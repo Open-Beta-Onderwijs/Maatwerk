@@ -18,6 +18,8 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4",
+    "acorn": "8.19.0",
+    "acorn-walk": "8.3.5",
     "prettier": "3.9.10"
   },
   "engines": {

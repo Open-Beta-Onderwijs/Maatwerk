@@ -1,10 +1,10 @@
 # State
 
-Last updated: 2026-10-25 (end of Step 1) Branch: `main` Last tag: `step-01`
+Last updated: 2026-10-25 (Step 2a in progress) Branch: `step/02-safety-net` Last tag: `step-01`
 
 ## Current step
 
-Step 1 done and approved. Next: Step 2, safety net on the old app (only when the user says so).
+Step 2 (safety net on the old app), sub-step 2a. User said to proceed on 2026-10-25.
 
 ## Done since last tag
 
@@ -23,11 +23,27 @@ Step 1 done and approved. Next: Step 2, safety net on the old app (only when the
 
 ## In progress
 
-- (nothing)
+Step 2a plan (sub-tasks, each one commit on `step/02-safety-net`):
+
+1. Harness skeleton `tests/reference-harness/`: locate `_reference/` (check commit), load the real
+   `main.js` IPC handlers with a fake `electron`, load `store.js` in a `vm` context with a fake
+   `window.rtti` that calls those handlers, extract inner functions from UI modules by name
+   (acorn), fixed clock + `TZ=Europe/Amsterdam`.
+2. `tools/fixtures`: seeded generator (`tiny`, `school`) + tree-hash manifest checked in CI.
+3. Logic goldens `tests/golden/logic/*.json` for business-rules.md section 11 (48 cases) via
+   `npm run golden:regen` / `golden:check` (check needs `_reference/`; CI validates structure).
+4. Storage/sync spec: `sync.js` + lock/CAS handlers copied verbatim to `tools/reference-shims/`,
+   node:test spec, `docs/specs/storage-spec.md`.
+5. `docs/testing.md` coverage matrix, CI, mid-step review, tag `step-02a`.
+
+Then 2b: Typst goldens (reference CLI 0.14.2, pdf-lib + pdfjs-dist dev deps).
+
+Decisions taken: test runner is `node:test` (built in) instead of Vitest for the harness; dev
+deps `acorn`, `acorn-walk` (MIT).
 
 ## Next action (concrete, resumable)
 
-1. When the user says so: `git checkout -b step/02-safety-net`, read PLAN.md Step 2 and its notes.
+1. Sub-task 1 above (harness skeleton).
 
 ## Open questions for the user
 
