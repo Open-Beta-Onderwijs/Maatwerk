@@ -53,10 +53,12 @@ core has no `tauri` dependency.
 ### 3. Storage
 
 - Same semantics as the reference (`data-files.md`): atomic write via temp file + rename, retry on
-  `EPERM`/`EBUSY`/`EACCES` with backoff (30-150 ms, 5 attempts), then the reference's direct-write
+  `EPERM`/`EBUSY`/`EACCES` with backoff (30-150 ms, 5 retries), then the reference's direct-write
   fallback; CAS on SHA-1 of the file bytes; `_meta.rev` check where the reference does it; JSON
-  written as `JSON.stringify(x, null, 2)` equivalent (2-space indent, no trailing newline) so files
-  stay byte-identical for unchanged content.
+  written like `JSON.stringify(x, null, 2)` (2-space indent, no trailing newline, insertion order).
+  The JSON values come from the UI, so formatting matches for normal data; number formatting can
+  differ between JS and `serde_json` for edge cases (exponents, `-0`, long fractions). Step 4
+  tests pin the cases that occur in real data.
 - The temp file for the atomic write lives next to the target (needed for an atomic rename on the
   same volume). This is the only file the app writes besides real data. "No temp files" (PLAN 4)
   applies to Typst wrappers, outputs and previews.
@@ -74,19 +76,22 @@ core has no `tauri` dependency.
 `notify` (MIT/Apache) plus a 20 s poll of the active year (OneDrive swallows events), 500 ms
 debounce, 100 ms batching, `.json`/`.typ` only, same ignore list as the reference (`fotos`, `bak`,
 `templates`, `temp`, `_preview_*`). Own writes are suppressed by remembering the hash written. An
-unparsable JSON file is retried once after ~1 s (still syncing). Emits `data:changed`.
+unparsable JSON file is retried once after ~1 s (still syncing). Emits `data:changed` only for
+external changes, as the reference does (own writes are suppressed, not flagged).
 
 ### 5. Typst service
 
 - **`typst` crates 0.14.x** behind a `World` implementation in `typst_svc`. Compiles run in
   `spawn_blocking`; batch jobs in parallel (the reference runs 2-4), output order = job order.
 - **Virtual file system** (nothing written to disk):
-  - `/temp/rtti_export.typ` -> embedded `rapport.typ` (renamed per the naming map; path kept
-    virtual for parity of relative imports).
+  - `/__maatwerk/rapport.typ` -> embedded report template (`rtti_export.typ` in the reference,
+    renamed per the naming map; its relative imports are served from the same virtual folder).
   - `/data/opdrachten/lib.typ` -> embedded `lib.typ`, regardless of what is on disk (ADR-0003 C4
     decides whether the disk copy is still written for the old app; not needed after cutover).
-  - `/data/...` -> files in the data folder via the path guard (teacher opdracht files, images,
-    `fotos/school-watermerk.svg`).
+  - `/data/opdrachten/**` and `/data/fotos/**` -> files in the data folder via the path guard
+    (teacher opdracht files, images, `fotos/school-watermerk.svg`). Nothing else in the data folder
+    is readable from Typst (PLAN Step 5a). The reference allows the whole app folder; this is a
+    deliberate narrowing.
   - Wrappers (`_rapport_run.typ`, opdracht wrappers, `_preview_*`) are generated in memory.
 - **Data in:** the reference generates Typst source (`toTypst`). The port passes data as a virtual
   JSON file (`/__maatwerk/data.json`, read with `json(...)`) and keeps a thin Typst wrapper that
@@ -101,7 +106,9 @@ unparsable JSON file is retried once after ~1 s (still syncing). Emits `data:cha
 - **Diagnostics:** structured (`severity`, message, file, span, hints) instead of raw stderr; the
   compat layer can still produce the old text for unmigrated screens. Warnings are kept, not
   dropped.
-- **Limits:** a compile timeout and cancellation for live preview (Step 8).
+- **Limits:** a compile timeout and cancellation for live preview (Step 8). Batch memory: a class
+  batch (~30 students) holds every compiled document until the merge; Step 5 measures it and caps
+  parallelism if needed (`docs/perf.md`).
 - **PDF merge:** `lopdf` (MIT) in `pdf_merge`: job order, grouping by `key`, odd-page padding per
   key with a blank page the size of the previous page; answer keys without padding (as the
   reference).
@@ -126,17 +133,30 @@ unparsable JSON file is retried once after ~1 s (still syncing). Emits `data:cha
 img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost; object-src 'none';
 base-uri 'self'; frame-ancestors 'none'` (plus `worker-src` for pdf.js). `style-src-attr` is
   pending the user's answer (architecture review, question 4).
-- Tauri capabilities: only `core:default` plus the plugins actually used (dialog, opener). No `fs`
-  plugin: the UI never touches the filesystem except through Maatwerk commands.
+- Tauri capabilities: only `core:default` plus the plugins actually used (dialog, opener, and
+  clipboard for the reference's image paste, Step 3/8). No `fs` plugin: the UI never touches the
+  filesystem except through Maatwerk commands.
 - Opening files/folders (`shell:openPath`) takes a data-relative path or a known output ID.
 
 ### 8. Logging and local state
 
 - `tracing` with a rolling file appender in the OS app-data dir
-  (`%APPDATA%\nl.openbetaonderwijs.maatwerk\logs`), never in the shared data folder. No student
+  (Tauri `app_log_dir`, on Windows `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs`), never in the shared data folder. No student
   names in logs.
 - Machine-local session state (the reference's `%APPDATA%\rtti-app\session.json`) moves to the
   app-config dir of the new identifier; not migrated (cutover starts fresh).
+
+### 9. Output files (PDFs)
+
+- The reference writes every PDF to `temp/` next to the exe, loads it in the viewer by
+  `file:///` URL and opens it with the OS for printing (`main.js:909-911`,
+  `modals/rapport.js:310-318`).
+- Proposal: compiled PDFs stay **in memory** under an output ID. The viewer loads them through a
+  custom Tauri URI scheme (`maatwerk-out://<id>`), so large batch PDFs never cross IPC as JSON.
+  "Opslaan als" writes to a path the teacher picks (dialog plugin). "Afdrukken" / "Openen" writes
+  the PDF to the OS cache dir (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output`, outside
+  OneDrive) and opens it with the opener plugin; the folder is cleared at start.
+- Pending the user's OK (architecture review, question 6).
 
 ## Consequences
 

@@ -216,7 +216,7 @@ same as `Math.round` **(quirk)**.
 | Where                              | Operation                                                                         | Decimals | Ref                                                                                                            |
 | ---------------------------------- | --------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- |
 | `formatGrade(g)` (all grade cells) | `null/undefined → '—'`, else `(Math.round(g*10)/10).toFixed(1).replace('.', ',')` | 1        | `app.js:363-366`                                                                                               |
-| Pass/fail `isFail(g)`              | `Math.round(g*10)/10 < 5.5`                                                       | 1        | `utils/colors.js:202-206`                                                                                      |
+| Pass/fail `isFail(g)`              | `Math.round(g*10)/10 < 5.5`                                                       | 1        | `utils/colors.js:38-40`                                                                                        |
 | RTTI %                             | `Math.round(earned/possible*100)`                                                 | 0        | `store.js:710-711`                                                                                             |
 | Override input                     | `Math.round(n*10)/10`                                                             | 1        | `screens/scores.js:666`                                                                                        |
 | `berekend`                         | `Math.round(calc*10)/10`                                                          | 1        | `screens/scores.js:1001`                                                                                       |
@@ -405,7 +405,7 @@ gradient from yellow to green) (`utils/grades.js:48-56`, `screens/toetsen.js:395
   (`screens/observaties.js:199-210`). Saving requires at least one schoolsoort, one vak and one
   jaarlaag (`screens/observaties.js:349-364`).
 - Subject match: `obs.subjects` (or the legacy `obs.subject`) contains the subject. For `wi`, any
-  of `wisob, wisa, wisb, wisc, wisd` matches (`store.js:50-60`).
+  of `wisob, wisa, wisb, wisc, wisd` matches (`store.js:216-224`).
 - Offered on an exam (exam editor) when the observatie's `jaarlagen` contains the exam's jaarlaag
   **and** (`obs.schoolsoort` is empty, or it overlaps the exam's schoolsoort)
   (`modals/toets-edit.js:379-386`). An empty `jaarlagen` means "never offered". Compare
@@ -420,7 +420,7 @@ gradient from yellow to green) (`utils/grades.js:48-56`, `screens/toetsen.js:395
 
 ```
 vakOk = vakken empty || any(v == subject)   (subject 'wi': v ∈ WI_VARIANTS)
-jlOk  = jaarlagen empty || !exam.jaarlaag || String(jaarlagen) contains String(exam.jaarlaag)
+jlOk  = jaarlagen empty || !exam.jaarlaag || jaarlagen.map(String).includes(String(exam.jaarlaag))   // element-wise, store.js:1221
 ssOk  = schoolsoort empty || exam.schoolsoort empty || overlap
 fit   = vakOk && jlOk && ssOk
 ```
@@ -643,7 +643,7 @@ reference code** in Step 2, not worked out by hand.
     `gradeGroupIdx`/histogram (unrounded).
 20. **RTTI rounding.** 1 of 3 points gives 33 and 2 of 3 gives 67 with `Math.round`; x.5 % cases
     such as 1 of 8 = 12.5 % (`store.js:710-711`).
-21. **Override basics.** Typed `'6,25'` is stored as 6.3, and typed `'10,04'` is stored as 10.0.
+21. **Override basics.** Typed `'6,25'` is stored as 6.3. Typed `'10,04'` is **rejected** (the 1-10 range check runs before rounding, `screens/scores.js:663-667`).
     `'0,9'` and `'10,1'` are rejected (`screens/scores.js:663-667`).
 22. **Override stale flag.** Set the override while calc = 5.43 (berekend 5.4), then change scores
     so calc = 5.44 (not stale) and then 5.46 (stale) (`store.js:721`).

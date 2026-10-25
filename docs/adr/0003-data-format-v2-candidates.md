@@ -34,9 +34,12 @@ Scale: cost / benefit / risk = low, medium, high.
 - **Change:** `config.json` gets `"schema_version": 2`. The new app refuses to write to a folder
   with a lower or higher version (with a Dutch message), and the migration sets it. Per-file
   versions only if a later change needs them.
-- **Benefit:** makes the cutover and all later changes safe; protects against an old app version
-  writing to a v2 folder by accident (the old app would ignore the field, so this protects the new
-  app, not the old one).
+- **Benefit:** makes the cutover and all later changes safe for the new app.
+- **Limit:** an old v1 exe started on a v2 folder ignores the field and still runs `migrate()`
+  (harmless once C2 removed the legacy files) and `seedInitialData()` (rewrites `lib.typ` when its
+  hash differs, seeds `gebruikers.json` if missing), and it writes v1-shaped data. The cutover
+  runbook (Step 7) must therefore remove or block old exes (for example by renaming the folder
+  once); `schema_version` alone does not stop them.
 - **Risk:** low. Note `config.json` is currently a blind write (C6).
 
 ### C2. Remove legacy files and `migrate()`
@@ -97,7 +100,7 @@ Scale: cost / benefit / risk = low, medium, high.
 ### C8. Student IDs always strings
 
 - **Now:** student numbers stored as JSON numbers in new data, strings in paths and presence; CSV
-  re-import can duplicate students whose id is a string (B-quirks).
+  re-import can duplicate students whose id is a string (B21).
 - **Change:** strings everywhere, migrated once.
 - **Risk:** medium: every comparison in the UI must be checked; leading zeros may already have
   been lost in existing data.
@@ -123,7 +126,7 @@ Scale: cost / benefit / risk = low, medium, high.
 
 - **Now:** `templates/RTTI explanations and advices/rtti_expl_adv_<fileKey>_<jaar>.json` (spaces in
   the folder name); the rapport reads `wi`, the editor writes `wisa`..`wisd`, so bovenbouw
-  wiskunde reports have no advice (B-quirk).
+  wiskunde reports have no advice (B9).
 - **Change:** a folder name without spaces and one key scheme; the migration merges the files.
 - **Benefit:** high (fixes visible missing advice). **Changes report output**: needs the user's
   OK, and could also be fixed in the port.

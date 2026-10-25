@@ -337,7 +337,7 @@ Undo, saving, collaboration
 22. **Undo/redo** owned by the app, not HOT: stack of 50 entries (`MAX_HISTORY`, `:45-50, 89-112`)
     for scores, observaties and grade overrides; an entry is skipped with a toast when a colleague
     changed the cell since (`:79-82, 1390-1401, 980-985, 1011-1020`); toolbar buttons ↶/↷ (`:156-157,
-199-202`) and Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z (`:204-214`; see quirk Q1). HOT's own UndoRedo plugin
+199-202`) and Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z (`:204-214`; see quirk U1). HOT's own UndoRedo plugin
     is not configured (default settings).
 23. **Autosave per cell** through `saveCell` (`:776-787`) → `Store.setScore` / `setObservation` /
     `setGradeOverride` (CAS read-modify-write per student file); `pendingSaves` tracks in-flight

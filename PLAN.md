@@ -93,7 +93,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | Step | Title | Size | Status |
 |---|---|---|---|
 | 0 | Bootstrap | S | done (`step-00`) |
-| 1 | Reference study + architecture review (**approval gate**) | M | todo |
+| 1 | Reference study + architecture review (**approval gate**) | M | awaiting approval |
 | 2 | Safety net: golden tests on the old app | L (2a, 2b) | todo |
 | 3 | UI foundation: Vite, bridge, domain extraction (3a); score-grid replacement (3b) | L (3a, 3b) | todo |
 | 4 | Rust core: paths, storage, watcher | L (4a, 4b) | todo |

@@ -159,6 +159,14 @@ are relative to `_reference/` unless a section says otherwise.
     - Where: `main.js:853-857`, `:909-911`
     - Evidence: progress is sent to `event.sender`; `done` only counts successes; output `temp/opdrachten.pdf` / `antwoordsleutel.pdf` is overwritten by the next run (the PDF viewer may still hold it).
 
+34. **D34 · Groups CSV re-import overwrites existing groups (data loss)**
+    - Where: `renderer/modals/groep-edit.js:535-543`, `:565`; `renderer/store.js:478-482`
+    - Evidence: every CSV row becomes a group object with `student_ids: []` and the CSV's
+      `docenten`, saved through `upsertGroups` -> `upsertGroup(..., { force: true })`. There is no
+      existence check and no confirmation, so re-importing a CSV with an existing group name empties
+      that group's student list and replaces its teachers.
+    - Port: pin with a test; ask the user whether to fix (merge or confirm) during the port.
+
 ## B. Business logic
 
 Paths in this section are relative to `_reference/renderer/`.

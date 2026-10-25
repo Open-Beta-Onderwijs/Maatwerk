@@ -29,7 +29,7 @@ The app has **no single-student rapport**. Path A always renders every student w
   ```
 - Paths A–D then add `--root <appDir> <wrapper.typ> <output>`. `appDir` = dev: `__dirname`, packaged: `PORTABLE_EXECUTABLE_DIR || dirname(execPath)` (`main.js:17-20`). `data/` and `temp/` both live directly under `appDir` (`main.js:23`, `549`), so **the Typst root is the app folder, which contains `data/`, `temp/` and the exe**.
 - The output format comes from the extension: `.pdf`, or `.svg` with a `{p}` page pattern. System fonts are **not** disabled (`--ignore-system-fonts` is not passed). The package cache is left at its default.
-- Every call is `child_process.execFile` (no shell). Paths B, C and D set `maxBuffer: 10 MiB` (`main.js:775`, `821`); A and B use the 1 MiB default. stdout is ignored. On failure (non-zero exit), `stderr || err.message` is the error text. **Warnings on success are dropped.**
+- Every call is `child_process.execFile` (no shell). Paths C and D set `maxBuffer: 10 MiB` (`main.js:775`, `821`); A and B use the 1 MiB default. stdout is ignored. On failure (non-zero exit), `stderr || err.message` is the error text. **Warnings on success are dropped.**
 
 ### Diagnostics format
 

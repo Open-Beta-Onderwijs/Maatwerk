@@ -2,7 +2,7 @@
 
 Date: 2026-10-25. Reference: `_reference/` at `0e30a70` (v0.1.6). Inputs, all in `docs/reference/`:
 `ipc-api.md`, `data-files.md`, `business-rules.md`, `typst-contract.md`, `ui-map.md`,
-`naming-map.md`, `metrics.md` (raw measurements) and `quirks.md` (105 items, IDs D/B/T/U). This
+`naming-map.md`, `metrics.md` (raw measurements) and `quirks.md` (106 items, IDs D/B/T/U; a few overlap across areas). This
 document draws conclusions; the evidence (with `file:line`) is in those files.
 
 **What the user decides at the end of Step 1:** the keep / change-now / change-later table (section
@@ -56,7 +56,7 @@ document draws conclusions; the evidence (with `file:line`) is in those files.
 | Duplication (jscpd)                   | 2.17% of lines; mostly Chart.js option blocks in `profiel.js` / `toets-overzicht.js` (~250 lines)                                                                                                                   |
 | Semantic duplication                  | Much larger than jscpd shows: best attempt x4, RTTI % x5, mean/SD x4, opdracht/observatie fit x2 each, "student's group" x3                                                                                         |
 | `innerHTML` with user data, unescaped | 19 interpolations on 17 lines (`metrics.md` section 5). Worst: RTTI-uitleg textareas (also corrupts `&`/`<` on save), login badges. CSP blocks script execution, so the effect is broken markup and data corruption |
-| Global state                          | Classic scripts sharing `window`-level globals (`Store`, `Sync`, `Presence`, `App` helpers); load order in `ui-map.md`                                                                                              |
+| Global state                          | Mixed: `store.js` and `custom-select.js` are classic scripts (global `Store`); `Sync`, `Presence` and the screens are ES modules with module-level state; load order in `ui-map.md`                                 |
 
 **Where the domain logic lives** (business-rules summary): the core maths (`calcResults`,
 `calcGrade`, `qKind`, `resolveBestAttempts`, `opdrachtMatchesExam`, `cijferCardReason`,
@@ -68,21 +68,28 @@ averages are closures inside modals.
 
 ## 4. Dependency review (target: AGPL-3.0-or-later)
 
-| Dependency                                               | Use                   | Licence                                                                                                         | Verdict                                                                                         |
-| -------------------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Handsontable 14.3.0** (CDN)                            | score grid            | **Proprietary** (key `non-commercial-and-evaluation`)                                                           | **Blocker: cannot ship.** Replace in Step 3b (section 4.1)                                      |
-| Chart.js 4.4.2 + annotation 3.0.1 (CDN)                  | charts                | MIT                                                                                                             | Keep; vendor via npm, pin                                                                       |
-| CodeMirror 6 / Lezer (esm.sh, `@6`)                      | Typst editor          | MIT                                                                                                             | Keep; vendor via npm, pin exact versions                                                        |
-| pdfjs-dist 4.9.155 (CDN)                                 | PDF viewer            | Apache-2.0                                                                                                      | Keep; vendor via npm (Apache-2.0 is AGPLv3-compatible)                                          |
-| pdf-lib 1.17.1                                           | PDF merge (main)      | MIT                                                                                                             | Replaced by a Rust merge (`lopdf`, MIT) in core                                                 |
-| docx 8.5.0                                               | nothing               | MIT                                                                                                             | Drop                                                                                            |
-| Typst CLI 0.14.2 (binary)                                | compile               | Apache-2.0                                                                                                      | Replaced by the `typst` crates 0.14.x (Apache-2.0)                                              |
-| Typst `zero` 0.7.1 (vendored)                            | number formatting     | MIT                                                                                                             | Keep, embed                                                                                     |
-| Typst `cetz` 0.3.4, `oxifmt` 0.2.1, `unify` 0.8.0        | rapport charts/units  | LGPL-3.0-or-later (cetz), MIT-0 (oxifmt), MIT (unify), per each package's `typst.toml` in the local Typst cache | All AGPL-compatible. **Not vendored today.** Vendor and embed in Step 5                         |
-| Fonts: Source Serif 4, STIX Two Math                     | Typst output          | OFL-1.1                                                                                                         | Keep, embed, ship OFL texts                                                                     |
-| Libertinus Serif (Typst embedded)                        | ●/◇ glyphs in rapport | OFL-1.1                                                                                                         | Comes with `typst-assets`; keep                                                                 |
-| Segoe UI Emoji (system)                                  | observatie icons      | Microsoft, not redistributable                                                                                  | Use the system font on Windows, or bundle an OFL/CC-BY emoji font: **open decision 2** (Step 5) |
-| electron, electron-builder, husky, lint-staged, prettier | build                 | MIT                                                                                                             | Go away (Prettier kept in the new repo)                                                         |
+**The reference itself has no licence file.** The port copies its code and templates verbatim
+(Steps 2b, 3a, 5a). The user confirmed on 2026-10-25 that they are the original author of the
+reference repository (all 20 commits are by the same account), so relicensing it as
+AGPL-3.0-or-later is theirs to do; recorded in `docs/STATE.md`. Contributions by others would
+need their consent, but there are none.
+
+| Dependency                                                         | Use                        | Licence                                                                                                         | Verdict                                                                                                                                                                         |
+| ------------------------------------------------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Handsontable 14.3.0** (CDN)                                      | score grid                 | **Proprietary** (key `non-commercial-and-evaluation`)                                                           | **Blocker: cannot ship.** Replace in Step 3b (section 4.1)                                                                                                                      |
+| Chart.js 4.4.2 + annotation 3.0.1 (CDN)                            | charts                     | MIT                                                                                                             | Keep; vendor via npm, pin                                                                                                                                                       |
+| CodeMirror 6 / Lezer (esm.sh, `@6`)                                | Typst editor               | MIT                                                                                                             | Keep; vendor via npm, pin exact versions                                                                                                                                        |
+| pdfjs-dist 4.9.155 (CDN)                                           | PDF viewer                 | Apache-2.0                                                                                                      | Keep; vendor via npm (Apache-2.0 is AGPLv3-compatible)                                                                                                                          |
+| pdf-lib 1.17.1                                                     | PDF merge (main)           | MIT                                                                                                             | Replaced by a Rust merge (`lopdf`, MIT) in core                                                                                                                                 |
+| docx 8.5.0                                                         | nothing                    | MIT                                                                                                             | Drop                                                                                                                                                                            |
+| Typst CLI 0.14.2 (binary)                                          | compile                    | Apache-2.0                                                                                                      | Replaced by the `typst` crates 0.14.x (Apache-2.0)                                                                                                                              |
+| Typst `zero` 0.7.1 (vendored)                                      | number formatting          | MIT                                                                                                             | Keep, embed                                                                                                                                                                     |
+| Typst `cetz` 0.3.4, `oxifmt` 0.2.1, `unify` 0.8.0                  | rapport charts/units       | LGPL-3.0-or-later (cetz), MIT-0 (oxifmt), MIT (unify), per each package's `typst.toml` in the local Typst cache | All AGPL-compatible. **Not vendored today.** Vendor and embed in Step 5                                                                                                         |
+| Fonts: Source Serif 4, STIX Two Math                               | Typst output               | OFL-1.1                                                                                                         | Keep, embed, ship OFL texts                                                                                                                                                     |
+| Libertinus Serif (Typst embedded)                                  | ●/◇ glyphs in rapport      | OFL-1.1                                                                                                         | Comes with `typst-assets`; keep                                                                                                                                                 |
+| New Computer Modern, DejaVu Sans Mono (other `typst-assets` fonts) | Typst defaults (math, raw) | GUST Font License; Bitstream Vera licence                                                                       | Both free and redistributable, but not on our allowlists and invisible to `cargo deny`. Step 5: embed only the fonts the templates use, or record these two licences explicitly |
+| Segoe UI Emoji (system)                                            | observatie icons           | Microsoft, not redistributable                                                                                  | Use the system font on Windows, or bundle an OFL/CC-BY emoji font: **open decision 2** (Step 5)                                                                                 |
+| electron, electron-builder, husky, lint-staged, prettier           | build                      | MIT                                                                                                             | Go away (Prettier kept in the new repo)                                                                                                                                         |
 
 ### 4.1 Score grid: what a replacement must preserve (input for Step 3b)
 
@@ -133,7 +140,10 @@ custom grid turns out too costly. Decide in Step 3b (open decision 1).
   one is also a data-corruption bug: U6, U7). New code builds DOM with `textContent`/elements or a
   tagged-template helper that escapes by default; ESLint can flag new raw `innerHTML`.
 - **Typst sandbox:** the World serves only (a) embedded templates, `lib.typ`, packages and fonts,
-  and (b) files under the data folder through the path guard. No network, no package downloads,
+  and (b) `opdrachten/**` and `fotos/**` of the data folder through the path guard (PLAN Step 5a).
+  This is **narrower than the reference**, whose Typst root is the app folder, so a teacher file
+  can read any data file today (including student JSON). No template needs more than those two
+  folders (`typst-contract.md`). No network, no package downloads,
   no system paths. Teacher markup (`uitleg_rtti`, opdracht files) is evaluated by Typst; that is by
   design, and Typst has no file-write or network access, so the World is the security boundary.
   Compile time and memory limits for live preview (a teacher's infinite loop must not hang the
@@ -168,7 +178,23 @@ data** is marked and needs the user's approval before it happens.
    pre-per-year or pre-per-subject files, so the new app does not need to port that code.
 4. **CSP inline styles:** accept `style-src-attr 'unsafe-inline'` for the port, with a
    change-later item to move inline styles to classes?
-5. **Quirks that corrupt data today** (U6/U7 escaping, U2/U4 lost score saves, B: CSV BOM imports
-   nothing, B: `wis*` advice key mismatch): fix during the port (each with a failing test first),
-   or keep for strict parity and fix after cutover?
-6. ADR-0003: which candidates should Step 7 work out in detail?
+5. **Quirks that lose or corrupt data today:** U2/U4 (score saves dropped), U3 (save errors
+   invisible), U9 (editor loses last edits on close), D25 (editor request hangs), D34 (groups CSV
+   re-import empties groups), U6/U7 (escaping corrupts teacher text), B22 (CSV with BOM imports
+   nothing), B9 (`wis*` advice key mismatch, changes report output). Fix during the port (each
+   with a failing test first), or keep for strict parity and fix after cutover?
+6. **Output files** (ADR-0002 section 9): generated PDFs in memory, shown via a custom protocol,
+   and written to a cache folder outside OneDrive only for printing / opening externally. OK?
+7. **Blind writes and advice keys now or in v2:** ADR-0003 C6 (CAS for `school.json`,
+   `config.json`, RTTI templates) and C11 (`wis*` keys) could be done during the port. Now, or in
+   Step 7?
+8. ADR-0003: which candidates should Step 7 work out in detail?
+
+### Deviations from the plan (for information)
+
+- 28 bridge methods are ported, not 29 (one is unreachable; ADR-0002 section 2).
+- `checkJs` stays off for untouched legacy JS files (ADR-0002 section 6).
+- The atomic-write temp file next to the target is the one file the app writes besides real data
+  (ADR-0002 section 3); PLAN 4 says "no temp files", which we read as "no Typst/output temp
+  files".
+- Typst sandbox narrower than the reference (section 5).

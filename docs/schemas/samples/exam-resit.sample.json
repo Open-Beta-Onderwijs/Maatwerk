@@ -20,7 +20,7 @@
   ],
   "obs_ids": [],
   "subject": "nat",
-  "volgnummer": 302,
+  "volgnummer": 301,
   "_meta": {
     "rev": 1,
     "createdBy": "gebr-1700000000001",
@@ -30,5 +30,12 @@
   },
   "description": "INHAAL",
   "attempt": 2,
-  "parent_id": "nat-voorbeeldtoets-1-2025-2026"
+  "parent_id": "nat-voorbeeldtoets-1-2025-2026",
+  "opdrachtenCijfer": [
+    {
+      "id": "cijfer-1700000000300",
+      "onder": 5.5,
+      "opdrachten": ["opdracht_1700000000200"]
+    }
+  ]
 }
