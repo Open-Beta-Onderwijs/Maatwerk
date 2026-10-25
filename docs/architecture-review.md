@@ -198,3 +198,21 @@ data** is marked and needs the user's approval before it happens.
   (ADR-0002 section 3); PLAN 4 says "no temp files", which we read as "no Typst/output temp
   files".
 - Typst sandbox narrower than the reference (section 5).
+
+## 8. Decisions (user, 2026-10-25)
+
+The user's answers to section 7. Where they differ from sections 5 and 6 above, these answers win;
+ADR-0002 and ADR-0003 have been updated accordingly.
+
+| #   | Question                      | Answer                                                                                                                                                                                                                                                                             |
+| --- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | ADR-0002                      | **Approved with one change:** each opdracht folder becomes a self-contained Typst project with its own editable `main.typ` (former hidden wrapper) and `lib.typ`, a warning when editing them and a reset to the bundled version (ADR-0002 5a, ADR-0003 C14). The rest is approved |
+| 2   | Report data as JSON           | **Yes**                                                                                                                                                                                                                                                                            |
+| 3   | Legacy `migrate()` code       | **Confirmed: drop it.** No live folder has pre-per-year or pre-per-subject data                                                                                                                                                                                                    |
+| 4   | Inline styles and CSP         | **Move them into CSS classes directly** during Step 3 and clean up the inconsistent styling; no `style-src-attr 'unsafe-inline'`                                                                                                                                                   |
+| 5   | Data-loss / corruption quirks | **Fix during the port** (ADR-0002 section 10)                                                                                                                                                                                                                                      |
+| 6   | Output PDFs                   | **Keep them in the cache**; when printing, make a timestamped copy with a descriptive name in a new shared `rapporten/` folder (ADR-0002 section 9, ADR-0003 C15)                                                                                                                  |
+| 7   | C6 and C11                    | **During the port**                                                                                                                                                                                                                                                                |
+| 8   | ADR-0003 candidates           | **All of them.** Timing left to the implementer; recorded in ADR-0003 "Decision and timing"                                                                                                                                                                                        |
+
+Also confirmed: the Step 0 hello-world exe and its "Begroet" round trip work on the user's machine.

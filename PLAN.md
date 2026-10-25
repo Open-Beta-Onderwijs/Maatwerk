@@ -93,7 +93,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | Step | Title | Size | Status |
 |---|---|---|---|
 | 0 | Bootstrap | S | done (`step-00`) |
-| 1 | Reference study + architecture review (**approval gate**) | M | awaiting approval |
+| 1 | Reference study + architecture review (**approval gate**) | M | done (`step-01`) |
 | 2 | Safety net: golden tests on the old app | L (2a, 2b) | todo |
 | 3 | UI foundation: Vite, bridge, domain extraction (3a); score-grid replacement (3b) | L (3a, 3b) | todo |
 | 4 | Rust core: paths, storage, watcher | L (4a, 4b) | todo |
@@ -243,6 +243,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 
 ### Step 3: UI foundation (L)
 
+> **Step 1 decisions (ADR-0002, ADR-0003):** the bridge has **28** methods (one of the 29 is unreachable). Do **not** port `migrate()`. Move all inline `style=` attributes into CSS classes (no `unsafe-inline` in the CSP) and clean up inconsistent styling. Fix during 3a, failing test first: U3, U9, D25, D34, U6/U7, B22, B9 (read both advice-key schemes). Domain code compares student IDs as strings (C8 prep). Quirk list: `docs/reference/quirks.md`.
+
 **3a: foundation.** Goal: the existing UI runs in Vite, offline, against a mock backend, with logic extracted and tested. Handsontable stays **temporarily** in 3a; it must not be shipped (see 3b).
 
 - Import `_reference/renderer` into `ui/` **verbatim as its own commit** (reviewable diffs).
@@ -255,6 +257,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 - Start `docs/parity.md`: one row per old IPC handler and per UI-visible behaviour -> new command -> test.
 
 **3b: replace the score grid (Handsontable)**
+
+> **Step 1 decisions (ADR-0002, ADR-0003):** preferred replacement is a small own grid on a `<table>` (feature list: `docs/architecture-review.md` 4.1, `docs/reference/metrics.md` section 8). The new grid also fixes U2 and U4. Still ask the user to choose.
 - *Why:* Handsontable 14 is under the HandsOnCode Non-Commercial licence (key `'non-commercial-and-evaluation'`). That licence permits personal, education and research use, but treats institutional environments as commercial (45-day evaluation), grants no clear distribution right, and is proprietary, so it cannot be bundled in an AGPL-3.0 app. The user has been told this; do not ship it.
 - First write a **behaviour spec** of the grid from `ui/src/screens/scores.js` (`docs/specs/score-grid.md`): numpad and arrow navigation, `N` for not evaluated, empty vs `0`, per-question observations, validation/colouring against max points, frozen headers, copy/paste of ranges, bonus/diag columns, colleague presence markers, keyboard shortcuts, expected size (about 30 students x 40 questions).
 - Write Playwright tests for that spec **against the Handsontable version first**, so the replacement is verified against the old behaviour.
@@ -266,6 +270,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 
 ### Step 4: Rust core: paths, storage, watcher (L)
 
+> **Step 1 decisions (ADR-0002, ADR-0003):** **no `.lock` files** (C3; concurrency tests must confirm CAS suffices, otherwise stop and ask), CAS also for `school.json`, `config.json` and RTTI templates (C6), active year per teacher in local session state (C7), refuse folders with an unknown/newer `schema_version` (C1). Reads distinguish missing from corrupt.
+
 **4a: paths and storage** (`maatwerk-core`)
 - `paths`: `DataDir`, safe relative-path join (reject `..`, absolute, drive letters, symlink escape, reserved Windows names). Data dir location: next to the exe (`current_exe()` parent) or `data/` next to the project in dev. Overridable by an env var for tests.
 - `storage`: read JSON, read JSON + content hash, write JSON atomically (temp + rename, retry on `EPERM/EBUSY/EACCES` with backoff, last-resort direct write), CAS on content hash (`expectedHash`, `null` = must not exist), `_meta.rev` stale-write rejection (as the UI does today), `.lock` files with 10 s TTL for non-score files, score files unlocked. List years (newest first), ensure year (exams/, groups/, scores/<subject>/), list score files, read all JSON in a dir, delete, ensure dir, text files, photo as data URL, save photo, local session file (OS app-config dir, not the shared folder), seed initial data (admin user, directories).
@@ -273,7 +279,7 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 - Port the Step 2 storage spec **test-first**. Add concurrency tests (two storage handles on one temp dir) and failure injection for rename errors. `proptest` for path safety.
 
 **4b: watcher and commands**
-- `watcher`: `notify` + 20 s poll fallback, 500 ms debounce, 100 ms flush batching, own-write suppression (`note_write`, `note_delete`), year scope, ignored dirs (`fotos`, `bak`, `templates`, `temp`), watched extensions `.json`/`.typ`, retry on unparsable JSON (OneDrive still syncing), restart watch after errors. Emits `data:changed` `[{relPath, kind, meta}]`.
+- `watcher`: `notify` + 20 s poll fallback, 500 ms debounce, 100 ms flush batching, own-write suppression (`note_write`, `note_delete`), year scope, ignored dirs (`fotos`, `bak`, `templates`, `temp`, `rapporten`), watched extensions `.json`/`.typ`, retry on unparsable JSON (OneDrive still syncing), restart watch after errors. Emits `data:changed` `[{relPath, kind, meta}]`.
 - Presence: heartbeat file write and mark-offline on quit/user switch.
 - Tauri commands for all of the above; implement `TauriApi` for these methods; the UI runs against real storage on synthetic data.
 - Typed errors and generated TS bindings (ADR for the tool choice).
@@ -283,6 +289,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 ---
 
 ### Step 5: Typst service, parity with the old output (L)
+
+> **Step 1 decisions (ADR-0002, ADR-0003):** two Worlds: the **rapport** World (embedded template, JSON data file, `fotos/**`) and the **opdracht** World whose root is **one opdracht project folder** (`main.typ`, `opdracht.typ`, `lib.typ`, `images/`; ADR-0002 5a). Build the service around a `TypstProject` abstraction; for parity with v1 goldens, present a v1 opdracht as a virtual project. Embed `zero`, `cetz`, `oxifmt`, `unify`. Runtime data for opdrachten via `sys.inputs` JSON with placeholder defaults. lib.typ/main.typ versioning: version line + hashes of released versions. Fonts: embed only what the templates use or record the GUST/Bitstream Vera licences. Where this section conflicts with ADR-0002, the ADR wins.
 
 **5a: World and report PDF**
 - `TypstWorld` implementing `typst::World`: in-memory `main` source; embedded files (`rapport.typ` = the old `rtti_export.typ`, `lib.typ`, `base_assignment.typ`; rename markers to `<__maatwerk_*>`); **vendored Typst packages** (`@preview/cetz:0.3.4`, `@preview/unify:0.8.0`; check their licences) so compiling needs no network; fonts via `typst-assets` (Libertinus Serif) plus system fonts via `typst-kit`, searched **once** at startup; `today()` injectable.
@@ -305,6 +313,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 
 ### Step 6: Tauri wiring, parity, portable build (L)
 
+> **Step 1 decisions (ADR-0002, ADR-0003):** PDFs live in the OS cache dir and reach pdf.js through a custom URI scheme; **printing** writes a timestamped, descriptively named copy to `rapporten/<schooljaar>/` in the data folder and opens that copy (ADR-0002 section 9, C15). Image names no longer contain the opdracht id (they live in the opdracht folder after Step 7).
+
 **6a: remaining commands and plugins**
 - Image handling: file dialog (`tauri-plugin-dialog`) with a token so the absolute path stays in Rust, clipboard image (`tauri-plugin-clipboard-manager`), thumbnails as data URLs (`image` crate; SVG gets none), save/import/copy/delete opdracht images, name cleaning (NFD, strip diacritics, `[^A-Za-z0-9_-]` -> `-`, max 60), overwrite handling, allowed extensions `png jpg jpeg gif svg webp`, remove empty image dirs on start.
 - `open_path` (`tauri-plugin-opener`), render commands from Step 5, Typst progress as events (`assignment:progress`), `data:changed` events, presence on window close.
@@ -325,12 +335,12 @@ The user now tests on a **copy** of real data and reports differences. Fix them 
 
 ### Step 7: Data format v2, migration, cutover runbook (M)
 
-Only change what the user approved from ADR-0003. If nothing is approved, this step shrinks to `schema_version`, legacy cleanup and the safety tooling below.
+Only change what the user approved from ADR-0003. **The user approved all candidates** (2026-10-25); the migration covers C1, C2, C3 (delete `.lock`), C5, C8, C9, C10, C11 (folder rename), C12, C13 and C14 (opdracht project folders), per the timing table in ADR-0003. C9 and C10 are high risk: migration tests first, and stop and ask if the goldens show unexpected changes.
 
 - `schema_version` in `config.json`; the new app refuses folders with a *newer* version and offers migration for older ones.
 - `maatwerk-cli validate-data`: checks schemas and cross-references (exam -> group, score -> student/exam, opdracht -> observatie, missing images). Also callable from the app (admin screen).
 - `maatwerk-cli migrate --dry-run | --apply`: backup **first** (zip to a folder outside the OneDrive folder), migrate, re-validate, report. Idempotent. Migration tests from synthetic v1 fixtures to expected v2 output.
-- `lib.typ` is served from the binary and no longer written into the shared folder (if approved).
+- `lib.typ` is no longer shared: each opdracht folder gets its own copy (C14, replaces C4).
 - `docs/cutover-runbook.md`: backup, announce, everyone closes the old app, one admin runs migration, distribute the new exe, move the old exe away, rollback plan (restore backup).
 
 ---
@@ -338,6 +348,8 @@ Only change what the user approved from ADR-0003. If nothing is approved, this s
 ### Step 8: New editor and assignment pipeline on the crate (L)
 
 **Goal:** use what a library gives us that a CLI cannot.
+
+> **Step 1 decisions (ADR-0002, ADR-0003):** the editor works on one opdracht project folder: file list (`opdracht.typ`, `main.typ`, `lib.typ`, images), warning banner when editing `main.typ`/`lib.typ`, "Herstel standaardversie", "Bekijk verschillen" for outdated copies (ADR-0002 5a).
 
 **8a: live compile service**
 - `EditorSession` in `maatwerk-core`: holds the source in memory (never written to the data folder), `update(source)` debounced, **incremental compile** (long-lived World, `comemo` caches evicted after each compile), latest request wins (generation counter), keeps the last good preview while there are errors, returns **only changed pages** (SVG + hash).
@@ -356,6 +368,8 @@ Only change what the user approved from ADR-0003. If nothing is approved, this s
 ---
 
 ### Step 9: AI-ready seams (S)
+
+> **Step 1 decisions (ADR-0002, ADR-0003):** an opdracht is a self-contained project folder (ADR-0002 5a). The CLI (and a later AI session) can run inside **one** opdracht folder and only sees that folder; design the `check`/`render` API around that.
 
 No AI features. Make them cheap to add later.
 
@@ -429,7 +443,7 @@ Order: biggest risk first, always with tests around the code you touch.
 
 1. **Score grid replacement** (Handsontable is not usable under AGPL): which permissive library or custom grid? Decide in Step 3b.
 2. **Emoji/icon font**: rely on system emoji fonts or bundle one (Step 5).
-3. **`.lock` files**: keep, or CAS only? They create sync noise (Step 1/7).
+3. **`.lock` files**: decided in Step 1: CAS only, no lock files (ADR-0003 C3).
 4. **Domain logic in Rust or JS?** (Step 10, with measurements).
 5. **Data-folder policy** on macOS and first run (Step 11).
 6. **macOS signing** (Step 11).

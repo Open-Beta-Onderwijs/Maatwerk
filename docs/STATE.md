@@ -1,21 +1,25 @@
 # State
 
-Last updated: 2026-10-25 (end of Step 1) Branch: `step/01-reference-study` Last tag: `step-00`
+Last updated: 2026-10-25 (end of Step 1) Branch: `main` Last tag: `step-01`
 
 ## Current step
 
-Step 1: reference study and architecture review. **STOPPED at the approval gate**, waiting for the
-user's answers. The branch is not merged yet: ADR statuses change with the answers.
+Step 1 done and approved. Next: Step 2, safety net on the old app (only when the user says so).
 
 ## Done since last tag
 
-- `docs/reference/`: `ipc-api.md`, `data-files.md`, `business-rules.md` (48 golden candidates),
-  `typst-contract.md` (11 parity candidates), `ui-map.md`, `naming-map.md` (full), `quirks.md`
-  (106 items, IDs D/B/T/U), `metrics.md`.
-- `docs/schemas/`: 12 draft JSON Schemas, 13 synthetic samples, all valid (ajv, strict).
-- `docs/architecture-review.md`, `docs/adr/0002-target-architecture.md` (proposed),
-  `docs/adr/0003-data-format-v2-candidates.md` (open, 13 candidates).
-- Review `docs/reviews/step-01.md`: 0 blockers, 4 majors fixed/resolved, minors fixed.
+- (nothing yet)
+
+## Step 1 summary
+
+- Reference study in `docs/reference/` (IPC API, data files, business rules, Typst contract, UI map,
+  naming map, 106 quirks, metrics), draft JSON Schemas in `docs/schemas/`.
+- `docs/architecture-review.md` with the user's decisions (section 8).
+- ADR-0002 accepted with the user's amendment: opdracht folders are self-contained Typst projects
+  (section 5a). ADR-0003 decided: all candidates, timing table per step.
+- Fix during the port: ADR-0002 section 10. CSP without inline styles (Step 3). Printed PDFs go to
+  `rapporten/` (Step 6). PLAN.md step sections carry "Step 1 decisions" notes.
+- Step 0 hello world confirmed working by the user.
 
 ## In progress
 
@@ -23,20 +27,16 @@ user's answers. The branch is not merged yet: ADR statuses change with the answe
 
 ## Next action (concrete, resumable)
 
-1. Get the user's answers to the questions in `docs/architecture-review.md` section 7.
-2. Update ADR-0002 status (accepted, with changes) and ADR-0003 (chosen candidates); record
-   answers in ADR-0001 style.
-3. Merge `step/01-reference-study` into `main` (merge commit), tag `step-01`, PLAN.md section 3.
-4. Step 2 only when the user says so.
+1. When the user says so: `git checkout -b step/02-safety-net`, read PLAN.md Step 2 and its notes.
 
 ## Open questions for the user
 
-- The 8 questions in `docs/architecture-review.md` section 7.
-- Manual check of the Step 0 hello world ("Begroet" click).
 - Remote: still to create (repo `maatwerk`, public). `gh` CLI is not installed.
+- Open decisions still pending (PLAN section 9): emoji font (Step 5), score grid choice (Step 3b),
+  domain logic location (Step 10), versioning/update policy, macOS items.
 
 ## How to resume
 
 PowerShell (not Git Bash, whose `link` shadows MSVC's): `npm ci; npm run build:ui`, then the gate
-commands in `CLAUDE.md`. `cargo-deny` 0.20.2 is installed. The schema validator (ajv) was
-installed in the session scratchpad; reinstall per `docs/schemas/README.md` if needed.
+commands in `CLAUDE.md`. `cargo-deny` 0.20.2 is installed. The schema validator (ajv) lives
+outside the repo; reinstall per `docs/schemas/README.md` if needed.

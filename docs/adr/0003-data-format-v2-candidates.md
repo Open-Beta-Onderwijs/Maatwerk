@@ -1,8 +1,38 @@
 # ADR-0003: Data format v2 candidates
 
-Status: **open** (Step 1, 2026-10-25). Nothing is picked yet. The user chooses which candidates
-Step 7 works out; Step 7 then writes the migration, the backup and the validation for the chosen
-ones.
+Status: **decided** (user, 2026-10-25): **all candidates are accepted**, plus two new ones (C14,
+C15). C6 and C11 are done during the port (user); the user left the timing of the rest to the
+implementer, recorded in "Decision and timing" below. Step 7 writes the migration, backup and
+validation for everything that changes files on disk.
+
+## Decision and timing
+
+"Port" = done in the step named, while porting; "Step 7" = part of the v2 migration. Behaviour
+changes in the port do not change the files on disk unless stated.
+
+| ID  | Candidate                            | When                                  | Why this timing                                                                                                                                   |
+| --- | ------------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | `schema_version`                     | 4a check, 7 write                     | The new app refuses unknown/newer versions from the start; the migration sets 2                                                                   |
+| C2  | Remove legacy files and `migrate()`  | port (3a), 7                          | `migrate()` is not ported (user confirmed no legacy data); the migration moves leftovers into the backup                                          |
+| C3  | No `.lock` files                     | port (4a), 7                          | Old and new app never share a folder, so the new app can skip locks from the start; Step 4 concurrency tests confirm; migration deletes leftovers |
+| C4  | `lib.typ` not in the shared folder   | superseded by C14                     | `lib.typ` moves into each opdracht folder instead                                                                                                 |
+| C5  | Normalise `_meta`                    | 7                                     | Rewrites many files; do it once, in the migration                                                                                                 |
+| C6  | CAS for blind writes                 | port (4a)                             | User                                                                                                                                              |
+| C7  | Per-teacher `activeYear`             | port (4a/6a)                          | Local session state; no file format change besides `config.json` keeping a default                                                                |
+| C8  | Student IDs always strings           | prep 3a, 7                            | Domain code compares as strings from 3a (safe for both); the migration converts the data                                                          |
+| C9  | Explicit score encoding              | 7                                     | High risk: needs all goldens first; domain code reads both encodings, the migration converts                                                      |
+| C10 | Stable entity IDs                    | 7                                     | High risk: rewrites references everywhere; needs `validate-data` and migration tests                                                              |
+| C11 | RTTI template files / `wis*` keys    | port (3a + 5a), 7                     | User. The key fix happens in the port (reads both schemes); the folder rename happens in the migration                                            |
+| C12 | No transient files in data folder    | port (5b), 7                          | No previews are written from the start; the migration deletes leftovers                                                                           |
+| C13 | Trailing newline in JSON             | 7                                     | Every file changes once; do it with the migration's rewrite                                                                                       |
+| C14 | Opdracht project folders             | 5 (abstraction), 7 (disk), 8 (editor) | See ADR-0002 section 5a                                                                                                                           |
+| C15 | `rapporten/` folder for printed PDFs | port (6a)                             | A new folder, not a change to existing files; see ADR-0002 section 9                                                                              |
+
+Consequence for parity: from Step 4 on, the new app's behaviour differs from the reference in
+these points on purpose. The parity matrix (`docs/parity.md`) marks each such row with its ADR-0003
+ID instead of claiming parity.
+
+## Original evaluation (Step 1)
 
 Context: the cutover is one-time and planned after Step 8; old and new app never share a data
 folder (ADR-0001). That makes format changes possible, but every change costs a migration, tests
@@ -148,3 +178,29 @@ Scale: cost / benefit / risk = low, medium, high.
 
 - Splitting score files further, a database, or a different folder layout: no evidence that the
   current layout is a problem; it is readable and merges well on OneDrive.
+
+## Candidates added after the Step 1 review
+
+### C14. Opdracht folders as self-contained Typst projects
+
+- **Now:** all opdrachten share `opdrachten/` (`<id>.json`, `<id>.typ`, `images/<id>/`, one
+  shared `lib.typ`); the wrapper with page setup, header and modes is generated in code.
+- **Change:** one folder per opdracht with `opdracht.json`, `main.typ` (the former wrapper),
+  `opdracht.typ`, its own `lib.typ` and `images/` (ADR-0002 section 5a). `main.typ` and `lib.typ`
+  are editable, with a warning and a reset to the bundled version.
+- **Migration:** move the files; rewrite `images/<id>/` to `images/` in `opdracht.typ`; add the
+  bundled `main.typ` and `lib.typ`; delete the shared `opdrachten/lib.typ`; update the watcher's
+  path patterns and the Store's path builders.
+- **Benefit:** high: the editor, the CLI and a later AI session work on one contained folder;
+  per-opdracht layout changes; a tighter Typst sandbox.
+- **Risk:** medium: teachers can break their own opdracht (mitigated by warning, reset, diff and
+  compile check); updates of the bundled `lib.typ` need the version/hash scheme in ADR-0002 5a.
+
+### C15. `rapporten/` folder for printed PDFs
+
+- **Now:** PDFs are written to `temp/` next to the exe and overwritten by the next run.
+- **Change:** printing makes a timestamped copy with a descriptive name in
+  `rapporten/<schooljaar>/` in the shared folder (ADR-0002 section 9).
+- **Benefit:** colleagues can find printed reports; nothing is overwritten.
+- **Risk:** low; the folder grows (cleanup policy in the backlog) and holds student data like the
+  rest of the folder.
