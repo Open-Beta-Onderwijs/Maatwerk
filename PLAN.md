@@ -92,7 +92,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 
 | Step | Title | Size | Status |
 |---|---|---|---|
-| 0 | Bootstrap | S | in progress (gate blocked: local MSVC toolchain) |
+| 0 | Bootstrap | S | done (`step-00`) |
 | 1 | Reference study + architecture review (**approval gate**) | M | todo |
 | 2 | Safety net: golden tests on the old app | L (2a, 2b) | todo |
 | 3 | UI foundation: Vite, bridge, domain extraction (3a); score-grid replacement (3b) | L (3a, 3b) | todo |
@@ -433,8 +433,8 @@ Order: biggest risk first, always with tests around the code you touch.
 4. **Domain logic in Rust or JS?** (Step 10, with measurements).
 5. **Data-folder policy** on macOS and first run (Step 11).
 6. **macOS signing** (Step 11).
-7. **Repo name and remote** (Step 0). Decided: public, AGPL-3.0; still to choose `-only` vs `-or-later`.
-8. **App identifier**: product name is Maatwerk; proposed identifier `nl.school.maatwerk` (was `nl.school.rtti-app`). Confirm in Step 0; changing it moves the local app-config folder, which is fine because of the cutover.
+7. **Repo name and remote** (Step 0). Decided: `maatwerk`, public, AGPL-3.0-or-later. Remote not created yet (user's call).
+8. **App identifier**: decided in Step 0: `nl.openbetaonderwijs.maatwerk` (was `nl.school.rtti-app`). Changing it moves the local app-config folder, which is fine because of the cutover.
 9. **Versioning and update policy** for a portable exe on OneDrive.
 10. **AI integration style** (Step 9 ADR lists the questions).
 11. **Cutover date.** Decided: after Step 8; the exact date is the user's call.

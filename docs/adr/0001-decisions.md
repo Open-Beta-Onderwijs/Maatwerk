@@ -26,6 +26,12 @@ Step 0.
 | App identifier               | `nl.openbetaonderwijs.maatwerk` (instead of the proposed `nl.school.maatwerk`) |
 | Create the public remote now | No, later                                                                      |
 
+## Tauri 2, not 3 (2026-10-25)
+
+The user asked whether to start on Tauri 3. Decided: stay on Tauri 2.x. Tauri 3 is alpha
+(`3.0.0-alpha.5`, plugins alpha, needs Rust 1.95) and `tauri-specta` has no Tauri 3 support. The
+thin `src-tauri` layer keeps a later upgrade small; tracked in `docs/backlog.md`.
+
 ## Bootstrap choices (implementer, revisit in Step 1 if needed)
 
 - Tauri `2.12.x` (crates.io also has 3.0 alphas; the plan says Tauri 2). Rust pinned in

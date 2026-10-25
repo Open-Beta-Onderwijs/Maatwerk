@@ -5,6 +5,9 @@ on:
     branches: [main, 'step/**']
   pull_request:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -21,6 +24,16 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check licenses bans sources advisories
+      - name: Rust toolchain (from rust-toolchain.toml)
+        run: rustup toolchain install
+      - name: maatwerk-core must not depend on tauri
+        shell: bash
+        run: |
+          set -euo pipefail
+          tree="$(cargo tree -p maatwerk-core --target all -e normal,build --prefix none)"
+          if grep -E '^tauri' <<<"$tree"; then
+            echo "maatwerk-core depends on tauri"; exit 1
+          fi
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -28,11 +41,6 @@ jobs:
       - run: npm ci
       - name: npm licence allowlist
         run: npm run licenses
-      - name: maatwerk-core must not depend on tauri
-        run: |
-          if cargo tree -p maatwerk-core -e normal,build --prefix none | grep -E '^tauri'; then
-            echo "maatwerk-core depends on tauri"; exit 1
-          fi
 
   windows:
     name: Build and test (Windows)
@@ -47,11 +55,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: UI lint / typecheck / test
-        run: |
-          npm run lint
-          npm run typecheck
-          npm test
+      # One command per step: pwsh only reports the exit code of the last line.
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
       # tauri::generate_context! needs ui/dist to exist before clippy and test.
       - run: npm run build:ui
       - run: cargo fmt --all --check

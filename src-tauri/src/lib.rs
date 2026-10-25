@@ -24,3 +24,21 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("failed to start the Tauri application");
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ui/src/greet.ts reads exactly these camelCase keys.
+    #[test]
+    fn greet_reply_matches_the_ui_contract() {
+        let reply = serde_json::to_value(greet(" Jan ")).unwrap();
+        assert_eq!(
+            reply,
+            serde_json::json!({
+                "message": "Hallo, Jan!",
+                "coreVersion": maatwerk_core::VERSION,
+            })
+        );
+    }
+}
