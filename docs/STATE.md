@@ -25,31 +25,29 @@ Step 0: Bootstrap. **Blocked at the gate** on the local MSVC toolchain (see open
 
 ## In progress
 
-- Gate: `cargo clippy`, `cargo test`, `npm run build:exe` and running the exe. All fail at link
-  time because the machine has no MSVC `link.exe` and no Windows SDK.
+- Gate after the VS repair (2026-10-25): clippy clean, `cargo test` green, `npm run build:exe`
+  builds `target\release\maatwerk.exe` (7.7 MB), which starts and opens the "Maatwerk" window.
+  Still open: manual click on "Begroet", the review, merge and tag.
 
 ## Next action (concrete, resumable)
 
-1. User repairs Visual Studio (see `docs/dev-setup.md`, "Fixing the MSVC/SDK problem").
-2. In PowerShell: `npm ci; npm run build:ui; cargo clippy --workspace --all-targets -- -D warnings; cargo test --workspace`.
-3. `npm run build:exe`, start `target\release\maatwerk.exe`, type a name, click "Begroet": it
-   should show `Hallo, <naam>! (maatwerk-core 0.1.0)`.
-4. Fix anything that fails, commit. Run the review (PLAN 2.3) -> `docs/reviews/step-00.md`,
-   triage.
-5. Merge `step/00-bootstrap` into `main` (merge commit), tag `step-00`, mark Step 0 done in
+1. Wait for the user's decision on Tauri 2 vs 3 (open questions).
+2. Run the review (PLAN 2.3) -> `docs/reviews/step-00.md`, triage.
+3. Merge `step/00-bootstrap` into `main` (merge commit), tag `step-00`, mark Step 0 done in
    PLAN.md section 3, report.
 
 ## Open questions for the user
 
-- **Toolchain:** VS 2022 has `cl.exe` but no `link.exe`, and no Windows SDK is installed. Please
-  repair/modify the VS install (admin rights needed).
-- **Reference licence:** the reference repo has no LICENSE. Porting its code, Typst templates and
-  icon into a public AGPL repo needs the copyright holder's permission (or the holder is you).
-  Please confirm. The app icon in `src-tauri/icons/` is generated from the reference PNG.
-- **OneDrive:** the repo is inside OneDrive. `target/` and `node_modules/` (GBs) will be synced and
-  may be locked mid-build. Move the repo, exclude those folders, or set `CARGO_TARGET_DIR` outside
-  OneDrive?
+- **Tauri 3:** the user asked whether to move to Tauri 3 (alpha) now. Recommendation given: stay
+  on 2.x until 3.0 is stable. Awaiting the decision.
 - Remote: still to create (repo `maatwerk`, public). `gh` CLI is not installed.
+
+## Resolved
+
+- Toolchain: VS repaired by the user; `link.exe` and Windows SDK 10.0.26100 present.
+- Reference licence: the user is the original author of the reference repo and its assets, so
+  relicensing as AGPL-3.0-or-later is theirs to do.
+- OneDrive: the user excludes `target/` and `node_modules/` from sync themselves.
 
 ## How to resume
 

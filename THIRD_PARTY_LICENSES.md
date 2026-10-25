@@ -21,9 +21,9 @@ Transitive crates: run `cargo deny list` for the full inventory.
 
 ## Assets
 
-| Asset                         | Source                                                          | Licence                                                                              |
-| ----------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| App icon (`src-tauri/icons/`) | Generated from `overig/maatwerk_icon.png` in the reference repo | Unclear: the reference repo has no licence file (open question, see `docs/STATE.md`) |
+| Asset                         | Source                                                          | Licence                                                                     |
+| ----------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| App icon (`src-tauri/icons/`) | Generated from `overig/maatwerk_icon.png` in the reference repo | AGPL-3.0-or-later (author of the reference repo is the author of this repo) |
 
 Fonts (Source Serif 4, STIX Two Math; OFL-1.1) and the Typst package `zero` 0.7.1 (MIT) are added
 in Step 5 and will be listed here then.
