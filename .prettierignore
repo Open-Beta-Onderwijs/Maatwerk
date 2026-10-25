@@ -8,3 +8,4 @@ package-lock.json
 LICENSE
 PLAN.md
 tests/golden/
+tools/reference-shims/*.cjs
