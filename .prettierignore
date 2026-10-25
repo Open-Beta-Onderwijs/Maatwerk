@@ -1,0 +1,9 @@
+_reference/
+data/
+target/
+node_modules/
+ui/dist/
+src-tauri/gen/
+package-lock.json
+LICENSE
+PLAN.md

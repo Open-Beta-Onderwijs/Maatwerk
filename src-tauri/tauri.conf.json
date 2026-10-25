@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Maatwerk",
+  "mainBinaryName": "maatwerk",
+  "version": "0.1.0",
+  "identifier": "nl.openbetaonderwijs.maatwerk",
+  "build": {
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../ui/dist",
+    "beforeDevCommand": "npm run dev -w ui",
+    "beforeBuildCommand": "npm run build -w ui"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Maatwerk",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self'; connect-src ipc: http://ipc.localhost",
+      "devCsp": "default-src 'self' http://localhost:1420; img-src 'self' data:; style-src 'self' 'unsafe-inline' http://localhost:1420; connect-src ipc: http://ipc.localhost ws://localhost:1420"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": ["icons/icon.ico", "icons/icon.png"]
+  }
+}

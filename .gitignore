@@ -1,0 +1,17 @@
+# Never commit (PLAN.md 2.4)
+/_reference/
+/data/
+target/
+node_modules/
+.env
+*.key
+
+# Build output
+/ui/dist/
+/src-tauri/gen/
+
+# Local tooling
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log

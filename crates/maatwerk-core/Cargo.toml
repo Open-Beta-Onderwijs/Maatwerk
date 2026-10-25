@@ -1,0 +1,13 @@
+[package]
+name = "maatwerk-core"
+description = "Maatwerk core: storage, Typst service and domain plumbing. Never depends on tauri."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

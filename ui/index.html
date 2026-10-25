@@ -1,0 +1,22 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maatwerk</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Maatwerk</h1>
+      <form id="greet-form">
+        <label for="greet-name">Naam</label>
+        <input id="greet-name" autocomplete="off" />
+        <button type="submit">Begroet</button>
+      </form>
+      <p id="greet-output" role="status"></p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

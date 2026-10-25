@@ -1,0 +1,50 @@
+# cargo-deny: licence allowlist and supply-chain checks (PLAN.md 2.5).
+# Only AGPL-compatible licences may be shipped in the exe.
+
+[graph]
+targets = ["x86_64-pc-windows-msvc", "aarch64-apple-darwin", "x86_64-apple-darwin"]
+all-features = true
+
+[licenses]
+confidence-threshold = 0.9
+# The allowlist is policy, not inventory: entries may be unused today.
+unused-allowed-license = "allow"
+allow = [
+  "MIT",
+  "MIT-0",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "0BSD",
+  "ISC",
+  "Zlib",
+  "BSL-1.0",
+  "CC0-1.0",
+  "Unlicense",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "MPL-2.0",
+  "OFL-1.1",
+  "LGPL-2.1-or-later",
+  "LGPL-3.0-or-later",
+  "GPL-3.0-or-later",
+  "AGPL-3.0-or-later",
+]
+
+[licenses.private]
+# Our own workspace crates are AGPL and unpublished.
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+
+[advisories]
+unmaintained = "workspace"
+yanked = "deny"

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'step/**']
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy:
+    name: Licences, SPDX, layering
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: SPDX headers
+        run: bash tools/check-spdx.sh
+      - name: cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses bans sources advisories
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: npm licence allowlist
+        run: npm run licenses
+      - name: maatwerk-core must not depend on tauri
+        run: |
+          if cargo tree -p maatwerk-core -e normal,build --prefix none | grep -E '^tauri'; then
+            echo "maatwerk-core depends on tauri"; exit 1
+          fi
+
+  windows:
+    name: Build and test (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Rust toolchain (from rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: UI lint / typecheck / test
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+      # tauri::generate_context! needs ui/dist to exist before clippy and test.
+      - run: npm run build:ui
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - name: Portable exe
+        run: npm run build:exe
+      - uses: actions/upload-artifact@v7
+        with:
+          name: maatwerk-windows-x64
+          path: target/release/maatwerk.exe
+          if-no-files-found: error

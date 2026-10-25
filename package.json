@@ -1,0 +1,26 @@
+{
+  "name": "maatwerk",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "workspaces": [
+    "ui"
+  ],
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build:exe": "tauri build --no-bundle",
+    "build:ui": "npm run build -w ui",
+    "lint": "npm run lint -w ui && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "npm run typecheck -w ui",
+    "test": "npm run test -w ui",
+    "licenses": "node tools/check-npm-licenses.mjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.4",
+    "prettier": "3.9.10"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
