@@ -5,8 +5,8 @@
 | Tool              | Version checked (2026-10-25)        | Notes                                                                                     |
 | ----------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
 | rustup            | 1.28.2                              | Toolchain pinned in `rust-toolchain.toml` (1.93.1, MSVC); rustup installs it on first use |
-| MSVC build tools  | VS 2022 Community, MSVC 14.44.35207 | **Broken on the dev machine:** `link.exe` missing from `bin\Hostx64\x64`                  |
-| Windows 10/11 SDK | **missing**                         | `C:\Program Files (x86)\Windows Kits\10` does not exist                                   |
+| MSVC build tools  | VS 2022 Community, MSVC 14.44.35207 | Was missing `link.exe` until repaired via VS Installer (see below)                        |
+| Windows 10/11 SDK | 10.0.26100.0                        | Was missing until the same repair                                                         |
 | Node.js           | 24.14.0 (npm 11.9.0)                | `engines.node >= 24`                                                                      |
 | WebView2 runtime  | 155.0.4283.62                       | Ships with Windows 11                                                                     |
 | git               | 2.51.0                              |                                                                                           |

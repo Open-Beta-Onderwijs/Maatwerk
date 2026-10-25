@@ -37,6 +37,8 @@ npm run build:exe                        # target/release/maatwerk.exe (portable
 
 ## Rules (PLAN.md section 2, short form)
 
+- Session start: `git status`, run the test suite for a baseline. Keep context small: subagents
+  for broad reading of `_reference/`, file ranges instead of whole large files.
 - Small sub-tasks; each ends in a commit on `step/NN-slug` where build + tests pass. `main` is
   always green; merge with a merge commit, tag `step-NN`.
 - Update `docs/STATE.md` after every sub-task and at least every ~45 min. Nothing may live only in

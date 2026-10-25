@@ -5,7 +5,9 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { isAllowed } from './spdx.mjs';
 
+// Keep in sync with deny.toml [licenses].allow. OFL-1.1 is for fonts only.
 const ALLOWED = new Set([
   'MIT',
   'ISC',
@@ -24,12 +26,6 @@ const ALLOWED = new Set([
   'GPL-3.0-or-later',
   'AGPL-3.0-or-later',
 ]);
-
-/** An SPDX expression passes when every OR-alternative set has an allowed member. */
-function isAllowed(expression) {
-  const alternatives = expression.replace(/[()]/g, '').split(/\s+OR\s+/);
-  return alternatives.some((alt) => alt.split(/\s+AND\s+/).every((id) => ALLOWED.has(id.trim())));
-}
 
 const tree = JSON.parse(
   execFileSync('npm', ['ls', '-w', 'ui', '--omit=dev', '--all', '--json', '--long'], {
@@ -57,7 +53,7 @@ let failed = false;
 for (const [path, name] of seen) {
   const pkg = JSON.parse(readFileSync(join(path, 'package.json'), 'utf8'));
   const license = typeof pkg.license === 'string' ? pkg.license : 'UNKNOWN';
-  const ok = isAllowed(license);
+  const ok = isAllowed(license, ALLOWED);
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}@${pkg.version}: ${license}`);
   failed ||= !ok;
 }

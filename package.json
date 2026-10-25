@@ -13,7 +13,7 @@
     "lint": "npm run lint -w ui && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck -w ui",
-    "test": "npm run test -w ui",
+    "test": "npm run test -w ui && node --test \"tools/*.test.mjs\"",
     "licenses": "node tools/check-npm-licenses.mjs"
   },
   "devDependencies": {
