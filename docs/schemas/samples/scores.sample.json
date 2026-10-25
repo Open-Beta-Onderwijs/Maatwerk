@@ -1,0 +1,20 @@
+{
+  "student_id": 900001,
+  "scores": {
+    "nat-voorbeeldtoets-1-2025-2026": {
+      "q1": 2,
+      "q2": 1.5,
+      "q3": null,
+      "q4": "7"
+    }
+  },
+  "observations": {
+    "nat-voorbeeldtoets-1-2025-2026": ["obs-1700000000100"]
+  },
+  "overrides": {
+    "nat-voorbeeldtoets-1-2025-2026": {
+      "cijfer": 6,
+      "berekend": 5.8
+    }
+  }
+}

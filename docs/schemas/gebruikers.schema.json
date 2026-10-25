@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/gebruikers.schema.json",
+  "title": "gebruikers.json",
+  "description": "data/gebruikers.json: array of teacher accounts. Written by Store.upsertUser (CAS + lock); seeded with one admin on first start (main.js:976-999).",
+  "type": "array",
+  "items": {
+    "$ref": "#/$defs/user"
+  },
+  "$defs": {
+    "user": {
+      "type": "object",
+      "required": ["id", "voornaam", "vakken", "isAdmin"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "'admin' (seed) or gebr-<ms epoch>"
+        },
+        "voornaam": {
+          "type": "string"
+        },
+        "tussenvoegsel": {
+          "type": "string"
+        },
+        "achternaam": {
+          "type": "string"
+        },
+        "afkorting": {
+          "type": "string"
+        },
+        "schoolsoort": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "vakken": {
+          "type": "array",
+          "items": {
+            "enum": ["nat", "bio", "schk", "wi"]
+          }
+        },
+        "kleur": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "foto": {
+          "type": ["string", "null"],
+          "description": "data-relative path, e.g. fotos/<userId>.png"
+        },
+        "isAdmin": {
+          "type": "boolean"
+        },
+        "actief": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/presence.schema.json",
+  "title": "users/<userId>.json",
+  "description": "Presence heartbeat. Written only via presence:update (atomic write, no lock). Never deleted.",
+  "type": "object",
+  "required": ["userId", "online", "heartbeatAt", "scoreModal"],
+  "additionalProperties": false,
+  "properties": {
+    "userId": {
+      "type": "string"
+    },
+    "online": {
+      "type": "boolean"
+    },
+    "heartbeatAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "scoreModal": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": ["year", "subject", "examId", "cell", "lastEditAt"],
+          "additionalProperties": false,
+          "properties": {
+            "year": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{4}$"
+            },
+            "subject": {
+              "type": ["string", "null"]
+            },
+            "examId": {
+              "type": "string"
+            },
+            "cell": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "required": ["studentId", "questionId"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "studentId": {
+                      "type": "string"
+                    },
+                    "questionId": {
+                      "type": "string",
+                      "description": "question id or obs:<obsId>"
+                    }
+                  }
+                }
+              ]
+            },
+            "lastEditAt": {
+              "type": ["string", "null"],
+              "format": "date-time"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

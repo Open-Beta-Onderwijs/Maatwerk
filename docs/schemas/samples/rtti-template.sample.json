@@ -1,0 +1,48 @@
+{
+  "uitleg": {
+    "R": "Uitleg R.",
+    "T1": "Uitleg T1.",
+    "T2": "Uitleg T2.",
+    "I": "Uitleg I."
+  },
+  "leeradvies": {
+    "R": {
+      "laag": "Advies R laag.",
+      "midden": "Advies R midden.",
+      "hoog": ""
+    },
+    "T1": {
+      "laag": "Advies T1 laag.",
+      "midden": "Advies T1 midden.",
+      "hoog": ""
+    },
+    "T2": {
+      "laag": "Advies T2 laag.",
+      "midden": "Advies T2 midden.",
+      "hoog": ""
+    },
+    "I": {
+      "laag": "Advies I laag.",
+      "midden": "Advies I midden.",
+      "hoog": ""
+    }
+  },
+  "grenswaarden": {
+    "R": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T1": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T2": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "I": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    }
+  }
+}

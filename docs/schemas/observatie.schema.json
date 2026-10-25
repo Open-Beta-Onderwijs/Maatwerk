@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/observatie.schema.json",
+  "title": "observaties/<obsId>.json",
+  "description": "Observatie. Written by Store.upsertObservation (CAS + rev + lock). Legacy files may have 'subject' instead of 'subjects' and no _meta.",
+  "type": "object",
+  "required": ["id", "naam"],
+  "anyOf": [
+    {
+      "required": ["subjects"],
+      "properties": {
+        "subjects": true
+      }
+    },
+    {
+      "required": ["subject"],
+      "properties": {
+        "subject": true
+      }
+    }
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "obs-<ms epoch> (older ids may differ)"
+    },
+    "naam": {
+      "type": "string"
+    },
+    "icon": {
+      "type": "string"
+    },
+    "uitleg": {
+      "type": "string"
+    },
+    "leeradvies": {
+      "type": "string"
+    },
+    "schoolsoort": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "subjects": {
+      "type": "array",
+      "items": {
+        "enum": ["nat", "bio", "schk", "wisob", "wisa", "wisb", "wisc", "wisd"]
+      }
+    },
+    "subject": {
+      "type": "string",
+      "description": "legacy single subject, removed on save"
+    },
+    "jaarlagen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "_meta": {
+      "$ref": "#/$defs/meta"
+    }
+  },
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "description": "Version stamp written by stampMeta (store.js:90-102).",
+      "required": ["rev", "createdBy", "createdAt", "updatedBy", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "rev": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdBy": {
+          "type": ["string", "null"]
+        },
+        "createdAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "type": ["string", "null"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

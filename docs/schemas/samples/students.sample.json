@@ -1,0 +1,22 @@
+[
+  {
+    "id": 900001,
+    "voornaam": "Leerling",
+    "tussenvoegsel": "",
+    "achternaam": "Een",
+    "stamklas": "3a",
+    "geslacht": "V",
+    "jaarlaag": "3",
+    "schoolsoort": ["Havo"]
+  },
+  {
+    "id": 900002,
+    "voornaam": "Leerling",
+    "tussenvoegsel": "de",
+    "achternaam": "Twee",
+    "stamklas": "3a",
+    "geslacht": "M",
+    "jaarlaag": "3",
+    "schoolsoort": ["Havo"]
+  }
+]

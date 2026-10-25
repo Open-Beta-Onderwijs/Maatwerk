@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/rtti-template.schema.json",
+  "title": "templates/RTTI explanations and advices/rtti_expl_adv_<fileKey>_<jaar>.json",
+  "description": "RTTI explanation and advice texts per subject and year level. Written by the RTTI-uitleg modal (blind write + lock). Default content: defaultTabData() in modals/rapport.js:407.",
+  "type": "object",
+  "required": ["uitleg", "leeradvies", "grenswaarden"],
+  "properties": {
+    "uitleg": {
+      "type": "object",
+      "required": ["R", "T1", "T2", "I"],
+      "properties": {
+        "R": {
+          "type": "string"
+        },
+        "T1": {
+          "type": "string"
+        },
+        "T2": {
+          "type": "string"
+        },
+        "I": {
+          "type": "string"
+        }
+      }
+    },
+    "leeradvies": {
+      "type": "object",
+      "required": ["R", "T1", "T2", "I"],
+      "properties": {
+        "R": {
+          "$ref": "#/$defs/advies"
+        },
+        "T1": {
+          "$ref": "#/$defs/advies"
+        },
+        "T2": {
+          "$ref": "#/$defs/advies"
+        },
+        "I": {
+          "$ref": "#/$defs/advies"
+        }
+      }
+    },
+    "grenswaarden": {
+      "type": "object",
+      "required": ["R", "T1", "T2", "I"],
+      "properties": {
+        "R": {
+          "$ref": "#/$defs/grens"
+        },
+        "T1": {
+          "$ref": "#/$defs/grens"
+        },
+        "T2": {
+          "$ref": "#/$defs/grens"
+        },
+        "I": {
+          "$ref": "#/$defs/grens"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "advies": {
+      "type": "object",
+      "required": ["laag", "midden", "hoog"],
+      "properties": {
+        "laag": {
+          "type": "string"
+        },
+        "midden": {
+          "type": "string"
+        },
+        "hoog": {
+          "type": "string"
+        }
+      }
+    },
+    "grens": {
+      "type": "object",
+      "required": ["laag_midden", "midden_hoog"],
+      "properties": {
+        "laag_midden": {
+          "type": "number",
+          "description": "percentage, default 40"
+        },
+        "midden_hoog": {
+          "type": "number",
+          "description": "percentage, default 70"
+        }
+      }
+    }
+  }
+}

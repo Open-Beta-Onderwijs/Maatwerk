@@ -1,0 +1,34 @@
+{
+  "id": "nat-voorbeeldtoets-1-inhaal-2025-2026",
+  "title": "Voorbeeldtoets 1 — INHAAL",
+  "jaarlaag": "3",
+  "schoolsoort": ["Havo"],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 1,
+  "periode": "1",
+  "type": "regular",
+  "structureMode": "roman",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 4,
+      "rtti": "T1"
+    }
+  ],
+  "obs_ids": [],
+  "subject": "nat",
+  "volgnummer": 302,
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1700000000001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1700000000001",
+    "updatedAt": "2025-10-01T12:30:00.000Z"
+  },
+  "description": "INHAAL",
+  "attempt": 2,
+  "parent_id": "nat-voorbeeldtoets-1-2025-2026"
+}

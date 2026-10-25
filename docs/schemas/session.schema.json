@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/session.schema.json",
+  "title": "<userData>/session.json",
+  "description": "Machine-local session (not in data/). Read-merge-write by Store.saveLastSession / saveFilterState; plain writeFileSync.",
+  "type": "object",
+  "properties": {
+    "lastSubject": {
+      "type": ["string", "null"]
+    },
+    "lastUserId": {
+      "type": ["string", "null"]
+    },
+    "filtersByUser": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["schoolsoorten", "jaarlagen", "jaarlagenKlas", "eigenOnly"],
+        "properties": {
+          "schoolsoorten": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "jaarlagen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "jaarlagenKlas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eigenOnly": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "naam": "Voorbeeldschool",
+  "ondertitel": "Scholengemeenschap Voorbeeld",
+  "motto": "Leren door te doen",
+  "schoolsoort": ["Havo", "Vwo"],
+  "logo": "fotos/school-logo.png",
+  "watermerk": "fotos/school-watermerk.svg"
+}

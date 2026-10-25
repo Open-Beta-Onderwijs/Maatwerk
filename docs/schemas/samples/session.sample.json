@@ -1,0 +1,12 @@
+{
+  "lastSubject": "nat",
+  "lastUserId": "gebr-1700000000001",
+  "filtersByUser": {
+    "gebr-1700000000001": {
+      "schoolsoorten": ["Havo"],
+      "jaarlagen": ["3"],
+      "jaarlagenKlas": [],
+      "eigenOnly": true
+    }
+  }
+}
