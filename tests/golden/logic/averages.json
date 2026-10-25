@@ -1,0 +1,1128 @@
+{
+  "format": 1,
+  "suite": "averages",
+  "description": "Weighted year and SE (PTA) averages with best attempts.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/modals/groep-leerlingen.js:57-71 dossierAverages",
+      "renderer/modals/groep-leerlingen.js:74-76 studentGrade",
+      "renderer/modals/groep-leerlingen.js:78-84 bestGradeForFamily",
+      "renderer/modals/groep-leerlingen.js:86-97 calcWeightedAvg",
+      "renderer/modals/profiel.js:638-663 yearAvg",
+      "renderer/modals/profiel.js:666-678 ptaAvg"
+    ]
+  },
+  "cases": [
+    {
+      "id": "data",
+      "rule": "BR 6.3",
+      "input": {
+        "years": {
+          "2025-2026": {
+            "students": [
+              {
+                "id": 1,
+                "voornaam": "Leerling1",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam1",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 2,
+                "voornaam": "Leerling2",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam2",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 3,
+                "voornaam": "Leerling3",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam3",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 4,
+                "voornaam": "Leerling4",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam4",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 5,
+                "voornaam": "Leerling5",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam5",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              }
+            ],
+            "exams": [
+              {
+                "id": "nat-w1-2025-2026",
+                "title": "nat-w1-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 301
+              },
+              {
+                "id": "nat-w2-2025-2026",
+                "title": "nat-w2-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 2,
+                "weging_se": 3,
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 302
+              },
+              {
+                "id": "nat-w3-2025-2026",
+                "title": "nat-w3-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 0.5,
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 303
+              },
+              {
+                "id": "nat-w4-2025-2026",
+                "title": "nat-w4-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 0,
+                "weging_se": 0,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 304
+              },
+              {
+                "id": "nat-w5-2025-2026",
+                "title": "nat-w5-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 305
+              },
+              {
+                "id": "nat-w1-herkansing-2025-2026",
+                "title": "nat-w1-herkansing-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 5,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 301,
+                "parent_id": "nat-w1-2025-2026",
+                "attempt": 2
+              },
+              {
+                "id": "nat-w6-2025-2026",
+                "title": "nat-w6-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": "2",
+                "weging_se": "0",
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 306
+              }
+            ],
+            "groups": [
+              {
+                "id": "g1",
+                "name": "3a nat",
+                "jaarlaag": "3",
+                "subject": "nat",
+                "student_ids": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            ],
+            "scores": {
+              "nat": {
+                "1": {
+                  "scores": {
+                    "nat-w1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 3.33
+                    },
+                    "nat-w1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 6.67,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    },
+                    "nat-w2-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 5.56,
+                      "q7": 0,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    },
+                    "nat-w3-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 10,
+                      "q8": 7.78,
+                      "q9": 0,
+                      "q10": 0
+                    },
+                    "nat-w4-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 10,
+                      "q8": 10,
+                      "q9": 10,
+                      "q10": 10
+                    }
+                  },
+                  "observations": {}
+                },
+                "2": {
+                  "scores": {
+                    "nat-w5-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10
+                    },
+                    "nat-w6-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 10,
+                      "q8": 10,
+                      "q9": 8.89
+                    }
+                  },
+                  "observations": {},
+                  "overrides": {
+                    "nat-w5-2025-2026": {
+                      "cijfer": 7,
+                      "berekend": 5.5
+                    }
+                  }
+                },
+                "3": {
+                  "scores": {
+                    "nat-w1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 5.56,
+                      "q7": 0,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    }
+                  },
+                  "observations": {}
+                },
+                "4": {
+                  "scores": {},
+                  "observations": {}
+                },
+                "5": {
+                  "scores": {
+                    "nat-w4-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 2.22
+                    }
+                  },
+                  "observations": {}
+                }
+              }
+            }
+          },
+          "2024-2025": {
+            "students": [
+              {
+                "id": 1,
+                "voornaam": "Leerling1",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam1",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "2",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              }
+            ],
+            "exams": [
+              {
+                "id": "nat-v1-2024-2025",
+                "title": "nat-v1-2024-2025",
+                "jaarlaag": "2",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 2,
+                "periode": "1",
+                "type": "pta",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 201
+              }
+            ],
+            "scores": {
+              "nat": {
+                "1": {
+                  "scores": {
+                    "nat-v1-2024-2025": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 4.44
+                    }
+                  },
+                  "observations": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "output": null
+    },
+    {
+      "id": "student-1",
+      "rule": "BR 6.3, 11.30",
+      "input": {
+        "studentId": 1
+      },
+      "output": {
+        "yearAvg": 6.571771428571429,
+        "ptaAvg": 6.000123076923076,
+        "ptaAvgRawHistory": 5.7334000000000005,
+        "bestGradeForFamily": {
+          "exam": "nat-w1-herkansing-2025-2026",
+          "grade": 7.000300000000001
+        },
+        "calcWeightedAvg": 5.7780000000000005
+      }
+    },
+    {
+      "id": "student-2",
+      "rule": "BR 6.3, 11.30",
+      "input": {
+        "studentId": 2
+      },
+      "output": {
+        "yearAvg": 8.3334,
+        "ptaAvg": 7,
+        "ptaAvgRawHistory": 7,
+        "bestGradeForFamily": {
+          "exam": null,
+          "grade": null
+        },
+        "calcWeightedAvg": 7
+      }
+    },
+    {
+      "id": "student-3",
+      "rule": "BR 6.3, 11.30",
+      "input": {
+        "studentId": 3
+      },
+      "output": {
+        "yearAvg": 6.0004,
+        "ptaAvg": 6.0004,
+        "ptaAvgRawHistory": 6.0004,
+        "bestGradeForFamily": {
+          "exam": "nat-w1-herkansing-2025-2026",
+          "grade": 6.0004
+        },
+        "calcWeightedAvg": null
+      }
+    },
+    {
+      "id": "student-4",
+      "rule": "BR 6.3, 11.30",
+      "input": {
+        "studentId": 4
+      },
+      "output": {
+        "yearAvg": null,
+        "ptaAvg": null,
+        "ptaAvgRawHistory": null,
+        "bestGradeForFamily": {
+          "exam": null,
+          "grade": null
+        },
+        "calcWeightedAvg": null
+      }
+    },
+    {
+      "id": "student-5",
+      "rule": "BR 6.3, 11.30",
+      "input": {
+        "studentId": 5
+      },
+      "output": {
+        "yearAvg": null,
+        "ptaAvg": null,
+        "ptaAvgRawHistory": null,
+        "bestGradeForFamily": {
+          "exam": null,
+          "grade": null
+        },
+        "calcWeightedAvg": null
+      }
+    },
+    {
+      "id": "calcWeightedAvg-direct",
+      "rule": "BR 6.3",
+      "input": {
+        "pairs": [
+          [
+            {
+              "grade": 6,
+              "weging": 1
+            },
+            {
+              "grade": 8,
+              "weging": 2
+            }
+          ],
+          [
+            {
+              "grade": null,
+              "weging": 1
+            }
+          ],
+          [
+            {
+              "grade": 7,
+              "weging": 0
+            }
+          ],
+          [
+            {
+              "grade": 7
+            },
+            {
+              "grade": 5,
+              "weging": "3"
+            }
+          ],
+          []
+        ]
+      },
+      "output": [
+        7.333333333333333,
+        null,
+        null,
+        5.5,
+        null
+      ]
+    },
+    {
+      "id": "dossierAverages",
+      "rule": "BR 6.3",
+      "input": {
+        "students": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "output": {
+        "1": 6.000123076923076,
+        "2": 7,
+        "3": 6.0004,
+        "4": null,
+        "5": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,1338 @@
+{
+  "format": 1,
+  "suite": "opdrachten",
+  "description": "Coupling observaties and grade cards to opdrachten per student.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/store.js:1215-1226 opdrachtMatchesExam",
+      "renderer/store.js:1229-1242 getOpdrachtCoupling",
+      "renderer/store.js:1247-1253 getOpdrachtCijferCards",
+      "renderer/store.js:1256-1261 cijferCardReason",
+      "renderer/store.js:1295-1353 getOpdrachtAssignments"
+    ]
+  },
+  "cases": [
+    {
+      "id": "opdrachtMatchesExam-matrix",
+      "rule": "BR 7.2, 11.40",
+      "input": {
+        "columns": [
+          "opdracht",
+          "exam",
+          "fits"
+        ]
+      },
+      "output": [
+        [
+          {},
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "nat"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "wisb"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "wi"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "bio",
+              "nat"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              "3"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              3
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              "4",
+              "5"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Vwo",
+              "Gymnasium"
+            ]
+          },
+          {
+            "subject": "nat",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          false
+        ],
+        [
+          {},
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "nat"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "wisb"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "wi"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "bio",
+              "nat"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "jaarlagen": [
+              "3"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "jaarlagen": [
+              3
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "jaarlagen": [
+              "4",
+              "5"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          true
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          false
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Vwo",
+              "Gymnasium"
+            ]
+          },
+          {
+            "subject": "wi",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Vwo"
+            ]
+          },
+          true
+        ],
+        [
+          {},
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "nat"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "wisb"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "wi"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "bio",
+              "nat"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              "3"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              3
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              "4",
+              "5"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          false
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Vwo",
+              "Gymnasium"
+            ]
+          },
+          {
+            "jaarlaag": 3,
+            "schoolsoort": []
+          },
+          true
+        ],
+        [
+          {},
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "nat"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "vakken": [
+              "wisb"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "wi"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          false
+        ],
+        [
+          {
+            "vakken": [
+              "bio",
+              "nat"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              "3"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              3
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "jaarlagen": [
+              "4",
+              "5"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Havo"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ],
+        [
+          {
+            "schoolsoort": [
+              "Vwo",
+              "Gymnasium"
+            ]
+          },
+          {
+            "subject": "nat"
+          },
+          true
+        ]
+      ]
+    },
+    {
+      "id": "data",
+      "rule": "BR 7",
+      "input": {
+        "observaties": [
+          {
+            "id": "obs-a",
+            "naam": "Observatie obs-a",
+            "icon": "📏",
+            "subjects": [
+              "nat"
+            ],
+            "jaarlagen": []
+          },
+          {
+            "id": "obs-b",
+            "naam": "Observatie obs-b",
+            "icon": "📏",
+            "subjects": [
+              "nat"
+            ],
+            "jaarlagen": []
+          },
+          {
+            "id": "obs-c",
+            "naam": "Observatie obs-c",
+            "icon": "📏",
+            "subjects": [
+              "nat"
+            ],
+            "jaarlagen": []
+          },
+          {
+            "id": "obs-d",
+            "naam": "Observatie obs-d",
+            "icon": "📏",
+            "subjects": [
+              "bio"
+            ],
+            "jaarlagen": []
+          }
+        ],
+        "opdrachten": [
+          {
+            "id": "op-1",
+            "naam": "Opdracht op-1",
+            "schoolsoort": [],
+            "vakken": [
+              "nat"
+            ],
+            "jaarlagen": [],
+            "observaties": [
+              "obs-a"
+            ],
+            "typFile": "op-1.typ"
+          },
+          {
+            "id": "op-2",
+            "naam": "Opdracht op-2",
+            "schoolsoort": [],
+            "vakken": [
+              "nat"
+            ],
+            "jaarlagen": [
+              "4"
+            ],
+            "observaties": [
+              "obs-a",
+              "obs-b"
+            ],
+            "typFile": "op-2.typ"
+          },
+          {
+            "id": "op-3",
+            "naam": "Opdracht op-3",
+            "schoolsoort": [],
+            "vakken": [
+              "nat"
+            ],
+            "jaarlagen": [],
+            "observaties": [
+              "obs-b"
+            ],
+            "typFile": "op-3.typ"
+          },
+          {
+            "id": "op-4",
+            "naam": "Opdracht op-4",
+            "schoolsoort": [],
+            "vakken": [
+              "bio"
+            ],
+            "jaarlagen": [],
+            "observaties": [
+              "obs-c"
+            ],
+            "typFile": "op-4.typ"
+          },
+          {
+            "id": "op-5",
+            "naam": "Opdracht op-5",
+            "schoolsoort": [
+              "Vwo"
+            ],
+            "vakken": [
+              "nat"
+            ],
+            "jaarlagen": [],
+            "observaties": [
+              "obs-a"
+            ],
+            "typFile": "op-5.typ"
+          }
+        ],
+        "years": {
+          "2025-2026": {
+            "students": [
+              {
+                "id": 1,
+                "voornaam": "Anna",
+                "tussenvoegsel": "de",
+                "achternaam": "Vries",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 2,
+                "voornaam": "Bram",
+                "tussenvoegsel": "",
+                "achternaam": "Bakker",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 3,
+                "voornaam": "Chloé",
+                "tussenvoegsel": "",
+                "achternaam": "Smit",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 4,
+                "voornaam": "Daan",
+                "tussenvoegsel": "van",
+                "achternaam": "Dijk",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 5,
+                "voornaam": "Emma",
+                "tussenvoegsel": "",
+                "achternaam": "Bakker",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 6,
+                "voornaam": "Finn",
+                "tussenvoegsel": "",
+                "achternaam": "Visser",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 7,
+                "voornaam": "Gijs",
+                "tussenvoegsel": "",
+                "achternaam": "Bakker",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 8,
+                "voornaam": "Anna",
+                "tussenvoegsel": "",
+                "achternaam": "bakker",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              }
+            ],
+            "exams": [
+              {
+                "id": "nat-opd-2025-2026",
+                "title": "nat-opd-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [
+                  "obs-a",
+                  "obs-b",
+                  "obs-c",
+                  "obs-weg"
+                ],
+                "subject": "nat",
+                "volgnummer": 301,
+                "opdrachten": {
+                  "obs-b": [],
+                  "obs-c": [
+                    "op-3",
+                    "op-verwijderd"
+                  ]
+                },
+                "opdrachtenCijfer": [
+                  {
+                    "id": "cijfer-1",
+                    "onder": 5.5,
+                    "opdrachten": [
+                      "op-1",
+                      "op-verwijderd"
+                    ]
+                  },
+                  {
+                    "id": "cijfer-2",
+                    "onder": 4,
+                    "opdrachten": [
+                      "op-3"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "groups": [
+              {
+                "id": "g-9a",
+                "name": "9a nat",
+                "jaarlaag": "3",
+                "subject": "nat",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "student_ids": [
+                  1,
+                  2,
+                  5,
+                  6,
+                  7
+                ]
+              },
+              {
+                "id": "g-10a",
+                "name": "10a nat",
+                "jaarlaag": "3",
+                "subject": "nat",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "student_ids": [
+                  3
+                ]
+              },
+              {
+                "id": "g-9b",
+                "name": "9b nat",
+                "jaarlaag": "3",
+                "subject": "nat",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "student_ids": [
+                  8,
+                  3
+                ]
+              }
+            ],
+            "scores": {
+              "nat": {
+                "1": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 9.44
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": []
+                  }
+                },
+                "2": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 9.45,
+                      "q6": 0,
+                      "q7": 0,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": []
+                  }
+                },
+                "3": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10,
+                      "q2": 10
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": [
+                      "obs-a"
+                    ]
+                  }
+                },
+                "4": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": [
+                      "obs-a",
+                      "obs-c"
+                    ]
+                  }
+                },
+                "5": {
+                  "scores": {},
+                  "observations": {
+                    "nat-opd-2025-2026": [
+                      "obs-b"
+                    ]
+                  }
+                },
+                "6": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": []
+                  },
+                  "overrides": {
+                    "nat-opd-2025-2026": {
+                      "cijfer": 7,
+                      "berekend": 3.7
+                    }
+                  }
+                },
+                "7": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 10,
+                      "q8": 10
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": [
+                      "obs-weg",
+                      "obs-d"
+                    ]
+                  }
+                },
+                "8": {
+                  "scores": {
+                    "nat-opd-2025-2026": {
+                      "q1": 10
+                    }
+                  },
+                  "observations": {
+                    "nat-opd-2025-2026": []
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "output": null
+    },
+    {
+      "id": "getOpdrachtCoupling",
+      "rule": "BR 7.3, 11.37",
+      "input": {
+        "exam": "nat-opd-2025-2026"
+      },
+      "output": {
+        "obs-a": [
+          "op-1"
+        ],
+        "obs-b": [],
+        "obs-c": [
+          "op-3"
+        ],
+        "obs-weg": []
+      }
+    },
+    {
+      "id": "getOpdrachtCijferCards",
+      "rule": "BR 7.4",
+      "input": {
+        "exam": "nat-opd-2025-2026"
+      },
+      "output": [
+        {
+          "id": "cijfer-1",
+          "onder": 5.5,
+          "opdrachten": [
+            "op-1"
+          ]
+        },
+        {
+          "id": "cijfer-2",
+          "onder": 4,
+          "opdrachten": [
+            "op-3"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cijferCardReason",
+      "rule": "BR 7.4",
+      "input": {
+        "onder": [
+          5.5,
+          1,
+          10,
+          5.45,
+          "6",
+          6.25
+        ]
+      },
+      "output": [
+        {
+          "icon": "5️⃣",
+          "naam": "Cijfer onder 5,5"
+        },
+        {
+          "icon": "5️⃣",
+          "naam": "Cijfer onder 1,0"
+        },
+        {
+          "icon": "5️⃣",
+          "naam": "Cijfer onder 10,0"
+        },
+        {
+          "icon": "5️⃣",
+          "naam": "Cijfer onder 5,5"
+        },
+        {
+          "icon": "5️⃣",
+          "naam": "Cijfer onder 6,0"
+        },
+        {
+          "icon": "5️⃣",
+          "naam": "Cijfer onder 6,3"
+        }
+      ]
+    },
+    {
+      "id": "getOpdrachtAssignments",
+      "rule": "BR 7.5, 11.35, 11.38, 11.39",
+      "input": {
+        "exam": "nat-opd-2025-2026",
+        "students": [
+          {
+            "id": 1,
+            "why": "5.4496 rounds to 5.4: card"
+          },
+          {
+            "id": 2,
+            "why": "5.4505 rounds to 5.5: no card"
+          },
+          {
+            "id": 3,
+            "why": "obs + both cards; op-1 twice"
+          },
+          {
+            "id": 4,
+            "why": "no group: sorts last"
+          },
+          {
+            "id": 5,
+            "why": "no grade, obs-b coupled to []"
+          },
+          {
+            "id": 6,
+            "why": "override 7 replaces 3.7"
+          },
+          {
+            "id": 7,
+            "why": "unknown observatie ids"
+          },
+          {
+            "id": 8,
+            "why": "collation of lower-case name"
+          }
+        ]
+      },
+      "output": {
+        "students": [
+          {
+            "studentId": 1,
+            "group": "g-9a",
+            "items": [
+              {
+                "opdracht": "op-1",
+                "reasons": [
+                  "Cijfer onder 5,5"
+                ]
+              }
+            ]
+          },
+          {
+            "studentId": 8,
+            "group": "g-9b",
+            "items": [
+              {
+                "opdracht": "op-1",
+                "reasons": [
+                  "Cijfer onder 5,5"
+                ]
+              },
+              {
+                "opdracht": "op-3",
+                "reasons": [
+                  "Cijfer onder 4,0"
+                ]
+              }
+            ]
+          },
+          {
+            "studentId": 3,
+            "group": "g-10a",
+            "items": [
+              {
+                "opdracht": "op-1",
+                "reasons": [
+                  "obs-a",
+                  "Cijfer onder 5,5"
+                ]
+              },
+              {
+                "opdracht": "op-3",
+                "reasons": [
+                  "Cijfer onder 4,0"
+                ]
+              }
+            ]
+          },
+          {
+            "studentId": 4,
+            "group": null,
+            "items": [
+              {
+                "opdracht": "op-1",
+                "reasons": [
+                  "obs-a",
+                  "Cijfer onder 5,5"
+                ]
+              },
+              {
+                "opdracht": "op-3",
+                "reasons": [
+                  "obs-c",
+                  "Cijfer onder 4,0"
+                ]
+              }
+            ]
+          }
+        ],
+        "obsStudents": {
+          "obs-a": [
+            3,
+            4
+          ],
+          "obs-b": [
+            5
+          ],
+          "obs-c": [
+            4
+          ],
+          "obs-weg": [
+            7
+          ]
+        },
+        "cijferStudents": {
+          "cijfer-1": [
+            1,
+            3,
+            4,
+            8
+          ],
+          "cijfer-2": [
+            3,
+            4,
+            8
+          ]
+        }
+      }
+    },
+    {
+      "id": "getOpdrachtAssignments-no-cards",
+      "rule": "BR 7.5",
+      "input": {
+        "exam": "nat-opd-2025-2026"
+      },
+      "output": {
+        "students": [
+          {
+            "studentId": 3,
+            "group": "g-10a",
+            "items": [
+              {
+                "opdracht": "op-1",
+                "reasons": [
+                  "obs-a"
+                ]
+              }
+            ]
+          },
+          {
+            "studentId": 4,
+            "group": null,
+            "items": [
+              {
+                "opdracht": "op-1",
+                "reasons": [
+                  "obs-a"
+                ]
+              },
+              {
+                "opdracht": "op-3",
+                "reasons": [
+                  "obs-c"
+                ]
+              }
+            ]
+          }
+        ],
+        "obsStudents": {
+          "obs-a": [
+            3,
+            4
+          ],
+          "obs-b": [
+            5
+          ],
+          "obs-c": [
+            4
+          ],
+          "obs-weg": [
+            7
+          ]
+        },
+        "cijferStudents": {}
+      }
+    }
+  ]
+}

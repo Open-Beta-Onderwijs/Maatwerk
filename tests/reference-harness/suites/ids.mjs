@@ -35,7 +35,8 @@ export default async function ids() {
     exam('bio-d-2025-2026', [[2, 'R']], { jaarlaag: '4', volgnummer: 410, subject: 'bio' }),
   ];
   const s = await openReference({
-    fixture: (dir) => buildData(dir, { years: { [YEAR]: { students: [student(1)], exams: existing } } }),
+    fixture: (dir) =>
+      buildData(dir, { years: { [YEAR]: { students: [student(1)], exams: existing } } }),
     subject: 'nat',
   });
   try {
@@ -96,10 +97,20 @@ export default async function ids() {
       { id: 8 },
       { id: 9, voornaam: null, achternaam: undefined },
     ];
-    suite.add('fullName', 'store.js fullName', { people }, people.map((p) => Store.fullName(p)));
+    suite.add(
+      'fullName',
+      'store.js fullName',
+      { people },
+      people.map((p) => Store.fullName(p)),
+    );
 
     const klassen = ['3a', '10b', 'a3', '', null, undefined, 4, '05c'];
-    suite.add('jaarlaagFromStamklas', 'store.js', { klassen }, klassen.map((k) => Store.jaarlaagFromStamklas(k)));
+    suite.add(
+      'jaarlaagFromStamklas',
+      'store.js',
+      { klassen },
+      klassen.map((k) => Store.jaarlaagFromStamklas(k)),
+    );
 
     const list = [
       { id: 1, stamklas: '10a', achternaam: 'Zwart' },
@@ -117,7 +128,20 @@ export default async function ids() {
       Store.sortStudents(structuredClone(list)).map((x) => x.id),
     );
 
-    const names = ['3a nat', '4 biol', '5 schk', '2 wis', '4 wisa', '5 wisb', '3 wiskunde', '4awi', 'Natuur 4', 'geen', '', null];
+    const names = [
+      '3a nat',
+      '4 biol',
+      '5 schk',
+      '2 wis',
+      '4 wisa',
+      '5 wisb',
+      '3 wiskunde',
+      '4awi',
+      'Natuur 4',
+      'geen',
+      '',
+      null,
+    ];
     suite.add(
       'group-name-parsing',
       'store.js subjectFromGroupName, parseGroupName',
@@ -142,9 +166,18 @@ export default async function ids() {
     const out = [];
     for (const e of fresh) {
       const saved = await capture(() => Store.upsertExam(structuredClone(e), YEAR));
-      out.push(saved.$throws ? saved : { id: saved.id, volgnummer: saved.volgnummer, title: saved.title, _meta: saved._meta });
+      out.push(
+        saved.$throws
+          ? saved
+          : { id: saved.id, volgnummer: saved.volgnummer, title: saved.title, _meta: saved._meta },
+      );
     }
-    suite.add('upsertExam-volgnummer-meta', 'BR 10, 11.47, DF _meta', { existing, fresh, now: DEFAULT_NOW }, out);
+    suite.add(
+      'upsertExam-volgnummer-meta',
+      'BR 10, 11.47, DF _meta',
+      { existing, fresh, now: DEFAULT_NOW },
+      out,
+    );
   } finally {
     s.dispose();
   }

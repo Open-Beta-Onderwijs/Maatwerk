@@ -1,0 +1,1532 @@
+{
+  "format": 1,
+  "suite": "attempts",
+  "description": "Resits and the best attempt per student.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/store.js:1035-1039 getResitsSync",
+      "renderer/store.js:1045-1076 computeBestGradeMap",
+      "renderer/store.js:1083-1134 resolveBestAttempts",
+      "renderer/store.js:629-655 getStudentHistory"
+    ]
+  },
+  "cases": [
+    {
+      "id": "data",
+      "rule": "BR 5",
+      "input": {
+        "years": {
+          "2025-2026": {
+            "students": [
+              {
+                "id": 1,
+                "voornaam": "Leerling1",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam1",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 2,
+                "voornaam": "Leerling2",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam2",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 3,
+                "voornaam": "Leerling3",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam3",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 4,
+                "voornaam": "Leerling4",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam4",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 5,
+                "voornaam": "Leerling5",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam5",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 6,
+                "voornaam": "Leerling6",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam6",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 7,
+                "voornaam": "Leerling7",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam7",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 8,
+                "voornaam": "Leerling8",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam8",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 9,
+                "voornaam": "Leerling9",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam9",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              },
+              {
+                "id": 10,
+                "voornaam": "Leerling10",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam10",
+                "stamklas": "3a",
+                "geslacht": "X",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              }
+            ],
+            "exams": [
+              {
+                "id": "nat-t1-2025-2026",
+                "title": "nat-t1-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 301
+              },
+              {
+                "id": "nat-t1-herkansing-2025-2026",
+                "title": "nat-t1-herkansing-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 301,
+                "parent_id": "nat-t1-2025-2026",
+                "attempt": 2,
+                "description": "HERKANSING"
+              },
+              {
+                "id": "nat-t1-inhaal-2025-2026",
+                "title": "nat-t1-inhaal-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 2,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 5,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 5,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 301,
+                "parent_id": "nat-t1-2025-2026",
+                "attempt": 3,
+                "description": "INHAAL"
+              },
+              {
+                "id": "nat-t2-2025-2026",
+                "title": "nat-t2-2025-2026",
+                "jaarlaag": "3",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 302
+              }
+            ],
+            "scores": {
+              "nat": {
+                "1": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 8.89
+                    },
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 4.44
+                    }
+                  },
+                  "observations": {}
+                },
+                "2": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 5.56,
+                      "q7": 0,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    },
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 5.56,
+                      "q7": 0,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    }
+                  },
+                  "observations": {}
+                },
+                "3": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 3.33
+                    },
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10
+                    }
+                  },
+                  "observations": {},
+                  "overrides": {
+                    "nat-t1-2025-2026": {
+                      "cijfer": 6,
+                      "berekend": 4
+                    }
+                  }
+                },
+                "4": {
+                  "scores": {
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 1.11
+                    }
+                  },
+                  "observations": {}
+                },
+                "5": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": "abc"
+                    },
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 8.89
+                    }
+                  },
+                  "observations": {}
+                },
+                "6": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 2.22
+                    },
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 3.33
+                    },
+                    "nat-t1-inhaal-2025-2026": {
+                      "q1": 4,
+                      "q2": 3
+                    }
+                  },
+                  "observations": {}
+                },
+                "7": {
+                  "scores": {},
+                  "observations": {}
+                },
+                "8": {
+                  "scores": {
+                    "nat-t1-herkansing-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 4.44
+                    },
+                    "nat-t1-inhaal-2025-2026": {
+                      "q1": 5,
+                      "q2": 5
+                    }
+                  },
+                  "observations": {}
+                },
+                "9": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 4.44
+                    }
+                  },
+                  "observations": {},
+                  "overrides": {
+                    "nat-t1-herkansing-2025-2026": {
+                      "cijfer": 5.8,
+                      "berekend": null
+                    }
+                  }
+                },
+                "10": {
+                  "scores": {
+                    "nat-t1-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 5.56,
+                      "q7": 0,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    },
+                    "nat-t2-2025-2026": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 6.67,
+                      "q8": 0,
+                      "q9": 0,
+                      "q10": 0
+                    }
+                  },
+                  "observations": {}
+                }
+              }
+            }
+          },
+          "2024-2025": {
+            "students": [
+              {
+                "id": 10,
+                "voornaam": "Leerling10",
+                "tussenvoegsel": "",
+                "achternaam": "Achternaam10",
+                "stamklas": "2a",
+                "geslacht": "X",
+                "jaarlaag": "2",
+                "schoolsoort": [
+                  "Havo"
+                ]
+              }
+            ],
+            "exams": [
+              {
+                "id": "nat-t9-2024-2025",
+                "title": "nat-t9-2024-2025",
+                "jaarlaag": "2",
+                "schoolsoort": [
+                  "Havo"
+                ],
+                "n_term": 1,
+                "weging": 1,
+                "weging_se": 1,
+                "periode": "1",
+                "type": "regular",
+                "structureMode": "roman",
+                "questions": [
+                  {
+                    "id": "q1",
+                    "section": "I",
+                    "number": 1,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q2",
+                    "section": "I",
+                    "number": 2,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q3",
+                    "section": "I",
+                    "number": 3,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q4",
+                    "section": "I",
+                    "number": 4,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q5",
+                    "section": "I",
+                    "number": 5,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q6",
+                    "section": "I",
+                    "number": 6,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  },
+                  {
+                    "id": "q7",
+                    "section": "I",
+                    "number": 7,
+                    "max_points": 10,
+                    "rtti": "T2"
+                  },
+                  {
+                    "id": "q8",
+                    "section": "I",
+                    "number": 8,
+                    "max_points": 10,
+                    "rtti": "I"
+                  },
+                  {
+                    "id": "q9",
+                    "section": "I",
+                    "number": 9,
+                    "max_points": 10,
+                    "rtti": "R"
+                  },
+                  {
+                    "id": "q10",
+                    "section": "I",
+                    "number": 10,
+                    "max_points": 10,
+                    "rtti": "T1"
+                  }
+                ],
+                "obs_ids": [],
+                "subject": "nat",
+                "volgnummer": 209
+              }
+            ],
+            "scores": {
+              "nat": {
+                "10": {
+                  "scores": {
+                    "nat-t9-2024-2025": {
+                      "q1": 10,
+                      "q2": 10,
+                      "q3": 10,
+                      "q4": 10,
+                      "q5": 10,
+                      "q6": 10,
+                      "q7": 10,
+                      "q8": 7.78,
+                      "q9": 0,
+                      "q10": 0
+                    }
+                  },
+                  "observations": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "output": null
+    },
+    {
+      "id": "getResitsSync",
+      "rule": "BR 5.1",
+      "input": {
+        "parentId": "nat-t1-2025-2026"
+      },
+      "output": [
+        "nat-t1-herkansing-2025-2026",
+        "nat-t1-inhaal-2025-2026"
+      ]
+    },
+    {
+      "id": "computeBestGradeMap",
+      "rule": "BR 5.2, 11.24-29",
+      "input": {
+        "parentId": "nat-t1-2025-2026",
+        "year": "2025-2026"
+      },
+      "output": {
+        "1": {
+          "examId": "nat-t1-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 10,
+            "q2": 10,
+            "q3": 10,
+            "q4": 10,
+            "q5": 10,
+            "q6": 10,
+            "q7": 8.89
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 7.2001
+        },
+        "2": {
+          "examId": "nat-t1-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 10,
+            "q2": 10,
+            "q3": 10,
+            "q4": 10,
+            "q5": 10,
+            "q6": 5.56,
+            "q7": 0,
+            "q8": 0,
+            "q9": 0,
+            "q10": 0
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 6.0004
+        },
+        "3": {
+          "examId": "nat-t1-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 10,
+            "q2": 10,
+            "q3": 10,
+            "q4": 3.33
+          },
+          "override": {
+            "cijfer": 6,
+            "berekend": 4
+          },
+          "grade": 6
+        },
+        "4": {
+          "examId": "nat-t1-herkansing-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 10,
+            "q2": 10,
+            "q3": 10,
+            "q4": 10,
+            "q5": 10,
+            "q6": 10,
+            "q7": 1.11
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 6.4999
+        },
+        "5": {
+          "examId": "nat-t1-herkansing-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 10,
+            "q2": 10,
+            "q3": 10,
+            "q4": 8.89
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 4.5001
+        },
+        "6": {
+          "examId": "nat-t1-inhaal-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 4,
+            "q2": 3
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 8.3
+        },
+        "8": {
+          "examId": "nat-t1-inhaal-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 5,
+            "q2": 5
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 10
+        },
+        "9": {
+          "examId": "nat-t1-herkansing-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {},
+          "override": {
+            "cijfer": 5.8,
+            "berekend": null
+          },
+          "grade": 5.8
+        },
+        "10": {
+          "examId": "nat-t1-2025-2026",
+          "academic_year": {
+            "$undefined": true
+          },
+          "questionScores": {
+            "q1": 10,
+            "q2": 10,
+            "q3": 10,
+            "q4": 10,
+            "q5": 10,
+            "q6": 5.56,
+            "q7": 0,
+            "q8": 0,
+            "q9": 0,
+            "q10": 0
+          },
+          "override": {
+            "$undefined": true
+          },
+          "grade": 6.0004
+        }
+      }
+    },
+    {
+      "id": "computeBestGradeMap-unknown-parent",
+      "rule": "BR 5.2",
+      "input": {
+        "parentId": "nat-bestaat-niet-2025-2026"
+      },
+      "output": {}
+    },
+    {
+      "id": "student-1",
+      "rule": "BR 5.2: resit worse than original",
+      "input": {
+        "studentId": 1
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 8.89
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 4.44
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 8.89
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-2",
+      "rule": "BR 5.2: tie: earliest attempt wins",
+      "input": {
+        "studentId": 2
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 5.56,
+              "q7": 0,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 5.56,
+              "q7": 0,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 5.56,
+              "q7": 0,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-3",
+      "rule": "BR 5.2: override on the original decides",
+      "input": {
+        "studentId": 3
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 3.33
+            },
+            "override": {
+              "cijfer": 6,
+              "berekend": 4
+            }
+          },
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 3.33
+            },
+            "override": {
+              "cijfer": 6,
+              "berekend": 4
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-4",
+      "rule": "BR 5.2: only the resit taken",
+      "input": {
+        "studentId": 4
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 1.11
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 1.11
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-5",
+      "rule": "BR 5.2: original has a null grade (only invalid input), resit graded",
+      "input": {
+        "studentId": 5
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": "abc"
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 8.89
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 8.89
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-6",
+      "rule": "BR 5.2: third attempt with its own structure and n-term is best",
+      "input": {
+        "studentId": 6
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 2.22
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 3.33
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-inhaal-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 4,
+              "q2": 3
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-inhaal-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 4,
+              "q2": 3
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-7",
+      "rule": "BR 5.2: no attempts at all",
+      "input": {
+        "studentId": 7
+      },
+      "output": {
+        "history": [],
+        "resolveBestAttempts": []
+      }
+    },
+    {
+      "id": "student-8",
+      "rule": "BR 5.2: only resits, both graded",
+      "input": {
+        "studentId": 8
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 4.44
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-inhaal-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 5,
+              "q2": 5
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-inhaal-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 5,
+              "q2": 5
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-9",
+      "rule": "BR 5.2: override only on the resit",
+      "input": {
+        "studentId": 9
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 4.44
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {},
+            "override": {
+              "cijfer": 5.8,
+              "berekend": null
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t1-herkansing-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {},
+            "override": {
+              "cijfer": 5.8,
+              "berekend": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-10",
+      "rule": "BR 5.2: history across two school years",
+      "input": {
+        "studentId": 10
+      },
+      "output": {
+        "history": [
+          {
+            "examId": "nat-t9-2024-2025",
+            "academic_year": "2024-2025",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 10,
+              "q8": 7.78,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 5.56,
+              "q7": 0,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t2-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 6.67,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ],
+        "resolveBestAttempts": [
+          {
+            "examId": "nat-t9-2024-2025",
+            "academic_year": "2024-2025",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 10,
+              "q8": 7.78,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t1-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 5.56,
+              "q7": 0,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          },
+          {
+            "examId": "nat-t2-2025-2026",
+            "academic_year": "2025-2026",
+            "questionScores": {
+              "q1": 10,
+              "q2": 10,
+              "q3": 10,
+              "q4": 10,
+              "q5": 10,
+              "q6": 10,
+              "q7": 6.67,
+              "q8": 0,
+              "q9": 0,
+              "q10": 0
+            },
+            "override": {
+              "$undefined": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

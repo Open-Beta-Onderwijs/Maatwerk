@@ -1,0 +1,730 @@
+{
+  "format": 1,
+  "suite": "csv",
+  "description": "CSV parsing and import row mapping.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/app.js:355-361 escHtml",
+      "renderer/modals/groep-edit.js:428-436 VALID_SCHOOLSOORTEN",
+      "renderer/modals/groep-edit.js:437-446 VAKKEN_MAP",
+      "renderer/modals/groep-edit.js:447-447 VALID_JAARLAGEN",
+      "renderer/modals/groep-edit.js:483-545 groupRows",
+      "renderer/modals/groep-edit.js:605-629 assignRows",
+      "renderer/modals/groep-edit.js:641-653 applyAssignments",
+      "renderer/modals/leerling-edit.js:250-269 studentRows",
+      "renderer/utils/csv.js:3-41 parseCSV"
+    ]
+  },
+  "cases": [
+    {
+      "id": "parseCSV-semicolon",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b;c\n1;2;3\n"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b",
+          "c"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2",
+            "c": "3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-comma",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a,b,c\n1,2,3"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b",
+          "c"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2",
+            "c": "3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-tie",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b,c\n1;2,3"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b,c"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b,c": "2,3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-tie-none",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "abc\n1"
+      },
+      "output": {
+        "headers": [
+          "abc"
+        ],
+        "rows": [
+          {
+            "abc": "1"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-quoted-delimiter",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "naam;plaats\n\"Jansen; Piet\";\"Den Haag\""
+      },
+      "output": {
+        "headers": [
+          "naam",
+          "plaats"
+        ],
+        "rows": [
+          {
+            "naam": "Jansen; Piet",
+            "plaats": "Den Haag"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-doubled-quotes",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "naam;quote\n\"Piet\";\"Hij zei \"\"hoi\"\"\""
+      },
+      "output": {
+        "headers": [
+          "naam",
+          "quote"
+        ],
+        "rows": [
+          {
+            "naam": "Piet",
+            "quote": "Hij zei hoi"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-bom",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "﻿Leerlingnummer;Achternaam\n123;Jansen"
+      },
+      "output": {
+        "headers": [
+          "Leerlingnummer",
+          "Achternaam"
+        ],
+        "rows": [
+          {
+            "Leerlingnummer": "123",
+            "Achternaam": "Jansen"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-crlf",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b\r\n1;2\r\n3;4\r\n"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          },
+          {
+            "a": "3",
+            "b": "4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-trailing-empty-lines",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b\n1;2\n\n\n"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-blank-middle-line",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b\n1;2\n   \n3;4"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          },
+          {
+            "a": "3",
+            "b": "4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-short-row",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b;c\n1"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b",
+          "c"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "",
+            "c": ""
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-long-row",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b\n1;2;3;4"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-header-only",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b;c"
+      },
+      "output": {
+        "headers": [],
+        "rows": []
+      }
+    },
+    {
+      "id": "parseCSV-empty",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": ""
+      },
+      "output": {
+        "headers": [],
+        "rows": []
+      }
+    },
+    {
+      "id": "parseCSV-whitespace-fields",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": " a ; b \n 1 ;  2  "
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-quoted-header",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "\"a\";\"b\"\n\"1\";2"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-unbalanced-quote",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;b\n\"1;2\n3;4"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1;2",
+            "b": ""
+          },
+          {
+            "a": "3",
+            "b": "4"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-duplicate-headers",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "a;a\n1;2"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "a"
+        ],
+        "rows": [
+          {
+            "a": "2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "parseCSV-leading-blank-lines",
+      "rule": "BR 9.1, 11.44",
+      "input": {
+        "text": "\n\na;b\n1;2"
+      },
+      "output": {
+        "headers": [
+          "a",
+          "b"
+        ],
+        "rows": [
+          {
+            "a": "1",
+            "b": "2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-csv",
+      "rule": "BR 9.2, 11.45",
+      "input": {
+        "text": "Leerlingnummer;Voornaam;Tussenvoegsel;Achternaam;Geslacht;Stamklas;Jaarlaag;Schoolsoort\n00123;Anna;van der;Berg;V;3a;3;\"Havo,Vwo\"\n124;Bram;;;M;3a;3;Havo\nabc;Chloé;;Zwart;V;3b; 3 ;\n;Daan;;Dijk;M;3b;3;Vwo\n0;Nul;;Nul;X;3b;3;Vwo\n125;Emma;;Bakker;V;3c;3; Havo , ,Vwo \n1.5e2;Exp;;Onent;X;3c;3;Havo"
+      },
+      "output": {
+        "rows": [
+          {
+            "Leerlingnummer": "00123",
+            "Voornaam": "Anna",
+            "Tussenvoegsel": "van der",
+            "Achternaam": "Berg",
+            "Geslacht": "V",
+            "Stamklas": "3a",
+            "Jaarlaag": "3",
+            "Schoolsoort": "Havo,Vwo"
+          },
+          {
+            "Leerlingnummer": "124",
+            "Voornaam": "Bram",
+            "Tussenvoegsel": "",
+            "Achternaam": "",
+            "Geslacht": "M",
+            "Stamklas": "3a",
+            "Jaarlaag": "3",
+            "Schoolsoort": "Havo"
+          },
+          {
+            "Leerlingnummer": "abc",
+            "Voornaam": "Chloé",
+            "Tussenvoegsel": "",
+            "Achternaam": "Zwart",
+            "Geslacht": "V",
+            "Stamklas": "3b",
+            "Jaarlaag": "3",
+            "Schoolsoort": ""
+          },
+          {
+            "Leerlingnummer": "",
+            "Voornaam": "Daan",
+            "Tussenvoegsel": "",
+            "Achternaam": "Dijk",
+            "Geslacht": "M",
+            "Stamklas": "3b",
+            "Jaarlaag": "3",
+            "Schoolsoort": "Vwo"
+          },
+          {
+            "Leerlingnummer": "0",
+            "Voornaam": "Nul",
+            "Tussenvoegsel": "",
+            "Achternaam": "Nul",
+            "Geslacht": "X",
+            "Stamklas": "3b",
+            "Jaarlaag": "3",
+            "Schoolsoort": "Vwo"
+          },
+          {
+            "Leerlingnummer": "125",
+            "Voornaam": "Emma",
+            "Tussenvoegsel": "",
+            "Achternaam": "Bakker",
+            "Geslacht": "V",
+            "Stamklas": "3c",
+            "Jaarlaag": "3",
+            "Schoolsoort": "Havo , ,Vwo"
+          },
+          {
+            "Leerlingnummer": "1.5e2",
+            "Voornaam": "Exp",
+            "Tussenvoegsel": "",
+            "Achternaam": "Onent",
+            "Geslacht": "X",
+            "Stamklas": "3c",
+            "Jaarlaag": "3",
+            "Schoolsoort": "Havo"
+          }
+        ],
+        "students": [
+          {
+            "id": 123,
+            "voornaam": "Anna",
+            "tussenvoegsel": "van der",
+            "achternaam": "Berg",
+            "geslacht": "V",
+            "stamklas": "3a",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo",
+              "Vwo"
+            ]
+          },
+          {
+            "id": 125,
+            "voornaam": "Emma",
+            "tussenvoegsel": "",
+            "achternaam": "Bakker",
+            "geslacht": "V",
+            "stamklas": "3c",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo",
+              "Vwo"
+            ]
+          },
+          {
+            "id": 150,
+            "voornaam": "Exp",
+            "tussenvoegsel": "",
+            "achternaam": "Onent",
+            "geslacht": "X",
+            "stamklas": "3c",
+            "jaarlaag": "3",
+            "schoolsoort": [
+              "Havo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "student-csv-lowercase-comma",
+      "rule": "BR 9.2, 11.45",
+      "input": {
+        "text": "leerlingnummer,voornaam,achternaam,jaarlaag,schoolsoort\n200,piet,puk,4,\"havo\""
+      },
+      "output": {
+        "rows": [
+          {
+            "leerlingnummer": "200",
+            "voornaam": "piet",
+            "achternaam": "puk",
+            "jaarlaag": "4",
+            "schoolsoort": "havo"
+          }
+        ],
+        "students": [
+          {
+            "id": 200,
+            "voornaam": "piet",
+            "tussenvoegsel": "",
+            "achternaam": "puk",
+            "geslacht": "",
+            "stamklas": "",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "havo"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "group-csv",
+      "rule": "BR 9.3",
+      "input": {
+        "text": "Naam;Schoolsoort;Vak;Leerjaar;Docent\n3a nat;Havo;nat;3;Docent van Natuur\n3b nat;havo;Natuurkunde;3;docent van natuur\n4 wisb;Vwo;Wiskunde;4;Onbekende Docent\n;Havo;nat;3;\n3c nat;Mavo;nat;3;\n3d nat;Havo;scheikunde;3;\n3e nat;Havo;Aardrijkskunde;3;\n7a nat;Havo;nat;7;\n3f nat;Havo;nat; 3;\nGroep ü;Vmbo-tl;bio;2;",
+        "users": [
+          {
+            "id": "admin",
+            "voornaam": "Administrator",
+            "tussenvoegsel": "",
+            "achternaam": ""
+          },
+          {
+            "id": "gebr-1",
+            "voornaam": "Docent",
+            "tussenvoegsel": "van",
+            "achternaam": "Natuur"
+          }
+        ],
+        "year": "2025-2026"
+      },
+      "output": {
+        "groups": [
+          {
+            "id": "3a-nat-2025-2026",
+            "name": "3a nat",
+            "jaarlaag": "3",
+            "subject": "nat",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "subcategory": {
+              "$undefined": true
+            },
+            "docenten": [
+              "gebr-1"
+            ],
+            "student_ids": []
+          },
+          {
+            "id": "3b-nat-2025-2026",
+            "name": "3b nat",
+            "jaarlaag": "3",
+            "subject": "nat",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "subcategory": {
+              "$undefined": true
+            },
+            "docenten": [
+              "gebr-1"
+            ],
+            "student_ids": []
+          },
+          {
+            "id": "4-wisb-2025-2026",
+            "name": "4 wisb",
+            "jaarlaag": "4",
+            "subject": "wi",
+            "schoolsoort": [
+              "Vwo"
+            ],
+            "subcategory": "wisb",
+            "docenten": [],
+            "student_ids": []
+          },
+          {
+            "id": "3d-nat-2025-2026",
+            "name": "3d nat",
+            "jaarlaag": "3",
+            "subject": "schk",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "subcategory": {
+              "$undefined": true
+            },
+            "docenten": [],
+            "student_ids": []
+          },
+          {
+            "id": "3f-nat-2025-2026",
+            "name": "3f nat",
+            "jaarlaag": "3",
+            "subject": "nat",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "subcategory": {
+              "$undefined": true
+            },
+            "docenten": [],
+            "student_ids": []
+          },
+          {
+            "id": "groep-2025-2026",
+            "name": "Groep ü",
+            "jaarlaag": "2",
+            "subject": "bio",
+            "schoolsoort": [
+              "Vmbo-tl"
+            ],
+            "subcategory": {
+              "$undefined": true
+            },
+            "docenten": [],
+            "student_ids": []
+          }
+        ],
+        "toasts": [
+          [
+            "Rij overgeslagen: Naam is verplicht.",
+            "error"
+          ],
+          [
+            "Rij overgeslagen (3c nat): ongeldige Schoolsoort \"Mavo\".",
+            "error"
+          ],
+          [
+            "Rij overgeslagen (3e nat): ongeldig Vak \"Aardrijkskunde\".",
+            "error"
+          ],
+          [
+            "Rij overgeslagen (7a nat): ongeldig Leerjaar \"7\".",
+            "error"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "group-assignment-csv",
+      "rule": "BR 9.4",
+      "input": {
+        "text": "Naam;Leerlingnummer\n3a nat;1\n3a nat;2\n3a nat;1\nbestaat niet;1\n3b nat;999\n3B NAT;2\n3b nat; 3 \n3b nat;003",
+        "groupsBefore": {
+          "3a nat": [
+            2
+          ],
+          "3b nat": []
+        }
+      },
+      "output": {
+        "assignments": [
+          {
+            "groupId": "3a-nat-2025-2026",
+            "studentId": 1
+          },
+          {
+            "groupId": "3a-nat-2025-2026",
+            "studentId": 2
+          },
+          {
+            "groupId": "3a-nat-2025-2026",
+            "studentId": 1
+          },
+          {
+            "groupId": "3b-nat-2025-2026",
+            "studentId": 3
+          }
+        ],
+        "toasts": [
+          [
+            "Groep met bestaat niet bestaat niet.",
+            "error"
+          ],
+          [
+            "Leerling met leerlingnummer 999 bestaat niet.",
+            "error"
+          ],
+          [
+            "Groep met 3B NAT bestaat niet.",
+            "error"
+          ],
+          [
+            "Leerling met leerlingnummer 003 bestaat niet.",
+            "error"
+          ]
+        ],
+        "groupsAfter": [
+          {
+            "id": "3a-nat-2025-2026",
+            "student_ids": [
+              2,
+              1
+            ]
+          },
+          {
+            "id": "3b-nat-2025-2026",
+            "student_ids": [
+              3
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

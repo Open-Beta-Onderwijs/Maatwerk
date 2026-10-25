@@ -9,7 +9,14 @@ import { TEN_BY_TEN, YEAR, buildData, exam, student, tenByTen } from '../scenari
 
 const STORE = 'renderer/store.js';
 
-const obs = (id, extra = {}) => ({ id, naam: `Observatie ${id}`, icon: '📏', subjects: ['nat'], jaarlagen: [], ...extra });
+const obs = (id, extra = {}) => ({
+  id,
+  naam: `Observatie ${id}`,
+  icon: '📏',
+  subjects: ['nat'],
+  jaarlagen: [],
+  ...extra,
+});
 const op = (id, extra = {}) => ({
   id,
   naam: `Opdracht ${id}`,
@@ -41,21 +48,99 @@ const EXAM = exam('nat-opd-2025-2026', TEN_BY_TEN, {
 
 // Students: grade (100-point exam: S * 0.09 + 1), observaties, group membership.
 const STUDENTS = [
-  { id: 1, name: ['Anna', 'de', 'Vries'], S: 49.44, obs: [], group: 'g-9a', why: '5.4496 rounds to 5.4: card' },
-  { id: 2, name: ['Bram', '', 'Bakker'], S: 49.45, obs: [], group: 'g-9a', why: '5.4505 rounds to 5.5: no card' },
-  { id: 3, name: ['Chloé', '', 'Smit'], S: 20, obs: ['obs-a'], group: 'g-10a', why: 'obs + both cards; op-1 twice' },
-  { id: 4, name: ['Daan', 'van', 'Dijk'], S: 30, obs: ['obs-a', 'obs-c'], group: null, why: 'no group: sorts last' },
-  { id: 5, name: ['Emma', '', 'Bakker'], S: null, obs: ['obs-b'], group: 'g-9a', why: 'no grade, obs-b coupled to []' },
-  { id: 6, name: ['Finn', '', 'Visser'], S: 30, obs: [], group: 'g-9a', why: 'override 7 replaces 3.7', override: { cijfer: 7, berekend: 3.7 } },
-  { id: 7, name: ['Gijs', '', 'Bakker'], S: 80, obs: ['obs-weg', 'obs-d'], group: 'g-9a', why: 'unknown observatie ids' },
-  { id: 8, name: ['Anna', '', 'bakker'], S: 10, obs: [], group: 'g-9b', why: 'collation of lower-case name' },
+  {
+    id: 1,
+    name: ['Anna', 'de', 'Vries'],
+    S: 49.44,
+    obs: [],
+    group: 'g-9a',
+    why: '5.4496 rounds to 5.4: card',
+  },
+  {
+    id: 2,
+    name: ['Bram', '', 'Bakker'],
+    S: 49.45,
+    obs: [],
+    group: 'g-9a',
+    why: '5.4505 rounds to 5.5: no card',
+  },
+  {
+    id: 3,
+    name: ['Chloé', '', 'Smit'],
+    S: 20,
+    obs: ['obs-a'],
+    group: 'g-10a',
+    why: 'obs + both cards; op-1 twice',
+  },
+  {
+    id: 4,
+    name: ['Daan', 'van', 'Dijk'],
+    S: 30,
+    obs: ['obs-a', 'obs-c'],
+    group: null,
+    why: 'no group: sorts last',
+  },
+  {
+    id: 5,
+    name: ['Emma', '', 'Bakker'],
+    S: null,
+    obs: ['obs-b'],
+    group: 'g-9a',
+    why: 'no grade, obs-b coupled to []',
+  },
+  {
+    id: 6,
+    name: ['Finn', '', 'Visser'],
+    S: 30,
+    obs: [],
+    group: 'g-9a',
+    why: 'override 7 replaces 3.7',
+    override: { cijfer: 7, berekend: 3.7 },
+  },
+  {
+    id: 7,
+    name: ['Gijs', '', 'Bakker'],
+    S: 80,
+    obs: ['obs-weg', 'obs-d'],
+    group: 'g-9a',
+    why: 'unknown observatie ids',
+  },
+  {
+    id: 8,
+    name: ['Anna', '', 'bakker'],
+    S: 10,
+    obs: [],
+    group: 'g-9b',
+    why: 'collation of lower-case name',
+  },
 ];
 
 function spec() {
   const groups = [
-    { id: 'g-9a', name: '9a nat', jaarlaag: '3', subject: 'nat', schoolsoort: ['Havo'], student_ids: [1, 2, 5, 6, 7] },
-    { id: 'g-10a', name: '10a nat', jaarlaag: '3', subject: 'nat', schoolsoort: ['Havo'], student_ids: [3] },
-    { id: 'g-9b', name: '9b nat', jaarlaag: '3', subject: 'nat', schoolsoort: ['Havo'], student_ids: [8, 3] },
+    {
+      id: 'g-9a',
+      name: '9a nat',
+      jaarlaag: '3',
+      subject: 'nat',
+      schoolsoort: ['Havo'],
+      student_ids: [1, 2, 5, 6, 7],
+    },
+    {
+      id: 'g-10a',
+      name: '10a nat',
+      jaarlaag: '3',
+      subject: 'nat',
+      schoolsoort: ['Havo'],
+      student_ids: [3],
+    },
+    {
+      id: 'g-9b',
+      name: '9b nat',
+      jaarlaag: '3',
+      subject: 'nat',
+      schoolsoort: ['Havo'],
+      student_ids: [8, 3],
+    },
   ];
   const scores = {};
   for (const st of STUDENTS) {
@@ -71,7 +156,11 @@ function spec() {
     years: {
       [YEAR]: {
         students: STUDENTS.map((st) =>
-          student(st.id, { voornaam: st.name[0], tussenvoegsel: st.name[1], achternaam: st.name[2] }),
+          student(st.id, {
+            voornaam: st.name[0],
+            tussenvoegsel: st.name[1],
+            achternaam: st.name[2],
+          }),
         ),
         exams: [EXAM],
         groups,
@@ -85,14 +174,20 @@ const slimAssignments = (res) => ({
   students: res.students.map((x) => ({
     studentId: x.student.id,
     group: x.group?.id ?? null,
-    items: x.items.map((it) => ({ opdracht: it.opdracht.id, reasons: it.obs.map((r) => r.id ?? r.naam) })),
+    items: x.items.map((it) => ({
+      opdracht: it.opdracht.id,
+      reasons: it.obs.map((r) => r.id ?? r.naam),
+    })),
   })),
   obsStudents: res.obsStudents,
   cijferStudents: res.cijferStudents,
 });
 
 export default async function opdrachten() {
-  const suite = new Suite('opdrachten', 'Coupling observaties and grade cards to opdrachten per student.');
+  const suite = new Suite(
+    'opdrachten',
+    'Coupling observaties and grade cards to opdrachten per student.',
+  );
   suite.ref(
     [
       'opdrachtMatchesExam',
@@ -128,8 +223,14 @@ export default async function opdrachten() {
       { schoolsoort: ['Havo'] },
       { schoolsoort: ['Vwo', 'Gymnasium'] },
     ];
-    for (const e of exams) for (const o of ops) matrix.push([o, e, Store.opdrachtMatchesExam(o, e)]);
-    suite.add('opdrachtMatchesExam-matrix', 'BR 7.2, 11.40', { columns: ['opdracht', 'exam', 'fits'] }, matrix);
+    for (const e of exams)
+      for (const o of ops) matrix.push([o, e, Store.opdrachtMatchesExam(o, e)]);
+    suite.add(
+      'opdrachtMatchesExam-matrix',
+      'BR 7.2, 11.40',
+      { columns: ['opdracht', 'exam', 'fits'] },
+      matrix,
+    );
 
     suite.add('data', 'BR 7', data, null);
     const coupling = Store.getOpdrachtCoupling(EXAM);
@@ -150,7 +251,12 @@ export default async function opdrachten() {
       res.$throws ? res : slimAssignments(res),
     );
     const noCards = await capture(() => Store.getOpdrachtAssignments(EXAM, YEAR, coupling));
-    suite.add('getOpdrachtAssignments-no-cards', 'BR 7.5', { exam: EXAM.id }, noCards.$throws ? noCards : slimAssignments(noCards));
+    suite.add(
+      'getOpdrachtAssignments-no-cards',
+      'BR 7.5',
+      { exam: EXAM.id },
+      noCards.$throws ? noCards : slimAssignments(noCards),
+    );
   } finally {
     s.dispose();
   }

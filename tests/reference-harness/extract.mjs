@@ -105,11 +105,19 @@ export const refOf = (d) => `${d.file}:${d.start}-${d.end} ${d.name}`;
  * do/while(false) so its `break` statements work (its consts are then not
  * visible to the epilogue).
  */
-export function extractSnippet(relFile, { start, end, name, params = [], prologue = '', epilogue = '', contains, breakable = false }) {
-  const lines = readRef(relFile).split(/\r?\n/).slice(start - 1, end);
+export function extractSnippet(
+  relFile,
+  { start, end, name, params = [], prologue = '', epilogue = '', contains, breakable = false },
+) {
+  const lines = readRef(relFile)
+    .split(/\r?\n/)
+    .slice(start - 1, end);
   const text = lines.join('\n');
   for (const c of [contains].flat()) {
-    if (!text.includes(c)) throw new Error(`${relFile}:${start}-${end}: snippet ${name} does not contain ${JSON.stringify(c)}`);
+    if (!text.includes(c))
+      throw new Error(
+        `${relFile}:${start}-${end}: snippet ${name} does not contain ${JSON.stringify(c)}`,
+      );
   }
   const body = breakable ? `do {\n${text}\n} while (false);` : text;
   const source = `function ${name}(${params.join(', ')}) {\n${prologue}\n${body}\n${epilogue}\n}`;

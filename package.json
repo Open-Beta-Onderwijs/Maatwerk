@@ -14,7 +14,9 @@
     "format": "prettier --write .",
     "typecheck": "npm run typecheck -w ui",
     "test": "npm run test -w ui && node --test \"tools/**/*.test.mjs\" \"tests/**/*.test.mjs\"",
-    "licenses": "node tools/check-npm-licenses.mjs"
+    "licenses": "node tools/check-npm-licenses.mjs",
+    "golden:regen": "node tests/reference-harness/regen.mjs",
+    "golden:check": "node tests/reference-harness/regen.mjs --check"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4",

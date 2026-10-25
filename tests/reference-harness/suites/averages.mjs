@@ -15,16 +15,54 @@ const g = (grade) => tenByTen(pointsFor(grade));
 const EXAMS = [
   exam('nat-w1-2025-2026', TEN_BY_TEN, { weging: 1, weging_se: 1, type: 'pta', volgnummer: 301 }),
   exam('nat-w2-2025-2026', TEN_BY_TEN, { weging: 2, weging_se: 3, type: 'pta', volgnummer: 302 }),
-  exam('nat-w3-2025-2026', TEN_BY_TEN, { weging: 0.5, weging_se: undefined, type: 'pta', volgnummer: 303 }),
-  exam('nat-w4-2025-2026', TEN_BY_TEN, { weging: 0, weging_se: 0, type: 'regular', volgnummer: 304 }),
-  exam('nat-w5-2025-2026', TEN_BY_TEN, { weging: undefined, weging_se: undefined, type: 'pta', volgnummer: 305 }),
-  exam('nat-w1-herkansing-2025-2026', TEN_BY_TEN, { parent_id: 'nat-w1-2025-2026', attempt: 2, weging: 5, type: 'pta', volgnummer: 301 }),
-  exam('nat-w6-2025-2026', TEN_BY_TEN, { weging: '2', weging_se: '0', type: 'pta', volgnummer: 306 }),
+  exam('nat-w3-2025-2026', TEN_BY_TEN, {
+    weging: 0.5,
+    weging_se: undefined,
+    type: 'pta',
+    volgnummer: 303,
+  }),
+  exam('nat-w4-2025-2026', TEN_BY_TEN, {
+    weging: 0,
+    weging_se: 0,
+    type: 'regular',
+    volgnummer: 304,
+  }),
+  exam('nat-w5-2025-2026', TEN_BY_TEN, {
+    weging: undefined,
+    weging_se: undefined,
+    type: 'pta',
+    volgnummer: 305,
+  }),
+  exam('nat-w1-herkansing-2025-2026', TEN_BY_TEN, {
+    parent_id: 'nat-w1-2025-2026',
+    attempt: 2,
+    weging: 5,
+    type: 'pta',
+    volgnummer: 301,
+  }),
+  exam('nat-w6-2025-2026', TEN_BY_TEN, {
+    weging: '2',
+    weging_se: '0',
+    type: 'pta',
+    volgnummer: 306,
+  }),
 ];
-const PREV_EXAM = exam('nat-v1-2024-2025', TEN_BY_TEN, { jaarlaag: '2', weging: 1, weging_se: 2, type: 'pta', volgnummer: 201 });
+const PREV_EXAM = exam('nat-v1-2024-2025', TEN_BY_TEN, {
+  jaarlaag: '2',
+  weging: 1,
+  weging_se: 2,
+  type: 'pta',
+  volgnummer: 201,
+});
 
 const STUDENTS = {
-  1: { 'nat-w1-2025-2026': g(4), 'nat-w1-herkansing-2025-2026': g(7), 'nat-w2-2025-2026': g(6), 'nat-w3-2025-2026': g(8), 'nat-w4-2025-2026': g(10) },
+  1: {
+    'nat-w1-2025-2026': g(4),
+    'nat-w1-herkansing-2025-2026': g(7),
+    'nat-w2-2025-2026': g(6),
+    'nat-w3-2025-2026': g(8),
+    'nat-w4-2025-2026': g(10),
+  },
   2: { 'nat-w5-2025-2026': g(5.5), 'nat-w6-2025-2026': g(9) },
   3: { 'nat-w1-herkansing-2025-2026': g(6) },
   4: {},
@@ -40,7 +78,9 @@ function spec() {
       [YEAR]: {
         students: Object.keys(STUDENTS).map((id) => student(Number(id))),
         exams: EXAMS.map((e) => JSON.parse(JSON.stringify(e))),
-        groups: [{ id: 'g1', name: '3a nat', jaarlaag: '3', subject: 'nat', student_ids: [1, 2, 3, 4, 5] }],
+        groups: [
+          { id: 'g1', name: '3a nat', jaarlaag: '3', subject: 'nat', student_ids: [1, 2, 3, 4, 5] },
+        ],
         scores: { nat: recs },
       },
       [PREV]: {
@@ -60,9 +100,13 @@ export default async function averages() {
     const { Store } = s;
     await Store.loadYear(PREV, 'nat');
     const exams = Store.getExamsSync(YEAR);
-    const profiel = bindFunctions([extractFunction(PROFIEL, 'yearAvg'), extractFunction(PROFIEL, 'ptaAvg')], { Store });
+    const profiel = bindFunctions(
+      [extractFunction(PROFIEL, 'yearAvg'), extractFunction(PROFIEL, 'ptaAvg')],
+      { Store },
+    );
     const scoreMap = {};
-    for (const id of Object.keys(STUDENTS)) scoreMap[id] = await Store.getStudentScores(Number(id), YEAR);
+    for (const id of Object.keys(STUDENTS))
+      scoreMap[id] = await Store.getStudentScores(Number(id), YEAR);
     const dossier = extractSnippet(GL, {
       start: 57,
       end: 71,
@@ -73,7 +117,9 @@ export default async function averages() {
     });
     dossier.source = dossier.source.replace(/^function /, 'async function ');
     const gl = bindFunctions(
-      ['studentGrade', 'bestGradeForFamily', 'calcWeightedAvg'].map((n) => extractFunction(GL, n)).concat([dossier]),
+      ['studentGrade', 'bestGradeForFamily', 'calcWeightedAvg']
+        .map((n) => extractFunction(GL, n))
+        .concat([dossier]),
       { Store, scoreMap },
     );
     suite.ref(profiel.refs, gl.refs);
@@ -92,21 +138,51 @@ export default async function averages() {
         .filter((e) => !e.parent_id)
         .map((e) => ({ grade: gl.fns.studentGrade(st, e), weging: e.weging_se ?? e.weging }));
       const fam = gl.fns.bestGradeForFamily(st, family);
-      suite.add(`student-${id}`, 'BR 6.3, 11.30', { studentId: sid }, {
-        yearAvg: profiel.fns.yearAvg(exams, scoreMap[id]),
-        ptaAvg: profiel.fns.ptaAvg(best),
-        ptaAvgRawHistory: profiel.fns.ptaAvg(history),
-        bestGradeForFamily: { exam: fam.exam?.id ?? null, grade: fam.grade },
-        calcWeightedAvg: gl.fns.calcWeightedAvg(pairs),
-      });
+      suite.add(
+        `student-${id}`,
+        'BR 6.3, 11.30',
+        { studentId: sid },
+        {
+          yearAvg: profiel.fns.yearAvg(exams, scoreMap[id]),
+          ptaAvg: profiel.fns.ptaAvg(best),
+          ptaAvgRawHistory: profiel.fns.ptaAvg(history),
+          bestGradeForFamily: { exam: fam.exam?.id ?? null, grade: fam.grade },
+          calcWeightedAvg: gl.fns.calcWeightedAvg(pairs),
+        },
+      );
     }
     suite.add(
       'calcWeightedAvg-direct',
       'BR 6.3',
-      { pairs: [[{ grade: 6, weging: 1 }, { grade: 8, weging: 2 }], [{ grade: null, weging: 1 }], [{ grade: 7, weging: 0 }], [{ grade: 7 }, { grade: 5, weging: '3' }], []] },
-      [[{ grade: 6, weging: 1 }, { grade: 8, weging: 2 }], [{ grade: null, weging: 1 }], [{ grade: 7, weging: 0 }], [{ grade: 7 }, { grade: 5, weging: '3' }], []].map((p) => gl.fns.calcWeightedAvg(p)),
+      {
+        pairs: [
+          [
+            { grade: 6, weging: 1 },
+            { grade: 8, weging: 2 },
+          ],
+          [{ grade: null, weging: 1 }],
+          [{ grade: 7, weging: 0 }],
+          [{ grade: 7 }, { grade: 5, weging: '3' }],
+          [],
+        ],
+      },
+      [
+        [
+          { grade: 6, weging: 1 },
+          { grade: 8, weging: 2 },
+        ],
+        [{ grade: null, weging: 1 }],
+        [{ grade: 7, weging: 0 }],
+        [{ grade: 7 }, { grade: 5, weging: '3' }],
+        [],
+      ].map((p) => gl.fns.calcWeightedAvg(p)),
     );
-    suite.add('dossierAverages', 'BR 6.3', { students: Object.keys(STUDENTS).map(Number) }, await gl.fns.dossierAverages(Object.keys(STUDENTS).map((id) => student(Number(id)))));
+    suite.add(
+      'dossierAverages',
+      'BR 6.3',
+      { students: Object.keys(STUDENTS).map(Number) },
+      await gl.fns.dossierAverages(Object.keys(STUDENTS).map((id) => student(Number(id)))),
+    );
   } finally {
     s.dispose();
   }

@@ -49,7 +49,10 @@ const STUDENTS = {
     scores: { [parent.id]: g(3), [resit.id]: g(4), [inhaal.id]: { q1: 4, q2: 3 } },
   },
   7: { why: 'no attempts at all', scores: {} },
-  8: { why: 'only resits, both graded', scores: { [resit.id]: g(5), [inhaal.id]: { q1: 5, q2: 5 } } },
+  8: {
+    why: 'only resits, both graded',
+    scores: { [resit.id]: g(5), [inhaal.id]: { q1: 5, q2: 5 } },
+  },
   9: {
     why: 'override only on the resit',
     scores: { [parent.id]: g(5) },
@@ -62,7 +65,11 @@ function spec() {
   const students = Object.keys(STUDENTS).map((id) => student(Number(id)));
   const scores = {};
   for (const [id, s] of Object.entries(STUDENTS)) {
-    scores[id] = { scores: s.scores, observations: {}, ...(s.overrides ? { overrides: s.overrides } : {}) };
+    scores[id] = {
+      scores: s.scores,
+      observations: {},
+      ...(s.overrides ? { overrides: s.overrides } : {}),
+    };
   }
   return {
     years: {

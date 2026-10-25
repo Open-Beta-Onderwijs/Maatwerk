@@ -31,26 +31,89 @@ export default async function scoregrid() {
     const { fns, refs } = bindFunctions(defs, { Store });
     suite.ref(refs);
 
-    const inputs = ['', '  ', 'n', 'N', ' n ', '1,5', '1.5', ' 2 ', '1,5,0', '0x1', '1e0', '-0', '-1', '2', '2.0', '2,25', '3', 'abc', '½', '0', null, undefined, 1.5, 0.1];
+    const inputs = [
+      '',
+      '  ',
+      'n',
+      'N',
+      ' n ',
+      '1,5',
+      '1.5',
+      ' 2 ',
+      '1,5,0',
+      '0x1',
+      '1e0',
+      '-0',
+      '-1',
+      '2',
+      '2.0',
+      '2,25',
+      '3',
+      'abc',
+      '½',
+      '0',
+      null,
+      undefined,
+      1.5,
+      0.1,
+    ];
     suite.add(
       'normalizeScore',
       'BR 2.1, 11.16 (q.max_points = 2)',
       { inputs },
-      inputs.map((i) => ({ parseScoreNum: fns.parseScoreNum(i), normalizeScore: fns.normalizeScore(i, { max_points: 2 }) })),
+      inputs.map((i) => ({
+        parseScoreNum: fns.parseScoreNum(i),
+        normalizeScore: fns.normalizeScore(i, { max_points: 2 }),
+      })),
     );
     const zeroMax = ['0', '0,5', 'N', ''];
-    suite.add('normalizeScore-max-0', 'BR 11.15', { inputs: zeroMax }, zeroMax.map((i) => fns.normalizeScore(i, { max_points: 0 })));
+    suite.add(
+      'normalizeScore-max-0',
+      'BR 11.15',
+      { inputs: zeroMax },
+      zeroMax.map((i) => fns.normalizeScore(i, { max_points: 0 })),
+    );
 
-    const grades = ['6,25', '6,24', '10,04', '10', '1', '0,9', '10,1', '1,04', '5.45', '', 'abc', ' 7 ', '6,35'];
-    suite.add('parseGradeInput', 'BR 3.3, 11.21', { inputs: grades }, grades.map((g) => fns.parseGradeInput(g)));
+    const grades = [
+      '6,25',
+      '6,24',
+      '10,04',
+      '10',
+      '1',
+      '0,9',
+      '10,1',
+      '1,04',
+      '5.45',
+      '',
+      'abc',
+      ' 7 ',
+      '6,35',
+    ];
+    suite.add(
+      'parseGradeInput',
+      'BR 3.3, 11.21',
+      { inputs: grades },
+      grades.map((g) => fns.parseGradeInput(g)),
+    );
     const pairs = [
       [undefined, undefined],
-      [{ cijfer: 6, berekend: 5.4 }, { cijfer: 6, berekend: 5.4 }],
+      [
+        { cijfer: 6, berekend: 5.4 },
+        { cijfer: 6, berekend: 5.4 },
+      ],
       [{ cijfer: 6 }, { cijfer: 6, berekend: null }],
-      [{ cijfer: 6, berekend: 5.4 }, { cijfer: 6, berekend: 5.5 }],
+      [
+        { cijfer: 6, berekend: 5.4 },
+        { cijfer: 6, berekend: 5.5 },
+      ],
       [null, { cijfer: null, berekend: null }],
     ];
-    suite.add('sameOverride', 'BR 3.3', { pairs }, pairs.map(([a, b]) => fns.sameOverride(a, b)));
+    suite.add(
+      'sameOverride',
+      'BR 3.3',
+      { pairs },
+      pairs.map(([a, b]) => fns.sameOverride(a, b)),
+    );
 
     // computeRowStatus is nested in createGroupHOT; gridData and exam are its free variables.
     const statusExam = makeExam([
@@ -70,7 +133,10 @@ export default async function scoregrid() {
       ['8', 'H', '-1', '1', '1'],
       ['9', 'I', '1,5', '2,5', '0,5'],
     ];
-    const status = bindFunctions([extractFunction(SCORES, 'computeRowStatus'), defs[0]], { gridData: rows, exam: statusExam });
+    const status = bindFunctions([extractFunction(SCORES, 'computeRowStatus'), defs[0]], {
+      gridData: rows,
+      exam: statusExam,
+    });
     suite.ref(status.refs);
     suite.add(
       'computeRowStatus',
@@ -117,7 +183,12 @@ export default async function scoregrid() {
       const summaryIdx = cells.length;
       for (let r = 0; r < summaryIdx; r++) fns.recomputeRow(grid, exam, r, O);
       fns.recomputeSummaryRow(grid, summaryIdx, summaryIdx + 1, exam, O);
-      suite.add(`grid-O${O}`, 'BR 2, 11.31', { exam, cells, overrides: grid.overrides, O }, { rows: [...grid], gradeInfo: grid.gradeInfo });
+      suite.add(
+        `grid-O${O}`,
+        'BR 2, 11.31',
+        { exam, cells, overrides: grid.overrides, O },
+        { rows: [...grid], gradeInfo: grid.gradeInfo },
+      );
     }
     // One graded row: SD row behaviour for n = 1, and no stdIdx.
     {
@@ -139,11 +210,20 @@ export default async function scoregrid() {
     const spin = values.map((v) => {
       const sp = { dataset: {} };
       const inp = { value: '' };
-      const { fns: f } = bindFunctions([extractFunction(SPIN, 'set')], { step: 0.1, min: 0, max: 3, dec: 1, sp, inp });
+      const { fns: f } = bindFunctions([extractFunction(SPIN, 'set')], {
+        step: 0.1,
+        min: 0,
+        max: 3,
+        dec: 1,
+        sp,
+        inp,
+      });
       f.set(v);
       return { val: sp.dataset.val, shown: inp.value };
     });
-    suite.ref(`${SPIN}:${extractFunction(SPIN, 'set').start}-${extractFunction(SPIN, 'set').end} set`);
+    suite.ref(
+      `${SPIN}:${extractFunction(SPIN, 'set').start}-${extractFunction(SPIN, 'set').end} set`,
+    );
     suite.add('nterm-spinner', 'BR 2.4, 11.5 (step 0.1, min 0, max 3)', { values }, spin);
 
     // "Cijfer onder" threshold input (inline in a change listener).
@@ -169,10 +249,15 @@ export default async function scoregrid() {
         year: null,
       });
       const state = { cijfer: [{ id: 'c1', onder: 5.5, opdrachten: [] }] };
-      const r = await capture(() => f.cijferOnder(state, { value: v, dataset: { card: 'c1' }, blur() {} }));
+      const r = await capture(() =>
+        f.cijferOnder(state, { value: v, dataset: { card: 'c1' }, blur() {} }),
+      );
       out.push({ ...r, toasts: toastCalls });
     }
-    suite.ref(`${OG}:${og.start}-${og.end} case og-cijfer-onder`, `${OG}:${fmtOnder.start}-${fmtOnder.end} fmtOnder`);
+    suite.ref(
+      `${OG}:${og.start}-${og.end} case og-cijfer-onder`,
+      `${OG}:${fmtOnder.start}-${fmtOnder.end} fmtOnder`,
+    );
     suite.add('cijfer-onder-input', 'BR 7.4, 11.36', { typed, startOnder: 5.5 }, out);
   } finally {
     s.dispose();

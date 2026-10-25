@@ -8,7 +8,11 @@ Step 2 (safety net on the old app), sub-step 2a. User said to proceed on 2026-10
 
 ## Done since last tag
 
-- (nothing yet)
+- 2a.1 Harness `tests/reference-harness/` (real main.js handlers + preload + Store in Node, acorn
+  function/snippet extraction, frozen clock, TZ Europe/Amsterdam, nl-NL default collation).
+- 2a.2 `tools/fixtures/generate.mjs` (`tiny`, `school`), hashes in `tools/fixtures/manifest.json`.
+- 2a.3 Logic goldens `tests/golden/logic/*.json` (11 suites, 143 cases) from
+  `npm run golden:regen`; `npm run golden:check` and `tests/golden/logic.test.mjs` re-run them.
 
 ## Step 1 summary
 
@@ -43,7 +47,7 @@ deps `acorn`, `acorn-walk` (MIT).
 
 ## Next action (concrete, resumable)
 
-1. Sub-task 1 above (harness skeleton).
+1. Sub-task 4: storage/sync spec (`tools/reference-shims/`, `docs/specs/storage-spec.md`).
 
 ## Open questions for the user
 

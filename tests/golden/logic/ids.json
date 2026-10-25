@@ -1,0 +1,762 @@
+{
+  "format": 1,
+  "suite": "ids",
+  "description": "Ids, slugs, names, school year and exam sequence numbers.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/store.js:116-123 saveEntity",
+      "renderer/store.js:232-239 subjectFromGroupName",
+      "renderer/store.js:246-267 parseGroupName",
+      "renderer/store.js:369-373 currentSchoolYear",
+      "renderer/store.js:376-380 fullName",
+      "renderer/store.js:382-385 jaarlaagFromStamklas",
+      "renderer/store.js:387-398 sortStudents",
+      "renderer/store.js:519-546 upsertExam",
+      "renderer/store.js:757-763 makeExamId",
+      "renderer/store.js:765-774 makeGroupId",
+      "renderer/store.js:90-102 stampMeta"
+    ]
+  },
+  "cases": [
+    {
+      "id": "makeExamId",
+      "rule": "DF ids, BR 11.47",
+      "input": {
+        "titles": [
+          "Toets H1 Krachten & Énergie",
+          "  --Spaties--  ",
+          "ÄÖÜ",
+          "",
+          "SE 2: H3/H4",
+          "Toets — INHAAL",
+          "a_b.c"
+        ],
+        "years": [
+          "2025-2026",
+          "2025/2026"
+        ],
+        "subjects": [
+          {
+            "$undefined": true
+          },
+          "wi"
+        ]
+      },
+      "output": [
+        "nat-toets-h1-krachten-nergie-2025-2026",
+        "wi-toets-h1-krachten-nergie-2025-2026",
+        "nat-toets-h1-krachten-nergie-2025-2026",
+        "wi-toets-h1-krachten-nergie-2025-2026",
+        "nat-spaties-2025-2026",
+        "wi-spaties-2025-2026",
+        "nat-spaties-2025-2026",
+        "wi-spaties-2025-2026",
+        "nat--2025-2026",
+        "wi--2025-2026",
+        "nat--2025-2026",
+        "wi--2025-2026",
+        "nat--2025-2026",
+        "wi--2025-2026",
+        "nat--2025-2026",
+        "wi--2025-2026",
+        "nat-se-2-h3-h4-2025-2026",
+        "wi-se-2-h3-h4-2025-2026",
+        "nat-se-2-h3-h4-2025-2026",
+        "wi-se-2-h3-h4-2025-2026",
+        "nat-toets-inhaal-2025-2026",
+        "wi-toets-inhaal-2025-2026",
+        "nat-toets-inhaal-2025-2026",
+        "wi-toets-inhaal-2025-2026",
+        "nat-a-b-c-2025-2026",
+        "wi-a-b-c-2025-2026",
+        "nat-a-b-c-2025-2026",
+        "wi-a-b-c-2025-2026"
+      ]
+    },
+    {
+      "id": "makeGroupId",
+      "rule": "DF ids",
+      "input": {
+        "names": [
+          "3a nat",
+          "3A-NAT",
+          "Groep ü 1",
+          "",
+          "4 wisB cluster"
+        ],
+        "years": [
+          "2025-2026",
+          "2025/2026"
+        ]
+      },
+      "output": [
+        "3a-nat-2025-2026",
+        "3a-nat-2025-2026",
+        "3a-nat-2025-2026",
+        "3a-nat-2025-2026",
+        "groep-1-2025-2026",
+        "groep-1-2025-2026",
+        "-2025-2026",
+        "-2025-2026",
+        "4-wisb-cluster-2025-2026",
+        "4-wisb-cluster-2025-2026"
+      ]
+    },
+    {
+      "id": "currentSchoolYear",
+      "rule": "BR 10, 11.46 (local time Europe/Amsterdam)",
+      "input": {
+        "clocks": [
+          "2026-07-31T23:59:59",
+          "2026-08-01T00:00:00",
+          "2026-01-01T00:00:00",
+          "2025-12-31T23:59:59",
+          "2026-07-31T23:30:00Z"
+        ]
+      },
+      "output": [
+        "2025-2026",
+        "2026-2027",
+        "2025-2026",
+        "2025-2026",
+        "2026-2027"
+      ]
+    },
+    {
+      "id": "fullName",
+      "rule": "store.js fullName",
+      "input": {
+        "people": [
+          {
+            "voornaam": "Anna",
+            "tussenvoegsel": "van der",
+            "achternaam": "Berg"
+          },
+          {
+            "voornaam": "Anna",
+            "tussenvoegsel": "",
+            "achternaam": ""
+          },
+          {
+            "voornaam": "",
+            "tussenvoegsel": "de",
+            "achternaam": "Vries"
+          },
+          {
+            "id": 7,
+            "name": "Oude Naam"
+          },
+          {
+            "id": 8
+          },
+          {
+            "id": 9,
+            "voornaam": null,
+            "achternaam": {
+              "$undefined": true
+            }
+          }
+        ]
+      },
+      "output": [
+        "Anna van der Berg",
+        "Anna",
+        "de Vries",
+        "Oude Naam",
+        "#8",
+        "#9"
+      ]
+    },
+    {
+      "id": "jaarlaagFromStamklas",
+      "rule": "store.js",
+      "input": {
+        "klassen": [
+          "3a",
+          "10b",
+          "a3",
+          "",
+          null,
+          {
+            "$undefined": true
+          },
+          4,
+          "05c"
+        ]
+      },
+      "output": [
+        "3",
+        "10",
+        "",
+        "",
+        "",
+        "",
+        "4",
+        "05"
+      ]
+    },
+    {
+      "id": "sortStudents",
+      "rule": "store.js sortStudents (default locale pinned to nl-NL)",
+      "input": {
+        "list": [
+          {
+            "id": 1,
+            "stamklas": "10a",
+            "achternaam": "Zwart"
+          },
+          {
+            "id": 2,
+            "stamklas": "9b",
+            "achternaam": "Appel"
+          },
+          {
+            "id": 3,
+            "stamklas": "9a",
+            "achternaam": "Ösch"
+          },
+          {
+            "id": 4,
+            "stamklas": "9a",
+            "achternaam": "Oost"
+          },
+          {
+            "id": 5,
+            "stamklas": "9a",
+            "achternaam": "de Boer"
+          },
+          {
+            "id": 6,
+            "achternaam": "Geen"
+          },
+          {
+            "id": 7,
+            "stamklas": "9A",
+            "achternaam": "Hoofd"
+          }
+        ]
+      },
+      "output": [
+        6,
+        5,
+        4,
+        3,
+        7,
+        2,
+        1
+      ]
+    },
+    {
+      "id": "group-name-parsing",
+      "rule": "store.js subjectFromGroupName, parseGroupName",
+      "input": {
+        "names": [
+          "3a nat",
+          "4 biol",
+          "5 schk",
+          "2 wis",
+          "4 wisa",
+          "5 wisb",
+          "3 wiskunde",
+          "4awi",
+          "Natuur 4",
+          "geen",
+          "",
+          null
+        ]
+      },
+      "output": [
+        {
+          "subject": "nat",
+          "nat": {
+            "jaarlaag": "3",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "3",
+            "subcategory": "onderbouw"
+          }
+        },
+        {
+          "subject": "bio",
+          "nat": {
+            "jaarlaag": "4",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "4",
+            "subcategory": null
+          }
+        },
+        {
+          "subject": "schk",
+          "nat": {
+            "jaarlaag": "5",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "5",
+            "subcategory": null
+          }
+        },
+        {
+          "subject": "wi",
+          "nat": {
+            "jaarlaag": "2",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "2",
+            "subcategory": "onderbouw"
+          }
+        },
+        {
+          "subject": "wi",
+          "nat": {
+            "jaarlaag": "4",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "4",
+            "subcategory": "wisa"
+          }
+        },
+        {
+          "subject": "wi",
+          "nat": {
+            "jaarlaag": "5",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "5",
+            "subcategory": "wisb"
+          }
+        },
+        {
+          "subject": "wi",
+          "nat": {
+            "jaarlaag": "3",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "3",
+            "subcategory": "onderbouw"
+          }
+        },
+        {
+          "subject": "wi",
+          "nat": {
+            "jaarlaag": "4",
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": "4",
+            "subcategory": null
+          }
+        },
+        {
+          "subject": "nat",
+          "nat": {
+            "jaarlaag": null,
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": null,
+            "subcategory": null
+          }
+        },
+        {
+          "subject": null,
+          "nat": {
+            "jaarlaag": null,
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": null,
+            "subcategory": null
+          }
+        },
+        {
+          "subject": null,
+          "nat": {
+            "jaarlaag": null,
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": null,
+            "subcategory": null
+          }
+        },
+        {
+          "subject": null,
+          "nat": {
+            "jaarlaag": null,
+            "subcategory": null
+          },
+          "wi": {
+            "jaarlaag": null,
+            "subcategory": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "upsertExam-volgnummer-meta",
+      "rule": "BR 10, 11.47, DF _meta",
+      "input": {
+        "existing": [
+          {
+            "id": "nat-a-2025-2026",
+            "title": "nat-a-2025-2026",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": 401
+          },
+          {
+            "id": "nat-b-2025-2026",
+            "title": "nat-b-2025-2026",
+            "jaarlaag": 4,
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": 402
+          },
+          {
+            "id": "nat-c-2025-2026",
+            "title": "nat-c-2025-2026",
+            "jaarlaag": "5",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": 599
+          },
+          {
+            "id": "bio-d-2025-2026",
+            "title": "bio-d-2025-2026",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "bio",
+            "volgnummer": 410
+          }
+        ],
+        "fresh": [
+          {
+            "id": "nat-nieuw-4-2025-2026",
+            "title": "nat-nieuw-4-2025-2026",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": {
+              "$undefined": true
+            }
+          },
+          {
+            "id": "nat-nieuw-5-2025-2026",
+            "title": "nat-nieuw-5-2025-2026",
+            "jaarlaag": "5",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": {
+              "$undefined": true
+            }
+          },
+          {
+            "id": "nat-nieuw-6-2025-2026",
+            "title": "nat-nieuw-6-2025-2026",
+            "jaarlaag": "6",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": {
+              "$undefined": true
+            }
+          },
+          {
+            "id": "nat-nieuw-x-2025-2026",
+            "title": "nat-nieuw-x-2025-2026",
+            "jaarlaag": "x",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": {
+              "$undefined": true
+            }
+          },
+          {
+            "id": "nat-nieuw-vast-2025-2026",
+            "title": "nat-nieuw-vast-2025-2026",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": 777
+          },
+          {
+            "id": "nat-a-2025-2026",
+            "title": "Gewijzigd",
+            "jaarlaag": "4",
+            "schoolsoort": [
+              "Havo"
+            ],
+            "n_term": 1,
+            "weging": 1,
+            "weging_se": 1,
+            "periode": "1",
+            "type": "regular",
+            "structureMode": "roman",
+            "questions": [
+              {
+                "id": "q1",
+                "section": "I",
+                "number": 1,
+                "max_points": 2,
+                "rtti": "R"
+              }
+            ],
+            "obs_ids": [],
+            "subject": "nat",
+            "volgnummer": {
+              "$undefined": true
+            }
+          }
+        ],
+        "now": "2026-03-02T10:00:00"
+      },
+      "output": [
+        {
+          "id": "nat-nieuw-4-2025-2026",
+          "volgnummer": 403,
+          "title": "nat-nieuw-4-2025-2026",
+          "_meta": {
+            "rev": 1,
+            "createdBy": "gebr-1756713600001",
+            "createdAt": "2026-03-02T09:00:00.000Z",
+            "updatedBy": "gebr-1756713600001",
+            "updatedAt": "2026-03-02T09:00:00.000Z"
+          }
+        },
+        {
+          "id": "nat-nieuw-5-2025-2026",
+          "volgnummer": 600,
+          "title": "nat-nieuw-5-2025-2026",
+          "_meta": {
+            "rev": 1,
+            "createdBy": "gebr-1756713600001",
+            "createdAt": "2026-03-02T09:00:00.000Z",
+            "updatedBy": "gebr-1756713600001",
+            "updatedAt": "2026-03-02T09:00:00.000Z"
+          }
+        },
+        {
+          "id": "nat-nieuw-6-2025-2026",
+          "volgnummer": 601,
+          "title": "nat-nieuw-6-2025-2026",
+          "_meta": {
+            "rev": 1,
+            "createdBy": "gebr-1756713600001",
+            "createdAt": "2026-03-02T09:00:00.000Z",
+            "updatedBy": "gebr-1756713600001",
+            "updatedAt": "2026-03-02T09:00:00.000Z"
+          }
+        },
+        {
+          "id": "nat-nieuw-x-2025-2026",
+          "volgnummer": {
+            "$undefined": true
+          },
+          "title": "nat-nieuw-x-2025-2026",
+          "_meta": {
+            "rev": 1,
+            "createdBy": "gebr-1756713600001",
+            "createdAt": "2026-03-02T09:00:00.000Z",
+            "updatedBy": "gebr-1756713600001",
+            "updatedAt": "2026-03-02T09:00:00.000Z"
+          }
+        },
+        {
+          "id": "nat-nieuw-vast-2025-2026",
+          "volgnummer": 777,
+          "title": "nat-nieuw-vast-2025-2026",
+          "_meta": {
+            "rev": 1,
+            "createdBy": "gebr-1756713600001",
+            "createdAt": "2026-03-02T09:00:00.000Z",
+            "updatedBy": "gebr-1756713600001",
+            "updatedAt": "2026-03-02T09:00:00.000Z"
+          }
+        },
+        {
+          "id": "nat-a-2025-2026",
+          "volgnummer": 401,
+          "title": "Gewijzigd",
+          "_meta": {
+            "rev": 1,
+            "createdBy": null,
+            "createdAt": null,
+            "updatedBy": "gebr-1756713600001",
+            "updatedAt": "2026-03-02T09:00:00.000Z"
+          }
+        }
+      ]
+    }
+  ]
+}

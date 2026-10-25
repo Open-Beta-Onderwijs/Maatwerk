@@ -1,0 +1,501 @@
+{
+  "format": 1,
+  "suite": "display",
+  "description": "Grade formatting, pass/fail and colour scales.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/app.js:363-366 formatGrade",
+      "renderer/utils/colors.js:13-19 hexToRgb",
+      "renderer/utils/colors.js:21-25 lerpColor",
+      "renderer/utils/colors.js:27-34 stdDevGradeColor",
+      "renderer/utils/colors.js:38-40 isFail",
+      "renderer/utils/colors.js:42-48 gradeColor",
+      "renderer/utils/colors.js:50-58 rttiPctColor",
+      "renderer/utils/colors.js:7-11 examTypeColor",
+      "renderer/utils/grades.js:19-21 gradeChartColor",
+      "renderer/utils/grades.js:24-28 gradeTextColor",
+      "renderer/utils/grades.js:30-34 gradeBorderColor",
+      "renderer/utils/grades.js:37-45 gradeCell",
+      "renderer/utils/grades.js:48-56 gradeStatHtml",
+      "renderer/utils/grades.js:6-6 GRADE_GROUP_LABELS",
+      "renderer/utils/grades.js:7-7 GRADE_GROUP_MIDPOINTS",
+      "renderer/utils/grades.js:9-16 gradeGroupIdx"
+    ]
+  },
+  "cases": [
+    {
+      "id": "grade-boundaries",
+      "rule": "BR 3.4, 11.18-19",
+      "input": {
+        "grades": [
+          null,
+          {
+            "$undefined": true
+          },
+          1,
+          1.04,
+          1.05,
+          5.4,
+          5.44,
+          5.449999,
+          5.45,
+          5.450001,
+          5.46,
+          5.5,
+          5.55,
+          5.549999,
+          6.25,
+          6.35,
+          6.45,
+          7.075,
+          8.649999999999999,
+          9.95,
+          9.99,
+          10,
+          0.95,
+          4.15
+        ]
+      },
+      "output": [
+        {
+          "formatGrade": "—",
+          "isFail": null,
+          "toFixed1": null,
+          "gradeGroupIdx": null,
+          "gradeChartColor": null,
+          "gradeTextColor": "#aaa",
+          "gradeBorderColor": "#ddd",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #ddd;\n        border-radius:4px;font-size:12px;font-weight:500;color:#aaa\">—</span></td>"
+        },
+        {
+          "formatGrade": "—",
+          "isFail": null,
+          "toFixed1": null,
+          "gradeGroupIdx": null,
+          "gradeChartColor": null,
+          "gradeTextColor": "rgb(NaN,NaN,NaN)",
+          "gradeBorderColor": "rgb(NaN,NaN,NaN)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(NaN,NaN,NaN);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(NaN,NaN,NaN)\">—</span></td>"
+        },
+        {
+          "formatGrade": "1,0",
+          "isFail": true,
+          "toFixed1": "1.0",
+          "gradeGroupIdx": 0,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">1,0</span></td>"
+        },
+        {
+          "formatGrade": "1,0",
+          "isFail": true,
+          "toFixed1": "1.0",
+          "gradeGroupIdx": 0,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">1,0</span></td>"
+        },
+        {
+          "formatGrade": "1,1",
+          "isFail": true,
+          "toFixed1": "1.1",
+          "gradeGroupIdx": 0,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">1,1</span></td>"
+        },
+        {
+          "formatGrade": "5,4",
+          "isFail": true,
+          "toFixed1": "5.4",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">5,4</span></td>"
+        },
+        {
+          "formatGrade": "5,4",
+          "isFail": true,
+          "toFixed1": "5.4",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">5,4</span></td>"
+        },
+        {
+          "formatGrade": "5,4",
+          "isFail": true,
+          "toFixed1": "5.4",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">5,4</span></td>"
+        },
+        {
+          "formatGrade": "5,5",
+          "isFail": false,
+          "toFixed1": "5.5",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "rgb(257,213,79)",
+          "gradeTextColor": "rgb(186,134,11)",
+          "gradeBorderColor": "rgb(257,213,79)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(257,213,79);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(186,134,11)\">5,5</span></td>"
+        },
+        {
+          "formatGrade": "5,5",
+          "isFail": false,
+          "toFixed1": "5.5",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "rgb(257,213,79)",
+          "gradeTextColor": "rgb(186,134,11)",
+          "gradeBorderColor": "rgb(257,213,79)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(257,213,79);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(186,134,11)\">5,5</span></td>"
+        },
+        {
+          "formatGrade": "5,5",
+          "isFail": false,
+          "toFixed1": "5.5",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "rgb(256,213,79)",
+          "gradeTextColor": "rgb(185,134,11)",
+          "gradeBorderColor": "rgb(256,213,79)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(256,213,79);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(185,134,11)\">5,5</span></td>"
+        },
+        {
+          "formatGrade": "5,5",
+          "isFail": false,
+          "toFixed1": "5.5",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "rgb(255,213,79)",
+          "gradeTextColor": "rgb(184,134,11)",
+          "gradeBorderColor": "rgb(255,213,79)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(255,213,79);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(184,134,11)\">5,5</span></td>"
+        },
+        {
+          "formatGrade": "5,6",
+          "isFail": false,
+          "toFixed1": "5.5",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "rgb(253,213,79)",
+          "gradeTextColor": "rgb(182,134,11)",
+          "gradeBorderColor": "rgb(253,213,79)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(253,213,79);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(182,134,11)\">5,6</span></td>"
+        },
+        {
+          "formatGrade": "5,5",
+          "isFail": false,
+          "toFixed1": "5.5",
+          "gradeGroupIdx": 2,
+          "gradeChartColor": "rgb(253,213,79)",
+          "gradeTextColor": "rgb(182,134,11)",
+          "gradeBorderColor": "rgb(253,213,79)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(253,213,79);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(182,134,11)\">5,5</span></td>"
+        },
+        {
+          "formatGrade": "6,3",
+          "isFail": false,
+          "toFixed1": "6.3",
+          "gradeGroupIdx": 3,
+          "gradeChartColor": "rgb(230,209,84)",
+          "gradeTextColor": "rgb(161,133,18)",
+          "gradeBorderColor": "rgb(230,209,84)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(230,209,84);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(161,133,18)\">6,3</span></td>"
+        },
+        {
+          "formatGrade": "6,4",
+          "isFail": false,
+          "toFixed1": "6.3",
+          "gradeGroupIdx": 3,
+          "gradeChartColor": "rgb(226,208,84)",
+          "gradeTextColor": "rgb(158,132,18)",
+          "gradeBorderColor": "rgb(226,208,84)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(226,208,84);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(158,132,18)\">6,4</span></td>"
+        },
+        {
+          "formatGrade": "6,5",
+          "isFail": false,
+          "toFixed1": "6.5",
+          "gradeGroupIdx": 3,
+          "gradeChartColor": "rgb(223,208,85)",
+          "gradeTextColor": "rgb(155,132,19)",
+          "gradeBorderColor": "rgb(223,208,85)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(223,208,85);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(155,132,19)\">6,5</span></td>"
+        },
+        {
+          "formatGrade": "7,1",
+          "isFail": false,
+          "toFixed1": "7.1",
+          "gradeGroupIdx": 4,
+          "gradeChartColor": "rgb(201,204,88)",
+          "gradeTextColor": "rgb(136,131,25)",
+          "gradeBorderColor": "rgb(201,204,88)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(201,204,88);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(136,131,25)\">7,1</span></td>"
+        },
+        {
+          "formatGrade": "8,6",
+          "isFail": false,
+          "toFixed1": "8.6",
+          "gradeGroupIdx": 5,
+          "gradeChartColor": "rgb(148,195,98)",
+          "gradeTextColor": "rgb(87,128,38)",
+          "gradeBorderColor": "rgb(148,195,98)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(148,195,98);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(87,128,38)\">8,6</span></td>"
+        },
+        {
+          "formatGrade": "10,0",
+          "isFail": false,
+          "toFixed1": "9.9",
+          "gradeGroupIdx": 5,
+          "gradeChartColor": "rgb(104,187,106)",
+          "gradeTextColor": "rgb(48,125,50)",
+          "gradeBorderColor": "rgb(104,187,106)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(104,187,106);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(48,125,50)\">10,0</span></td>"
+        },
+        {
+          "formatGrade": "10,0",
+          "isFail": false,
+          "toFixed1": "10.0",
+          "gradeGroupIdx": 5,
+          "gradeChartColor": "rgb(102,187,106)",
+          "gradeTextColor": "rgb(46,125,50)",
+          "gradeBorderColor": "rgb(102,187,106)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(102,187,106);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(46,125,50)\">10,0</span></td>"
+        },
+        {
+          "formatGrade": "10,0",
+          "isFail": false,
+          "toFixed1": "10.0",
+          "gradeGroupIdx": 5,
+          "gradeChartColor": "rgb(102,187,106)",
+          "gradeTextColor": "rgb(46,125,50)",
+          "gradeBorderColor": "rgb(102,187,106)",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid rgb(102,187,106);\n        border-radius:4px;font-size:12px;font-weight:500;color:rgb(46,125,50)\">10,0</span></td>"
+        },
+        {
+          "formatGrade": "1,0",
+          "isFail": true,
+          "toFixed1": "0.9",
+          "gradeGroupIdx": 0,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">1,0</span></td>"
+        },
+        {
+          "formatGrade": "4,2",
+          "isFail": true,
+          "toFixed1": "4.2",
+          "gradeGroupIdx": 1,
+          "gradeChartColor": "#e57373",
+          "gradeTextColor": "#c0392b",
+          "gradeBorderColor": "#e57373",
+          "gradeCell": "<td style=\"text-align:center;padding:3px 4px\">\n      <span style=\"display:inline-block;min-width:34px;padding:1px 5px;border:2px solid #e57373;\n        border-radius:4px;font-size:12px;font-weight:bold;color:#c0392b\">4,2</span></td>"
+        }
+      ]
+    },
+    {
+      "id": "gradeColor",
+      "rule": "BR 3.4",
+      "input": {
+        "gradeStrs": [
+          "",
+          "—",
+          "abc",
+          "1,0",
+          "5,4",
+          "5,5",
+          "7,3",
+          "10,0",
+          "11,0",
+          "5.5"
+        ]
+      },
+      "output": [
+        null,
+        null,
+        null,
+        "#f8d7da",
+        "#f8d7da",
+        "rgb(255,243,205)",
+        "rgb(231,238,204)",
+        "rgb(195,230,203)",
+        "rgb(182,227,203)",
+        "rgb(255,243,205)"
+      ]
+    },
+    {
+      "id": "rttiPctColor",
+      "rule": "BR 4",
+      "input": {
+        "pcts": [
+          "",
+          "NVT",
+          "abc",
+          "0%",
+          "33%",
+          "50",
+          "67%",
+          "100%",
+          "120%",
+          "-5%"
+        ]
+      },
+      "output": [
+        null,
+        null,
+        null,
+        "rgb(248,215,218)",
+        "rgb(253,233,209)",
+        "rgb(255,243,205)",
+        "rgb(235,239,204)",
+        "rgb(195,230,203)",
+        "rgb(195,230,203)",
+        "rgb(248,215,218)"
+      ]
+    },
+    {
+      "id": "stdDevGradeColor",
+      "rule": "BR 6.1",
+      "input": {
+        "sds": [
+          "",
+          "abc",
+          "0,0",
+          "0.5",
+          "1,0",
+          "1,5",
+          "2,0",
+          "3,5"
+        ]
+      },
+      "output": [
+        null,
+        null,
+        "rgb(195,230,203)",
+        "rgb(225,237,204)",
+        "rgb(255,243,205)",
+        "rgb(252,229,212)",
+        "rgb(248,215,218)",
+        "rgb(248,215,218)"
+      ]
+    },
+    {
+      "id": "examTypeColor",
+      "rule": "colors.js",
+      "input": {
+        "types": [
+          "pta",
+          "po",
+          "regular",
+          {
+            "$undefined": true
+          }
+        ]
+      },
+      "output": [
+        "#d9534f",
+        "#f0ad4e",
+        "#4A90D9",
+        "#4A90D9"
+      ]
+    },
+    {
+      "id": "lerpColor",
+      "rule": "colors.js",
+      "input": {
+        "cases": [
+          [
+            "#000000",
+            "#ffffff",
+            0.5
+          ],
+          [
+            "#e57373",
+            "#66bb6a",
+            0
+          ],
+          [
+            "#e57373",
+            "#66bb6a",
+            1
+          ],
+          [
+            "#e57373",
+            "#66bb6a",
+            1.5
+          ],
+          [
+            "#e57373",
+            "#66bb6a",
+            -0.5
+          ]
+        ]
+      },
+      "output": [
+        "rgb(128,128,128)",
+        "rgb(229,115,115)",
+        "rgb(102,187,106)",
+        "rgb(39,223,102)",
+        "rgb(293,79,120)"
+      ]
+    },
+    {
+      "id": "gradeStatHtml",
+      "rule": "grades.js",
+      "input": {
+        "statInputs": [
+          {
+            "mean": 6.5,
+            "sd": 1.2,
+            "fails": 20
+          },
+          {
+            "mean": 5.45,
+            "sd": 0,
+            "fails": 100
+          },
+          {
+            "mean": 5.449999,
+            "sd": 2.25,
+            "fails": 50
+          }
+        ]
+      },
+      "output": [
+        "<span class=\"muted\" style=\"display:flex;align-items:center;gap:0\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" style=\"vertical-align:middle;margin:0 3px 0 0;flex-shrink:0\"><circle cx=\"5\" cy=\"5\" r=\"5\" fill=\"rgb(221,207,85)\"/></svg>6,5 ± 1,2 &nbsp;·&nbsp; 20% onvoldoende</span>",
+        "<span class=\"muted\" style=\"display:flex;align-items:center;gap:0\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" style=\"vertical-align:middle;margin:0 3px 0 0;flex-shrink:0\"><circle cx=\"5\" cy=\"5\" r=\"5\" fill=\"rgb(257,213,79)\"/></svg>5,5 ± 0,0 &nbsp;·&nbsp; 100% onvoldoende</span>",
+        "<span class=\"muted\" style=\"display:flex;align-items:center;gap:0\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" style=\"vertical-align:middle;margin:0 3px 0 0;flex-shrink:0\"><circle cx=\"5\" cy=\"5\" r=\"5\" fill=\"#e57373\"/></svg>5,4 ± 2,3 &nbsp;·&nbsp; 50% onvoldoende</span>"
+      ]
+    },
+    {
+      "id": "grade-groups",
+      "rule": "grades.js",
+      "input": null,
+      "output": {
+        "labels": [
+          "<4",
+          "4–5",
+          "5–6",
+          "6–7",
+          "7–8",
+          ">8"
+        ],
+        "midpoints": [
+          2.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          9
+        ]
+      }
+    }
+  ]
+}

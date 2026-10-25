@@ -7,3 +7,4 @@ src-tauri/gen/
 package-lock.json
 LICENSE
 PLAN.md
+tests/golden/

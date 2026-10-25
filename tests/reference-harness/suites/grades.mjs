@@ -41,11 +41,16 @@ const scoresOf = (values) =>
 
 export default async function grades() {
   const suite = new Suite('grades', 'Grade and RTTI calculation from question scores.');
-  suite.ref(['calcGrade', 'calcResults', 'examResults', 'qKind'].map((n) => refOf(extractFunction(STORE, n))));
+  suite.ref(
+    ['calcGrade', 'calcResults', 'examResults', 'qKind'].map((n) =>
+      refOf(extractFunction(STORE, n)),
+    ),
+  );
   const s = await openReference({ fixture: null, subject: 'nat' });
   try {
     const { Store } = s;
-    const calc = (exam, scores, override) => capture(() => Store.calcResults(exam, scores, override));
+    const calc = (exam, scores, override) =>
+      capture(() => Store.calcResults(exam, scores, override));
     const add = async (id, rule, exam, scores, override) =>
       suite.add(id, rule, { exam, scores, override }, await calc(exam, scores, override));
 
@@ -53,7 +58,8 @@ export default async function grades() {
     const sweep = [];
     for (const max of [1, 7, 20, 33]) {
       for (const n of [0, 0.5, 1, 1.3, 2, 2.5, 3, 3.5]) {
-        for (let scored = 0; scored <= max; scored += 0.5) sweep.push([scored, max, n, Store.calcGrade(scored, max, n)]);
+        for (let scored = 0; scored <= max; scored += 0.5)
+          sweep.push([scored, max, n, Store.calcGrade(scored, max, n)]);
       }
     }
     suite.add('calcGrade-sweep', 'BR 3.2', { columns: ['scored', 'max', 'nTerm', 'grade'] }, sweep);
@@ -65,7 +71,8 @@ export default async function grades() {
     await add('nterm-hi1', 'BR 11.3', makeExam(normal(10, 2), { n: 3 }), fill(18));
     await add('nterm-lo2', 'BR 11.4', makeExam(normal(10, 2), { n: 0 }), fill(1));
     await add('nterm-hi2', 'BR 11.4', makeExam(normal(10, 2), { n: 0 }), fill(18));
-    for (const S of [7, 13.5, 19.5]) await add(`nterm-1.3-S${S}`, 'BR 11.5', makeExam(normal(10, 2), { n: 1.3 }), fill(S));
+    for (const S of [7, 13.5, 19.5])
+      await add(`nterm-1.3-S${S}`, 'BR 11.5', makeExam(normal(10, 2), { n: 1.3 }), fill(S));
 
     const withBonus = makeExam([...normal(10, 2), [5, 'T2', 'bonus']]);
     await add('bonus-full-marks', 'BR 11.6', withBonus, { ...fill(18), q11: 3 });
@@ -77,21 +84,129 @@ export default async function grades() {
     const withDiag = makeExam([...normal(4, 2), [3, 'I', 'diag']]);
     await add('only-diag', 'BR 11.11', withDiag, { q5: 3 });
     await add('diag-and-normal', 'BR 3.1', withDiag, { q1: 2, q5: 1 });
-    await add('only-invalid', 'BR 11.12', makeExam([[10, 'R'], [2, 'T1']]), { q1: 12, q2: 'abc' });
-    await add('invalid-plus-valid', 'BR 11.12', makeExam([[10, 'R'], [2, 'T1']]), { q1: 'abc', q2: 2 });
-    await add('negative-score', 'BR 3.1', makeExam([[2, 'R'], [2, 'R']]), { q1: -1, q2: 1 });
+    await add(
+      'only-invalid',
+      'BR 11.12',
+      makeExam([
+        [10, 'R'],
+        [2, 'T1'],
+      ]),
+      { q1: 12, q2: 'abc' },
+    );
+    await add(
+      'invalid-plus-valid',
+      'BR 11.12',
+      makeExam([
+        [10, 'R'],
+        [2, 'T1'],
+      ]),
+      { q1: 'abc', q2: 2 },
+    );
+    await add(
+      'negative-score',
+      'BR 3.1',
+      makeExam([
+        [2, 'R'],
+        [2, 'R'],
+      ]),
+      { q1: -1, q2: 1 },
+    );
     await add('partial-entry', 'BR 11.13', twenty, { q1: 2, q2: 2, q3: 2 });
-    await add('only-bonus-diag-exam', 'BR 11.14', makeExam([[3, 'R', 'bonus'], [2, 'I', 'diag']]), { q1: 3 });
-    await add('only-bonus-diag-exam-override', 'BR 11.14', makeExam([[3, 'R', 'bonus'], [2, 'I', 'diag']]), { q1: 3 }, { cijfer: 7, berekend: null });
-    await add('max-points-0-zero', 'BR 11.15', makeExam([[0, 'R'], [2, 'T1']]), { q1: 0, q2: 1 });
-    await add('max-points-0-half', 'BR 11.15', makeExam([[0, 'R'], [2, 'T1']]), { q1: 0.5, q2: 1 });
-    await add('float-accumulation', 'BR 11.17', makeExam(normal(3, 0.3)), { q1: 0.1, q2: 0.2, q3: 0.3 });
-    await add('float-accumulation-full', 'BR 11.17', makeExam([[0.1, 'R'], [0.2, 'R']]), { q1: 0.1, q2: 0.2 });
-    await add('rtti-thirds', 'BR 11.20', makeExam([[3, 'R'], [3, 'T1'], [8, 'T2']]), { q1: 1, q2: 2, q3: 1 });
-    await add('rtti-half-percent', 'BR 11.20', makeExam([[8, 'R'], [8, 'T1'], [200, 'T2']]), { q1: 1, q2: 3, q3: 1 });
-    await add('string-numbers', 'BR 3.1', makeExam(normal(4, 2)), { q1: '1.5', q2: '1,5', q3: ' 2 ', q4: '' });
-    await add('unknown-rtti-tag', 'BR 11.48', makeExam([[2, undefined], [2, 'R']]), { q1: 1, q2: 1 });
-    await add('unknown-rtti-tag-unscored', 'BR 11.48', makeExam([[2, undefined], [2, 'R']]), { q2: 1 });
+    await add(
+      'only-bonus-diag-exam',
+      'BR 11.14',
+      makeExam([
+        [3, 'R', 'bonus'],
+        [2, 'I', 'diag'],
+      ]),
+      { q1: 3 },
+    );
+    await add(
+      'only-bonus-diag-exam-override',
+      'BR 11.14',
+      makeExam([
+        [3, 'R', 'bonus'],
+        [2, 'I', 'diag'],
+      ]),
+      { q1: 3 },
+      { cijfer: 7, berekend: null },
+    );
+    await add(
+      'max-points-0-zero',
+      'BR 11.15',
+      makeExam([
+        [0, 'R'],
+        [2, 'T1'],
+      ]),
+      { q1: 0, q2: 1 },
+    );
+    await add(
+      'max-points-0-half',
+      'BR 11.15',
+      makeExam([
+        [0, 'R'],
+        [2, 'T1'],
+      ]),
+      { q1: 0.5, q2: 1 },
+    );
+    await add('float-accumulation', 'BR 11.17', makeExam(normal(3, 0.3)), {
+      q1: 0.1,
+      q2: 0.2,
+      q3: 0.3,
+    });
+    await add(
+      'float-accumulation-full',
+      'BR 11.17',
+      makeExam([
+        [0.1, 'R'],
+        [0.2, 'R'],
+      ]),
+      { q1: 0.1, q2: 0.2 },
+    );
+    await add(
+      'rtti-thirds',
+      'BR 11.20',
+      makeExam([
+        [3, 'R'],
+        [3, 'T1'],
+        [8, 'T2'],
+      ]),
+      { q1: 1, q2: 2, q3: 1 },
+    );
+    await add(
+      'rtti-half-percent',
+      'BR 11.20',
+      makeExam([
+        [8, 'R'],
+        [8, 'T1'],
+        [200, 'T2'],
+      ]),
+      { q1: 1, q2: 3, q3: 1 },
+    );
+    await add('string-numbers', 'BR 3.1', makeExam(normal(4, 2)), {
+      q1: '1.5',
+      q2: '1,5',
+      q3: ' 2 ',
+      q4: '',
+    });
+    await add(
+      'unknown-rtti-tag',
+      'BR 11.48',
+      makeExam([
+        [2, undefined],
+        [2, 'R'],
+      ]),
+      { q1: 1, q2: 1 },
+    );
+    await add(
+      'unknown-rtti-tag-unscored',
+      'BR 11.48',
+      makeExam([
+        [2, undefined],
+        [2, 'R'],
+      ]),
+      { q2: 1 },
+    );
 
     // Overrides (BR 3.3, 11.22-23).
     const ov = makeExam(normal(10, 10), { n: 1 });
@@ -104,11 +219,21 @@ export default async function grades() {
 
     const er = async (id, rule, exam, rec) =>
       suite.add(id, rule, { exam, rec }, await capture(() => Store.examResults(rec, exam)));
-    await er('examResults-override-only', 'BR 11.23', ov, { student_id: 1, scores: {}, overrides: { [ov.id]: { cijfer: 7.5, berekend: 6 } } });
+    await er('examResults-override-only', 'BR 11.23', ov, {
+      student_id: 1,
+      scores: {},
+      overrides: { [ov.id]: { cijfer: 7.5, berekend: 6 } },
+    });
     await er('examResults-nothing', 'BR 3.1', ov, { student_id: 1, scores: {} });
     await er('examResults-null-record', 'BR 3.1', ov, null);
-    await er('examResults-unknown-question-ids', 'BR 3.1', ov, { student_id: 1, scores: { [ov.id]: { q99: 5 } } });
-    await er('examResults-scores', 'BR 3.1', ov, { student_id: 1, scores: { [ov.id]: { q1: 7, q2: null, q3: 'x' } } });
+    await er('examResults-unknown-question-ids', 'BR 3.1', ov, {
+      student_id: 1,
+      scores: { [ov.id]: { q99: 5 } },
+    });
+    await er('examResults-scores', 'BR 3.1', ov, {
+      student_id: 1,
+      scores: { [ov.id]: { q1: 7, q2: null, q3: 'x' } },
+    });
   } finally {
     s.dispose();
   }

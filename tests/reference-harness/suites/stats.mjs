@@ -44,7 +44,11 @@ function spec() {
     const sc = {};
     if (ps) sc[parent.id] = ps;
     if (rs) sc[resit.id] = rs;
-    scores[id] = { scores: sc, observations: { [parent.id]: obs }, ...(ov ? { overrides: { [parent.id]: ov } } : {}) };
+    scores[id] = {
+      scores: sc,
+      observations: { [parent.id]: obs },
+      ...(ov ? { overrides: { [parent.id]: ov } } : {}),
+    };
   }
   const group = (gid) => ({
     id: gid,
@@ -54,7 +58,13 @@ function spec() {
     student_ids: ROWS.filter((r) => r[5] === gid).map((r) => r[0]),
   });
   return {
-    observaties: ['obs-x', 'obs-y'].map((id) => ({ id, naam: id, icon: '📏', subjects: ['nat'], jaarlagen: [] })),
+    observaties: ['obs-x', 'obs-y'].map((id) => ({
+      id,
+      naam: id,
+      icon: '📏',
+      subjects: ['nat'],
+      jaarlagen: [],
+    })),
     years: {
       [YEAR]: {
         students: ROWS.map((r) => student(r[0])),
@@ -67,7 +77,10 @@ function spec() {
 }
 
 export default async function stats() {
-  const suite = new Suite('stats', 'Exam statistics, overview accumulation, histogram and boxplot.');
+  const suite = new Suite(
+    'stats',
+    'Exam statistics, overview accumulation, histogram and boxplot.',
+  );
   const data = spec();
   const s = await openReference({ fixture: (dir) => buildData(dir, data), subject: 'nat' });
   try {
@@ -75,15 +88,40 @@ export default async function stats() {
     const colorDefs = ['hexToRgb', 'lerpColor', 'isFail'].map((n) => extractFunction(COLORS, n));
     const gradeDefs = ['gradeGroupIdx', 'gradeChartColor'].map((n) => extractFunction(GRADES, n));
     const cards = bindFunctions(
-      [...colorDefs, ...['computeExamStats', 'computeExamWarnings', 'computeBestGradeStats'].map((n) => extractFunction(TOETSEN, n))],
+      [
+        ...colorDefs,
+        ...['computeExamStats', 'computeExamWarnings', 'computeBestGradeStats'].map((n) =>
+          extractFunction(TOETSEN, n),
+        ),
+      ],
       { Store, qKind },
     );
     suite.ref(cards.refs);
     suite.add('data', 'BR 6', data, null);
-    suite.add('computeExamStats', 'BR 6.1, 11.31', { exam: parent.id }, await capture(() => cards.fns.computeExamStats(YEAR, parent)));
-    suite.add('computeExamStats-resit', 'BR 6.1', { exam: resit.id }, await capture(() => cards.fns.computeExamStats(YEAR, resit)));
-    suite.add('computeExamWarnings', 'BR 6.1', { exam: parent.id }, await capture(() => cards.fns.computeExamWarnings(YEAR, parent)));
-    suite.add('computeBestGradeStats', 'BR 6.1, 11.29', { parent: parent.id }, await capture(() => cards.fns.computeBestGradeStats(parent.id, YEAR)));
+    suite.add(
+      'computeExamStats',
+      'BR 6.1, 11.31',
+      { exam: parent.id },
+      await capture(() => cards.fns.computeExamStats(YEAR, parent)),
+    );
+    suite.add(
+      'computeExamStats-resit',
+      'BR 6.1',
+      { exam: resit.id },
+      await capture(() => cards.fns.computeExamStats(YEAR, resit)),
+    );
+    suite.add(
+      'computeExamWarnings',
+      'BR 6.1',
+      { exam: parent.id },
+      await capture(() => cards.fns.computeExamWarnings(YEAR, parent)),
+    );
+    suite.add(
+      'computeBestGradeStats',
+      'BR 6.1, 11.29',
+      { parent: parent.id },
+      await capture(() => cards.fns.computeBestGradeStats(parent.id, YEAR)),
+    );
 
     // Overview accumulation (inline in openExamOverviewModal) and summary.
     const accumulate = extractSnippet(OVERZICHT, {
@@ -104,7 +142,8 @@ export default async function stats() {
       name: 'summary',
       params: ['grades'],
       contains: ['const mean =', 'const fails ='],
-      epilogue: 'return { mean, sd, fails, shown: `${mean.toFixed(1).replace(".", ",")} ± ${sd.toFixed(1).replace(".", ",")}` };',
+      epilogue:
+        'return { mean, sd, fails, shown: `${mean.toFixed(1).replace(".", ",")} ± ${sd.toFixed(1).replace(".", ",")}` };',
     });
     const qPcts = extractSnippet(OVERZICHT, {
       start: 800,
@@ -120,28 +159,60 @@ export default async function stats() {
       const acc = await capture(() => ov.fns.accumulate(id, YEAR, scoreOverride));
       const sum = acc.grades?.length ? ov.fns.summary(acc.grades) : null;
       const pcts = acc.qStats ? ov.fns.qPctsOf(acc.qStats) : null;
-      suite.add(label, rule, { exam: id, scoreOverride: scoreOverride ? 'computeBestGradeMap' : null }, { ...acc, summary: sum, qPcts: pcts });
+      suite.add(
+        label,
+        rule,
+        { exam: id, scoreOverride: scoreOverride ? 'computeBestGradeMap' : null },
+        { ...acc, summary: sum, qPcts: pcts },
+      );
     };
     await runOverview(parent.id, null, 'overview-exam', 'BR 6.2, 11.34');
-    await runOverview(parent.id, await Store.computeBestGradeMap(parent.id, YEAR), 'overview-summary', 'BR 6.2, 11.29');
+    await runOverview(
+      parent.id,
+      await Store.computeBestGradeMap(parent.id, YEAR),
+      'overview-summary',
+      'BR 6.2, 11.29',
+    );
 
     // Histogram and boxplot helpers (nested in openExamOverviewModal).
-    const hist = bindFunctions([...colorDefs, ...gradeDefs, extractFunction(OVERZICHT, 'makeHistBins'), extractFunction(OVERZICHT, 'boxStats')]);
+    const hist = bindFunctions([
+      ...colorDefs,
+      ...gradeDefs,
+      extractFunction(OVERZICHT, 'makeHistBins'),
+      extractFunction(OVERZICHT, 'boxStats'),
+    ]);
     suite.ref(hist.refs);
     const histGrades = [1.0, 1.49, 5.47, 5.5, 9.99, 10.0, 0.5, 5.45, 5.449999, 3.0, 2.99];
     suite.add(
       'makeHistBins',
       'BR 6.2, 11.32',
       { grades: histGrades },
-      { step05: hist.fns.makeHistBins(0.5, histGrades), step1: hist.fns.makeHistBins(1, histGrades) },
+      {
+        step05: hist.fns.makeHistBins(0.5, histGrades),
+        step1: hist.fns.makeHistBins(1, histGrades),
+      },
     );
-    const sets = [[], [7], [7, 3], [4, 1, 3, 2], [5, 1, 4, 2, 3], [9.5, 1.2, 5.5, 5.5, 6.1, 7.7, 3.3, 8]];
-    suite.add('boxStats', 'BR 6.2, 11.33', { sets }, sets.map((v) => hist.fns.boxStats(v)));
+    const sets = [
+      [],
+      [7],
+      [7, 3],
+      [4, 1, 3, 2],
+      [5, 1, 4, 2, 3],
+      [9.5, 1.2, 5.5, 5.5, 6.1, 7.7, 3.3, 8],
+    ];
+    suite.add(
+      'boxStats',
+      'BR 6.2, 11.33',
+      { sets },
+      sets.map((v) => hist.fns.boxStats(v)),
+    );
     suite.add(
       'gradeGroupIdx',
       'BR 6.2',
       { grades: [1, 3.99, 4, 4.99, 5, 5.45, 5.99, 6, 6.99, 7, 7.99, 8, 10] },
-      [1, 3.99, 4, 4.99, 5, 5.45, 5.99, 6, 6.99, 7, 7.99, 8, 10].map((x) => ov.fns.gradeGroupIdx(x)),
+      [1, 3.99, 4, 4.99, 5, 5.45, 5.99, 6, 6.99, 7, 7.99, 8, 10].map((x) =>
+        ov.fns.gradeGroupIdx(x),
+      ),
     );
   } finally {
     s.dispose();
