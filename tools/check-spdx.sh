@@ -9,6 +9,6 @@ while IFS= read -r file; do
     echo "missing SPDX header: $file"
     missing=1
   fi
-done < <(git ls-files '*.rs' '*.ts' '*.js' '*.mjs' '*.css' '*.html' '*.sh' '*.typ')
+done < <(git ls-files '*.rs' '*.ts' '*.js' '*.mjs' '*.cjs' '*.css' '*.html' '*.sh' '*.typ')
 
 exit "$missing"

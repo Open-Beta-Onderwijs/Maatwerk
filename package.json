@@ -13,13 +13,14 @@
     "lint": "npm run lint -w ui && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "npm run typecheck -w ui",
-    "test": "npm run test -w ui && node --test \"tools/*.test.mjs\"",
+    "test": "npm run test -w ui && node --test \"tools/**/*.test.mjs\" \"tests/**/*.test.mjs\"",
     "licenses": "node tools/check-npm-licenses.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4",
     "acorn": "8.19.0",
     "acorn-walk": "8.3.5",
+    "pdf-lib": "1.17.1",
     "prettier": "3.9.10"
   },
   "engines": {
