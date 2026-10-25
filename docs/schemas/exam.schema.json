@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/exam.schema.json",
+  "title": "<year>/exams/<examId>.json",
+  "description": "Exam (toets), including resits (parent_id). Written by Store.upsertExam (CAS + rev + lock) and setExamNTerm / setExamOpdrachten (CAS field merge).",
+  "type": "object",
+  "required": ["id", "subject", "title", "questions"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "<subject>-<slug(title)>-<year>; older exams lack the subject prefix"
+    },
+    "subject": {
+      "enum": ["nat", "bio", "schk", "wi"]
+    },
+    "title": {
+      "type": "string"
+    },
+    "jaarlaag": {
+      "type": ["string", "integer"]
+    },
+    "subcategory": {
+      "enum": ["onderbouw", "wisa", "wisb", "wisc", "wisd", null]
+    },
+    "schoolsoort": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "n_term": {
+      "type": "number"
+    },
+    "weging": {
+      "type": "number"
+    },
+    "weging_se": {
+      "type": "number"
+    },
+    "periode": {
+      "type": ["string", "null"]
+    },
+    "type": {
+      "enum": ["pta", "regular"]
+    },
+    "structureMode": {
+      "enum": ["roman", "alpha", "alpha2", "seq"]
+    },
+    "volgnummer": {
+      "type": "integer",
+      "description": "jaarlaag * 100 + sequence"
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/question"
+      }
+    },
+    "obs_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "opdrachten": {
+      "type": "object",
+      "description": "obsId -> opdracht ids",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "opdrachtenCijfer": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "onder", "opdrachten"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "cijfer-<ms epoch>"
+          },
+          "onder": {
+            "type": "number",
+            "description": "grade threshold (strictly below), one decimal"
+          },
+          "opdrachten": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "resit: id of the original exam"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 2,
+      "description": "resit attempt (original = 1, implicit)"
+    },
+    "description": {
+      "type": "string",
+      "description": "resit label, e.g. INHAAL"
+    },
+    "_meta": {
+      "$ref": "#/$defs/meta"
+    }
+  },
+  "$defs": {
+    "question": {
+      "type": "object",
+      "required": ["id", "max_points", "rtti"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "q<n>"
+        },
+        "section": {
+          "type": "string",
+          "description": "roman numeral, section letter, number string or ''"
+        },
+        "number": {
+          "type": ["integer", "string"],
+          "description": "integer, or a letter in 'alpha' mode"
+        },
+        "max_points": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rtti": {
+          "enum": ["R", "T1", "T2", "I"]
+        },
+        "kind": {
+          "enum": ["normal", "bonus", "diag"],
+          "description": "absent = normal"
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "Version stamp written by stampMeta (store.js:90-102).",
+      "required": ["rev", "createdBy", "createdAt", "updatedBy", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "rev": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdBy": {
+          "type": ["string", "null"]
+        },
+        "createdAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "type": ["string", "null"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

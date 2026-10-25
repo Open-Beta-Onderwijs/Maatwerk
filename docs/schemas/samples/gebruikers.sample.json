@@ -1,0 +1,27 @@
+[
+  {
+    "id": "admin",
+    "voornaam": "Administrator",
+    "tussenvoegsel": "",
+    "achternaam": "",
+    "afkorting": "ADM",
+    "vakken": ["nat", "bio", "schk", "wi"],
+    "kleur": "#c0392b",
+    "foto": null,
+    "isAdmin": true,
+    "actief": true
+  },
+  {
+    "id": "gebr-1700000000001",
+    "voornaam": "Docent",
+    "tussenvoegsel": "van",
+    "achternaam": "Voorbeeld",
+    "afkorting": "DVV",
+    "schoolsoort": ["Havo", "Vwo"],
+    "vakken": ["nat"],
+    "kleur": "#2e86de",
+    "foto": "fotos/gebr-1700000000001.png",
+    "isAdmin": false,
+    "actief": true
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "id": "nat-voorbeeldtoets-1-2025-2026",
+  "title": "Voorbeeldtoets 1",
+  "jaarlaag": "3",
+  "schoolsoort": ["Havo"],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 1,
+  "periode": "1",
+  "type": "regular",
+  "structureMode": "roman",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 2,
+      "rtti": "R"
+    },
+    {
+      "id": "q2",
+      "section": "I",
+      "number": 2,
+      "max_points": 3,
+      "rtti": "T1"
+    },
+    {
+      "id": "q3",
+      "section": "II",
+      "number": 3,
+      "max_points": 2,
+      "rtti": "T2",
+      "kind": "bonus"
+    },
+    {
+      "id": "q4",
+      "section": "II",
+      "number": 4,
+      "max_points": 1,
+      "rtti": "I",
+      "kind": "diag"
+    }
+  ],
+  "obs_ids": ["obs-1700000000100"],
+  "subject": "nat",
+  "volgnummer": 301,
+  "opdrachten": {
+    "obs-1700000000100": ["opdracht_1700000000200"]
+  },
+  "opdrachtenCijfer": [
+    {
+      "id": "cijfer-1700000000300",
+      "onder": 5.5,
+      "opdrachten": ["opdracht_1700000000200"]
+    }
+  ],
+  "_meta": {
+    "rev": 3,
+    "createdBy": "gebr-1700000000001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1700000000001",
+    "updatedAt": "2025-10-01T12:30:00.000Z"
+  }
+}

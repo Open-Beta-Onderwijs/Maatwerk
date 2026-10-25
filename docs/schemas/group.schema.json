@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/group.schema.json",
+  "title": "<year>/groups/<groupId>.json",
+  "description": "Teaching group. Written by Store.upsertGroup (CAS + rev + lock) and upsertGroups (CSV import, force).",
+  "type": "object",
+  "required": ["id", "name", "student_ids"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]*-\\d{4}-\\d{4}$",
+      "description": "<slug(name)>-<year>"
+    },
+    "name": {
+      "type": "string"
+    },
+    "jaarlaag": {
+      "type": ["string", "integer"]
+    },
+    "subject": {
+      "enum": ["nat", "bio", "schk", "wi"]
+    },
+    "subcategory": {
+      "enum": ["onderbouw", "wisa", "wisb", "wisc", "wisd"]
+    },
+    "schoolsoort": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "docenten": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "user ids"
+    },
+    "student_ids": {
+      "type": "array",
+      "items": {
+        "type": ["integer", "string"]
+      }
+    },
+    "_meta": {
+      "$ref": "#/$defs/meta"
+    }
+  },
+  "$defs": {
+    "meta": {
+      "type": "object",
+      "description": "Version stamp written by stampMeta (store.js:90-102).",
+      "required": ["rev", "createdBy", "createdAt", "updatedBy", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "rev": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "createdBy": {
+          "type": ["string", "null"]
+        },
+        "createdAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "updatedBy": {
+          "type": ["string", "null"]
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

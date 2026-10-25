@@ -1,0 +1,15 @@
+{
+  "userId": "gebr-1700000000001",
+  "online": true,
+  "heartbeatAt": "2025-10-01T12:30:15.000Z",
+  "scoreModal": {
+    "year": "2025-2026",
+    "subject": "nat",
+    "examId": "nat-voorbeeldtoets-1-2025-2026",
+    "cell": {
+      "studentId": "900001",
+      "questionId": "q2"
+    },
+    "lastEditAt": "2025-10-01T12:30:10.000Z"
+  }
+}

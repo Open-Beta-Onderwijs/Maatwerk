@@ -1,0 +1,17 @@
+{
+  "id": "opdracht_1700000000200",
+  "naam": "Voorbeeldopdracht eenheden",
+  "beschrijving": "Oefenen met eenheden omrekenen.",
+  "schoolsoort": ["Havo"],
+  "vakken": ["nat"],
+  "jaarlagen": ["3"],
+  "observaties": ["obs-1700000000100"],
+  "typFile": "opdracht_1700000000200.typ",
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1700000000001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1700000000001",
+    "updatedAt": "2025-10-01T12:30:00.000Z"
+  }
+}

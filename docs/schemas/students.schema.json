@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/students.schema.json",
+  "title": "<year>/students-<year>.json",
+  "description": "Students of one school year. Written by Store.upsertStudent(s) / deleteStudent (CAS + lock); sorted on every write. No _meta.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "achternaam"],
+    "properties": {
+      "id": {
+        "type": ["integer", "string"],
+        "description": "student number; the UI stores a number, legacy data may hold a numeric string"
+      },
+      "voornaam": {
+        "type": "string"
+      },
+      "tussenvoegsel": {
+        "type": "string"
+      },
+      "achternaam": {
+        "type": "string"
+      },
+      "stamklas": {
+        "type": "string"
+      },
+      "geslacht": {
+        "type": "string"
+      },
+      "jaarlaag": {
+        "type": "string"
+      },
+      "schoolsoort": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

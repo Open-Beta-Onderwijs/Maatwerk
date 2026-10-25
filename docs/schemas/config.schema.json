@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/config.schema.json",
+  "title": "config.json",
+  "description": "data/config.json. Written by Store.setActiveYear (blind write + lock).",
+  "type": "object",
+  "required": ["activeYear"],
+  "properties": {
+    "activeYear": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{4}$"
+    }
+  }
+}

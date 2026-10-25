@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/scores.schema.json",
+  "title": "<year>/scores/<subject>/<studentId>.json",
+  "description": "Scores of one student for one subject and year. Written by Store.setScore / setGradeOverride / setObservation / removeObsFromExamScores (CAS, no lock). No _meta.",
+  "type": "object",
+  "required": ["student_id", "scores"],
+  "properties": {
+    "student_id": {
+      "type": ["integer", "string"]
+    },
+    "scores": {
+      "type": "object",
+      "description": "examId -> questionId -> value",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "description": "number = points; null = N (not evaluated); other string = invalid raw input as typed (or legacy 'N'); absent key = not filled",
+          "type": ["number", "null", "string"]
+        }
+      }
+    },
+    "observations": {
+      "type": "object",
+      "description": "examId -> ticked observatie ids",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "overrides": {
+      "type": "object",
+      "description": "examId -> teacher-typed grade",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["cijfer", "berekend"],
+        "additionalProperties": false,
+        "properties": {
+          "cijfer": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "berekend": {
+            "type": ["number", "null"],
+            "description": "calculated grade when the override was set"
+          }
+        }
+      }
+    }
+  }
+}

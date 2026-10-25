@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maatwerk.invalid/schemas/school.schema.json",
+  "title": "school.json",
+  "description": "data/school.json. Written by Store.saveSchool (blind write + lock). All fields optional.",
+  "type": "object",
+  "properties": {
+    "naam": {
+      "type": "string"
+    },
+    "ondertitel": {
+      "type": "string"
+    },
+    "motto": {
+      "type": "string"
+    },
+    "schoolsoort": {
+      "type": "array",
+      "items": {
+        "enum": ["Vmbo-bb", "Vmbo-kb", "Vmbo-gl", "Vmbo-tl", "Havo", "Vwo", "Gymnasium"]
+      }
+    },
+    "logo": {
+      "type": "string",
+      "description": "fotos/school-logo.<ext>"
+    },
+    "watermerk": {
+      "type": "string",
+      "description": "fotos/school-watermerk.<ext>"
+    }
+  }
+}
