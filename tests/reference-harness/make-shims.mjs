@@ -29,7 +29,8 @@ function block(file, a, b, first, last) {
   const lines = readRef(file).split(/\r?\n/);
   const body = lines.slice(a - 1, b);
   if (!body[0].includes(first)) throw new Error(`${file}:${a} does not start with ${first}`);
-  if (!body[body.length - 1].includes(last)) throw new Error(`${file}:${b} does not end with ${last}`);
+  if (!body[body.length - 1].includes(last))
+    throw new Error(`${file}:${b} does not end with ${last}`);
   return `// @verbatim ${file}:${a}-${b}\n${body.join('\n')}\n// @end`;
 }
 
@@ -69,7 +70,9 @@ export function shimSources() {
     ].join('\n'),
 
     'store-cas.cjs': [
-      HEADER('Compare-and-swap writes and _meta stamping of the renderer Store (`_reference/renderer/store.js`).'),
+      HEADER(
+        'Compare-and-swap writes and _meta stamping of the renderer Store (`_reference/renderer/store.js`).',
+      ),
       '// `rtti` is the bridge (here: { readJsonVersioned, writeJson } from main-storage).',
       'function createStoreCas({ rtti, activeUser = null }) {',
       '  const window = { rtti };',
@@ -88,7 +91,8 @@ export function shimSources() {
 export function verbatimBlocks(shimText) {
   const out = [];
   const re = /^\/\/ @verbatim (\S+):(\d+)-(\d+)\n([\s\S]*?)\n\/\/ @end$/gm;
-  for (const m of shimText.matchAll(re)) out.push({ file: m[1], a: Number(m[2]), b: Number(m[3]), text: m[4] });
+  for (const m of shimText.matchAll(re))
+    out.push({ file: m[1], a: Number(m[2]), b: Number(m[3]), text: m[4] });
   return out;
 }
 

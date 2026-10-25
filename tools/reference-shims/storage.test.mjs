@@ -199,12 +199,18 @@ test(
   'S09 fs:readJsonVersioned: missing -> nulls, corrupt -> {error}, valid -> {data, hash}',
   withDir(async (dir) => {
     const m = createMainStorage({ dataDir: dir });
-    assert.deepEqual(await m.invoke('fs:readJsonVersioned', 'nope.json'), { data: null, hash: null });
+    assert.deepEqual(await m.invoke('fs:readJsonVersioned', 'nope.json'), {
+      data: null,
+      hash: null,
+    });
     put(dir, 'bad.json', '{');
     const bad = await quiet(() => m.invoke('fs:readJsonVersioned', 'bad.json'));
     assert.deepEqual(Object.keys(bad), ['error']);
     put(dir, 'ok.json', '{ "a": 1 }');
-    assert.deepEqual(await m.invoke('fs:readJsonVersioned', 'ok.json'), { data: { a: 1 }, hash: sha1('{ "a": 1 }') });
+    assert.deepEqual(await m.invoke('fs:readJsonVersioned', 'ok.json'), {
+      data: { a: 1 },
+      hash: sha1('{ "a": 1 }'),
+    });
   }),
 );
 
@@ -225,7 +231,10 @@ test(
   withDir(async (dir) => {
     const m = createMainStorage({ dataDir: dir });
     const { hash } = await m.invoke('fs:writeJson', 'a.json', { v: 1 });
-    assert.equal((await m.invoke('fs:writeJson', 'a.json', { v: 2 }, { cas: true, expectedHash: hash })).ok, true);
+    assert.equal(
+      (await m.invoke('fs:writeJson', 'a.json', { v: 2 }, { cas: true, expectedHash: hash })).ok,
+      true,
+    );
     const r = await m.invoke('fs:writeJson', 'a.json', { v: 3 }, { cas: true, expectedHash: hash });
     assert.deepEqual(r, { ok: false, reason: 'conflict' });
     assert.deepEqual(JSON.parse(read(dir, 'a.json')), { v: 2 });
@@ -236,9 +245,18 @@ test(
   'S12 CAS with expectedHash null/absent means "must not exist yet"',
   withDir(async (dir) => {
     const m = createMainStorage({ dataDir: dir });
-    assert.equal((await m.invoke('fs:writeJson', 'a.json', 1, { cas: true, expectedHash: null })).ok, true);
-    assert.deepEqual(await m.invoke('fs:writeJson', 'a.json', 2, { cas: true }), { ok: false, reason: 'conflict' });
-    assert.deepEqual(await m.invoke('fs:writeJson', 'a.json', 2, { cas: true, expectedHash: null }), { ok: false, reason: 'conflict' });
+    assert.equal(
+      (await m.invoke('fs:writeJson', 'a.json', 1, { cas: true, expectedHash: null })).ok,
+      true,
+    );
+    assert.deepEqual(await m.invoke('fs:writeJson', 'a.json', 2, { cas: true }), {
+      ok: false,
+      reason: 'conflict',
+    });
+    assert.deepEqual(
+      await m.invoke('fs:writeJson', 'a.json', 2, { cas: true, expectedHash: null }),
+      { ok: false, reason: 'conflict' },
+    );
     assert.equal(read(dir, 'a.json'), '1');
   }),
 );
@@ -249,8 +267,14 @@ test(
     const m = createMainStorage({ dataDir: dir });
     put(dir, 'exams/a.json', '"old"');
     put(dir, 'exams/a.json.lock', String(Date.now()));
-    assert.deepEqual(await m.invoke('fs:writeJson', 'exams/a.json', 'new'), { ok: false, reason: 'locked' });
-    assert.deepEqual(await m.invoke('fs:deleteFile', 'exams/a.json'), { ok: false, reason: 'locked' });
+    assert.deepEqual(await m.invoke('fs:writeJson', 'exams/a.json', 'new'), {
+      ok: false,
+      reason: 'locked',
+    });
+    assert.deepEqual(await m.invoke('fs:deleteFile', 'exams/a.json'), {
+      ok: false,
+      reason: 'locked',
+    });
     assert.equal(read(dir, 'exams/a.json'), '"old"');
     assert.equal(exists(dir, 'exams/a.json.lock'), true, 'foreign lock is left alone');
   }),
@@ -301,7 +325,10 @@ test(
   withDir(async (dir) => {
     const m = createMainStorage({ dataDir: dir });
     put(dir, 'scores/1.json.lock', String(Date.now()));
-    assert.deepEqual(await m.invoke('fs:writeJson', 'scores/1.json', {}), { ok: false, reason: 'locked' });
+    assert.deepEqual(await m.invoke('fs:writeJson', 'scores/1.json', {}), {
+      ok: false,
+      reason: 'locked',
+    });
   }),
 );
 
@@ -353,7 +380,13 @@ test(
       (cur, onDisk) => (seen.push([structuredClone(cur), onDisk]), { n: 1 }),
       () => ({ fresh: true }),
     );
-    const next = await cas.update('a.json', (cur, onDisk) => (seen.push([structuredClone(cur), structuredClone(onDisk)]), { n: cur.n + 1 }));
+    const next = await cas.update(
+      'a.json',
+      (cur, onDisk) => (
+        seen.push([structuredClone(cur), structuredClone(onDisk)]),
+        { n: cur.n + 1 }
+      ),
+    );
     assert.deepEqual(next, { n: 2 });
     assert.deepEqual(seen, [
       [{ fresh: true }, null],
@@ -401,7 +434,10 @@ test(
     let n = 0;
     const always = { ...rtti, writeJson: async () => (n++, { ok: false, reason: 'conflict' }) };
     const cas = createStoreCas({ rtti: always });
-    await assert.rejects(cas.update('a.json', () => 1), { message: 'Save failed for a.json: conflict' });
+    await assert.rejects(
+      cas.update('a.json', () => 1),
+      { message: 'Save failed for a.json: conflict' },
+    );
     assert.equal(n, 5);
   }),
 );
@@ -412,7 +448,10 @@ test(
     const m = createMainStorage({ dataDir: dir });
     put(dir, 'a.json.lock', String(Date.now()));
     const cas = createStoreCas({ rtti: bridge(m) });
-    await assert.rejects(cas.update('a.json', () => 1), { message: 'Save failed for a.json: locked' });
+    await assert.rejects(
+      cas.update('a.json', () => 1),
+      { message: 'Save failed for a.json: locked' },
+    );
   }),
 );
 
@@ -422,7 +461,12 @@ test(
     const m = createMainStorage({ dataDir: dir });
     put(dir, 'a.json', '{"half');
     const cas = createStoreCas({ rtti: bridge(m) });
-    await quiet(() => assert.rejects(cas.update('a.json', () => 1), /^Error: Bestand a\.json is onleesbaar: /));
+    await quiet(() =>
+      assert.rejects(
+        cas.update('a.json', () => 1),
+        /^Error: Bestand a\.json is onleesbaar: /,
+      ),
+    );
     assert.equal(read(dir, 'a.json'), '{"half');
   }),
 );
@@ -457,14 +501,32 @@ test(
       const m = createMainStorage({ dataDir: dir });
       const cas = createStoreCas({ rtti: bridge(m), activeUser: { id: 'u1' } });
       const first = await cas.saveEntity('e.json', { id: 'e' }, undefined);
-      assert.deepEqual(first._meta, { rev: 1, createdBy: 'u1', createdAt: '2026-03-02T09:00:00.000Z', updatedBy: 'u1', updatedAt: '2026-03-02T09:00:00.000Z' });
+      assert.deepEqual(first._meta, {
+        rev: 1,
+        createdBy: 'u1',
+        createdAt: '2026-03-02T09:00:00.000Z',
+        updatedBy: 'u1',
+        updatedAt: '2026-03-02T09:00:00.000Z',
+      });
       mock.timers.setTime(Date.parse('2026-03-03T09:00:00Z'));
       cas.setActiveUser({ id: 'u2' });
       const second = await cas.saveEntity('e.json', { id: 'e', x: 1, _meta: first._meta }, 1);
-      assert.deepEqual(second._meta, { rev: 2, createdBy: 'u1', createdAt: '2026-03-02T09:00:00.000Z', updatedBy: 'u2', updatedAt: '2026-03-03T09:00:00.000Z' });
+      assert.deepEqual(second._meta, {
+        rev: 2,
+        createdBy: 'u1',
+        createdAt: '2026-03-02T09:00:00.000Z',
+        updatedBy: 'u2',
+        updatedAt: '2026-03-03T09:00:00.000Z',
+      });
       put(dir, 'legacy.json', pretty({ id: 'l' }));
       const legacy = await cas.saveEntity('legacy.json', { id: 'l' }, undefined);
-      assert.deepEqual(legacy._meta, { rev: 1, createdBy: null, createdAt: null, updatedBy: 'u2', updatedAt: '2026-03-03T09:00:00.000Z' });
+      assert.deepEqual(legacy._meta, {
+        rev: 1,
+        createdBy: null,
+        createdAt: null,
+        updatedBy: 'u2',
+        updatedAt: '2026-03-03T09:00:00.000Z',
+      });
       cas.setActiveUser(null);
       const anon = await cas.saveEntity('anon.json', {}, 0);
       assert.equal(anon._meta.createdBy, null);
@@ -482,7 +544,10 @@ test(
     const b = createStoreCas({ rtti: bridge(m), activeUser: { id: 'b' } });
     await a.saveEntity('e.json', { v: 1 }, undefined);
     await b.saveEntity('e.json', { v: 2 }, 1);
-    await assert.rejects(a.saveEntity('e.json', { v: 3 }, 1), (e) => e.message === 'conflict' && e.code === 'conflict' && e.updatedBy === 'b');
+    await assert.rejects(
+      a.saveEntity('e.json', { v: 3 }, 1),
+      (e) => e.message === 'conflict' && e.code === 'conflict' && e.updatedBy === 'b',
+    );
     const forced = await a.saveEntity('e.json', { v: 4 }, 1, { force: true });
     assert.equal(forced._meta.rev, 3);
     // A new file accepts any baseRev; a deleted file is "new" again.
@@ -536,7 +601,9 @@ test(
       t.tick(99);
       assert.deepEqual(t.batches, []);
       t.tick(1);
-      assert.deepEqual(t.changes(), [{ relPath: 'observaties/o1.json', kind: 'added', meta: meta1 }]);
+      assert.deepEqual(t.changes(), [
+        { relPath: 'observaties/o1.json', kind: 'added', meta: meta1 },
+      ]);
     } finally {
       t.stop();
     }
@@ -554,7 +621,8 @@ test(
       put(dir, '2025-2026/students-2025-2026.json', '[{"id":1}]');
       put(dir, 'opdrachten/o.typ', 'bb');
       fs.rmSync(path.join(dir, 'school.json'));
-      for (const r of ['2025-2026/students-2025-2026.json', 'opdrachten/o.typ', 'school.json']) t.watch(r);
+      for (const r of ['2025-2026/students-2025-2026.json', 'opdrachten/o.typ', 'school.json'])
+        t.watch(r);
       t.tick(600);
       assert.deepEqual(t.changes(), [
         { relPath: '2025-2026/students-2025-2026.json', kind: 'changed', meta: null },
@@ -593,7 +661,17 @@ test(
   withDir((dir) => {
     const t = startWatcher(dir);
     try {
-      const rels = ['fotos/a.json', 'bak/a.json', 'templates/x/a.json', 'temp/a.json', 'opdrachten/_preview_o.typ', 'a.json.lock', 'a.json.123.tmp', 'img.png', 'sub/fotos/a.json'];
+      const rels = [
+        'fotos/a.json',
+        'bak/a.json',
+        'templates/x/a.json',
+        'temp/a.json',
+        'opdrachten/_preview_o.typ',
+        'a.json.lock',
+        'a.json.123.tmp',
+        'img.png',
+        'sub/fotos/a.json',
+      ];
       for (const r of rels) {
         put(dir, r, '{}');
         t.watch(r);
@@ -625,10 +703,15 @@ test(
       assert.deepEqual(t.changes(), [], 'nothing before the first poll');
       t.tick(1 + 600);
       assert.deepEqual(
-        t.changes()
+        t
+          .changes()
           .map((c) => `${c.kind} ${c.relPath}`)
           .sort(),
-        ['added 2025-2026/groups/new.json', 'added observaties/new.json', 'changed 2025-2026/exams/a.json'],
+        [
+          'added 2025-2026/groups/new.json',
+          'added observaties/new.json',
+          'changed 2025-2026/exams/a.json',
+        ],
       );
       // An fs.watch event for another year is still reported.
       t.watch('2024-2025/exams/b.json');
@@ -654,7 +737,9 @@ test(
       fs.rmSync(path.join(dir, '2025-2026/exams/a.json'));
       fs.rmSync(path.join(dir, '2024-2025/exams/b.json'));
       t.tick(20_000 + 600);
-      assert.deepEqual(t.changes(), [{ relPath: '2025-2026/exams/a.json', kind: 'deleted', meta: null }]);
+      assert.deepEqual(t.changes(), [
+        { relPath: '2025-2026/exams/a.json', kind: 'deleted', meta: null },
+      ]);
     } finally {
       t.stop();
     }

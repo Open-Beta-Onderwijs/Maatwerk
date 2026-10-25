@@ -13,6 +13,10 @@ Step 2 (safety net on the old app), sub-step 2a. User said to proceed on 2026-10
 - 2a.2 `tools/fixtures/generate.mjs` (`tiny`, `school`), hashes in `tools/fixtures/manifest.json`.
 - 2a.3 Logic goldens `tests/golden/logic/*.json` (11 suites, 143 cases) from
   `npm run golden:regen`; `npm run golden:check` and `tests/golden/logic.test.mjs` re-run them.
+- 2a.4 Storage spec: `tools/reference-shims/` (verbatim sync.js, main.js lock/CAS handlers,
+  Store.update/saveEntity), `storage.test.mjs` rows S01-S36, `docs/specs/storage-spec.md`.
+- 2a.5 `docs/testing.md` (commands, golden format, harness assumptions, coverage matrix).
+  Quirks: new D35 (watcher first touch), correction to B22 (BOM is stripped).
 
 ## Step 1 summary
 
@@ -47,7 +51,8 @@ deps `acorn`, `acorn-walk` (MIT).
 
 ## Next action (concrete, resumable)
 
-1. Sub-task 4: storage/sync spec (`tools/reference-shims/`, `docs/specs/storage-spec.md`).
+1. Mid-step review of 2a (reviewer subagent -> `docs/reviews/step-02a.md`), fix, tag `step-02a`.
+2. Then 2b: Typst goldens.
 
 ## Open questions for the user
 

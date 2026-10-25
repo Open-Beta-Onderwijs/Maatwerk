@@ -20,7 +20,9 @@ test('every @verbatim block equals the cited reference lines', { skip }, () => {
   let blocks = 0;
   for (const name of fs.readdirSync(SHIM_DIR).filter((f) => f.endsWith('.cjs'))) {
     for (const b of verbatimBlocks(fs.readFileSync(path.join(SHIM_DIR, name), 'utf8'))) {
-      const lines = readRef(b.file).split(/\r?\n/).slice(b.a - 1, b.b);
+      const lines = readRef(b.file)
+        .split(/\r?\n/)
+        .slice(b.a - 1, b.b);
       assert.equal(b.text, lines.join('\n'), `${name}: ${b.file}:${b.a}-${b.b}`);
       blocks++;
     }

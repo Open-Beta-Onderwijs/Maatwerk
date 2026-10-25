@@ -167,6 +167,13 @@ are relative to `_reference/` unless a section says otherwise.
       that group's student list and replaces its teachers.
     - Port: pin with a test; ask the user whether to fix (merge or confirm) during the port.
 
+35. **D35 · Watcher reports an untouched file as changed the first time its mtime moves**
+    - Where: `sync.js:240-244` (initial snapshot without hash), `:149-157` (`check`)
+    - Evidence: the snapshot stores only mtime/size, so the first event or poll that sees a new
+      mtime reports `changed` even when the bytes are identical; later touches compare hashes.
+      Found in Step 2a, pinned by storage spec S34.
+    - Port: harmless (a spurious refresh); the Rust watcher may hash up front.
+
 ## B. Business logic
 
 Paths in this section are relative to `_reference/renderer/`.
@@ -342,6 +349,11 @@ Paths in this section are relative to `_reference/renderer/`.
 - **Why it matters:** This silently corrupts the roster. The port needs a single id type.
 
 ### B22. CSV parsing does not strip the BOM, assumes UTF-8 and has no `""` escape
+
+> **Correction (Step 2a):** the BOM part is wrong. `parseCSV` starts with `text.trim()`, which
+> removes U+FEFF, so a BOM header still matches (`tests/golden/logic/csv.json`,
+> `parseCSV-bom`); `File.text()` also strips it. The rest stands: `""` inside quotes is dropped,
+> not unescaped (`parseCSV-doubled-quotes`), and an unbalanced quote swallows the delimiter.
 
 - **Where:** `utils/csv.js:59-97`, `modals/leerling-edit.js:223`
 - **Evidence:** `File.text()` always decodes UTF-8. An Excel "CSV UTF-8" file starts with a BOM,
