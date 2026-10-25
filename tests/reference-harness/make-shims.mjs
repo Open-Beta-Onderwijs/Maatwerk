@@ -69,6 +69,27 @@ export function shimSources() {
       '',
     ].join('\n'),
 
+    'typst-wrappers.cjs': [
+      HEADER('Typst wrapper builders of `_reference/main.js` (rapport and opdracht wrappers).'),
+      '// rapportWrapper(students, examInfo): the body of app:renderRapportPdf that builds',
+      '// the wrapper source (main.js:557-583), returned instead of written to temp/.',
+      'function rapportWrapper(students, examInfo) {',
+      block(
+        'main.js',
+        557,
+        583,
+        '// Recursively serialize a JS value',
+        '#render(exam_info, student_data)',
+      ),
+      '  return { wrapperContent, toTypst };',
+      '}',
+      '',
+      block('main.js', 604, 687, '// Draws an invisible link', '}'),
+      '',
+      'module.exports = { rapportWrapper, typStr, placeholderHeader, buildAssignmentWrapper, CURSOR_FOREGROUND };',
+      '',
+    ].join('\n'),
+
     'store-cas.cjs': [
       HEADER(
         'Compare-and-swap writes and _meta stamping of the renderer Store (`_reference/renderer/store.js`).',

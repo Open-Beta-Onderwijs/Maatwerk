@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "id": "opdracht-base-template",
+  "path": "B",
+  "rule": "TC 10.1: base_assignment.typ unchanged, placeholderHeader(\"Remweg\")",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentPdf",
+    "args": [
+      "basis.typ",
+      "Remweg"
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\assignment_preview.pdf"
+  },
+  "wrappers": [
+    {
+      "file": "temp/_assignment_run.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/basis.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Remweg\",\n  student: \"Leerling Voornaam Achternaam\",\n  group: \"Klas Z vak W\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Voorbeeldtoets Toetsweek X\",\n  observaties: ((icon: \"❌\", name: \"Een voorbeeldobservatie met een behoorlijk lange naam, zodat deze twee regels beslaat in het voorbeeld\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Remweg\nLeerling Voornaam Achternaam N.a.v. Voorbeeldtoets Toetsweek X\nKlas Z vak W ❌ Een voorbeeldobservatie met een behoorlijk lange naam,\nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Titel van de opgave)\nInleidende tekst van de opgave.\na Eerste vraag. 2p\nb Tweede vraag. 1p\nExtra informatie tussen de vragen.\nc Derde vraag. 1p\nOpgave 2 (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag. 1p\nFiguur\nAntwoorden\n1a Antwoord op de eerste vraag. 1b Antwoord op de tweede vraag. 1c Antwoord op de derde vraag.\n2 Het antwoord."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "5ae32b5f70ffd11431441d27e8ff159212942be218559105c111443454501fc4",
+      "bytes": 9504
+    },
+    {
+      "file": "p2.png",
+      "sha256": "bb3cfe34938040fc9edb24303e4495075ad3b7a7bb9ed5537affc0a08eb4c76b",
+      "bytes": 13539
+    }
+  ]
+}

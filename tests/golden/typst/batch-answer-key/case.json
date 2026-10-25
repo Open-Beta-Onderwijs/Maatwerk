@@ -1,0 +1,95 @@
+{
+  "format": 1,
+  "id": "batch-answer-key",
+  "path": "D",
+  "rule": "TC 4.3: answer key batch, no duplex padding",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "opdracht_1756713600202",
+          "typFile": "opdracht_1756713600202.typ",
+          "label": "Opdracht nat 3 (grid)",
+          "mode": "answers",
+          "header": {
+            "title": "Opdracht nat 3 (grid)"
+          }
+        },
+        {
+          "key": "opdracht_1756713600200",
+          "typFile": "opdracht_1756713600200.typ",
+          "label": "Opdracht nat 1 (images)",
+          "mode": "answers",
+          "header": {
+            "title": "Opdracht nat 1 (images)"
+          }
+        },
+        {
+          "key": "opdracht_1756713600203",
+          "typFile": "opdracht_1756713600203.typ",
+          "label": "Opdracht nat 4 (long-odd)",
+          "mode": "answers",
+          "header": {
+            "title": "Opdracht nat 4 (long-odd)"
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": false,
+        "outputName": "antwoordsleutel.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\antwoordsleutel.pdf",
+    "pages": 3
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600202.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#antwoorden_header(title: \"Opdracht nat 3 (grid)\")\n\n#place(hide[#render_uitleg() #render_opgaven()])\n#antwoorden_lijst()\n"
+    },
+    {
+      "file": "temp/opdrachten_run/b1-1.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600200.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#antwoorden_header(title: \"Opdracht nat 1 (images)\")\n\n#place(hide[#render_uitleg() #render_opgaven()])\n#antwoorden_lijst()\n"
+    },
+    {
+      "file": "temp/opdrachten_run/b1-2.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600203.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#antwoorden_header(title: \"Opdracht nat 4 (long-odd)\")\n\n#place(hide[#render_uitleg() #render_opgaven()])\n#antwoorden_lijst()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 3,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opdracht nat 3 (grid)\nAntwoordsleutel\n1 Het antwoord.\n2a 1234,5"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opdracht nat 1 (images)\nAntwoordsleutel\n1a Een rechte lijn. 1b 𝑣 = 𝑠\n𝑡"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opdracht nat 4 (long-odd)\nAntwoordsleutel\n1 Lang antwoord."
+      }
+    ]
+  }
+}

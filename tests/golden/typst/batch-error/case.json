@@ -1,0 +1,63 @@
+{
+  "format": 1,
+  "id": "batch-error",
+  "path": "D",
+  "rule": "TC 4.3, 10.7: a failing job stops the batch; error text prefixed with the opdracht label",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "1",
+          "typFile": "opdracht_1756713600205.typ",
+          "label": "Goed",
+          "mode": "student",
+          "header": {
+            "title": "Goed",
+            "student": "Anna",
+            "group": "",
+            "exam": "Toets",
+            "observaties": []
+          }
+        },
+        {
+          "key": "2",
+          "typFile": "kapot.typ",
+          "label": "Kapotte opdracht",
+          "mode": "student",
+          "header": {
+            "title": "Kapot",
+            "student": "Bram",
+            "group": "",
+            "exam": "Toets",
+            "observaties": []
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": true,
+        "outputName": "opdrachten.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": false,
+    "error": "Fout in opdracht \"Kapotte opdracht\":\n\nerror: unclosed delimiter\n  ┌─ <app>\\data\\opdrachten\\kapot.typ:3:23\n  │\n3 │ #let render_uitleg() = [ Uitleg\n  │                        ^\n\nhelp: error occurred while importing this module\n  ┌─ <app>\\temp\\opdrachten_run\\b1-1.typ:2:8\n  │\n2 │ #import \"/data/opdrachten/kapot.typ\": setup_extra, render_uitleg, render_opgaven\n  │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n"
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600205.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Goed\",\n  student: \"Anna\",\n  group: \"\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets\",\n  observaties: (),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    },
+    {
+      "file": "temp/opdrachten_run/b1-1.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/kapot.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Kapot\",\n  student: \"Bram\",\n  group: \"\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets\",\n  observaties: (),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ]
+}

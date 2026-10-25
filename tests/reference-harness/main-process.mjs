@@ -52,7 +52,10 @@ function fakeElectron({ userDataDir }) {
         const fn = handlers.get(channel);
         if (!fn) throw new Error(`No handler registered for '${channel}'`);
         const event = {
-          sender: { send: (ch, payload) => sent.push({ ch, payload: structuredClone(payload) }) },
+          sender: {
+            send: (ch, payload) => sent.push({ ch, payload: structuredClone(payload) }),
+            isDestroyed: () => false,
+          },
         };
         return structuredClone(await fn(event, ...structuredClone(args)));
       },
@@ -86,7 +89,7 @@ function runCjs(relFile, { dirname, electron, extraModules = {} }) {
  * linked to the reference) and loads main.js + preload.js against it.
  * Returns { appDir, dataDir, rtti (the window.rtti bridge), invoke, sent, dispose }.
  */
-export function startMainProcess({ tmpRoot } = {}) {
+export function startMainProcess({ tmpRoot, onWrite } = {}) {
   const root = fs.mkdtempSync(path.join(tmpRoot ?? os.tmpdir(), 'maatwerk-ref-'));
   const appDir = path.join(root, 'app');
   const userDataDir = path.join(root, 'userData');
@@ -96,7 +99,20 @@ export function startMainProcess({ tmpRoot } = {}) {
     fs.symlinkSync(path.join(REF_DIR, dir), path.join(appDir, dir), 'junction');
   }
   const { electron, handlers, sent } = fakeElectron({ userDataDir });
-  runCjs('main.js', { dirname: appDir, electron });
+  // onWrite(file, data) sees every fs.writeFileSync made by main.js itself
+  // (Typst wrappers, preview copies); sync.js keeps the real fs.
+  const extraModules = onWrite
+    ? {
+        fs: {
+          ...fs,
+          writeFileSync: (file, data, ...rest) => {
+            onWrite(String(file), data);
+            return fs.writeFileSync(file, data, ...rest);
+          },
+        },
+      }
+    : {};
+  runCjs('main.js', { dirname: appDir, electron, extraModules });
   runCjs('preload.js', { dirname: REF_DIR, electron });
   const rtti = electron.exposed.rtti;
   return {

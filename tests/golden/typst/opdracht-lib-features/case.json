@@ -1,0 +1,87 @@
+{
+  "format": 1,
+  "id": "opdracht-lib-features",
+  "path": "D",
+  "rule": "TC 10.3, 10.5: lib.typ blocks, table figure, labels and refs, 1,5p, single-vraag opgave, vraag outside an opgave, opgave over a page break; header text injection",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "a",
+          "typFile": "opdracht_1756713600206.typ",
+          "label": "lib",
+          "mode": "student",
+          "header": {
+            "title": "Titel \"met\" \\ tekens",
+            "student": "x#y $z$ *b*",
+            "group": "3a nat\n",
+            "exam": "Toets",
+            "observaties": [
+              {
+                "icon": "5️⃣",
+                "name": "Cijfer onder 5,5"
+              },
+              {
+                "icon": "❌",
+                "name": "Rekenfout"
+              }
+            ]
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": true,
+        "outputName": "opdrachten.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\opdrachten.pdf",
+    "pages": 2
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600206.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Titel \\\"met\\\" \\\\ tekens\",\n  student: \"x#y $z$ *b*\",\n  group: \"3a nat\n\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets\",\n  observaties: ((icon: \"5️⃣\", name: \"Cijfer onder 5,5\"), (icon: \"❌\", name: \"Rekenfout\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Titel \"met\" \\ tekens\nx#y $z$ *b* N.a.v. Toets\n3a nat 5️⃣ Cijfer onder 5,5, ❌ Rekenfout\nVoorbeeld 1 (Remweg)\nEen auto remt af.\nContext 1\nContext zonder naam.\nTabel 1: Eenheden.\nGrootheid Eenheid\n𝑣 m/s\nZie Voorbeeld 1, Tabel 1 en Opgave 2. Een vraag buiten een opgave:\nLosse vraag. 1p"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Eén vraag)\nEnige vraag, zonder letter. 1,5p\nOpgave 2 (Over de paginagrens)\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et\ndolore magnam aliquam quaerat voluptatem. Ut enim aeque doleamus animo, cum corpore dolemus, fieri\ntamen permagna accessio potest, si aliquod aeternum et infinitum impendere malum nobis opinemur.\nQuod idem licet transferre in voluptatem, ut postea variari voluptas distinguique possit, augeri amplifica\nrique non possit. At etiam Athenis, ut e patre audiebam facete et urbane Stoicos irridente, statua est in quo a\nnobis philosophia defensa et collaudata est, cum id, quod maxime placeat, facere possimus, omnis voluptas\nassumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum\nnecessitatibus saepe eveniet, ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum\nrerum defuturum, quas natura non depravata desiderat. Et quem ad me accedis, saluto: 'chaere,' inquam,\n'Tite!' lictores, turma omnis chorusque: 'chaere, Tite!' hinc hostis mi Albucius, hinc inimicus. Sed iure\nMucius. Ego autem mirari satis non queo unde hoc sit tam insolens domesticarum rerum fastidium. Non\nest omnino hic docendi locus; sed ita prorsus existimo, neque eum Torquatum, qui hoc primus cognomen\ninvenerit, aut torquem illum hosti detraxisse, ut aliquam ex eo est consecutus? – Laudem et caritatem, quae\nsunt vitae sine metu degendae praesidia firmissima. – Filium morte multavit. – Si sine causa, nollem me ab\neo delectari, quod ista Platonis, Aristoteli, Theophrasti orationis ornamenta neglexerit. Nam illud quidem\nphysici, credere aliquid esse minimum, quod profecto numquam putavisset, si a Polyaeno, familiari suo,\ngeometrica discere maluisset quam illum etiam ipsum dedocere. Sol Democrito magnus videtur, quippe\nhomini erudito in geometriaque perfecto, huic pedalis fortasse; tantum enim esse omnino in nostris poetis\naut inertissimae segnitiae est aut fastidii delicatissimi. Mihi quidem videtur, inermis ac nudus est. Tollit\ndefinitiones, nihil de dividendo ac partiendo docet, non quo ignorare vos arbitrer, sed ut ratione et via\nprocedat oratio. Quaerimus igitur, quid sit extremum et ultimum bonorum, quod omnium philosophorum\nsententia tale debet esse, ut eius magnitudinem celeritas, diuturnitatem allevatio consoletur. Ad ea cum\naccedit, ut neque divinum numen horreat nec praeteritas voluptates effluere patiatur earumque assidua\nrecordatione laetetur, quid est, quod huc possit, quod melius sit, migrare de vita. His rebus instructus\nsemper est in voluptate esse aut in armatum hostem impetum fecisse aut in poetis evolvendis, ut ego et\nTriarius te hortatore facimus, consumeret, in quibus hoc primum est in quo admirer, cur in gravissimis\nrebus non delectet eos sermo patrius, cum idem fabellas Latinas ad verbum e Graecis expressas non inviti\nlegant. Quis enim tam inimicus paene nomini Romano est, qui Ennii Medeam aut Antiopam Pacuvii spernat\naut reiciat, quod se isdem Euripidis fabulis delectari dicat, Latinas litteras oderit? Synephebos ego, inquit,\npotius Caecilii aut Andriam Terentii quam utramque Menandri legam? A quibus tantum dissentio, ut, cum\nSophocles vel optime scripserit Electram, tamen male conversam Atilii mihi legendam putem, de quo\nLucilius: 'ferreum scriptorem', verum, opinor, scriptorem tamen, ut legendus sit. Rudem enim esse omnino\nin nostris poetis aut inertissimae segnitiae est aut in dolore. Omnis autem privatione doloris putat Epicurus.\na Na de grens. 2p\nb Zonder antwoord. 2p\nAntwoorden\n0 Buiten.\n1 3,5 m s−1\n2a A."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "b7c09f8588c93d03d57d200ec9ef757a2b67280cedc5c30b8da30a3b5c7a11da",
+      "bytes": 12746
+    },
+    {
+      "file": "p2.png",
+      "sha256": "35d8490aaca2862dcbd85a4a76fbda4e7d6d738aa8cd79533762779ea9096670",
+      "bytes": 97738
+    }
+  ]
+}

@@ -27,5 +27,5 @@ test('every @verbatim block equals the cited reference lines', { skip }, () => {
       blocks++;
     }
   }
-  assert.equal(blocks, 5);
+  assert.equal(blocks, 7);
 });

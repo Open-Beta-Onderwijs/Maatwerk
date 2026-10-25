@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "id": "opdracht-grid-answers",
+  "path": "D",
+  "rule": "TC 3: answers mode (antwoordsleutel)",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "opdracht_1756713600202",
+          "typFile": "opdracht_1756713600202.typ",
+          "label": "Opdracht nat 3 (grid)",
+          "mode": "answers",
+          "header": {
+            "title": "Opdracht nat 3 (grid)"
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": false,
+        "outputName": "antwoordsleutel.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\antwoordsleutel.pdf",
+    "pages": 1
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600202.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#antwoorden_header(title: \"Opdracht nat 3 (grid)\")\n\n#place(hide[#render_uitleg() #render_opgaven()])\n#antwoorden_lijst()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 1,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opdracht nat 3 (grid)\nAntwoordsleutel\n1 Het antwoord.\n2a 1234,5"
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "01b95a74a01de53b883d67cb00e08a71d6d01c66c6fdb79407449d802fef9bdb",
+      "bytes": 6073
+    }
+  ]
+}

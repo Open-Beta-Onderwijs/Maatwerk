@@ -571,6 +571,18 @@ Paths in this section are relative to `_reference/renderer/`.
 - Evidence: the rapport uses English hyphenation and smart-quote rules, and is not justified. Any figure or reference supplements in the rapport would read "Figure".
 - Why it matters: parity, so do not "fix" it to nl.
 
+### T26. One invalid typed score makes the whole rapport fail
+
+- Where: `renderer/modals/rapport.js:48` (`Math.max(0, Number(raw))`), `:29-37` (`scoreDotColor`), `include/templates/rtti_export.typ:133` (`rgb(q.dot_color)`).
+- Evidence (found in Step 2b, golden `tests/golden/typst/rapport-tiny`): a score kept as typed (e.g. `abc`, quirk B23/BR 2.1) becomes `NaN`, `scoreDotColor` returns `#NaNNaNNaN`, and Typst stops with "color string contains non-hexadecimal letters". `toTypst(NaN)` also turns the score into `0`.
+- Why it matters: one typo in the score grid blocks the rapport for the whole class. Ask the user before fixing (it changes output).
+
+### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
+
+- Where: `renderer/modals/rapport.js:129-136` (`sanitizeTypstMarkup`), `include/templates/rtti_export.typ:276` (`eval(r.advies, mode: "markup")`).
+- Evidence (found in Step 2b, golden `tests/golden/typst/rapport-markup`): with an odd number of `$` the guard escapes them but prepends `#text(...)[$-teken niet gesloten — …]`. That warning contains an unescaped `$`, so `eval` fails with "unclosed delimiter" and the whole rapport fails. Related to T11.
+- Why it matters: the guard never works; an odd `$` in a leeradvies text always breaks the rapport. Ask the user before fixing.
+
 ## U. UI
 
 Read from code only; "probable" means the code path is clear but not confirmed in the running app.

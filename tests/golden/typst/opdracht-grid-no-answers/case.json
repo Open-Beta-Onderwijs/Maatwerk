@@ -1,0 +1,78 @@
+{
+  "format": 1,
+  "id": "opdracht-grid-no-answers",
+  "path": "D",
+  "rule": "TC 3: student mode without answers, vragen in grid and figure, no observaties (empty header cell, quirk T19)",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "a",
+          "typFile": "opdracht_1756713600202.typ",
+          "label": "Opdracht nat 3 (grid)",
+          "mode": "student",
+          "header": {
+            "title": "Opdracht nat 3 (grid)",
+            "student": "Hash#Tag Dollar$ \"Quote\" \\Back",
+            "group": "",
+            "exam": "Toets",
+            "observaties": []
+          }
+        }
+      ],
+      {
+        "includeAnswers": false,
+        "duplex": true,
+        "outputName": "opdrachten.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\opdrachten.pdf",
+    "pages": 2
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600202.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Opdracht nat 3 (grid)\",\n  student: \"Hash#Tag Dollar$ \\\"Quote\\\" \\\\Back\",\n  group: \"\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets\",\n  observaties: (),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opdracht nat 3 (grid)\nHash#Tag Dollar$ \"Quote\" \\Back N.a.v. Toets\nFormule 1 (Snelheid)\n𝑣 = 𝑠\n𝑡\nBelangrijk!\nLet op de eenheden: 3,5 m s−1."
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag in een grid. 1p\nFiguur\nOpgave 2 (Vraag in een figuur)\nVoorbeeld 1 (In een figuur)\na Schrijf als getal. 2p\nb Vraag zonder punten en zonder antwoord."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "043529c31e268fe5131f37b6ebe9599785701c342a94fa62321c55892123de3e",
+      "bytes": 8786
+    },
+    {
+      "file": "p2.png",
+      "sha256": "f645f18afb6fccdbcee8f8d70baa403edb37320d76f929aef3383f2374029522",
+      "bytes": 10804
+    }
+  ]
+}

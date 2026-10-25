@@ -11,15 +11,17 @@ import { loadStore } from './store.mjs';
 /**
  * fixture: 'tiny' | 'school' | null (empty data folder) | (dataDir) => void.
  * subject: active subject for initSubject (null = admin view).
+ * main: options for startMainProcess (e.g. onWrite).
  * Returns { mp, Store, qKind, dataDir, dispose }.
  */
 export async function openReference({
   fixture = 'tiny',
   subject = 'nat',
   user = 'gebr-1756713600001',
+  main = {},
 } = {}) {
   requireReference();
-  const mp = startMainProcess();
+  const mp = startMainProcess(main);
   try {
     if (typeof fixture === 'string') {
       fs.rmSync(mp.dataDir, { recursive: true, force: true });

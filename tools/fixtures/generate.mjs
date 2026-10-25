@@ -363,14 +363,24 @@ function opdrachtTyp(kind, id) {
       );
     case 'long-odd':
     case 'long-even': {
-      // Page counts differ so batches mix odd and even (duplex blank pages).
-      const n = kind === 'long-odd' ? 9 : 4;
+      // Page counts differ so batches mix odd and even (duplex blank pages):
+      // long-odd = 2 pages uitleg + 1 page opgaven, long-even = 2 + 2.
+      const odd = kind === 'long-odd';
       return (
         head +
-        uitleg(filler(n)) +
-        `#let render_opgaven() = [\n  #opgave(titel: "Lang")[\n${filler(n)}\n    #vraag(punten: 3, antwoord: [Lang antwoord.])[Een vraag na veel tekst.]\n  ]\n]\n`
+        uitleg(filler(14)) +
+        `#let render_opgaven() = [\n  #opgave(titel: "Lang")[\n${filler(odd ? 1 : 14)}\n    #vraag(punten: 3, antwoord: [Lang antwoord.])[Een vraag na veel tekst.]\n  ]\n]\n`
       );
     }
+    case 'lib':
+      // lib.typ features (typst-contract.md section 10, case 5).
+      return (
+        head +
+        uitleg(
+          '  #voorbeeld_blok(name: [Remweg])[Een auto remt af.] <vb>\n  #context_blok[Context zonder naam.]\n  #figure(table(columns: 2, [Grootheid], [Eenheid], [$v$], [m/s]), caption: [Eenheden.]) <tab>\n  Zie @vb, @tab en @opg-twee. Een vraag buiten een opgave:\n  #vraag(punten: 1, antwoord: [Buiten.])[Losse vraag.]',
+        ) +
+        `#let render_opgaven() = [\n  #opgave(titel: "Eén vraag")[\n    #vraag(punten: 1.5, antwoord: [#quan("3.5 m/s")])[Enige vraag, zonder letter.]\n  ]\n  #opgave(titel: "Over de paginagrens")[\n    #lorem(500)\n\n    #vraag(punten: 2, antwoord: [A.])[Na de grens.]\n    #vraag(punten: 2)[Zonder antwoord.]\n  ] <opg-twee>\n]\n`
+      );
     default:
       return (
         head +
@@ -384,7 +394,7 @@ const SVG =
   '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect x="1" y="1" width="118" height="58" fill="#eef" stroke="#235"/><path d="M10 50 L60 10 L110 50" fill="none" stroke="#a23" stroke-width="3"/><text x="60" y="55" font-size="10" text-anchor="middle">schema</text></svg>\n';
 
 function makeOpdrachten(p, observaties, root) {
-  const kinds = ['images', 'zero-vragen', 'grid', 'long-odd', 'long-even', 'plain'];
+  const kinds = ['images', 'zero-vragen', 'grid', 'long-odd', 'long-even', 'plain', 'lib'];
   const out = [];
   let n = 0;
   for (const subject of p.subjects) {

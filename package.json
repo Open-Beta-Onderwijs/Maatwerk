@@ -16,13 +16,15 @@
     "test": "npm run test -w ui && node --test \"tools/**/*.test.mjs\" \"tests/**/*.test.mjs\"",
     "licenses": "node tools/check-npm-licenses.mjs",
     "golden:regen": "node tests/reference-harness/regen.mjs",
-    "golden:check": "node tests/reference-harness/regen.mjs --check"
+    "golden:check": "node tests/reference-harness/regen.mjs --check",
+    "golden:typst": "node tests/reference-harness/typst/regen-typst.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.12.4",
     "acorn": "8.19.0",
     "acorn-walk": "8.3.5",
     "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.4.299",
     "prettier": "3.9.10"
   },
   "engines": {

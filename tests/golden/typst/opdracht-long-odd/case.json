@@ -1,0 +1,103 @@
+{
+  "format": 1,
+  "id": "opdracht-long-odd",
+  "path": "D",
+  "rule": "TC 3: multi-page opdracht (odd page count)",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "a",
+          "typFile": "opdracht_1756713600203.typ",
+          "label": "x",
+          "mode": "student",
+          "header": {
+            "title": "Lang oneven",
+            "student": "Maximiliaan Alexander Constantijn van der Wiel-Brandsma de Clercq-Zubli van Hoogstraten",
+            "group": "3a nat",
+            "exam": "Toets",
+            "observaties": [
+              {
+                "icon": "📏",
+                "name": "Eenheden vergeten"
+              },
+              {
+                "icon": "👩‍🔬",
+                "name": "Formule \"niet\" genoteerd #1 $x$ @a <b> \\c"
+              },
+              {
+                "icon": "5️⃣",
+                "name": "Cijfer onder 5,5"
+              }
+            ]
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": true,
+        "outputName": "opdrachten.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\opdrachten.pdf",
+    "pages": 3
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600203.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Lang oneven\",\n  student: \"Maximiliaan Alexander Constantijn van der Wiel-Brandsma de Clercq-Zubli van Hoogstraten\",\n  group: \"3a nat\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets\",\n  observaties: ((icon: \"📏\", name: \"Eenheden vergeten\"), (icon: \"👩‍🔬\", name: \"Formule \\\"niet\\\" genoteerd #1 $x$ @a <b> \\\\c\"), (icon: \"5️⃣\", name: \"Cijfer onder 5,5\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 3,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Lang oneven\nMaximiliaan Alexander Constantijn van\nder Wiel-Brandsma de Clercq-Zubli van\nHoogstraten\nN.a.v. Toets\n3a nat 📏 Eenheden vergeten, 👩‍🔬 Formule \"niet\" genoteerd #1 $x$ @a\n<b> \\c, 5️⃣ Cijfer onder 5,5\nAlinea 1. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 2. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 3. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 4. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 5. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 6. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 7. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 8. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 9. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 10. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst\nom de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit\nis opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 11. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst\nom de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit\nis opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 12. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst\nom de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit\nis opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 13. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst\nom de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit\nis opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen.\nAlinea 14. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst\nom de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit\nis opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te\nvullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om\nde pagina te vullen. Dit is opvultekst om de pagina te vullen."
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Lang)\nAlinea 1. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst\nom de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen.\nDit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de\npagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen. Dit is\nopvultekst om de pagina te vullen. Dit is opvultekst om de pagina te vullen.\nEen vraag na veel tekst. 3p\nAntwoorden\n1 Lang antwoord."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "ba9bbbd13edcf3f7e073df5ded7958da78e1bbb18f7ffb2c440939b792f112fe",
+      "bytes": 124231
+    },
+    {
+      "file": "p2.png",
+      "sha256": "a0a6783a6afe44a3fbfea8e853346db8216a59591157897ce4da1d5d5cb9f883",
+      "bytes": 73502
+    },
+    {
+      "file": "p3.png",
+      "sha256": "ab3f11e822057d4e4d9bbd93b5df76b6bba46bcbd393c632e2ce184a7473eaec",
+      "bytes": 18541
+    }
+  ]
+}

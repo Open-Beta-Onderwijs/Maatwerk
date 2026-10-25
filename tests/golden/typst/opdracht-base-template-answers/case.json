@@ -1,0 +1,62 @@
+{
+  "format": 1,
+  "id": "opdracht-base-template-answers",
+  "path": "D",
+  "rule": "TC 10.2: base_assignment.typ in answers mode",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "basis",
+          "typFile": "basis.typ",
+          "label": "Remweg",
+          "mode": "answers",
+          "header": {
+            "title": "Remweg"
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": false,
+        "outputName": "antwoordsleutel.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\antwoordsleutel.pdf",
+    "pages": 1
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/basis.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#antwoorden_header(title: \"Remweg\")\n\n#place(hide[#render_uitleg() #render_opgaven()])\n#antwoorden_lijst()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 1,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Remweg\nAntwoordsleutel\n1a Antwoord op de eerste vraag. 1b Antwoord op de tweede vraag. 1c Antwoord op de derde vraag.\n2 Het antwoord."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "288729bcd55f84cbedaac9ee07b50f4c2f85a40b1de86119e189fb413c97f128",
+      "bytes": 7432
+    }
+  ]
+}

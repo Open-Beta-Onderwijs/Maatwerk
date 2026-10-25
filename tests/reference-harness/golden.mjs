@@ -35,6 +35,19 @@ export function encode(v) {
   return out;
 }
 
+/** Inverse of encode() for the tagged values ($map/$set/$throws are left as they are). */
+export function decode(v) {
+  if (v === null || typeof v !== 'object') return v;
+  if (Array.isArray(v)) return v.map(decode);
+  const keys = Object.keys(v);
+  if (keys.length === 1 && keys[0] === '$undefined') return undefined;
+  if (keys.length === 1 && keys[0] === '$number')
+    return Number(v.$number === '-0' ? '-0' : v.$number);
+  const out = {};
+  for (const k of keys) out[k] = decode(v[k]);
+  return out;
+}
+
 /** Runs fn and returns its (awaited) result, or {$throws} when it throws. */
 export async function capture(fn) {
   try {
