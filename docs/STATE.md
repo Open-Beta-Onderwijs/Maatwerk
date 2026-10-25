@@ -1,10 +1,10 @@
 # State
 
-Last updated: 2026-10-25 (end of Step 0) Branch: `main` Last tag: `step-00`
+Last updated: 2026-10-25 (Step 1 started) Branch: `step/01-reference-study` Last tag: `step-00`
 
 ## Current step
 
-Step 0 done. Next: Step 1, reference study and architecture review (ends at the approval gate).
+Step 1: reference study and architecture review. Ends at a **STOP for approval**.
 
 ## Done since last tag
 
@@ -23,11 +23,17 @@ Step 0 done. Next: Step 1, reference study and architecture review (ends at the 
 
 ## In progress
 
-- (nothing)
+- Four parallel reader subagents: (a) `ipc-api.md`, `data-files.md`, `docs/schemas/`; (b)
+  `business-rules.md`; (c) `typst-contract.md`; (d) `ui-map.md`, `naming-map.md`, code metrics.
+  Quirks and metrics land in the session scratchpad first and are merged into
+  `docs/reference/quirks.md` and `docs/architecture-review.md`.
 
 ## Next action (concrete, resumable)
 
-1. `git checkout -b step/01-reference-study` and read PLAN.md Step 1.
+1. If the session ended mid-step: re-run any missing `docs/reference/*.md` study from PLAN Step 1.
+2. Merge quirks into `docs/reference/quirks.md`; write `docs/architecture-review.md`,
+   `docs/adr/0002-target-architecture.md`, `docs/adr/0003-data-format-v2-candidates.md`.
+3. Review, commit, STOP for the user's approval (do not merge before approval decisions).
 
 ## Open questions for the user
 
