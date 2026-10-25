@@ -95,3 +95,23 @@ export function bindFunctions(defs, scope = {}) {
 }
 
 export const refOf = (d) => `${d.file}:${d.start}-${d.end} ${d.name}`;
+
+/**
+ * Wraps inline reference code (lines start..end, 1-based, inclusive) in a named
+ * function so it can run on its own. `contains` must occur in the snippet, so a
+ * shifted line range fails loudly instead of running the wrong code.
+ * `prologue`/`epilogue` add the glue (parameters in, result out); the snippet
+ * itself is never edited. With `breakable`, the snippet runs inside a
+ * do/while(false) so its `break` statements work (its consts are then not
+ * visible to the epilogue).
+ */
+export function extractSnippet(relFile, { start, end, name, params = [], prologue = '', epilogue = '', contains, breakable = false }) {
+  const lines = readRef(relFile).split(/\r?\n/).slice(start - 1, end);
+  const text = lines.join('\n');
+  for (const c of [contains].flat()) {
+    if (!text.includes(c)) throw new Error(`${relFile}:${start}-${end}: snippet ${name} does not contain ${JSON.stringify(c)}`);
+  }
+  const body = breakable ? `do {\n${text}\n} while (false);` : text;
+  const source = `function ${name}(${params.join(', ')}) {\n${prologue}\n${body}\n${epilogue}\n}`;
+  return { name, file: relFile, source, start, end };
+}
