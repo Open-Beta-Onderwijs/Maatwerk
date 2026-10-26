@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-26 (end of Step 2) Branch: `main` Last tag: `step-02`
+Last updated: 2026-10-26 (end of Step 2, decisions recorded) Branch: `main` Last tag: `step-02`
 
 ## Current step
 
@@ -34,10 +34,8 @@ Step 2 done. Next: Step 3, UI foundation (only when the user says so).
 
 ## Open questions for the user
 
-- Quirks T26 (one invalid typed score breaks the whole class rapport) and T27 (the unclosed-`$`
-  guard itself breaks the rapport): fix during the port or keep for parity? Both change output.
-- Storage S37/S38: CAS is not atomic across instances and several files are written blind. C3 (no
-  `.lock` files) relies on CAS; Step 4 must decide how to close the window (stop and ask then).
+- Decided 2026-10-26: T26 and T27 are fixed in the port (3a/5a, failing test first). S37/S38: the
+  user will probably rule that Step 4 fixes them; **ask again in Step 4** with a concrete proposal.
 - Remote: still to create (repo `maatwerk`, public). `gh` CLI is not installed.
 - Open decisions still pending (PLAN section 9): emoji font (Step 5), score grid choice (Step 3b),
   domain logic location (Step 10), versioning/update policy, macOS items.

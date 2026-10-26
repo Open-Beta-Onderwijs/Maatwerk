@@ -245,6 +245,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 
 > **Step 1 decisions (ADR-0002, ADR-0003):** the bridge has **28** methods (one of the 29 is unreachable). Do **not** port `migrate()`. Move all inline `style=` attributes into CSS classes (no `unsafe-inline` in the CSP) and clean up inconsistent styling. Fix during 3a, failing test first: U3, U9, D25, D34, U6/U7, B22, B9 (read both advice-key schemes). Domain code compares student IDs as strings (C8 prep). Quirk list: `docs/reference/quirks.md`.
 
+> **Step 2 decisions (user, 2026-10-26):** fix quirks **T26** (a non-numeric score breaks the class rapport: `assembleVragen`/`scoreDotColor`) and **T27** (`sanitizeTypstMarkup` warning contains `$`) during 3a, failing test first. The goldens `tests/golden/typst/rapport-tiny` and `rapport-markup` pin the old, failing behaviour; see `docs/reference/quirks.md`.
+
 **3a: foundation.** Goal: the existing UI runs in Vite, offline, against a mock backend, with logic extracted and tested. Handsontable stays **temporarily** in 3a; it must not be shipped (see 3b).
 
 - Import `_reference/renderer` into `ui/` **verbatim as its own commit** (reviewable diffs).
@@ -272,6 +274,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 
 > **Step 1 decisions (ADR-0002, ADR-0003):** **no `.lock` files** (C3; concurrency tests must confirm CAS suffices, otherwise stop and ask), CAS also for `school.json`, `config.json` and RTTI templates (C6), active year per teacher in local session state (C7), refuse folders with an unknown/newer `schema_version` (C1). Reads distinguish missing from corrupt.
 
+> **Step 2 decisions (user, 2026-10-26):** storage spec rows **S37** (CAS check not atomic across instances) and **S38** (blind writes) are unreliable old behaviour; the user will probably rule that 4a fixes them. **Stop and ask** with a concrete proposal (what is needed to make CAS atomic without `.lock` files; CAS for students and score files?) before implementing. Spec: `docs/specs/storage-spec.md`.
+
 **4a: paths and storage** (`maatwerk-core`)
 - `paths`: `DataDir`, safe relative-path join (reject `..`, absolute, drive letters, symlink escape, reserved Windows names). Data dir location: next to the exe (`current_exe()` parent) or `data/` next to the project in dev. Overridable by an env var for tests.
 - `storage`: read JSON, read JSON + content hash, write JSON atomically (temp + rename, retry on `EPERM/EBUSY/EACCES` with backoff, last-resort direct write), CAS on content hash (`expectedHash`, `null` = must not exist), `_meta.rev` stale-write rejection (as the UI does today), `.lock` files with 10 s TTL for non-score files, score files unlocked. List years (newest first), ensure year (exams/, groups/, scores/<subject>/), list score files, read all JSON in a dir, delete, ensure dir, text files, photo as data URL, save photo, local session file (OS app-config dir, not the shared folder), seed initial data (admin user, directories).
@@ -291,6 +295,8 @@ Write `docs/adr/0002-target-architecture.md` (revise section 4 if warranted) and
 ### Step 5: Typst service, parity with the old output (L)
 
 > **Step 1 decisions (ADR-0002, ADR-0003):** two Worlds: the **rapport** World (embedded template, JSON data file, `fotos/**`) and the **opdracht** World whose root is **one opdracht project folder** (`main.typ`, `opdracht.typ`, `lib.typ`, `images/`; ADR-0002 5a). Build the service around a `TypstProject` abstraction; for parity with v1 goldens, present a v1 opdracht as a virtual project. Embed `zero`, `cetz`, `oxifmt`, `unify`. Runtime data for opdrachten via `sys.inputs` JSON with placeholder defaults. lib.typ/main.typ versioning: version line + hashes of released versions. Fonts: embed only what the templates use or record the GUST/Bitstream Vera licences. Where this section conflicts with ADR-0002, the ADR wins.
+
+> **Step 2 decisions (user, 2026-10-26):** the template side of quirk **T26** (no `rgb()` on a non-colour) and the unguarded `uitleg_rtti` eval of **T11/T27** are fixed in 5a, failing test first; the rapport goldens `rapport-tiny`/`rapport-markup` stay as the record of the old behaviour.
 
 **5a: World and report PDF**
 - `TypstWorld` implementing `typst::World`: in-memory `main` source; embedded files (`rapport.typ` = the old `rtti_export.typ`, `lib.typ`, `base_assignment.typ`; rename markers to `<__maatwerk_*>`); **vendored Typst packages** (`@preview/cetz:0.3.4`, `@preview/unify:0.8.0`; check their licences) so compiling needs no network; fonts via `typst-assets` (Libertinus Serif) plus system fonts via `typst-kit`, searched **once** at startup; `today()` injectable.
