@@ -618,7 +618,7 @@ Paths in this section are relative to `_reference/renderer/`.
   `$`, so the guarded text compiles and shows the red warning. Failing test first: the
   `rapport-markup` golden is the old (failing) behaviour. `sanitizeTypstMarkup` in Step 3a; the
   `uitleg_rtti` fields (T11, no guard at all) get the same treatment in Step 5.
-- **Fixed in the port (Step 3a):** the warning reads `[$-teken niet gesloten …]`, so every `$` of a
+- **Fixed in the port (Step 3a):** the warning reads `[\$-teken niet gesloten …]`, so every `$` of a
   guarded text is escaped (`ui/src/domain/rapport.ts` `sanitizeTypstMarkup`). Tests:
   `ui/tests/domain/rapport.test.ts` ("T27").
 
