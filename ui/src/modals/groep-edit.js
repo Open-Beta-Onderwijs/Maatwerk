@@ -13,7 +13,7 @@ import {
   changedByName,
   confirmDialog,
 } from '../app.js';
-import { parseCSV, askSchoolYear } from '../utils/csv.js';
+import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
 import { renderGroepen } from '../screens/groepen.js';
 
 export async function openGroupModal(id) {
@@ -479,7 +479,7 @@ export async function openGroupCSVImport() {
       el.querySelector('#f-csv-groups').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const { rows } = parseCSV(await file.text());
+        const { rows } = parseCSV(decodeCsv(new Uint8Array(await file.arrayBuffer())));
         toImport = [];
 
         for (const r of rows) {
@@ -602,7 +602,7 @@ export async function openGroupAssignmentCSVImport() {
       el.querySelector('#f-csv-assignment').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const { rows } = parseCSV(await file.text());
+        const { rows } = parseCSV(decodeCsv(new Uint8Array(await file.arrayBuffer())));
 
         const groups = Store.getGroupsSync(year, null);
         const students = Store.getStudentsSync(year);

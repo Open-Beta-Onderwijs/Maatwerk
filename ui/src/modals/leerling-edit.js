@@ -11,7 +11,8 @@ import {
   showReloadNotice,
   confirmDialog,
 } from '../app.js';
-import { parseCSV, askSchoolYear } from '../utils/csv.js';
+import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
+import { studentsFromCsvRows } from '../domain/csv';
 import {
   leerlingenState,
   renderLeerlingen,
@@ -222,7 +223,7 @@ export async function openStudentCSVImport() {
       el.querySelector('#f-csv-students').addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        parsed = parseCSV(await file.text()).rows;
+        parsed = parseCSV(decodeCsv(new Uint8Array(await file.arrayBuffer()))).rows;
         const preview = el.querySelector('#csv-preview');
         if (!parsed.length) {
           preview.innerHTML = '<p class="hint">Geen rijen gevonden.</p>';
@@ -249,26 +250,7 @@ export async function openStudentCSVImport() {
       });
       el.querySelector('#f-csv-import').addEventListener('click', async () => {
         if (!parsed) return;
-        const students = parsed
-          .map((r) => {
-            const ssRaw = (r['Schoolsoort'] ?? r['schoolsoort'] ?? '').trim();
-            return {
-              id: Number(r['Leerlingnummer'] ?? r['leerlingnummer']),
-              voornaam: r['Voornaam'] ?? r['voornaam'] ?? '',
-              tussenvoegsel: r['Tussenvoegsel'] ?? r['tussenvoegsel'] ?? '',
-              achternaam: r['Achternaam'] ?? r['achternaam'] ?? '',
-              geslacht: r['Geslacht'] ?? r['geslacht'] ?? '',
-              stamklas: r['Stamklas'] ?? r['stamklas'] ?? '',
-              jaarlaag: String(r['Jaarlaag'] ?? r['jaarlaag'] ?? '').trim(),
-              schoolsoort: ssRaw
-                ? ssRaw
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean)
-                : [],
-            };
-          })
-          .filter((s) => s.id && s.achternaam);
+        const students = studentsFromCsvRows(parsed);
         await Store.upsertStudents(students, year);
         closeModal();
         toast(`${students.length} leerlingen geïmporteerd voor ${year}.`, 'success');

@@ -361,6 +361,10 @@ Paths in this section are relative to `_reference/renderer/`.
   row is then dropped (`filter(s => s.id && …)`). An ANSI file turns é into U+FFFD. A doubled `""`
   inside quotes is not handled, and a newline inside quotes breaks the row.
 - **Why it matters:** The usual Excel exports may import zero students without any error.
+- **Fixed in the port (Step 3a, `ui/src/domain/csv.ts`):** `""` inside quotes is a literal quote;
+  files that are not valid UTF-8 decode as Windows-1252. Still line-based: a newline inside quotes
+  and an unbalanced quote behave as before (`parseCSV-unbalanced-quote`). Tests:
+  `ui/tests/domain/csv.test.ts` ("B22").
 
 ### B23. Score input accepts hex and exponent notation
 

@@ -2,45 +2,8 @@
 
 // ── CSV utilities ─────────────────────────────────────────────────────────────
 
-export function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return { headers: [], rows: [] };
-  const semiCount = (lines[0].match(/;/g) || []).length;
-  const commaCount = (lines[0].match(/,/g) || []).length;
-  const delim = semiCount >= commaCount ? ';' : ',';
-
-  function parseLine(line) {
-    const result = [];
-    let cur = '',
-      inQ = false;
-    for (const c of line) {
-      if (c === '"') {
-        inQ = !inQ;
-      } else if (c === delim && !inQ) {
-        result.push(cur.trim());
-        cur = '';
-      } else {
-        cur += c;
-      }
-    }
-    result.push(cur.trim());
-    return result;
-  }
-
-  const headers = parseLine(lines[0]).map((h) => h.replace(/^"|"$/g, '').trim());
-  const rows = lines
-    .slice(1)
-    .filter((l) => l.trim())
-    .map((line) => {
-      const vals = parseLine(line).map((v) => v.replace(/^"|"$/g, '').trim());
-      const obj = {};
-      headers.forEach((h, i) => {
-        obj[h] = vals[i] ?? '';
-      });
-      return obj;
-    });
-  return { headers, rows };
-}
+// Parsing and decoding: src/domain/csv.ts. Kept as a re-export for the screens.
+export { decodeCsv, parseCSV } from '../domain/csv';
 
 /**
  * Show a year-selection modal before running a CSV import.
