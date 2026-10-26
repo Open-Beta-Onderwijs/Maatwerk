@@ -31,8 +31,9 @@ export async function withMock<R, A = undefined>(
   fn: (mock: MockApi, arg: A) => R | Promise<R>,
   arg?: A,
 ): Promise<R> {
-  const handle = await page.evaluateHandle(
-    () => (window as unknown as { __maatwerkMock: MockApi }).__maatwerkMock,
+  // The bridge installs the mock asynchronously after the page loads.
+  const handle = await page.waitForFunction(
+    () => (window as unknown as { __maatwerkMock?: MockApi }).__maatwerkMock,
   );
   return handle.evaluate(fn as never, arg as never) as Promise<R>;
 }

@@ -59,6 +59,10 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # Playwright on the mock build: smoke, UI quirks, CSP walkthrough (not the local visual project).
+      - run: npx playwright install chromium
+        working-directory: ui
+      - run: npm run test:e2e
       # tauri::generate_context! needs ui/dist to exist before clippy and test.
       - run: npm run build:ui
       - run: cargo fmt --all --check
