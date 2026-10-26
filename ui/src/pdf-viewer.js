@@ -114,7 +114,7 @@ const renderObserver = new IntersectionObserver(
       }
     }
   },
-  { root: viewer, rootMargin: '500px 0px' }
+  { root: viewer, rootMargin: '500px 0px' },
 );
 
 for (const wrap of pageWraps) renderObserver.observe(wrap);
@@ -152,7 +152,7 @@ viewer.addEventListener(
     if (isNavigating) return;
     updatePageFromScroll();
   },
-  { passive: true }
+  { passive: true },
 );
 
 // `scrollend` fires once when a smooth scroll animation completes.
@@ -239,7 +239,7 @@ document.addEventListener(
       applyScale(next);
     }
   },
-  { passive: false }
+  { passive: false },
 );
 
 // ── Navigation ─────────────────────────────────────────────────────────────────

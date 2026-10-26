@@ -153,7 +153,7 @@ export function inScoreModal(year, subject, examId) {
     (o) =>
       o.scoreModal?.year === year &&
       o.scoreModal?.subject === subject &&
-      o.scoreModal?.examId === examId
+      o.scoreModal?.examId === examId,
   );
 }
 

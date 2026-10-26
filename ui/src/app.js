@@ -173,7 +173,7 @@ async function requestCloseModal() {
     const session = _modalSession;
     const ok = await confirmDialog(
       'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
-      { title: 'Onopgeslagen wijzigingen', okLabel: 'Sluiten zonder opslaan', danger: true }
+      { title: 'Onopgeslagen wijzigingen', okLabel: 'Sluiten zonder opslaan', danger: true },
     );
     if (!ok || session !== _modalSession) return;
   }
@@ -207,7 +207,7 @@ export function formSnapshot(root) {
  */
 export function confirmDialog(
   message,
-  { title = '', okLabel = 'OK', cancelLabel = 'Annuleren', danger = false } = {}
+  { title = '', okLabel = 'OK', cancelLabel = 'Annuleren', danger = false } = {},
 ) {
   return new Promise((resolve) => {
     const prevFocus = document.activeElement;
@@ -571,7 +571,7 @@ const FILTER_POPOVER_IDS = ['pop-vak', 'pop-ss', 'pop-jl-klas', 'pop-jl', 'pop-o
 
 function closeAllPopovers(except) {
   FILTER_POPOVER_IDS.filter((id) => id !== except).forEach((id) =>
-    document.getElementById(id).classList.add('hidden')
+    document.getElementById(id).classList.add('hidden'),
   );
 }
 
@@ -641,7 +641,7 @@ function buildSchoolsoortPopover(options, savedSelection) {
 function updateSchoolsoortLabel() {
   document.getElementById('lbl-filter-ss').textContent = schoolsoortLabel(
     _filterState.schoolsoorten,
-    _schoolsoortOptions
+    _schoolsoortOptions,
   );
 }
 
@@ -714,7 +714,7 @@ function rebuildJaarlagPopover(subject, savedSelection) {
 function updateJaarlagLabel() {
   document.getElementById('lbl-filter-jl').textContent = jaarlagLabel(
     _filterState.jaarlagen,
-    _jaarlagOptions
+    _jaarlagOptions,
   );
 }
 
@@ -773,7 +773,7 @@ function buildJaarlagKlasPopover(savedSelection) {
 function updateJaarlagKlasLabel() {
   document.getElementById('lbl-filter-jl-klas').textContent = jaarlagLabel(
     _filterState.jaarlagenKlas,
-    KLAS_JAARLAG_OPTIONS
+    KLAS_JAARLAG_OPTIONS,
   );
 }
 
@@ -968,7 +968,7 @@ window.addEventListener('unhandledrejection', async (e) => {
   const other = users.find((u) => u.id === e.reason.updatedBy);
   const door = other ? ` door ${Store.fullName(other)}` : '';
   persistentError(
-    `Niet opgeslagen: dit is intussen${door} gewijzigd. Sluit het venster en open het opnieuw.`
+    `Niet opgeslagen: dit is intussen${door} gewijzigd. Sluit het venster en open het opnieuw.`,
   );
 });
 

@@ -52,7 +52,7 @@ export function askSchoolYear(activeYear, existingYears, ui) {
   const { showModal, closeModal, toast, overlay } = ui;
   return new Promise((resolve) => {
     const allYears = [...new Set([activeYear, ...existingYears])].sort((a, b) =>
-      b.localeCompare(a)
+      b.localeCompare(a),
     );
     showModal(
       `
@@ -91,7 +91,7 @@ export function askSchoolYear(activeYear, existingYears, ui) {
           closeModal();
           resolve(chosen);
         });
-      }
+      },
     );
     overlay.addEventListener(
       'click',
@@ -101,7 +101,7 @@ export function askSchoolYear(activeYear, existingYears, ui) {
           resolve(null);
         }
       },
-      { once: true }
+      { once: true },
     );
     document
       .getElementById('modal-close')

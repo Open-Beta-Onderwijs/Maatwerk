@@ -137,7 +137,7 @@ export async function openResitModal(parentId, year) {
         };
         showExamEditor(resitExam, false, year, () => renderToetsen(), false, true);
       });
-    }
+    },
   );
 }
 
@@ -175,7 +175,7 @@ export async function openSummaryEditModal(parentId, year) {
           ${[1, 2, 3, 4, 5]
             .map(
               (n) =>
-                `<button class="tog-btn per-btn${String(parent.periode) === String(n) ? ' selected' : ''}" data-per="${n}">${n}</button>`
+                `<button class="tog-btn per-btn${String(parent.periode) === String(n) ? ' selected' : ''}" data-per="${n}">${n}</button>`,
             )
             .join('')}
         </div>
@@ -221,7 +221,7 @@ export async function openSummaryEditModal(parentId, year) {
           const already = btn.classList.contains('selected');
           el.querySelectorAll('.per-btn').forEach((b) => b.classList.remove('selected'));
           if (!already) btn.classList.add('selected');
-        })
+        }),
       );
       wireSpinners(el);
 
@@ -247,7 +247,7 @@ export async function openSummaryEditModal(parentId, year) {
             weging: newWeging,
             weging_se: newWegingSE,
           },
-          year
+          year,
         );
 
         // Update each resit — derive its title from new parent naam + its own description
@@ -261,7 +261,7 @@ export async function openSummaryEditModal(parentId, year) {
               weging: newWeging,
               weging_se: newWegingSE,
             },
-            year
+            year,
           );
         }
 
@@ -269,6 +269,6 @@ export async function openSummaryEditModal(parentId, year) {
         toast('Verzamelkaart opgeslagen.', 'success');
         renderToetsen();
       });
-    }
+    },
   );
 }

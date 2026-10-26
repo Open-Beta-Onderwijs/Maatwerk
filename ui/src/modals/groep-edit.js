@@ -221,7 +221,7 @@ export async function openGroupModal(id) {
           } else {
             showReloadNotice(
               `Deze groep is gewijzigd door ${who}. Het venster wordt opnieuw geladen.`,
-              () => openGroupModal(id)
+              () => openGroupModal(id),
             );
           }
         });
@@ -231,7 +231,7 @@ export async function openGroupModal(id) {
       const updateDocentSection = () => {
         const selectedSS = [...el.querySelectorAll('.ss-toggle.selected')].map((b) => b.dataset.ss);
         const selectedDocenten = [...el.querySelectorAll('.docent-toggle.selected')].map(
-          (b) => b.dataset.docentId
+          (b) => b.dataset.docentId,
         );
         const selectedVak = el.querySelector('.vak-g-btn.selected')?.dataset.vak ?? null;
         const docentContainer = el.querySelector('#f-g-docenten');
@@ -304,7 +304,7 @@ export async function openGroupModal(id) {
               } else {
                 cb.checked = false;
               }
-            }
+            },
           );
         });
       }
@@ -324,7 +324,7 @@ export async function openGroupModal(id) {
         const jaarlaag = jlSelected.dataset.jl;
 
         const schoolsoort = [...el.querySelectorAll('.ss-toggle.selected')].map(
-          (b) => b.dataset.ss
+          (b) => b.dataset.ss,
         );
         if (schoolsoort.length === 0) {
           toast('Selecteer minimaal één schoolsoort.', 'error');
@@ -332,7 +332,7 @@ export async function openGroupModal(id) {
         }
 
         const docenten = [...el.querySelectorAll('.docent-toggle.selected')].map(
-          (b) => b.dataset.docentId
+          (b) => b.dataset.docentId,
         );
 
         const vakSelected = el.querySelector('.vak-g-btn.selected');
@@ -345,7 +345,7 @@ export async function openGroupModal(id) {
         if (resolvedSubject === 'wi' && !parsed.subcategory) {
           toast(
             'Kan de subcategorie niet afleiden uit de naam. Gebruik bijv. 4wisa1, 5wisb2 of 3wi1 voor onderbouw.',
-            'error'
+            'error',
           );
           return;
         }
@@ -403,7 +403,7 @@ export async function openGroupModal(id) {
               subcategory: parsed.subcategory ?? undefined,
               student_ids: [],
             },
-            year
+            year,
           );
         }
 
@@ -412,7 +412,7 @@ export async function openGroupModal(id) {
         renderGroepen();
       });
     },
-    'modal-xl'
+    'modal-xl',
   );
 }
 
@@ -493,12 +493,12 @@ export async function openGroupCSVImport() {
           }
 
           const matchedSS = VALID_SCHOOLSOORTEN.find(
-            (ss) => ss.toLowerCase() === schoolsoortRaw.toLowerCase()
+            (ss) => ss.toLowerCase() === schoolsoortRaw.toLowerCase(),
           );
           if (!matchedSS) {
             toast(
               `Rij overgeslagen (${escHtml(naam)}): ongeldige Schoolsoort "${escHtml(schoolsoortRaw)}".`,
-              'error'
+              'error',
             );
             continue;
           }
@@ -507,7 +507,7 @@ export async function openGroupCSVImport() {
           if (!matchedVak) {
             toast(
               `Rij overgeslagen (${escHtml(naam)}): ongeldig Vak "${escHtml(vakRaw)}".`,
-              'error'
+              'error',
             );
             continue;
           }
@@ -515,7 +515,7 @@ export async function openGroupCSVImport() {
           if (!VALID_JAARLAGEN.includes(leerjaarRaw)) {
             toast(
               `Rij overgeslagen (${escHtml(naam)}): ongeldig Leerjaar "${escHtml(leerjaarRaw)}".`,
-              'error'
+              'error',
             );
             continue;
           }
@@ -553,7 +553,7 @@ export async function openGroupCSVImport() {
                  <tbody>${toImport
                    .map(
                      (g) =>
-                       `<tr><td>${escHtml(g.name)}</td><td>${escHtml(g.schoolsoort.join(', '))}</td><td>${escHtml(g.subject)}</td><td>${escHtml(String(g.jaarlaag))}</td></tr>`
+                       `<tr><td>${escHtml(g.name)}</td><td>${escHtml(g.schoolsoort.join(', '))}</td><td>${escHtml(g.subject)}</td><td>${escHtml(String(g.jaarlaag))}</td></tr>`,
                    )
                    .join('')}</tbody>
                </table>`;
@@ -567,7 +567,7 @@ export async function openGroupCSVImport() {
         toast(`${toImport.length} groepen geïmporteerd voor ${year}.`, 'success');
         renderGroepen();
       });
-    }
+    },
   );
 }
 
@@ -620,7 +620,7 @@ export async function openGroupAssignmentCSVImport() {
           if (!student) {
             toast(
               `Leerling met leerlingnummer ${escHtml(leerlingnummerRaw)} bestaat niet.`,
-              'error'
+              'error',
             );
             continue;
           }
@@ -655,6 +655,6 @@ export async function openGroupAssignmentCSVImport() {
         toast(`Groepsindelingen geïmporteerd voor ${year}.`, 'success');
         renderGroepen();
       });
-    }
+    },
   );
 }

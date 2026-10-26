@@ -237,7 +237,7 @@ function buildWrapIndent(view) {
   const { doc, tabSize } = view.state;
   let lastLine = 0;
   for (const { from, to } of view.visibleRanges) {
-    for (let pos = from; pos <= to; ) {
+    for (let pos = from; pos <= to;) {
       const line = doc.lineAt(pos);
       pos = line.to + 1;
       if (line.number <= lastLine) continue;
@@ -261,7 +261,7 @@ const wrapIndent = ViewPlugin.fromClass(
       }
     }
   },
-  { decorations: (v) => v.decorations }
+  { decorations: (v) => v.decorations },
 );
 
 // ── Initialisation ────────────────────────────────────────────────────────────
@@ -547,7 +547,7 @@ svgViewer.addEventListener(
       wheelAccum = 0;
     }
   },
-  { passive: false }
+  { passive: false },
 );
 
 // Links inside the rendered document (e.g. @references) must not navigate the frame.
@@ -1199,7 +1199,7 @@ function insertFigure(file, name) {
 function insertCaptioned(body, label) {
   const snippet = withIndent(
     view,
-    `#figure(\n  ${body.replace(/\n/g, '\n  ')},\n  caption: [${FIGURE_CAPTION}],\n) <${label}>`
+    `#figure(\n  ${body.replace(/\n/g, '\n  ')},\n  caption: [${FIGURE_CAPTION}],\n) <${label}>`,
   );
   const { from, to } = view.state.selection.main;
   const at = from + snippet.indexOf(FIGURE_CAPTION);
@@ -1241,7 +1241,7 @@ async function showFigureMenu() {
       <button class="tb-fig-item" data-fig="use" data-file="${esc(img.file)}" data-name="${esc(img.name)}">
         ${img.thumb ? `<img src="${esc(img.thumb)}" alt="" />` : '<span class="tb-fig-noimg">🖼️</span>'}
         <span>${esc(img.name)}</span>
-      </button>`
+      </button>`,
     )
     .join('');
   panel.innerHTML = `
@@ -1316,7 +1316,7 @@ async function saveNamedImage(overwrite) {
     insertFigure(result.file, result.name);
   } else if (result?.exists) {
     showFigError(
-      `Er bestaat al een afbeelding "${result.name}". Kies een andere naam of overschrijf hem.`
+      `Er bestaat al een afbeelding "${result.name}". Kies een andere naam of overschrijf hem.`,
     );
     panel.querySelector('[data-fig="overwrite"]').hidden = false;
   } else {

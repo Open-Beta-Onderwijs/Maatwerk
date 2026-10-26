@@ -66,7 +66,7 @@ export async function renderOpdrachten() {
       matchesSchoolsoort(o) &&
       matchesJaarlaagFilter(o.jaarlagen) &&
       matchesVak(o) &&
-      (!obsFilter || (o.observaties ?? []).some((id) => obsFilter.has(id)))
+      (!obsFilter || (o.observaties ?? []).some((id) => obsFilter.has(id))),
   );
 
   // ── Sort: min(jaarlagen) asc, then naam alpha ──────────────────────────────
@@ -96,7 +96,7 @@ export async function renderOpdrachten() {
         .filter(Boolean)
         .map(
           (obs) =>
-            `<span title="${escHtml(obs.naam)}" style="cursor:default">${escHtml(obs.icon)}</span>`
+            `<span title="${escHtml(obs.naam)}" style="cursor:default">${escHtml(obs.icon)}</span>`,
         )
         .join(' ');
 
@@ -122,7 +122,7 @@ export async function renderOpdrachten() {
     b.addEventListener('click', () => {
       const opdracht = Store.getOpdrachtenSync().find((o) => o.id === b.dataset.id);
       if (opdracht) openEditor(opdracht);
-    })
+    }),
   );
   container
     .querySelectorAll('[data-action="edit-opdracht"]')
@@ -150,7 +150,7 @@ async function copyOpdracht(btn, id) {
 async function deleteOpdracht(id) {
   const ok = await confirmDialog(
     'Opdracht verwijderen? Dit verwijdert ook het bijbehorende Typst-bestand.',
-    { okLabel: 'Verwijderen', danger: true }
+    { okLabel: 'Verwijderen', danger: true },
   );
   if (!ok) return;
   await Store.deleteOpdracht(id);
@@ -270,7 +270,7 @@ async function openOpdrachtenModal(existingId) {
 
         // Preserve current selection; seed from saved data on first render
         const currentSelected = new Set(
-          [...obsGroup.querySelectorAll('.obs-icon-op-btn.selected')].map((b) => b.dataset.obsid)
+          [...obsGroup.querySelectorAll('.obs-icon-op-btn.selected')].map((b) => b.dataset.obsid),
         );
         if (currentSelected.size === 0 && (data.observaties ?? []).length > 0) {
           (data.observaties ?? []).forEach((id) => currentSelected.add(id));
@@ -279,7 +279,7 @@ async function openOpdrachtenModal(existingId) {
         // Subtractive: start with all obs, filter OUT those that don't match any
         // selected value in a field (only when that field has a selection).
         const matching = allObs.filter((obs) =>
-          obsMatchesSelections(obs, selectedSS, selectedVak, selectedJL)
+          obsMatchesSelections(obs, selectedSS, selectedVak, selectedJL),
         );
 
         if (matching.length === 0) {
@@ -296,7 +296,7 @@ async function openOpdrachtenModal(existingId) {
                 data-obsid="${escHtml(obs.id)}"
                 title="${escHtml(obs.naam)}"
                 style="width:30px;height:30px;padding:0;font-size:16px"
-              >${escHtml(obs.icon)}</button>`
+              >${escHtml(obs.icon)}</button>`,
           )
           .join('');
 
@@ -310,19 +310,19 @@ async function openOpdrachtenModal(existingId) {
         b.addEventListener('click', () => {
           b.classList.toggle('selected');
           rebuildObsToggles();
-        })
+        }),
       );
       el.querySelectorAll('.vak-op-btn').forEach((b) =>
         b.addEventListener('click', () => {
           b.classList.toggle('selected');
           rebuildObsToggles();
-        })
+        }),
       );
       el.querySelectorAll('.jl-op-btn').forEach((b) =>
         b.addEventListener('click', () => {
           b.classList.toggle('selected');
           rebuildObsToggles();
-        })
+        }),
       );
 
       // Initial obs render (for edit mode or if toggles pre-selected)
@@ -335,7 +335,7 @@ async function openOpdrachtenModal(existingId) {
         const vakken = getSelectedVak();
         const jaarlagen = getSelectedJL().map(Number);
         const observaties = [...el.querySelectorAll('.obs-icon-op-btn.selected')].map(
-          (b) => b.dataset.obsid
+          (b) => b.dataset.obsid,
         );
 
         if (!naam) {
@@ -376,6 +376,6 @@ async function openOpdrachtenModal(existingId) {
         toast(`Opdracht ${isEdit ? 'bijgewerkt' : 'toegevoegd'}.`, 'success');
         renderOpdrachten();
       });
-    }
+    },
   );
 }

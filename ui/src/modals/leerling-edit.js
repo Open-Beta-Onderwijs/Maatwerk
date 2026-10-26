@@ -27,7 +27,7 @@ function studentVersions(ev, id) {
 export function openStudentModal(id) {
   const jaarlaagHtml = JAARLAGEN.map(
     (jl) =>
-      `<button type="button" class="tog-btn jl-btn jl-s-toggle" data-jl="${jl}">${jl}</button>`
+      `<button type="button" class="tog-btn jl-btn jl-s-toggle" data-jl="${jl}">${jl}</button>`,
   ).join('');
   const schoolSS = Store.getSchoolSync().schoolsoort ?? [];
   const schoolSSFilter = schoolSS.length > 0;
@@ -106,7 +106,7 @@ export function openStudentModal(id) {
           } else {
             showReloadNotice(
               'De gegevens van deze leerling zijn gewijzigd door een collega. Het venster wordt opnieuw geladen.',
-              () => openStudentModal(id)
+              () => openStudentModal(id),
             );
           }
         });
@@ -160,7 +160,7 @@ export function openStudentModal(id) {
         }
         const jaarlaag = el.querySelector('.jl-s-toggle.selected')?.dataset.jl ?? '';
         const schoolsoort = [...el.querySelectorAll('.ss-s-toggle.selected')].map(
-          (b) => b.dataset.ss
+          (b) => b.dataset.ss,
         );
         await Store.upsertStudent(
           {
@@ -173,13 +173,13 @@ export function openStudentModal(id) {
             jaarlaag,
             schoolsoort,
           },
-          year
+          year,
         );
         closeModal();
         toast('Leerling opgeslagen.', 'success');
         renderLeerlingen();
       });
-    }
+    },
   );
 }
 
@@ -239,7 +239,7 @@ export async function openStudentCSVImport() {
               (r) =>
                 `<tr>${Object.values(r)
                   .map((v) => `<td>${escHtml(v)}</td>`)
-                  .join('')}</tr>`
+                  .join('')}</tr>`,
             )
             .join('')}
           </tbody></table>`;
@@ -273,6 +273,6 @@ export async function openStudentCSVImport() {
         leerlingenState.year = year;
         renderLeerlingen();
       });
-    }
+    },
   );
 }

@@ -202,7 +202,7 @@ async function compileRapport(exam, year) {
         const { scored, normalMax, grade, overridden } = Store.calcResults(
           exam,
           questionScores,
-          rec?.overrides?.[examId]
+          rec?.overrides?.[examId],
         );
         const group = groups.find((g) => g.student_ids.includes(s.id));
         const obsIds = rec?.observations?.[examId] ?? [];
@@ -226,7 +226,7 @@ async function compileRapport(exam, year) {
           questionScores,
           observaties,
         };
-      })
+      }),
     )
   ).filter(Boolean);
 
@@ -332,7 +332,7 @@ export function openRapportModal(examId, year) {
     () => {
       if (_printListener) window.removeEventListener('message', _printListener);
       _printListener = null;
-    }
+    },
   );
 }
 
@@ -426,7 +426,7 @@ function buildTabHtml(data, tabs, activeTab) {
   function copyBtnHtml(block) {
     const targets = tabs
       .map((t, i) =>
-        i !== activeTab ? `<button class="tog-btn" data-copy-tab="${i}">${t.label}</button>` : ''
+        i !== activeTab ? `<button class="tog-btn" data-copy-tab="${i}">${t.label}</button>` : '',
       )
       .join('');
     return `
@@ -444,7 +444,7 @@ function buildTabHtml(data, tabs, activeTab) {
     <tr>
       <td>${cat}</td>
       <td><textarea rows="3" data-uitleg="${cat}" placeholder="${RTTI_PLACEHOLDERS[cat].uitleg}">${data.uitleg[cat]}</textarea></td>
-    </tr>`
+    </tr>`,
   ).join('');
 
   const adviesRows = RTTI_CATS.filter((cat) => cat !== 'I')
@@ -455,7 +455,7 @@ function buildTabHtml(data, tabs, activeTab) {
       <td><textarea rows="5" data-adv="${cat}-laag" placeholder="${RTTI_PLACEHOLDERS[cat].laag}">${data.leeradvies[cat].laag}</textarea></td>
       <td><textarea rows="5" data-adv="${cat}-midden" placeholder="${RTTI_PLACEHOLDERS[cat].midden}">${data.leeradvies[cat].midden}</textarea></td>
       <td><textarea rows="5" data-adv="${cat}-hoog" placeholder="${RTTI_PLACEHOLDERS[cat].hoog}">${data.leeradvies[cat].hoog}</textarea></td>
-    </tr>`
+    </tr>`,
     )
     .join('');
 
@@ -544,7 +544,7 @@ export async function openRttiUitlegModal() {
     tabs.map(async (t, i) => {
       const raw = await window.maatwerk.readJson(rttiExplFilePath(t.fileKey, t.jaar));
       tabData[i] = raw ?? defaultTabData();
-    })
+    }),
   );
 
   let activeTab = 0;
@@ -552,7 +552,7 @@ export async function openRttiUitlegModal() {
   const tabButtons = tabs
     .map(
       (t, i) =>
-        `<button class="overview-tab${i === 0 ? ' selected' : ''}" data-tab-idx="${i}">${t.label}</button>`
+        `<button class="overview-tab${i === 0 ? ' selected' : ''}" data-tab-idx="${i}">${t.label}</button>`,
     )
     .join('');
 
@@ -632,7 +632,7 @@ export async function openRttiUitlegModal() {
         el.querySelector('#rtti-uitleg-tab-content').innerHTML = buildTabHtml(
           tabData[idx],
           tabs,
-          idx
+          idx,
         );
         initDualSliders(el);
         initCopyButtons(el, idx);
@@ -658,7 +658,7 @@ export async function openRttiUitlegModal() {
           confirmBtn.addEventListener('click', () => {
             readCurrentTabIntoData(srcIdx);
             const selected = [...popover.querySelectorAll('.tog-btn.selected')].map((b) =>
-              Number(b.dataset.copyTab)
+              Number(b.dataset.copyTab),
             );
             for (const destIdx of selected) {
               if (block === 'uitleg') {
@@ -675,7 +675,7 @@ export async function openRttiUitlegModal() {
             if (selected.length > 0) {
               toast(
                 `${block === 'uitleg' ? 'Uitleg' : block === 'leeradvies' ? 'Leeradvies' : 'Grenswaarden'} gekopieerd naar ${selected.length} tab${selected.length > 1 ? 's' : ''}.`,
-                'success'
+                'success',
               );
             }
           });
@@ -701,14 +701,14 @@ export async function openRttiUitlegModal() {
           if (cat !== 'I') {
             for (const score of ['laag', 'midden', 'hoog']) {
               tabData[idx].leeradvies[cat][score] = content.querySelector(
-                `[data-adv="${cat}-${score}"]`
+                `[data-adv="${cat}-${score}"]`,
               ).value;
             }
             tabData[idx].grenswaarden[cat].laag_midden = Number(
-              content.querySelector(`[data-slider="${cat}-low"]`).value
+              content.querySelector(`[data-slider="${cat}-low"]`).value,
             );
             tabData[idx].grenswaarden[cat].midden_hoog = Number(
-              content.querySelector(`[data-slider="${cat}-high"]`).value
+              content.querySelector(`[data-slider="${cat}-high"]`).value,
             );
           }
         }
@@ -720,7 +720,7 @@ export async function openRttiUitlegModal() {
         readCurrentTabIntoData(activeTab);
         activeTab = Number(btn.dataset.tabIdx);
         el.querySelectorAll('.overview-tab').forEach((b) =>
-          b.classList.toggle('selected', b.dataset.tabIdx === String(activeTab))
+          b.classList.toggle('selected', b.dataset.tabIdx === String(activeTab)),
         );
         renderTab(activeTab);
       });
@@ -733,7 +733,9 @@ export async function openRttiUitlegModal() {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Bezig\u2026';
         const results = await Promise.all(
-          tabs.map((t, i) => window.maatwerk.writeJson(rttiExplFilePath(t.fileKey, t.jaar), tabData[i]))
+          tabs.map((t, i) =>
+            window.maatwerk.writeJson(rttiExplFilePath(t.fileKey, t.jaar), tabData[i]),
+          ),
         );
         saveBtn.disabled = false;
         saveBtn.textContent = 'Opslaan';
@@ -748,6 +750,6 @@ export async function openRttiUitlegModal() {
 
       renderTab(0);
     },
-    'modal-xl'
+    'modal-xl',
   );
 }

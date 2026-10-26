@@ -120,7 +120,7 @@ function attachListeners(container, school) {
     btn.addEventListener('click', async () => {
       btn.classList.toggle('selected');
       school.schoolsoort = [...container.querySelectorAll('.school-ss-btn.selected')].map(
-        (b) => b.dataset.ss
+        (b) => b.dataset.ss,
       );
       try {
         await Store.saveSchool(school);

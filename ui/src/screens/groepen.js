@@ -109,7 +109,7 @@ export async function renderGroepenForYear(year) {
   groups.sort(
     (a, b) =>
       String(a.jaarlaag).localeCompare(String(b.jaarlaag), undefined, { numeric: true }) ||
-      a.name.localeCompare(b.name)
+      a.name.localeCompare(b.name),
   );
 
   if (groups.length === 0) {
@@ -167,9 +167,9 @@ export async function renderGroepenForYear(year) {
       b.addEventListener('click', () =>
         openGroupStudentsModal(
           b.dataset.id,
-          SEL.groupsYear.getValue() || Store.getConfigSync().activeYear
-        )
-      )
+          SEL.groupsYear.getValue() || Store.getConfigSync().activeYear,
+        ),
+      ),
     );
   container
     .querySelectorAll('[data-action="edit-group"]')
@@ -182,7 +182,7 @@ export async function renderGroepenForYear(year) {
   fillGroupGradeStats(
     groups.filter((g) => g.student_ids.length > 0),
     year,
-    container
+    container,
   );
 }
 
@@ -198,7 +198,7 @@ async function calcGroupGradeStats(group, year) {
 
   const allExams = await Store.getExams(year, subject);
   const exams = allExams.filter(
-    (e) => String(e.jaarlaag) === String(group.jaarlaag) && e.volgnummer
+    (e) => String(e.jaarlaag) === String(group.jaarlaag) && e.volgnummer,
   );
   if (exams.length === 0) return null;
 
@@ -221,7 +221,7 @@ async function calcGroupGradeStats(group, year) {
     students.map(async (s) => {
       const rec = await Store.getStudentScores(s.id, year, subject);
       scoreMap[s.id] = rec;
-    })
+    }),
   );
 
   function studentGrade(s, exam) {

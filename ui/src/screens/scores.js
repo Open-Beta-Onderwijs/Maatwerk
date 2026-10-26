@@ -240,7 +240,7 @@ export async function openScoreModal(examId, year, deps) {
         if (!ev.after) {
           showReloadNotice(
             `Toets ${activeExam.title} is verwijderd door een collega. Het scorescherm wordt gesloten.`,
-            closeModal
+            closeModal,
           );
           return;
         }
@@ -248,7 +248,7 @@ export async function openScoreModal(examId, year, deps) {
           const who = await changedByName(ev);
           showReloadNotice(
             `Toets ${ev.after.title} is gewijzigd door ${who}. Het scorescherm wordt opnieuw geladen.`,
-            () => reloadScoreModal(examId, year, deps)
+            () => reloadScoreModal(examId, year, deps),
           );
           return;
         }
@@ -281,7 +281,7 @@ export async function openScoreModal(examId, year, deps) {
           const who = await changedByName(ev);
           showReloadNotice(
             `${NOTICE_SUBJECT[type]} zijn gewijzigd door ${who}. Het scorescherm wordt opnieuw geladen.`,
-            () => reloadScoreModal(examId, year, deps)
+            () => reloadScoreModal(examId, year, deps),
           );
         });
       }
@@ -290,12 +290,12 @@ export async function openScoreModal(examId, year, deps) {
         String(exam.jaarlaag),
         examId,
         el.querySelector('#sc-grid-container'),
-        year
+        year,
       );
       renderPresence(el, examId, year);
     },
     'modal-scores',
-    deps?.renderToetsenList
+    deps?.renderToetsenList,
   );
 }
 
@@ -452,7 +452,7 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       .sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
 
     const scoreRecs = await Promise.all(
-      groupStudents.map((s) => Store.getStudentScores(s.id, year))
+      groupStudents.map((s) => Store.getStudentScores(s.id, year)),
     );
 
     for (let si = 0; si < groupStudents.length; si++) {
@@ -502,7 +502,7 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       groupStudents,
       gridData,
       year,
-      activeObs
+      activeObs,
     );
     hotInstances.push(hot);
 
@@ -692,7 +692,7 @@ function showCellMenu(x, y, items) {
   menu.innerHTML = items
     .map(
       (it, i) =>
-        `<button class="exam-menu-item" role="menuitem" data-idx="${i}"><span class="exam-menu-icon">${escHtml(it.icon)}</span><span>${escHtml(it.label)}</span></button>`
+        `<button class="exam-menu-item" role="menuitem" data-idx="${i}"><span class="exam-menu-icon">${escHtml(it.icon)}</span><span>${escHtml(it.label)}</span></button>`,
     )
     .join('');
   document.body.appendChild(menu);
@@ -902,7 +902,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
       ? [
           ...obsArr.map(
             (o, oi) =>
-              `<span class="hdr-obs" title="${escHtml(o.naam)}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon)}</span>`
+              `<span class="hdr-obs" title="${escHtml(o.naam)}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon)}</span>`,
           ),
           '', // spacer2 header
         ]
@@ -1005,7 +1005,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
       recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
       hotInstances.forEach((h) => h.render());
       await saveCell(row, gradeCol, () =>
-        Store.setGradeOverride(student.id, exam.id, ov?.cijfer ?? null, ov?.berekend, year)
+        Store.setGradeOverride(student.id, exam.id, ov?.cijfer ?? null, ov?.berekend, year),
       );
     };
     pushHistory({
@@ -1404,7 +1404,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
           if (raw === '') {
             gridData[row][col] = '';
             await saveCell(row, col, () =>
-              Store.setScore(student.id, exam.id, q.id, undefined, year)
+              Store.setScore(student.id, exam.id, q.id, undefined, year),
             );
           } else if (upper === 'N') {
             gridData[row][col] = 'N';
@@ -1415,7 +1415,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
               gridData[row][col] = raw;
               await saveCell(row, col, () => Store.setScore(student.id, exam.id, q.id, raw, year));
               persistentError(
-                `Ongeldige score "${raw}" voor vraag ${q.section}${q.number} (max ${q.max_points}). Controleer en herstel.`
+                `Ongeldige score "${raw}" voor vraag ${q.section}${q.number} (max ${q.max_points}). Controleer en herstel.`,
               );
             } else {
               gridData[row][col] = scoreCellText(num);
@@ -1571,7 +1571,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
         return;
       }
     },
-    true // capture phase
+    true, // capture phase
   );
 
   return hot;

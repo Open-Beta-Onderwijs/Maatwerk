@@ -37,7 +37,7 @@ function watchProfile(el, { studentId, year, backFn, peers, activeTab }) {
     } else {
       showReloadNotice(
         'De gegevens van deze leerling zijn gewijzigd door een collega. Het venster wordt opnieuw geladen.',
-        reopen
+        reopen,
       );
     }
   });
@@ -47,7 +47,7 @@ export async function openProfielModal(
   studentId,
   backFn = null,
   peers = null,
-  activeTab = 'cijferverloop'
+  activeTab = 'cijferverloop',
 ) {
   const year = leerlingenState.year || Store.getConfigSync().activeYear;
   const students = await Store.getStudents(year);
@@ -65,7 +65,7 @@ export async function openProfielModal(
         watchProfile(el, { studentId, year, backFn, peers, activeTab });
         if (backFn)
           document.getElementById('modal-close').addEventListener('click', backFn, { once: true });
-      }
+      },
     );
     return;
   }
@@ -160,7 +160,7 @@ export async function openProfielModal(
               ${allYears
                 .map(
                   (yr, i) =>
-                    `<button class="tog-btn mc-jaar-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" style="${btnW}">${escHtml(yearLabel(yr))}</button>`
+                    `<button class="tog-btn mc-jaar-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" style="${btnW}">${escHtml(yearLabel(yr))}</button>`,
                 )
                 .join('')}
             </div>
@@ -181,7 +181,7 @@ export async function openProfielModal(
               ${allYears
                 .map(
                   (yr, i) =>
-                    `<button class="tog-btn mc-rtti-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" style="${btnW}">${escHtml(yearLabel(yr))}</button>`
+                    `<button class="tog-btn mc-rtti-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" style="${btnW}">${escHtml(yearLabel(yr))}</button>`,
                 )
                 .join('')}
               <button class="tog-btn mc-rtti-btn" data-year="se" style="${btnW}">Examendossier</button>
@@ -401,7 +401,7 @@ export async function openProfielModal(
               }
               const labels = filtered.map((r) => examLabel(r.exam));
               const gradeData = filtered.map((r) =>
-                r.res.grade !== null ? Math.round(r.res.grade * 10) / 10 : null
+                r.res.grade !== null ? Math.round(r.res.grade * 10) / 10 : null,
               );
               const barColors = filtered.map((r) => examTypeColor(r.exam));
               const yGroups = [];
@@ -478,7 +478,7 @@ export async function openProfielModal(
               el.querySelectorAll('.mc-bouw-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
                   el.querySelectorAll('.mc-bouw-btn').forEach((b) =>
-                    b.classList.remove('selected')
+                    b.classList.remove('selected'),
                   );
                   btn.classList.add('selected');
                   buildBouwChart(btn.dataset.bouw);
@@ -505,7 +505,7 @@ export async function openProfielModal(
                 const canvas = wrap.querySelector('canvas');
                 const labels = filtered.map((r) => examLabel(r.exam));
                 const studentGrades = filtered.map((r) =>
-                  r.res.grade !== null ? Math.round(r.res.grade * 10) / 10 : null
+                  r.res.grade !== null ? Math.round(r.res.grade * 10) / 10 : null,
                 );
                 const studentBarColors = filtered.map((r) => examTypeColor(r.exam));
                 const examAvgs = [],
@@ -621,7 +621,7 @@ export async function openProfielModal(
               el.querySelectorAll('.mc-jaar-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
                   el.querySelectorAll('.mc-jaar-btn').forEach((b) =>
-                    b.classList.remove('selected')
+                    b.classList.remove('selected'),
                   );
                   btn.classList.add('selected');
                   buildJaarChart(btn.dataset.year);
@@ -696,7 +696,7 @@ export async function openProfielModal(
                   }
                   const studentsInYear = Store.getStudentsSync(yr);
                   const peers = studentsInYear.filter(
-                    (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === jl
+                    (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === jl,
                   );
                   const examsInYear = Store.getExamsSync(yr);
                   const peerAvgs = [];
@@ -720,7 +720,7 @@ export async function openProfielModal(
                 // Jaarlaag SE average (current jaarlaag, PTA weighted avg per student)
                 const seJl = String(jaarlaagByYear[allYears[allYears.length - 1]] ?? currentJl);
                 const studentsForSe = Store.getStudentsSync(year).filter(
-                  (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === seJl
+                  (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === seJl,
                 );
                 const peerPtaAvgs = [];
                 if (studentPtaAvg !== null) peerPtaAvgs.push(studentPtaAvg); // include current student
@@ -837,7 +837,7 @@ export async function openProfielModal(
                         },
                       },
                     },
-                  })
+                  }),
                 );
               })(); // end graph 3 async
             } // end initCijferverloop
@@ -952,7 +952,7 @@ export async function openProfielModal(
                         backgroundColor,
                         _legendColor,
                         nvtArr,
-                      })
+                      }),
                     ),
                   },
                   options: {
@@ -988,7 +988,7 @@ export async function openProfielModal(
               el.querySelectorAll('.mc-rtti-btn').forEach((btn) => {
                 btn.addEventListener('click', () => {
                   el.querySelectorAll('.mc-rtti-btn').forEach((b) =>
-                    b.classList.remove('selected')
+                    b.classList.remove('selected'),
                   );
                   btn.classList.add('selected');
                   buildRttiChart(btn.dataset.year);
@@ -1115,7 +1115,7 @@ export async function openProfielModal(
                           },
                         },
                       },
-                    })
+                    }),
                   );
                 }
               }
@@ -1125,10 +1125,10 @@ export async function openProfielModal(
             const tabInited = new Set([activeTab]);
             function switchTab(name) {
               el.querySelectorAll('.overview-tab').forEach((b) =>
-                b.classList.toggle('selected', b.dataset.tab === name)
+                b.classList.toggle('selected', b.dataset.tab === name),
               );
               el.querySelectorAll('.tab-pane').forEach((p) =>
-                p.classList.toggle('hidden', p.id !== `tab-${name}`)
+                p.classList.toggle('hidden', p.id !== `tab-${name}`),
               );
               if (!tabInited.has(name)) {
                 tabInited.add(name);
@@ -1136,7 +1136,7 @@ export async function openProfielModal(
                   requestAnimationFrame(() => {
                     if (name === 'analyse') initAnalyse();
                     else if (name === 'cijferverloop') initCijferverloop();
-                  })
+                  }),
                 );
               }
             }
@@ -1146,9 +1146,9 @@ export async function openProfielModal(
             // Initialize whichever tab is active first
             if (activeTab === 'analyse') initAnalyse();
             else initCijferverloop();
-          }) // end inner rAF
+          }), // end inner rAF
       ); // end double-requestAnimationFrame
     },
-    'modal-profile'
+    'modal-profile',
   );
 }

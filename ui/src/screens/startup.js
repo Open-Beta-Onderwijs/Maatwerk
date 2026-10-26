@@ -91,7 +91,7 @@ export async function renderStartup() {
             initialsEl.textContent = '';
           }
         }
-      })
+      }),
     );
   }
 

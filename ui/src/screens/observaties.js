@@ -93,7 +93,8 @@ export function renderObservaties() {
   // Schoolsoort filter — always applied; obs without schoolsoort always pass
   obs = obs.filter(
     (o) =>
-      !(o.schoolsoort ?? []).length || (o.schoolsoort ?? []).some((ss) => schoolsoortFilter.has(ss))
+      !(o.schoolsoort ?? []).length ||
+      (o.schoolsoort ?? []).some((ss) => schoolsoortFilter.has(ss)),
   );
 
   // Jaarlaag filter
@@ -102,7 +103,7 @@ export function renderObservaties() {
     obs = obs.filter(
       (o) =>
         !(o.jaarlagen ?? []).length ||
-        (o.jaarlagen ?? []).some((jl) => jaarlagKlasFilter.has(String(jl)))
+        (o.jaarlagen ?? []).some((jl) => jaarlagKlasFilter.has(String(jl))),
     );
     // Subcategory filter: OB covers jaarlaag 1-3; any WisX covers jaarlaag 4-6
     const allowedJl = new Set();
@@ -123,13 +124,13 @@ export function renderObservaties() {
     }
     obs = obs.filter(
       (o) =>
-        !(o.jaarlagen ?? []).length || (o.jaarlagen ?? []).some((jl) => allowedJl.has(String(jl)))
+        !(o.jaarlagen ?? []).length || (o.jaarlagen ?? []).some((jl) => allowedJl.has(String(jl))),
     );
   } else {
     obs = obs.filter(
       (o) =>
         !(o.jaarlagen ?? []).length ||
-        (o.jaarlagen ?? []).some((jl) => jaarlagFilter.has(String(jl)))
+        (o.jaarlagen ?? []).some((jl) => jaarlagFilter.has(String(jl))),
     );
   }
 
@@ -137,15 +138,15 @@ export function renderObservaties() {
   if (eigenOnly && activeUser && !Store.isAdminActive()) {
     const cfg = Store.getConfigSync();
     const myGroups = Store.getGroupsSync(cfg.activeYear).filter((g) =>
-      (g.docenten ?? []).includes(activeUser.id)
+      (g.docenten ?? []).includes(activeUser.id),
     );
     obs = obs.filter((o) =>
       myGroups.some(
         (g) =>
           (o.subjects ?? []).includes(g.subject) &&
           (o.schoolsoort ?? []).some((ss) => (g.schoolsoort ?? []).includes(ss)) &&
-          (o.jaarlagen ?? []).map(String).includes(String(g.jaarlaag))
-      )
+          (o.jaarlagen ?? []).map(String).includes(String(g.jaarlaag)),
+      ),
     );
   }
 
@@ -173,7 +174,7 @@ export function renderObservaties() {
         <button class="btn-sm btn-sm-icon" data-action="edit-obs" data-id="${escHtml(o.id)}" title="Observatie bewerken">${ICONS.pen}</button>
         <button class="btn-sm btn-danger btn-sm-icon" data-action="del-obs" data-id="${escHtml(o.id)}"${Store.obsIsUsedInAnyExam(o.id) ? ' disabled title="Deze observatie is gekoppeld aan een toets en kan dus niet worden verwijderd."' : ' title="Observatie verwijderen"'}>${ICONS.trash}</button>
       </div>
-    </div>`
+    </div>`,
     )
     .join('');
 
@@ -290,7 +291,7 @@ export async function openObsModal(existingId) {
       <div class="btn-toggle-group" id="obs-subj-group">
         ${SUBJECT_BTNS.map(
           (s) =>
-            `<button type="button" class="tog-btn subj-btn${obs.subjects.includes(s.code) ? ' selected' : ''}" data-subj="${s.code}">${escHtml(s.label)}</button>`
+            `<button type="button" class="tog-btn subj-btn${obs.subjects.includes(s.code) ? ' selected' : ''}" data-subj="${s.code}">${escHtml(s.label)}</button>`,
         ).join('')}
       </div>
     </div>
@@ -300,7 +301,7 @@ export async function openObsModal(existingId) {
         ${jlAll
           .map(
             (j) =>
-              `<button type="button" class="tog-btn jl-btn${(obs.jaarlagen ?? []).includes(j) ? ' selected' : ''}" data-jl="${j}">${j}</button>`
+              `<button type="button" class="tog-btn jl-btn${(obs.jaarlagen ?? []).includes(j) ? ' selected' : ''}" data-jl="${j}">${j}</button>`,
           )
           .join('')}
       </div>
@@ -326,15 +327,15 @@ export async function openObsModal(existingId) {
       });
 
       el.querySelectorAll('.ss-obs-btn').forEach((b) =>
-        b.addEventListener('click', () => b.classList.toggle('selected'))
+        b.addEventListener('click', () => b.classList.toggle('selected')),
       );
 
       el.querySelectorAll('.subj-btn').forEach((b) =>
-        b.addEventListener('click', () => b.classList.toggle('selected'))
+        b.addEventListener('click', () => b.classList.toggle('selected')),
       );
 
       el.querySelectorAll('.jl-btn').forEach((b) =>
-        b.addEventListener('click', () => b.classList.toggle('selected'))
+        b.addEventListener('click', () => b.classList.toggle('selected')),
       );
 
       el.querySelector('#f-osave').addEventListener('click', async () => {
@@ -342,7 +343,7 @@ export async function openObsModal(existingId) {
         const uitleg = el.querySelector('#f-ouit').value.trim();
         const leeradvies = el.querySelector('#f-oleeradvies').value.trim();
         const schoolsoort = [...el.querySelectorAll('.ss-obs-btn.selected')].map(
-          (b) => b.dataset.ss
+          (b) => b.dataset.ss,
         );
         const subjects = [...el.querySelectorAll('.subj-btn.selected')].map((b) => b.dataset.subj);
         const jaarlagen = [...el.querySelectorAll('.jl-btn.selected')].map((b) => b.dataset.jl);
@@ -381,6 +382,6 @@ export async function openObsModal(existingId) {
 
       const initialForm = formSnapshot(el);
       guardModalClose(() => formSnapshot(el) !== initialForm);
-    }
+    },
   );
 }

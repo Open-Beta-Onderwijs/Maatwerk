@@ -83,7 +83,7 @@ export async function openOpdrachtenGenererenModal(examId, year) {
     // modals and stays in the DOM, so only og-root tells whether we're still open.
     (el) => initModal(el.querySelector('.og-root'), state, year),
     'modal-pdf',
-    () => saveCoupling(state, year)
+    () => saveCoupling(state, year),
   );
 }
 
@@ -113,7 +113,7 @@ function renderCijferList(el, state) {
       const nStudents = assignments?.cijferStudents?.[card.id]?.length;
       const candidates = opdrachten
         .filter(
-          (o) => state.showAll || Store.opdrachtMatchesExam(o, exam) || selected.includes(o.id)
+          (o) => state.showAll || Store.opdrachtMatchesExam(o, exam) || selected.includes(o.id),
         )
         .sort((a, b) => (a.naam ?? '').localeCompare(b.naam ?? '', 'nl'));
       const items = candidates.length
@@ -157,7 +157,7 @@ function renderObsList(el, state) {
   renderCijferList(el, state);
   const { exam, coupling, assignments } = state;
   const obsById = Object.fromEntries(
-    Store.getObservatiesSync(exam.subject ?? Store.getActiveSubject()).map((o) => [o.id, o])
+    Store.getObservatiesSync(exam.subject ?? Store.getActiveSubject()).map((o) => [o.id, o]),
   );
   const opdrachten = Store.getOpdrachtenSync();
   const list = el.querySelector('.og-obs-list');
@@ -245,7 +245,7 @@ function renderStudentList(el, state) {
         ({ opdracht, obs }) =>
           `<span class="og-chip" title="${escHtml(obs.map((o) => o.naam).join(', '))}">${obs
             .map((o) => escHtml(o.icon))
-            .join('')} ${escHtml(opdracht.naam)}</span>`
+            .join('')} ${escHtml(opdracht.naam)}</span>`,
       )
       .join('');
     html += `
@@ -262,7 +262,7 @@ function renderStudentList(el, state) {
 
 function includedStudents(state) {
   return (state.assignments?.students ?? []).filter(
-    (e) => !state.excluded.has(String(e.student.id))
+    (e) => !state.excluded.has(String(e.student.id)),
   );
 }
 
@@ -284,7 +284,7 @@ async function recompute(el, state, year) {
     state.exam,
     year,
     state.coupling,
-    state.cijfer
+    state.cijfer,
   );
   if (seq !== _recomputeSeq || !el.isConnected) return;
   state.assignments = assignments;
@@ -303,7 +303,7 @@ async function saveCoupling(state, year) {
       state.coupling,
       year,
       state.exam.subject,
-      state.cijfer
+      state.cijfer,
     );
     state.savedJson = json;
   } catch (e) {
@@ -328,7 +328,7 @@ function studentJobs(state) {
         exam: exam.title,
         observaties: obs.map((o) => ({ icon: o.icon, name: o.naam })),
       },
-    }))
+    })),
   );
 }
 
@@ -530,7 +530,7 @@ function initModal(el, state, year) {
       async () => {
         await saveCoupling(state, year);
         openOpdrachtenGenererenModal(exam.id, year);
-      }
+      },
     );
   });
 

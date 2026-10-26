@@ -34,7 +34,7 @@ export async function openExamOverviewModal(
   year,
   scoreOverride = null,
   isSummary = false,
-  initialTab = 'resultaten'
+  initialTab = 'resultaten',
 ) {
   const all = await Store.getExams(year);
   const exam = all.find((e) => e.id === examId);
@@ -277,7 +277,7 @@ export async function openExamOverviewModal(
       resObs
         .map(
           (o, i) =>
-            `<th class="${i === 0 ? 'res-sep' : ''}" title="${escHtml(o.naam)}">${escHtml(o.icon)}</th>`
+            `<th class="${i === 0 ? 'res-sep' : ''}" title="${escHtml(o.naam)}">${escHtml(o.icon)}</th>`,
         )
         .join('') +
       RTTI_CATS.map((c, i) => `<th class="${i === 0 ? 'res-sep' : ''}">${c}%</th>`).join('') +
@@ -418,7 +418,7 @@ export async function openExamOverviewModal(
 
     (el) => {
       const qLabels = exam.questions.map((q) =>
-        q.section ? `${q.section}${q.number}` : String(q.number)
+        q.section ? `${q.section}${q.number}` : String(q.number),
       );
 
       // ── Inline data-label plugins ─────────────────────────────────────────
@@ -798,7 +798,7 @@ export async function openExamOverviewModal(
       function initVraaganalyse() {
         if (!hasQStats) return;
         const qPcts = qStats.map((s) =>
-          s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null
+          s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
         );
         const allCanvas = el.querySelector('#chart-q-all');
         if (allCanvas)
@@ -815,7 +815,7 @@ export async function openExamOverviewModal(
                   datasets: groupEntries.map((entry, i) => ({
                     label: entry.group.name,
                     data: entry.qStats.map((s) =>
-                      s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null
+                      s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
                     ),
                     backgroundColor: GROUP_PALETTE[i % GROUP_PALETTE.length],
                     borderRadius: 2,
@@ -845,7 +845,7 @@ export async function openExamOverviewModal(
                     y: { ticks: { font: { size: 10 } } },
                   },
                 },
-              })
+              }),
             );
           }
         }
@@ -930,7 +930,7 @@ export async function openExamOverviewModal(
                   },
                 },
               },
-            })
+            }),
           );
         }
 
@@ -975,8 +975,8 @@ export async function openExamOverviewModal(
                   mkDs(
                     cat,
                     groupSources.map((s) => s.pcts[ci]),
-                    rttiColors[ci]
-                  )
+                    rttiColors[ci],
+                  ),
                 ),
               },
               options: {
@@ -1007,7 +1007,7 @@ export async function openExamOverviewModal(
                   },
                 },
               },
-            })
+            }),
           );
         }
 
@@ -1035,7 +1035,7 @@ export async function openExamOverviewModal(
               }
             }
             const pcts = cats.map(({ scored, max }) =>
-              max > 0 ? Math.round((scored / max) * 100) : null
+              max > 0 ? Math.round((scored / max) * 100) : null,
             );
             if (pcts.some((p) => p !== null))
               examRttiRows.push({ title: ex.title, id: ex.id, pcts });
@@ -1106,7 +1106,7 @@ export async function openExamOverviewModal(
                   },
                 },
               },
-            })
+            }),
           );
         })();
       }
@@ -1147,7 +1147,7 @@ export async function openExamOverviewModal(
                   },
                 },
               },
-            })
+            }),
           );
         }
 
@@ -1190,7 +1190,7 @@ export async function openExamOverviewModal(
                     },
                   },
                 },
-              })
+              }),
             );
           }
         }
@@ -1234,7 +1234,7 @@ export async function openExamOverviewModal(
                   },
                 },
               },
-            })
+            }),
           );
         }
       }
@@ -1243,10 +1243,10 @@ export async function openExamOverviewModal(
       const tabInited = new Set(['resultaten']);
       function switchTab(name) {
         el.querySelectorAll('.overview-tab').forEach((b) =>
-          b.classList.toggle('selected', b.dataset.tab === name)
+          b.classList.toggle('selected', b.dataset.tab === name),
         );
         el.querySelectorAll('.tab-pane').forEach((p) =>
-          p.classList.toggle('hidden', p.id !== `tab-${name}`)
+          p.classList.toggle('hidden', p.id !== `tab-${name}`),
         );
         if (!tabInited.has(name)) {
           tabInited.add(name);
@@ -1270,7 +1270,7 @@ export async function openExamOverviewModal(
         const currentTab = () =>
           el.querySelector('.overview-tab.selected')?.dataset.tab ?? 'resultaten';
         const refresh = modalRefresher(() =>
-          openExamOverviewModal(examId, year, null, isSummary, currentTab())
+          openExamOverviewModal(examId, year, null, isSummary, currentTab()),
         );
         onModalSync('scores', (ev) => {
           if (ev.year === year && ev.subject === Store.getActiveSubject()) refresh();
@@ -1282,6 +1282,6 @@ export async function openExamOverviewModal(
         });
       }
     },
-    'modal-overview'
+    'modal-overview',
   );
 }

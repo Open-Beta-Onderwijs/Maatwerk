@@ -182,7 +182,8 @@ export async function renderToetsenList() {
   // Schoolsoort filter — always applied; exams without schoolsoort always pass
   exams = exams.filter(
     (e) =>
-      !(e.schoolsoort ?? []).length || (e.schoolsoort ?? []).some((ss) => schoolsoortFilter.has(ss))
+      !(e.schoolsoort ?? []).length ||
+      (e.schoolsoort ?? []).some((ss) => schoolsoortFilter.has(ss)),
   );
 
   // Jaarlaag filter
@@ -201,14 +202,14 @@ export async function renderToetsenList() {
   // Eigen filter: exam overlaps with at least one of teacher's groups
   if (eigenOnly && activeUser && !Store.isAdminActive()) {
     const myGroups = Store.getGroupsSync(year).filter((g) =>
-      (g.docenten ?? []).includes(activeUser.id)
+      (g.docenten ?? []).includes(activeUser.id),
     );
     exams = exams.filter((e) =>
       myGroups.some(
         (g) =>
           String(g.jaarlaag) === String(e.jaarlaag) &&
-          (g.schoolsoort ?? []).some((ss) => (e.schoolsoort ?? []).includes(ss))
-      )
+          (g.schoolsoort ?? []).some((ss) => (e.schoolsoort ?? []).includes(ss)),
+      ),
     );
   }
 
@@ -216,7 +217,7 @@ export async function renderToetsenList() {
     (a, b) =>
       String(a.jaarlaag).localeCompare(String(b.jaarlaag), undefined, { numeric: true }) ||
       (a.volgnummer ?? 0) - (b.volgnummer ?? 0) ||
-      (a.attempt ?? 1) - (b.attempt ?? 1)
+      (a.attempt ?? 1) - (b.attempt ?? 1),
   );
 
   if (exams.length === 0) {
@@ -381,13 +382,13 @@ export async function renderToetsenList() {
     b.addEventListener('click', () => {
       const yr = SEL.toetsenYear.getValue() || Store.getConfigSync().activeYear;
       openExamOverviewModal(b.dataset.examid, yr);
-    })
+    }),
   );
   container.querySelectorAll('[data-action="exam-overview-best"]').forEach((b) =>
     b.addEventListener('click', () => {
       const yr = SEL.toetsenYear.getValue() || Store.getConfigSync().activeYear;
       openBestGradesOverviewModal(b.dataset.parentid, yr);
-    })
+    }),
   );
 
   // ── Fill stats asynchronously ──────────────────────────────────────────────
@@ -416,7 +417,7 @@ export async function renderToetsenList() {
     } else {
       // Summary card stats (best grades)
       const summaryStatsEl = container.querySelector(
-        `.exam-stats[data-examid="${CSS.escape(e.id)}"][data-best-stats]`
+        `.exam-stats[data-examid="${CSS.escape(e.id)}"][data-best-stats]`,
       );
       if (summaryStatsEl)
         computeBestGradeStats(e.id, year).then((st) => applyStats(summaryStatsEl, st));
@@ -424,7 +425,7 @@ export async function renderToetsenList() {
       const allAttempts = [e, ...resits];
       for (const attempt of allAttempts) {
         const statsEl = container.querySelector(
-          `.exam-attempt-card .exam-stats[data-examid="${CSS.escape(attempt.id)}"]`
+          `.exam-attempt-card .exam-stats[data-examid="${CSS.escape(attempt.id)}"]`,
         );
         if (statsEl) computeExamStats(year, attempt).then((st) => applyStats(statsEl, st));
       }
@@ -440,7 +441,7 @@ export async function renderToetsenList() {
     el.title = problems
       .map(
         (p) =>
-          `${p.name} \u2014 ${p.issue === 'ongeldig' ? 'ongeldige score' : 'onvolledige scores'}`
+          `${p.name} \u2014 ${p.issue === 'ongeldig' ? 'ongeldige score' : 'onvolledige scores'}`,
       )
       .join('\n');
     el.style.display = 'inline';
@@ -454,7 +455,7 @@ export async function renderToetsenList() {
     } else {
       for (const attempt of [e, ...resits]) {
         const warnEl = container.querySelector(
-          `.exam-attempt-card .exam-warning[data-examid="${CSS.escape(attempt.id)}"]`
+          `.exam-attempt-card .exam-warning[data-examid="${CSS.escape(attempt.id)}"]`,
         );
         if (warnEl) computeExamWarnings(year, attempt).then((p) => applyWarning(warnEl, p));
       }
@@ -551,7 +552,7 @@ async function buildMenuItems(examId, kind, year) {
         danger: true,
         disabled:
           'Deze toets bestaat uit meerdere pogingen. De individuele pogingen moeten eerst worden verwijderd.',
-      }
+      },
     );
   } else {
     items.push(
@@ -562,7 +563,7 @@ async function buildMenuItems(examId, kind, year) {
         danger: true,
         disabled: await deleteBlockReason(examId, year),
         run: () => deleteExam(examId),
-      }
+      },
     );
   }
   return items;
@@ -586,7 +587,7 @@ async function toggleExamMenu(btn, year) {
     .map((it, i) =>
       it === 'sep'
         ? '<div class="exam-menu-sep" role="separator"></div>'
-        : `<button class="exam-menu-item${it.danger ? ' exam-menu-item--danger' : ''}" role="menuitem" data-idx="${i}"${it.disabled ? ` aria-disabled="true" title="${escHtml(it.disabled)}"` : ''}><span class="exam-menu-icon">${it.icon}</span><span>${escHtml(it.label)}</span></button>`
+        : `<button class="exam-menu-item${it.danger ? ' exam-menu-item--danger' : ''}" role="menuitem" data-idx="${i}"${it.disabled ? ` aria-disabled="true" title="${escHtml(it.disabled)}"` : ''}><span class="exam-menu-icon">${it.icon}</span><span>${escHtml(it.label)}</span></button>`,
     )
     .join('');
   document.body.appendChild(menu);

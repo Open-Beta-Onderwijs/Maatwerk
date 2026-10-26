@@ -108,7 +108,7 @@ export function renderStudentList() {
   // Eigen filter: student must be in at least one group where teacher is a docent
   if (eigenOnly && activeUser && !Store.isAdminActive()) {
     const myGroups = Store.getGroupsSync(year).filter((g) =>
-      (g.docenten ?? []).includes(activeUser.id)
+      (g.docenten ?? []).includes(activeUser.id),
     );
     const myStudentIds = new Set(myGroups.flatMap((g) => g.student_ids));
     students = students.filter((s) => myStudentIds.has(s.id));
@@ -120,7 +120,7 @@ export function renderStudentList() {
       (s) =>
         Store.fullName(s).toLowerCase().includes(query) ||
         String(s.id).includes(query) ||
-        (s.stamklas ?? '').toLowerCase().includes(query)
+        (s.stamklas ?? '').toLowerCase().includes(query),
     );
   }
 
@@ -173,7 +173,7 @@ export function renderStudentList() {
   container
     .querySelectorAll('[data-action="profile"]')
     .forEach((b) =>
-      b.addEventListener('click', () => openProfielModal(Number(b.dataset.id), null, _peers))
+      b.addEventListener('click', () => openProfielModal(Number(b.dataset.id), null, _peers)),
     );
   container
     .querySelectorAll('[data-action="edit-student"]')
@@ -190,7 +190,7 @@ export function renderStudentList() {
 
     checkHasScores.then((hasScores) => {
       const btn = container.querySelector(
-        `[data-action="del-student"][data-id="${CSS.escape(String(s.id))}"]`
+        `[data-action="del-student"][data-id="${CSS.escape(String(s.id))}"]`,
       );
       if (!btn) return;
       if (hasScores) {

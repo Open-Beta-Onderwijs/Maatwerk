@@ -102,7 +102,7 @@ async function renderUserList() {
       await Store.upsertUser(user);
       toast(
         user.actief ? `${user.voornaam} geactiveerd.` : `${user.voornaam} gedeactiveerd.`,
-        'success'
+        'success',
       );
       await renderUserList();
     });
@@ -201,7 +201,7 @@ function openUserModal(user) {
       }
 
       const selectedSchoolsoort = Array.from(content.querySelectorAll('.ss-toggle.selected')).map(
-        (b) => b.dataset.ss
+        (b) => b.dataset.ss,
       );
 
       const selectedVakken = isAdmin

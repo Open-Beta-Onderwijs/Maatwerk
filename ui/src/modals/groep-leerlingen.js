@@ -98,7 +98,7 @@ export async function openGroupStudentsModal(groupId, year) {
 
   // ── Group exams by Periode ─────────────────────────────────────────────────
   const periodes = [...new Set(examFamilies.map((f) => f.original.periode ?? '—'))].sort((a, b) =>
-    String(a).localeCompare(String(b), undefined, { numeric: true })
+    String(a).localeCompare(String(b), undefined, { numeric: true }),
   );
   const byPeriode = periodes.map((p) => ({
     p,
@@ -123,7 +123,7 @@ export async function openGroupStudentsModal(groupId, year) {
           `<th colspan="${families.reduce((sum, f) => sum + 2, 0)}" ${thStyle} style="text-align:center;padding:3px 6px;font-size:11px;
       font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;
       border-bottom:1px solid var(--border);border-right:1px solid #e0e0e0">
-      Periode ${escHtml(String(p))}</th>`
+      Periode ${escHtml(String(p))}</th>`,
       )
       .join('') +
     `<th colspan="2" ${thStyle} style="text-align:center;padding:3px 6px;font-size:11px;
@@ -140,9 +140,9 @@ export async function openGroupStudentsModal(groupId, year) {
               `<th style="text-align:right;padding:4px 6px;border-bottom:2px solid var(--border)">
         <span class="volgnummer" style="text-align:center;background:${examTypeColor(f.original)};margin-right:0">${f.original.volgnummer}</span></th>
         <th style="text-align:center;padding:4px 3px;border-bottom:2px solid var(--border);
-        ${fi === families.length - 1 ? 'border-right:1px solid #e0e0e0' : ''}"></th>`
+        ${fi === families.length - 1 ? 'border-right:1px solid #e0e0e0' : ''}"></th>`,
           )
-          .join('')
+          .join(''),
       )
       .join('') +
     `<th style="text-align:center;padding:4px 6px;border-bottom:2px solid var(--border);
@@ -189,7 +189,7 @@ export async function openGroupStudentsModal(groupId, year) {
                 badgeCell
               );
             })
-            .join('')
+            .join(''),
         )
         .join('');
 
@@ -242,7 +242,7 @@ export async function openGroupStudentsModal(groupId, year) {
             `<td style="background:#f0f4ff;${borderR}"></td>`
           );
         })
-        .join('')
+        .join(''),
     )
     .join('');
 
@@ -317,7 +317,7 @@ export async function openGroupStudentsModal(groupId, year) {
         else {
           showReloadNotice(
             `Deze groep is gewijzigd door ${who}. Het venster wordt opnieuw geladen.`,
-            reopen
+            reopen,
           );
         }
       });
@@ -330,7 +330,7 @@ export async function openGroupStudentsModal(groupId, year) {
         if (!changed) return;
         showReloadNotice(
           'Leerlinggegevens zijn gewijzigd door een collega. Het venster wordt opnieuw geladen.',
-          reopen
+          reopen,
         );
       });
 
@@ -339,11 +339,11 @@ export async function openGroupStudentsModal(groupId, year) {
           openProfielModal(
             Number(b.dataset.id),
             () => openGroupStudentsModal(b.dataset.groupid, b.dataset.year),
-            students
-          )
-        )
+            students,
+          ),
+        ),
       );
     },
-    true
+    true,
   ); // wide modal
 }

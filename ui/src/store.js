@@ -164,14 +164,18 @@ const Store = (() => {
         else users.push(user);
         return users;
       },
-      () => []
+      () => [],
     );
   }
 
   // ── Session (machine-local, not synced via OneDrive) ──────────────────────
   async function saveLastSession(subject, userId) {
     const existing = (await window.maatwerk.readLocalSession()) ?? {};
-    await window.maatwerk.writeLocalSession({ ...existing, lastSubject: subject, lastUserId: userId });
+    await window.maatwerk.writeLocalSession({
+      ...existing,
+      lastSubject: subject,
+      lastUserId: userId,
+    });
   }
 
   async function loadLastSession() {
@@ -413,7 +417,7 @@ const Store = (() => {
     cache[ypStudents(year)] = await update(
       ypStudents(year),
       (list) => sortStudents(mutator(list)),
-      () => []
+      () => [],
     );
   }
 
@@ -497,7 +501,7 @@ const Store = (() => {
     const set = new Set(
       getGroupsSync(year)
         .map((g) => String(g.jaarlaag ?? ''))
-        .filter(Boolean)
+        .filter(Boolean),
     );
     return [...set].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }
@@ -532,7 +536,7 @@ const Store = (() => {
         const jl = parseInt(updated.jaarlaag, 10);
         if (!isNaN(jl)) {
           const existing = arr.filter(
-            (e) => String(e.jaarlaag) === String(updated.jaarlaag) && e.volgnummer
+            (e) => String(e.jaarlaag) === String(updated.jaarlaag) && e.volgnummer,
           );
           const maxSeq =
             existing.length > 0 ? Math.max(...existing.map((e) => e.volgnummer % 100)) : 0;
@@ -597,7 +601,7 @@ const Store = (() => {
         mutator(rec);
         return rec;
       },
-      () => ({ student_id: studentId, scores: {} })
+      () => ({ student_id: studentId, scores: {} }),
     );
     return cache[file];
   }
@@ -899,7 +903,10 @@ const Store = (() => {
       }
       for (const [year, scores] of Object.entries(byYear)) {
         if (!yearSet.has(year)) continue;
-        await window.maatwerk.writeJson(`${year}/scores/${s.id}.json`, { student_id: s.id, scores });
+        await window.maatwerk.writeJson(`${year}/scores/${s.id}.json`, {
+          student_id: s.id,
+          scores,
+        });
       }
     }
 
@@ -1006,7 +1013,7 @@ const Store = (() => {
     const rec = await getStudentScores(studentId, year, subject);
     if (Object.keys(rec.overrides ?? {}).length) return true;
     return Object.values(rec.scores ?? {}).some((exScores) =>
-      Object.values(exScores ?? {}).some((v) => v !== null && v !== undefined)
+      Object.values(exScores ?? {}).some((v) => v !== null && v !== undefined),
     );
   }
 
@@ -1027,7 +1034,7 @@ const Store = (() => {
       ([key, val]) =>
         key.includes('/exams/') &&
         Array.isArray(val) &&
-        val.some((e) => (e.obs_ids ?? []).includes(obsId))
+        val.some((e) => (e.obs_ids ?? []).includes(obsId)),
     );
   }
 
@@ -1082,7 +1089,7 @@ const Store = (() => {
    */
   function resolveBestAttempts(history) {
     const parentsWithResits = new Set(
-      history.filter((h) => h.exam.parent_id).map((h) => h.exam.parent_id)
+      history.filter((h) => h.exam.parent_id).map((h) => h.exam.parent_id),
     );
     const handledParents = new Set();
     const result = [];
@@ -1143,7 +1150,7 @@ const Store = (() => {
           const arr = fresh.observations?.[examId];
           if (arr) fresh.observations[examId] = arr.filter((id) => id !== obsId);
         });
-      })
+      }),
     );
   }
 
@@ -1186,7 +1193,7 @@ const Store = (() => {
     else
       await window.maatwerk.writeTextFile(
         `opdrachten/${typFile}`,
-        content.split(`images/${id}/`).join(`images/${newId}/`)
+        content.split(`images/${id}/`).join(`images/${newId}/`),
       );
     await window.maatwerk.copyOpdrachtImages(id, newId);
     const { _meta, ...rest } = JSON.parse(JSON.stringify(original));
@@ -1267,7 +1274,7 @@ const Store = (() => {
     coupling,
     year,
     subject = _activeSubject,
-    cijferCards = []
+    cijferCards = [],
   ) {
     const saved = await update(ypExam(year, examId), (exam, onDisk) => {
       if (!onDisk) throw new Error(`Toets ${examId} bestaat niet meer.`);
@@ -1347,7 +1354,7 @@ const Store = (() => {
         cmp(a.group?.name, b.group?.name) ||
         cmp(a.student.achternaam, b.student.achternaam) ||
         cmp(a.student.voornaam, b.student.voornaam) ||
-        cmp(fullName(a.student), fullName(b.student))
+        cmp(fullName(a.student), fullName(b.student)),
     );
     return { students, obsStudents, cijferStudents };
   }
@@ -1431,7 +1438,7 @@ const Store = (() => {
             `${ev.year}/exams/`,
             ev.id,
             ev.after,
-            subj ? [`${ev.year}/exams/${subj}`] : []
+            subj ? [`${ev.year}/exams/${subj}`] : [],
           );
           ev.subject = subj ?? ev.before?.subject ?? null;
           break;
@@ -1444,7 +1451,7 @@ const Store = (() => {
             `${ev.year}/groups/`,
             ev.id,
             ev.after,
-            [subj && `${ev.year}/groups/${subj}`, `${ev.year}/groups/__all__`].filter(Boolean)
+            [subj && `${ev.year}/groups/${subj}`, `${ev.year}/groups/__all__`].filter(Boolean),
           );
           ev.subject = subj ?? ev.before?.subject ?? null;
           break;

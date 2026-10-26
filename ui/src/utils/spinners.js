@@ -25,10 +25,10 @@ export function wireSpinners(root) {
     }
 
     sp.querySelector('.spin-minus').addEventListener('click', () =>
-      set(parseFloat(sp.dataset.val) - step)
+      set(parseFloat(sp.dataset.val) - step),
     );
     sp.querySelector('.spin-plus').addEventListener('click', () =>
-      set(parseFloat(sp.dataset.val) + step)
+      set(parseFloat(sp.dataset.val) + step),
     );
 
     inp.addEventListener('change', () => {
@@ -52,6 +52,6 @@ export function wireSpinners(root) {
 /** Read the current numeric value from a .num-spinner element. */
 export function spinnerValue(sp) {
   return parseFloat(
-    (sp?.dataset?.val ?? sp?.querySelector?.('.spin-val')?.value ?? '0').replace(',', '.')
+    (sp?.dataset?.val ?? sp?.querySelector?.('.spin-val')?.value ?? '0').replace(',', '.'),
   );
 }

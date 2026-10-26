@@ -276,7 +276,7 @@ export async function openExamModal(existingId, afterSave = null) {
           };
           showExamEditor(exam, false, toetsYear, afterSave);
         });
-      }
+      },
     );
   } else {
     const all = await Store.getExams(toetsYear);
@@ -362,7 +362,7 @@ export function showExamEditor(
   toetsYear,
   afterSave = null,
   hasScores = false,
-  lockTopFields = false
+  lockTopFields = false,
 ) {
   const mode = exam.structureMode ?? 'roman';
   const secLabels =
@@ -477,7 +477,7 @@ export function showExamEditor(
             (o) =>
               `<button type="button" class="tog-btn obs-sel-btn${(exam.obs_ids ?? []).includes(o.id) ? ' selected' : ''}"
             data-obs-id="${escHtml(o.id)}" title="${escHtml(o.naam)}"
-            style="font-size:16px;width:36px;height:36px;padding:0">${escHtml(o.icon)}</button>`
+            style="font-size:16px;width:36px;height:36px;padding:0">${escHtml(o.icon)}</button>`,
           )
           .join('')}
       </div>
@@ -504,7 +504,7 @@ export function showExamEditor(
           } else {
             showReloadNotice(
               `Deze toets is gewijzigd door ${who}. Het venster wordt opnieuw geladen.`,
-              () => openExamModal(exam.id, afterSave)
+              () => openExamModal(exam.id, afterSave),
             );
           }
         });
@@ -565,7 +565,7 @@ export function showExamEditor(
                 ${Array.from(
                   { length: 11 },
                   (_, n) =>
-                    `<button class="tog-btn pts-btn${q.max_points === n ? ' selected' : ''}" data-qi="${i}" data-pts="${n}">${n}</button>`
+                    `<button class="tog-btn pts-btn${q.max_points === n ? ' selected' : ''}" data-qi="${i}" data-pts="${n}">${n}</button>`,
                 ).join('')}
               </div>
             </td>
@@ -581,7 +581,7 @@ export function showExamEditor(
                 ${['R', 'T1', 'T2', 'I']
                   .map(
                     (cat) =>
-                      `<button class="tog-btn rtti-btn${q.rtti === cat ? ' selected' : ''}" data-qi="${i}" data-rtti="${cat}">${cat}</button>`
+                      `<button class="tog-btn rtti-btn${q.rtti === cat ? ' selected' : ''}" data-qi="${i}" data-rtti="${cat}">${cat}</button>`,
                   )
                   .join('')}
               </div>
@@ -642,21 +642,21 @@ export function showExamEditor(
             if (wasSelected) {
               const ok = await confirmDialog(
                 'Weet je zeker dat je deze observatie wilt verwijderen uit de toets? Alle geregistreerde indicaties van deze observatie voor deze toets worden verwijderd.',
-                { okLabel: 'Verwijderen', danger: true }
+                { okLabel: 'Verwijderen', danger: true },
               );
               if (!ok) return;
               deselectedObs.add(btn.dataset.obsId);
             } else {
               const ok = await confirmDialog(
                 'Er zijn al scores ingevoerd voor deze toets. Een toegevoegde observatie kan achteraf niet meer worden verwijderd. Wil je doorgaan?',
-                { okLabel: 'Doorgaan' }
+                { okLabel: 'Doorgaan' },
               );
               if (!ok) return;
               deselectedObs.delete(btn.dataset.obsId);
             }
           }
           btn.classList.toggle('selected');
-        })
+        }),
       );
 
       el.querySelector('#f-addq').addEventListener('click', async () => {
@@ -664,7 +664,7 @@ export function showExamEditor(
           hasScores &&
           !(await confirmDialog(
             'Er zijn al scores ingevoerd voor deze toets. Een toegevoegde vraag kan achteraf niet meer worden verwijderd. Wil je doorgaan?',
-            { okLabel: 'Doorgaan' }
+            { okLabel: 'Doorgaan' },
           ))
         )
           return;
@@ -703,7 +703,7 @@ export function showExamEditor(
           return;
         }
         const obs_ids = [...el.querySelectorAll('.obs-sel-btn.selected')].map(
-          (b) => b.dataset.obsId
+          (b) => b.dataset.obsId,
         );
         for (const obsId of deselectedObs) {
           await Store.removeObsFromExamScores(obsId, exam.id, toetsYear);
@@ -721,7 +721,7 @@ export function showExamEditor(
             type: isPta ? 'pta' : 'regular',
             obs_ids,
           },
-          toetsYear
+          toetsYear,
         );
         closeModal();
         toast('Toets opgeslagen.', 'success');
@@ -734,7 +734,7 @@ export function showExamEditor(
       const initialForm = formSnapshot(el);
       guardModalClose(() => !isEdit || formSnapshot(el) !== initialForm);
     },
-    true
+    true,
   );
 }
 
@@ -747,7 +747,7 @@ export async function deleteExam(id) {
   if (await Store.examHasScores(id, toetsYear)) {
     toast(
       'Er zijn scores ingevoerd voor deze toets, de toets kan dus niet worden verwijderd.',
-      'error'
+      'error',
     );
     return;
   }
