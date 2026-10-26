@@ -1,14 +1,20 @@
 # State
 
-Last updated: 2026-10-26 (end of Step 2, decisions recorded) Branch: `main` Last tag: `step-02`
+Last updated: 2026-10-26 (Step 3a in progress) Branch: `step/03-ui-foundation` Last tag: `step-02`
 
 ## Current step
 
-Step 2 done. Next: Step 3, UI foundation (only when the user says so).
+Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
 
 ## Done since last tag
 
-- (nothing yet)
+- 3a.1 verbatim import of `_reference/renderer` (8c27793; WIP commit, not green by design).
+- 3a.2 codemod `window.rtti` -> `window.maatwerk`, editor postMessage types `rtti-*` ->
+  `maatwerk-*`.
+- 3a.3 Prettier on the imported code (mechanical).
+- 3a.4 Vite multi-page build, vendored npm deps at reference versions, `src/legacy/globals.ts`,
+  SPDX, ESLint legacy config, `ui/tests/offline.test.ts`. Handsontable is a documented temporary
+  licence exception (removed in 3b; CI exe artifacts must not be distributed until then).
 
 ## Step 2 summary
 
@@ -26,11 +32,15 @@ Step 2 done. Next: Step 3, UI foundation (only when the user says so).
 
 ## In progress
 
-- (nothing)
+- 3a.5 bridge.
 
 ## Next action (concrete, resumable)
 
-1. When the user says so: `git checkout -b step/03-ui-foundation`, read PLAN.md Step 3 and its notes.
+1. 3a.5 bridge: `ui/src/bridge/api.ts` (interface of the 28 ported methods with their compat
+   result shapes), `MockApi` (in-memory FS seeded from `tools/fixtures`, CAS conflicts,
+   `data:changed`), `TauriApi` stub, `npm run dev:mock`.
+2. Then: domain extraction + quirk fixes (failing test first), inline styles -> classes + strict
+   CSP, Playwright smoke, `docs/parity.md`, 3a review, tag `step-03a`.
 
 ## Open questions for the user
 
