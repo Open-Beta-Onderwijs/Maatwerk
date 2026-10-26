@@ -16,7 +16,15 @@ export default defineConfig({
     timezoneId: 'Europe/Amsterdam',
     viewport: { width: 1280, height: 800 },
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: 'visual.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    // Local visual regression (npm run test:visual); not part of test:e2e or CI.
+    { name: 'visual', testMatch: 'visual.spec.ts', use: { ...devices['Desktop Chrome'] } },
+  ],
   webServer: {
     command: 'npx vite preview --outDir dist-mock --port 4173 --strictPort',
     url: 'http://localhost:4173',

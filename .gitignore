@@ -18,3 +18,4 @@ node_modules/
 !.vscode/extensions.json
 .idea/
 *.log
+/ui/e2e/visual.spec.ts-snapshots/

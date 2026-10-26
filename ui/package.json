@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.e2e.json",
     "test": "vitest run",
-    "test:e2e": "npm run build:mock && playwright test"
+    "test:e2e": "npm run build:mock && playwright test --project chromium",
+    "test:visual": "npm run build:mock && playwright test --project visual"
   },
   "dependencies": {
     "@codemirror/commands": "6.11.1",
