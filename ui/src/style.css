@@ -2936,3 +2936,511 @@ td.grade-override-stale::after {
   line-height: 1;
   color: #b35900;
 }
+
+/* ══ Former inline styles (Step 3a, strict CSP) ═══════════════════════════════
+   The reference set these with style="" attributes, which the CSP blocks.
+   Values computed at render time use data attributes (src/legacy/style-data.ts).
+   Small utilities first, then per component. Pixel-identical to the reference. */
+
+.screen-header--h32 {
+  height: 32px;
+}
+
+/* Grade pill in tables (utils/grades.js gradeCell); colours via data-border-color/data-color */
+.grade-cell-td {
+  text-align: center;
+  padding: 3px 4px;
+}
+.grade-pill {
+  display: inline-block;
+  min-width: 34px;
+  padding: 1px 5px;
+  border: 2px solid;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.grade-pill--fail {
+  font-weight: bold;
+}
+
+/* Mean ± sd line with a coloured dot (utils/grades.js gradeStatHtml) */
+.stat-line {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.stat-dot {
+  vertical-align: middle;
+  margin: 0 3px 0 0;
+  flex-shrink: 0;
+}
+
+/* Utilities: one declaration each, from the former inline styles. !important, as
+   in Bootstrap: an inline style beat every selector, and so must these (no JS
+   sets the same property on these elements). Shorthand before longhand. */
+.u-d-flex {
+  display: flex !important;
+}
+.u-d-block {
+  display: block !important;
+}
+.u-d-inline-block {
+  display: inline-block !important;
+}
+.u-items-center {
+  align-items: center !important;
+}
+.u-items-end {
+  align-items: flex-end !important;
+}
+.u-items-start {
+  align-items: flex-start !important;
+}
+.u-justify-center {
+  justify-content: center !important;
+}
+.u-justify-end {
+  justify-content: flex-end !important;
+}
+.u-flex-wrap {
+  flex-wrap: wrap !important;
+}
+.u-flex-auto {
+  flex: 0 0 auto !important;
+}
+.u-flex-1 {
+  flex: 1 !important;
+}
+.u-flex-1-5 {
+  flex: 1.5 !important;
+}
+.u-flex-2 {
+  flex: 2 !important;
+}
+.u-flex-fill {
+  flex: 999 !important;
+}
+.u-flex-none {
+  flex: none !important;
+}
+.u-shrink-0 {
+  flex-shrink: 0 !important;
+}
+.u-gap-0 {
+  gap: 0 !important;
+}
+.u-gap-4 {
+  gap: 4px !important;
+}
+.u-gap-6 {
+  gap: 6px !important;
+}
+.u-gap-8 {
+  gap: 8px !important;
+}
+.u-gap-12 {
+  gap: 12px !important;
+}
+.u-gap-14 {
+  gap: 14px !important;
+}
+.u-gap-20 {
+  gap: 20px !important;
+}
+.u-grid-4x28 {
+  grid-template-columns: repeat(4, 28px) !important;
+}
+.u-bg-dark {
+  background: #111 !important;
+}
+.u-bg-highlight {
+  background: #f0f4ff !important;
+}
+.u-bg-page {
+  background: var(--bg) !important;
+}
+.u-bg-surface {
+  background: var(--surface) !important;
+}
+.u-border {
+  border: 1px solid var(--border) !important;
+}
+.u-border-b {
+  border-bottom: 1px solid var(--border) !important;
+}
+.u-border-b-2 {
+  border-bottom: 2px solid var(--border) !important;
+}
+.u-border-l-2 {
+  border-left: 2px solid var(--border) !important;
+}
+.u-border-t-2 {
+  border-top: 2px solid var(--border) !important;
+}
+.u-border-r-light {
+  border-right: 1px solid #e0e0e0 !important;
+}
+.u-border-light {
+  border-color: #d0d6df !important;
+}
+.u-rounded {
+  border-radius: var(--radius) !important;
+}
+.u-collapse {
+  border-collapse: collapse !important;
+}
+.u-text-subtle {
+  color: #9aa0ab !important;
+}
+.u-text-faint {
+  color: #aaa !important;
+}
+.u-text-muted {
+  color: var(--muted) !important;
+}
+.u-cursor-default {
+  cursor: default !important;
+}
+.u-cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+.u-cursor-pointer {
+  cursor: pointer !important;
+}
+.u-fs-11 {
+  font-size: 11px !important;
+}
+.u-fs-12 {
+  font-size: 12px !important;
+}
+.u-fs-13 {
+  font-size: 13px !important;
+}
+.u-fs-14 {
+  font-size: 14px !important;
+}
+.u-fs-16 {
+  font-size: 16px !important;
+}
+.u-fs-17 {
+  font-size: 17px !important;
+}
+.u-italic {
+  font-style: italic !important;
+}
+.u-not-italic {
+  font-style: normal !important;
+}
+.u-fw-600 {
+  font-weight: 600 !important;
+}
+.u-fw-normal {
+  font-weight: normal !important;
+}
+.u-tracking {
+  letter-spacing: 0.4px !important;
+}
+.u-uppercase {
+  text-transform: uppercase !important;
+}
+.u-text-center {
+  text-align: center !important;
+}
+.u-text-left {
+  text-align: left !important;
+}
+.u-text-right {
+  text-align: right !important;
+}
+.u-ellipsis {
+  text-overflow: ellipsis !important;
+}
+.u-nowrap {
+  white-space: nowrap !important;
+}
+.u-align-middle {
+  vertical-align: middle !important;
+}
+.u-align-bottom {
+  vertical-align: bottom !important;
+}
+.u-relative {
+  position: relative !important;
+}
+.u-overflow-hidden {
+  overflow: hidden !important;
+}
+.u-overflow-x-auto {
+  overflow-x: auto !important;
+}
+.u-opacity-55 {
+  opacity: 0.55 !important;
+}
+.u-no-pointer {
+  pointer-events: none !important;
+}
+.u-h-28 {
+  height: 28px !important;
+}
+.u-h-30 {
+  height: 30px !important;
+}
+.u-h-32 {
+  height: 32px !important;
+}
+.u-h-36 {
+  height: 36px !important;
+}
+.u-h-200 {
+  height: 200px !important;
+}
+.u-h-220 {
+  height: 220px !important;
+}
+.u-h-240 {
+  height: 240px !important;
+}
+.u-h-260 {
+  height: 260px !important;
+}
+.u-h-280 {
+  height: 280px !important;
+}
+.u-min-h-36 {
+  min-height: 36px !important;
+}
+.u-w-full {
+  width: 100% !important;
+}
+.u-w-30 {
+  width: 30px !important;
+}
+.u-w-32 {
+  width: 32px !important;
+}
+.u-w-36 {
+  width: 36px !important;
+}
+.u-w-48 {
+  width: 48px !important;
+}
+.u-w-50 {
+  width: 50px !important;
+}
+.u-w-80 {
+  width: 80px !important;
+}
+.u-w-90 {
+  width: 90px !important;
+}
+.u-w-108 {
+  width: 108px !important;
+}
+.u-w-110 {
+  width: 110px !important;
+}
+.u-w-270 {
+  width: 270px !important;
+}
+.u-min-w-0 {
+  min-width: 0 !important;
+}
+.u-min-w-90 {
+  min-width: 90px !important;
+}
+.u-min-w-110 {
+  min-width: 110px !important;
+}
+.u-min-w-160 {
+  min-width: 160px !important;
+}
+.u-m-0 {
+  margin: 0 !important;
+}
+.u-mx-3 {
+  margin: 0 3px !important;
+}
+.u-mx-4 {
+  margin: 0 4px !important;
+}
+.u-my-8 {
+  margin: 8px 0 !important;
+}
+.u-my-8-4 {
+  margin: 8px 0 4px !important;
+}
+.u-bleed-28 {
+  margin: 0 -28px -28px !important;
+}
+.u-mb-0 {
+  margin-bottom: 0 !important;
+}
+.u-mb-10 {
+  margin-bottom: 10px !important;
+}
+.u-mb-12 {
+  margin-bottom: 12px !important;
+}
+.u-mb-14 {
+  margin-bottom: 14px !important;
+}
+.u-mb-16 {
+  margin-bottom: 16px !important;
+}
+.u-mb-20 {
+  margin-bottom: 20px !important;
+}
+.u-mr-0 {
+  margin-right: 0 !important;
+}
+.u-mr-5 {
+  margin-right: 5px !important;
+}
+.u-mt-4 {
+  margin-top: 4px !important;
+}
+.u-mt-6 {
+  margin-top: 6px !important;
+}
+.u-mt-8 {
+  margin-top: 8px !important;
+}
+.u-mt-10 {
+  margin-top: 10px !important;
+}
+.u-mt-12 {
+  margin-top: 12px !important;
+}
+.u-mt-14 {
+  margin-top: 14px !important;
+}
+.u-mt-16 {
+  margin-top: 16px !important;
+}
+.u-p-0 {
+  padding: 0 !important;
+}
+.u-p-2 {
+  padding: 2px !important;
+}
+.u-p-8 {
+  padding: 8px !important;
+}
+.u-p-10 {
+  padding: 10px !important;
+}
+.u-p-panel {
+  padding: 10px 12px 14px !important;
+}
+.u-p-bleed-28 {
+  padding: 16px 28px 28px !important;
+}
+.u-px-2 {
+  padding: 0 2px !important;
+}
+.u-px-6 {
+  padding: 0 6px !important;
+}
+.u-py-4 {
+  padding: 4px 0 !important;
+}
+.u-py-7 {
+  padding: 7px 0 !important;
+}
+.u-p-2-4 {
+  padding: 2px 4px !important;
+}
+.u-p-3-4 {
+  padding: 3px 4px !important;
+}
+.u-p-3-6 {
+  padding: 3px 6px !important;
+}
+.u-p-4-6 {
+  padding: 4px 6px !important;
+}
+.u-pr-30 {
+  padding-right: 30px !important;
+}
+
+/* Icon picker of the observatie modal (screens/observaties.js) */
+.obs-icon-btn {
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.obs-icon-btn.selected {
+  border-color: var(--primary);
+  background: #e8f0fb;
+}
+
+/* Group students modal (modals/groep-leerlingen.js) */
+.grade-pill--wide {
+  text-align: center;
+  min-width: 36px;
+}
+.gl-th {
+  text-align: center;
+  padding: 3px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 2px solid var(--border);
+}
+.gl-name-th {
+  text-align: left;
+  padding: 4px 12px 4px 4px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.gl-badge-th {
+  text-align: center;
+  padding: 4px 3px;
+  border-bottom: 2px solid var(--border);
+}
+.gl-bg-even {
+  background: #f8f9fb;
+}
+.gl-bg-odd {
+  background: #fff;
+}
+.gl-name-td {
+  padding: 5px 12px 5px 4px;
+  white-space: nowrap;
+}
+.gl-badge-td {
+  text-align: left;
+  vertical-align: top;
+  padding: 3px 1px 3px 2px;
+  width: 30px;
+}
+.gl-grade-td {
+  text-align: right;
+  padding: 3px 4px;
+  width: 50px;
+}
+.gl-avg-td {
+  text-align: center;
+  padding: 3px 4px;
+  width: 70px;
+}
+.gl-foot-label {
+  padding: 5px 12px 5px 4px;
+  white-space: nowrap;
+  background: #f0f4ff;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}

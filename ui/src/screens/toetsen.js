@@ -266,11 +266,11 @@ export async function renderToetsenList() {
   }
 
   function statsSpanHtml(examId, isBest = false) {
-    return `<span class="exam-stats muted" data-examid="${escHtml(examId)}"${isBest ? ' data-best-stats="1"' : ''} style="display:none"></span>`;
+    return `<span class="exam-stats muted" data-examid="${escHtml(examId)}"${isBest ? ' data-best-stats="1"' : ''} data-display="none"></span>`;
   }
 
   function warningSpanHtml(examId) {
-    return `<span class="exam-warning" data-examid="${escHtml(examId)}" style="display:none" aria-label="Waarschuwing">⚠</span>`;
+    return `<span class="exam-warning" data-examid="${escHtml(examId)}" data-display="none" aria-label="Waarschuwing">⚠</span>`;
   }
 
   function metaLine(e) {
@@ -290,7 +290,7 @@ export async function renderToetsenList() {
     if (!letter) return '';
     const jl = parseInt(e.jaarlaag, 10);
     if (jl < 4) return '';
-    return `<span class="volgnummer" style="background:#111;margin-right:0">${letter}</span> `;
+    return `<span class="u-bg-dark u-mr-0 volgnummer">${letter}</span> `;
   }
 
   function attemptBadge(e) {
@@ -311,7 +311,7 @@ export async function renderToetsenList() {
     return `
       <div class="card exam-attempt-card">
         <div class="card-main">
-          <strong>${wiSubBadge(e)}<span class="volgnummer" style="background:${typeColor(e)}">${escHtml(attemptBadge(e))}</span> <button class="student-name-btn exam-title-link" style="vertical-align:middle" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+          <strong>${wiSubBadge(e)}<span class="volgnummer" data-bg="${typeColor(e)}">${escHtml(attemptBadge(e))}</span> <button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
           <span class="rtti-summary">${examSummaryLine(e)}</span>
           ${statsSpanHtml(e.id)}
         </div>
@@ -340,7 +340,7 @@ export async function renderToetsenList() {
       html += `
         <div class="card">
           <div class="card-main">
-            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" style="background:${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="student-name-btn exam-title-link" style="vertical-align:middle" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" data-bg="${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
             <span class="muted">${metaLine(e)}</span>
             <span class="rtti-summary">${examSummaryLine(e)}</span>
             ${statsSpanHtml(e.id)}
@@ -357,7 +357,7 @@ export async function renderToetsenList() {
       html += `
         <div class="card exam-summary-card">
           <div class="card-main">
-            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" style="background:${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="student-name-btn exam-title-link" style="vertical-align:middle" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" data-bg="${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
             <span class="muted">${metaLine(e)}</span>
             ${statsSpanHtml(e.id, true)}
           </div>
@@ -402,7 +402,7 @@ export async function renderToetsenList() {
     const gv = parseFloat(st.avgG.replace(',', '.'));
     const circleColor = isFail(gv) ? '#e57373' : lerpColor('#ffd54f', '#66bb6a', (gv - 5.5) / 4.5);
     el.innerHTML =
-      `<svg width="10" height="10" viewBox="0 0 10 10" style="vertical-align:middle;margin-right:5px;flex-shrink:0"><circle cx="5" cy="5" r="5" fill="${circleColor}"/></svg>` +
+      `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mr-5 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${circleColor}"/></svg>` +
       `${st.avgG} ± ${st.sd} · ${st.fails}% onvoldoende`;
     el.style.display = 'flex';
     el.style.alignItems = 'center';

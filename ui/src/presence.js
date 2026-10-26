@@ -186,7 +186,7 @@ export function badgeHtml(user, status, title) {
   const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
   return (
     `<span class="user-badge-mini ${shape} presence-badge presence-${status}" ` +
-    `data-len="${initials.length}" style="--badge-color:${escHtml(user.kleur ?? '#888')}" ` +
+    `data-len="${initials.length}" data-badge-color="${escHtml(user.kleur ?? '#888')}" ` +
     `title="${escHtml(title)}">${escHtml(initials)}</span>`
   );
 }

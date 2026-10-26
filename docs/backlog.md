@@ -2,6 +2,18 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 3a
+
+- **Styling cleanup (Step 10):** the 268 inline styles became pixel-identical CSS (Step 3a): about
+  130 one-declaration `u-*` utilities (`!important`, mirroring inline precedence) plus a few
+  component classes (`grade-pill`, `gl-*`, `obs-icon-btn`). Consolidate them into semantic
+  component classes and fix the inconsistencies they preserve (e.g. grade pills 34 vs 36 px, two
+  panel paddings `10px` vs `10px 12px 14px`, `#aaa` vs `#9aa0ab` greys). Each visible change needs
+  the user's eye; `npm run test:visual` shows the diff.
+- **U18:** the period separators in the group students modal never rendered; add them if wanted.
+- **Dependency updates after parity (Step 10):** pdfjs-dist 4.9.155, chart.js 4.4.2 and
+  chartjs-plugin-annotation 3.0.1 are pinned to the reference versions.
+
 ## From the Step 2 review (`docs/reviews/step-02.md`)
 
 - **m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
@@ -20,9 +32,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **m6 (Step 6):** full third-party notices for the ~300 bundled crates (e.g. `cargo about`) and an
   "Over Maatwerk" screen with licence text and a source link, before the exe is distributed (AGPL
   section 13 / GPL section 6).
-- **n1 (Step 3):** CSP. The reference UI has ~262 inline `style=` attributes, which
-  `style-src 'self'` blocks. Decide in Step 3 (move to classes vs. a nonce/hash); do not add
-  `'unsafe-inline'` silently. Also add `object-src 'none'; base-uri 'self'; frame-ancestors 'none'`.
+- ~~**n1 (Step 3):** CSP~~: done in Step 3a (classes + CSSOM style data, `ui/vite/csp.ts`,
+  `ui/e2e/csp.spec.ts`).
 - **n3:** `LICENSE` is the SPDX reflowed AGPL-3.0 text; replace with the verbatim gnu.org text when
   gnu.org is reachable.
 - **n5:** `src-tauri/tauri.conf.json` `version` duplicates the Cargo workspace version; drop it

@@ -29,23 +29,23 @@ export async function openExamModal(existingId, afterSave = null) {
     showModal(
       `
       <h3>Nieuwe toets — stap 1 van 2</h3>
-      <div class="form-row" style="align-items:flex-end;gap:20px">
-        <div class="form-group" style="flex:999;min-width:0;margin-bottom:0">
+      <div class="u-items-end u-gap-20 form-row">
+        <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
           <label>Naam</label>
           <input id="f-etitle" type="text" placeholder="PTA t.na-3 (H4, 9, 11, K3)" />
         </div>
-        <div class="form-group" style="flex:none;margin-bottom:0">
+        <div class="u-flex-none u-mb-0 form-group">
           <label>PTA</label>
           <button type="button" class="pta-btn" id="f-epta-btn" data-checked="false">✓</button>
         </div>
-        <div style="flex:1"></div>
-        <div class="form-group" style="flex:none;width:110px;margin-bottom:0">
+        <div class="u-flex-1"></div>
+        <div class="u-flex-none u-w-110 u-mb-0 form-group">
           <label>Schooljaar</label>
-          <div id="f-exam-year-label" style="height:30px;display:flex;align-items:center;font-size:13px;color:var(--muted);font-style:italic"></div>
+          <div id="f-exam-year-label" class="u-h-30 u-d-flex u-items-center u-fs-13 u-text-muted u-italic"></div>
         </div>
       </div>
-      <div class="form-row" style="align-items:flex-end;gap:20px;margin-top:10px">
-        <div class="form-group" style="flex:none;margin-bottom:0">
+      <div class="u-items-end u-gap-20 u-mt-10 form-row">
+        <div class="u-flex-none u-mb-0 form-group">
           <label>Schoolsoort</label>
           <div class="btn-toggle-group">
             ${['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium']
@@ -59,7 +59,7 @@ export async function openExamModal(existingId, afterSave = null) {
         ${
           isWi
             ? `
-        <div class="form-group" style="flex:none;margin-bottom:0">
+        <div class="u-flex-none u-mb-0 form-group">
           <label>Subcategorie</label>
           <div class="btn-toggle-group">
             <button class="tog-btn sub-btn" data-sub="wisa">A</button>
@@ -71,8 +71,8 @@ export async function openExamModal(existingId, afterSave = null) {
             : ''
         }
       </div>
-      <div class="form-row" style="align-items:flex-end;gap:20px;margin-top:10px">
-        <div class="form-group" style="flex:2;margin-bottom:0">
+      <div class="u-items-end u-gap-20 u-mt-10 form-row">
+        <div class="u-flex-2 u-mb-0 form-group">
           <label>Jaarlaag</label>
           <div class="btn-toggle-group">
             ${[1, 2, 3, 4, 5, 6]
@@ -80,7 +80,7 @@ export async function openExamModal(existingId, afterSave = null) {
               .join('')}
           </div>
         </div>
-        <div class="form-group" style="flex:2;margin-bottom:0">
+        <div class="u-flex-2 u-mb-0 form-group">
           <label>Periode</label>
           <div class="btn-toggle-group">
             ${[1, 2, 3, 4, 5]
@@ -88,7 +88,7 @@ export async function openExamModal(existingId, afterSave = null) {
               .join('')}
           </div>
         </div>
-        <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+        <div class="u-mb-0 form-group spinner-wrap-sm">
           <label>Weging</label>
           <div class="num-spinner" id="f-eweging" data-val="1" data-step="0.5" data-min="0" data-max="100">
             <button type="button" class="spin-btn spin-minus">−</button>
@@ -96,7 +96,7 @@ export async function openExamModal(existingId, afterSave = null) {
             <button type="button" class="spin-btn spin-plus">+</button>
           </div>
         </div>
-        <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+        <div class="u-mb-0 form-group spinner-wrap-sm">
           <label>Weging SE</label>
           <div class="num-spinner" id="f-eweging-se" data-val="1" data-step="0.5" data-min="0" data-max="100">
             <button type="button" class="spin-btn spin-minus">−</button>
@@ -105,12 +105,12 @@ export async function openExamModal(existingId, afterSave = null) {
           </div>
         </div>
       </div>
-      <div class="form-row" style="margin-top:10px;gap:20px;align-items:flex-end">
-        <div class="form-group" style="flex:1;min-width:160px">
+      <div class="u-mt-10 u-gap-20 u-items-end form-row">
+        <div class="u-flex-1 u-min-w-160 form-group">
           <label>Opgave- &amp; Vraagstructuur</label>
           <div id="f-struct-host" class="csel-host"></div>
         </div>
-        <div class="form-group" style="flex:none;width:108px">
+        <div class="u-flex-none u-w-108 form-group">
           <label>Aantal vragen</label>
           <div class="num-spinner" id="f-enum" data-val="10" data-step="1" data-min="1" data-max="40">
             <button type="button" class="spin-btn spin-minus">−</button>
@@ -390,61 +390,61 @@ export function showExamEditor(
     `
     <h3>${
       isEdit
-        ? `Toets bewerken: <em>${escHtml(exam.title)}</em> <span style="font-weight:normal;font-size:14px;font-style:normal">(Jaarlaag ${escHtml(String(exam.jaarlaag))}, ${escHtml((exam.schoolsoort ?? []).join(' / ') || '—')}, ${escHtml(toetsYear)})</span>`
+        ? `Toets bewerken: <em>${escHtml(exam.title)}</em> <span class="u-fw-normal u-fs-14 u-not-italic">(Jaarlaag ${escHtml(String(exam.jaarlaag))}, ${escHtml((exam.schoolsoort ?? []).join(' / ') || '—')}, ${escHtml(toetsYear)})</span>`
         : `Nieuwe toets — stap 2 van 2: <em>${escHtml(exam.title)}</em>`
     }</h3>
-    <div class="form-row" style="align-items:flex-end;gap:20px;margin-bottom:10px;flex-wrap:wrap">
-      <div class="form-group" style="flex:2;min-width:0;margin-bottom:0">
+    <div class="u-items-end u-gap-20 u-mb-10 u-flex-wrap form-row">
+      <div class="u-flex-2 u-min-w-0 u-mb-0 form-group">
         <label>Naam</label>
         <input id="f-etitle2" type="text" value="${escHtml(exam.title)}" />
       </div>
-      <div class="form-group" style="flex:none;margin-bottom:0">
+      <div class="u-flex-none u-mb-0 form-group">
         <label>PTA</label>
         ${
           lockTopFields
-            ? `<div style="cursor:not-allowed;display:inline-block" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><button type="button" class="pta-btn" id="f-epta-btn" data-checked="${exam.type === 'pta' ? 'true' : 'false'}" disabled style="pointer-events:none">✓</button></div>`
+            ? `<div class="u-cursor-not-allowed u-d-inline-block" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><button type="button" class="u-no-pointer pta-btn" id="f-epta-btn" data-checked="${exam.type === 'pta' ? 'true' : 'false'}" disabled>✓</button></div>`
             : `<button type="button" class="pta-btn" id="f-epta-btn" data-checked="${exam.type === 'pta' ? 'true' : 'false'}">✓</button>`
         }
       </div>
       ${
         !isEdit
           ? `
-      <div class="form-group" style="flex:none;width:90px;margin-bottom:0">
+      <div class="u-flex-none u-w-90 u-mb-0 form-group">
         <label>Schooljaar</label>
         <input type="text" value="${escHtml(toetsYear)}" readonly
-          style="background:var(--bg);color:var(--muted);font-size:12px;padding:0 6px" />
+          class="u-bg-page u-text-muted u-fs-12 u-px-6" />
       </div>
-      <div class="form-group" style="flex:none;margin-bottom:0">
+      <div class="u-flex-none u-mb-0 form-group">
         <label>Jaar</label>
         <button class="tog-btn jl-btn jl-locked selected" disabled>${escHtml(String(exam.jaarlaag))}</button>
       </div>`
           : ''
       }
-      <div class="form-group" style="flex:1.5;margin-bottom:0">
+      <div class="u-flex-1-5 u-mb-0 form-group">
         <label>Periode</label>
         ${
           lockTopFields
-            ? `<div style="cursor:not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="btn-toggle-group" style="pointer-events:none">${[1, 2, 3, 4, 5].map((n) => `<button class="tog-btn per-btn tog-btn-disabled${String(exam.periode) === String(n) ? ' selected' : ''}" data-per="${n}" disabled>${n}</button>`).join('')}</div></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="u-no-pointer btn-toggle-group">${[1, 2, 3, 4, 5].map((n) => `<button class="tog-btn per-btn tog-btn-disabled${String(exam.periode) === String(n) ? ' selected' : ''}" data-per="${n}" disabled>${n}</button>`).join('')}</div></div>`
             : `<div class="btn-toggle-group">${[1, 2, 3, 4, 5].map((n) => `<button class="tog-btn per-btn${String(exam.periode) === String(n) ? ' selected' : ''}" data-per="${n}">${n}</button>`).join('')}</div>`
         }
       </div>
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging</label>
         ${
           lockTopFields
-            ? `<div style="cursor:not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
             : `<div class="num-spinner" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
         }
       </div>
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
         ${
           lockTopFields
-            ? `<div style="cursor:not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
             : `<div class="num-spinner" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
         }
       </div>
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>N-term</label>
         <div class="num-spinner" id="f-enterm2" data-val="${exam.n_term}" data-step="0.1" data-min="0" data-max="3">
           <button type="button" class="spin-btn spin-minus">−</button>
@@ -456,36 +456,36 @@ export function showExamEditor(
     <div class="questions-scroll">
       <table class="questions-table">
         <thead><tr>
-          <th style="width:270px">Opgave</th>
-          <th style="width:50px">Vr.</th>
-          <th style="width:270px">Max punten</th>
-          <th style="width:90px">B / D</th>
+          <th class="u-w-270">Opgave</th>
+          <th class="u-w-50">Vr.</th>
+          <th class="u-w-270">Max punten</th>
+          <th class="u-w-90">B / D</th>
           <th>RTTI</th>
-          <th style="width:36px"></th>
+          <th class="u-w-36"></th>
         </tr></thead>
         <tbody id="f-qbody"></tbody>
       </table>
     </div>
-    <button class="btn-secondary" id="f-addq" style="margin-top:8px">+ Vraag toevoegen</button>
+    <button class="u-mt-8 btn-secondary" id="f-addq">+ Vraag toevoegen</button>
     ${
       availableObs.length > 0
         ? `
-    <div class="form-group" style="margin-top:14px;margin-bottom:0">
+    <div class="u-mt-14 u-mb-0 form-group">
       <label>Observaties</label>
-      <div id="f-obs-group" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+      <div id="f-obs-group" class="u-d-flex u-flex-wrap u-gap-6 u-mt-6">
         ${availableObs
           .map(
             (o) =>
-              `<button type="button" class="tog-btn obs-sel-btn${(exam.obs_ids ?? []).includes(o.id) ? ' selected' : ''}"
+              `<button type="button" class="u-fs-16 u-w-36 u-h-36 u-p-0 tog-btn obs-sel-btn${(exam.obs_ids ?? []).includes(o.id) ? ' selected' : ''}"
             data-obs-id="${escHtml(o.id)}" title="${escHtml(o.naam)}"
-            style="font-size:16px;width:36px;height:36px;padding:0">${escHtml(o.icon)}</button>`,
+           >${escHtml(o.icon)}</button>`,
           )
           .join('')}
       </div>
     </div>`
         : ''
     }
-    <div class="form-actions" style="margin-top:14px">
+    <div class="u-mt-14 form-actions">
       <button class="btn-primary" id="f-esave">Opslaan</button>
       <button class="btn-secondary" data-close-modal="1">Annuleren</button>
     </div>
@@ -571,7 +571,7 @@ export function showExamEditor(
               </div>
             </td>
             <td>
-              <select class="kind-sel" data-qi="${i}" style="font-size:12px;padding:2px 4px;width:80px">
+              <select class="u-fs-12 u-p-2-4 u-w-80 kind-sel" data-qi="${i}">
                 <option value="normal"${(q.kind ?? 'normal') === 'normal' ? ' selected' : ''}>Normaal</option>
                 <option value="bonus"${q.kind === 'bonus' ? ' selected' : ''}>Bonus</option>
                 <option value="diag"${q.kind === 'diag' ? ' selected' : ''}>Diag.</option>

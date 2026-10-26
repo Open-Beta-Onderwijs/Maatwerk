@@ -16,28 +16,28 @@ export async function openResitModal(parentId, year) {
   showModal(
     `
     <h3 id="f-resit-title">${escHtml(parent.title)} — …</h3>
-    <div class="form-row" style="align-items:flex-end;gap:20px">
-      <div class="form-group" style="flex:999;min-width:0;margin-bottom:0">
+    <div class="u-items-end u-gap-20 form-row">
+      <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
         <label>Beschrijving (bijv. INHAAL)</label>
         <input id="f-resit-desc" type="text" placeholder="INHAAL" autocomplete="off" />
       </div>
     </div>
-    <div class="form-row" style="align-items:flex-end;gap:20px;margin-top:10px;opacity:.55;pointer-events:none">
-      <div class="form-group" style="flex:2;margin-bottom:0">
+    <div class="u-items-end u-gap-20 u-mt-10 u-opacity-55 u-no-pointer form-row">
+      <div class="u-flex-2 u-mb-0 form-group">
         <label>Jaarlaag</label>
         <div class="btn-toggle-group">
           <button class="tog-btn selected" disabled>${escHtml(String(parent.jaarlaag))}</button>
         </div>
       </div>
-      <div class="form-group" style="flex:2;margin-bottom:0">
+      <div class="u-flex-2 u-mb-0 form-group">
         <label>Periode</label>
         <div class="btn-toggle-group">
           <button class="tog-btn selected" disabled>${escHtml(String(parent.periode ?? '—'))}</button>
         </div>
       </div>
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging</label>
-        <div class="num-spinner spinner-disabled" style="width:90px">
+        <div class="u-w-90 num-spinner spinner-disabled">
           <button type="button" class="spin-btn spin-minus" disabled>−</button>
           <input class="spin-val" value="${String(parent.weging ?? 1).replace('.', ',')}" readonly />
           <button type="button" class="spin-btn spin-plus" disabled>+</button>
@@ -46,9 +46,9 @@ export async function openResitModal(parentId, year) {
       ${
         parent.type === 'pta'
           ? `
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
-        <div class="num-spinner spinner-disabled" style="width:90px">
+        <div class="u-w-90 num-spinner spinner-disabled">
           <button type="button" class="spin-btn spin-minus" disabled>−</button>
           <input class="spin-val" value="${String(parent.weging_se ?? parent.weging ?? 1).replace('.', ',')}" readonly />
           <button type="button" class="spin-btn spin-plus" disabled>+</button>
@@ -57,12 +57,12 @@ export async function openResitModal(parentId, year) {
           : ''
       }
     </div>
-    <div class="form-row" style="margin-top:10px;gap:20px;align-items:flex-end">
-      <div class="form-group" style="flex:1;min-width:160px">
+    <div class="u-mt-10 u-gap-20 u-items-end form-row">
+      <div class="u-flex-1 u-min-w-160 form-group">
         <label>Opgave- &amp; Vraagstructuur</label>
         <div id="f-resit-struct-host" class="csel-host"></div>
       </div>
-      <div class="form-group" style="flex:none;width:108px">
+      <div class="u-flex-none u-w-108 form-group">
         <label>Aantal vragen</label>
         <div class="num-spinner" id="f-resit-num" data-val="${parent.questions.length}" data-step="1" data-min="1" data-max="40">
           <button type="button" class="spin-btn spin-minus">−</button>
@@ -162,16 +162,16 @@ export async function openSummaryEditModal(parentId, year) {
   showModal(
     `
     <h3>Verzamelkaart bewerken: <em>${escHtml(parent.title)}</em></h3>
-    <div class="form-row" style="align-items:flex-end;gap:20px;flex-wrap:wrap">
-      <div class="form-group" style="flex:999;min-width:0;margin-bottom:0">
+    <div class="u-items-end u-gap-20 u-flex-wrap form-row">
+      <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
         <label>Naam</label>
         <input id="f-sum-naam" type="text" value="${escHtml(parent.title)}" />
       </div>
-      <div class="form-group" style="flex:none;margin-bottom:0">
+      <div class="u-flex-none u-mb-0 form-group">
         <label>PTA</label>
         <button type="button" class="pta-btn" id="f-sum-pta" data-checked="${isPta ? 'true' : 'false'}">✓</button>
       </div>
-      <div class="form-group" style="flex:1.5;margin-bottom:0">
+      <div class="u-flex-1-5 u-mb-0 form-group">
         <label>Periode</label>
         <div class="btn-toggle-group">
           ${[1, 2, 3, 4, 5]
@@ -182,7 +182,7 @@ export async function openSummaryEditModal(parentId, year) {
             .join('')}
         </div>
       </div>
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging</label>
         <div class="num-spinner" id="f-sum-weging" data-val="${parent.weging ?? 1}" data-step="0.5" data-min="0" data-max="100">
           <button type="button" class="spin-btn spin-minus">−</button>
@@ -190,7 +190,7 @@ export async function openSummaryEditModal(parentId, year) {
           <button type="button" class="spin-btn spin-plus">+</button>
         </div>
       </div>
-      <div class="form-group spinner-wrap-sm" style="margin-bottom:0">
+      <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
         <div class="num-spinner${isPta ? '' : ' spinner-disabled'}" id="f-sum-weging-se" data-val="${parent.weging_se ?? parent.weging ?? 1}" data-step="0.5" data-min="0" data-max="100">
           <button type="button" class="spin-btn spin-minus"${isPta ? '' : ' disabled'}>−</button>

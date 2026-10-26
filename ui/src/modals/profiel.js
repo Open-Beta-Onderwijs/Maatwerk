@@ -128,73 +128,73 @@ export async function openProfielModal(
   }
   const hasObsData = Object.values(obsPerYear).some((c) => Object.keys(c).length > 0);
 
-  const btnW = allYears.length > 3 ? 'min-width:120px' : 'min-width:150px';
+  const btnW = allYears.length > 3 ? '120px' : '150px'; // min-width of the year buttons
 
   showModal(
     `
-    <div style="padding:0 2px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <h3 style="margin:0;flex:none">${escHtml(Store.fullName(student))}</h3>
-        <div id="mc-prof-nav" style="flex:1;display:flex;justify-content:center;gap:6px;flex-wrap:wrap"></div>
+    <div class="u-px-2">
+      <div class="u-d-flex u-items-center u-gap-12 u-mb-12">
+        <h3 class="u-m-0 u-flex-none">${escHtml(Store.fullName(student))}</h3>
+        <div id="mc-prof-nav" class="u-flex-1 u-d-flex u-justify-center u-gap-6 u-flex-wrap"></div>
       </div>
       <div class="overview-tab-bar">
         <button class="overview-tab${activeTab === 'cijferverloop' ? ' selected' : ''}" data-tab="cijferverloop">Cijferverloop</button>
         <button class="overview-tab${activeTab === 'analyse' ? ' selected' : ''}" data-tab="analyse">Analyse</button>
       </div>
-      <div style="margin:0 -28px -28px;padding:16px 28px 28px;background:var(--bg)">
+      <div class="u-bleed-28 u-p-bleed-28 u-bg-page">
 
       <div class="tab-pane${activeTab === 'cijferverloop' ? '' : ' hidden'}" id="tab-cijferverloop">
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 14px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:280px;position:relative"><canvas id="mc-bouw-chart"></canvas></div>
-          <div style="display:flex;justify-content:flex-end;margin-top:10px">
+        <div class="u-border u-rounded u-p-panel u-mb-16 u-bg-surface">
+          <div class="u-h-280 u-relative"><canvas id="mc-bouw-chart"></canvas></div>
+          <div class="u-d-flex u-justify-end u-mt-10">
             <div class="btn-toggle-group">
-              <button class="tog-btn mc-bouw-btn${defaultBouw === 'onderbouw' ? ' selected' : ''}" data-bouw="onderbouw" style="min-width:110px">Onderbouw</button>
-              <button class="tog-btn mc-bouw-btn${defaultBouw === 'bovenbouw' ? ' selected' : ''}" data-bouw="bovenbouw" style="min-width:110px">Bovenbouw</button>
+              <button class="u-min-w-110 tog-btn mc-bouw-btn${defaultBouw === 'onderbouw' ? ' selected' : ''}" data-bouw="onderbouw">Onderbouw</button>
+              <button class="u-min-w-110 tog-btn mc-bouw-btn${defaultBouw === 'bovenbouw' ? ' selected' : ''}" data-bouw="bovenbouw">Bovenbouw</button>
             </div>
           </div>
         </div>
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 14px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:260px;position:relative" id="mc-jaar-wrap">
-            <p class="hint" style="margin:8px 0;font-style:italic">Laden\u2026</p>
+        <div class="u-border u-rounded u-p-panel u-mb-16 u-bg-surface">
+          <div class="u-h-260 u-relative" id="mc-jaar-wrap">
+            <p class="u-my-8 u-italic hint">Laden\u2026</p>
           </div>
-          <div style="display:flex;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
+          <div class="u-d-flex u-justify-end u-mt-10 u-flex-wrap">
             <div class="btn-toggle-group" id="mc-jaar-btns">
               ${allYears
                 .map(
                   (yr, i) =>
-                    `<button class="tog-btn mc-jaar-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" style="${btnW}">${escHtml(yearLabel(yr))}</button>`,
+                    `<button class="tog-btn mc-jaar-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" data-min-w="${btnW}">${escHtml(yearLabel(yr))}</button>`,
                 )
                 .join('')}
             </div>
           </div>
         </div>
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 14px;margin-bottom:16px;background:var(--surface)">
-          <div id="mc-gem-wrap" style="height:260px;position:relative">
-            <p class="hint" style="margin:8px 0;font-style:italic">Laden\u2026</p>
+        <div class="u-border u-rounded u-p-panel u-mb-16 u-bg-surface">
+          <div id="mc-gem-wrap" class="u-h-260 u-relative">
+            <p class="u-my-8 u-italic hint">Laden\u2026</p>
           </div>
         </div>
       </div>
 
       <div class="tab-pane${activeTab === 'analyse' ? '' : ' hidden'}" id="tab-analyse">
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 14px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:260px;position:relative"><canvas id="mc-rtti-chart"></canvas></div>
-          <div style="display:flex;justify-content:flex-end;margin-top:10px;flex-wrap:wrap">
+        <div class="u-border u-rounded u-p-panel u-mb-16 u-bg-surface">
+          <div class="u-h-260 u-relative"><canvas id="mc-rtti-chart"></canvas></div>
+          <div class="u-d-flex u-justify-end u-mt-10 u-flex-wrap">
             <div class="btn-toggle-group" id="mc-rtti-btns">
               ${allYears
                 .map(
                   (yr, i) =>
-                    `<button class="tog-btn mc-rtti-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" style="${btnW}">${escHtml(yearLabel(yr))}</button>`,
+                    `<button class="tog-btn mc-rtti-btn${i === allYears.length - 1 ? ' selected' : ''}" data-year="${escHtml(yr)}" data-min-w="${btnW}">${escHtml(yearLabel(yr))}</button>`,
                 )
                 .join('')}
-              <button class="tog-btn mc-rtti-btn" data-year="se" style="${btnW}">Examendossier</button>
+              <button class="tog-btn mc-rtti-btn" data-year="se" data-min-w="${btnW}">Examendossier</button>
             </div>
           </div>
         </div>
         ${
           hasObsData
             ? `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 14px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:260px;position:relative"><canvas id="mc-obs-chart"></canvas></div>
+        <div class="u-border u-rounded u-p-panel u-mb-16 u-bg-surface">
+          <div class="u-h-260 u-relative"><canvas id="mc-obs-chart"></canvas></div>
         </div>
         `
             : ''

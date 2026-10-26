@@ -98,7 +98,7 @@ export async function renderOpdrachten() {
         .filter(Boolean)
         .map(
           (obs) =>
-            `<span title="${escHtml(obs.naam)}" style="cursor:default">${escHtml(obs.icon)}</span>`,
+            `<span title="${escHtml(obs.naam)}" class="u-cursor-default">${escHtml(obs.icon)}</span>`,
         )
         .join(' ');
 
@@ -190,12 +190,12 @@ async function openOpdrachtenModal(existingId) {
     const sel = (data.schoolsoort ?? []).includes(ss);
     const disabled = schoolSSFilter && !schoolSS.includes(ss);
     const cls = `tog-btn ss-op-btn${sel ? ' selected' : ''}${disabled ? ' tog-btn-disabled' : ''}`;
-    return `<button type="button" class="${cls}" data-ss="${ss}" style="height:30px"${disabled ? ' disabled' : ''}>${escHtml(ss)}</button>`;
+    return `<button type="button" class="u-h-30 ${cls}" data-ss="${ss}"${disabled ? ' disabled' : ''}>${escHtml(ss)}</button>`;
   }).join('');
 
   const vakkenHtml = SUBJECT_BTNS.map((s) => {
     const sel = (data.vakken ?? []).includes(s.code);
-    return `<button type="button" class="tog-btn vak-op-btn${sel ? ' selected' : ''}" data-vak="${s.code}" style="height:30px">${escHtml(s.label)}</button>`;
+    return `<button type="button" class="u-h-30 tog-btn vak-op-btn${sel ? ' selected' : ''}" data-vak="${s.code}">${escHtml(s.label)}</button>`;
   }).join('');
 
   const jaarlagenHtml = jlAll
@@ -230,7 +230,7 @@ async function openOpdrachtenModal(existingId) {
     </div>
     <div class="form-group">
       <label>Observaties</label>
-      <div id="op-obs-group" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:4px 0"></div>
+      <div id="op-obs-group" class="u-d-flex u-flex-wrap u-gap-6 u-min-h-36 u-py-4"></div>
     </div>
     <div class="form-actions">
       <button class="btn-primary" id="f-opsave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
@@ -286,7 +286,7 @@ async function openOpdrachtenModal(existingId) {
 
         if (matching.length === 0) {
           obsGroup.innerHTML =
-            '<span class="muted" style="font-size:13px">Geen observaties gevonden voor de huidige selectie.</span>';
+            '<span class="u-fs-13 muted">Geen observaties gevonden voor de huidige selectie.</span>';
           return;
         }
 
@@ -294,10 +294,10 @@ async function openOpdrachtenModal(existingId) {
           .map(
             (obs) =>
               `<button type="button"
-                class="obs-icon-op-btn${currentSelected.has(obs.id) ? ' selected' : ''}"
+                class="u-w-30 u-h-30 u-p-0 u-fs-16 obs-icon-op-btn${currentSelected.has(obs.id) ? ' selected' : ''}"
                 data-obsid="${escHtml(obs.id)}"
                 title="${escHtml(obs.naam)}"
-                style="width:30px;height:30px;padding:0;font-size:16px"
+               
               >${escHtml(obs.icon)}</button>`,
           )
           .join('');

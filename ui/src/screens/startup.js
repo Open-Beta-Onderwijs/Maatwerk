@@ -31,7 +31,7 @@ export async function renderStartup() {
     const fotoAttr = user.foto ? ` data-foto="${escHtml(user.foto)}"` : '';
     return `
       <button class="user-badge ${shape}" data-user-id="${escHtml(user.id)}"
-              style="--badge-color: ${escHtml(user.kleur ?? '#888')}"${fotoAttr}>
+              data-badge-color="${escHtml(user.kleur ?? '#888')}"${fotoAttr}>
         <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
         <span class="badge-name">${escHtml(user.voornaam)}</span>
       </button>`;

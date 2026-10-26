@@ -41,17 +41,16 @@ export function gradeCell(g) {
   const bc = gradeBorderColor(g);
   const tc = gradeTextColor(g);
   const fw = g !== null && isFail(g) ? 'bold' : '500';
-  return `<td style="text-align:center;padding:3px 4px">
-      <span style="display:inline-block;min-width:34px;padding:1px 5px;border:2px solid ${bc};
-        border-radius:4px;font-size:12px;font-weight:${fw};color:${tc}">${label}</span></td>`;
+  return `<td class="grade-cell-td">
+      <span class="grade-pill${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>`;
 }
 
 // ── Grade stats badge (mean ± sd, % onvoldoende) ─────────────────────────────
 export function gradeStatHtml({ mean, sd, fails }) {
   const dotColor = isFail(mean) ? '#e57373' : lerpColor('#ffd54f', '#66bb6a', (mean - 5.5) / 4.5);
-  const dot = `<svg width="10" height="10" viewBox="0 0 10 10" style="vertical-align:middle;margin:0 3px 0 0;flex-shrink:0"><circle cx="5" cy="5" r="5" fill="${dotColor}"/></svg>`;
+  const dot = `<svg width="10" height="10" viewBox="0 0 10 10" class="stat-dot"><circle cx="5" cy="5" r="5" fill="${dotColor}"/></svg>`;
   return (
-    `<span class="muted" style="display:flex;align-items:center;gap:0">` +
+    `<span class="muted stat-line">` +
     `${dot}${mean.toFixed(1).replace('.', ',')} ± ${sd.toFixed(1).replace('.', ',')}` +
     ` &nbsp;·&nbsp; ${fails}% onvoldoende</span>`
   );

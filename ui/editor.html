@@ -30,7 +30,7 @@
           ···
         </button>
       </div>
-      <div id="popup-more-text" class="tb-popup" style="display: none">
+      <div id="popup-more-text" class="tb-popup" data-display="none">
         <div class="tb-popup-grid">
           <button class="tb-btn" data-action="overline" title="Bovenlijn">Ā</button>
           <button class="tb-btn" data-action="strike" title="Doorhalen"><s>S</s></button>
@@ -63,7 +63,7 @@
           @
         </button>
       </div>
-      <div id="popup-reference" class="tb-popup" style="display: none">
+      <div id="popup-reference" class="tb-popup" data-display="none">
         <div class="tb-ref-panel">
           <div class="tb-ref-list" id="ref-list"></div>
         </div>
@@ -119,11 +119,11 @@
           🪟
         </button>
       </div>
-      <div id="popup-figure" class="tb-popup" style="display: none">
+      <div id="popup-figure" class="tb-popup" data-display="none">
         <div class="tb-fig-panel"></div>
       </div>
-      <div id="popup-tabel" class="tb-popup" style="display: none"></div>
-      <div id="popup-grid" class="tb-popup" style="display: none"></div>
+      <div id="popup-tabel" class="tb-popup" data-display="none"></div>
+      <div id="popup-grid" class="tb-popup" data-display="none"></div>
 
       <div class="tb-divider"></div>
 
@@ -170,8 +170,8 @@
           ···
         </button>
       </div>
-      <div id="popup-math-extra" class="tb-popup" style="display: none">
-        <div class="tb-popup-grid" style="grid-template-columns: repeat(4, 28px)">
+      <div id="popup-math-extra" class="tb-popup" data-display="none">
+        <div class="u-grid-4x28 tb-popup-grid">
           <button class="tb-btn" data-action="math-numeq" title="Genummerde vergelijking">
             (1)
           </button>
@@ -219,10 +219,10 @@
           🙂
         </button>
       </div>
-      <div id="popup-sym-letterlike" class="tb-popup" style="display: none"></div>
-      <div id="popup-sym-math" class="tb-popup" style="display: none"></div>
-      <div id="popup-sym-misc" class="tb-popup" style="display: none"></div>
-      <div id="popup-sym-emoji" class="tb-popup" style="display: none"></div>
+      <div id="popup-sym-letterlike" class="tb-popup" data-display="none"></div>
+      <div id="popup-sym-math" class="tb-popup" data-display="none"></div>
+      <div id="popup-sym-misc" class="tb-popup" data-display="none"></div>
+      <div id="popup-sym-emoji" class="tb-popup" data-display="none"></div>
     </div>
 
     <div id="editor-body">
@@ -235,11 +235,11 @@
           <button class="pv-btn" id="pv-fit-width" title="Paginabreedte">Paginabreedte</button>
         </div>
         <div id="pdf-placeholder">Bezig met renderen…</div>
-        <div id="svg-viewer" style="display: none"></div>
+        <div id="svg-viewer" data-display="none"></div>
       </div>
     </div>
     <!-- Context menu -->
-    <div id="cm-context-menu" style="display: none">
+    <div id="cm-context-menu" data-display="none">
       <button class="cm-ctx-item" data-cm-action="cut">
         <span class="cm-ctx-icon">✂️</span>Knippen
       </button>
@@ -255,7 +255,7 @@
       </button>
     </div>
 
-    <div id="error-popover" style="display: none"></div>
+    <div id="error-popover" data-display="none"></div>
     <script type="module" src="/src/editor-init.js"></script>
   </body>
 </html>

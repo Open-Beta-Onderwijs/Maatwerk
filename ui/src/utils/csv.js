@@ -22,7 +22,7 @@ export function askSchoolYear(activeYear, existingYears, ui) {
     showModal(
       `
       <h3>Schooljaar kiezen</h3>
-      <p class="muted" style="margin-bottom:12px">
+      <p class="muted u-mb-12">
         Voor welk schooljaar wil je deze gegevens importeren?
         Als het schooljaar al bestaat, worden de gegevens bijgewerkt.
       </p>

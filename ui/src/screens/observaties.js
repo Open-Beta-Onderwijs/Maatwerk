@@ -225,7 +225,7 @@ export async function openObsModal(existingId) {
     const sel = (obs.schoolsoort ?? []).includes(ss);
     const disabled = schoolSSFilter && !schoolSS.includes(ss);
     const cls = `tog-btn ss-obs-btn${sel ? ' selected' : ''}${disabled ? ' tog-btn-disabled' : ''}`;
-    return `<button type="button" class="${cls}" data-ss="${ss}" style="height:30px"${disabled ? ' disabled' : ''}>${ss}</button>`;
+    return `<button type="button" class="u-h-30 ${cls}" data-ss="${ss}"${disabled ? ' disabled' : ''}>${ss}</button>`;
   }).join('');
 
   const SUBJECT_BTNS = [
@@ -242,10 +242,6 @@ export async function openObsModal(existingId) {
   const iconBtn = (p) =>
     `<button type="button" class="obs-icon-btn${p.icon === obs.icon ? ' selected' : ''}"
       data-icon="${escHtml(p.icon)}"
-      style="font-size:18px;width:40px;height:40px;border-radius:6px;
-        border:2px solid ${p.icon === obs.icon ? 'var(--primary)' : 'var(--border)'};
-        background:${p.icon === obs.icon ? '#e8f0fb' : 'var(--bg)'};
-        cursor:pointer;transition:all .1s"
       >${escHtml(p.icon)}</button>`;
 
   showModal(
@@ -257,7 +253,7 @@ export async function openObsModal(existingId) {
     </div>
     <div class="form-group">
       <label>Icoon</label>
-      <div id="obs-icon-grid" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+      <div id="obs-icon-grid" class="u-d-flex u-flex-wrap u-gap-6 u-mt-4">
         ${OBS_PRESET_ICONS.slice(0, 12).map(iconBtn).join('')}
         <details class="obs-icon-more">
           <summary class="obs-icon-more-summary">Meer iconen ▾</summary>
@@ -266,8 +262,8 @@ export async function openObsModal(existingId) {
           </div>
         </details>
       </div>
-      <div style="margin-top:6px;font-size:12px;color:var(--muted)">
-        Geselecteerd: <span id="obs-icon-preview" style="font-size:16px">${escHtml(obs.icon)}</span>
+      <div class="u-mt-6 u-fs-12 u-text-muted">
+        Geselecteerd: <span id="obs-icon-preview" class="u-fs-16">${escHtml(obs.icon)}</span>
       </div>
     </div>
     <div class="form-group">
@@ -321,9 +317,7 @@ export async function openObsModal(existingId) {
         selectedIcon = btn.dataset.icon;
         el.querySelectorAll('.obs-icon-btn').forEach((b) => {
           const active = b.dataset.icon === selectedIcon;
-          b.classList.toggle('selected', active);
-          b.style.border = `2px solid ${active ? 'var(--primary)' : 'var(--border)'}`;
-          b.style.background = active ? '#e8f0fb' : 'var(--bg)';
+          b.classList.toggle('selected', active); // colours: .obs-icon-btn.selected
         });
         el.querySelector('#obs-icon-preview').textContent = selectedIcon;
       });

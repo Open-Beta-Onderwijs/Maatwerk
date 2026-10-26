@@ -47,7 +47,7 @@ async function renderUserList() {
     return `
       <div class="card gebruiker-card">
         <div class="gebruiker-card-left">
-          <div class="user-badge ${shape}" style="--badge-color: ${escHtml(user.kleur ?? '#888')}; pointer-events:none">
+          <div class="user-badge ${shape} u-no-pointer" data-badge-color="${escHtml(user.kleur ?? '#888')}">
             <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
           </div>
         </div>
@@ -136,27 +136,27 @@ function openUserModal(user) {
   const html = `
     <h3>${escHtml(title)}</h3>
     <div class="form-row">
-      <div class="form-group" style="flex:2">
+      <div class="u-flex-2 form-group">
         <label>Voornaam</label>
         <input id="f-uvoornaam" type="text" value="${escHtml(user?.voornaam ?? '')}" />
       </div>
-      <div class="form-group" style="flex:1">
+      <div class="u-flex-1 form-group">
         <label>Tussenvoegsel</label>
         <input id="f-utussen" type="text" value="${escHtml(user?.tussenvoegsel ?? '')}" placeholder="van" />
       </div>
-      <div class="form-group" style="flex:2">
+      <div class="u-flex-2 form-group">
         <label>Achternaam</label>
         <input id="f-uachter" type="text" value="${escHtml(user?.achternaam ?? '')}" />
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group" style="flex:1">
+      <div class="u-flex-1 form-group">
         <label>Afkorting (op badge)</label>
-        <input id="f-uafkorting" type="text" maxlength="5" value="${escHtml(user?.afkorting ?? '')}" placeholder="bijv. JAN" style="text-transform:uppercase" />
+        <input id="f-uafkorting" type="text" maxlength="5" value="${escHtml(user?.afkorting ?? '')}" placeholder="bijv. JAN" class="u-uppercase" />
       </div>
-      <div class="form-group" style="flex:1">
+      <div class="u-flex-1 form-group">
         <label>Kleur (badge rand)</label>
-        <input id="f-ukleur" type="color" value="${user?.kleur ?? '#4a90d9'}" style="width:48px;height:28px;padding:2px;cursor:pointer;vertical-align:middle" />
+        <input id="f-ukleur" type="color" value="${user?.kleur ?? '#4a90d9'}" class="u-w-48 u-h-28 u-p-2 u-cursor-pointer u-align-middle" />
       </div>
     </div>
     <div class="form-group">
@@ -176,7 +176,7 @@ function openUserModal(user) {
     <div class="form-group">
       <label>Profielfoto (optioneel, 1:1 verhouding)</label>
       <input id="f-ufoto" type="file" accept="image/jpeg,image/png" />
-      ${user?.foto ? `<span class="hint" style="display:block;margin-top:4px">Huidig: ${escHtml(user.foto)}</span>` : ''}
+      ${user?.foto ? `<span class="u-d-block u-mt-4 hint">Huidig: ${escHtml(user.foto)}</span>` : ''}
     </div>
     <div class="form-actions">
       <button class="btn-primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>

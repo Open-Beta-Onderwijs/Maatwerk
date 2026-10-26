@@ -36,7 +36,7 @@ function buildHtml(school, logoUrl, watermerkUrl) {
         <div class="school-logo-area" id="school-logo-area">
           ${logoHtml(logoUrl)}
           <button class="school-logo-edit-btn btn-sm btn-sm-icon" id="btn-edit-logo" title="Logo wijzigen">${ICONS.pen}</button>
-          <input type="file" id="input-logo" accept="image/*" style="display:none" />
+          <input type="file" id="input-logo" accept="image/*" class="hidden" />
         </div>
       </div>
       <div class="school-fields">
@@ -93,7 +93,7 @@ function watermerkRow(url) {
       <div class="school-field-value-wrap">
         <div class="school-watermark-preview" id="school-watermark-preview">${preview}</div>
         <button class="btn-sm btn-sm-icon" data-action="edit-watermerk" title="Watermerk wijzigen">${ICONS.pen}</button>
-        <input type="file" id="input-watermerk" accept="image/svg+xml,.svg" style="display:none" />
+        <input type="file" id="input-watermerk" accept="image/svg+xml,.svg" class="hidden" />
       </div>
     </div>`;
 }

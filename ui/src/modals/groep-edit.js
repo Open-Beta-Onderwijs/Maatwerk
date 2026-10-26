@@ -145,26 +145,26 @@ export async function openGroupModal(id) {
 
   const fieldsHtml = isEdit
     ? `
-    <div class="form-row" style="gap:20px;align-items:flex-start">
-      <div class="form-group" style="flex:1;min-width:0">
+    <div class="u-gap-20 u-items-start form-row">
+      <div class="u-flex-1 u-min-w-0 form-group">
         <label>Naam (bijv. 6nat4 of 2anat)</label>
         <input id="f-gname" type="text" value="${escHtml(group.name)}" ${hasStudents ? 'disabled' : ''} />
       </div>
-      <div class="form-group" style="flex:1;min-width:0">
+      <div class="u-flex-1 u-min-w-0 form-group">
         <label>Schoolsoort</label>
         <div class="vak-toggle-group">${schoolsoortHtml}</div>
       </div>
     </div>
-    <div class="form-row" style="gap:20px;align-items:flex-start;margin-top:4px">
-      <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+    <div class="u-gap-20 u-items-start u-mt-4 form-row">
+      <div class="u-flex-auto u-mb-0 form-group">
         <label>Vak</label>
         <div class="btn-toggle-group">${vakHtml}</div>
       </div>
-      <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+      <div class="u-flex-auto u-mb-0 form-group">
         <label>Leerjaar</label>
         <div class="btn-toggle-group">${jaarlaagHtml}</div>
       </div>
-      <div class="form-group" style="flex:1;min-width:0;margin-bottom:0">
+      <div class="u-flex-1 u-min-w-0 u-mb-0 form-group">
         <label>Docent(en)</label>
         <div class="vak-toggle-group" id="f-g-docenten">${initialDocentHtml}</div>
       </div>
@@ -196,15 +196,15 @@ export async function openGroupModal(id) {
     ${
       !isEdit
         ? `
-    <div class="form-group" style="margin-bottom:0">
+    <div class="u-mb-0 form-group">
       <label>Docent(en)</label>
       <div class="vak-toggle-group" id="f-g-docenten">${initialDocentHtml}</div>
     </div>`
         : ''
     }
-    ${hasStudents ? '<span class="form-hint muted" style="display:block;margin-top:8px">Naam, leerjaar, schoolsoort en vak kunnen niet worden gewijzigd zolang er leerlingen in de groep zitten.</span>' : ''}
-    ${isEdit ? `<div class="form-group" style="margin-top:16px">${studentsSection}</div>` : ''}
-    <div class="form-actions" style="margin-top:16px">
+    ${hasStudents ? '<span class="u-d-block u-mt-8 form-hint muted">Naam, leerjaar, schoolsoort en vak kunnen niet worden gewijzigd zolang er leerlingen in de groep zitten.</span>' : ''}
+    ${isEdit ? `<div class="u-mt-16 form-group">${studentsSection}</div>` : ''}
+    <div class="u-mt-16 form-actions">
       <button class="btn-primary" id="f-g-save">Opslaan</button>
       <button class="btn-secondary" data-close-modal="1">Annuleren</button>
     </div>
@@ -460,7 +460,7 @@ export async function openGroupCSVImport() {
   showModal(
     `
     <h3>Groepen importeren — ${escHtml(year)}</h3>
-    <p class="muted" style="margin-bottom:12px">
+    <p class="u-mb-12 muted">
       Verwachte kolommen: <code>Naam, Schoolsoort, Vak, Leerjaar, Docent</code>
     </p>
     <div class="form-group">
@@ -468,7 +468,7 @@ export async function openGroupCSVImport() {
       <input type="file" id="f-csv-groups" accept=".csv,.txt" />
     </div>
     <div id="csv-grp-preview"></div>
-    <div class="form-actions" style="margin-top:12px">
+    <div class="u-mt-12 form-actions">
       <button class="btn-primary" id="f-csv-grp-import" disabled>Importeren</button>
       <button class="btn-secondary" data-close-modal="1">Annuleren</button>
     </div>
@@ -549,7 +549,7 @@ export async function openGroupCSVImport() {
         el.querySelector('#csv-grp-preview').innerHTML =
           toImport.length === 0
             ? '<p class="hint">Geen geldige groepen gevonden.</p>'
-            : `<p style="margin:8px 0 4px"><strong>${toImport.length}</strong> groepen klaar om te importeren:</p>
+            : `<p class="u-my-8-4"><strong>${toImport.length}</strong> groepen klaar om te importeren:</p>
                <table class="preview-table">
                  <thead><tr><th>Naam</th><th>Schoolsoort</th><th>Vak</th><th>Leerjaar</th></tr></thead>
                  <tbody>${toImport
@@ -583,7 +583,7 @@ export async function openGroupAssignmentCSVImport() {
   showModal(
     `
     <h3>Groepsindeling importeren — ${escHtml(year)}</h3>
-    <p class="muted" style="margin-bottom:12px">
+    <p class="u-mb-12 muted">
       Verwachte kolommen: <code>Naam, Leerlingnummer</code>
     </p>
     <div class="form-group">
@@ -591,7 +591,7 @@ export async function openGroupAssignmentCSVImport() {
       <input type="file" id="f-csv-assignment" accept=".csv,.txt" />
     </div>
     <div id="csv-assignment-preview"></div>
-    <div class="form-actions" style="margin-top:12px">
+    <div class="u-mt-12 form-actions">
       <button class="btn-primary" id="f-csv-assignment-import" disabled>Importeren</button>
       <button class="btn-secondary" data-close-modal="1">Annuleren</button>
     </div>
@@ -633,7 +633,7 @@ export async function openGroupAssignmentCSVImport() {
         el.querySelector('#csv-assignment-preview').innerHTML =
           assignments.length === 0
             ? '<p class="hint">Geen geldige koppelingen gevonden.</p>'
-            : `<p style="margin:8px 0 4px"><strong>${assignments.length}</strong> koppelingen klaar om te importeren.</p>`;
+            : `<p class="u-my-8-4"><strong>${assignments.length}</strong> koppelingen klaar om te importeren.</p>`;
         el.querySelector('#f-csv-assignment-import').disabled = assignments.length === 0;
       });
 

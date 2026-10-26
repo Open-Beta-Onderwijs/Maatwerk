@@ -8,9 +8,6 @@ import { expect, test } from '@playwright/test';
 import { watchErrors } from './helpers';
 import { VIEWS, openView } from './views';
 
-// TODO(3a): remove once every inline style= attribute is a class (in progress).
-test.fixme(true, 'inline styles are being moved to CSS classes');
-
 for (const view of VIEWS) {
   test(`no CSP violation or error: ${view.name}`, async ({ page }) => {
     const errors = watchErrors(page);

@@ -167,7 +167,7 @@ export async function openExamOverviewModal(
   const hasRttiData = rttiAccum.some((grp) => grp.some((cat) => cat.max > 0));
   const hasObsData = examObsObjects.length > 0 && Object.values(obsAccum).some((a) => a.count > 0);
 
-  let summaryHtml = '<p class="hint" style="margin:0">Nog geen scores ingevoerd.</p>';
+  let summaryHtml = '<p class="u-m-0 hint">Nog geen scores ingevoerd.</p>';
   if (hasGrades) {
     const mean = grades.reduce((a, b) => a + b, 0) / grades.length;
     const sd =
@@ -176,8 +176,8 @@ export async function openExamOverviewModal(
         : Math.sqrt(grades.reduce((s, v) => s + (v - mean) ** 2, 0) / grades.length);
     const fails = Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100);
     const dotColor = isFail(mean) ? '#e57373' : lerpColor('#ffd54f', '#66bb6a', (mean - 5.5) / 4.5);
-    const dot = `<svg width="10" height="10" viewBox="0 0 10 10" style="vertical-align:middle;margin:0 3px;flex-shrink:0"><circle cx="5" cy="5" r="5" fill="${dotColor}"/></svg>`;
-    summaryHtml = `<span class="muted" style="display:flex;align-items:center;flex-wrap:wrap;gap:0">${grades.length} leerlingen &nbsp;·&nbsp; ${dot} ${mean.toFixed(1).replace('.', ',')} ± ${sd.toFixed(1).replace('.', ',')} &nbsp;·&nbsp; ${fails}% onvoldoende</span>`;
+    const dot = `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mx-3 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${dotColor}"/></svg>`;
+    summaryHtml = `<span class="u-d-flex u-items-center u-flex-wrap u-gap-0 muted">${grades.length} leerlingen &nbsp;·&nbsp; ${dot} ${mean.toFixed(1).replace('.', ',')} ± ${sd.toFixed(1).replace('.', ',')} &nbsp;·&nbsp; ${fails}% onvoldoende</span>`;
   }
 
   const qChartHeight = Math.max(180, exam.questions.length * 22 + 60);
@@ -188,11 +188,11 @@ export async function openExamOverviewModal(
     if (!hasGroupData) return '';
     let html = '';
     const card = (j) =>
-      `<div style="flex:1;min-width:0;border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--surface)">` +
-      `<div style="position:relative;height:${heightPx}px"><canvas id="${idFn(j)}"></canvas></div></div>`;
+      `<div class="u-flex-1 u-min-w-0 u-border u-rounded u-p-8 u-bg-surface">` +
+      `<div class="u-relative" data-h="${heightPx}px"><canvas id="${idFn(j)}"></canvas></div></div>`;
     for (let i = 0; i < groupEntries.length; i += 2) {
-      html += `<div style="display:flex;gap:14px;margin-bottom:14px">${card(i)}${
-        i + 1 < groupEntries.length ? card(i + 1) : '<div style="flex:1;min-width:0"></div>'
+      html += `<div class="u-d-flex u-gap-14 u-mb-14">${card(i)}${
+        i + 1 < groupEntries.length ? card(i + 1) : '<div class="u-flex-1 u-min-w-0"></div>'
       }</div>`;
     }
     return html;
@@ -212,7 +212,7 @@ export async function openExamOverviewModal(
       ...resObs.map(() => COL_W.obs),
       ...RTTI_CATS.map(() => COL_W.rtti),
     ];
-    const colgroup = `<colgroup><col />${cols.map((w) => `<col style="width:${w}px" />`).join('')}</colgroup>`;
+    const colgroup = `<colgroup><col />${cols.map((w) => `<col data-w="${w}px" />`).join('')}</colgroup>`;
     const tableMinWidth = 200 + cols.reduce((a, b) => a + b, 0);
     const studentRow = (s) => {
       const d = studentData.get(String(s.id)) ?? {};
@@ -254,7 +254,7 @@ export async function openExamOverviewModal(
         const v = hasScores ? res[cat] : null;
         const text = v == null ? '' : v === 'NVT' ? 'NVT' : `${v}%`;
         const bg = rttiPctColor(text);
-        return `<td class="${i === 0 ? 'res-sep' : ''}"${bg ? ` style="background:${bg}"` : ''}>${text}</td>`;
+        return `<td class="${i === 0 ? 'res-sep' : ''}"${bg ? ` data-bg="${bg}"` : ''}>${text}</td>`;
       }).join('');
 
       const gbg = gradeColor(gradeTxt);
@@ -267,7 +267,7 @@ export async function openExamOverviewModal(
       return (
         `<tr><td class="res-name">${escHtml(Store.fullName(s))}</td>` +
         `<td class="res-sep">${totaal}</td>` +
-        `<td class="${gradeClass}"${gbg ? ` style="background:${gbg}"` : ''}${gradeTitle ? ` title="${escHtml(gradeTitle)}"` : ''}>${gradeTxt}</td>${badgeCell}` +
+        `<td class="${gradeClass}"${gbg ? ` data-bg="${gbg}"` : ''}${gradeTitle ? ` title="${escHtml(gradeTitle)}"` : ''}>${gradeTxt}</td>${badgeCell}` +
         `${obsCells}${rttiCells}</tr>`
       );
     };
@@ -290,7 +290,7 @@ export async function openExamOverviewModal(
         if (gStudents.length === 0) return '';
         return (
           `<h3 class="group-heading">${escHtml(g.name)}</h3>` +
-          `<div class="results-table-wrap"><table class="results-table" style="min-width:${tableMinWidth}px">${colgroup}<thead>${head}</thead>` +
+          `<div class="results-table-wrap"><table class="results-table" data-min-w="${tableMinWidth}px">${colgroup}<thead>${head}</thead>` +
           `<tbody>${gStudents.map(studentRow).join('')}</tbody></table></div>`
         );
       })
@@ -300,9 +300,9 @@ export async function openExamOverviewModal(
 
   showModal(
     `<h3>Overzicht: <em>${escHtml(exam.title)}</em>
-      <span style="font-weight:normal;font-size:13px;font-style:normal"> — Jaarlaag ${escHtml(String(exam.jaarlaag))}, ${escHtml(year)}</span>
+      <span class="u-fw-normal u-fs-13 u-not-italic"> — Jaarlaag ${escHtml(String(exam.jaarlaag))}, ${escHtml(year)}</span>
     </h3>
-    <div style="margin-bottom:10px">${summaryHtml}</div>
+    <div class="u-mb-10">${summaryHtml}</div>
     <div class="overview-tab-bar">
       <button class="overview-tab selected" data-tab="resultaten">Resultaten</button>
       <button class="overview-tab" data-tab="cijferverdeling">Cijferverdeling</button>
@@ -311,7 +311,7 @@ export async function openExamOverviewModal(
       <button class="overview-tab" data-tab="rtti-analyse"${isSummary ? ' disabled title="Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht."' : ''}>RTTI-analyse</button>
       <button class="overview-tab" data-tab="observaties"${isSummary ? ' disabled title="Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht."' : ''}>Observaties</button>
     </div>
-    <div style="margin:0 -28px -28px;padding:16px 28px 28px;background:var(--bg)">
+    <div class="u-bleed-28 u-p-bleed-28 u-bg-page">
 
     <div class="tab-pane" id="tab-resultaten">
       ${resultatenHtml()}
@@ -321,13 +321,13 @@ export async function openExamOverviewModal(
       ${
         hasGrades
           ? `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px 14px;margin-bottom:20px;background:var(--surface)">
-          <div style="height:200px;position:relative;margin-bottom:12px"><canvas id="chart-hist"></canvas></div>
-          <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px">
-            <span style="font-size:13px;color:var(--muted)">Stapgrootte:</span>
+        <div class="u-border u-rounded u-p-panel u-mb-20 u-bg-surface">
+          <div class="u-h-200 u-relative u-mb-12"><canvas id="chart-hist"></canvas></div>
+          <div class="u-d-flex u-justify-end u-items-center u-gap-8">
+            <span class="u-fs-13 u-text-muted">Stapgrootte:</span>
             <div class="btn-toggle-group">
-              <button class="tog-btn hist-bin-btn selected" data-bin="0.5" style="min-width:90px">0,5 punten</button>
-              <button class="tog-btn hist-bin-btn" data-bin="1" style="min-width:90px">1 punt</button>
+              <button class="u-min-w-90 tog-btn hist-bin-btn selected" data-bin="0.5">0,5 punten</button>
+              <button class="u-min-w-90 tog-btn hist-bin-btn" data-bin="1">1 punt</button>
             </div>
           </div>
         </div>
@@ -341,8 +341,8 @@ export async function openExamOverviewModal(
       ${
         hasGrades
           ? `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--surface)">
-          <div style="height:${Math.max(200, (groupEntries.length + 1) * 55 + 60)}px;position:relative">
+        <div class="u-border u-rounded u-p-10 u-bg-surface">
+          <div class="u-relative" data-h="${Math.max(200, (groupEntries.length + 1) * 55 + 60)}px">
             <canvas id="chart-box-combined"></canvas>
           </div>
         </div>
@@ -355,14 +355,14 @@ export async function openExamOverviewModal(
       ${
         hasQStats
           ? `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:${qChartHeight}px;position:relative"><canvas id="chart-q-all"></canvas></div>
+        <div class="u-border u-rounded u-p-8 u-mb-16 u-bg-surface">
+          <div class="u-relative" data-h="${qChartHeight}px"><canvas id="chart-q-all"></canvas></div>
         </div>
         ${
           hasGroupData
             ? `
-          <div style="border:1px solid var(--border);border-radius:var(--radius);padding:8px;background:var(--surface)">
-            <div style="height:${groupQHeight}px;position:relative"><canvas id="chart-q-groups"></canvas></div>
+          <div class="u-border u-rounded u-p-8 u-bg-surface">
+            <div class="u-relative" data-h="${groupQHeight}px"><canvas id="chart-q-groups"></canvas></div>
           </div>
         `
             : ''
@@ -376,13 +376,13 @@ export async function openExamOverviewModal(
       ${
         hasRttiData
           ? `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:240px;position:relative"><canvas id="chart-rtti"></canvas></div>
+        <div class="u-border u-rounded u-p-10 u-mb-16 u-bg-surface">
+          <div class="u-h-240 u-relative"><canvas id="chart-rtti"></canvas></div>
         </div>
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:240px;position:relative"><canvas id="chart-rtti-groups"></canvas></div>
+        <div class="u-border u-rounded u-p-10 u-mb-16 u-bg-surface">
+          <div class="u-h-240 u-relative"><canvas id="chart-rtti-groups"></canvas></div>
         </div>
-        <div id="rtti-history-container"><p class="hint" style="margin:0">Laden\u2026</p></div>
+        <div id="rtti-history-container"><p class="u-m-0 hint">Laden\u2026</p></div>
       `
           : '<p class="hint">Geen RTTI data beschikbaar.</p>'
       }
@@ -395,20 +395,20 @@ export async function openExamOverviewModal(
           : !hasObsData
             ? '<p class="hint">Nog geen observaties ingevoerd voor deze toets.</p>'
             : `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:220px;position:relative"><canvas id="chart-obs-hist"></canvas></div>
+        <div class="u-border u-rounded u-p-10 u-mb-16 u-bg-surface">
+          <div class="u-h-220 u-relative"><canvas id="chart-obs-hist"></canvas></div>
         </div>
         ${
           hasGroupData
             ? `
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:220px;position:relative"><canvas id="chart-obs-groups"></canvas></div>
+        <div class="u-border u-rounded u-p-10 u-mb-16 u-bg-surface">
+          <div class="u-h-220 u-relative"><canvas id="chart-obs-groups"></canvas></div>
         </div>
         `
             : ''
         }
-        <div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:16px;background:var(--surface)">
-          <div style="height:220px;position:relative"><canvas id="chart-obs-grades"></canvas></div>
+        <div class="u-border u-rounded u-p-10 u-mb-16 u-bg-surface">
+          <div class="u-h-220 u-relative"><canvas id="chart-obs-grades"></canvas></div>
         </div>
       `
       }
@@ -1047,7 +1047,7 @@ export async function openExamOverviewModal(
             return;
           }
           container.innerHTML =
-            '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:10px;background:var(--surface)"><div style="height:240px;position:relative"><canvas id="chart-rtti-history"></canvas></div></div>';
+            '<div class="u-border u-rounded u-p-10 u-bg-surface"><div class="u-h-240 u-relative"><canvas id="chart-rtti-history"></canvas></div></div>';
           const histCanvas = el.querySelector('#chart-rtti-history');
           if (!histCanvas) return;
           const RTTI_PALETTE = ['#5cb85c', '#5bc0de', '#f0ad4e', '#d9534f'];

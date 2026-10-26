@@ -39,6 +39,11 @@ import {
   bracketMatching,
 } from '@codemirror/language';
 import { Tag, tags } from '@lezer/highlight';
+import { applyStyleData } from './legacy/style-data';
+import editorCmCss from './editor-cm.css?inline';
+
+// editor.html has no style="" (strict CSP): initial hidden states are data-display.
+applyStyleData(document);
 
 // ── postMessage bridge ────────────────────────────────────────────────────────
 
@@ -70,7 +75,7 @@ window.addEventListener('message', (evt) => {
 // Lezer has no underline tag, so the stream tokens map to a custom one.
 const underlineTag = Tag.define();
 
-// Token styling lives in editor.html as .cm-<token> classes.
+// Token styling lives in editor-cm.css as .cm-<token> classes.
 const typstHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, class: 'cm-comment' },
   { tag: tags.keyword, class: 'cm-keyword' },
@@ -709,6 +714,19 @@ const changeListener = EditorView.updateListener.of((update) => {
   }
 });
 
+/**
+ * The shadow root CodeMirror is mounted in. In a shadow root CodeMirror styles
+ * itself with constructable stylesheets; in the document it would add a
+ * <style> element, which the strict CSP blocks. editor-cm.css holds our theme.
+ */
+function editorRoot() {
+  const shadow = document.getElementById('cm-container').attachShadow({ mode: 'open' });
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(editorCmCss);
+  shadow.adoptedStyleSheets = [sheet];
+  return shadow;
+}
+
 async function init() {
   let content, dir;
   try {
@@ -744,10 +762,7 @@ async function init() {
     ],
   });
 
-  view = new EditorView({
-    state,
-    parent: document.getElementById('cm-container'),
-  });
+  view = new EditorView({ state, parent: editorRoot() });
 
   await renderPreview();
 }

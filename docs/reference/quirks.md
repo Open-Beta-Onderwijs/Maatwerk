@@ -809,3 +809,13 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   login overwrites them.
 - `toTypst` emits object keys unquoted (`main.js:570`), so any key that is not a valid Typst
   identifier (e.g. one starting with a digit or containing a space) would break the rapport compile; today the keys are fixed field names, so this is latent.
+
+### U18. Group students modal: header styles that never applied
+
+- Where: `renderer/modals/groep-leerlingen.js:115-131` (reference). The "Periode N" and
+  "Gemiddelde" header cells carry `${thStyle}` (a `style="…"`) **and** a second literal
+  `style="…"` (border-right between periodes, border-left before Gemiddelde, 1px bottom border).
+  HTML ignores a duplicate attribute, so only `thStyle` ever rendered.
+- Port (Step 3a, inline styles -> classes): kept as rendered (`.gl-th` only), so the look does not
+  change. If the separators were intended, adding them is a visual change for the user to approve
+  (backlog).

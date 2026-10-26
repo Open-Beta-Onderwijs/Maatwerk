@@ -1082,7 +1082,7 @@ async function showExamAddedNotice(exam, year) {
   card.title = 'Klik om te sluiten';
   card.innerHTML = `
     <span class="user-badge-mini ${creator?.isAdmin ? 'badge-square' : 'badge-circle'}"
-      data-len="${initials.length}" style="--badge-color:${escHtml(creator?.kleur ?? '#888')}">${escHtml(initials)}</span>
+      data-len="${initials.length}" data-badge-color="${escHtml(creator?.kleur ?? '#888')}">${escHtml(initials)}</span>
     <div class="bg-notice-body">
       <div class="bg-notice-title">Nieuwe toets toegevoegd</div>
       <div class="bg-notice-exam">${escHtml(exam.title)}</div>

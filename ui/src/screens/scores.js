@@ -137,29 +137,29 @@ export async function openScoreModal(examId, year, deps) {
 
   showModal(
     `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;padding-right:30px;flex-shrink:0">
-      <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;font-size:17px;font-weight:600">
-        <span style="white-space:nowrap">Scores invoeren voor</span>
+    <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-pr-30 u-shrink-0">
+      <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0 u-fs-17 u-fw-600">
+        <span class="u-nowrap">Scores invoeren voor</span>
         ${
           exam.volgnummer
-            ? `<span class="volgnummer" style="background:${examTypeColor(exam)};margin-right:0;flex-shrink:0">${escHtml(String(exam.volgnummer))}</span>`
+            ? `<span class="volgnummer u-mr-0 u-shrink-0" data-bg="${examTypeColor(exam)}">${escHtml(String(exam.volgnummer))}</span>`
             : ''
         }
-        <em style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(exam.title)}</em>
+        <em class="u-min-w-0 u-overflow-hidden u-ellipsis u-nowrap">${escHtml(exam.title)}</em>
         <div id="sc-presence" class="presence-badges"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        <button class="btn-secondary" id="sc-undo" title="Ongedaan maken (Ctrl+Z)" style="width:32px;height:32px;padding:0;font-size:16px;">&#x21B6;</button>
-        <button class="btn-secondary" id="sc-redo" title="Opnieuw (Ctrl+Y)" style="width:32px;height:32px;padding:0;font-size:16px;">&#x21B7;</button>
-        <button class="btn-secondary" id="sc-help" disabled
+      <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">
+        <button class="u-w-32 u-h-32 u-p-0 u-fs-16 btn-secondary" id="sc-undo" title="Ongedaan maken (Ctrl+Z)">&#x21B6;</button>
+        <button class="u-w-32 u-h-32 u-p-0 u-fs-16 btn-secondary" id="sc-redo" title="Opnieuw (Ctrl+Y)">&#x21B7;</button>
+        <button class="u-cursor-default u-text-subtle u-border-light btn-secondary" id="sc-help" disabled
           title="Navigeer sneller door gebruik te maken van de numpad:&#10;0-9: Punten invullen&#10;Punt (.): N invullen (als '. → N' aangevinkt is)&#10;Enter: Bevestigen &amp; volgende veld&#10;/ of *: Vorige / volgende veld&#10;- of +: Vorige / volgende leerling&#10;F1, F2, …: Eerste, tweede, … observatie aan/uit voor de huidige leerling&#10;&#10;Cijfer overschrijven: typ een cijfer in de kolom Cijfer. Leegmaken (of rechtermuisklik) herstelt het berekende cijfer."
-          style="cursor:default;color:#9aa0ab;border-color:#d0d6df;">Help ?</button>
+         >Help ?</button>
         <label class="sc-dot-toggle"
           title="Als deze checkbox aangevinkt is, wordt de Numpad '.' een sneltoets voor &quot;Niet gemaakt&quot;. Je kunt dan geen halve punten meer invoeren met alleen het numpad.">
           <input type="checkbox" id="sc-dot-n" ${numpadDotIsN ? 'checked' : ''} /> . → N
         </label>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <div class="u-d-flex u-items-center u-gap-8 u-shrink-0">
         <button class="btn-secondary" id="sc-edit-exam">Toets bewerken</button>
         <span class="toolbar-label">N-term:</span>
         <div class="num-spinner spinner-wrap-sm" id="sc-nterm"
@@ -884,11 +884,11 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
       qKind(q) === 'bonus' ? 'Bonusvraag' : qKind(q) === 'diag' ? 'Diagnostische vraag' : '';
     if (isSpecial) {
       return (
-        `<span style="color:#9aa0ab;font-style:italic" title="${tooltip}">` +
+        `<span class="u-text-subtle u-italic" title="${tooltip}">` +
         `<span class="hdr-rtti">${escHtml(q.rtti)}</span>` +
         `<span class="hdr-pts">${q.max_points}p</span>` +
-        `<span class="hdr-opgave" style="color:#9aa0ab">${escHtml(q.section)}</span>` +
-        `<span class="hdr-vraag" style="color:#9aa0ab">${q.number}</span>` +
+        `<span class="u-text-subtle hdr-opgave">${escHtml(q.section)}</span>` +
+        `<span class="u-text-subtle hdr-vraag">${q.number}</span>` +
         `</span>`
       );
     }

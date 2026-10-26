@@ -43,47 +43,47 @@ export function openStudentModal(id) {
     `
     <h3>${id ? 'Leerling bewerken' : 'Leerling toevoegen'}</h3>
     <div class="form-row">
-      <div class="form-group" style="flex:1">
+      <div class="u-flex-1 form-group">
         <label>Leerlingnummer</label>
         <input id="f-sid" type="number" placeholder="105455" ${id ? 'disabled' : ''} />
       </div>
-      <div class="form-group" style="flex:1">
+      <div class="u-flex-1 form-group">
         <label>Geslacht</label>
         <div id="f-sgeslacht-host" class="csel-host"></div>
       </div>
     </div>
     <div class="form-row">
-      <div class="form-group" style="flex:2">
+      <div class="u-flex-2 form-group">
         <label>Voornaam</label>
         <input id="f-svoornaam" type="text" />
       </div>
-      <div class="form-group" style="flex:1">
+      <div class="u-flex-1 form-group">
         <label>Tussenvoegsel</label>
         <input id="f-stussen" type="text" placeholder="van" />
       </div>
-      <div class="form-group" style="flex:2">
+      <div class="u-flex-2 form-group">
         <label>Achternaam</label>
         <input id="f-sachter" type="text" />
       </div>
     </div>
-    <div class="form-row" style="align-items:flex-end;gap:20px">
-      <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+    <div class="u-items-end u-gap-20 form-row">
+      <div class="u-flex-auto u-mb-0 form-group">
         <label>Jaarlaag</label>
         <div class="btn-toggle-group">${jaarlaagHtml}</div>
       </div>
-      <div class="form-group" style="flex:2;margin-bottom:0">
+      <div class="u-flex-2 u-mb-0 form-group">
         <label>Stamklas</label>
         <input id="f-sstamklas" type="text" placeholder="5A" />
       </div>
     </div>
-    <div class="form-row" style="margin-top:10px">
-      <div class="form-group" style="flex:1;margin-bottom:0">
+    <div class="u-mt-10 form-row">
+      <div class="u-flex-1 u-mb-0 form-group">
         <label>Schoolsoort</label>
         <div class="vak-toggle-group">${schoolsoortHtml}</div>
       </div>
-      <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+      <div class="u-flex-auto u-mb-0 form-group">
         <label>Schooljaar</label>
-        <div id="f-syear-label" style="padding:7px 0;font-size:13px;color:var(--muted);font-style:italic"></div>
+        <div id="f-syear-label" class="u-py-7 u-fs-13 u-text-muted u-italic"></div>
       </div>
     </div>
     <div class="form-actions">
@@ -205,7 +205,7 @@ export async function openStudentCSVImport() {
   showModal(
     `
     <h3>Leerlingen importeren — ${escHtml(year)}</h3>
-    <p class="muted" style="margin-bottom:12px">
+    <p class="u-mb-12 muted">
       Verwachte kolommen: <code>Leerlingnummer, Voornaam, Tussenvoegsel, Achternaam, Geslacht, Stamklas, Jaarlaag, Schoolsoort</code>
     </p>
     <div class="form-group">
@@ -213,7 +213,7 @@ export async function openStudentCSVImport() {
       <input type="file" id="f-csv-students" accept=".csv,.txt" />
     </div>
     <div id="csv-preview"></div>
-    <div class="form-actions" style="margin-top:12px">
+    <div class="u-mt-12 form-actions">
       <button class="btn-primary" id="f-csv-import" disabled>Importeren</button>
       <button class="btn-secondary" data-close-modal="1">Annuleren</button>
     </div>
@@ -231,7 +231,7 @@ export async function openStudentCSVImport() {
           return;
         }
         preview.innerHTML = `
-        <p style="margin:8px 0 4px"><strong>${parsed.length}</strong> leerlingen gevonden (eerste 5):</p>
+        <p class="u-my-8-4"><strong>${parsed.length}</strong> leerlingen gevonden (eerste 5):</p>
         <table class="preview-table">
           <thead><tr>${Object.keys(parsed[0])
             .map((h) => `<th>${escHtml(h)}</th>`)

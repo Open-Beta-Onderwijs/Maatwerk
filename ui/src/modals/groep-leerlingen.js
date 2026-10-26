@@ -21,6 +21,12 @@ function studentVersions(ev, id) {
   return [find(ev.before), find(ev.after)];
 }
 
+// Grade pill of an average; colours via style data (src/legacy/style-data.ts).
+function gradePill(g) {
+  const fail = isFail(g) ? ' grade-pill--fail' : '';
+  return `<span class="grade-pill${fail}" data-border-color="${gradeBorderColor(g)}" data-color="${gradeTextColor(g)}">${formatGrade(g)}</span>`;
+}
+
 export async function openGroupStudentsModal(groupId, year) {
   const group = Store.getGroupsSync(year).find((g) => g.id === groupId);
   if (!group) return;
@@ -113,24 +119,19 @@ export async function openGroupStudentsModal(groupId, year) {
     .map((y) => y.slice(-2))
     .join('');
   // Row 1: Naam | Periode N (colspan) | ... | Jaar | PTA
-  const thStyle = `style="text-align:center;padding:3px 6px;font-size:11px;font-weight:600;
-    color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--border)"`;
-  const nameTh = `<th rowspan="2" style="text-align:left;padding:4px 12px 4px 4px;font-weight:600;
-    border-bottom:2px solid var(--border);white-space:nowrap;vertical-align:bottom">Naam</th>`;
+  // The reference gave these headers a second style="" (border-right per
+  // periode, border-left on Gemiddelde); browsers ignore a duplicate attribute,
+  // so only .gl-th ever applied. Kept as rendered (quirk U18).
+  const nameTh = `<th rowspan="2" class="gl-name-th">Naam</th>`;
 
   const periodeCols =
     byPeriode
       .map(
         ({ p, families }) =>
-          `<th colspan="${families.reduce((sum, f) => sum + 2, 0)}" ${thStyle} style="text-align:center;padding:3px 6px;font-size:11px;
-      font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;
-      border-bottom:1px solid var(--border);border-right:1px solid #e0e0e0">
+          `<th colspan="${families.reduce((sum, f) => sum + 2, 0)}" class="gl-th">
       Periode ${escHtml(String(p))}</th>`,
       )
-      .join('') +
-    `<th colspan="2" ${thStyle} style="text-align:center;padding:3px 6px;font-size:11px;
-    font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;
-    border-bottom:1px solid var(--border);border-left:2px solid var(--border)">Gemiddelde</th>`;
+      .join('') + `<th colspan="2" class="gl-th">Gemiddelde</th>`;
 
   // Row 2: exam badges per periode | Jaar | Dossier
   const examBadgeCols =
@@ -139,30 +140,26 @@ export async function openGroupStudentsModal(groupId, year) {
         families
           .map(
             (f, fi) =>
-              `<th style="text-align:right;padding:4px 6px;border-bottom:2px solid var(--border)">
-        <span class="volgnummer" style="text-align:center;background:${examTypeColor(f.original)};margin-right:0">${f.original.volgnummer}</span></th>
-        <th style="text-align:center;padding:4px 3px;border-bottom:2px solid var(--border);
-        ${fi === families.length - 1 ? 'border-right:1px solid #e0e0e0' : ''}"></th>`,
+              `<th class="u-text-right u-p-4-6 u-border-b-2">
+        <span class="volgnummer u-text-center u-mr-0" data-bg="${examTypeColor(f.original)}">${f.original.volgnummer}</span></th>
+        <th class="gl-badge-th${fi === families.length - 1 ? ' u-border-r-light' : ''}"></th>`,
           )
           .join(''),
       )
       .join('') +
-    `<th style="text-align:center;padding:4px 6px;border-bottom:2px solid var(--border);
-    border-left:2px solid var(--border);font-size:11px;font-weight:600;color:var(--muted);
-    white-space:nowrap">${yearShort}</th>` +
-    `<th style="text-align:center;padding:4px 6px;border-bottom:2px solid var(--border);
-    font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap">SE</th>`;
+    `<th class="u-text-center u-p-4-6 u-border-b-2 u-border-l-2 u-fs-11 u-fw-600 u-text-muted u-nowrap">${yearShort}</th>` +
+    `<th class="u-text-center u-p-4-6 u-border-b-2 u-fs-11 u-fw-600 u-text-muted u-nowrap">SE</th>`;
 
   // ── Student rows ───────────────────────────────────────────────────────────
   const rows = students
     .map((s, si) => {
-      const rowBg = si % 2 === 0 ? 'background:#f8f9fb' : 'background:#fff';
+      const rowBg = si % 2 === 0 ? 'gl-bg-even' : 'gl-bg-odd';
 
-      const nameCell = `<td style="padding:5px 12px 5px 4px;white-space:nowrap;${rowBg}">
-      <button class="student-name-btn group-name-btn" data-action="open-student-from-group"
+      const nameCell = `<td class="gl-name-td ${rowBg}">
+      <button class="u-fs-13 student-name-btn group-name-btn" data-action="open-student-from-group"
         data-id="${s.id}" data-groupid="${escHtml(groupId)}" data-year="${escHtml(year)}"
-        style="font-size:13px">${escHtml(Store.fullName(s))}</button>
-      <span class="card-sep" style="margin:0 4px">·</span>
+       >${escHtml(Store.fullName(s))}</button>
+      <span class="u-mx-4 card-sep">·</span>
       <span class="student-id-inline">${s.id}</span></td>`;
 
       const examCells = byPeriode
@@ -174,20 +171,19 @@ export async function openGroupStudentsModal(groupId, year) {
               const bc = gradeBorderColor(g);
               const tc = gradeTextColor(g);
               const fw = g !== null && isFail(g) ? 'bold' : '500';
-              const borderR = fi === families.length - 1 ? 'border-right:1px solid #e0e0e0' : '';
+              const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
               const badgeLetter = fromExam?.parent_id
                 ? (fromExam.description ?? '').trim().charAt(0).toUpperCase() || '?'
                 : '';
               const badgeCell =
-                `<td style="text-align:left;vertical-align:top;padding:3px 1px 3px 2px;width:30px;${rowBg};${borderR}">` +
+                `<td class="gl-badge-td ${rowBg}${borderR}">` +
                 (badgeLetter
                   ? `<span class="attempt-badge" title="${(fromExam.description ?? '').trim()}">${badgeLetter}</span>`
                   : '') +
                 `</td>`;
               return (
-                `<td style="text-align:right;padding:3px 4px;width:50px;${rowBg}">` +
-                `<span style="text-align:center;display:inline-block;min-width:36px;padding:1px 5px;border:2px solid ${bc};` +
-                `border-radius:4px;font-size:12px;font-weight:${fw};color:${tc}">${label}</span></td>` +
+                `<td class="gl-grade-td ${rowBg}">` +
+                `<span class="grade-pill grade-pill--wide${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>` +
                 badgeCell
               );
             })
@@ -204,19 +200,11 @@ export async function openGroupStudentsModal(groupId, year) {
       const dossierAvg = dossierAvgMap[s.id];
 
       const avgCells =
-        `<td style="text-align:center;padding:3px 4px;width:70px;border-left:2px solid var(--border);${rowBg}">${
-          yearAvg !== null
-            ? `<span style="display:inline-block;min-width:34px;padding:1px 5px;border:2px solid ${gradeBorderColor(yearAvg)};
-              border-radius:4px;font-size:12px;font-weight:${isFail(yearAvg) ? 'bold' : '500'};color:${gradeTextColor(yearAvg)}"
-            >${formatGrade(yearAvg)}</span>`
-            : `<span style="color:#aaa">—</span>`
+        `<td class="gl-avg-td u-border-l-2 ${rowBg}">${
+          yearAvg !== null ? gradePill(yearAvg) : `<span class="u-text-faint">—</span>`
         }</td>` +
-        `<td style="text-align:center;padding:3px 4px;width:70px;${rowBg}">${
-          dossierAvg !== null
-            ? `<span style="display:inline-block;min-width:34px;padding:1px 5px;border:2px solid ${gradeBorderColor(dossierAvg)};
-              border-radius:4px;font-size:12px;font-weight:${isFail(dossierAvg) ? 'bold' : '500'};color:${gradeTextColor(dossierAvg)}"
-            >${formatGrade(dossierAvg)}</span>`
-            : `<span style="color:#aaa">—</span>`
+        `<td class="gl-avg-td ${rowBg}">${
+          dossierAvg !== null ? gradePill(dossierAvg) : `<span class="u-text-faint">—</span>`
         }</td>`;
 
       return `<tr>${nameCell}${examCells}${avgCells}</tr>`;
@@ -236,12 +224,11 @@ export async function openGroupStudentsModal(groupId, year) {
           const bc = gradeBorderColor(avg);
           const tc = gradeTextColor(avg);
           const fw = avg !== null && isFail(avg) ? 'bold' : '500';
-          const borderR = fi === families.length - 1 ? 'border-right:1px solid #e0e0e0' : '';
+          const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
           return (
-            `<td style="text-align:right;padding:3px 4px;background:#f0f4ff">` +
-            `<span style="text-align:center;display:inline-block;min-width:36px;padding:1px 5px;border:2px solid ${bc};` +
-            `border-radius:4px;font-size:12px;font-weight:${fw};color:${tc}">${label}</span></td>` +
-            `<td style="background:#f0f4ff;${borderR}"></td>`
+            `<td class="u-text-right u-p-3-4 u-bg-highlight">` +
+            `<span class="grade-pill grade-pill--wide${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>` +
+            `<td class="u-bg-highlight${borderR}"></td>`
           );
         })
         .join(''),
@@ -264,23 +251,16 @@ export async function openGroupStudentsModal(groupId, year) {
   const seAvgOfAvgs = seAvgs.length > 0 ? seAvgs.reduce((a, b) => a + b, 0) / seAvgs.length : null;
 
   const avgRowSummary =
-    `<td style="text-align:center;padding:3px 4px;background:#f0f4ff;border-left:2px solid var(--border)">${
-      yearAvgOfAvgs !== null
-        ? `<span style="display:inline-block;min-width:34px;padding:1px 5px;border:2px solid ${gradeBorderColor(yearAvgOfAvgs)};` +
-          `border-radius:4px;font-size:12px;font-weight:${isFail(yearAvgOfAvgs) ? 'bold' : '500'};color:${gradeTextColor(yearAvgOfAvgs)}">${formatGrade(yearAvgOfAvgs)}</span>`
-        : `<span style="color:#aaa">—</span>`
+    `<td class="u-text-center u-p-3-4 u-bg-highlight u-border-l-2">${
+      yearAvgOfAvgs !== null ? gradePill(yearAvgOfAvgs) : `<span class="u-text-faint">—</span>`
     }</td>` +
-    `<td style="text-align:center;padding:3px 4px;background:#f0f4ff">${
-      seAvgOfAvgs !== null
-        ? `<span style="display:inline-block;min-width:34px;padding:1px 5px;border:2px solid ${gradeBorderColor(seAvgOfAvgs)};` +
-          `border-radius:4px;font-size:12px;font-weight:${isFail(seAvgOfAvgs) ? 'bold' : '500'};color:${gradeTextColor(seAvgOfAvgs)}">${formatGrade(seAvgOfAvgs)}</span>`
-        : `<span style="color:#aaa">—</span>`
+    `<td class="u-text-center u-p-3-4 u-bg-highlight">${
+      seAvgOfAvgs !== null ? gradePill(seAvgOfAvgs) : `<span class="u-text-faint">—</span>`
     }</td>`;
 
   const avgRow =
-    `<tr style="border-top:2px solid var(--border)">` +
-    `<td style="padding:5px 12px 5px 4px;white-space:nowrap;background:#f0f4ff;font-size:11px;` +
-    `font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Gemiddelde</td>` +
+    `<tr class="u-border-t-2">` +
+    `<td class="gl-foot-label">Gemiddelde</td>` +
     avgRowExamCells +
     avgRowSummary +
     `</tr>`;
@@ -288,9 +268,9 @@ export async function openGroupStudentsModal(groupId, year) {
   showModal(
     `
     <h3>${escHtml(group.name)}</h3>
-    <p class="muted" style="margin-bottom:10px">${students.length} leerlingen &mdash; klik een naam om het leerlingprofiel te openen</p>
-    <div style="overflow-x:auto">
-      <table style="border-collapse:collapse;width:100%;font-size:13px">
+    <p class="u-mb-10 muted">${students.length} leerlingen &mdash; klik een naam om het leerlingprofiel te openen</p>
+    <div class="u-overflow-x-auto">
+      <table class="u-collapse u-w-full u-fs-13">
         <thead>
           <tr>${nameTh}${periodeCols}</tr>
           <tr>${examBadgeCols}</tr>
