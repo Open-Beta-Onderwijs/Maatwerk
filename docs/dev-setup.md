@@ -25,6 +25,10 @@ Test-Path "C:\Program Files (x86)\Windows Kits\10\Lib"
 
 ## Optional
 
+- Playwright's Chromium for `npm run test:e2e` / `test:visual`: `npx playwright install chromium`
+  (from `ui/`, once; about 150 MB in `%LOCALAPPDATA%\ms-playwright`).
+- `npm run dev:mock` opens the UI on http://localhost:1420 in a normal browser, on synthetic data
+  in memory (nothing is saved; reload starts over).
 - `cargo-deny` 0.20.x (CI runs it). Without a working linker, download the prebuilt
   `x86_64-pc-windows-msvc` release from GitHub instead of `cargo install`.
 - `gh` CLI: not installed; only needed to create the GitHub remote from the terminal.

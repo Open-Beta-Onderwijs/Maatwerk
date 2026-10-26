@@ -14,6 +14,22 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 | `npm run golden:typst [-- --check] [-- <case> ...]`     | yes, plus the Typst package cache (below) | Renders the Typst goldens with the reference CLI 0.14.2 (or checks them byte for byte) |
 | `node tests/reference-harness/make-shims.mjs`           | yes                                       | Rewrites `tools/reference-shims/*.cjs` from the reference                              |
 | `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                         |
+| `npm run test:e2e`                                      | no                                        | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)    |
+| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 37 views; baseline is machine-specific, not committed   |
+| `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)    |
+
+### UI tests (Step 3a)
+
+- Vitest (`npm test`): `ui/tests/domain/*` run the TypeScript domain modules against the Step 2
+  logic goldens; `ui/tests/store/*` run the ported `store.js` on a `MockApi` seeded with a golden's
+  `data` folder (`ui/tests/store-session.ts`). The environment matches the harness (TZ, nl
+  collation, frozen clock: `ui/tests/setup.ts`). Cases that pin reference behaviour the port fixes
+  on purpose are compared after applying exactly that fix, named after the quirk (B22, T26, T27,
+  B9). `ui/src/bridge/mock/mock-api.test.ts` is the bridge contract.
+- Playwright (`ui/e2e`, mock build with the strict CSP): `smoke`, `quirks` (one test per UI quirk
+  fix, written before the fix), `csp` (every view, no violations, no console errors), and the local
+  `visual` project. `e2e/views.ts` lists the views; `e2e/helpers.ts` has `seedFiles` (replace
+  fixture files before boot) and `withMock` (`MockApi.fail()` injects errors).
 
 With `_reference/` present, `npm test` also re-runs every golden suite and the shim drift check.
 CI has no `_reference/` (it is gitignored and has no licence), so CI checks structure only; the
