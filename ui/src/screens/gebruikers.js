@@ -47,7 +47,7 @@ async function renderUserList() {
     return `
       <div class="card gebruiker-card">
         <div class="gebruiker-card-left">
-          <div class="user-badge ${shape}" style="--badge-color: ${user.kleur ?? '#888'}; pointer-events:none">
+          <div class="user-badge ${shape}" style="--badge-color: ${escHtml(user.kleur ?? '#888')}; pointer-events:none">
             <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
           </div>
         </div>

@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "typecheck": "npm run typecheck -w ui",
     "test": "npm run test -w ui && node --test \"tools/**/*.test.mjs\" \"tests/**/*.test.mjs\"",
+    "test:e2e": "npm run test:e2e -w ui",
     "licenses": "node tools/check-npm-licenses.mjs",
     "golden:regen": "node tests/reference-harness/regen.mjs",
     "golden:check": "node tests/reference-harness/regen.mjs --check && node tests/reference-harness/typst/regen-typst.mjs --check",

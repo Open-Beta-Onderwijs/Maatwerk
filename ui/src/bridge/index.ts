@@ -13,7 +13,18 @@ export async function installBridge(): Promise<MaatwerkApi> {
   if (import.meta.env.MODE === 'mock') {
     const { createMockFromFixtures } = await import('./mock/from-fixtures');
     const mock = createMockFromFixtures();
-    (window as unknown as { __maatwerkMock: unknown }).__maatwerkMock = mock;
+    // Test hooks: Playwright reaches the mock as window.__maatwerkMock and can
+    // replace fixture files before the app starts (window.__maatwerkMockFiles,
+    // relPath -> JSON value). Data only: the strict CSP forbids eval.
+    const hooks = window as unknown as {
+      __maatwerkMock: unknown;
+      __maatwerkMockFiles?: Record<string, unknown>;
+    };
+    hooks.__maatwerkMock = mock;
+    for (const [relPath, data] of Object.entries(hooks.__maatwerkMockFiles ?? {})) {
+      await mock.writeJson(relPath, data);
+    }
+    mock.calls.length = 0;
     api = mock;
   } else {
     const { createTauriApi } = await import('./tauri-api');

@@ -153,7 +153,7 @@ function buildTabHtml(data, tabs, activeTab) {
     (cat) => `
     <tr>
       <td>${cat}</td>
-      <td><textarea rows="3" data-uitleg="${cat}" placeholder="${RTTI_PLACEHOLDERS[cat].uitleg}">${data.uitleg[cat]}</textarea></td>
+      <td><textarea rows="3" data-uitleg="${cat}" placeholder="${RTTI_PLACEHOLDERS[cat].uitleg}">${escHtml(data.uitleg[cat])}</textarea></td>
     </tr>`,
   ).join('');
 
@@ -162,9 +162,9 @@ function buildTabHtml(data, tabs, activeTab) {
       (cat) => `
     <tr>
       <td>${cat}</td>
-      <td><textarea rows="5" data-adv="${cat}-laag" placeholder="${RTTI_PLACEHOLDERS[cat].laag}">${data.leeradvies[cat].laag}</textarea></td>
-      <td><textarea rows="5" data-adv="${cat}-midden" placeholder="${RTTI_PLACEHOLDERS[cat].midden}">${data.leeradvies[cat].midden}</textarea></td>
-      <td><textarea rows="5" data-adv="${cat}-hoog" placeholder="${RTTI_PLACEHOLDERS[cat].hoog}">${data.leeradvies[cat].hoog}</textarea></td>
+      <td><textarea rows="5" data-adv="${cat}-laag" placeholder="${RTTI_PLACEHOLDERS[cat].laag}">${escHtml(data.leeradvies[cat].laag)}</textarea></td>
+      <td><textarea rows="5" data-adv="${cat}-midden" placeholder="${RTTI_PLACEHOLDERS[cat].midden}">${escHtml(data.leeradvies[cat].midden)}</textarea></td>
+      <td><textarea rows="5" data-adv="${cat}-hoog" placeholder="${RTTI_PLACEHOLDERS[cat].hoog}">${escHtml(data.leeradvies[cat].hoog)}</textarea></td>
     </tr>`,
     )
     .join('');

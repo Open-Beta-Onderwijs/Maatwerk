@@ -155,11 +155,39 @@ export class MockApi implements MaatwerkApi {
     return bytes ? decoder.decode(bytes) : null;
   }
 
+  private faults = new Map<string, { pathPart: string; message: string }>();
+
+  /**
+   * Records the call; throws the injected fault when one matches (the async
+   * method then rejects, like a handler error in the reference main process).
+   */
   private record(method: string, args: unknown[]): void {
     this.calls.push([method, ...args]);
+    const fault = this.faultFor(method, args);
+    if (fault && method !== 'writeJson') throw new Error(fault);
+  }
+
+  private faultFor(method: string, args: unknown[]): string | null {
+    const fault = this.faults.get(method);
+    if (!fault) return null;
+    const path = typeof args[0] === 'string' ? args[0] : '';
+    return path.includes(fault.pathPart) ? fault.message : null;
   }
 
   // ── Test hooks (not part of MaatwerkApi) ──────────────────────────────────
+
+  /**
+   * Makes `method` fail for paths containing `pathPart` until cleared:
+   * writeJson returns `{ ok: false, reason: message }` (a failed write in the
+   * reference), every other method rejects with `message`.
+   */
+  fail(method: string, pathPart = '', message = 'EBUSY: resource busy or locked'): void {
+    this.faults.set(method, { pathPart, message });
+  }
+
+  clearFaults(): void {
+    this.faults.clear();
+  }
 
   /** A colleague's write arriving through OneDrive: changes the file and emits `data:changed`. */
   externalWrite(relPath: string, data: Json): void {
@@ -215,6 +243,8 @@ export class MockApi implements MaatwerkApi {
     opts: { cas?: boolean; expectedHash?: string | null } = {},
   ): Promise<FsResult> {
     this.record('writeJson', [relPath, data, opts]);
+    const fault = this.faultFor('writeJson', [relPath]);
+    if (fault) return { ok: false, reason: fault };
     if (opts.cas) {
       const current = this.files.get(relPath);
       const currentHash = current ? await sha1(current) : null;

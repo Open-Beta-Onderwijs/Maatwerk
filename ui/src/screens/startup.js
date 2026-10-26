@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { navigateTo, showUserBadge } from '../app.js';
+import { escHtml, navigateTo, showUserBadge } from '../app.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Startup — two-step subject + user picker
@@ -27,12 +27,13 @@ export async function renderStartup() {
   function renderBadge(user) {
     const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
     const initials = user.afkorting || (user.voornaam[0] ?? '') + (user.achternaam[0] ?? '');
-    const fotoAttr = user.foto ? ` data-foto="${user.foto}"` : '';
+    // U7: every user field is escaped (the reference inserted them raw).
+    const fotoAttr = user.foto ? ` data-foto="${escHtml(user.foto)}"` : '';
     return `
-      <button class="user-badge ${shape}" data-user-id="${user.id}"
-              style="--badge-color: ${user.kleur ?? '#888'}"${fotoAttr}>
-        <span class="badge-initials" data-len="${initials.length}">${initials}</span>
-        <span class="badge-name">${user.voornaam}</span>
+      <button class="user-badge ${shape}" data-user-id="${escHtml(user.id)}"
+              style="--badge-color: ${escHtml(user.kleur ?? '#888')}"${fotoAttr}>
+        <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
+        <span class="badge-name">${escHtml(user.voornaam)}</span>
       </button>`;
   }
 

@@ -126,6 +126,7 @@ are relative to `_reference/` unless a section says otherwise.
 25. **D25 · Editor proxy never answers on rejection**
     - Where: `modals/editor.js:61-95`; `editor-init.js:46-52`
     - Evidence: `.then(reply)` without `.catch`; a thrown handler error (e.g. invalid opdracht id in `opdrachtImagesDir`) leaves the iframe promise pending forever.
+    - **Fixed in the port (Step 3a):** the proxy answers a failed call with `{ error }` and the editor's `postToParent` rejects; a failed load shows "Fout bij laden" and creates no editor view (so nothing can overwrite the file). Test: `ui/e2e/quirks.spec.ts` "D25".
 
 26. **D26 · Store ignores `deleteFile` results**
     - Where: `store.js:487`, `:572`, `:798`, `:1201`, `:1203`
@@ -661,6 +662,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   (no `preventDefault`, no toast).
 - Effect: the cell shows the value as saved; the user is not told (OneDrive lock, disk full, broken
   JSON).
+- **Fixed in the port (Step 3a):** `saveCell` (`ui/src/screens/scores.js`) shows a persistent error with the
+  student and the reason; conflicts still go to the global handler. The cell keeps the typed value (the
+  grid itself is replaced in 3b). Test: `ui/e2e/quirks.spec.ts` "U3".
 
 ### U4. Score grid: pasting or auto-filling into observatie columns is not saved
 
@@ -691,6 +695,8 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   back); `</textarea>` in the text breaks the form. Script execution is blocked by the CSP.
 - Same modal: saves all tabs with plain `writeJson` (no CAS, no `_meta`) (`rapport.js:735-737`), so
   it silently overwrites a colleague's edits of the same files, and has no `Sync` subscription.
+- **Fixed in the port (Step 3a):** the textareas escape their content (`escHtml`). The blind write
+  (no CAS) stays until Step 4a (ADR-0003 C6). Test: `ui/e2e/quirks.spec.ts` "U6".
 
 ### U7. Login screen builds user badges from unescaped user data
 
@@ -700,6 +706,8 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   escaped.
 - Effect: a first name or abbreviation with `<`, `&` or `"` renders wrong or injects markup on the
   very first screen; inconsistent with the rest of the app.
+- **Fixed in the port (Step 3a):** `screens/startup.js` escapes every user field; `gebruikers.js` escapes
+  `kleur`. Test: `ui/e2e/quirks.spec.ts` "U7".
 
 ### U8. Exam description unescaped in a `title` attribute
 
@@ -714,6 +722,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   in-flight `postToParent` promise (the parent listener is removed, so `_pending` never resolves).
 - Also: `.typ` saves use `writeTextFile` without CAS or Sync, so two teachers editing the same
   opdracht overwrite each other without notice.
+- **Fixed in the port (Step 3a):** closing via the app title or the badge first writes a pending autosave
+  and waits for writes in flight (`flushSave` in `editor-init.js`); if the write fails the editor stays
+  open with "Fout bij opslaan". No CAS on `.typ` yet (Step 8). Test: `ui/e2e/quirks.spec.ts` "U9".
 
 ### U10. Editor iframe proxy: untyped, path-based, and reachable by CDN code
 

@@ -57,40 +57,59 @@ function handleEditorMessage(evt, frame) {
   const { type, id, ...rest } = evt.data;
 
   function reply(result) {
-    frame.contentWindow.postMessage({ type: 'maatwerk-response', id, result }, '*');
+    frame.contentWindow?.postMessage({ type: 'maatwerk-response', id, result }, '*');
+  }
+
+  // D25: a failed call is answered too (with `error`), so the editor's
+  // promise settles instead of waiting forever.
+  function replyError(err) {
+    frame.contentWindow?.postMessage(
+      { type: 'maatwerk-response', id, error: String(err?.message ?? err) },
+      '*',
+    );
+  }
+
+  function answer(call) {
+    Promise.resolve().then(call).then(reply, replyError);
   }
 
   switch (type) {
     case 'maatwerk-read-text':
-      window.maatwerk.readTextFile(rest.path).then(reply);
+      answer(() => window.maatwerk.readTextFile(rest.path));
       break;
     case 'maatwerk-write-text':
-      window.maatwerk.writeTextFile(rest.path, rest.content).then(reply);
+      answer(() => window.maatwerk.writeTextFile(rest.path, rest.content));
       break;
     case 'maatwerk-render-assignment-svg':
-      window.maatwerk.renderAssignmentSvg(rest.typFile, rest.title, rest.content).then(reply);
+      answer(() => window.maatwerk.renderAssignmentSvg(rest.typFile, rest.title, rest.content));
       break;
     case 'maatwerk-list-images':
-      window.maatwerk.listOpdrachtImages(rest.opdrachtId).then(reply);
+      answer(() => window.maatwerk.listOpdrachtImages(rest.opdrachtId));
       break;
     case 'maatwerk-save-image':
-      window.maatwerk
-        .saveOpdrachtImage(rest.opdrachtId, rest.name, rest.ext, rest.base64, rest.overwrite)
-        .then(reply);
+      answer(() =>
+        window.maatwerk.saveOpdrachtImage(
+          rest.opdrachtId,
+          rest.name,
+          rest.ext,
+          rest.base64,
+          rest.overwrite,
+        ),
+      );
       break;
     case 'maatwerk-pick-image':
-      window.maatwerk.pickImageFile().then(reply);
+      answer(() => window.maatwerk.pickImageFile());
       break;
     case 'maatwerk-import-image':
-      window.maatwerk
-        .importOpdrachtImage(rest.opdrachtId, rest.token, rest.name, rest.overwrite)
-        .then(reply);
+      answer(() =>
+        window.maatwerk.importOpdrachtImage(rest.opdrachtId, rest.token, rest.name, rest.overwrite),
+      );
       break;
     case 'maatwerk-clipboard-image':
-      window.maatwerk.readClipboardImage().then(reply);
+      answer(() => window.maatwerk.readClipboardImage());
       break;
     case 'maatwerk-get-data-dir':
-      window.maatwerk.getDataDir().then(reply);
+      answer(() => window.maatwerk.getDataDir());
       break;
     case 'editor-close':
       closeEditor();

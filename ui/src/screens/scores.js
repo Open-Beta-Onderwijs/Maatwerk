@@ -775,6 +775,13 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     Presence.markEdit();
     try {
       await write();
+    } catch (err) {
+      // Conflicts are reported by the global handler in app.js. U3: any other
+      // failure (locked file, broken JSON, disk full) was silently lost.
+      if (err?.code === 'conflict') throw err;
+      persistentError(
+        `Score niet opgeslagen (${students[row] ? Store.fullName(students[row]) : 'onbekend'}): ${err?.message ?? err}. Controleer de gedeelde map en voer de score opnieuw in.`,
+      );
     } finally {
       const n = pendingSaves.get(key) - 1;
       if (n > 0) pendingSaves.set(key, n);

@@ -45,10 +45,12 @@ import { Tag, tags } from '@lezer/highlight';
 let _seq = 0;
 const _pending = {};
 
+// Rejects when the parent answers with `error` (D25: the reference never
+// answered a failed call, so the promise stayed pending forever).
 function postToParent(type, data = {}) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const id = ++_seq;
-    _pending[id] = resolve;
+    _pending[id] = { resolve, reject };
     window.parent.postMessage({ type, id, ...data }, '*');
   });
 }
@@ -56,8 +58,10 @@ function postToParent(type, data = {}) {
 window.addEventListener('message', (evt) => {
   const msg = evt.data;
   if (msg?.type === 'maatwerk-response' && _pending[msg.id]) {
-    _pending[msg.id](msg.result);
+    const { resolve, reject } = _pending[msg.id];
     delete _pending[msg.id];
+    if (msg.error !== undefined) reject(new Error(msg.error));
+    else resolve(msg.result);
   }
 });
 
@@ -275,7 +279,7 @@ const naam = params.get('naam') ?? 'Opdracht';
 document.getElementById('editor-title-naam').textContent = naam;
 
 document.getElementById('btn-app-title').addEventListener('click', () => {
-  window.parent.postMessage({ type: 'editor-close' }, '*');
+  closeAfterSave('editor-close');
 });
 
 // Render user badge from URL params (passed by modals/editor.js from the topbar DOM)
@@ -285,7 +289,7 @@ badgeBtn.dataset.len = badgeBtn.textContent.length;
 badgeBtn.style.setProperty('--badge-color', params.get('badgeColor') ?? '#888');
 badgeBtn.classList.add(params.get('badgeShape') === 'square' ? 'badge-square' : 'badge-circle');
 badgeBtn.addEventListener('click', () => {
-  window.parent.postMessage({ type: 'editor-logout' }, '*');
+  closeAfterSave('editor-logout');
 });
 
 let view = null;
@@ -591,7 +595,7 @@ function compileSvg(content) {
     typFile,
     title: naam,
     content,
-  });
+  }).catch((err) => ({ success: false, error: err.message }));
 }
 
 // Compile the current editor text (with cursor marker) and show the result.
@@ -634,24 +638,57 @@ async function renderPreview() {
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
-async function doSaveAndCompile() {
-  if (!view || !dataDir || !typFile) return;
+let saving = Promise.resolve(true); // the last write, so a close can wait for it
 
+/** Writes the editor text; resolves to true when saved. */
+function saveNow() {
   const content = view.state.doc.toString();
   const relPath = `opdrachten/${typFile}`;
-  const writeResult = await postToParent('maatwerk-write-text', { path: relPath, content });
-  if (!writeResult?.ok) {
-    setStatus('Fout bij opslaan');
-    return;
-  }
-  setStatus('Opgeslagen');
+  saving = saving.then(async () => {
+    try {
+      const writeResult = await postToParent('maatwerk-write-text', { path: relPath, content });
+      if (!writeResult?.ok) throw new Error('niet opgeslagen');
+      setStatus('Opgeslagen');
+      return true;
+    } catch (err) {
+      setStatus('Fout bij opslaan', err.message);
+      return false;
+    }
+  });
+  return saving;
+}
+
+async function doSaveAndCompile() {
+  if (!view || !dataDir || !typFile) return;
+  if (!(await saveNow())) return;
   await renderPreview();
 }
 
 function scheduleCompile() {
   clearTimeout(saveTimer);
   clearTimeout(cursorTimer);
-  saveTimer = setTimeout(doSaveAndCompile, 600);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    doSaveAndCompile();
+  }, 600);
+}
+
+/**
+ * U9: saves a pending autosave right away and waits for writes in flight, so
+ * closing the editor within the 600 ms autosave delay loses nothing. Resolves
+ * to false when the last write failed (the editor then stays open).
+ */
+async function flushSave() {
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (view && dataDir && typFile) return saveNow();
+  }
+  return saving;
+}
+
+async function closeAfterSave(type) {
+  if (await flushSave()) window.parent.postMessage({ type }, '*');
 }
 
 // Cursor moved without editing: re-render only if the marker would move.
@@ -673,10 +710,17 @@ const changeListener = EditorView.updateListener.of((update) => {
 });
 
 async function init() {
-  const [content, dir] = await Promise.all([
-    postToParent('maatwerk-read-text', { path: `opdrachten/${typFile}` }),
-    postToParent('maatwerk-get-data-dir'),
-  ]);
+  let content, dir;
+  try {
+    [content, dir] = await Promise.all([
+      postToParent('maatwerk-read-text', { path: `opdrachten/${typFile}` }),
+      postToParent('maatwerk-get-data-dir'),
+    ]);
+  } catch (err) {
+    // No editor view is created, so nothing can overwrite the file.
+    setStatus('Fout bij laden', err.message);
+    return;
+  }
 
   dataDir = dir ?? '';
 
