@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-26 (Step 3a done, in review) Branch: `step/03-ui-foundation` Last tag: `step-02`
+Last updated: 2026-10-26 (3a review triage in progress) Branch: `step/03-ui-foundation` Last tag: `step-02`
 
 ## Current step
 
@@ -54,12 +54,17 @@ Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
 
 ## Next action (concrete, resumable)
 
-1. Triage `docs/reviews/step-03a.md` (fix blockers/majors), re-run the gate, merge nothing yet
-   (Step 3 merges after 3b), tag `step-03a` on the branch.
-2. 3b: `docs/specs/score-grid.md` from `ui/src/screens/scores.js`, Playwright tests of that spec
-   against Handsontable, ADR-0004 (grid candidates), then **ask the user to choose** (also D34).
-3. Not yet covered by Vitest goldens: averages, display, scoregrid, stats (screen code, not
-   extracted in 3a; they stay in their screens per ADR-0002 section 6).
+1. Review : M1 (frame-ancestors 'self'), M2 (editor close after failed
+   save, test in quirks.spec), M3 (no CI exe upload until 3b) are fixed. Still to do (minors): call
+   in before charts measure; serialise MockApi CAS writes; catch
+   rejected image/clipboard calls in editor-init; unit test for C8 string ids + parity note; escape
+   in the gebruikers colour input; nits to backlog. Then gate, tag .
+2. 3b: spec and ADR-0004 (proposed) are committed. Draft tests are in the
+   session scratchpad (lost): rewrite + per spec
+   G01-G58 (HoT selectors , ; exams nat-lege-toets / nat-toets-h2;
+   G33/G52 as test.fail), run against Handsontable.
+3. Then **ask the user**: grid choice (ADR-0004), D34 (merge or confirm), U1 (Ctrl+Z on app undo),
+   and confirm the ADR-0002 CSP amendment (frame-ancestors 'self').
 
 ## Open questions for the user
 

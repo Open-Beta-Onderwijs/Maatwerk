@@ -29,7 +29,8 @@ const render = (directives: Record<string, string[]>) =>
 export const APP_CSP = render({
   ...COMMON,
   'connect-src': ['ipc:', 'http://ipc.localhost'],
-  'frame-ancestors': ["'none'"],
+  // 'self', not 'none': editor.html and pdf-viewer.html are framed by the app (review 3a M1).
+  'frame-ancestors': ["'self'"],
 });
 
 /**

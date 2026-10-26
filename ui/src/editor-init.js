@@ -644,6 +644,7 @@ async function renderPreview() {
 // ── Save ──────────────────────────────────────────────────────────────────────
 
 let saving = Promise.resolve(true); // the last write, so a close can wait for it
+let lastSaveFailed = false;
 
 /** Writes the editor text; resolves to true when saved. */
 function saveNow() {
@@ -654,9 +655,11 @@ function saveNow() {
       const writeResult = await postToParent('maatwerk-write-text', { path: relPath, content });
       if (!writeResult?.ok) throw new Error('niet opgeslagen');
       setStatus('Opgeslagen');
+      lastSaveFailed = false;
       return true;
     } catch (err) {
       setStatus('Fout bij opslaan', err.message);
+      lastSaveFailed = true;
       return false;
     }
   });
@@ -684,16 +687,29 @@ function scheduleCompile() {
  * to false when the last write failed (the editor then stays open).
  */
 async function flushSave() {
-  if (saveTimer !== null) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
-    if (view && dataDir && typFile) return saveNow();
+  const pending = saveTimer !== null;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  // A failed save is retried too, so a close after a passing hiccup saves.
+  if ((pending || (await saving) === false || lastSaveFailed) && view && dataDir && typFile) {
+    return saveNow();
   }
   return saving;
 }
 
+// If saving still fails, the teacher may close anyway after confirming (review 3a M2:
+// otherwise there was no way out of the editor).
 async function closeAfterSave(type) {
-  if (await flushSave()) window.parent.postMessage({ type }, '*');
+  const saved = await flushSave();
+  if (
+    !saved &&
+    !window.confirm(
+      'De laatste wijzigingen zijn niet opgeslagen. Toch sluiten? Dan gaan ze verloren.',
+    )
+  ) {
+    return;
+  }
+  window.parent.postMessage({ type }, '*');
 }
 
 // Cursor moved without editing: re-render only if the marker would move.

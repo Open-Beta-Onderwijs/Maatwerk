@@ -70,8 +70,5 @@ jobs:
       - run: cargo test --workspace
       - name: Portable exe
         run: npm run build:exe
-      - uses: actions/upload-artifact@v7
-        with:
-          name: maatwerk-windows-x64
-          path: target/release/maatwerk.exe
-          if-no-files-found: error
+      # No artifact upload until Step 3b removes Handsontable: its licence forbids
+      # distributing the exe (review 3a M3). Restore the upload-artifact step then.

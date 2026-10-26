@@ -84,3 +84,25 @@ test('D25: the editor reports a failed load instead of waiting forever', async (
   const status = page.frameLocator('#editor-frame').locator('#editor-status');
   await expect(status).toContainText('Fout bij laden');
 });
+
+test('U9: after a failed save the editor can still be closed, after confirming', async ({
+  page,
+}) => {
+  await login(page);
+  const frame = await openFirstOpdrachtInEditor(page);
+  await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
+  await frame.locator('.cm-content').click();
+  await page.keyboard.type('x');
+  const dialogs: string[] = [];
+  page.on('dialog', (d) => {
+    dialogs.push(d.message());
+    void (dialogs.length === 1 ? d.dismiss() : d.accept());
+  });
+  await frame.locator('#btn-app-title').click(); // save fails -> asks; dismissed: stays open
+  await expect.poll(() => dialogs.length).toBe(1);
+  await expect(page.locator('#editor-overlay')).toBeVisible();
+  await frame.locator('#btn-app-title').click(); // retries, fails, asks again; accepted: closes
+  await expect(page.locator('#editor-overlay')).toBeHidden();
+  expect(dialogs).toHaveLength(2);
+  expect(dialogs[0]).toContain('niet opgeslagen');
+});
