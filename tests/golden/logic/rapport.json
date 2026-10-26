@@ -1,0 +1,1090 @@
+{
+  "format": 1,
+  "suite": "rapport",
+  "description": "Data the rapport dialog builds for the Typst report.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/modals/rapport.js:11-11 RTTI_COLORS",
+      "renderer/modals/rapport.js:112-117 getScoreBracket",
+      "renderer/modals/rapport.js:119-121 fmtNum",
+      "renderer/modals/rapport.js:129-136 sanitizeTypstMarkup",
+      "renderer/modals/rapport.js:13-27 lerpHex",
+      "renderer/modals/rapport.js:138-169 buildLeeradviesRows",
+      "renderer/modals/rapport.js:174-282 compileRapport",
+      "renderer/modals/rapport.js:29-37 scoreDotColor",
+      "renderer/modals/rapport.js:403-405 rttiExplFilePath",
+      "renderer/modals/rapport.js:407-423 defaultTabData",
+      "renderer/modals/rapport.js:44-79 assembleVragen",
+      "renderer/modals/rapport.js:83-89 WI_SUB_DISPLAY",
+      "renderer/modals/rapport.js:91-93 subjectDisplayName",
+      "renderer/modals/rapport.js:97-110 calcCategoryTotals"
+    ]
+  },
+  "cases": [
+    {
+      "id": "data",
+      "rule": "BR 8",
+      "input": {
+        "files": {
+          "2025-2026/exams/nat-rapport-2025-2026.json": "{\n  \"id\": \"nat-rapport-2025-2026\",\n  \"title\": \"Toets H2 \\\"Elektriciteit\\\" #1 $5 @home <b>\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1.3,\n  \"weging\": 1,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"regular\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 3,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 3,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"II\",\n      \"number\": 3,\n      \"max_points\": 5,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 4,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 2,\n      \"rtti\": \"T1\",\n      \"kind\": \"bonus\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 1,\n      \"rtti\": \"R\",\n      \"kind\": \"diag\"\n    }\n  ],\n  \"obs_ids\": [\n    \"obs-1\",\n    \"obs-2\",\n    \"obs-3\"\n  ],\n  \"subject\": \"nat\",\n  \"volgnummer\": 301\n}",
+          "2025-2026/exams/nat-rapport-4-2025-2026.json": "{\n  \"id\": \"nat-rapport-4-2025-2026\",\n  \"title\": \"Toets zonder sjabloon\",\n  \"jaarlaag\": \"4\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 1,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"regular\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 2,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 2,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 301\n}",
+          "2025-2026/exams/wi-rapport-2025-2026.json": "{\n  \"id\": \"wi-rapport-2025-2026\",\n  \"title\": \"Wiskunde zonder jaarlaag\",\n  \"jaarlaag\": \"\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 1,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"regular\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 4,\n      \"rtti\": \"T2\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"wi\",\n  \"volgnummer\": 301\n}",
+          "2025-2026/groups/g3a.json": "{\n  \"id\": \"g3a\",\n  \"name\": \"3a nat\",\n  \"jaarlaag\": \"3\",\n  \"subject\": \"nat\",\n  \"student_ids\": [\n    1,\n    2,\n    5,\n    6,\n    8,\n    9\n  ]\n}",
+          "2025-2026/groups/g3b.json": "{\n  \"id\": \"g3b\",\n  \"name\": \"3b nat\",\n  \"jaarlaag\": \"3\",\n  \"subject\": \"nat\",\n  \"student_ids\": [\n    3,\n    4\n  ]\n}",
+          "2025-2026/scores/nat/1.json": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": 1,\n      \"q2\": 1,\n      \"q3\": 2,\n      \"q4\": 4,\n      \"q5\": 4,\n      \"q6\": 2,\n      \"q7\": 1\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": [\n      \"obs-1\"\n    ]\n  }\n}",
+          "2025-2026/scores/nat/2.json": "{\n  \"student_id\": 2,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": 1,\n      \"q2\": 1,\n      \"q3\": 3.5,\n      \"q4\": 7,\n      \"q5\": 0\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": [\n      \"obs-2\",\n      \"obs-3\",\n      \"obs-weg\"\n    ]\n  }\n}",
+          "2025-2026/scores/nat/3.json": "{\n  \"student_id\": 3,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 2,\n      \"q3\": 5,\n      \"q4\": 10,\n      \"q5\": 2,\n      \"q6\": 1\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": []\n  },\n  \"overrides\": {\n    \"nat-rapport-2025-2026\": {\n      \"cijfer\": 9.9,\n      \"berekend\": 9.5\n    }\n  }\n}",
+          "2025-2026/scores/nat/4.json": "{\n  \"student_id\": 4,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": 3,\n      \"q2\": 0,\n      \"q3\": \"abc\",\n      \"q4\": 12\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/5.json": "{\n  \"student_id\": 5,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": null,\n      \"q2\": null\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": [\n      \"obs-1\"\n    ]\n  }\n}",
+          "2025-2026/scores/nat/6.json": "{\n  \"student_id\": 6,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {},\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": []\n  },\n  \"overrides\": {\n    \"nat-rapport-2025-2026\": {\n      \"cijfer\": 7,\n      \"berekend\": null\n    }\n  }\n}",
+          "2025-2026/scores/nat/7.json": "{\n  \"student_id\": 7,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/8.json": "{\n  \"student_id\": 8,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": 3\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/9.json": "{\n  \"student_id\": 9,\n  \"scores\": {\n    \"nat-rapport-2025-2026\": {\n      \"q1\": -1,\n      \"q2\": \"N\",\n      \"q3\": 5\n    },\n    \"nat-rapport-4-2025-2026\": {\n      \"q1\": 2,\n      \"q2\": 1\n    },\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {\n    \"nat-rapport-2025-2026\": [\n      \"obs-1\"\n    ]\n  }\n}",
+          "2025-2026/scores/wi/1.json": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"wi-rapport-2025-2026\": {\n      \"q1\": 3\n    }\n  },\n  \"observations\": {}\n}",
+          "2025-2026/students-2025-2026.json": "[\n  {\n    \"id\": 1,\n    \"voornaam\": \"Anna\",\n    \"tussenvoegsel\": \"van der\",\n    \"achternaam\": \"Berg\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 2,\n    \"voornaam\": \"Bram\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Appel\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 3,\n    \"voornaam\": \"Chloé\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Zwart\",\n    \"stamklas\": \"3b\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 4,\n    \"voornaam\": \"Hash#Tag\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Dollar$ \\\"Quote\\\" \\\\Back\",\n    \"stamklas\": \"3b\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 5,\n    \"voornaam\": \"Alleen\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Ennen\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 6,\n    \"voornaam\": \"Alleen\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Override\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 7,\n    \"voornaam\": \"Geen\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Groep\",\n    \"stamklas\": \"3c\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 8,\n    \"voornaam\": \"Vierde\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Klasser\",\n    \"stamklas\": \"4a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"4\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 9,\n    \"voornaam\": \"@At\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"<Angle> *ster* _under_\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  }\n]",
+          "config.json": "{\n  \"activeYear\": \"2025-2026\"\n}",
+          "observaties/obs-1.json": "{\n  \"id\": \"obs-1\",\n  \"naam\": \"Eenheden\",\n  \"icon\": \"📏\",\n  \"uitleg\": \"Eenheid vergeten.\",\n  \"leeradvies\": \"Schrijf de eenheid op.\",\n  \"subjects\": [\n    \"nat\"\n  ],\n  \"jaarlagen\": []\n}",
+          "observaties/obs-2.json": "{\n  \"id\": \"obs-2\",\n  \"naam\": \"Formule $v$\",\n  \"icon\": \"👩‍🔬\",\n  \"uitleg\": \"Formule ontbreekt.\",\n  \"subjects\": [\n    \"nat\"\n  ],\n  \"jaarlagen\": []\n}",
+          "observaties/obs-3.json": "{\n  \"id\": \"obs-3\",\n  \"naam\": \"Andere vak\",\n  \"icon\": \"🇳🇱\",\n  \"uitleg\": \"x\",\n  \"leeradvies\": \"y\",\n  \"subjects\": [\n    \"bio\"\n  ],\n  \"jaarlagen\": []\n}",
+          "templates/RTTI explanations and advices/rtti_expl_adv_nat_3.json": "{\n  \"uitleg\": {\n    \"R\": \"Reproductie: *vet* en _cursief_.\",\n    \"T1\": \"Toepassen 1 $x$.\",\n    \"T2\": \"Toepassen 2 met $ los dollarteken.\",\n    \"I\": \"Inzicht.\"\n  },\n  \"leeradvies\": {\n    \"R\": {\n      \"laag\": \"R laag.\",\n      \"midden\": \"R midden.\",\n      \"hoog\": \"R hoog.\"\n    },\n    \"T1\": {\n      \"laag\": \"T1 laag $a$ en $b.\",\n      \"midden\": \"  \",\n      \"hoog\": \"T1 hoog.\"\n    },\n    \"T2\": {\n      \"laag\": \"T2 laag.\",\n      \"midden\": \"T2 midden.\",\n      \"hoog\": \"\"\n    },\n    \"I\": {\n      \"laag\": \"I laag.\",\n      \"midden\": \"I midden.\",\n      \"hoog\": \"I hoog.\"\n    }\n  },\n  \"grenswaarden\": {\n    \"R\": {\n      \"laag_midden\": 40,\n      \"midden_hoog\": 70\n    },\n    \"T1\": {\n      \"laag_midden\": 40,\n      \"midden_hoog\": 70\n    },\n    \"T2\": {\n      \"laag_midden\": 50,\n      \"midden_hoog\": 80\n    },\n    \"I\": {\n      \"laag_midden\": 40,\n      \"midden_hoog\": 70\n    }\n  }\n}"
+        }
+      },
+      "output": null
+    },
+    {
+      "id": "compileRapport-exam-jaarlaag-3",
+      "rule": "BR 8, 11.41-43, TC 2.1",
+      "input": {
+        "exam": "nat-rapport-2025-2026",
+        "year": "2025-2026"
+      },
+      "output": {
+        "result": {
+          "success": true,
+          "pdfPath": "captured"
+        },
+        "renderRapportPdf": {
+          "examId": "nat-rapport-2025-2026",
+          "studentData": [
+            {
+              "name": "Geen Groep",
+              "student_nr": "7",
+              "group": "—",
+              "score": 3,
+              "max_score": 25,
+              "grade": "2,4",
+              "grade_num": 2.4,
+              "grade_overridden": false,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 2,
+                  "max": 3,
+                  "class_avg": 1.3,
+                  "class_pct": 43,
+                  "dot_color": "#cccc58"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 1,
+                  "max": 3,
+                  "class_avg": 1,
+                  "class_pct": 33,
+                  "dot_color": "#f6b45b"
+                },
+                {
+                  "label": "II3",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": null,
+                  "max": 5,
+                  "class_avg": 3.9,
+                  "class_pct": 78,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I4",
+                  "rtti": "T2",
+                  "kind": "normal",
+                  "rtti_color": "#f0ad4e",
+                  "score": null,
+                  "max": 10,
+                  "class_avg": 8.3,
+                  "class_pct": 83,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I5",
+                  "rtti": "I",
+                  "kind": "normal",
+                  "rtti_color": "#d9534f",
+                  "score": null,
+                  "max": 4,
+                  "class_avg": 2,
+                  "class_pct": 50,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I6",
+                  "rtti": "T1",
+                  "kind": "bonus",
+                  "rtti_color": "#5bc0de",
+                  "score": null,
+                  "max": 2,
+                  "class_avg": 1.5,
+                  "class_pct": 75,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I7",
+                  "rtti": "R",
+                  "kind": "diag",
+                  "rtti_color": "#5cb85c",
+                  "score": null,
+                  "max": 1,
+                  "class_avg": 1,
+                  "class_pct": 100,
+                  "dot_color": "#b0b8c1"
+                }
+              ],
+              "observaties": [],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "3 / 6 (50%)",
+                  "advies": "R midden."
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "0 / 5 (0%)",
+                  "advies": "#text(fill: red, weight: \"bold\")[$-teken niet gesloten — controleer de tekst: ] T1 laag \\$a\\$ en \\$b."
+                },
+                {
+                  "cat": "T2",
+                  "score_str": "0 / 10 (0%)",
+                  "advies": "T2 laag."
+                }
+              ]
+            },
+            {
+              "name": "@At <Angle> *ster* _under_",
+              "student_nr": "9",
+              "group": "3a nat",
+              "score": 5,
+              "max_score": 25,
+              "grade": "3,1",
+              "grade_num": 3.1,
+              "grade_overridden": false,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 0,
+                  "max": 3,
+                  "class_avg": 1.3,
+                  "class_pct": 43,
+                  "dot_color": "#e57373"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": null,
+                  "max": 3,
+                  "class_avg": 1,
+                  "class_pct": 33,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "II3",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": 5,
+                  "max": 5,
+                  "class_avg": 3.9,
+                  "class_pct": 78,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I4",
+                  "rtti": "T2",
+                  "kind": "normal",
+                  "rtti_color": "#f0ad4e",
+                  "score": null,
+                  "max": 10,
+                  "class_avg": 8.3,
+                  "class_pct": 83,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I5",
+                  "rtti": "I",
+                  "kind": "normal",
+                  "rtti_color": "#d9534f",
+                  "score": null,
+                  "max": 4,
+                  "class_avg": 2,
+                  "class_pct": 50,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I6",
+                  "rtti": "T1",
+                  "kind": "bonus",
+                  "rtti_color": "#5bc0de",
+                  "score": null,
+                  "max": 2,
+                  "class_avg": 1.5,
+                  "class_pct": 75,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I7",
+                  "rtti": "R",
+                  "kind": "diag",
+                  "rtti_color": "#5cb85c",
+                  "score": null,
+                  "max": 1,
+                  "class_avg": 1,
+                  "class_pct": 100,
+                  "dot_color": "#b0b8c1"
+                }
+              ],
+              "observaties": [
+                {
+                  "icon": "📏",
+                  "naam": "Eenheden",
+                  "uitleg": "Eenheid vergeten.",
+                  "leeradvies": "Schrijf de eenheid op."
+                }
+              ],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "0 / 6 (0%)",
+                  "advies": "R laag."
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "5 / 5 (100%)",
+                  "advies": "T1 hoog."
+                },
+                {
+                  "cat": "T2",
+                  "score_str": "0 / 10 (0%)",
+                  "advies": "T2 laag."
+                },
+                {
+                  "cat": "📏",
+                  "score_str": "",
+                  "advies": "Schrijf de eenheid op."
+                }
+              ]
+            },
+            {
+              "name": "Bram Appel",
+              "student_nr": "2",
+              "group": "3a nat",
+              "score": 12.5,
+              "max_score": 25,
+              "grade": "5,8",
+              "grade_num": 5.8,
+              "grade_overridden": false,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 1,
+                  "max": 3,
+                  "class_avg": 1.3,
+                  "class_pct": 43,
+                  "dot_color": "#f6b45b"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 1,
+                  "max": 3,
+                  "class_avg": 1,
+                  "class_pct": 33,
+                  "dot_color": "#f6b45b"
+                },
+                {
+                  "label": "II3",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": 3.5,
+                  "max": 5,
+                  "class_avg": 3.9,
+                  "class_pct": 78,
+                  "dot_color": "#c2cb5a"
+                },
+                {
+                  "label": "I4",
+                  "rtti": "T2",
+                  "kind": "normal",
+                  "rtti_color": "#f0ad4e",
+                  "score": 7,
+                  "max": 10,
+                  "class_avg": 8.3,
+                  "class_pct": 83,
+                  "dot_color": "#c2cb5a"
+                },
+                {
+                  "label": "I5",
+                  "rtti": "I",
+                  "kind": "normal",
+                  "rtti_color": "#d9534f",
+                  "score": 0,
+                  "max": 4,
+                  "class_avg": 2,
+                  "class_pct": 50,
+                  "dot_color": "#e57373"
+                },
+                {
+                  "label": "I6",
+                  "rtti": "T1",
+                  "kind": "bonus",
+                  "rtti_color": "#5bc0de",
+                  "score": null,
+                  "max": 2,
+                  "class_avg": 1.5,
+                  "class_pct": 75,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I7",
+                  "rtti": "R",
+                  "kind": "diag",
+                  "rtti_color": "#5cb85c",
+                  "score": null,
+                  "max": 1,
+                  "class_avg": 1,
+                  "class_pct": 100,
+                  "dot_color": "#b0b8c1"
+                }
+              ],
+              "observaties": [
+                {
+                  "icon": "👩‍🔬",
+                  "naam": "Formule $v$",
+                  "uitleg": "Formule ontbreekt.",
+                  "leeradvies": ""
+                }
+              ],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "2 / 6 (33%)",
+                  "advies": "R laag."
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "3,5 / 5 (70%)",
+                  "advies": "T1 hoog."
+                },
+                {
+                  "cat": "T2",
+                  "score_str": "7 / 10 (70%)",
+                  "advies": "T2 midden."
+                },
+                {
+                  "cat": "👩‍🔬",
+                  "score_str": "",
+                  "advies": "—"
+                }
+              ]
+            },
+            {
+              "name": "Anna van der Berg",
+              "student_nr": "1",
+              "group": "3a nat",
+              "score": 14,
+              "max_score": 25,
+              "grade": "6,3",
+              "grade_num": 6.3,
+              "grade_overridden": false,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 1,
+                  "max": 3,
+                  "class_avg": 1.3,
+                  "class_pct": 43,
+                  "dot_color": "#f6b45b"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 1,
+                  "max": 3,
+                  "class_avg": 1,
+                  "class_pct": 33,
+                  "dot_color": "#f6b45b"
+                },
+                {
+                  "label": "II3",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": 2,
+                  "max": 5,
+                  "class_avg": 3.9,
+                  "class_pct": 78,
+                  "dot_color": "#fac156"
+                },
+                {
+                  "label": "I4",
+                  "rtti": "T2",
+                  "kind": "normal",
+                  "rtti_color": "#f0ad4e",
+                  "score": 4,
+                  "max": 10,
+                  "class_avg": 8.3,
+                  "class_pct": 83,
+                  "dot_color": "#fac156"
+                },
+                {
+                  "label": "I5",
+                  "rtti": "I",
+                  "kind": "normal",
+                  "rtti_color": "#d9534f",
+                  "score": 4,
+                  "max": 4,
+                  "class_avg": 2,
+                  "class_pct": 50,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I6",
+                  "rtti": "T1",
+                  "kind": "bonus",
+                  "rtti_color": "#5bc0de",
+                  "score": 2,
+                  "max": 2,
+                  "class_avg": 1.5,
+                  "class_pct": 75,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I7",
+                  "rtti": "R",
+                  "kind": "diag",
+                  "rtti_color": "#5cb85c",
+                  "score": 1,
+                  "max": 1,
+                  "class_avg": 1,
+                  "class_pct": 100,
+                  "dot_color": "#66bb6a"
+                }
+              ],
+              "observaties": [
+                {
+                  "icon": "📏",
+                  "naam": "Eenheden",
+                  "uitleg": "Eenheid vergeten.",
+                  "leeradvies": "Schrijf de eenheid op."
+                }
+              ],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "2 / 6 (33%)",
+                  "advies": "R laag."
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "2 / 5 (40%)",
+                  "advies": "—"
+                },
+                {
+                  "cat": "T2",
+                  "score_str": "4 / 10 (40%)",
+                  "advies": "T2 laag."
+                },
+                {
+                  "cat": "📏",
+                  "score_str": "",
+                  "advies": "Schrijf de eenheid op."
+                }
+              ]
+            },
+            {
+              "name": "Hash#Tag Dollar$ \"Quote\" \\Back",
+              "student_nr": "4",
+              "group": "3b nat",
+              "score": 3,
+              "max_score": 25,
+              "grade": "2,4",
+              "grade_num": 2.4,
+              "grade_overridden": false,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 3,
+                  "max": 3,
+                  "class_avg": 1.3,
+                  "class_pct": 43,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 0,
+                  "max": 3,
+                  "class_avg": 1,
+                  "class_pct": 33,
+                  "dot_color": "#e57373"
+                },
+                {
+                  "label": "II3",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": {
+                    "$number": "NaN"
+                  },
+                  "max": 5,
+                  "class_avg": 3.9,
+                  "class_pct": 78,
+                  "dot_color": "#NaNNaNNaN"
+                },
+                {
+                  "label": "I4",
+                  "rtti": "T2",
+                  "kind": "normal",
+                  "rtti_color": "#f0ad4e",
+                  "score": 12,
+                  "max": 10,
+                  "class_avg": 8.3,
+                  "class_pct": 83,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I5",
+                  "rtti": "I",
+                  "kind": "normal",
+                  "rtti_color": "#d9534f",
+                  "score": null,
+                  "max": 4,
+                  "class_avg": 2,
+                  "class_pct": 50,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I6",
+                  "rtti": "T1",
+                  "kind": "bonus",
+                  "rtti_color": "#5bc0de",
+                  "score": null,
+                  "max": 2,
+                  "class_avg": 1.5,
+                  "class_pct": 75,
+                  "dot_color": "#b0b8c1"
+                },
+                {
+                  "label": "I7",
+                  "rtti": "R",
+                  "kind": "diag",
+                  "rtti_color": "#5cb85c",
+                  "score": null,
+                  "max": 1,
+                  "class_avg": 1,
+                  "class_pct": 100,
+                  "dot_color": "#b0b8c1"
+                }
+              ],
+              "observaties": [],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "3 / 6 (50%)",
+                  "advies": "R midden."
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "NaN / 5 (NaN%)",
+                  "advies": "T1 hoog."
+                },
+                {
+                  "cat": "T2",
+                  "score_str": "12 / 10 (120%)",
+                  "advies": "—"
+                }
+              ]
+            },
+            {
+              "name": "Chloé Zwart",
+              "student_nr": "3",
+              "group": "3b nat",
+              "score": 22,
+              "max_score": 25,
+              "grade": "9,9",
+              "grade_num": 9.9,
+              "grade_overridden": true,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 2,
+                  "max": 3,
+                  "class_avg": 1.3,
+                  "class_pct": 43,
+                  "dot_color": "#cccc58"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 2,
+                  "max": 3,
+                  "class_avg": 1,
+                  "class_pct": 33,
+                  "dot_color": "#cccc58"
+                },
+                {
+                  "label": "II3",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": 5,
+                  "max": 5,
+                  "class_avg": 3.9,
+                  "class_pct": 78,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I4",
+                  "rtti": "T2",
+                  "kind": "normal",
+                  "rtti_color": "#f0ad4e",
+                  "score": 10,
+                  "max": 10,
+                  "class_avg": 8.3,
+                  "class_pct": 83,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I5",
+                  "rtti": "I",
+                  "kind": "normal",
+                  "rtti_color": "#d9534f",
+                  "score": 2,
+                  "max": 4,
+                  "class_avg": 2,
+                  "class_pct": 50,
+                  "dot_color": "#ffd54f"
+                },
+                {
+                  "label": "I6",
+                  "rtti": "T1",
+                  "kind": "bonus",
+                  "rtti_color": "#5bc0de",
+                  "score": 1,
+                  "max": 2,
+                  "class_avg": 1.5,
+                  "class_pct": 75,
+                  "dot_color": "#ffd54f"
+                },
+                {
+                  "label": "I7",
+                  "rtti": "R",
+                  "kind": "diag",
+                  "rtti_color": "#5cb85c",
+                  "score": null,
+                  "max": 1,
+                  "class_avg": 1,
+                  "class_pct": 100,
+                  "dot_color": "#b0b8c1"
+                }
+              ],
+              "observaties": [],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "4 / 6 (67%)",
+                  "advies": "R midden."
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "5 / 5 (100%)",
+                  "advies": "T1 hoog."
+                },
+                {
+                  "cat": "T2",
+                  "score_str": "10 / 10 (100%)",
+                  "advies": "—"
+                }
+              ]
+            }
+          ],
+          "examInfo": {
+            "name": "Toets H2 \"Elektriciteit\" #1 $5 @home <b>",
+            "subject_display": "Natuurkunde",
+            "global_max_points": 10,
+            "n_term": 1.3,
+            "uitleg_rtti": {
+              "R": "Reproductie: *vet* en _cursief_.",
+              "T1": "Toepassen 1 $x$.",
+              "T2": "Toepassen 2 met $ los dollarteken.",
+              "I": "Inzicht."
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "compileRapport-exam-jaarlaag-4-default-template",
+      "rule": "BR 8, 11.41-43, TC 2.1",
+      "input": {
+        "exam": "nat-rapport-4-2025-2026",
+        "year": "2025-2026"
+      },
+      "output": {
+        "result": {
+          "success": true,
+          "pdfPath": "captured"
+        },
+        "renderRapportPdf": {
+          "examId": "nat-rapport-4-2025-2026",
+          "studentData": [
+            {
+              "name": "Vierde Klasser",
+              "student_nr": "8",
+              "group": "3a nat",
+              "score": 3,
+              "max_score": 4,
+              "grade": "7,8",
+              "grade_num": 7.8,
+              "grade_overridden": false,
+              "vragen": [
+                {
+                  "label": "I1",
+                  "rtti": "R",
+                  "kind": "normal",
+                  "rtti_color": "#5cb85c",
+                  "score": 2,
+                  "max": 2,
+                  "class_avg": 2,
+                  "class_pct": 100,
+                  "dot_color": "#66bb6a"
+                },
+                {
+                  "label": "I2",
+                  "rtti": "T1",
+                  "kind": "normal",
+                  "rtti_color": "#5bc0de",
+                  "score": 1,
+                  "max": 2,
+                  "class_avg": 1,
+                  "class_pct": 50,
+                  "dot_color": "#ffd54f"
+                }
+              ],
+              "observaties": [],
+              "leeradvies_rows": [
+                {
+                  "cat": "R",
+                  "score_str": "2 / 2 (100%)",
+                  "advies": "—"
+                },
+                {
+                  "cat": "T1",
+                  "score_str": "1 / 2 (50%)",
+                  "advies": "—"
+                }
+              ]
+            }
+          ],
+          "examInfo": {
+            "name": "Toets zonder sjabloon",
+            "subject_display": "Natuurkunde",
+            "global_max_points": 2,
+            "n_term": 1,
+            "uitleg_rtti": {
+              "R": "",
+              "T1": "",
+              "T2": "",
+              "I": ""
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "compileRapport-no-jaarlaag-wi",
+      "rule": "BR 8",
+      "input": {
+        "exam": "wi-rapport-2025-2026"
+      },
+      "output": {
+        "examId": "wi-rapport-2025-2026",
+        "studentData": [
+          {
+            "name": "Anna van der Berg",
+            "student_nr": "1",
+            "group": "—",
+            "score": 3,
+            "max_score": 4,
+            "grade": "7,8",
+            "grade_num": 7.8,
+            "grade_overridden": false,
+            "vragen": [
+              {
+                "label": "I1",
+                "rtti": "T2",
+                "kind": "normal",
+                "rtti_color": "#f0ad4e",
+                "score": 3,
+                "max": 4,
+                "class_avg": 3,
+                "class_pct": 75,
+                "dot_color": "#b3c85d"
+              }
+            ],
+            "observaties": [],
+            "leeradvies_rows": [
+              {
+                "cat": "T2",
+                "score_str": "3 / 4 (75%)",
+                "advies": "—"
+              }
+            ]
+          }
+        ],
+        "examInfo": {
+          "name": "Wiskunde zonder jaarlaag",
+          "subject_display": "Wiskunde",
+          "global_max_points": 4,
+          "n_term": 1,
+          "uitleg_rtti": {
+            "R": "",
+            "T1": "",
+            "T2": "",
+            "I": ""
+          }
+        }
+      }
+    },
+    {
+      "id": "getScoreBracket",
+      "rule": "BR 8, 11.42",
+      "input": {
+        "brackets": [
+          [
+            0,
+            10
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            3.99,
+            10
+          ],
+          [
+            6.99,
+            10
+          ],
+          [
+            7,
+            10
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        "grenzen": {
+          "laag_midden": 40,
+          "midden_hoog": 70
+        }
+      },
+      "output": [
+        "laag",
+        "midden",
+        "laag",
+        "midden",
+        "hoog",
+        "hoog",
+        "hoog"
+      ]
+    },
+    {
+      "id": "fmtNum",
+      "rule": "BR 8",
+      "input": {
+        "nums": [
+          0,
+          1,
+          2.5,
+          2.25,
+          2.05,
+          -1.5,
+          10,
+          1e+21,
+          {
+            "$number": "NaN"
+          }
+        ]
+      },
+      "output": [
+        "0",
+        "1",
+        "2,5",
+        "2,3",
+        "2,0",
+        "-1,5",
+        "10",
+        "1e+21",
+        "NaN"
+      ]
+    },
+    {
+      "id": "sanitizeTypstMarkup",
+      "rule": "BR 8, TC 2.2",
+      "input": {
+        "markup": [
+          "",
+          "geen dollars",
+          "$x$",
+          "$x",
+          "a $b$ c $d",
+          "$$",
+          "\\$ ontsnapt $"
+        ]
+      },
+      "output": [
+        "",
+        "geen dollars",
+        "$x$",
+        "#text(fill: red, weight: \"bold\")[$-teken niet gesloten — controleer de tekst: ] \\$x",
+        "#text(fill: red, weight: \"bold\")[$-teken niet gesloten — controleer de tekst: ] a \\$b\\$ c \\$d",
+        "$$",
+        "\\$ ontsnapt $"
+      ]
+    },
+    {
+      "id": "subjectDisplayName",
+      "rule": "BR 8",
+      "input": {
+        "subjects": [
+          "nat",
+          "bio",
+          "schk",
+          "wi",
+          "wisa",
+          "wisb",
+          "wisob",
+          "onbekend",
+          {
+            "$undefined": true
+          }
+        ]
+      },
+      "output": [
+        "Natuurkunde",
+        "Biologie",
+        "Scheikunde",
+        "Wiskunde",
+        "Wiskunde A",
+        "Wiskunde B",
+        "Wiskunde",
+        "onbekend",
+        {
+          "$undefined": true
+        }
+      ]
+    },
+    {
+      "id": "scoreDotColor",
+      "rule": "BR 8",
+      "input": {
+        "dots": [
+          [
+            null,
+            4
+          ],
+          [
+            0,
+            4
+          ],
+          [
+            -1,
+            4
+          ],
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            4
+          ],
+          [
+            3,
+            4
+          ],
+          [
+            4,
+            4
+          ],
+          [
+            5,
+            4
+          ],
+          [
+            0.5,
+            0
+          ]
+        ]
+      },
+      "output": [
+        "#b0b8c1",
+        "#e57373",
+        "#e57373",
+        "#f2a461",
+        "#ffd54f",
+        "#b3c85d",
+        "#66bb6a",
+        "#66bb6a",
+        "#66bb6a"
+      ]
+    }
+  ]
+}

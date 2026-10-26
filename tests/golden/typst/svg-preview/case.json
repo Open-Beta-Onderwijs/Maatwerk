@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "id": "svg-preview",
+  "path": "C",
+  "rule": "TC 4.2: SVG preview of the editor text, placeholder header",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentSvg",
+    "args": [
+      "opdracht_1756713600202.typ",
+      "Voorbeeld",
+      "#import \"lib.typ\": *\n\n#let setup_extra() = []\n\n#let render_uitleg() = [\n  #formule_blok(name: [Snelheid])[$v = s / t$]\n  #belangrijk_blok[Let op de eenheden: #quan(\"3.5 m/s\").]\n]\n\n#let render_opgaven() = [\n  #opgave(titel: \"Opgave met een figuur\")[\n    #grid(columns: (3fr, 2fr), gutter: 1em,\n      [\n        Tekst naast de figuur.\n\n        #vraag(punten: 1, antwoord: [Het antwoord.])[De vraag in een grid.]\n      ],\n      rect(width: 100%, height: 3cm, stroke: luma(160))[#align(center + horizon)[Figuur]],\n    )\n  ]\n  #opgave(titel: \"Vraag in een figuur\")[\n    #figure(kind: \"voorbeeld\", supplement: \"Voorbeeld\", caption: [In een figuur])[\n      #vraag(punten: 2, antwoord: [#num[1234.5]])[Schrijf als getal.]\n    ]\n    #vraag(antwoord: none)[Vraag zonder punten en zonder antwoord.]\n  ]\n]\n"
+    ]
+  },
+  "result": {
+    "success": true,
+    "pages": 2
+  },
+  "wrappers": [
+    {
+      "file": "data/opdrachten/_preview_opdracht_1756713600202.typ",
+      "source": "#import \"lib.typ\": *\n\n#let setup_extra() = []\n\n#let render_uitleg() = [\n  #formule_blok(name: [Snelheid])[$v = s / t$]\n  #belangrijk_blok[Let op de eenheden: #quan(\"3.5 m/s\").]\n]\n\n#let render_opgaven() = [\n  #opgave(titel: \"Opgave met een figuur\")[\n    #grid(columns: (3fr, 2fr), gutter: 1em,\n      [\n        Tekst naast de figuur.\n\n        #vraag(punten: 1, antwoord: [Het antwoord.])[De vraag in een grid.]\n      ],\n      rect(width: 100%, height: 3cm, stroke: luma(160))[#align(center + horizon)[Figuur]],\n    )\n  ]\n  #opgave(titel: \"Vraag in een figuur\")[\n    #figure(kind: \"voorbeeld\", supplement: \"Voorbeeld\", caption: [In een figuur])[\n      #vraag(punten: 2, antwoord: [#num[1234.5]])[Schrijf als getal.]\n    ]\n    #vraag(antwoord: none)[Vraag zonder punten en zonder antwoord.]\n  ]\n]\n"
+    },
+    {
+      "file": "temp/_assignment_svg_run.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/_preview_opdracht_1756713600202.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#set page(foreground: context {\n  for m in query(<__rtti_cursor>).filter(m => m.location().page() == here().page()) {\n    let p = m.location().position()\n    place(top + left, dx: p.x, dy: p.y, link(\"rtti-cursor:\")[#box(width: 1pt, height: 1em)])\n  }\n})\n#setup_extra()\n\n#opdracht_header(\n  title: \"Voorbeeld\",\n  student: \"Leerling Voornaam Achternaam\",\n  group: \"Klas Z vak W\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Voorbeeldtoets Toetsweek X\",\n  observaties: ((icon: \"❌\", name: \"Een voorbeeldobservatie met een behoorlijk lange naam, zodat deze twee regels beslaat in het voorbeeld\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "svg": [
+    {
+      "bytes": 120635,
+      "viewBox": "0 0 595.2755905511812 841.8897637795276",
+      "cursorLinks": 0,
+      "images": 1
+    },
+    {
+      "bytes": 98946,
+      "viewBox": "0 0 595.2755905511812 841.8897637795276",
+      "cursorLinks": 0,
+      "images": 0
+    }
+  ],
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "9dd6c27013749796f9a84fad1438d709aab2781c0870daaa2a509ff5c9a4ec48",
+      "bytes": 11524
+    },
+    {
+      "file": "p2.png",
+      "sha256": "5aa48feecefa3139ddfbb2a72ba2e3942f6a0494d0251b1398859d23a0356c28",
+      "bytes": 11557
+    }
+  ]
+}

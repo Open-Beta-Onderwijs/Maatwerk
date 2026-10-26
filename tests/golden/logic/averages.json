@@ -1,0 +1,270 @@
+{
+  "format": 1,
+  "suite": "averages",
+  "description": "Weighted year and SE (PTA) averages with best attempts.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/modals/groep-leerlingen.js:197-201 groupYearAvg",
+      "renderer/modals/groep-leerlingen.js:31-47 examFamiliesOf",
+      "renderer/modals/groep-leerlingen.js:57-71 dossierAverages",
+      "renderer/modals/groep-leerlingen.js:74-76 studentGrade",
+      "renderer/modals/groep-leerlingen.js:78-84 bestGradeForFamily",
+      "renderer/modals/groep-leerlingen.js:86-97 calcWeightedAvg",
+      "renderer/modals/profiel.js:638-663 yearAvg",
+      "renderer/modals/profiel.js:666-678 ptaAvg"
+    ]
+  },
+  "cases": [
+    {
+      "id": "data",
+      "rule": "BR 6.3",
+      "input": {
+        "files": {
+          "2024-2025/exams/nat-v1-2024-2025.json": "{\n  \"id\": \"nat-v1-2024-2025\",\n  \"title\": \"nat-v1-2024-2025\",\n  \"jaarlaag\": \"2\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 1,\n  \"weging_se\": 2,\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 201\n}",
+          "2024-2025/scores/nat/1.json": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-v1-2024-2025\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 4.44\n    }\n  },\n  \"observations\": {}\n}",
+          "2024-2025/students-2024-2025.json": "[\n  {\n    \"id\": 1,\n    \"voornaam\": \"Leerling1\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam1\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"2\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  }\n]",
+          "2025-2026/exams/nat-w1-2025-2026.json": "{\n  \"id\": \"nat-w1-2025-2026\",\n  \"title\": \"nat-w1-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 1,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 301\n}",
+          "2025-2026/exams/nat-w1-herkansing-2025-2026.json": "{\n  \"id\": \"nat-w1-herkansing-2025-2026\",\n  \"title\": \"nat-w1-herkansing-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 5,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 301,\n  \"parent_id\": \"nat-w1-2025-2026\",\n  \"attempt\": 2\n}",
+          "2025-2026/exams/nat-w2-2025-2026.json": "{\n  \"id\": \"nat-w2-2025-2026\",\n  \"title\": \"nat-w2-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 2,\n  \"weging_se\": 3,\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 302\n}",
+          "2025-2026/exams/nat-w3-2025-2026.json": "{\n  \"id\": \"nat-w3-2025-2026\",\n  \"title\": \"nat-w3-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 0.5,\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 303\n}",
+          "2025-2026/exams/nat-w4-2025-2026.json": "{\n  \"id\": \"nat-w4-2025-2026\",\n  \"title\": \"nat-w4-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 0,\n  \"weging_se\": 0,\n  \"periode\": \"1\",\n  \"type\": \"regular\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 304\n}",
+          "2025-2026/exams/nat-w5-2025-2026.json": "{\n  \"id\": \"nat-w5-2025-2026\",\n  \"title\": \"nat-w5-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 305\n}",
+          "2025-2026/exams/nat-w6-2025-2026.json": "{\n  \"id\": \"nat-w6-2025-2026\",\n  \"title\": \"nat-w6-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": \"2\",\n  \"weging_se\": \"0\",\n  \"periode\": \"1\",\n  \"type\": \"pta\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 306\n}",
+          "2025-2026/groups/g1.json": "{\n  \"id\": \"g1\",\n  \"name\": \"3a nat\",\n  \"jaarlaag\": \"3\",\n  \"subject\": \"nat\",\n  \"student_ids\": [\n    1,\n    2,\n    3,\n    4,\n    5,\n    6,\n    7\n  ]\n}",
+          "2025-2026/scores/nat/1.json": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-w1-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 3.33\n    },\n    \"nat-w1-herkansing-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 6.67,\n      \"q8\": 0,\n      \"q9\": 0,\n      \"q10\": 0\n    },\n    \"nat-w2-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 5.56,\n      \"q7\": 0,\n      \"q8\": 0,\n      \"q9\": 0,\n      \"q10\": 0\n    },\n    \"nat-w3-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 10,\n      \"q8\": 7.78,\n      \"q9\": 0,\n      \"q10\": 0\n    },\n    \"nat-w4-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 10,\n      \"q8\": 10,\n      \"q9\": 10,\n      \"q10\": 10\n    }\n  },\n  \"observations\": {}\n}",
+          "2025-2026/scores/nat/2.json": "{\n  \"student_id\": 2,\n  \"scores\": {\n    \"nat-w5-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10\n    },\n    \"nat-w6-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 10,\n      \"q8\": 10,\n      \"q9\": 8.89\n    }\n  },\n  \"observations\": {},\n  \"overrides\": {\n    \"nat-w5-2025-2026\": {\n      \"cijfer\": 7,\n      \"berekend\": 5.5\n    }\n  }\n}",
+          "2025-2026/scores/nat/3.json": "{\n  \"student_id\": 3,\n  \"scores\": {\n    \"nat-w1-herkansing-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 5.56,\n      \"q7\": 0,\n      \"q8\": 0,\n      \"q9\": 0,\n      \"q10\": 0\n    }\n  },\n  \"observations\": {}\n}",
+          "2025-2026/scores/nat/4.json": "{\n  \"student_id\": 4,\n  \"scores\": {},\n  \"observations\": {}\n}",
+          "2025-2026/scores/nat/5.json": "{\n  \"student_id\": 5,\n  \"scores\": {\n    \"nat-w4-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 2.22\n    }\n  },\n  \"observations\": {}\n}",
+          "2025-2026/scores/nat/6.json": "{\n  \"student_id\": 6,\n  \"scores\": {\n    \"nat-w1-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 5.56,\n      \"q7\": 0,\n      \"q8\": 0,\n      \"q9\": 0,\n      \"q10\": 0\n    },\n    \"nat-w1-herkansing-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 5.56,\n      \"q7\": 0,\n      \"q8\": 0,\n      \"q9\": 0,\n      \"q10\": 0\n    }\n  },\n  \"observations\": {}\n}",
+          "2025-2026/scores/nat/7.json": "{\n  \"student_id\": 7,\n  \"scores\": {\n    \"nat-w1-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 6.67,\n      \"q8\": 0,\n      \"q9\": 0,\n      \"q10\": 0\n    },\n    \"nat-w1-herkansing-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 3.33\n    },\n    \"nat-w2-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 4.44\n    }\n  },\n  \"observations\": {}\n}",
+          "2025-2026/students-2025-2026.json": "[\n  {\n    \"id\": 1,\n    \"voornaam\": \"Leerling1\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam1\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 2,\n    \"voornaam\": \"Leerling2\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam2\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 3,\n    \"voornaam\": \"Leerling3\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam3\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 4,\n    \"voornaam\": \"Leerling4\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam4\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 5,\n    \"voornaam\": \"Leerling5\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam5\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 6,\n    \"voornaam\": \"Leerling6\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam6\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 7,\n    \"voornaam\": \"Leerling7\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam7\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  }\n]",
+          "config.json": "{\n  \"activeYear\": \"2025-2026\"\n}"
+        }
+      },
+      "output": null
+    },
+    {
+      "id": "examFamilies",
+      "rule": "BR 6.3",
+      "input": {
+        "year": "2025-2026",
+        "group": {
+          "jaarlaag": "3"
+        }
+      },
+      "output": [
+        {
+          "original": "nat-w1-2025-2026",
+          "resits": [
+            "nat-w1-herkansing-2025-2026"
+          ]
+        },
+        {
+          "original": "nat-w2-2025-2026",
+          "resits": []
+        },
+        {
+          "original": "nat-w3-2025-2026",
+          "resits": []
+        },
+        {
+          "original": "nat-w4-2025-2026",
+          "resits": []
+        },
+        {
+          "original": "nat-w5-2025-2026",
+          "resits": []
+        },
+        {
+          "original": "nat-w6-2025-2026",
+          "resits": []
+        }
+      ]
+    },
+    {
+      "id": "student-1",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 1
+      },
+      "output": {
+        "profileYearAvg": 6.571771428571429,
+        "profilePtaAvg": 6.000123076923076,
+        "groupYearAvg": 6.571771428571429,
+        "bestGradeForFamily": {
+          "exam": "nat-w1-herkansing-2025-2026",
+          "grade": 7.000300000000001
+        }
+      }
+    },
+    {
+      "id": "student-2",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 2
+      },
+      "output": {
+        "profileYearAvg": 8.3334,
+        "profilePtaAvg": 7,
+        "groupYearAvg": 8.3334,
+        "bestGradeForFamily": {
+          "exam": null,
+          "grade": null
+        }
+      }
+    },
+    {
+      "id": "student-3",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 3
+      },
+      "output": {
+        "profileYearAvg": 6.0004,
+        "profilePtaAvg": 6.0004,
+        "groupYearAvg": 6.0004,
+        "bestGradeForFamily": {
+          "exam": "nat-w1-herkansing-2025-2026",
+          "grade": 6.0004
+        }
+      }
+    },
+    {
+      "id": "student-4",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 4
+      },
+      "output": {
+        "profileYearAvg": null,
+        "profilePtaAvg": null,
+        "groupYearAvg": null,
+        "bestGradeForFamily": {
+          "exam": null,
+          "grade": null
+        }
+      }
+    },
+    {
+      "id": "student-5",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 5
+      },
+      "output": {
+        "profileYearAvg": null,
+        "profilePtaAvg": null,
+        "groupYearAvg": null,
+        "bestGradeForFamily": {
+          "exam": null,
+          "grade": null
+        }
+      }
+    },
+    {
+      "id": "student-6",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 6
+      },
+      "output": {
+        "profileYearAvg": 6.0004,
+        "profilePtaAvg": 6.0004,
+        "groupYearAvg": 6.0004,
+        "bestGradeForFamily": {
+          "exam": "nat-w1-2025-2026",
+          "grade": 6.0004
+        }
+      }
+    },
+    {
+      "id": "student-7",
+      "rule": "BR 6.3, 11.24-25, 11.30",
+      "input": {
+        "studentId": 7
+      },
+      "output": {
+        "profileYearAvg": 5.666499999999999,
+        "profilePtaAvg": 5.499775,
+        "groupYearAvg": 5.666499999999999,
+        "bestGradeForFamily": {
+          "exam": "nat-w1-2025-2026",
+          "grade": 7.000300000000001
+        }
+      }
+    },
+    {
+      "id": "calcWeightedAvg-direct",
+      "rule": "BR 6.3",
+      "input": {
+        "pairs": [
+          [
+            {
+              "grade": 6,
+              "weging": 1
+            },
+            {
+              "grade": 8,
+              "weging": 2
+            }
+          ],
+          [
+            {
+              "grade": null,
+              "weging": 1
+            }
+          ],
+          [
+            {
+              "grade": 7,
+              "weging": 0
+            }
+          ],
+          [
+            {
+              "grade": 7
+            },
+            {
+              "grade": 5,
+              "weging": "3"
+            }
+          ],
+          []
+        ]
+      },
+      "output": [
+        7.333333333333333,
+        null,
+        null,
+        5.5,
+        null
+      ]
+    },
+    {
+      "id": "dossierAverages",
+      "rule": "BR 6.3",
+      "input": {
+        "students": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ]
+      },
+      "output": {
+        "1": 6.000123076923076,
+        "2": 7,
+        "3": 6.0004,
+        "4": null,
+        "5": null,
+        "6": 6.0004,
+        "7": 5.499775
+      }
+    }
+  ]
+}

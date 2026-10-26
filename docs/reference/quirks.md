@@ -167,6 +167,13 @@ are relative to `_reference/` unless a section says otherwise.
       that group's student list and replaces its teachers.
     - Port: pin with a test; ask the user whether to fix (merge or confirm) during the port.
 
+35. **D35 · Watcher reports an untouched file as changed the first time its mtime moves**
+    - Where: `sync.js:240-244` (initial snapshot without hash), `:149-157` (`check`)
+    - Evidence: the snapshot stores only mtime/size, so the first event or poll that sees a new
+      mtime reports `changed` even when the bytes are identical; later touches compare hashes.
+      Found in Step 2a, pinned by storage spec S34.
+    - Port: harmless (a spurious refresh); the Rust watcher may hash up front.
+
 ## B. Business logic
 
 Paths in this section are relative to `_reference/renderer/`.
@@ -343,6 +350,11 @@ Paths in this section are relative to `_reference/renderer/`.
 
 ### B22. CSV parsing does not strip the BOM, assumes UTF-8 and has no `""` escape
 
+> **Correction (Step 2a):** the BOM part is wrong. `parseCSV` starts with `text.trim()`, which
+> removes U+FEFF, so a BOM header still matches (`tests/golden/logic/csv.json`,
+> `parseCSV-bom`); `File.text()` also strips it. The rest stands: `""` inside quotes is dropped,
+> not unescaped (`parseCSV-doubled-quotes`), and an unbalanced quote swallows the delimiter.
+
 - **Where:** `utils/csv.js:59-97`, `modals/leerling-edit.js:223`
 - **Evidence:** `File.text()` always decodes UTF-8. An Excel "CSV UTF-8" file starts with a BOM,
   so the first header becomes `﻿Leerlingnummer` and `r['Leerlingnummer']` is undefined. Every
@@ -411,6 +423,20 @@ Paths in this section are relative to `_reference/renderer/`.
 - **Evidence:** A row counts as complete only when every question is filled, including optional
   bonus and diag questions.
 - **Why it matters:** An exam can show ⚠ "onvolledig" for every student who skipped the bonus.
+
+### B31. Results depend on the order files come back from the folder
+
+- **Where:** `main.js:163-176` (`fs:readAllJson` returns `readdirSync` order, unsorted), used by
+  `store.js:283-293` for exams and groups. Order-sensitive consumers: `store.js:1337-1339`
+  (`getOpdrachtAssignments` picks the first group of the exam's jaarlaag), `rapport.js`
+  `compileRapport` (`groups.find`), `toets-overzicht.js:49-54` (first group per student), and float
+  sums over exams (`profiel.js` `yearAvg`).
+- **Evidence (Step 2a review M2):** a student in two groups of the same jaarlaag gets the group whose
+  file name sorts first on NTFS (`g-10a` before `g-9b`); with the listing reversed the student gets
+  the other group and sorts elsewhere. Averages change in the last float digit.
+- **Why it matters:** on Windows the order is stable (NTFS returns names sorted case-insensitively),
+  so the app is consistent there, but the port and a macOS build must pick the order on purpose. The
+  harness pins NTFS order (`docs/testing.md`, harness assumptions).
 
 ## T. Typst
 
@@ -558,6 +584,18 @@ Paths in this section are relative to `_reference/renderer/`.
 - `rtti_export.typ:46` against `lib.typ:39`.
 - Evidence: the rapport uses English hyphenation and smart-quote rules, and is not justified. Any figure or reference supplements in the rapport would read "Figure".
 - Why it matters: parity, so do not "fix" it to nl.
+
+### T26. One invalid typed score makes the whole rapport fail
+
+- Where: `renderer/modals/rapport.js:48` (`Math.max(0, Number(raw))`), `:29-37` (`scoreDotColor`), `include/templates/rtti_export.typ:133` (`rgb(q.dot_color)`).
+- Evidence (found in Step 2b, golden `tests/golden/typst/rapport-tiny`): a score kept as typed (e.g. `abc`, quirk B23/BR 2.1) becomes `NaN`, `scoreDotColor` returns `#NaNNaNNaN`, and Typst stops with "color string contains non-hexadecimal letters". `toTypst(NaN)` also turns the score into `0`.
+- Why it matters: one typo in the score grid blocks the rapport for the whole class. Ask the user before fixing (it changes output).
+
+### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
+
+- Where: `renderer/modals/rapport.js:129-136` (`sanitizeTypstMarkup`), `include/templates/rtti_export.typ:276` (`eval(r.advies, mode: "markup")`).
+- Evidence (found in Step 2b, golden `tests/golden/typst/rapport-markup`): with an odd number of `$` the guard escapes them but prepends `#text(...)[$-teken niet gesloten — …]`. That warning contains an unescaped `$`, so `eval` fails with "unclosed delimiter" and the whole rapport fails. Related to T11.
+- Why it matters: the guard never works; an odd `$` in a leeradvies text always breaks the rapport. Ask the user before fixing.
 
 ## U. UI
 

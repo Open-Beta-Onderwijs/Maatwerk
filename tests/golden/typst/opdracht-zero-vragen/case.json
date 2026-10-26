@@ -1,0 +1,83 @@
+{
+  "format": 1,
+  "id": "opdracht-zero-vragen",
+  "path": "D",
+  "rule": "TC 5: opdracht without vragen (no answer block)",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "a",
+          "typFile": "opdracht_1756713600201.typ",
+          "label": "x",
+          "mode": "student",
+          "header": {
+            "title": "Zonder vragen",
+            "student": "Anna",
+            "group": "3a nat",
+            "exam": "Toets",
+            "observaties": [
+              {
+                "icon": "📏",
+                "name": "Eenheden vergeten"
+              }
+            ]
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": true,
+        "outputName": "opdrachten.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\opdrachten.pdf",
+    "pages": 2
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600201.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Zonder vragen\",\n  student: \"Anna\",\n  group: \"3a nat\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets\",\n  observaties: ((icon: \"📏\", name: \"Eenheden vergeten\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Zonder vragen\nAnna N.a.v. Toets\n3a nat 📏 Eenheden vergeten\nAlleen uitleg, geen vragen."
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Lezen)\nLees de tekst hierboven."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "2b746de38bded4acb5830d78a25f6a2cae66fda56f492294a6d1b1a1128e4b97",
+      "bytes": 6243
+    },
+    {
+      "file": "p2.png",
+      "sha256": "88a2fea80e11b9fdad2c725df37337b93be2f3240854249aea4cd0898d3807e1",
+      "bytes": 4404
+    }
+  ]
+}

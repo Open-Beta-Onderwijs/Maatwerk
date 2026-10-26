@@ -1,0 +1,91 @@
+{
+  "format": 1,
+  "id": "opdracht-images-student",
+  "path": "D",
+  "rule": "TC 3, 4.3: student mode with header, observaties (emoji), PNG/JPG/SVG images, answers upside down",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentBatch",
+    "args": [
+      [
+        {
+          "key": "900001",
+          "typFile": "opdracht_1756713600200.typ",
+          "label": "Opdracht nat 1 (images)",
+          "mode": "student",
+          "header": {
+            "title": "Opdracht nat 1 (images)",
+            "student": "Marie-Claire 't Hart",
+            "group": "3a nat",
+            "exam": "Toets H1 \"Krachten\" & Énergie",
+            "observaties": [
+              {
+                "icon": "📏",
+                "name": "Eenheden vergeten"
+              },
+              {
+                "icon": "👩‍🔬",
+                "name": "Formule \"niet\" genoteerd #1 $x$ @a <b> \\c"
+              },
+              {
+                "icon": "5️⃣",
+                "name": "Cijfer onder 5,5"
+              }
+            ]
+          }
+        }
+      ],
+      {
+        "includeAnswers": true,
+        "duplex": true,
+        "outputName": "opdrachten.pdf"
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\opdrachten.pdf",
+    "pages": 2
+  },
+  "wrappers": [
+    {
+      "file": "temp/opdrachten_run/b1-0.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600200.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Opdracht nat 1 (images)\",\n  student: \"Marie-Claire 't Hart\",\n  group: \"3a nat\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Toets H1 \\\"Krachten\\\" & Énergie\",\n  observaties: ((icon: \"📏\", name: \"Eenheden vergeten\"), (icon: \"👩‍🔬\", name: \"Formule \\\"niet\\\" genoteerd #1 $x$ @a <b> \\\\c\"), (icon: \"5️⃣\", name: \"Cijfer onder 5,5\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opdracht nat 1 (images)\nMarie-Claire 't Hart N.a.v. Toets H1 \"Krachten\" & Énergie\n3a nat 📏 Eenheden vergeten, 👩‍🔬 Formule \"niet\" genoteerd #1 $x$ @a\n<b> \\c, 5️⃣ Cijfer onder 5,5\nUitleg met drie figuren.\nFiguur 1: Een PNG.\nFiguur 2: Een JPG.\nschema\nFiguur 3: Een SVG."
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Figuren)\nZie Figuur 1.\na Wat zie je in de figuur? 2p\nb Geef de formule. 1,5p\nAntwoorden\n1a Een rechte lijn. 1b 𝑣 = 𝑠\n𝑡"
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "86dad7e4b2708499dfd6869c681da1eab02e29f71e56cd3ee68dc1eaf248f04c",
+      "bytes": 29010
+    },
+    {
+      "file": "p2.png",
+      "sha256": "f1ed351c9565d08f59181a9328bca203dc021be238cabba63b531b80e3e32e78",
+      "bytes": 6573
+    }
+  ]
+}

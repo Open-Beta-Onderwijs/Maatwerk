@@ -1,0 +1,88 @@
+{
+  "format": 1,
+  "id": "rapport-no-watermark",
+  "path": "A",
+  "rule": "quirk T4: a missing watermark fails the whole rapport",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderRapportPdf",
+    "args": [
+      "nat-rapport-4-2025-2026",
+      [
+        {
+          "name": "Vierde Klasser",
+          "student_nr": "8",
+          "group": "3a nat",
+          "score": 3,
+          "max_score": 4,
+          "grade": "7,8",
+          "grade_num": 7.8,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 2,
+              "max": 2,
+              "class_avg": 2,
+              "class_pct": 100,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#ffd54f"
+            }
+          ],
+          "observaties": [],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "2 / 2 (100%)",
+              "advies": "—"
+            },
+            {
+              "cat": "T1",
+              "score_str": "1 / 2 (50%)",
+              "advies": "—"
+            }
+          ]
+        }
+      ],
+      {
+        "name": "Toets zonder sjabloon",
+        "subject_display": "Natuurkunde",
+        "global_max_points": 2,
+        "n_term": 1,
+        "uitleg_rtti": {
+          "R": "",
+          "T1": "",
+          "T2": "",
+          "I": ""
+        }
+      }
+    ]
+  },
+  "result": {
+    "success": false,
+    "error": "error: file not found (searched at <app>\\data\\fotos\\school-watermerk.svg)\n   ┌─ <app>\\temp\\rtti_export.typ:32:15\n   │\n32 │         #image(\"/data/fotos/school-watermerk.svg\", width: 3.5cm, height: 3.5cm, fit: \"contain\")\n   │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n"
+  },
+  "wrappers": [
+    {
+      "file": "temp/_rapport_run.typ",
+      "source": "#import \"rtti_export.typ\": setup, render\n\n#let exam_info = (name: \"Toets zonder sjabloon\", subject_display: \"Natuurkunde\", global_max_points: 2, n_term: 1, uitleg_rtti: (R: \"\", T1: \"\", T2: \"\", I: \"\"))\n#let student_data = ((name: \"Vierde Klasser\", student_nr: \"8\", group: \"3a nat\", score: 3, max_score: 4, grade: \"7,8\", grade_num: 7.8, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 2, max: 2, class_avg: 2, class_pct: 100, dot_color: \"#66bb6a\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 1, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#ffd54f\"),), observaties: (), leeradvies_rows: ((cat: \"R\", score_str: \"2 / 2 (100%)\", advies: \"—\"), (cat: \"T1\", score_str: \"1 / 2 (50%)\", advies: \"—\"),)),)\n\n#show: setup\n#render(exam_info, student_data)\n"
+    }
+  ]
+}

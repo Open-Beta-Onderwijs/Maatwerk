@@ -1,0 +1,157 @@
+{
+  "format": 1,
+  "id": "rapport-one-student",
+  "path": "A",
+  "rule": "TC 10.8: rapport for one student (no histogram), bonus question",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderRapportPdf",
+    "args": [
+      "nat-toets-n-leerling-2025-2026",
+      [
+        {
+          "name": "D'Angelo O'Neill",
+          "student_nr": "900001",
+          "group": "3 nat cluster",
+          "score": 10.5,
+          "max_score": 16,
+          "grade": "6,9",
+          "grade_num": 6.9,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 3.5,
+              "max": 5,
+              "class_avg": 3.5,
+              "class_pct": 70,
+              "dot_color": "#c2cb5a"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 1.5,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#f5ae5d"
+            },
+            {
+              "label": "II3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 3.5,
+              "max": 5,
+              "class_avg": 3.5,
+              "class_pct": 70,
+              "dot_color": "#c2cb5a"
+            },
+            {
+              "label": "III4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.5,
+              "class_pct": 50,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III5",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1.5,
+              "class_pct": 75,
+              "dot_color": "#b3c85d"
+            }
+          ],
+          "observaties": [],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "3,5 / 5 (70%)",
+              "advies": "—"
+            },
+            {
+              "cat": "T1",
+              "score_str": "1,5 / 5 (30%)",
+              "advies": "Advies T1 laag."
+            },
+            {
+              "cat": "T2",
+              "score_str": "3,5 / 5 (70%)",
+              "advies": "—"
+            }
+          ]
+        }
+      ],
+      {
+        "name": "Toets één leerling",
+        "subject_display": "Natuurkunde",
+        "global_max_points": 5,
+        "n_term": 1,
+        "uitleg_rtti": {
+          "R": "Uitleg R.",
+          "T1": "Uitleg T1.",
+          "T2": "Uitleg T2.",
+          "I": "Uitleg I."
+        }
+      }
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\rapport_preview.pdf"
+  },
+  "wrappers": [
+    {
+      "file": "temp/_rapport_run.typ",
+      "source": "#import \"rtti_export.typ\": setup, render\n\n#let exam_info = (name: \"Toets één leerling\", subject_display: \"Natuurkunde\", global_max_points: 5, n_term: 1, uitleg_rtti: (R: \"Uitleg R.\", T1: \"Uitleg T1.\", T2: \"Uitleg T2.\", I: \"Uitleg I.\"))\n#let student_data = ((name: \"D'Angelo O'Neill\", student_nr: \"900001\", group: \"3 nat cluster\", score: 10.5, max_score: 16, grade: \"6,9\", grade_num: 6.9, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 3.5, max: 5, class_avg: 3.5, class_pct: 70, dot_color: \"#c2cb5a\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 1.5, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#f5ae5d\"), (label: \"II3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 3.5, max: 5, class_avg: 3.5, class_pct: 70, dot_color: \"#c2cb5a\"), (label: \"III4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.5, class_pct: 50, dot_color: \"#ffd54f\"), (label: \"III5\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: 1.5, max: 2, class_avg: 1.5, class_pct: 75, dot_color: \"#b3c85d\"),), observaties: (), leeradvies_rows: ((cat: \"R\", score_str: \"3,5 / 5 (70%)\", advies: \"—\"), (cat: \"T1\", score_str: \"1,5 / 5 (30%)\", advies: \"Advies T1 laag.\"), (cat: \"T2\", score_str: \"3,5 / 5 (70%)\", advies: \"—\"),)),)\n\n#show: setup\n#render(exam_info, student_data)\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "schema\nToetsanalyse Natuurkunde Toets één leerling\n3 nat cluster — D'Angelo O'Neill (900001)\nJe hebt 10.5 / 16 punten behaald en had dus 66% goed. De N-term is N=1. Je cijfer is een 6,9.\nScoretabel\nVraag RTTI B / D Jij (●) 0 1 2 3 4 5 Gemiddeld (◇)\nI1 R 3 / 5 3.5 3,5 / 5 (70%)\nI2 T1 1 / 5 1.5 1,5 / 5 (30%)\nII3 T2 3 / 5 3.5 3,5 / 5 (70%)\nIII4 I 0 / 1 0.5 0,5 / 1 (50%)\nIII5 T2 Bonus 1 / 2 1.5 1,5 / 2 (75%)\nObservaties\nDe docent heeft bij jou geen observaties genoteerd voor deze toets.\nLeeradvies\nCat. Score Leeradvies\nR 3,5 / 5 (70%) —\nT1 1,5 / 5 (30%) Advies T1 laag.\nT2 3,5 / 5 (70%) —\n1 / 2 Natuurkunde Toets één leerling — D'Angelo O'Neill"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "schema\nUitleg RTTI-categorieën\nAfk. Categorie Beschrijving\nR Reproductie Uitleg R.\nT1 Training Uitleg T1.\nT2 Transfer Uitleg T2.\nI Inzicht Uitleg I.\nVerdeling RTTI deze toets\nR (31%)\nT1 (31%)\nT2 (31%)\nI (6%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n70%\nR\n30%\nT1\n70%\nT2\n50%\nI\n2 / 2 Natuurkunde Toets één leerling — D'Angelo O'Neill"
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "4dd2130cfcc2d4f0051ac2ba71834c690cb0e641a7417647e321bb41b262eea1",
+      "bytes": 20795
+    },
+    {
+      "file": "p2.png",
+      "sha256": "014a0825952c03787eac28553f55abbf70134bef003100e37f0e69f09f18479c",
+      "bytes": 20712
+    }
+  ]
+}

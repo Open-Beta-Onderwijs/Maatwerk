@@ -1,0 +1,1088 @@
+{
+  "format": 1,
+  "suite": "stats",
+  "description": "Exam statistics, overview accumulation, histogram and boxplot.",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "code": [
+      "renderer/modals/toets-overzicht.js:171-176 summary",
+      "renderer/modals/toets-overzicht.js:39-158 accumulate",
+      "renderer/modals/toets-overzicht.js:528-545 makeHistBins",
+      "renderer/modals/toets-overzicht.js:596-607 boxStats",
+      "renderer/modals/toets-overzicht.js:800-802 qPctsOf",
+      "renderer/screens/toetsen.js:121-135 computeBestGradeStats",
+      "renderer/screens/toetsen.js:65-95 computeExamStats",
+      "renderer/screens/toetsen.js:97-119 computeExamWarnings",
+      "renderer/utils/colors.js:13-19 hexToRgb",
+      "renderer/utils/colors.js:21-25 lerpColor",
+      "renderer/utils/colors.js:38-40 isFail",
+      "renderer/utils/grades.js:19-21 gradeChartColor",
+      "renderer/utils/grades.js:9-16 gradeGroupIdx"
+    ]
+  },
+  "cases": [
+    {
+      "id": "data",
+      "rule": "BR 6",
+      "input": {
+        "files": {
+          "2025-2026/exams/nat-stat-2025-2026.json": "{\n  \"id\": \"nat-stat-2025-2026\",\n  \"title\": \"nat-stat-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 1,\n  \"weging\": 1,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"regular\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q3\",\n      \"section\": \"I\",\n      \"number\": 3,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q4\",\n      \"section\": \"I\",\n      \"number\": 4,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q5\",\n      \"section\": \"I\",\n      \"number\": 5,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q6\",\n      \"section\": \"I\",\n      \"number\": 6,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    },\n    {\n      \"id\": \"q7\",\n      \"section\": \"I\",\n      \"number\": 7,\n      \"max_points\": 10,\n      \"rtti\": \"T2\"\n    },\n    {\n      \"id\": \"q8\",\n      \"section\": \"I\",\n      \"number\": 8,\n      \"max_points\": 10,\n      \"rtti\": \"I\"\n    },\n    {\n      \"id\": \"q9\",\n      \"section\": \"I\",\n      \"number\": 9,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q10\",\n      \"section\": \"I\",\n      \"number\": 10,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [\n    \"obs-x\",\n    \"obs-y\"\n  ],\n  \"subject\": \"nat\",\n  \"volgnummer\": 301\n}",
+          "2025-2026/exams/nat-stat-herkansing-2025-2026.json": "{\n  \"id\": \"nat-stat-herkansing-2025-2026\",\n  \"title\": \"nat-stat-herkansing-2025-2026\",\n  \"jaarlaag\": \"3\",\n  \"schoolsoort\": [\n    \"Havo\"\n  ],\n  \"n_term\": 2,\n  \"weging\": 1,\n  \"weging_se\": 1,\n  \"periode\": \"1\",\n  \"type\": \"regular\",\n  \"structureMode\": \"roman\",\n  \"questions\": [\n    {\n      \"id\": \"q1\",\n      \"section\": \"I\",\n      \"number\": 1,\n      \"max_points\": 10,\n      \"rtti\": \"R\"\n    },\n    {\n      \"id\": \"q2\",\n      \"section\": \"I\",\n      \"number\": 2,\n      \"max_points\": 10,\n      \"rtti\": \"T1\"\n    }\n  ],\n  \"obs_ids\": [],\n  \"subject\": \"nat\",\n  \"volgnummer\": 301,\n  \"parent_id\": \"nat-stat-2025-2026\",\n  \"attempt\": 2\n}",
+          "2025-2026/groups/g1.json": "{\n  \"id\": \"g1\",\n  \"name\": \"g1 nat\",\n  \"jaarlaag\": \"3\",\n  \"subject\": \"nat\",\n  \"student_ids\": [\n    1,\n    2,\n    3,\n    8\n  ]\n}",
+          "2025-2026/groups/g2.json": "{\n  \"id\": \"g2\",\n  \"name\": \"g2 nat\",\n  \"jaarlaag\": \"3\",\n  \"subject\": \"nat\",\n  \"student_ids\": [\n    4,\n    5,\n    6,\n    9\n  ]\n}",
+          "2025-2026/scores/nat/1.json": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 8.89\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": [\n      \"obs-x\"\n    ]\n  }\n}",
+          "2025-2026/scores/nat/10.json": "{\n  \"student_id\": 10,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 10,\n      \"q6\": 10,\n      \"q7\": 10,\n      \"q8\": 10,\n      \"q9\": 10,\n      \"q10\": 9.89\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/2.json": "{\n  \"student_id\": 2,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 9.44\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/3.json": "{\n  \"student_id\": 3,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": 10,\n      \"q2\": 10,\n      \"q3\": 10,\n      \"q4\": 10,\n      \"q5\": 9.33\n    },\n    \"nat-stat-herkansing-2025-2026\": {\n      \"q1\": 9,\n      \"q2\": 9\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": [\n      \"obs-x\",\n      \"obs-y\"\n    ]\n  }\n}",
+          "2025-2026/scores/nat/4.json": "{\n  \"student_id\": 4,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": null,\n      \"q2\": \"N\"\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/5.json": "{\n  \"student_id\": 5,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": 12,\n      \"q2\": 5\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/6.json": "{\n  \"student_id\": 6,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {}\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": [\n      \"obs-y\"\n    ]\n  },\n  \"overrides\": {\n    \"nat-stat-2025-2026\": {\n      \"cijfer\": 6.5,\n      \"berekend\": null\n    }\n  }\n}",
+          "2025-2026/scores/nat/7.json": "{\n  \"student_id\": 7,\n  \"scores\": {},\n  \"observations\": {\n    \"nat-stat-2025-2026\": [\n      \"obs-x\"\n    ]\n  }\n}",
+          "2025-2026/scores/nat/8.json": "{\n  \"student_id\": 8,\n  \"scores\": {\n    \"nat-stat-2025-2026\": {\n      \"q1\": \"abc\",\n      \"q2\": -1\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": []\n  }\n}",
+          "2025-2026/scores/nat/9.json": "{\n  \"student_id\": 9,\n  \"scores\": {\n    \"nat-stat-herkansing-2025-2026\": {\n      \"q1\": 4,\n      \"q2\": 4\n    }\n  },\n  \"observations\": {\n    \"nat-stat-2025-2026\": []\n  }\n}",
+          "2025-2026/students-2025-2026.json": "[\n  {\n    \"id\": 1,\n    \"voornaam\": \"Leerling1\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam1\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 2,\n    \"voornaam\": \"Leerling2\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam2\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 3,\n    \"voornaam\": \"Leerling3\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam3\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 4,\n    \"voornaam\": \"Leerling4\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam4\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 5,\n    \"voornaam\": \"Leerling5\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam5\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 6,\n    \"voornaam\": \"Leerling6\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam6\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 7,\n    \"voornaam\": \"Leerling7\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam7\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 8,\n    \"voornaam\": \"Leerling8\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam8\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 9,\n    \"voornaam\": \"Leerling9\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam9\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  },\n  {\n    \"id\": 10,\n    \"voornaam\": \"Leerling10\",\n    \"tussenvoegsel\": \"\",\n    \"achternaam\": \"Achternaam10\",\n    \"stamklas\": \"3a\",\n    \"geslacht\": \"X\",\n    \"jaarlaag\": \"3\",\n    \"schoolsoort\": [\n      \"Havo\"\n    ]\n  }\n]",
+          "config.json": "{\n  \"activeYear\": \"2025-2026\"\n}",
+          "observaties/obs-x.json": "{\n  \"id\": \"obs-x\",\n  \"naam\": \"obs-x\",\n  \"icon\": \"📏\",\n  \"subjects\": [\n    \"nat\"\n  ],\n  \"jaarlagen\": []\n}",
+          "observaties/obs-y.json": "{\n  \"id\": \"obs-y\",\n  \"naam\": \"obs-y\",\n  \"icon\": \"📏\",\n  \"subjects\": [\n    \"nat\"\n  ],\n  \"jaarlagen\": []\n}"
+        }
+      },
+      "output": null
+    },
+    {
+      "id": "computeExamStats",
+      "rule": "BR 6.1, 11.31",
+      "input": {
+        "exam": "nat-stat-2025-2026"
+      },
+      "output": {
+        "n": 7,
+        "avgPts": "45,4",
+        "avgG": "5,3",
+        "sd": "2,9",
+        "fails": 57,
+        "normalMax": 100
+      }
+    },
+    {
+      "id": "computeExamStats-resit",
+      "rule": "BR 6.1",
+      "input": {
+        "exam": "nat-stat-herkansing-2025-2026"
+      },
+      "output": {
+        "n": 2,
+        "avgPts": "13,0",
+        "avgG": "7,6",
+        "sd": "2,0",
+        "fails": 0,
+        "normalMax": 20
+      }
+    },
+    {
+      "id": "computeExamWarnings",
+      "rule": "BR 6.1",
+      "input": {
+        "exam": "nat-stat-2025-2026"
+      },
+      "output": [
+        {
+          "name": "Leerling1 Achternaam1",
+          "issue": "onvolledig"
+        },
+        {
+          "name": "Leerling2 Achternaam2",
+          "issue": "onvolledig"
+        },
+        {
+          "name": "Leerling3 Achternaam3",
+          "issue": "onvolledig"
+        },
+        {
+          "name": "Leerling4 Achternaam4",
+          "issue": "ongeldig"
+        },
+        {
+          "name": "Leerling5 Achternaam5",
+          "issue": "ongeldig"
+        },
+        {
+          "name": "Leerling8 Achternaam8",
+          "issue": "ongeldig"
+        }
+      ]
+    },
+    {
+      "id": "computeBestGradeStats",
+      "rule": "BR 6.1, 11.29",
+      "input": {
+        "parent": "nat-stat-2025-2026"
+      },
+      "output": {
+        "n": 8,
+        "avgG": "5,8",
+        "sd": "3,1",
+        "fails": 38
+      }
+    },
+    {
+      "id": "overview-exam",
+      "rule": "BR 6.2, 11.34",
+      "input": {
+        "exam": "nat-stat-2025-2026",
+        "scoreOverride": null
+      },
+      "output": {
+        "grades": [
+          7.2001,
+          5.449599999999999,
+          5.439699999999999,
+          1,
+          1.45,
+          6.5,
+          9.9901
+        ],
+        "qStats": [
+          {
+            "q": "q1",
+            "totalScored": 52,
+            "totalMax": 50
+          },
+          {
+            "q": "q2",
+            "totalScored": 45,
+            "totalMax": 50
+          },
+          {
+            "q": "q3",
+            "totalScored": 40,
+            "totalMax": 40
+          },
+          {
+            "q": "q4",
+            "totalScored": 40,
+            "totalMax": 40
+          },
+          {
+            "q": "q5",
+            "totalScored": 38.769999999999996,
+            "totalMax": 40
+          },
+          {
+            "q": "q6",
+            "totalScored": 20,
+            "totalMax": 20
+          },
+          {
+            "q": "q7",
+            "totalScored": 18.89,
+            "totalMax": 20
+          },
+          {
+            "q": "q8",
+            "totalScored": 10,
+            "totalMax": 10
+          },
+          {
+            "q": "q9",
+            "totalScored": 10,
+            "totalMax": 10
+          },
+          {
+            "q": "q10",
+            "totalScored": 9.89,
+            "totalMax": 10
+          }
+        ],
+        "rttiAccum": [
+          [
+            {
+              "scored": 12,
+              "max": 10
+            },
+            {
+              "scored": 5,
+              "max": 10
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            }
+          ],
+          [
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            }
+          ],
+          [
+            {
+              "scored": 38.769999999999996,
+              "max": 40
+            },
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 20,
+              "max": 20
+            }
+          ],
+          [
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            }
+          ],
+          [
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 18.89,
+              "max": 20
+            },
+            {
+              "scored": 10,
+              "max": 10
+            }
+          ],
+          [
+            {
+              "scored": 30,
+              "max": 30
+            },
+            {
+              "scored": 29.89,
+              "max": 30
+            },
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 20,
+              "max": 20
+            }
+          ]
+        ],
+        "groupStats": [
+          {
+            "group": "g1",
+            "grades": [
+              7.2001,
+              5.449599999999999,
+              5.439699999999999
+            ],
+            "qStats": [
+              [
+                "q1",
+                30,
+                30
+              ],
+              [
+                "q2",
+                30,
+                30
+              ],
+              [
+                "q3",
+                30,
+                30
+              ],
+              [
+                "q4",
+                30,
+                30
+              ],
+              [
+                "q5",
+                28.769999999999996,
+                30
+              ],
+              [
+                "q6",
+                10,
+                10
+              ],
+              [
+                "q7",
+                8.89,
+                10
+              ],
+              [
+                "q8",
+                0,
+                0
+              ],
+              [
+                "q9",
+                0,
+                0
+              ],
+              [
+                "q10",
+                0,
+                0
+              ]
+            ]
+          },
+          {
+            "group": "g2",
+            "grades": [
+              1,
+              1.45,
+              6.5
+            ],
+            "qStats": [
+              [
+                "q1",
+                12,
+                10
+              ],
+              [
+                "q2",
+                5,
+                10
+              ],
+              [
+                "q3",
+                0,
+                0
+              ],
+              [
+                "q4",
+                0,
+                0
+              ],
+              [
+                "q5",
+                0,
+                0
+              ],
+              [
+                "q6",
+                0,
+                0
+              ],
+              [
+                "q7",
+                0,
+                0
+              ],
+              [
+                "q8",
+                0,
+                0
+              ],
+              [
+                "q9",
+                0,
+                0
+              ],
+              [
+                "q10",
+                0,
+                0
+              ]
+            ]
+          }
+        ],
+        "obsAccum": {
+          "obs-x": {
+            "count": 3,
+            "byGroup": {
+              "g1": 2
+            },
+            "byGradeGroup": [
+              0,
+              0,
+              1,
+              0,
+              1,
+              0
+            ]
+          },
+          "obs-y": {
+            "count": 2,
+            "byGroup": {
+              "g1": 1,
+              "g2": 1
+            },
+            "byGradeGroup": [
+              0,
+              0,
+              1,
+              1,
+              0,
+              0
+            ]
+          }
+        },
+        "studentGroup": {
+          "1": "g1",
+          "2": "g1",
+          "3": "g1",
+          "4": "g2",
+          "5": "g2",
+          "6": "g2",
+          "8": "g1",
+          "9": "g2"
+        },
+        "summary": {
+          "mean": 5.289928571428571,
+          "sd": 2.937469859645632,
+          "fails": 57
+        },
+        "qPcts": [
+          104,
+          90,
+          100,
+          100,
+          97,
+          100,
+          94,
+          100,
+          100,
+          99
+        ]
+      }
+    },
+    {
+      "id": "overview-summary",
+      "rule": "BR 6.2, 11.29",
+      "input": {
+        "exam": "nat-stat-2025-2026",
+        "scoreOverride": "computeBestGradeMap"
+      },
+      "output": {
+        "grades": [
+          7.2001,
+          5.449599999999999,
+          9.55,
+          1,
+          1.45,
+          6.5,
+          5.6,
+          9.9901
+        ],
+        "qStats": [
+          {
+            "q": "q1",
+            "totalScored": 55,
+            "totalMax": 60
+          },
+          {
+            "q": "q2",
+            "totalScored": 48,
+            "totalMax": 60
+          },
+          {
+            "q": "q3",
+            "totalScored": 30,
+            "totalMax": 30
+          },
+          {
+            "q": "q4",
+            "totalScored": 30,
+            "totalMax": 30
+          },
+          {
+            "q": "q5",
+            "totalScored": 29.439999999999998,
+            "totalMax": 30
+          },
+          {
+            "q": "q6",
+            "totalScored": 20,
+            "totalMax": 20
+          },
+          {
+            "q": "q7",
+            "totalScored": 18.89,
+            "totalMax": 20
+          },
+          {
+            "q": "q8",
+            "totalScored": 10,
+            "totalMax": 10
+          },
+          {
+            "q": "q9",
+            "totalScored": 10,
+            "totalMax": 10
+          },
+          {
+            "q": "q10",
+            "totalScored": 9.89,
+            "totalMax": 10
+          }
+        ],
+        "rttiAccum": [
+          [
+            {
+              "scored": 12,
+              "max": 10
+            },
+            {
+              "scored": 5,
+              "max": 10
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            }
+          ],
+          [
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            }
+          ],
+          [
+            {
+              "scored": 23.439999999999998,
+              "max": 30
+            },
+            {
+              "scored": 14,
+              "max": 20
+            },
+            {
+              "scored": 10,
+              "max": 10
+            },
+            {
+              "scored": 10,
+              "max": 10
+            }
+          ],
+          [
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            },
+            {
+              "scored": 0,
+              "max": 0
+            }
+          ],
+          [
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 18.89,
+              "max": 20
+            },
+            {
+              "scored": 10,
+              "max": 10
+            }
+          ],
+          [
+            {
+              "scored": 39,
+              "max": 40
+            },
+            {
+              "scored": 38.89,
+              "max": 40
+            },
+            {
+              "scored": 20,
+              "max": 20
+            },
+            {
+              "scored": 20,
+              "max": 20
+            }
+          ]
+        ],
+        "groupStats": [
+          {
+            "group": "g1",
+            "grades": [
+              7.2001,
+              5.449599999999999,
+              9.55
+            ],
+            "qStats": [
+              [
+                "q1",
+                29,
+                30
+              ],
+              [
+                "q2",
+                29,
+                30
+              ],
+              [
+                "q3",
+                20,
+                20
+              ],
+              [
+                "q4",
+                20,
+                20
+              ],
+              [
+                "q5",
+                19.439999999999998,
+                20
+              ],
+              [
+                "q6",
+                10,
+                10
+              ],
+              [
+                "q7",
+                8.89,
+                10
+              ],
+              [
+                "q8",
+                0,
+                0
+              ],
+              [
+                "q9",
+                0,
+                0
+              ],
+              [
+                "q10",
+                0,
+                0
+              ]
+            ]
+          },
+          {
+            "group": "g2",
+            "grades": [
+              1,
+              1.45,
+              6.5,
+              5.6
+            ],
+            "qStats": [
+              [
+                "q1",
+                16,
+                20
+              ],
+              [
+                "q2",
+                9,
+                20
+              ],
+              [
+                "q3",
+                0,
+                0
+              ],
+              [
+                "q4",
+                0,
+                0
+              ],
+              [
+                "q5",
+                0,
+                0
+              ],
+              [
+                "q6",
+                0,
+                0
+              ],
+              [
+                "q7",
+                0,
+                0
+              ],
+              [
+                "q8",
+                0,
+                0
+              ],
+              [
+                "q9",
+                0,
+                0
+              ],
+              [
+                "q10",
+                0,
+                0
+              ]
+            ]
+          }
+        ],
+        "obsAccum": {
+          "obs-x": {
+            "count": 3,
+            "byGroup": {
+              "g1": 2
+            },
+            "byGradeGroup": [
+              0,
+              0,
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          "obs-y": {
+            "count": 2,
+            "byGroup": {
+              "g1": 1,
+              "g2": 1
+            },
+            "byGradeGroup": [
+              0,
+              0,
+              0,
+              1,
+              0,
+              1
+            ]
+          }
+        },
+        "studentGroup": {
+          "1": "g1",
+          "2": "g1",
+          "3": "g1",
+          "4": "g2",
+          "5": "g2",
+          "6": "g2",
+          "8": "g1",
+          "9": "g2"
+        },
+        "summary": {
+          "mean": 5.842474999999999,
+          "sd": 3.085866271709615,
+          "fails": 38
+        },
+        "qPcts": [
+          92,
+          80,
+          100,
+          100,
+          98,
+          100,
+          94,
+          100,
+          100,
+          99
+        ]
+      }
+    },
+    {
+      "id": "makeHistBins",
+      "rule": "BR 6.2, 11.32",
+      "input": {
+        "grades": [
+          1,
+          1.49,
+          5.47,
+          5.5,
+          9.99,
+          10,
+          0.5,
+          5.45,
+          5.449999,
+          3,
+          2.99
+        ]
+      },
+      "output": {
+        "step05": {
+          "data": [
+            3,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0,
+            3,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          "binLabels": [
+            "<1,5",
+            "<2,0",
+            "<2,5",
+            "<3,0",
+            "<3,5",
+            "<4,0",
+            "<4,5",
+            "<5,0",
+            "<5,5",
+            "<6,0",
+            "<6,5",
+            "<7,0",
+            "<7,5",
+            "<8,0",
+            "<8,5",
+            "<9,0",
+            "<9,5",
+            "≤10,0"
+          ],
+          "barColors": [
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "rgb(247,212,81)",
+            "rgb(230,209,84)",
+            "rgb(213,206,87)",
+            "rgb(196,203,90)",
+            "rgb(179,200,93)",
+            "rgb(162,197,96)",
+            "rgb(145,194,99)",
+            "rgb(128,191,102)",
+            "rgb(111,188,105)"
+          ],
+          "passBinIndex": 9
+        },
+        "step1": {
+          "data": [
+            3,
+            0,
+            2,
+            0,
+            3,
+            1,
+            0,
+            0,
+            0,
+            2
+          ],
+          "binLabels": [
+            "<1,5",
+            "<2,5",
+            "<3,5",
+            "<4,5",
+            "<5,5",
+            "<6,5",
+            "<7,5",
+            "<8,5",
+            "<9,5",
+            "≤10,0"
+          ],
+          "barColors": [
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "#e57373",
+            "rgb(238,210,82)",
+            "rgb(204,204,88)",
+            "rgb(170,199,94)",
+            "rgb(136,193,100)",
+            "rgb(102,187,106)"
+          ],
+          "passBinIndex": 5
+        }
+      }
+    },
+    {
+      "id": "boxStats",
+      "rule": "BR 6.2, 11.33",
+      "input": {
+        "sets": [
+          [],
+          [
+            7
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            4,
+            1,
+            3,
+            2
+          ],
+          [
+            5,
+            1,
+            4,
+            2,
+            3
+          ],
+          [
+            9.5,
+            1.2,
+            5.5,
+            5.5,
+            6.1,
+            7.7,
+            3.3,
+            8
+          ]
+        ]
+      },
+      "output": [
+        null,
+        {
+          "min": 7,
+          "max": 7,
+          "q1": 7,
+          "median": 7,
+          "q3": 7
+        },
+        {
+          "min": 3,
+          "max": 7,
+          "q1": 3,
+          "median": 7,
+          "q3": 7
+        },
+        {
+          "min": 1,
+          "max": 4,
+          "q1": 2,
+          "median": 3,
+          "q3": 4
+        },
+        {
+          "min": 1,
+          "max": 5,
+          "q1": 2,
+          "median": 3,
+          "q3": 4
+        },
+        {
+          "min": 1.2,
+          "max": 9.5,
+          "q1": 5.5,
+          "median": 6.1,
+          "q3": 8
+        }
+      ]
+    },
+    {
+      "id": "gradeGroupIdx",
+      "rule": "BR 6.2",
+      "input": {
+        "grades": [
+          1,
+          3.99,
+          4,
+          4.99,
+          5,
+          5.45,
+          5.99,
+          6,
+          6.99,
+          7,
+          7.99,
+          8,
+          10
+        ]
+      },
+      "output": [
+        0,
+        0,
+        1,
+        1,
+        2,
+        2,
+        2,
+        3,
+        3,
+        4,
+        4,
+        5,
+        5
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "format": 1,
+  "id": "opdracht-placeholder-pdf",
+  "path": "B",
+  "rule": "TC 4.1: renderAssignmentPdf with the placeholder header (path unused by the UI)",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderAssignmentPdf",
+    "args": [
+      "opdracht_1756713600205.typ",
+      "Titel met \"quotes\" en \\"
+    ]
+  },
+  "result": {
+    "success": true,
+    "pdfPath": "<app>\\temp\\assignment_preview.pdf"
+  },
+  "wrappers": [
+    {
+      "file": "temp/_assignment_run.typ",
+      "source": "#import \"/data/opdrachten/lib.typ\": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd\n#import \"/data/opdrachten/opdracht_1756713600205.typ\": setup_extra, render_uitleg, render_opgaven\n\n#show: setup\n#setup_extra()\n\n#opdracht_header(\n  title: \"Titel met \\\"quotes\\\" en \\\\\",\n  student: \"Leerling Voornaam Achternaam\",\n  group: \"Klas Z vak W\",\n  exam_prefix: \"N.a.v.\",\n  exam: \"Voorbeeldtoets Toetsweek X\",\n  observaties: ((icon: \"❌\", name: \"Een voorbeeldobservatie met een behoorlijk lange naam, zodat deze twee regels beslaat in het voorbeeld\"),),\n)\n\n#render_uitleg()\n\n#pagebreak()\n\n#render_opgaven()\n#antwoorden_omgekeerd()\n"
+    }
+  ],
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Titel met \"quotes\" en \\\nLeerling Voornaam Achternaam N.a.v. Voorbeeldtoets Toetsweek X\nKlas Z vak W ❌ Een voorbeeldobservatie met een behoorlijk lange naam,\nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave 1 (Oefening)\na Eerste vraag. 2p\nb Tweede vraag. 1p\nAntwoorden\n1a Antwoord a. 1b Antwoord b."
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "9c5944acd556983913cdff67a6fa02613facf5ea16993ea54bb31f1f0ebbe19a",
+      "bytes": 10367
+    },
+    {
+      "file": "p2.png",
+      "sha256": "0a7353365fc3cc2f67c8df9a2a071b3c40e711aea83773b3285ad985cf7a331e",
+      "bytes": 5770
+    }
+  ]
+}

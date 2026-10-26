@@ -1,25 +1,28 @@
 # State
 
-Last updated: 2026-10-25 (end of Step 1) Branch: `main` Last tag: `step-01`
+Last updated: 2026-10-26 (end of Step 2) Branch: `main` Last tag: `step-02`
 
 ## Current step
 
-Step 1 done and approved. Next: Step 2, safety net on the old app (only when the user says so).
+Step 2 done. Next: Step 3, UI foundation (only when the user says so).
 
 ## Done since last tag
 
 - (nothing yet)
 
-## Step 1 summary
+## Step 2 summary
 
-- Reference study in `docs/reference/` (IPC API, data files, business rules, Typst contract, UI map,
-  naming map, 106 quirks, metrics), draft JSON Schemas in `docs/schemas/`.
-- `docs/architecture-review.md` with the user's decisions (section 8).
-- ADR-0002 accepted with the user's amendment: opdracht folders are self-contained Typst projects
-  (section 5a). ADR-0003 decided: all candidates, timing table per step.
-- Fix during the port: ADR-0002 section 10. CSP without inline styles (Step 3). Printed PDFs go to
-  `rapporten/` (Step 6). PLAN.md step sections carry "Step 1 decisions" notes.
-- Step 0 hello world confirmed working by the user.
+- Harness `tests/reference-harness/`: the real reference `main.js`, `preload.js` and `store.js` run
+  in Node (fake Electron); UI helpers are extracted by name or checked line range. Pinned: clock,
+  TZ Europe/Amsterdam, nl-NL collation, NTFS directory order (quirk B31).
+- Fixtures `tools/fixtures/` (`tiny`, `school`), hashes in `manifest.json`.
+- Logic goldens `tests/golden/logic/` (11 suites), Typst goldens `tests/golden/typst/` (21 cases,
+  paths A-D, PNG 30 ppi, PDF text). `npm run golden:regen`, `golden:typst`, `golden:check`.
+- Storage spec `docs/specs/storage-spec.md` rows S01-S40 on verbatim shims in
+  `tools/reference-shims/` (CI-executable).
+- `docs/testing.md`: commands, format, assumptions, coverage matrix.
+- Reviews `docs/reviews/step-02a.md`, `step-02.md`: all blockers/majors fixed; rest in backlog.
+- New quirks: B31, D35, T26, T27; B22 corrected.
 
 ## In progress
 
@@ -27,10 +30,14 @@ Step 1 done and approved. Next: Step 2, safety net on the old app (only when the
 
 ## Next action (concrete, resumable)
 
-1. When the user says so: `git checkout -b step/02-safety-net`, read PLAN.md Step 2 and its notes.
+1. When the user says so: `git checkout -b step/03-ui-foundation`, read PLAN.md Step 3 and its notes.
 
 ## Open questions for the user
 
+- Quirks T26 (one invalid typed score breaks the whole class rapport) and T27 (the unclosed-`$`
+  guard itself breaks the rapport): fix during the port or keep for parity? Both change output.
+- Storage S37/S38: CAS is not atomic across instances and several files are written blind. C3 (no
+  `.lock` files) relies on CAS; Step 4 must decide how to close the window (stop and ask then).
 - Remote: still to create (repo `maatwerk`, public). `gh` CLI is not installed.
 - Open decisions still pending (PLAN section 9): emoji font (Step 5), score grid choice (Step 3b),
   domain logic location (Step 10), versioning/update policy, macOS items.
@@ -38,5 +45,6 @@ Step 1 done and approved. Next: Step 2, safety net on the old app (only when the
 ## How to resume
 
 PowerShell (not Git Bash, whose `link` shadows MSVC's): `npm ci; npm run build:ui`, then the gate
-commands in `CLAUDE.md`. `cargo-deny` 0.20.2 is installed. The schema validator (ajv) lives
-outside the repo; reinstall per `docs/schemas/README.md` if needed.
+commands in `CLAUDE.md`. Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the
+Typst packages cetz/unify/oxifmt in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is
+installed.

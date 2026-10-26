@@ -1,0 +1,1557 @@
+{
+  "format": 1,
+  "id": "rapport-tiny",
+  "path": "A",
+  "rule": "TC 2, quirk T26: tiny fixture as is; one typed invalid score breaks the whole rapport",
+  "reference": {
+    "commit": "0e30a70cbe4e9286bd54efa5722fb7532c1be308",
+    "typst": "0.14.2",
+    "ppi": 30
+  },
+  "call": {
+    "channel": "app:renderRapportPdf",
+    "args": [
+      "nat-toets-h3-2025-2026",
+      [
+        {
+          "name": "Sem van den Dekker",
+          "student_nr": "900004",
+          "group": "3 nat cluster",
+          "score": 20.5,
+          "max_score": 41,
+          "grade": "5,0",
+          "grade_num": 5,
+          "grade_overridden": true,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 2.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#d9cf56"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 0,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 3.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#8cc263"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 4,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#a3c55f"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 1,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#ef9a65"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 3,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": {
+                "$number": "NaN"
+              },
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#NaNNaNNaN"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": {
+                "$number": "NaN"
+              },
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#NaNNaNNaN"
+            }
+          ],
+          "observaties": [
+            {
+              "icon": "🧮",
+              "naam": "Rekenfout",
+              "uitleg": "Uitleg bij observatie 2.",
+              "leeradvies": "Leeradvies bij observatie 2."
+            }
+          ],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "4,5 / 7 (64%)",
+              "advies": "Advies R midden."
+            },
+            {
+              "cat": "T1",
+              "score_str": "4 / 14 (29%)",
+              "advies": "Advies T1 laag."
+            },
+            {
+              "cat": "T2",
+              "score_str": "6,5 / 11 (59%)",
+              "advies": "Advies T2 midden."
+            },
+            {
+              "cat": "🧮",
+              "score_str": "",
+              "advies": "Leeradvies bij observatie 2."
+            }
+          ]
+        },
+        {
+          "name": "D'Angelo O'Neill",
+          "student_nr": "900001",
+          "group": "3 nat cluster",
+          "score": 19,
+          "max_score": 41,
+          "grade": "6,7",
+          "grade_num": 6.7,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#ec8c6a"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 1.5,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": null,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 4,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 3,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#e0d054"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#ea876c"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 2.5,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#d9cf56"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0,
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 4,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            }
+          ],
+          "observaties": [
+            {
+              "icon": "📏",
+              "naam": "Eenheden vergeten",
+              "uitleg": "Uitleg bij observatie 1.",
+              "leeradvies": "Leeradvies bij observatie 1."
+            },
+            {
+              "icon": "✏️",
+              "naam": "Formule niet genoteerd",
+              "uitleg": "Uitleg bij observatie 3.",
+              "leeradvies": ""
+            }
+          ],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "1 / 7 (14%)",
+              "advies": "Advies R laag."
+            },
+            {
+              "cat": "T1",
+              "score_str": "5,5 / 14 (39%)",
+              "advies": "Advies T1 laag."
+            },
+            {
+              "cat": "T2",
+              "score_str": "8 / 11 (73%)",
+              "advies": "—"
+            },
+            {
+              "cat": "📏",
+              "score_str": "",
+              "advies": "Leeradvies bij observatie 1."
+            },
+            {
+              "cat": "✏️",
+              "score_str": "",
+              "advies": "—"
+            }
+          ]
+        },
+        {
+          "name": "Lars 't Vos",
+          "student_nr": "900007",
+          "group": "3 nat cluster",
+          "score": 18.5,
+          "max_score": 41,
+          "grade": "6,6",
+          "grade_num": 6.6,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 4,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 0.5,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#ee9467"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 2,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": null,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": null,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": null,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 1.5,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#f5ae5d"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 2,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 2,
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#cccc58"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 3,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": null,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            }
+          ],
+          "observaties": [],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "5 / 7 (71%)",
+              "advies": "—"
+            },
+            {
+              "cat": "T1",
+              "score_str": "8,5 / 14 (61%)",
+              "advies": "Advies T1 midden."
+            },
+            {
+              "cat": "T2",
+              "score_str": "2,5 / 11 (23%)",
+              "advies": "Advies T2 laag."
+            }
+          ]
+        },
+        {
+          "name": "Marie-Claire 't Hart",
+          "student_nr": "900002",
+          "group": "3a nat",
+          "score": 27.5,
+          "max_score": 41,
+          "grade": "8,5",
+          "grade_num": 8.5,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 3,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 2,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#cccc58"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 1.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#f9bd58"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 4,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#a3c55f"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 2.5,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 3.5,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#8cc263"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 1,
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#f6b45b"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 3.5,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#8cc263"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": 2,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            }
+          ],
+          "observaties": [
+            {
+              "icon": "📏",
+              "naam": "Eenheden vergeten",
+              "uitleg": "Uitleg bij observatie 1.",
+              "leeradvies": "Leeradvies bij observatie 1."
+            },
+            {
+              "icon": "🧮",
+              "naam": "Rekenfout",
+              "uitleg": "Uitleg bij observatie 2.",
+              "leeradvies": "Leeradvies bij observatie 2."
+            }
+          ],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "4 / 7 (57%)",
+              "advies": "Advies R midden."
+            },
+            {
+              "cat": "T1",
+              "score_str": "9,5 / 14 (68%)",
+              "advies": "Advies T1 midden."
+            },
+            {
+              "cat": "T2",
+              "score_str": "7 / 11 (64%)",
+              "advies": "Advies T2 midden."
+            },
+            {
+              "cat": "📏",
+              "score_str": "",
+              "advies": "Leeradvies bij observatie 1."
+            },
+            {
+              "cat": "🧮",
+              "score_str": "",
+              "advies": "Leeradvies bij observatie 2."
+            }
+          ]
+        },
+        {
+          "name": "Gijs Kok",
+          "student_nr": "900006",
+          "group": "3a nat",
+          "score": 22,
+          "max_score": 41,
+          "grade": "7,3",
+          "grade_num": 7.3,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#ec8c6a"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 2,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#cccc58"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": null,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 3.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#8cc263"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 2,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#fac156"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1.5,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 4,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#a3c55f"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 2,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#ee9467"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0.5,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#f2a461"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 2,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": 2,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#e57373"
+            }
+          ],
+          "observaties": [],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "3 / 7 (43%)",
+              "advies": "Advies R midden."
+            },
+            {
+              "cat": "T1",
+              "score_str": "6,5 / 14 (46%)",
+              "advies": "Advies T1 midden."
+            },
+            {
+              "cat": "T2",
+              "score_str": "7,5 / 11 (68%)",
+              "advies": "Advies T2 midden."
+            }
+          ]
+        },
+        {
+          "name": "Olivia ter Østergaard",
+          "student_nr": "900003",
+          "group": "3a nat",
+          "score": 17,
+          "max_score": 41,
+          "grade": "6,2",
+          "grade_num": 6.2,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 3,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 3,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": null,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0.5,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#f2a461"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 1.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#f9bd58"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 2,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#fac156"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 2,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#66bb6a"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#ea876c"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 1,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#f2a461"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 1.5,
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": null,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": null,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": 0.5,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#ffd54f"
+            }
+          ],
+          "observaties": [
+            {
+              "icon": "📏",
+              "naam": "Eenheden vergeten",
+              "uitleg": "Uitleg bij observatie 1.",
+              "leeradvies": "Leeradvies bij observatie 1."
+            }
+          ],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "3 / 7 (43%)",
+              "advies": "Advies R midden."
+            },
+            {
+              "cat": "T1",
+              "score_str": "4 / 14 (29%)",
+              "advies": "Advies T1 laag."
+            },
+            {
+              "cat": "T2",
+              "score_str": "5,5 / 11 (50%)",
+              "advies": "Advies T2 midden."
+            },
+            {
+              "cat": "📏",
+              "score_str": "",
+              "advies": "Leeradvies bij observatie 1."
+            }
+          ]
+        },
+        {
+          "name": "Bram van Willems",
+          "student_nr": "900008",
+          "group": "3a nat",
+          "score": 14.5,
+          "max_score": 41,
+          "grade": "5,7",
+          "grade_num": 5.7,
+          "grade_overridden": false,
+          "vragen": [
+            {
+              "label": "I1",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.4,
+              "class_pct": 40,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "I2",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 3,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "I3",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 0.5,
+              "max": 3,
+              "class_avg": 1.4,
+              "class_pct": 47,
+              "dot_color": "#ee9467"
+            },
+            {
+              "label": "I4",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "I5",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0.5,
+              "max": 2,
+              "class_avg": 1.2,
+              "class_pct": 60,
+              "dot_color": "#f2a461"
+            },
+            {
+              "label": "II6",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#e57373"
+            },
+            {
+              "label": "II7",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 0.5,
+              "max": 4,
+              "class_avg": 2.4,
+              "class_pct": 60,
+              "dot_color": "#ec8c6a"
+            },
+            {
+              "label": "II8",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 1.5,
+              "max": 5,
+              "class_avg": 2.8,
+              "class_pct": 56,
+              "dot_color": "#f5ae5d"
+            },
+            {
+              "label": "II9",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 0.5,
+              "max": 2,
+              "class_avg": 1.1,
+              "class_pct": 55,
+              "dot_color": "#f2a461"
+            },
+            {
+              "label": "II10",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 0.5,
+              "max": 5,
+              "class_avg": 1.5,
+              "class_pct": 30,
+              "dot_color": "#ea876c"
+            },
+            {
+              "label": "III11",
+              "rtti": "T2",
+              "kind": "normal",
+              "rtti_color": "#f0ad4e",
+              "score": 1,
+              "max": 4,
+              "class_avg": 2.1,
+              "class_pct": 53,
+              "dot_color": "#f2a461"
+            },
+            {
+              "label": "III12",
+              "rtti": "I",
+              "kind": "normal",
+              "rtti_color": "#d9534f",
+              "score": 2.5,
+              "max": 3,
+              "class_avg": 1.3,
+              "class_pct": 43,
+              "dot_color": "#99c461"
+            },
+            {
+              "label": "III13",
+              "rtti": "R",
+              "kind": "normal",
+              "rtti_color": "#5cb85c",
+              "score": 1,
+              "max": 2,
+              "class_avg": 1,
+              "class_pct": 50,
+              "dot_color": "#ffd54f"
+            },
+            {
+              "label": "III14",
+              "rtti": "T1",
+              "kind": "normal",
+              "rtti_color": "#5bc0de",
+              "score": 3,
+              "max": 4,
+              "class_avg": 2.6,
+              "class_pct": 65,
+              "dot_color": "#b3c85d"
+            },
+            {
+              "label": "III15",
+              "rtti": "T2",
+              "kind": "bonus",
+              "rtti_color": "#f0ad4e",
+              "score": null,
+              "max": 2,
+              "class_avg": 1.4,
+              "class_pct": 70,
+              "dot_color": "#b0b8c1"
+            },
+            {
+              "label": "III16",
+              "rtti": "I",
+              "kind": "diag",
+              "rtti_color": "#d9534f",
+              "score": 0,
+              "max": 1,
+              "class_avg": 0.3,
+              "class_pct": 30,
+              "dot_color": "#e57373"
+            }
+          ],
+          "observaties": [],
+          "leeradvies_rows": [
+            {
+              "cat": "R",
+              "score_str": "2 / 7 (29%)",
+              "advies": "Advies R laag."
+            },
+            {
+              "cat": "T1",
+              "score_str": "6,5 / 14 (46%)",
+              "advies": "Advies T1 midden."
+            },
+            {
+              "cat": "T2",
+              "score_str": "2 / 11 (18%)",
+              "advies": "Advies T2 laag."
+            }
+          ]
+        }
+      ],
+      {
+        "name": "Toets H3",
+        "subject_display": "Natuurkunde",
+        "global_max_points": 5,
+        "n_term": 2.5,
+        "uitleg_rtti": {
+          "R": "Uitleg R.",
+          "T1": "Uitleg T1.",
+          "T2": "Uitleg T2.",
+          "I": "Uitleg I."
+        }
+      }
+    ]
+  },
+  "result": {
+    "success": false,
+    "error": "error: color string contains non-hexadecimal letters\n    ┌─ <app>\\temp\\rtti_export.typ:133:16\n    │\n133 │       fill: rgb(q.dot_color), stroke: none,\n    │                 ^^^^^^^^^^^\n\nhelp: error occurred in this call of function `lollipop_track`\n    ┌─ <app>\\temp\\rtti_export.typ:213:10\n    │\n213 │           lollipop_track(q, global_max),\n    │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nhelp: error occurred in this call of function `map`\n    ┌─ <app>\\temp\\rtti_export.typ:187:6\n    │  \n187 │       ..vragen.map(q => {\n    │ ╭───────^\n188 │ │       let score_str = if q.score == none {\n189 │ │         \"N / \" + str(q.max)\n190 │ │       } else {\n    · │\n216 │ │       }\n217 │ │     }).flatten()\n    │ ╰──────^\n\nhelp: error occurred in this call of function `lollipop_chart`\n    ┌─ <app>\\temp\\rtti_export.typ:656:4\n    │\n656 │     lollipop_chart(student.vragen, exam_info.global_max_points)\n    │     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nhelp: error occurred in this call of function `render`\n  ┌─ <app>\\temp\\_rapport_run.typ:7:1\n  │\n7 │ #render(exam_info, student_data)\n  │  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n"
+  },
+  "wrappers": [
+    {
+      "file": "temp/_rapport_run.typ",
+      "source": "#import \"rtti_export.typ\": setup, render\n\n#let exam_info = (name: \"Toets H3\", subject_display: \"Natuurkunde\", global_max_points: 5, n_term: 2.5, uitleg_rtti: (R: \"Uitleg R.\", T1: \"Uitleg T1.\", T2: \"Uitleg T2.\", I: \"Uitleg I.\"))\n#let student_data = ((name: \"Sem van den Dekker\", student_nr: \"900004\", group: \"3 nat cluster\", score: 20.5, max_score: 41, grade: \"5,0\", grade_num: 5, grade_overridden: true, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0.5, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#ffd54f\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 2.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#d9cf56\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 0, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#e57373\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#b3c85d\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 3.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#8cc263\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 4, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#a3c55f\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#ffd54f\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 1, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#ef9a65\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 3, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#b3c85d\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#NaNNaNNaN\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#b3c85d\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#e57373\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: 1, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#ffd54f\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#NaNNaNNaN\"),), observaties: ((icon: \"🧮\", naam: \"Rekenfout\", uitleg: \"Uitleg bij observatie 2.\", leeradvies: \"Leeradvies bij observatie 2.\"),), leeradvies_rows: ((cat: \"R\", score_str: \"4,5 / 7 (64%)\", advies: \"Advies R midden.\"), (cat: \"T1\", score_str: \"4 / 14 (29%)\", advies: \"Advies T1 laag.\"), (cat: \"T2\", score_str: \"6,5 / 11 (59%)\", advies: \"Advies T2 midden.\"), (cat: \"🧮\", score_str: \"\", advies: \"Leeradvies bij observatie 2.\"),)), (name: \"D'Angelo O'Neill\", student_nr: \"900001\", group: \"3 nat cluster\", score: 19, max_score: 41, grade: \"6,7\", grade_num: 6.7, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#e57373\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#ec8c6a\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 1.5, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#ffd54f\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: none, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#b0b8c1\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 4, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#66bb6a\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 3, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#e0d054\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#ffd54f\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#ea876c\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 2.5, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#d9cf56\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#e57373\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#e57373\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 4, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#66bb6a\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: 1, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#ffd54f\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"),), observaties: ((icon: \"📏\", naam: \"Eenheden vergeten\", uitleg: \"Uitleg bij observatie 1.\", leeradvies: \"Leeradvies bij observatie 1.\"), (icon: \"✏️\", naam: \"Formule niet genoteerd\", uitleg: \"Uitleg bij observatie 3.\", leeradvies: \"\"),), leeradvies_rows: ((cat: \"R\", score_str: \"1 / 7 (14%)\", advies: \"Advies R laag.\"), (cat: \"T1\", score_str: \"5,5 / 14 (39%)\", advies: \"Advies T1 laag.\"), (cat: \"T2\", score_str: \"8 / 11 (73%)\", advies: \"—\"), (cat: \"📏\", score_str: \"\", advies: \"Leeradvies bij observatie 1.\"), (cat: \"✏️\", score_str: \"\", advies: \"—\"),)), (name: \"Lars 't Vos\", student_nr: \"900007\", group: \"3 nat cluster\", score: 18.5, max_score: 41, grade: \"6,6\", grade_num: 6.6, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#e57373\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 4, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#66bb6a\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 0.5, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#ee9467\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 2, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#66bb6a\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: none, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#b0b8c1\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: none, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#b0b8c1\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: none, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#b0b8c1\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#b3c85d\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 1.5, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#f5ae5d\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 2, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#ffd54f\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 2, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#cccc58\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#b3c85d\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 3, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#b3c85d\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: none, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#b0b8c1\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"),), observaties: (), leeradvies_rows: ((cat: \"R\", score_str: \"5 / 7 (71%)\", advies: \"—\"), (cat: \"T1\", score_str: \"8,5 / 14 (61%)\", advies: \"Advies T1 midden.\"), (cat: \"T2\", score_str: \"2,5 / 11 (23%)\", advies: \"Advies T2 laag.\"),)), (name: \"Marie-Claire 't Hart\", student_nr: \"900002\", group: \"3a nat\", score: 27.5, max_score: 41, grade: \"8,5\", grade_num: 8.5, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#66bb6a\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 3, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#b3c85d\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 2, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#cccc58\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#e57373\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#b3c85d\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 1.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#f9bd58\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 4, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#a3c55f\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#e57373\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 2.5, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 3.5, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#8cc263\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 1, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#f6b45b\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#b3c85d\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 3.5, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#8cc263\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: 2, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#66bb6a\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"),), observaties: ((icon: \"📏\", naam: \"Eenheden vergeten\", uitleg: \"Uitleg bij observatie 1.\", leeradvies: \"Leeradvies bij observatie 1.\"), (icon: \"🧮\", naam: \"Rekenfout\", uitleg: \"Uitleg bij observatie 2.\", leeradvies: \"Leeradvies bij observatie 2.\"),), leeradvies_rows: ((cat: \"R\", score_str: \"4 / 7 (57%)\", advies: \"Advies R midden.\"), (cat: \"T1\", score_str: \"9,5 / 14 (68%)\", advies: \"Advies T1 midden.\"), (cat: \"T2\", score_str: \"7 / 11 (64%)\", advies: \"Advies T2 midden.\"), (cat: \"📏\", score_str: \"\", advies: \"Leeradvies bij observatie 1.\"), (cat: \"🧮\", score_str: \"\", advies: \"Leeradvies bij observatie 2.\"),)), (name: \"Gijs Kok\", student_nr: \"900006\", group: \"3a nat\", score: 22, max_score: 41, grade: \"7,3\", grade_num: 7.3, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#66bb6a\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#ec8c6a\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 2, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#cccc58\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: none, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#b0b8c1\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#e57373\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 3.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#8cc263\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 2, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#fac156\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1.5, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#b3c85d\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 4, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#a3c55f\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 2, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#ffd54f\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0.5, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#ee9467\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0.5, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#f2a461\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 2, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#ffd54f\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: 2, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#66bb6a\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#e57373\"),), observaties: (), leeradvies_rows: ((cat: \"R\", score_str: \"3 / 7 (43%)\", advies: \"Advies R midden.\"), (cat: \"T1\", score_str: \"6,5 / 14 (46%)\", advies: \"Advies T1 midden.\"), (cat: \"T2\", score_str: \"7,5 / 11 (68%)\", advies: \"Advies T2 midden.\"),)), (name: \"Olivia ter Østergaard\", student_nr: \"900003\", group: \"3a nat\", score: 17, max_score: 41, grade: \"6,2\", grade_num: 6.2, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0.5, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#ffd54f\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 3, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#b3c85d\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 3, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#66bb6a\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: none, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#b0b8c1\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0.5, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#f2a461\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 1.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#f9bd58\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 2, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#fac156\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 2, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#66bb6a\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#ea876c\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 1, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#f2a461\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 1.5, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#ffd54f\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: none, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#b0b8c1\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: none, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#b0b8c1\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: 1, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#ffd54f\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0.5, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#ffd54f\"),), observaties: ((icon: \"📏\", naam: \"Eenheden vergeten\", uitleg: \"Uitleg bij observatie 1.\", leeradvies: \"Leeradvies bij observatie 1.\"),), leeradvies_rows: ((cat: \"R\", score_str: \"3 / 7 (43%)\", advies: \"Advies R midden.\"), (cat: \"T1\", score_str: \"4 / 14 (29%)\", advies: \"Advies T1 laag.\"), (cat: \"T2\", score_str: \"5,5 / 11 (50%)\", advies: \"Advies T2 midden.\"), (cat: \"📏\", score_str: \"\", advies: \"Leeradvies bij observatie 1.\"),)), (name: \"Bram van Willems\", student_nr: \"900008\", group: \"3a nat\", score: 14.5, max_score: 41, grade: \"5,7\", grade_num: 5.7, grade_overridden: false, vragen: ((label: \"I1\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0, max: 1, class_avg: 0.4, class_pct: 40, dot_color: \"#e57373\"), (label: \"I2\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 3, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#b3c85d\"), (label: \"I3\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 0.5, max: 3, class_avg: 1.4, class_pct: 47, dot_color: \"#ee9467\"), (label: \"I4\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#e57373\"), (label: \"I5\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0.5, max: 2, class_avg: 1.2, class_pct: 60, dot_color: \"#f2a461\"), (label: \"II6\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#e57373\"), (label: \"II7\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 0.5, max: 4, class_avg: 2.4, class_pct: 60, dot_color: \"#ec8c6a\"), (label: \"II8\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 1.5, max: 5, class_avg: 2.8, class_pct: 56, dot_color: \"#f5ae5d\"), (label: \"II9\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 0.5, max: 2, class_avg: 1.1, class_pct: 55, dot_color: \"#f2a461\"), (label: \"II10\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 0.5, max: 5, class_avg: 1.5, class_pct: 30, dot_color: \"#ea876c\"), (label: \"III11\", rtti: \"T2\", kind: \"normal\", rtti_color: \"#f0ad4e\", score: 1, max: 4, class_avg: 2.1, class_pct: 53, dot_color: \"#f2a461\"), (label: \"III12\", rtti: \"I\", kind: \"normal\", rtti_color: \"#d9534f\", score: 2.5, max: 3, class_avg: 1.3, class_pct: 43, dot_color: \"#99c461\"), (label: \"III13\", rtti: \"R\", kind: \"normal\", rtti_color: \"#5cb85c\", score: 1, max: 2, class_avg: 1, class_pct: 50, dot_color: \"#ffd54f\"), (label: \"III14\", rtti: \"T1\", kind: \"normal\", rtti_color: \"#5bc0de\", score: 3, max: 4, class_avg: 2.6, class_pct: 65, dot_color: \"#b3c85d\"), (label: \"III15\", rtti: \"T2\", kind: \"bonus\", rtti_color: \"#f0ad4e\", score: none, max: 2, class_avg: 1.4, class_pct: 70, dot_color: \"#b0b8c1\"), (label: \"III16\", rtti: \"I\", kind: \"diag\", rtti_color: \"#d9534f\", score: 0, max: 1, class_avg: 0.3, class_pct: 30, dot_color: \"#e57373\"),), observaties: (), leeradvies_rows: ((cat: \"R\", score_str: \"2 / 7 (29%)\", advies: \"Advies R laag.\"), (cat: \"T1\", score_str: \"6,5 / 14 (46%)\", advies: \"Advies T1 midden.\"), (cat: \"T2\", score_str: \"2 / 11 (18%)\", advies: \"Advies T2 laag.\"),)),)\n\n#show: setup\n#render(exam_info, student_data)\n"
+    }
+  ]
+}
