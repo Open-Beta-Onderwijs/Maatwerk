@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ── Grade coloring & grouping utilities ──────────────────────────────────────
 import { lerpColor, isFail } from './colors.js';
 import { formatGrade } from '../app.js';

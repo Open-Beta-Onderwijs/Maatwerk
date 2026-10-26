@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * CustomSelect — lightweight div-based dropdown that replaces <select>.
  * Bypasses the native OS control so Electron never triggers the black-box flash.
@@ -196,3 +198,5 @@ function escHtmlCS(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+export { CustomSelect };

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { showModal, closeModal, toast, escHtml, getAdminSubjectFilter } from '../app.js';
 import { ICONS } from '../utils/icons.js';
 

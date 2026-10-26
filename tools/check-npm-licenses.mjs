@@ -27,6 +27,15 @@ const ALLOWED = new Set([
   'AGPL-3.0-or-later',
 ]);
 
+// Temporary, documented exceptions: the package and its whole subtree are
+// skipped with a warning. Each entry names the step that removes it.
+const TEMPORARY = new Map([
+  [
+    'handsontable',
+    'Step 3b replaces the score grid; proprietary licence, must never ship (PLAN.md Step 3)',
+  ],
+]);
+
 const tree = JSON.parse(
   execFileSync('npm', ['ls', '-w', 'ui', '--omit=dev', '--all', '--json', '--long'], {
     encoding: 'utf8',
@@ -37,6 +46,12 @@ const tree = JSON.parse(
 const seen = new Map();
 (function walk(node) {
   for (const [name, dep] of Object.entries(node.dependencies ?? {})) {
+    if (TEMPORARY.has(name)) {
+      console.warn(
+        `WARN ${name}@${dep.version}: skipped with its subtree (${TEMPORARY.get(name)})`,
+      );
+      continue;
+    }
     if (dep.path && !seen.has(dep.path)) {
       seen.set(dep.path, name);
       walk(dep);

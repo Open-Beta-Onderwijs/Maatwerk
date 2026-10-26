@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * app.js — Renderer process entry point.
  * Shared services (modal, toast, nav, SEL) + orchestration of all screens.

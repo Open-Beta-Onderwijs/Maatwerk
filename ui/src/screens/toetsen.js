@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { lerpColor, isFail } from '../utils/colors.js';
 import { ICONS } from '../utils/icons.js';
 import {

@@ -1,17 +1,10 @@
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 <!doctype html>
 <html lang="nl">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:;"
-    />
     <title>Maatwerk</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.css"
-    />
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <header id="topbar" class="hidden">
@@ -306,11 +299,6 @@
 
     <div id="toast-container"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/handsontable@14.3.0/dist/handsontable.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <script src="store.js"></script>
-    <script src="custom-select.js"></script>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

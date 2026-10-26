@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * editor-init.js — CodeMirror 6 setup for the Typst assignment editor.
  *
@@ -6,12 +8,12 @@
  * compilation is done by posting messages to the parent window, which proxies
  * the calls via modals/editor.js.
  *
- * Imports from esm.sh, which deduplicates shared peer dependencies (e.g.
- * @codemirror/state) across packages — preventing the "multiple instances"
- * instanceof error that occurs when using separate jsdelivr ESM bundles.
+ * CodeMirror comes from npm (pinned in ui/package.json); Vite bundles one copy
+ * of @codemirror/state, so the "multiple instances" instanceof error of separate
+ * CDN bundles cannot occur.
  */
 
-import { EditorState, RangeSetBuilder, countColumn } from 'https://esm.sh/@codemirror/state@6';
+import { EditorState, RangeSetBuilder, countColumn } from '@codemirror/state';
 import {
   EditorView,
   keymap,
@@ -21,22 +23,22 @@ import {
   drawSelection,
   Decoration,
   ViewPlugin,
-} from 'https://esm.sh/@codemirror/view@6';
+} from '@codemirror/view';
 import {
   defaultKeymap,
   history,
   historyKeymap,
   indentWithTab,
   toggleComment,
-} from 'https://esm.sh/@codemirror/commands@6';
+} from '@codemirror/commands';
 import {
   StreamLanguage,
   syntaxHighlighting,
   HighlightStyle,
   indentOnInput,
   bracketMatching,
-} from 'https://esm.sh/@codemirror/language@6';
-import { Tag, tags } from 'https://esm.sh/@lezer/highlight@1';
+} from '@codemirror/language';
+import { Tag, tags } from '@lezer/highlight';
 
 // ── postMessage bridge ────────────────────────────────────────────────────────
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { lerpColor, gradeColor, rttiPctColor, isFail } from '../utils/colors.js';
 import {
   gradeGroupIdx,
@@ -15,7 +17,6 @@ import {
   showReloadNotice,
   modalRefresher,
 } from '../app.js';
-import { openExamModal } from './toets-edit.js';
 import { examGroups, groupStudentsOf } from '../screens/scores.js';
 
 const GROUP_PALETTE = [

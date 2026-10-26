@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * sync.js — Routes changes made by other teachers (reported by the file watcher
  * in main.js) to the parts of the UI that care about them.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * store.js — Central data access layer.
  *
@@ -271,10 +273,6 @@ const Store = (() => {
   }
 
   // ── Year management ───────────────────────────────────────────────────────
-  async function refreshYears() {
-    _years = await window.maatwerk.listYears();
-    return _years;
-  }
 
   function listYearsSync() {
     return _years ?? [];
@@ -1599,3 +1597,5 @@ const Store = (() => {
     getOpdrachtAssignments,
   };
 })();
+
+export { Store, qKind };

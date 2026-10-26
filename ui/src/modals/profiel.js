@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ── Student profile modal ─────────────────────────────────────────────────
 import {
   showModal,

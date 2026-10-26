@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ── Student add/edit & CSV import modals ─────────────────────────────────────
 import {
   showModal,

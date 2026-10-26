@@ -1,10 +1,6 @@
-import {
-  lerpColor,
-  gradeColor,
-  stdDevGradeColor,
-  rttiPctColor,
-  examTypeColor,
-} from '../utils/colors.js';
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { gradeColor, stdDevGradeColor, rttiPctColor, examTypeColor } from '../utils/colors.js';
 import { wireSpinners, spinnerValue } from '../utils/spinners.js';
 import {
   showModal,

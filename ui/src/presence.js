@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /**
  * presence.js — Which colleagues are using the app right now, and where.
  *

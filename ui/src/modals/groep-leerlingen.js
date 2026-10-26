@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ── Group students modal ──────────────────────────────────────────────────────
 import {
   showModal,
@@ -9,7 +11,7 @@ import {
   changedByName,
   modalRefresher,
 } from '../app.js';
-import { lerpColor, examTypeColor, isFail } from '../utils/colors.js';
+import { examTypeColor, isFail } from '../utils/colors.js';
 import { gradeTextColor, gradeBorderColor } from '../utils/grades.js';
 import { openProfielModal } from './profiel.js';
 

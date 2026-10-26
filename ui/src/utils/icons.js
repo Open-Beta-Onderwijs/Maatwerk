@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Shared SVG icons — used in the exam card menu and on icon buttons app-wide
 // ═══════════════════════════════════════════════════════════════════════════════

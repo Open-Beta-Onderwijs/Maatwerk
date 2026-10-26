@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { toast, escHtml } from '../app.js';
 import { ICONS } from '../utils/icons.js';
 
@@ -152,7 +154,6 @@ function attachListeners(container, school) {
 
 function startTextEdit(field, container, school) {
   const row = container.querySelector(`.school-field-row[data-field="${field}"]`);
-  const valueWrap = row.querySelector('.school-field-value-wrap');
   const span = row.querySelector('.school-field-text');
   const editBtn = row.querySelector('[data-action="edit-field"]');
   const currentValue = span.dataset.value;

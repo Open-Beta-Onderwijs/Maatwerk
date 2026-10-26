@@ -1,7 +1,9 @@
-import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.mjs';
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs';
+import * as pdfjsLib from 'pdfjs-dist';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 const INITIAL_SCALE = 1.25;
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
