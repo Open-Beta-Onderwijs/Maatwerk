@@ -2,6 +2,14 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From the Step 2 review (`docs/reviews/step-02.md`)
+
+- **m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
+  diagnostics separator-neutrally (`\` vs `/`).
+- **m6 (Step 5/6):** store an explicit merged-page map for batch goldens (job, page, blank) and
+  PNGs for multi-job batches if pixel parity of the merge matters.
+- **m7 (Step 6):** record `assignment:progress` events in the batch goldens.
+
 ## From the Step 2a review (`docs/reviews/step-02a.md`)
 
 - **n4:** `attempts` golden: store the grade `resolveBestAttempts` compared

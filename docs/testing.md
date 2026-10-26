@@ -159,9 +159,11 @@ recorded wrapper follows from the call arguments through the verbatim builders i
 `tools/reference-shims/typst-wrappers.cjs`.
 
 Regen needs the Typst packages `@preview/cetz:0.3.4`, `@preview/unify:0.8.0` and `oxifmt` in the
-local package cache (`%LOCALAPPDATA%	ypst\packages`), because the reference does not vendor them
-(quirk T1). PNGs depend on the fonts of the machine for emoji (quirk T2: Segoe UI Emoji on
-Windows), so regenerate on Windows.
+local package cache (`%LOCALAPPDATA%\typst\packages`), because the reference does not vendor them
+(quirk T1); the script stops if they are missing, so Typst never downloads them silently. PNGs
+depend on the fonts of the machine for emoji (quirk T2: Segoe UI Emoji on Windows), so regenerate
+on Windows. PNGs use 30 ppi instead of the 110-144 ppi in typst-contract.md section 10, to keep the
+repo small (size budget); Step 5 renders its own PNGs at the same 30 ppi for the comparison.
 
 | #   | Candidate                                           | Golden case(s)                                                                 |
 | --- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -173,7 +175,7 @@ Windows), so regenerate on Windows.
 | 6   | SVG preview, cursor marker, 10+ pages               | `svg-preview`, `svg-preview-cursor`, `svg-preview-many-pages`                  |
 | 7   | Batch duplex, failing job                           | `batch-duplex`, `batch-answer-key`, `batch-error`                              |
 | 8   | Rapport, one student                                | `rapport-one-student`                                                          |
-| 9   | Rapport, class, override, markup in leeradvies      | `rapport-valid`                                                                |
+| 9   | Rapport, class, override, markup in leeradvies      | `rapport-valid` (11 students, histogram, long and Typst-special names)         |
 | 10  | Rapport edge cases                                  | `rapport-no-watermark` (T4), `rapport-tiny` (T26), `rapport-markup` (T27)      |
 | 11  | Diagnostics name the opdracht file, not `_preview_` | `svg-preview-error`, `batch-error`                                             |
 
@@ -181,9 +183,10 @@ Multi-page opdrachten: `opdracht-long-odd` (3 pages), `batch-duplex` (long-even 
 
 ### Not covered yet, on purpose
 
-| Behaviour                                                 | Where it will be covered                                            |
-| --------------------------------------------------------- | ------------------------------------------------------------------- |
-| Legacy `migrate()`                                        | Not ported (Step 1 decision); behaviour recorded in `data-files.md` |
-| Grid interaction (numpad `.` -> `N`, typing, undo, paste) | Step 3 Playwright smoke tests (UI behaviour, DOM-bound)             |
-| Presence files (`users/<id>.json`), local session, photos | Step 4 Rust tests against `data-files.md`                           |
-| Opdracht images and `.typ` file IPC                       | Step 2b (Typst) and Step 4                                          |
+| Behaviour                                                                | Where it will be covered                                            |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Legacy `migrate()`                                                       | Not ported (Step 1 decision); behaviour recorded in `data-files.md` |
+| Grid interaction (numpad `.` -> `N`, typing, undo, paste)                | Step 3 Playwright smoke tests (UI behaviour, DOM-bound)             |
+| Presence files (`users/<id>.json`), local session, photos                | Step 4 Rust tests against `data-files.md`                           |
+| Opdracht image and `.typ` file IPC (list, save, import, copy, delete)    | Step 4 Rust tests                                                   |
+| Rapport with a 3-page first section (footer still "/ 2", contract 10.10) | Step 5 parity tests                                                 |

@@ -11,16 +11,64 @@ import { bindFunctions, extractConst, extractFunction } from '../extract.mjs';
 
 const RAPPORT = 'renderer/modals/rapport.js';
 
-/** Typed invalid scores (kept as strings) become N, so the rapport compiles (quirk T26). */
+/**
+ * Typed scores that are not numbers (kept as strings, e.g. "abc") are replaced by
+ * null (N), so the rapport compiles (quirk T26). Numeric strings stay as they are.
+ */
 function sanitizeScores(dataDir) {
   const dir = path.join(dataDir, '2025-2026', 'scores', 'nat');
   for (const f of fs.readdirSync(dir)) {
     const rec = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
     for (const qs of Object.values(rec.scores)) {
-      for (const [q, v] of Object.entries(qs)) if (typeof v === 'string') qs[q] = null;
+      for (const [q, v] of Object.entries(qs))
+        if (typeof v === 'string' && Number.isNaN(Number(v))) qs[q] = null;
     }
     fs.writeFileSync(path.join(dir, f), JSON.stringify(rec, null, 2));
   }
+}
+
+// Extra synthetic students for the class rapport: 12 in total (the grade histogram
+// needs 10 or more, rtti_export.typ:494-496), with a long name, Typst-special
+// characters and diacritics.
+const EXTRA_STUDENTS = [
+  ['Maximiliaan Alexander Constantijn', 'van der', 'Wiel-Brandsma de Clercq-Zubli van Hoogstraten'],
+  ['Hash#Tag', '', 'Dollar$ "Quote" \\Back'],
+  ['@At', '', '<Angle> *ster* _under_'],
+  ['Ëlla', 'de', 'Ruïne'],
+];
+
+/** Adds EXTRA_STUDENTS to the tiny fixture (class 3a), with score records derived from 900001-900004. */
+function addStudents(dataDir) {
+  const year = path.join(dataDir, '2025-2026');
+  const studentsFile = path.join(year, 'students-2025-2026.json');
+  const students = JSON.parse(fs.readFileSync(studentsFile, 'utf8'));
+  const groupFile = path.join(year, 'groups', '3a-nat-2025-2026.json');
+  const group = JSON.parse(fs.readFileSync(groupFile, 'utf8'));
+  EXTRA_STUDENTS.forEach(([voornaam, tussenvoegsel, achternaam], i) => {
+    const id = 900009 + i;
+    students.push({
+      id,
+      voornaam,
+      tussenvoegsel,
+      achternaam,
+      stamklas: '3a',
+      geslacht: 'X',
+      jaarlaag: '3',
+      schoolsoort: ['Havo'],
+    });
+    group.student_ids.push(id);
+    const base = JSON.parse(
+      fs.readFileSync(path.join(year, 'scores', 'nat', `${900001 + i}.json`), 'utf8'),
+    );
+    // Halve every numeric score, so the extra students spread the grades downwards.
+    for (const qs of Object.values(base.scores)) {
+      for (const [q, v] of Object.entries(qs)) if (typeof v === 'number') qs[q] = Math.floor(v) / 2;
+    }
+    base.student_id = id;
+    fs.writeFileSync(path.join(year, 'scores', 'nat', `${id}.json`), JSON.stringify(base, null, 2));
+  });
+  fs.writeFileSync(studentsFile, JSON.stringify(students, null, 2));
+  fs.writeFileSync(groupFile, JSON.stringify(group, null, 2));
 }
 
 /** Opdrachten of the tiny fixture, by kind (tools/fixtures/generate.mjs makeOpdrachten). */
@@ -78,8 +126,9 @@ export const CASES = [
   {
     id: 'rapport-valid',
     path: 'A',
-    rule: 'TC 2, 10.9: rapport as rapport-tiny with invalid scores replaced by N, an override, and leeradvies markup that compiles',
+    rule: 'TC 2, 10.9: class rapport, 12 students (grade histogram), long and Typst-special names, an override, non-numeric scores replaced by N, leeradvies markup that compiles',
     prepare: (dataDir) => {
+      addStudents(dataDir);
       sanitizeScores(dataDir);
       // Leeradvies markup that compiles: bold, number formatting, math; T1 uitleg empty.
       const file = path.join(

@@ -90,8 +90,32 @@ function renderPngs(appDir, wrapperRel, outDir) {
 const MAIN_WRAPPER = /(^|\/)(_rapport_run|_assignment_run|_assignment_svg_run|b\d+-0)\.typ$/;
 
 /** Runs every case; returns { [id]: { json, pngs: [{name, buf}] } }. */
+/**
+ * rtti_export.typ imports cetz and unify, which the reference does not ship
+ * (quirk T1). Stop when they are not in a local Typst package directory, so the
+ * CLI never fetches them from the network during a regen.
+ */
+function requirePackages() {
+  const dirs = [
+    process.env.APPDATA,
+    process.env.LOCALAPPDATA,
+    process.env.XDG_DATA_HOME,
+    process.env.XDG_CACHE_HOME,
+  ]
+    .filter(Boolean)
+    .map((d) => path.join(d, 'typst', 'packages', 'preview'));
+  for (const pkg of ['cetz/0.3.4', 'unify/0.8.0', 'oxifmt']) {
+    if (!dirs.some((d) => fs.existsSync(path.join(d, ...pkg.split('/'))))) {
+      throw new Error(
+        `Typst package @preview/${pkg} is not in the local package cache (${dirs.join(', ')}); see docs/testing.md`,
+      );
+    }
+  }
+}
+
 export async function runCases(only = []) {
   requireReference();
+  requirePackages();
   const out = {};
   for (const c of CASES) {
     if (only.length && !only.includes(c.id)) continue;
@@ -169,7 +193,7 @@ async function runCase(c) {
       json.svg = result.pages.map((svg) => ({
         bytes: Buffer.byteLength(svg),
         viewBox: /viewBox="([^"]+)"/.exec(svg)?.[1] ?? null,
-        cursorLinks: (svg.match(/href="rtti-cursor:"/g) ?? []).length,
+        cursorLinks: (svg.match(/<a [^>]*href="rtti-cursor:"/g) ?? []).length,
         images: (svg.match(/<image /g) ?? []).length,
       }));
     }
@@ -220,6 +244,15 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       console.log(
         `wrote ${id}: ${json.result?.success ? `${pages} page(s)` : 'error'}, ${pngs.length} png`,
       );
+    }
+  }
+  if (check && !only.length) {
+    // A removed case must not leave an orphan folder behind.
+    for (const dir of fs.readdirSync(TYPST_DIR)) {
+      if (!(dir in results)) {
+        console.error(`STALE ${dir}: no case produces it`);
+        failed++;
+      }
     }
   }
   if (failed) process.exit(1);

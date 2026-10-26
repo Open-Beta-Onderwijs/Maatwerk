@@ -16,7 +16,7 @@
     "test": "npm run test -w ui && node --test \"tools/**/*.test.mjs\" \"tests/**/*.test.mjs\"",
     "licenses": "node tools/check-npm-licenses.mjs",
     "golden:regen": "node tests/reference-harness/regen.mjs",
-    "golden:check": "node tests/reference-harness/regen.mjs --check",
+    "golden:check": "node tests/reference-harness/regen.mjs --check && node tests/reference-harness/typst/regen-typst.mjs --check",
     "golden:typst": "node tests/reference-harness/typst/regen-typst.mjs"
   },
   "devDependencies": {
