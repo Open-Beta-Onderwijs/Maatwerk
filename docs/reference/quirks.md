@@ -251,6 +251,10 @@ Paths in this section are relative to `_reference/renderer/`.
   jaarlaag 4–6, so the rapport falls back to `defaultTabData()` (empty advice, bounds 40/70).
   `exam.subcategory` is not used.
 - **Why it matters:** Wiskunde A/B/C/D reports silently leave out all leeradvies.
+- **Fixed in the port (Step 3a, data side):** the rapport reads `rtti_expl_adv_<wisa..wisd>_<jaar>.json`
+  first (from `exam.subcategory`), then the old `wi_<jaar>` key, then the defaults
+  (`ui/src/domain/rapport.ts` `rttiExplFileCandidates`, `ui/src/services/rapport.ts`). The folder and
+  key merge on disk stays for Step 7 (ADR-0003 C11). Tests: `ui/tests/domain/rapport.test.ts` ("B9").
 
 ### B10. Rapport leaves out students with only `N`s or only an override
 
@@ -599,6 +603,11 @@ Paths in this section are relative to `_reference/renderer/`.
   test expects a compiled rapport. Data side (`assembleVragen`/`scoreDotColor`) in Step 3a, template
   side in Step 5. Proposed treatment, confirm with a test: no points and a grey dot, like an empty
   score, consistent with `calcResults` (BR 3.1).
+- **Fixed in the port (Step 3a, data side):** `assembleVragen` treats a non-numeric score as not
+  entered (`score: null`, grey dot), so its category also counts 0 points. Visible effect besides the
+  rapport compiling: that category's leeradvies row reads e.g. `0 / 5 (0%)` with the "laag" advice; the
+  reference showed `NaN / 5 (NaN%)` with the "hoog" advice (NaN compares false). Template side: Step 5.
+  Tests: `ui/tests/domain/rapport.test.ts` ("T26", and `compileRapport-exam-jaarlaag-3`).
 
 ### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
 
@@ -609,6 +618,9 @@ Paths in this section are relative to `_reference/renderer/`.
   `$`, so the guarded text compiles and shows the red warning. Failing test first: the
   `rapport-markup` golden is the old (failing) behaviour. `sanitizeTypstMarkup` in Step 3a; the
   `uitleg_rtti` fields (T11, no guard at all) get the same treatment in Step 5.
+- **Fixed in the port (Step 3a):** the warning reads `[$-teken niet gesloten …]`, so every `$` of a
+  guarded text is escaped (`ui/src/domain/rapport.ts` `sanitizeTypstMarkup`). Tests:
+  `ui/tests/domain/rapport.test.ts` ("T27").
 
 ## U. UI
 
