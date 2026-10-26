@@ -54,15 +54,16 @@ Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
 
 ## Next action (concrete, resumable)
 
-1. Review : M1 (frame-ancestors 'self'), M2 (editor close after failed
-   save, test in quirks.spec), M3 (no CI exe upload until 3b) are fixed. Still to do (minors): call
-   in before charts measure; serialise MockApi CAS writes; catch
-   rejected image/clipboard calls in editor-init; unit test for C8 string ids + parity note; escape
-   in the gebruikers colour input; nits to backlog. Then gate, tag .
-2. 3b: spec and ADR-0004 (proposed) are committed. Draft tests are in the
-   session scratchpad (lost): rewrite + per spec
-   G01-G58 (HoT selectors , ; exams nat-lege-toets / nat-toets-h2;
-   G33/G52 as test.fail), run against Handsontable.
+1. Review `docs/reviews/step-03a.md`: M1 (frame-ancestors 'self'), M2 (editor close after a
+   failed save, test in quirks.spec), M3 (no CI exe upload until 3b) are fixed. Still to do
+   (minors): call `applyStyleData` in `showModal` before charts measure; serialise MockApi CAS
+   writes; catch rejected image/clipboard calls in `editor-init.js`; unit test for C8 string ids +
+   parity note; escape `kleur` in the gebruikers colour input; nits to backlog. Then gate, tag
+   `step-03a`.
+2. 3b: `docs/specs/score-grid.md` and ADR-0004 (proposed) are committed. The draft tests were in
+   the session scratchpad (gone): write `ui/e2e/grid-driver.ts` + `ui/e2e/score-grid.spec.ts` per
+   G01-G58 (Handsontable selectors `.ht_master .htCore`, `td.current`; exams `nat-lege-toets` and
+   `nat-toets-h2`; G33/G52 as `test.fail`), run against Handsontable.
 3. Then **ask the user**: grid choice (ADR-0004), D34 (merge or confirm), U1 (Ctrl+Z on app undo),
    and confirm the ADR-0002 CSP amendment (frame-ancestors 'self').
 
