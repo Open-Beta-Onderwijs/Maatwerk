@@ -589,13 +589,22 @@ Paths in this section are relative to `_reference/renderer/`.
 
 - Where: `renderer/modals/rapport.js:48` (`Math.max(0, Number(raw))`), `:29-37` (`scoreDotColor`), `include/templates/rtti_export.typ:133` (`rgb(q.dot_color)`).
 - Evidence (found in Step 2b, golden `tests/golden/typst/rapport-tiny`): a score kept as typed (e.g. `abc`, quirk B23/BR 2.1) becomes `NaN`, `scoreDotColor` returns `#NaNNaNNaN`, and Typst stops with "color string contains non-hexadecimal letters". `toTypst(NaN)` also turns the score into `0`.
-- Why it matters: one typo in the score grid blocks the rapport for the whole class. Ask the user before fixing (it changes output).
+- Why it matters: one typo in the score grid blocks the rapport for the whole class.
+- **Decision (user, 2026-10-26): fix in the port.** A score that is not a number must not break the
+  rapport. Failing test first: the `rapport-tiny` golden is the old (failing) behaviour; the port's
+  test expects a compiled rapport. Data side (`assembleVragen`/`scoreDotColor`) in Step 3a, template
+  side in Step 5. Proposed treatment, confirm with a test: no points and a grey dot, like an empty
+  score, consistent with `calcResults` (BR 3.1).
 
 ### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
 
 - Where: `renderer/modals/rapport.js:129-136` (`sanitizeTypstMarkup`), `include/templates/rtti_export.typ:276` (`eval(r.advies, mode: "markup")`).
 - Evidence (found in Step 2b, golden `tests/golden/typst/rapport-markup`): with an odd number of `$` the guard escapes them but prepends `#text(...)[$-teken niet gesloten — …]`. That warning contains an unescaped `$`, so `eval` fails with "unclosed delimiter" and the whole rapport fails. Related to T11.
-- Why it matters: the guard never works; an odd `$` in a leeradvies text always breaks the rapport. Ask the user before fixing.
+- Why it matters: the guard never works; an odd `$` in a leeradvies text always breaks the rapport.
+- **Decision (user, 2026-10-26): fix in the port.** The warning text must not contain an unescaped
+  `$`, so the guarded text compiles and shows the red warning. Failing test first: the
+  `rapport-markup` golden is the old (failing) behaviour. `sanitizeTypstMarkup` in Step 3a; the
+  `uitleg_rtti` fields (T11, no guard at all) get the same treatment in Step 5.
 
 ## U. UI
 

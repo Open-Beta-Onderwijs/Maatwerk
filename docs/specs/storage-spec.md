@@ -11,6 +11,11 @@ Where PLAN.md Step 4a still mentions `.lock` files with a 10 s TTL, ADR-0002 (de
 files) overrides it. Rows S37-S38 are the baseline for C3/C6: they show what CAS does **not** cover
 today.
 
+**Decision (user, 2026-10-26):** S37/S38 are unreliable behaviour of the old app. The user expects to
+rule that Step 4 fixes them, but wants to be asked again once Step 4 knows concretely what it needs
+(e.g. how to make the CAS check atomic without `.lock` files, and which of students and score files
+get CAS). Step 4 must stop and ask before implementing a fix.
+
 The Rust storage layer (Step 4) must pass the same table, except where a Step 1 decision changes
 the behaviour (column "Port"). "Keep" means the port must behave the same. Times are the
 reference constants: lock TTL 10 s, debounce 500 ms, flush 100 ms, poll 20 s, parse retry 1 s.
