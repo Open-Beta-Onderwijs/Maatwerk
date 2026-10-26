@@ -6,13 +6,14 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 
 ## Commands
 
-| Command                                                 | Needs `_reference/` | What it does                                                                          |
-| ------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------- |
-| `npm test`                                              | no                  | UI unit tests, tool tests, fixture determinism, storage spec, golden structure checks |
-| `npm run golden:regen [-- <suite> ...]`                 | yes, at `0e30a70`   | Re-runs the reference code and rewrites `tests/golden/logic/*.json`                   |
-| `npm run golden:check`                                  | yes                 | Re-runs the reference and fails on any byte difference                                |
-| `node tests/reference-harness/make-shims.mjs`           | yes                 | Rewrites `tools/reference-shims/*.cjs` from the reference                             |
-| `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                  | Writes a synthetic data folder                                                        |
+| Command                                                 | Needs `_reference/`                       | What it does                                                                           |
+| ------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| `npm test`                                              | no                                        | UI unit tests, tool tests, fixture determinism, storage spec, golden structure checks  |
+| `npm run golden:regen [-- <suite> ...]`                 | yes, at `0e30a70`                         | Re-runs the reference code and rewrites `tests/golden/logic/*.json`                    |
+| `npm run golden:check`                                  | yes                                       | Re-runs the reference and fails on any byte difference                                 |
+| `npm run golden:typst [-- --check] [-- <case> ...]`     | yes, plus the Typst package cache (below) | Renders the Typst goldens with the reference CLI 0.14.2 (or checks them byte for byte) |
+| `node tests/reference-harness/make-shims.mjs`           | yes                                       | Rewrites `tools/reference-shims/*.cjs` from the reference                              |
+| `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                         |
 
 With `_reference/` present, `npm test` also re-runs every golden suite and the shim drift check.
 CI has no `_reference/` (it is gitignored and has no licence), so CI checks structure only; the
@@ -74,8 +75,8 @@ These make runs deterministic. Each is a choice about the environment, not about
 
 | Area                     | Budget | Now    |
 | ------------------------ | ------ | ------ |
-| `tests/golden/logic/`    | 1 MB   | 468 KB |
-| Typst goldens (Step 2b)  | 5 MB   | -      |
+| `tests/golden/logic/`    | 1 MB   | 414 KB |
+| `tests/golden/typst/`    | 5 MB   | 2.6 MB |
 | `tools/fixtures/assets/` | 50 KB  | 5 KB   |
 
 ## Coverage matrix
@@ -146,12 +147,43 @@ helpers (ids: `fullName`, `jaarlaagFromStamklas`, `sortStudents`, `group-name-pa
 `docs/specs/storage-spec.md` rows S01-S40 -> `tools/reference-shims/storage.test.mjs` (one test
 per row, same id; rows are grouped by topic, not by number).
 
+### Typst (`docs/reference/typst-contract.md` section 10)
+
+Each case in `tests/golden/typst/<case>/` calls a real reference IPC handler on the `tiny` fixture
+and stores `case.json` (call arguments, handler result with paths normalised to `<app>`, the
+wrapper sources the handler wrote, PDF page count, page sizes and text per page via pdf.js, SVG page
+facts) plus one 30 ppi PNG per page, rendered by the reference CLI from the recorded wrapper with
+the reference arguments plus `--format png`. Batches with several jobs store text and page
+structure only. `tests/golden/typst.test.mjs` checks in CI that the PNG hashes match and that every
+recorded wrapper follows from the call arguments through the verbatim builders in
+`tools/reference-shims/typst-wrappers.cjs`.
+
+Regen needs the Typst packages `@preview/cetz:0.3.4`, `@preview/unify:0.8.0` and `oxifmt` in the
+local package cache (`%LOCALAPPDATA%	ypst\packages`), because the reference does not vendor them
+(quirk T1). PNGs depend on the fonts of the machine for emoji (quirk T2: Segoe UI Emoji on
+Windows), so regenerate on Windows.
+
+| #   | Candidate                                           | Golden case(s)                                                                 |
+| --- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1   | Base template, placeholder header, student mode     | `opdracht-base-template`, `opdracht-placeholder-pdf`                           |
+| 2   | Base template, answers mode                         | `opdracht-base-template-answers`, `opdracht-grid-answers`                      |
+| 3   | Header text injection, emoji observaties            | `opdracht-lib-features`, `opdracht-images-student`, `opdracht-grid-no-answers` |
+| 4   | Empty observaties (quirk T19)                       | `opdracht-grid-no-answers`                                                     |
+| 5   | lib.typ features, images (PNG, JPG, SVG)            | `opdracht-lib-features`, `opdracht-images-student`, `opdracht-zero-vragen`     |
+| 6   | SVG preview, cursor marker, 10+ pages               | `svg-preview`, `svg-preview-cursor`, `svg-preview-many-pages`                  |
+| 7   | Batch duplex, failing job                           | `batch-duplex`, `batch-answer-key`, `batch-error`                              |
+| 8   | Rapport, one student                                | `rapport-one-student`                                                          |
+| 9   | Rapport, class, override, markup in leeradvies      | `rapport-valid`                                                                |
+| 10  | Rapport edge cases                                  | `rapport-no-watermark` (T4), `rapport-tiny` (T26), `rapport-markup` (T27)      |
+| 11  | Diagnostics name the opdracht file, not `_preview_` | `svg-preview-error`, `batch-error`                                             |
+
+Multi-page opdrachten: `opdracht-long-odd` (3 pages), `batch-duplex` (long-even 4 pages).
+
 ### Not covered yet, on purpose
 
-| Behaviour                                                    | Where it will be covered                                            |
-| ------------------------------------------------------------ | ------------------------------------------------------------------- |
-| Typst output (rapport, opdracht, SVG preview, batch, duplex) | Step 2b (`tests/golden/typst/`)                                     |
-| Legacy `migrate()`                                           | Not ported (Step 1 decision); behaviour recorded in `data-files.md` |
-| Grid interaction (numpad `.` -> `N`, typing, undo, paste)    | Step 3 Playwright smoke tests (UI behaviour, DOM-bound)             |
-| Presence files (`users/<id>.json`), local session, photos    | Step 4 Rust tests against `data-files.md`                           |
-| Opdracht images and `.typ` file IPC                          | Step 2b (Typst) and Step 4                                          |
+| Behaviour                                                 | Where it will be covered                                            |
+| --------------------------------------------------------- | ------------------------------------------------------------------- |
+| Legacy `migrate()`                                        | Not ported (Step 1 decision); behaviour recorded in `data-files.md` |
+| Grid interaction (numpad `.` -> `N`, typing, undo, paste) | Step 3 Playwright smoke tests (UI behaviour, DOM-bound)             |
+| Presence files (`users/<id>.json`), local session, photos | Step 4 Rust tests against `data-files.md`                           |
+| Opdracht images and `.typ` file IPC                       | Step 2b (Typst) and Step 4                                          |
