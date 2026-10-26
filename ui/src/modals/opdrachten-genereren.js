@@ -402,8 +402,8 @@ async function generate(el, state, year, kind) {
     return;
   }
 
-  // Cache-buster: the output file name is reused for every run.
-  const pdfUrl = 'file:///' + res.pdfPath.replace(/\\/g, '/') + `?t=${Date.now()}`;
+  // The output file name is reused for every run; pdfUrl() returns a fresh URL.
+  const pdfUrl = window.maatwerk.pdfUrl(res.pdfPath);
   content.innerHTML = `<iframe class="rapport-pdf-frame" src="pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}"></iframe>`;
   state.printPath = res.pdfPath;
   toast(`${what} gegenereerd (${res.pages} pagina's).`, 'success');

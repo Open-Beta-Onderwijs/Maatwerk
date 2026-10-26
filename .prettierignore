@@ -3,6 +3,9 @@ data/
 target/
 node_modules/
 ui/dist/
+ui/dist-mock/
+ui/test-results/
+ui/playwright-report/
 src-tauri/gen/
 package-lock.json
 LICENSE

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Entry point of the main window. Import order matters: the globals must exist
-// before app.js and the screens evaluate.
-import './legacy/globals';
-import './app.js';
+// Entry point of the main window. Order matters: the bridge (window.maatwerk)
+// and the legacy globals must exist before app.js evaluates, so they are
+// awaited and app.js is imported dynamically.
+import { installBridge } from './bridge';
+
+await installBridge();
+await import('./legacy/globals');
+await import('./app.js');

@@ -305,8 +305,9 @@ async function showRapportPdf(content, exam, year) {
   // The user may have navigated away / closed the modal while compiling
   if (!content.isConnected) return;
 
-  // Convert Windows backslashes and build a file:// URL
-  const pdfUrl = 'file:///' + result.pdfPath.replace(/\\/g, '/');
+  // The bridge turns the output path into a URL the viewer iframe can load
+  // (the reference used 'file:///' + path, which a webview cannot load).
+  const pdfUrl = window.maatwerk.pdfUrl(result.pdfPath);
   const absPath = result.pdfPath;
   const viewerSrc = `pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}`;
   content.innerHTML = `<iframe class="rapport-pdf-frame" src="${viewerSrc}"></iframe>`;

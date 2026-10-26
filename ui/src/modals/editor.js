@@ -67,9 +67,6 @@ function handleEditorMessage(evt, frame) {
     case 'maatwerk-write-text':
       window.maatwerk.writeTextFile(rest.path, rest.content).then(reply);
       break;
-    case 'maatwerk-render-assignment':
-      window.maatwerk.renderAssignmentPdf(rest.typFile, rest.title).then(reply);
-      break;
     case 'maatwerk-render-assignment-svg':
       window.maatwerk.renderAssignmentSvg(rest.typFile, rest.title, rest.content).then(reply);
       break;
