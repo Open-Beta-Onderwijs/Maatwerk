@@ -28,5 +28,8 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    setupFiles: ['tests/setup.ts'],
+    // Set before the worker starts: Node reads TZ once.
+    env: { TZ: 'Europe/Amsterdam' },
   },
 });

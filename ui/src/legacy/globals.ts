@@ -10,7 +10,8 @@ import 'handsontable/dist/handsontable.full.min.css';
 import Chart from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { CustomSelect } from '../custom-select.js';
-import { Store, qKind } from '../store.js';
+import { qKind } from '../domain/grades';
+import { Store } from '../store.js';
 
 // The CDN build of the annotation plugin registered itself on load.
 Chart.register(annotationPlugin);

@@ -51,7 +51,7 @@ function fromBase64(base64: string): Uint8Array {
 }
 
 async function sha1(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-1', bytes as BufferSource);
+  const digest = await crypto.subtle.digest('SHA-1', new Uint8Array(bytes));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -527,7 +527,7 @@ export class MockApi implements MaatwerkApi {
     let url = this.pdfUrls.get(pdfPath);
     if (!url) {
       const bytes = this.pdfs.get(pdfPath) ?? cannedPdf([['Geen PDF (mock)']]);
-      url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
+      url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }));
       this.pdfUrls.set(pdfPath, url);
     }
     return url;
