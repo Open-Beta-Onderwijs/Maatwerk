@@ -22,7 +22,28 @@
  * Subject field inside each JSON file is authoritative (not derived from path).
  */
 
+import { bestAttempt, compareHistory, resitsOf, resolveBestAttempts } from './domain/attempts';
 import { calcGrade, calcResults, examResults } from './domain/grades';
+import {
+  currentSchoolYear,
+  fullName,
+  jaarlaagFromStamklas,
+  makeExamId as makeExamIdFor,
+  makeGroupId,
+  nextVolgnummer,
+  parseGroupName,
+  sortStudents,
+  stampMeta as stampMetaBy,
+  subjectFromGroupName,
+} from './domain/ids';
+import {
+  WI_VARIANTS,
+  assignOpdrachten,
+  cijferCardReason,
+  opdrachtCijferCards,
+  opdrachtCoupling,
+  opdrachtMatchesExam as opdrachtMatchesExamFor,
+} from './domain/opdrachten';
 
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
@@ -87,17 +108,7 @@ const Store = (() => {
 
   // Version info stored in single-object files (exams, groups, observaties, opdrachten).
   function stampMeta(obj, onDisk) {
-    const now = new Date().toISOString();
-    const userId = _activeUser?.id ?? null;
-    const prev = onDisk?._meta;
-    obj._meta = {
-      rev: (prev?.rev ?? 0) + 1,
-      createdBy: onDisk ? (prev?.createdBy ?? null) : userId,
-      createdAt: onDisk ? (prev?.createdAt ?? null) : now,
-      updatedBy: userId,
-      updatedAt: now,
-    };
-    return obj;
+    return stampMetaBy(obj, onDisk, _activeUser?.id ?? null);
   }
 
   // Thrown when saving an object someone else saved after it was loaded here.
@@ -213,9 +224,6 @@ const Store = (() => {
     wi: 'Wiskunde',
   };
 
-  // Wiskunde sub-variants: wisob = onderbouw (jn 1-3), wisa/b/c/d = bovenbouw (jn 4-6)
-  const WI_VARIANTS = new Set(['wisob', 'wisa', 'wisb', 'wisc', 'wisd']);
-
   function obsMatchesSubject(obs, subject) {
     const subjectsArr = Array.isArray(obs.subjects)
       ? obs.subjects
@@ -232,42 +240,7 @@ const Store = (() => {
     }
   }
 
-  function subjectFromGroupName(name) {
-    const n = (name ?? '').toLowerCase();
-    if (/nat/.test(n)) return 'nat';
-    if (/biol/.test(n)) return 'bio';
-    if (/schk/.test(n)) return 'schk';
-    if (/wi/.test(n)) return 'wi';
-    return null;
-  }
-
-  /**
-   * Derive jaarlaag (and subcategory for wiskunde) from a group name.
-   * Returns { jaarlaag: string|null, subcategory: string|null }
-   * subcategory is only set when subject === 'wi'.
-   */
-  function parseGroupName(name, subject) {
-    const n = (name ?? '').toLowerCase();
-    const jlMatch = n.match(/^(\d+)/);
-    const jaarlaag = jlMatch ? jlMatch[1] : null;
-
-    let subcategory = null;
-    if (subject === 'wi') {
-      if (/wisd/.test(n)) subcategory = 'wisd';
-      else if (/wisc/.test(n)) subcategory = 'wisc';
-      else if (/wisb/.test(n)) subcategory = 'wisb';
-      else if (/wisa/.test(n)) subcategory = 'wisa';
-      else if (/awi/.test(n) || /bwi/.test(n)) {
-        // common patterns like 4awi, 5bwi — treat as wisa/wisb if detectable
-        subcategory = null;
-      }
-      if (!subcategory && jaarlaag && parseInt(jaarlaag, 10) <= 3) {
-        subcategory = 'onderbouw';
-      }
-    }
-
-    return { jaarlaag, subcategory };
-  }
+  // subjectFromGroupName, parseGroupName: src/domain/ids.ts
 
   // ── Year management ───────────────────────────────────────────────────────
 
@@ -365,36 +338,10 @@ const Store = (() => {
     await save('config.json', cfg);
   }
 
-  function currentSchoolYear() {
-    const now = new Date(),
-      y = now.getFullYear();
-    return now.getMonth() >= 7 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-  }
+  // currentSchoolYear: src/domain/ids.ts
 
   // ── Student helpers ───────────────────────────────────────────────────────
-  function fullName(s) {
-    if (s.voornaam || s.achternaam)
-      return [s.voornaam, s.tussenvoegsel, s.achternaam].filter(Boolean).join(' ');
-    return s.name ?? `#${s.id}`;
-  }
-
-  function jaarlaagFromStamklas(stamklas) {
-    const m = String(stamklas ?? '').match(/^(\d+)/);
-    return m ? m[1] : '';
-  }
-
-  function sortStudents(list) {
-    list.sort((a, b) => {
-      const ja = jaarlaagFromStamklas(a.stamklas),
-        jb = jaarlaagFromStamklas(b.stamklas);
-      const jcmp = ja.localeCompare(jb, undefined, { numeric: true });
-      if (jcmp !== 0) return jcmp;
-      const scmp = (a.stamklas ?? '').localeCompare(b.stamklas ?? '');
-      if (scmp !== 0) return scmp;
-      return (a.achternaam ?? '').localeCompare(b.achternaam ?? '');
-    });
-    return list;
-  }
+  // fullName, jaarlaagFromStamklas, sortStudents: src/domain/ids.ts
 
   // ── Students (year-scoped) ────────────────────────────────────────────────
   async function getStudents(year) {
@@ -528,15 +475,8 @@ const Store = (() => {
       merged = { ...arr[i], ...updated };
     } else {
       if (!updated.volgnummer) {
-        const jl = parseInt(updated.jaarlaag, 10);
-        if (!isNaN(jl)) {
-          const existing = arr.filter(
-            (e) => String(e.jaarlaag) === String(updated.jaarlaag) && e.volgnummer,
-          );
-          const maxSeq =
-            existing.length > 0 ? Math.max(...existing.map((e) => e.volgnummer % 100)) : 0;
-          updated.volgnummer = jl * 100 + maxSeq + 1;
-        }
+        const seq = nextVolgnummer(arr, updated.jaarlaag);
+        if (seq !== undefined) updated.volgnummer = seq;
       }
     }
     const saved = await saveEntity(ypExam(year, merged.id), merged, merged._meta?.rev);
@@ -646,10 +586,7 @@ const Store = (() => {
         });
       }
     }
-    results.sort((a, b) => {
-      const ycmp = a.exam.academic_year.localeCompare(b.exam.academic_year);
-      return ycmp !== 0 ? ycmp : (a.exam.volgnummer ?? 0) - (b.exam.volgnummer ?? 0);
-    });
+    results.sort(compareHistory);
     return results;
   }
 
@@ -657,22 +594,7 @@ const Store = (() => {
 
   // ── Utilities ─────────────────────────────────────────────────────────────
   function makeExamId(title, year, subject = _activeSubject) {
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    return `${subject}-${slug}-${year.replace(/\//g, '-')}`;
-  }
-
-  function makeGroupId(name, year) {
-    return (
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '') +
-      '-' +
-      year.replace(/\//g, '-')
-    );
+    return makeExamIdFor(title, year, subject);
   }
 
   // ── Observaties (subject-scoped, individual files) ────────────────────────
@@ -938,9 +860,7 @@ const Store = (() => {
 
   // ── Resit helpers ─────────────────────────────────────────────────────────
   function getResitsSync(parentId, year, subject = _activeSubject) {
-    return getExamsSync(year, subject)
-      .filter((e) => e.parent_id === parentId)
-      .sort((a, b) => (a.attempt ?? 1) - (b.attempt ?? 1));
+    return resitsOf(getExamsSync(year, subject), parentId);
   }
 
   function examHasResits(examId, year, subject = _activeSubject) {
@@ -955,88 +875,13 @@ const Store = (() => {
     const bestMap = {};
     for (const s of students) {
       const rec = await getStudentScores(s.id, year, subject);
-      let bestGrade = -Infinity;
-      let bestEntry = null;
-      for (const attempt of allAttempts) {
-        const res = examResults(rec, attempt);
-        if (res && res.grade !== null && res.grade > bestGrade) {
-          bestGrade = res.grade;
-          const qs = {};
-          attempt.questions.forEach((q) => {
-            const v = rec.scores?.[attempt.id]?.[q.id];
-            if (v !== undefined) qs[q.id] = v;
-          });
-          bestEntry = {
-            examId: attempt.id,
-            exam: attempt,
-            questionScores: qs,
-            override: rec.overrides?.[attempt.id],
-            grade: res.grade,
-          };
-        }
-      }
+      const bestEntry = bestAttempt(rec, allAttempts);
       if (bestEntry) bestMap[s.id] = bestEntry;
     }
     return bestMap;
   }
 
-  /**
-   * Given a flat history array (from getStudentHistory), collapses resit groups
-   * so that only the attempt with the highest grade appears per exam group.
-   * Standalone exams (no parent_id, no resits in history) pass through unchanged.
-   */
-  function resolveBestAttempts(history) {
-    const parentsWithResits = new Set(
-      history.filter((h) => h.exam.parent_id).map((h) => h.exam.parent_id),
-    );
-    const handledParents = new Set();
-    const result = [];
-
-    // Process originals (no parent_id) first
-    for (const entry of history) {
-      if (entry.exam.parent_id) continue;
-      const examId = entry.exam.id;
-      if (!parentsWithResits.has(examId)) {
-        result.push(entry); // standalone — pass through
-        continue;
-      }
-      handledParents.add(examId);
-      const candidates = [entry, ...history.filter((h) => h.exam.parent_id === examId)];
-      let best = candidates[0];
-      for (const c of candidates) {
-        if (
-          (calcResults(c.exam, c.questionScores, c.override).grade ?? -1) >
-          (calcResults(best.exam, best.questionScores, best.override).grade ?? -1)
-        )
-          best = c;
-      }
-      result.push(best);
-    }
-
-    // Handle resits whose parent has no history entry (student only did the resit)
-    for (const entry of history) {
-      if (!entry.exam.parent_id) continue;
-      const parentId = entry.exam.parent_id;
-      if (handledParents.has(parentId)) continue;
-      handledParents.add(parentId);
-      const resitGroup = history.filter((h) => h.exam.parent_id === parentId);
-      let best = resitGroup[0];
-      for (const c of resitGroup) {
-        if (
-          (calcResults(c.exam, c.questionScores, c.override).grade ?? -1) >
-          (calcResults(best.exam, best.questionScores, best.override).grade ?? -1)
-        )
-          best = c;
-      }
-      result.push(best);
-    }
-
-    result.sort((a, b) => {
-      const ycmp = (a.exam.academic_year ?? '').localeCompare(b.exam.academic_year ?? '');
-      return ycmp !== 0 ? ycmp : (a.exam.volgnummer ?? 0) - (b.exam.volgnummer ?? 0);
-    });
-    return result;
-  }
+  // resolveBestAttempts: src/domain/attempts.ts
 
   async function removeObsFromExamScores(obsId, examId, year, subject = _activeSubject) {
     const students = getStudentsSync(year);
@@ -1116,53 +961,18 @@ const Store = (() => {
   // exam to remedial opdrachten. Observaties without a saved coupling fall back
   // to the matching opdrachten that list the observatie in their observaties[].
 
-  // Opdracht fits the exam's vak, jaarlaag and schoolsoort (empty lists always fit).
+  // Coupling rules: src/domain/opdrachten.ts. These wrappers supply the
+  // active subject and the cached opdrachten.
   function opdrachtMatchesExam(opdracht, exam) {
-    const subject = exam.subject ?? _activeSubject;
-    const vakken = opdracht.vakken ?? [];
-    const vakOk =
-      !vakken.length || vakken.some((v) => (subject === 'wi' ? WI_VARIANTS.has(v) : v === subject));
-    const jl = opdracht.jaarlagen ?? [];
-    const jlOk = !jl.length || !exam.jaarlaag || jl.map(String).includes(String(exam.jaarlaag));
-    const ss = opdracht.schoolsoort ?? [];
-    const examSS = exam.schoolsoort ?? [];
-    const ssOk = !ss.length || !examSS.length || ss.some((s) => examSS.includes(s));
-    return vakOk && jlOk && ssOk;
+    return opdrachtMatchesExamFor(opdracht, exam, _activeSubject);
   }
 
-  // The coupling to use for every observatie of the exam (saved or default).
   function getOpdrachtCoupling(exam) {
-    const all = getOpdrachtenSync();
-    const exists = new Set(all.map((o) => o.id));
-    const coupling = {};
-    for (const obsId of exam.obs_ids ?? []) {
-      const saved = exam.opdrachten?.[obsId];
-      coupling[obsId] = saved
-        ? saved.filter((id) => exists.has(id))
-        : all
-            .filter((o) => (o.observaties ?? []).includes(obsId) && opdrachtMatchesExam(o, exam))
-            .map((o) => o.id);
-    }
-    return coupling;
+    return opdrachtCoupling(exam, getOpdrachtenSync(), _activeSubject);
   }
 
-  // Grade cards of the exam: students whose grade on this exam (overwritten
-  // grade included, rounded to one decimal) is below `onder` get `opdrachten`.
-  // Saved as exam.opdrachtenCijfer: [{ id, onder, opdrachten: [opdrachtId] }].
   function getOpdrachtCijferCards(exam) {
-    const exists = new Set(getOpdrachtenSync().map((o) => o.id));
-    return (exam.opdrachtenCijfer ?? []).map((c) => ({
-      ...c,
-      opdrachten: (c.opdrachten ?? []).filter((id) => exists.has(id)),
-    }));
-  }
-
-  // The reason shown for a grade card (chip in the modal, header of the opdracht).
-  function cijferCardReason(card) {
-    return {
-      icon: '5\uFE0F\u20E3',
-      naam: `Cijfer onder ${Number(card.onder).toFixed(1).replace('.', ',')}`,
-    };
+    return opdrachtCijferCards(exam, getOpdrachtenSync());
   }
 
   // Saves the coupling (and the grade cards) into the latest version of the exam
@@ -1205,56 +1015,19 @@ const Store = (() => {
       getObservaties(subject),
       loadOpdrachten(),
     ]);
-    const obsById = Object.fromEntries(getObservatiesSync(subject).map((o) => [o.id, o]));
-    const opById = Object.fromEntries(getOpdrachtenSync().map((o) => [o.id, o]));
-    const groups = getGroupsSync(year, subject);
-    const examObs = exam.obs_ids ?? [];
-
-    const obsStudents = Object.fromEntries(examObs.map((id) => [id, []]));
-    const cijferStudents = Object.fromEntries(cijferCards.map((c) => [c.id, []]));
-    const students = [];
-    for (const s of getStudentsSync(year)) {
-      const rec = await getStudentScores(s.id, year, subject);
-      const own = new Set(rec?.observations?.[exam.id] ?? []);
-      const items = new Map(); // opdrachtId -> { opdracht, obs }
-      const give = (opIds, reason) => {
-        for (const opId of opIds ?? []) {
-          if (!opById[opId]) continue;
-          if (!items.has(opId)) items.set(opId, { opdracht: opById[opId], obs: [] });
-          items.get(opId).obs.push(reason);
-        }
-      };
-      for (const obsId of examObs) {
-        if (!own.has(obsId)) continue;
-        obsStudents[obsId].push(s.id);
-        if (obsById[obsId]) give(coupling[obsId], obsById[obsId]);
-      }
-      const grade = cijferCards.length ? examResults(rec, exam)?.grade : null;
-      if (grade !== null && grade !== undefined) {
-        const rounded = Math.round(grade * 10) / 10;
-        for (const card of cijferCards) {
-          if (!(rounded < card.onder)) continue;
-          cijferStudents[card.id].push(s.id);
-          give(card.opdrachten, cijferCardReason(card));
-        }
-      }
-      if (!items.size) continue;
-      const ownGroups = groups.filter((g) => g.student_ids.includes(s.id));
-      const group =
-        ownGroups.find((g) => String(g.jaarlaag) === String(exam.jaarlaag)) ?? ownGroups[0] ?? null;
-      students.push({ student: s, group, items: [...items.values()] });
-    }
-
-    const cmp = (a, b) => (a ?? '').localeCompare(b ?? '', 'nl', { numeric: true });
-    students.sort(
-      (a, b) =>
-        !a.group - !b.group ||
-        cmp(a.group?.name, b.group?.name) ||
-        cmp(a.student.achternaam, b.student.achternaam) ||
-        cmp(a.student.voornaam, b.student.voornaam) ||
-        cmp(fullName(a.student), fullName(b.student)),
-    );
-    return { students, obsStudents, cijferStudents };
+    const students = getStudentsSync(year);
+    const records = new Map();
+    for (const s of students) records.set(s.id, await getStudentScores(s.id, year, subject));
+    return assignOpdrachten({
+      exam,
+      students,
+      recordOf: (id) => records.get(id),
+      observaties: getObservatiesSync(subject),
+      opdrachten: getOpdrachtenSync(),
+      groups: getGroupsSync(year, subject),
+      coupling,
+      cijferCards,
+    });
   }
 
   // ── External changes (other teachers, reported by the watcher in main.js) ──
