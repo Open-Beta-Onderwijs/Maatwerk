@@ -38,7 +38,7 @@ export async function renderOpdrachten() {
 
   const [, allObsRaw] = await Promise.all([
     Store.getOpdrachten(),
-    window.rtti.readAllJson('observaties'),
+    window.maatwerk.readAllJson('observaties'),
   ]);
   const allOpdrachten = Store.getOpdrachtenSync();
   const _allObsForCards = (allObsRaw ?? []).filter((o) => o && o.id);
@@ -162,7 +162,7 @@ async function deleteOpdracht(id) {
 
 async function openOpdrachtenModal(existingId) {
   // Load all observations (across all subjects) before opening the modal
-  const allObs = (await window.rtti.readAllJson('observaties')).filter((o) => o && o.id);
+  const allObs = (await window.maatwerk.readAllJson('observaties')).filter((o) => o && o.id);
 
   const allOpdrachten = Store.getOpdrachtenSync();
   const existing = existingId ? (allOpdrachten.find((o) => o.id === existingId) ?? null) : null;
@@ -359,7 +359,7 @@ async function openOpdrachtenModal(existingId) {
         const typFile = existing?.typFile ?? `${id}.typ`;
 
         if (!existing) {
-          await window.rtti.createAssignmentTypFile(typFile);
+          await window.maatwerk.createAssignmentTypFile(typFile);
         }
 
         await Store.upsertOpdracht({

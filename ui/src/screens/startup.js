@@ -81,7 +81,7 @@ export async function renderStartup() {
     const badges = container.querySelectorAll('[data-foto]');
     await Promise.all(
       Array.from(badges).map(async (btn) => {
-        const dataUrl = await window.rtti.readPhotoAsDataUrl(btn.dataset.foto);
+        const dataUrl = await window.maatwerk.readPhotoAsDataUrl(btn.dataset.foto);
         if (dataUrl) {
           const initialsEl = btn.querySelector('.badge-initials');
           if (initialsEl) {

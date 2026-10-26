@@ -41,7 +41,7 @@ function write() {
   writeTimer = null;
   if (!me) return;
   lastWriteAt = Date.now();
-  window.rtti.updatePresence(me, {
+  window.maatwerk.updatePresence(me, {
     userId: me,
     online: true,
     heartbeatAt: new Date().toISOString(),
@@ -63,7 +63,7 @@ export async function start(userId) {
   own = { scoreModal: null };
   write();
   heartbeatTimer = setInterval(write, HEARTBEAT_MS);
-  const all = (await window.rtti.readAllJson('users')) ?? [];
+  const all = (await window.maatwerk.readAllJson('users')) ?? [];
   for (const state of all) receive(state, true);
   notify();
 }
@@ -73,7 +73,7 @@ export function stop() {
   clearInterval(heartbeatTimer);
   clearTimeout(writeTimer);
   heartbeatTimer = writeTimer = null;
-  if (me) window.rtti.updatePresence(null);
+  if (me) window.maatwerk.updatePresence(null);
   me = null;
   own = { scoreModal: null };
   remote.clear();

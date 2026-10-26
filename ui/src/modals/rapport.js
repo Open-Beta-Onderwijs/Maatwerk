@@ -245,7 +245,7 @@ async function compileRapport(exam, year) {
 
   // Load leeradvies data once for this exam (subject + jaarlaag uniquely identify the file)
   const adviesData =
-    (await window.rtti.readJson(rttiExplFilePath(subject, exam.jaarlaag))) ?? defaultTabData();
+    (await window.maatwerk.readJson(rttiExplFilePath(subject, exam.jaarlaag))) ?? defaultTabData();
 
   const studentData = entries.map((e) => {
     const vragen = assembleVragen(exam, e.questionScores, allQuestionScores);
@@ -278,7 +278,7 @@ async function compileRapport(exam, year) {
     },
   };
 
-  return window.rtti.renderRapportPdf(examId, studentData, examInfo);
+  return window.maatwerk.renderRapportPdf(examId, studentData, examInfo);
 }
 
 /**
@@ -313,7 +313,7 @@ async function showRapportPdf(content, exam, year) {
   // system viewer via postMessage (window.print() doesn't work in Electron iframes).
   if (_printListener) window.removeEventListener('message', _printListener);
   _printListener = (e) => {
-    if (e.data?.type === 'print-pdf') window.rtti.openPath(absPath);
+    if (e.data?.type === 'print-pdf') window.maatwerk.openPath(absPath);
   };
   window.addEventListener('message', _printListener);
 
@@ -542,7 +542,7 @@ export async function openRttiUitlegModal() {
   const tabData = {};
   await Promise.all(
     tabs.map(async (t, i) => {
-      const raw = await window.rtti.readJson(rttiExplFilePath(t.fileKey, t.jaar));
+      const raw = await window.maatwerk.readJson(rttiExplFilePath(t.fileKey, t.jaar));
       tabData[i] = raw ?? defaultTabData();
     })
   );
@@ -733,7 +733,7 @@ export async function openRttiUitlegModal() {
         saveBtn.disabled = true;
         saveBtn.textContent = 'Bezig\u2026';
         const results = await Promise.all(
-          tabs.map((t, i) => window.rtti.writeJson(rttiExplFilePath(t.fileKey, t.jaar), tabData[i]))
+          tabs.map((t, i) => window.maatwerk.writeJson(rttiExplFilePath(t.fileKey, t.jaar), tabData[i]))
         );
         saveBtn.disabled = false;
         saveBtn.textContent = 'Opslaan';

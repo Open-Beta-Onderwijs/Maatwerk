@@ -2,7 +2,7 @@
  * editor-init.js — CodeMirror 6 setup for the Typst assignment editor.
  *
  * Loaded as an ES module inside editor.html (which runs inside the #editor-frame
- * iframe). Does NOT have access to window.rtti directly; all file I/O and
+ * iframe). Does NOT have access to window.maatwerk directly; all file I/O and
  * compilation is done by posting messages to the parent window, which proxies
  * the calls via modals/editor.js.
  *
@@ -53,7 +53,7 @@ function postToParent(type, data = {}) {
 
 window.addEventListener('message', (evt) => {
   const msg = evt.data;
-  if (msg?.type === 'rtti-response' && _pending[msg.id]) {
+  if (msg?.type === 'maatwerk-response' && _pending[msg.id]) {
     _pending[msg.id](msg.result);
     delete _pending[msg.id];
   }
@@ -585,7 +585,7 @@ function scrollToCursorMarker() {
 }
 
 function compileSvg(content) {
-  return postToParent('rtti-render-assignment-svg', {
+  return postToParent('maatwerk-render-assignment-svg', {
     typFile,
     title: naam,
     content,
@@ -637,7 +637,7 @@ async function doSaveAndCompile() {
 
   const content = view.state.doc.toString();
   const relPath = `opdrachten/${typFile}`;
-  const writeResult = await postToParent('rtti-write-text', { path: relPath, content });
+  const writeResult = await postToParent('maatwerk-write-text', { path: relPath, content });
   if (!writeResult?.ok) {
     setStatus('Fout bij opslaan');
     return;
@@ -672,8 +672,8 @@ const changeListener = EditorView.updateListener.of((update) => {
 
 async function init() {
   const [content, dir] = await Promise.all([
-    postToParent('rtti-read-text', { path: `opdrachten/${typFile}` }),
-    postToParent('rtti-get-data-dir'),
+    postToParent('maatwerk-read-text', { path: `opdrachten/${typFile}` }),
+    postToParent('maatwerk-get-data-dir'),
   ]);
 
   dataDir = dir ?? '';
@@ -1222,7 +1222,7 @@ function showFigurePopup() {
 
 // First free "afbeelding-N" for a pasted image.
 async function nextImageName() {
-  const images = (await postToParent('rtti-list-images', { opdrachtId })) ?? [];
+  const images = (await postToParent('maatwerk-list-images', { opdrachtId })) ?? [];
   const taken = new Set(images.map((i) => i.name));
   let n = 1;
   while (taken.has(`afbeelding-${n}`)) n++;
@@ -1234,7 +1234,7 @@ async function showFigureMenu() {
   showFigurePopup();
   const panel = figPanel();
   panel.innerHTML = '<div class="tb-fig-hint">Laden…</div>';
-  const images = (await postToParent('rtti-list-images', { opdrachtId })) ?? [];
+  const images = (await postToParent('maatwerk-list-images', { opdrachtId })) ?? [];
   const items = images
     .map(
       (img) => `
@@ -1298,14 +1298,14 @@ async function saveNamedImage(overwrite) {
   const name = panel.querySelector('#fig-name').value.trim();
   const result =
     source.kind === 'paste'
-      ? await postToParent('rtti-save-image', {
+      ? await postToParent('maatwerk-save-image', {
           opdrachtId,
           name,
           ext: source.ext,
           base64: source.base64,
           overwrite,
         })
-      : await postToParent('rtti-import-image', {
+      : await postToParent('maatwerk-import-image', {
           opdrachtId,
           token: source.token,
           name,
@@ -1329,7 +1329,7 @@ async function pasteImage(base64, ext) {
 }
 
 async function pasteImageFromClipboard() {
-  const base64 = await postToParent('rtti-clipboard-image');
+  const base64 = await postToParent('maatwerk-clipboard-image');
   if (base64) await pasteImage(base64, 'png');
   else showFigError('Er staat geen afbeelding op het klembord.');
 }
@@ -1344,7 +1344,7 @@ function setupFigurePopup() {
         insertFigure(btn.dataset.file, btn.dataset.name);
         break;
       case 'pick': {
-        const picked = await postToParent('rtti-pick-image');
+        const picked = await postToParent('maatwerk-pick-image');
         if (picked) showNameForm({ kind: 'file', token: picked.token }, picked.name);
         break;
       }
@@ -1650,7 +1650,7 @@ function setupContextMenu() {
         });
         view.focus();
       } else {
-        const image = await postToParent('rtti-clipboard-image');
+        const image = await postToParent('maatwerk-clipboard-image');
         if (image) await pasteImage(image, 'png');
       }
     } else if (action === 'comment') {

@@ -35,14 +35,14 @@ const Store = (() => {
 
   async function load(relPath) {
     if (cache[relPath] !== undefined) return cache[relPath];
-    const data = await window.rtti.readJson(relPath);
+    const data = await window.maatwerk.readJson(relPath);
     cache[relPath] = data;
     return data;
   }
 
   async function save(relPath, data) {
     cache[relPath] = data;
-    const result = await window.rtti.writeJson(relPath, data);
+    const result = await window.maatwerk.writeJson(relPath, data);
     if (!result?.ok) throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
   }
 
@@ -69,10 +69,10 @@ const Store = (() => {
   function update(relPath, mutator, fallback = () => null) {
     const run = async () => {
       for (let attempt = 0; attempt < 5; attempt++) {
-        const read = await window.rtti.readJsonVersioned(relPath);
+        const read = await window.maatwerk.readJsonVersioned(relPath);
         if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
         const next = mutator(read.data ?? fallback(), read.data);
-        const result = await window.rtti.writeJson(relPath, next, {
+        const result = await window.maatwerk.writeJson(relPath, next, {
           cas: true,
           expectedHash: read.hash,
         });
@@ -170,16 +170,16 @@ const Store = (() => {
 
   // ── Session (machine-local, not synced via OneDrive) ──────────────────────
   async function saveLastSession(subject, userId) {
-    const existing = (await window.rtti.readLocalSession()) ?? {};
-    await window.rtti.writeLocalSession({ ...existing, lastSubject: subject, lastUserId: userId });
+    const existing = (await window.maatwerk.readLocalSession()) ?? {};
+    await window.maatwerk.writeLocalSession({ ...existing, lastSubject: subject, lastUserId: userId });
   }
 
   async function loadLastSession() {
-    return await window.rtti.readLocalSession();
+    return await window.maatwerk.readLocalSession();
   }
 
   async function saveFilterState(userId, state) {
-    const existing = (await window.rtti.readLocalSession()) ?? {};
+    const existing = (await window.maatwerk.readLocalSession()) ?? {};
     const filtersByUser = existing.filtersByUser ?? {};
     filtersByUser[userId] = {
       schoolsoorten: [...state.schoolsoorten],
@@ -187,11 +187,11 @@ const Store = (() => {
       jaarlagenKlas: [...state.jaarlagenKlas],
       eigenOnly: state.eigenOnly,
     };
-    await window.rtti.writeLocalSession({ ...existing, filtersByUser });
+    await window.maatwerk.writeLocalSession({ ...existing, filtersByUser });
   }
 
   async function loadFilterState(userId) {
-    const session = await window.rtti.readLocalSession();
+    const session = await window.maatwerk.readLocalSession();
     return session?.filtersByUser?.[userId] ?? null;
   }
 
@@ -268,7 +268,7 @@ const Store = (() => {
 
   // ── Year management ───────────────────────────────────────────────────────
   async function refreshYears() {
-    _years = await window.rtti.listYears();
+    _years = await window.maatwerk.listYears();
     return _years;
   }
 
@@ -280,7 +280,7 @@ const Store = (() => {
   async function loadExams(year, subject) {
     const key = `${year}/exams/${subject}`;
     if (cache[key] !== undefined) return cache[key];
-    const all = await window.rtti.readAllJson(`${year}/exams`);
+    const all = await window.maatwerk.readAllJson(`${year}/exams`);
     cache[key] = all.filter((e) => e.subject === subject);
     return cache[key];
   }
@@ -288,7 +288,7 @@ const Store = (() => {
   async function loadGroups(year, subject) {
     const key = subject ? `${year}/groups/${subject}` : `${year}/groups/__all__`;
     if (cache[key] !== undefined) return cache[key];
-    const all = await window.rtti.readAllJson(`${year}/groups`);
+    const all = await window.maatwerk.readAllJson(`${year}/groups`);
     cache[key] = subject ? all.filter((g) => g.subject === subject) : all;
     return cache[key];
   }
@@ -296,13 +296,13 @@ const Store = (() => {
   async function loadObservaties(subject) {
     const key = `obs/${subject}`;
     if (cache[key] !== undefined) return cache[key];
-    const all = await window.rtti.readAllJson('observaties');
+    const all = await window.maatwerk.readAllJson('observaties');
     cache[key] = all.filter((o) => obsMatchesSubject(o, subject));
     return cache[key];
   }
 
   async function loadYear(year, subject = _activeSubject) {
-    await window.rtti.ensureYear(year);
+    await window.maatwerk.ensureYear(year);
     const tasks = [load(ypStudents(year))];
     // subject === null means admin (all groups); subject === undefined means no subject yet
     if (subject !== undefined) tasks.push(loadGroups(year, subject));
@@ -317,10 +317,10 @@ const Store = (() => {
   // ── Preload: warm config + year list before startup screen ────────────────
   async function preload() {
     await migrate();
-    _years = await window.rtti.listYears();
+    _years = await window.maatwerk.listYears();
     await load('config.json');
     await load('school.json');
-    _years = await window.rtti.listYears();
+    _years = await window.maatwerk.listYears();
   }
 
   async function initSubject(subject) {
@@ -484,7 +484,7 @@ const Store = (() => {
   async function deleteGroup(id, year) {
     const group = getGroupsSync(year).find((g) => g.id === id);
     if (!group) return;
-    await window.rtti.deleteFile(ypGroup(year, id));
+    await window.maatwerk.deleteFile(ypGroup(year, id));
     const key = `${year}/groups/${group.subject ?? _activeSubject}`;
     cache[key] = (cache[key] ?? []).filter((g) => g.id !== id);
   }
@@ -569,7 +569,7 @@ const Store = (() => {
     const exam = getExamsSync(year).find((e) => e.id === id);
     if (!exam) return;
     if (examHasResits(id, year)) throw new Error('has_resits');
-    await window.rtti.deleteFile(ypExam(year, id));
+    await window.maatwerk.deleteFile(ypExam(year, id));
     const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
     cache[key] = (cache[key] ?? []).filter((e) => e.id !== id);
   }
@@ -795,7 +795,7 @@ const Store = (() => {
   }
 
   async function deleteObservation(id, subject = _activeSubject) {
-    await window.rtti.deleteFile(ypObs(id));
+    await window.maatwerk.deleteFile(ypObs(id));
     invalidateObsCache();
     await loadObservaties(subject);
   }
@@ -826,13 +826,13 @@ const Store = (() => {
 
   // Phase 1: very old flat root layout → per-year layout
   async function migrateLegacyToPerYear() {
-    const oldStudents = await window.rtti.readJson('students.json');
+    const oldStudents = await window.maatwerk.readJson('students.json');
     if (!oldStudents) return;
 
     console.log('[store] Migrating legacy data to per-year layout…');
 
-    const oldGroups = (await window.rtti.readJson('groups.json')) ?? [];
-    const oldExams = (await window.rtti.readJson('exams.json')) ?? [];
+    const oldGroups = (await window.maatwerk.readJson('groups.json')) ?? [];
+    const oldExams = (await window.maatwerk.readJson('exams.json')) ?? [];
 
     const examYear = {};
     for (const e of oldExams) if (e.academic_year) examYear[e.id] = e.academic_year;
@@ -844,7 +844,7 @@ const Store = (() => {
     for (const e of oldExams) if (e.academic_year) yearSet.add(e.academic_year);
 
     for (const year of yearSet) {
-      await window.rtti.ensureYear(year);
+      await window.maatwerk.ensureYear(year);
 
       const yearStudents = [];
       for (const s of oldStudents) {
@@ -873,22 +873,22 @@ const Store = (() => {
       }
       if (yearStudents.length) {
         sortStudents(yearStudents);
-        await window.rtti.writeJson(`${year}/students.json`, yearStudents);
+        await window.maatwerk.writeJson(`${year}/students.json`, yearStudents);
       }
 
       const yearGroups = oldGroups
         .filter((g) => g.academic_year === year)
         .map(({ academic_year: _ay, ...g }) => g);
-      if (yearGroups.length) await window.rtti.writeJson(`${year}/groups.json`, yearGroups);
+      if (yearGroups.length) await window.maatwerk.writeJson(`${year}/groups.json`, yearGroups);
 
       const yearExams = oldExams
         .filter((e) => e.academic_year === year)
         .map(({ academic_year: _ay, ...e }) => e);
-      if (yearExams.length) await window.rtti.writeJson(`${year}/exams.json`, yearExams);
+      if (yearExams.length) await window.maatwerk.writeJson(`${year}/exams.json`, yearExams);
     }
 
     for (const s of oldStudents) {
-      const rec = await window.rtti.readJson(`scores/${s.id}.json`);
+      const rec = await window.maatwerk.readJson(`scores/${s.id}.json`);
       if (!rec?.scores) continue;
       const byYear = {};
       for (const [examId, qs] of Object.entries(rec.scores)) {
@@ -899,29 +899,29 @@ const Store = (() => {
       }
       for (const [year, scores] of Object.entries(byYear)) {
         if (!yearSet.has(year)) continue;
-        await window.rtti.writeJson(`${year}/scores/${s.id}.json`, { student_id: s.id, scores });
+        await window.maatwerk.writeJson(`${year}/scores/${s.id}.json`, { student_id: s.id, scores });
       }
     }
 
-    await window.rtti.writeJson('students.json.bak', oldStudents);
-    if (oldGroups.length) await window.rtti.writeJson('groups.json.bak', oldGroups);
-    if (oldExams.length) await window.rtti.writeJson('exams.json.bak', oldExams);
-    await window.rtti.writeJson('students.json', null);
+    await window.maatwerk.writeJson('students.json.bak', oldStudents);
+    if (oldGroups.length) await window.maatwerk.writeJson('groups.json.bak', oldGroups);
+    if (oldExams.length) await window.maatwerk.writeJson('exams.json.bak', oldExams);
+    await window.maatwerk.writeJson('students.json', null);
 
     console.log('[store] Legacy migration complete.');
   }
 
   // Phase 2: per-year array layout → per-subject individual files
   async function migrateToPerSubject() {
-    const years = (await window.rtti.listYears()) ?? [];
+    const years = (await window.maatwerk.listYears()) ?? [];
     let needsMigration = false;
 
-    const obsRaw = await window.rtti.readJson('observaties.json');
+    const obsRaw = await window.maatwerk.readJson('observaties.json');
     if (Array.isArray(obsRaw)) needsMigration = true;
 
     if (!needsMigration) {
       for (const year of years) {
-        const examsRaw = await window.rtti.readJson(`${year}/exams.json`);
+        const examsRaw = await window.maatwerk.readJson(`${year}/exams.json`);
         if (Array.isArray(examsRaw)) {
           needsMigration = true;
           break;
@@ -935,55 +935,55 @@ const Store = (() => {
 
     // Migrate observaties.json → observaties/<id>.json
     if (Array.isArray(obsRaw)) {
-      await window.rtti.ensureDir('observaties');
+      await window.maatwerk.ensureDir('observaties');
       for (const obs of obsRaw) {
-        await window.rtti.writeJson(ypObs(obs.id), { ...obs, subject: obs.subject ?? 'nat' });
+        await window.maatwerk.writeJson(ypObs(obs.id), { ...obs, subject: obs.subject ?? 'nat' });
       }
-      await window.rtti.writeJson('observaties.json.bak', obsRaw);
-      await window.rtti.writeJson('observaties.json', null);
+      await window.maatwerk.writeJson('observaties.json.bak', obsRaw);
+      await window.maatwerk.writeJson('observaties.json', null);
     }
 
     for (const year of years) {
       // Migrate exams.json → exams/<id>.json
-      const examsRaw = await window.rtti.readJson(`${year}/exams.json`);
+      const examsRaw = await window.maatwerk.readJson(`${year}/exams.json`);
       if (Array.isArray(examsRaw)) {
-        await window.rtti.ensureDir(`${year}/exams`);
+        await window.maatwerk.ensureDir(`${year}/exams`);
         for (const exam of examsRaw) {
-          await window.rtti.writeJson(ypExam(year, exam.id), {
+          await window.maatwerk.writeJson(ypExam(year, exam.id), {
             ...exam,
             subject: exam.subject ?? 'nat',
           });
         }
-        await window.rtti.writeJson(`${year}/exams.json.bak`, examsRaw);
-        await window.rtti.writeJson(`${year}/exams.json`, null);
+        await window.maatwerk.writeJson(`${year}/exams.json.bak`, examsRaw);
+        await window.maatwerk.writeJson(`${year}/exams.json`, null);
       }
 
       // Migrate groups.json → groups/<id>.json
-      const groupsRaw = await window.rtti.readJson(`${year}/groups.json`);
+      const groupsRaw = await window.maatwerk.readJson(`${year}/groups.json`);
       if (Array.isArray(groupsRaw)) {
-        await window.rtti.ensureDir(`${year}/groups`);
+        await window.maatwerk.ensureDir(`${year}/groups`);
         for (const group of groupsRaw) {
           const subj = subjectFromGroupName(group.name) ?? 'nat';
-          await window.rtti.writeJson(ypGroup(year, group.id), { ...group, subject: subj });
+          await window.maatwerk.writeJson(ypGroup(year, group.id), { ...group, subject: subj });
         }
-        await window.rtti.writeJson(`${year}/groups.json.bak`, groupsRaw);
-        await window.rtti.writeJson(`${year}/groups.json`, null);
+        await window.maatwerk.writeJson(`${year}/groups.json.bak`, groupsRaw);
+        await window.maatwerk.writeJson(`${year}/groups.json`, null);
       }
 
       // Migrate students.json → students-<year>.json
-      const studentsRaw = await window.rtti.readJson(`${year}/students.json`);
+      const studentsRaw = await window.maatwerk.readJson(`${year}/students.json`);
       if (Array.isArray(studentsRaw)) {
-        await window.rtti.writeJson(ypStudents(year), studentsRaw);
-        await window.rtti.writeJson(`${year}/students.json.bak`, studentsRaw);
-        await window.rtti.writeJson(`${year}/students.json`, null);
+        await window.maatwerk.writeJson(ypStudents(year), studentsRaw);
+        await window.maatwerk.writeJson(`${year}/students.json.bak`, studentsRaw);
+        await window.maatwerk.writeJson(`${year}/students.json`, null);
       }
 
       // Migrate scores/<studentId>.json → scores/nat/<studentId>.json
-      const oldScoreRecs = await window.rtti.readAllJson(`${year}/scores`);
+      const oldScoreRecs = await window.maatwerk.readAllJson(`${year}/scores`);
       for (const rec of oldScoreRecs) {
         if (!rec?.student_id) continue;
-        await window.rtti.writeJson(ypScore(year, 'nat', rec.student_id), rec);
-        await window.rtti.deleteFile(`${year}/scores/${rec.student_id}.json`);
+        await window.maatwerk.writeJson(ypScore(year, 'nat', rec.student_id), rec);
+        await window.maatwerk.deleteFile(`${year}/scores/${rec.student_id}.json`);
       }
     }
 
@@ -1151,7 +1151,7 @@ const Store = (() => {
 
   async function loadOpdrachten() {
     if (cache['opdrachten'] !== undefined) return cache['opdrachten'];
-    const all = await window.rtti.readAllJson('opdrachten');
+    const all = await window.maatwerk.readAllJson('opdrachten');
     cache['opdrachten'] = all.filter((o) => o && o.id);
     return cache['opdrachten'];
   }
@@ -1180,15 +1180,15 @@ const Store = (() => {
     const newId = `opdracht_${Date.now()}`;
     const typFile = `${newId}.typ`;
     const content = original.typFile
-      ? await window.rtti.readTextFile(`opdrachten/${original.typFile}`)
+      ? await window.maatwerk.readTextFile(`opdrachten/${original.typFile}`)
       : null;
-    if (content == null) await window.rtti.createAssignmentTypFile(typFile);
+    if (content == null) await window.maatwerk.createAssignmentTypFile(typFile);
     else
-      await window.rtti.writeTextFile(
+      await window.maatwerk.writeTextFile(
         `opdrachten/${typFile}`,
         content.split(`images/${id}/`).join(`images/${newId}/`)
       );
-    await window.rtti.copyOpdrachtImages(id, newId);
+    await window.maatwerk.copyOpdrachtImages(id, newId);
     const { _meta, ...rest } = JSON.parse(JSON.stringify(original));
     const copy = { ...rest, id: newId, naam: `${original.naam} (kopie)`, typFile };
     await upsertOpdracht(copy);
@@ -1198,11 +1198,11 @@ const Store = (() => {
   async function deleteOpdracht(id) {
     const opdracht = getOpdrachtenSync().find((o) => o.id === id);
     cache['opdrachten'] = undefined;
-    await window.rtti.deleteFile(`opdrachten/${id}.json`);
+    await window.maatwerk.deleteFile(`opdrachten/${id}.json`);
     if (opdracht?.typFile) {
-      await window.rtti.deleteFile(`opdrachten/${opdracht.typFile}`);
+      await window.maatwerk.deleteFile(`opdrachten/${opdracht.typFile}`);
     }
-    await window.rtti.deleteOpdrachtImages(id);
+    await window.maatwerk.deleteOpdrachtImages(id);
     await loadOpdrachten();
   }
 
@@ -1409,7 +1409,7 @@ const Store = (() => {
     const ev = { type, kind, relPath, meta, year: null, subject: null, id: null };
     ev.before = null;
     ev.after = null;
-    const readFresh = async () => (kind === 'deleted' ? null : window.rtti.readJson(relPath));
+    const readFresh = async () => (kind === 'deleted' ? null : window.maatwerk.readJson(relPath));
 
     // Serialised with own writes to the same file, so a refresh can never put an
     // older version in the cache than one this app just wrote.

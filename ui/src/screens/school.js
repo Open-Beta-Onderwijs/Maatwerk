@@ -14,8 +14,8 @@ export async function renderSchool() {
 
   const school = (await Store.loadSchool()) ?? {};
   const [logoUrl, watermerkUrl] = await Promise.all([
-    school.logo ? window.rtti.readPhotoAsDataUrl(school.logo) : Promise.resolve(null),
-    school.watermerk ? window.rtti.readPhotoAsDataUrl(school.watermerk) : Promise.resolve(null),
+    school.logo ? window.maatwerk.readPhotoAsDataUrl(school.logo) : Promise.resolve(null),
+    school.watermerk ? window.maatwerk.readPhotoAsDataUrl(school.watermerk) : Promise.resolve(null),
   ]);
 
   container.innerHTML = buildHtml(school, logoUrl, watermerkUrl);
@@ -232,7 +232,7 @@ async function saveImageField(file, fileBaseName, field, school, container) {
   const dataUrl = await readFileAsDataUrl(file);
   const base64 = dataUrl.split(',')[1];
 
-  await window.rtti.savePhoto(relPath, base64);
+  await window.maatwerk.savePhoto(relPath, base64);
   school[field] = relPath;
 
   try {
@@ -243,7 +243,7 @@ async function saveImageField(file, fileBaseName, field, school, container) {
     return;
   }
 
-  const reloadedUrl = await window.rtti.readPhotoAsDataUrl(relPath);
+  const reloadedUrl = await window.maatwerk.readPhotoAsDataUrl(relPath);
   if (!reloadedUrl) return;
 
   if (field === 'logo') {

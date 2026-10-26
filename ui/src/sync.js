@@ -43,7 +43,7 @@ let queue = Promise.resolve();
 export function start() {
   if (started) return;
   started = true;
-  window.rtti.onDataChanged((changes) => {
+  window.maatwerk.onDataChanged((changes) => {
     for (const change of changes) {
       queue = queue.then(async () => {
         try {

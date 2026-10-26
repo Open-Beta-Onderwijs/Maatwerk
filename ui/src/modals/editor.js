@@ -2,7 +2,7 @@
  * editor.js — Full-screen Typst editor overlay.
  *
  * Opens editor.html in the #editor-frame iframe that covers the entire window.
- * All window.rtti calls are proxied from the iframe via postMessage, since the
+ * All window.maatwerk calls are proxied from the iframe via postMessage, since the
  * iframe does not have direct access to the contextBridge API.
  */
 
@@ -55,43 +55,43 @@ function handleEditorMessage(evt, frame) {
   const { type, id, ...rest } = evt.data;
 
   function reply(result) {
-    frame.contentWindow.postMessage({ type: 'rtti-response', id, result }, '*');
+    frame.contentWindow.postMessage({ type: 'maatwerk-response', id, result }, '*');
   }
 
   switch (type) {
-    case 'rtti-read-text':
-      window.rtti.readTextFile(rest.path).then(reply);
+    case 'maatwerk-read-text':
+      window.maatwerk.readTextFile(rest.path).then(reply);
       break;
-    case 'rtti-write-text':
-      window.rtti.writeTextFile(rest.path, rest.content).then(reply);
+    case 'maatwerk-write-text':
+      window.maatwerk.writeTextFile(rest.path, rest.content).then(reply);
       break;
-    case 'rtti-render-assignment':
-      window.rtti.renderAssignmentPdf(rest.typFile, rest.title).then(reply);
+    case 'maatwerk-render-assignment':
+      window.maatwerk.renderAssignmentPdf(rest.typFile, rest.title).then(reply);
       break;
-    case 'rtti-render-assignment-svg':
-      window.rtti.renderAssignmentSvg(rest.typFile, rest.title, rest.content).then(reply);
+    case 'maatwerk-render-assignment-svg':
+      window.maatwerk.renderAssignmentSvg(rest.typFile, rest.title, rest.content).then(reply);
       break;
-    case 'rtti-list-images':
-      window.rtti.listOpdrachtImages(rest.opdrachtId).then(reply);
+    case 'maatwerk-list-images':
+      window.maatwerk.listOpdrachtImages(rest.opdrachtId).then(reply);
       break;
-    case 'rtti-save-image':
-      window.rtti
+    case 'maatwerk-save-image':
+      window.maatwerk
         .saveOpdrachtImage(rest.opdrachtId, rest.name, rest.ext, rest.base64, rest.overwrite)
         .then(reply);
       break;
-    case 'rtti-pick-image':
-      window.rtti.pickImageFile().then(reply);
+    case 'maatwerk-pick-image':
+      window.maatwerk.pickImageFile().then(reply);
       break;
-    case 'rtti-import-image':
-      window.rtti
+    case 'maatwerk-import-image':
+      window.maatwerk
         .importOpdrachtImage(rest.opdrachtId, rest.token, rest.name, rest.overwrite)
         .then(reply);
       break;
-    case 'rtti-clipboard-image':
-      window.rtti.readClipboardImage().then(reply);
+    case 'maatwerk-clipboard-image':
+      window.maatwerk.readClipboardImage().then(reply);
       break;
-    case 'rtti-get-data-dir':
-      window.rtti.getDataDir().then(reply);
+    case 'maatwerk-get-data-dir':
+      window.maatwerk.getDataDir().then(reply);
       break;
     case 'editor-close':
       closeEditor();

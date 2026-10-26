@@ -219,7 +219,7 @@ function openUserModal(user) {
             const ext = file.name.endsWith('.png') ? 'png' : 'jpg';
             const userId = user?.id ?? `gebr-${Date.now()}`;
             const relPath = `fotos/${userId}.${ext}`;
-            await window.rtti.savePhoto(relPath, base64);
+            await window.maatwerk.savePhoto(relPath, base64);
             resolve(relPath);
           };
           reader.readAsDataURL(file);

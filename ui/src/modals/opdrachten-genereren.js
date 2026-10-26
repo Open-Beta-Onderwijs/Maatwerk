@@ -373,13 +373,13 @@ async function generate(el, state, year, kind) {
   const what = kind === 'key' ? 'Antwoordsleutel' : 'Opdrachten';
   content.innerHTML = `<div class="rapport-spinner">${what} worden gegenereerd… <span class="og-progress"></span></div>`;
   const progressEl = content.querySelector('.og-progress');
-  const offProgress = window.rtti.onAssignmentProgress(({ done, total }) => {
+  const offProgress = window.maatwerk.onAssignmentProgress(({ done, total }) => {
     if (progressEl.isConnected) progressEl.textContent = `${done} / ${total}`;
   });
 
   let res;
   try {
-    res = await window.rtti.renderAssignmentBatch(jobs, {
+    res = await window.maatwerk.renderAssignmentBatch(jobs, {
       includeAnswers: state.includeAnswers,
       duplex: kind !== 'key',
       outputName: kind === 'key' ? 'antwoordsleutel.pdf' : 'opdrachten.pdf',
@@ -491,7 +491,7 @@ function initModal(el, state, year) {
   // The PDF viewer's "Afdrukken" button opens the file in the system viewer
   // (window.print() doesn't work in Electron iframes).
   const onMessage = (e) => {
-    if (e.data?.type === 'print-pdf' && state.printPath) window.rtti.openPath(state.printPath);
+    if (e.data?.type === 'print-pdf' && state.printPath) window.maatwerk.openPath(state.printPath);
   };
   window.addEventListener('message', onMessage);
   onModalCleanup(() => window.removeEventListener('message', onMessage));

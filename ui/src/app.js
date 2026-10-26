@@ -954,7 +954,7 @@ userBadgeBtn.addEventListener('click', () => {
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
 async function applyWatermerk() {
-  const dataUrl = await window.rtti.readPhotoAsDataUrl('fotos/school-watermerk.svg');
+  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('fotos/school-watermerk.svg');
   if (dataUrl) document.documentElement.style.setProperty('--watermerk-url', `url("${dataUrl}")`);
 }
 
