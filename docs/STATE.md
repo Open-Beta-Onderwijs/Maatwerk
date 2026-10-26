@@ -16,6 +16,17 @@ Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
   SPDX, ESLint legacy config, `ui/tests/offline.test.ts`. Handsontable is a documented temporary
   licence exception (removed in 3b; CI exe artifacts must not be distributed until then).
 
+- 3a.5 bridge: `ui/src/bridge/api.ts` (28 methods, compat shapes, `pdfUrl`), `MockApi` (fixtures via
+  `virtual:maatwerk-fixtures`), `TauriApi` stub, `npm run dev:mock` / `build:mock`. App boots on the
+  mock without console errors.
+- 3a.6 domain: `ui/src/domain/{types,grades,ids,attempts,opdrachten,csv,rapport}.ts`,
+  `ui/src/services/rapport.ts`; `store.js` delegates. Vitest in the golden environment
+  (`ui/tests/setup.ts`), goldens via `ui/tests/golden.ts`; Store-level goldens on a MockApi
+  (`ui/tests/store-session.ts`). All logic goldens of grades, attempts, ids, opdrachten, csv,
+  rapport, score-writes pass, except documented fixes.
+- Fixed (failing test / golden diff first): B22 (CSV `""`, ANSI), T26, T27, B9 (data side).
+- `migrate()` removed (C2).
+
 ## Step 2 summary
 
 - Harness `tests/reference-harness/`: the real reference `main.js`, `preload.js` and `store.js` run
@@ -32,15 +43,17 @@ Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
 
 ## In progress
 
-- 3a.5 bridge.
+- 3a.7 UI quirks U3, U6/U7, U9, D25.
 
 ## Next action (concrete, resumable)
 
-1. 3a.5 bridge: `ui/src/bridge/api.ts` (interface of the 28 ported methods with their compat
-   result shapes), `MockApi` (in-memory FS seeded from `tools/fixtures`, CAS conflicts,
-   `data:changed`), `TauriApi` stub, `npm run dev:mock`.
-2. Then: domain extraction + quirk fixes (failing test first), inline styles -> classes + strict
-   CSP, Playwright smoke, `docs/parity.md`, 3a review, tag `step-03a`.
+1. 3a.7 UI quirk fixes (failing test first): U3 (save errors toast), U6/U7 (escape teacher text),
+   U9 (flush editor autosave before close), D25 (editor proxy answers on rejection). D34 needs the
+   user's choice (merge or confirm) -> ask at the end of 3a.
+2. Then: inline `style=` -> classes + strict CSP (mock build injects the CSP meta), Playwright smoke,
+   `docs/parity.md`, 3a review, tag `step-03a`.
+3. Not yet covered by Vitest goldens: averages, display, scoregrid, stats (screen code, not
+   extracted in 3a; they stay in their screens per ADR-0002 section 6).
 
 ## Open questions for the user
 
