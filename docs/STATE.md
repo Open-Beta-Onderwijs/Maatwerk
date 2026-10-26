@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-26 (Step 3a in progress) Branch: `step/03-ui-foundation` Last tag: `step-02`
+Last updated: 2026-10-26 (Step 3a done, in review) Branch: `step/03-ui-foundation` Last tag: `step-02`
 
 ## Current step
 
@@ -26,6 +26,13 @@ Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
   rapport, score-writes pass, except documented fixes.
 - Fixed (failing test / golden diff first): B22 (CSV `""`, ANSI), T26, T27, B9 (data side).
 - `migrate()` removed (C2).
+- 3a.7 UI quirks U3, U6, U7, U9, D25 fixed, Playwright test first (`ui/e2e/quirks.spec.ts`).
+- 3a.8 strict CSP (`ui/vite/csp.ts`, Tauri + mock meta), all 268 inline styles gone pixel-identically
+  (`u-*` utilities, component classes, CSSOM style data, CodeMirror in a shadow root);
+  `ui/e2e/csp.spec.ts` (37 views, 0 violations), local `npm run test:visual`.
+- 3a.9 Playwright smoke (`ui/e2e/smoke.spec.ts`), e2e in CI, `docs/parity.md`, testing/dev-setup docs.
+- Gate green 2026-10-26 (fmt, clippy, cargo test, lint, typecheck, npm test 184+121, e2e 43,
+  licences, SPDX, cargo deny).
 
 ## Step 2 summary
 
@@ -43,15 +50,14 @@ Step 3a (UI foundation). Started 2026-10-26 on `step/03-ui-foundation`.
 
 ## In progress
 
-- 3a.7 UI quirks U3, U6/U7, U9, D25.
+- 3a review (fresh-context subagent -> `docs/reviews/step-03a.md`).
 
 ## Next action (concrete, resumable)
 
-1. 3a.7 UI quirk fixes (failing test first): U3 (save errors toast), U6/U7 (escape teacher text),
-   U9 (flush editor autosave before close), D25 (editor proxy answers on rejection). D34 needs the
-   user's choice (merge or confirm) -> ask at the end of 3a.
-2. Then: inline `style=` -> classes + strict CSP (mock build injects the CSP meta), Playwright smoke,
-   `docs/parity.md`, 3a review, tag `step-03a`.
+1. Triage `docs/reviews/step-03a.md` (fix blockers/majors), re-run the gate, merge nothing yet
+   (Step 3 merges after 3b), tag `step-03a` on the branch.
+2. 3b: `docs/specs/score-grid.md` from `ui/src/screens/scores.js`, Playwright tests of that spec
+   against Handsontable, ADR-0004 (grid candidates), then **ask the user to choose** (also D34).
 3. Not yet covered by Vitest goldens: averages, display, scoregrid, stats (screen code, not
    extracted in 3a; they stay in their screens per ADR-0002 section 6).
 
