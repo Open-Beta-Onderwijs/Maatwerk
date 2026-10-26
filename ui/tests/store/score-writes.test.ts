@@ -51,7 +51,7 @@ function scenario(): Record<string, string> {
         },
       },
     });
-    return readTree(root);
+    return readTree(root) as Record<string, string>;
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
