@@ -2,12 +2,13 @@
 
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+import { mockCsp } from './vite/csp.ts';
 import { mockFixtures } from './vite/mock-fixtures.ts';
 
 // Tauri expects a fixed dev port; see src-tauri/tauri.conf.json (devUrl).
 export default defineConfig({
   clearScreen: false,
-  plugins: [mockFixtures()],
+  plugins: [mockFixtures(), mockCsp()],
   server: {
     port: 1420,
     strictPort: true,
