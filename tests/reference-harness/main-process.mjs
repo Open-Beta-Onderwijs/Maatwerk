@@ -85,48 +85,90 @@ function runCjs(relFile, { dirname, electron, extraModules = {} }) {
 }
 
 /**
- * Creates a throw-away app folder (`<tmp>/app/data`, with `bin/` and `include/`
- * linked to the reference) and loads main.js + preload.js against it.
+ * Directory listings in the order NTFS returns them (ordinal, case-insensitive).
+ * `fs:readAllJson` returns files in readdir order and the Store keeps that order
+ * (e.g. which of two groups a student gets, quirk B31), so it is pinned like the
+ * clock and the locale. MAATWERK_READDIR_REVERSE=1 reverses the raw listing
+ * first, to prove the pin works (tests/reference-harness/harness.test.mjs).
+ */
+export function ntfsOrder(entries) {
+  const name = (e) => (typeof e === 'string' ? e : e.name);
+  const raw = process.env.MAATWERK_READDIR_REVERSE === '1' ? [...entries].reverse() : [...entries];
+  return raw.sort((a, b) => {
+    const x = name(a).toUpperCase();
+    const y = name(b).toUpperCase();
+    if (x !== y) return x < y ? -1 : 1;
+    return name(a) < name(b) ? -1 : name(a) > name(b) ? 1 : 0;
+  });
+}
+
+const LINKS = ['bin', 'include'];
+
+/** Removes leftovers of killed runs; junctions are unlinked before the folder. */
+function sweepStale(tmp) {
+  const dayAgo = Date.now() - 86_400_000;
+  for (const name of fs.readdirSync(tmp)) {
+    if (!name.startsWith('maatwerk-ref-')) continue;
+    const root = path.join(tmp, name);
+    try {
+      if (fs.statSync(root).mtimeMs > dayAgo) continue;
+      for (const dir of LINKS) fs.rmSync(path.join(root, 'app', dir), { force: true });
+      fs.rmSync(root, { recursive: true, force: true });
+    } catch (_) {
+      // Another run may own it; leave it.
+    }
+  }
+}
+
+/**
+ * Creates a throw-away app folder (`<tmp>/app/data`) and loads main.js +
+ * preload.js against it. With `typst: true`, `bin/` and `include/` are linked
+ * (junctions) to the reference so the Typst handlers find the CLI and templates.
  * Returns { appDir, dataDir, rtti (the window.rtti bridge), invoke, sent, dispose }.
  */
-export function startMainProcess({ tmpRoot, onWrite } = {}) {
-  const root = fs.mkdtempSync(path.join(tmpRoot ?? os.tmpdir(), 'maatwerk-ref-'));
+export function startMainProcess({ tmpRoot, onWrite, typst = false } = {}) {
+  const tmp = tmpRoot ?? os.tmpdir();
+  sweepStale(tmp);
+  const root = fs.mkdtempSync(path.join(tmp, 'maatwerk-ref-'));
   const appDir = path.join(root, 'app');
-  const userDataDir = path.join(root, 'userData');
-  fs.mkdirSync(path.join(appDir, 'data'), { recursive: true });
-  fs.mkdirSync(userDataDir);
-  for (const dir of ['bin', 'include']) {
-    fs.symlinkSync(path.join(REF_DIR, dir), path.join(appDir, dir), 'junction');
-  }
-  const { electron, handlers, sent } = fakeElectron({ userDataDir });
-  // onWrite(file, data) sees every fs.writeFileSync made by main.js itself
-  // (Typst wrappers, preview copies); sync.js keeps the real fs.
-  const extraModules = onWrite
-    ? {
-        fs: {
-          ...fs,
-          writeFileSync: (file, data, ...rest) => {
-            onWrite(String(file), data);
-            return fs.writeFileSync(file, data, ...rest);
-          },
-        },
-      }
-    : {};
-  runCjs('main.js', { dirname: appDir, electron, extraModules });
-  runCjs('preload.js', { dirname: REF_DIR, electron });
-  const rtti = electron.exposed.rtti;
-  return {
-    root,
-    appDir,
-    dataDir: path.join(appDir, 'data'),
-    rtti,
-    handlers,
-    invoke: (channel, ...args) => electron.ipcRenderer.invoke(channel, ...args),
-    sent,
-    dispose: () => {
-      // Remove junctions first so rmSync never follows them into _reference/.
-      for (const dir of ['bin', 'include']) fs.rmSync(path.join(appDir, dir), { force: true });
-      fs.rmSync(root, { recursive: true, force: true });
-    },
+  const dispose = () => {
+    // Remove junctions first so rmSync never follows them into _reference/.
+    for (const dir of LINKS) fs.rmSync(path.join(appDir, dir), { force: true });
+    fs.rmSync(root, { recursive: true, force: true });
   };
+  try {
+    const userDataDir = path.join(root, 'userData');
+    fs.mkdirSync(path.join(appDir, 'data'), { recursive: true });
+    fs.mkdirSync(userDataDir);
+    if (typst) {
+      for (const dir of LINKS)
+        fs.symlinkSync(path.join(REF_DIR, dir), path.join(appDir, dir), 'junction');
+    }
+    const { electron, handlers, sent } = fakeElectron({ userDataDir });
+    // main.js gets an fs whose readdirSync has a pinned order and whose
+    // writeFileSync reports to onWrite (Typst wrappers, preview copies).
+    const mainFs = {
+      ...fs,
+      readdirSync: (...args) => ntfsOrder(fs.readdirSync(...args)),
+      writeFileSync: (file, data, ...rest) => {
+        onWrite?.(String(file), data);
+        return fs.writeFileSync(file, data, ...rest);
+      },
+    };
+    runCjs('main.js', { dirname: appDir, electron, extraModules: { fs: mainFs } });
+    runCjs('preload.js', { dirname: REF_DIR, electron });
+    return {
+      root,
+      appDir,
+      dataDir: path.join(appDir, 'data'),
+      rtti: electron.exposed.rtti,
+      handlers,
+      invoke: (channel, ...args) => electron.ipcRenderer.invoke(channel, ...args),
+      sent,
+      dispose,
+    };
+  } catch (e) {
+    dispose();
+    throw e;
+  }
 }

@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-25 (Step 2a in progress) Branch: `step/02-safety-net` Last tag: `step-01`
+Last updated: 2026-10-26 (Step 2a reviewed; 2b in progress) Branch: `step/02-safety-net` Last tag: `step-01`
 
 ## Current step
 
@@ -49,10 +49,18 @@ Then 2b: Typst goldens (reference CLI 0.14.2, pdf-lib + pdfjs-dist dev deps).
 Decisions taken: test runner is `node:test` (built in) instead of Vitest for the harness; dev
 deps `acorn`, `acorn-walk` (MIT).
 
+- 2a review (`docs/reviews/step-02a.md`): 0 blockers, 3 majors, 7 minors, 6 nits; all fixed except
+  n4 (backlog). Storage spec now S01-S40; quirk B31 (readdir order) and harness pin.
+- 2b (WIP commit `c0a8c94`): `npm run golden:typst [-- --check]`, 21 cases in
+  `tests/golden/typst/`, wrapper shims `tools/reference-shims/typst-wrappers.cjs`,
+  `tests/golden/typst.test.mjs`. New quirks T26 (invalid score breaks rapport), T27 (`$` guard
+  breaks rapport).
+
 ## Next action (concrete, resumable)
 
-1. Mid-step review of 2a (reviewer subagent -> `docs/reviews/step-02a.md`), fix, tag `step-02a`.
-2. Then 2b: Typst goldens.
+1. Commit the 2a review fixes, tag `step-02a`.
+2. Finish 2b: docs/testing.md Typst section, final review (`docs/reviews/step-02.md`), gate incl.
+   cargo, merge to main, tag `step-02`, report.
 
 ## Open questions for the user
 

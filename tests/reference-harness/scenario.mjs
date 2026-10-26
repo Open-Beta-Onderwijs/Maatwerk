@@ -92,3 +92,22 @@ export function buildData(root, spec) {
     }
   }
 }
+
+/**
+ * The files of a data folder as { 'posix/rel/path': text }, sorted. Suites store
+ * this as their `data` case, so consumers get exactly what the reference read.
+ */
+export function readTree(root) {
+  const out = {};
+  const walk = (dir) => {
+    for (const e of fs
+      .readdirSync(dir, { withFileTypes: true })
+      .sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const abs = path.join(dir, e.name);
+      if (e.isDirectory()) walk(abs);
+      else out[path.relative(root, abs).split(path.sep).join('/')] = fs.readFileSync(abs, 'utf8');
+    }
+  };
+  walk(root);
+  return out;
+}

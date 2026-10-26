@@ -5,7 +5,16 @@
 import { Suite } from '../golden.mjs';
 import { bindFunctions, extractFunction, extractSnippet } from '../extract.mjs';
 import { openReference } from '../session.mjs';
-import { TEN_BY_TEN, YEAR, buildData, exam, pointsFor, student, tenByTen } from '../scenario.mjs';
+import {
+  TEN_BY_TEN,
+  YEAR,
+  buildData,
+  readTree,
+  exam,
+  pointsFor,
+  student,
+  tenByTen,
+} from '../scenario.mjs';
 
 const PROFIEL = 'renderer/modals/profiel.js';
 const GL = 'renderer/modals/groep-leerlingen.js';
@@ -67,6 +76,8 @@ const STUDENTS = {
   3: { 'nat-w1-herkansing-2025-2026': g(6) },
   4: {},
   5: { 'nat-w4-2025-2026': g(3) },
+  6: { 'nat-w1-2025-2026': g(6), 'nat-w1-herkansing-2025-2026': g(6) },
+  7: { 'nat-w1-2025-2026': g(7), 'nat-w1-herkansing-2025-2026': g(4), 'nat-w2-2025-2026': g(5) },
 };
 
 function spec() {
@@ -79,7 +90,13 @@ function spec() {
         students: Object.keys(STUDENTS).map((id) => student(Number(id))),
         exams: EXAMS.map((e) => JSON.parse(JSON.stringify(e))),
         groups: [
-          { id: 'g1', name: '3a nat', jaarlaag: '3', subject: 'nat', student_ids: [1, 2, 3, 4, 5] },
+          {
+            id: 'g1',
+            name: '3a nat',
+            jaarlaag: '3',
+            subject: 'nat',
+            student_ids: [1, 2, 3, 4, 5, 6, 7],
+          },
         ],
         scores: { nat: recs },
       },
@@ -95,7 +112,14 @@ function spec() {
 export default async function averages() {
   const suite = new Suite('averages', 'Weighted year and SE (PTA) averages with best attempts.');
   const data = spec();
-  const s = await openReference({ fixture: (dir) => buildData(dir, data), subject: 'nat' });
+  let tree;
+  const s = await openReference({
+    fixture: (dir) => {
+      buildData(dir, data);
+      tree = readTree(dir);
+    },
+    subject: 'nat',
+  });
   try {
     const { Store } = s;
     await Store.loadYear(PREV, 'nat');
@@ -116,38 +140,58 @@ export default async function averages() {
       epilogue: 'return dossierAvgMap;',
     });
     dossier.source = dossier.source.replace(/^function /, 'async function ');
+    // Group overview: exam families (groep-leerlingen.js:31-47) and the "Jaar" column
+    // (:197-201), both as the app builds them.
+    const families = extractSnippet(GL, {
+      start: 31,
+      end: 47,
+      name: 'examFamiliesOf',
+      params: ['year', 'group'],
+      contains: ['const exams = Store.getExamsSync(year)', 'const examFamilies = exams'],
+      epilogue: 'return examFamilies;',
+    });
+    const yearColumn = extractSnippet(GL, {
+      start: 197,
+      end: 201,
+      name: 'groupYearAvg',
+      params: ['s', 'examFamilies'],
+      contains: [
+        'const yearPairs = examFamilies.map',
+        'const yearAvg = calcWeightedAvg(yearPairs);',
+      ],
+      epilogue: 'return yearAvg;',
+    });
     const gl = bindFunctions(
       ['studentGrade', 'bestGradeForFamily', 'calcWeightedAvg']
         .map((n) => extractFunction(GL, n))
-        .concat([dossier]),
+        .concat([dossier, families, yearColumn]),
       { Store, scoreMap },
     );
     suite.ref(profiel.refs, gl.refs);
-    suite.add('data', 'BR 6.3', data, null);
+    suite.add('data', 'BR 6.3', { files: tree }, null);
 
-    const family = {
-      original: exams.find((e) => e.id === 'nat-w1-2025-2026'),
-      resits: exams.filter((e) => e.parent_id === 'nat-w1-2025-2026'),
-    };
+    const examFamilies = gl.fns.examFamiliesOf(YEAR, { jaarlaag: '3' });
+    suite.add(
+      'examFamilies',
+      'BR 6.3',
+      { year: YEAR, group: { jaarlaag: '3' } },
+      examFamilies.map((f) => ({ original: f.original.id, resits: f.resits.map((r) => r.id) })),
+    );
+    const family = examFamilies.find((f) => f.original.id === 'nat-w1-2025-2026');
     for (const id of Object.keys(STUDENTS)) {
       const sid = Number(id);
-      const history = await Store.getStudentHistory(sid);
-      const best = Store.resolveBestAttempts(history);
+      const best = Store.resolveBestAttempts(await Store.getStudentHistory(sid));
       const st = { id: sid };
-      const pairs = exams
-        .filter((e) => !e.parent_id)
-        .map((e) => ({ grade: gl.fns.studentGrade(st, e), weging: e.weging_se ?? e.weging }));
       const fam = gl.fns.bestGradeForFamily(st, family);
       suite.add(
         `student-${id}`,
-        'BR 6.3, 11.30',
+        'BR 6.3, 11.24-25, 11.30',
         { studentId: sid },
         {
-          yearAvg: profiel.fns.yearAvg(exams, scoreMap[id]),
-          ptaAvg: profiel.fns.ptaAvg(best),
-          ptaAvgRawHistory: profiel.fns.ptaAvg(history),
+          profileYearAvg: profiel.fns.yearAvg(exams, scoreMap[id]),
+          profilePtaAvg: profiel.fns.ptaAvg(best),
+          groupYearAvg: gl.fns.groupYearAvg(st, examFamilies),
           bestGradeForFamily: { exam: fam.exam?.id ?? null, grade: fam.grade },
-          calcWeightedAvg: gl.fns.calcWeightedAvg(pairs),
         },
       );
     }

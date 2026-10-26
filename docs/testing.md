@@ -52,7 +52,7 @@ goldens and shims change only through the commands above, with the reason in the
 `rule` points into `docs/reference/business-rules.md` (`BR`), `data-files.md` (`DF`),
 `typst-contract.md` (`TC`) or `quirks.md`. JSON cannot hold some JavaScript values, so they are
 tagged: `{"$undefined": true}`, `{"$number": "NaN" | "Infinity" | "-Infinity" | "-0"}`,
-`{"$throws": "TypeError: ..."}` for an exception. A case named `data` holds the scenario's data
+`{"$throws": "TypeError: ..."}` for an exception, `{"$map": [[k, v], ...]}` and `{"$set": [...]}` for Map and Set. A case named `data` holds the scenario's data
 folder for the other cases of that suite. Consumers (Vitest in Step 3, Rust in Steps 4-5) must
 decode these tags.
 
@@ -60,14 +60,15 @@ decode these tags.
 
 These make runs deterministic. Each is a choice about the environment, not about the code:
 
-| Assumption                                                      | Why                                                                      |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Clock frozen at `2026-03-02T10:00:00` local (`environment.mjs`) | `_meta` timestamps, `currentSchoolYear()`                                |
-| `TZ=Europe/Amsterdam`                                           | The school year turns over on 1 August local time                        |
-| `localeCompare` without a locale collates as `nl-NL`            | The app runs on Dutch Windows; Node's default locale depends on the host |
-| IPC arguments and results pass through `structuredClone`        | Same as Electron IPC                                                     |
-| `app.whenReady()` never resolves                                | No seeding, watcher or window during tests                               |
-| Admin-only flows run after `Store.loadYear(year, null)`         | The admin view loads all groups (group-assignment CSV import)            |
+| Assumption                                                                        | Why                                                                                                                   |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Clock frozen at `2026-03-02T10:00:00` local (`environment.mjs`)                   | `_meta` timestamps, `currentSchoolYear()`                                                                             |
+| `TZ=Europe/Amsterdam`                                                             | The school year turns over on 1 August local time                                                                     |
+| `localeCompare` without a locale collates as `nl-NL`                              | The app runs on Dutch Windows; Node's default locale depends on the host                                              |
+| IPC arguments and results pass through `structuredClone`                          | Same as Electron IPC                                                                                                  |
+| `readdirSync` in `main.js` returns names in NTFS order (case-insensitive ordinal) | `fs:readAllJson` order decides e.g. which group a student gets (quirk B31); checked with `MAATWERK_READDIR_REVERSE=1` |
+| `app.whenReady()` never resolves                                                  | No seeding, watcher or window during tests                                                                            |
+| Admin-only flows run after `Store.loadYear(year, null)`                           | The admin view loads all groups (group-assignment CSV import)                                                         |
 
 ## Size budget
 
@@ -83,56 +84,56 @@ These make runs deterministic. Each is a choice about the environment, not about
 
 Suite = `tests/golden/logic/<suite>.json`, case ids after the colon.
 
-| #   | Behaviour                                   | Golden                                                                        |
-| --- | ------------------------------------------- | ----------------------------------------------------------------------------- |
-| 1   | Linear grade, n = 1                         | grades: `linear-n1-*`, `calcGrade-sweep`                                      |
-| 2   | n-term bound lo1                            | grades: `nterm-lo1`, `calcGrade-sweep`                                        |
-| 3   | n-term bound hi1                            | grades: `nterm-hi1`                                                           |
-| 4   | n-term bounds lo2/hi2                       | grades: `nterm-lo2`, `nterm-hi2`                                              |
-| 5   | n = 1.3 and spinner rounding                | grades: `nterm-1.3-*`; scoregrid: `nterm-spinner`                             |
-| 6   | Full marks via bonus, Totaal `(+)`          | grades: `bonus-full-marks`; scoregrid: `grid-O0` row 0                        |
-| 7   | Bonus partly compensating                   | grades: `bonus-partial`                                                       |
-| 8   | No entries                                  | grades: `empty-entries`                                                       |
-| 9   | All N                                       | grades: `all-N`, `all-N-string`                                               |
-| 10  | Only a bonus question, N                    | grades: `only-bonus-N`                                                        |
-| 11  | Only a diag question                        | grades: `only-diag`, `diag-and-normal`                                        |
-| 12  | Only invalid values                         | grades: `only-invalid`, `invalid-plus-valid`, `negative-score`                |
-| 13  | Partial entry                               | grades: `partial-entry`                                                       |
-| 14  | Only bonus/diag questions, with override    | grades: `only-bonus-diag-exam*`                                               |
-| 15  | `max_points = 0`                            | grades: `max-points-0-*`; scoregrid: `normalizeScore-max-0`                   |
-| 16  | Decimal comma and odd input                 | scoregrid: `normalizeScore`; grades: `string-numbers`                         |
-| 17  | Float accumulation                          | grades: `float-accumulation*`                                                 |
-| 18  | Rounding boundaries                         | display: `grade-boundaries`                                                   |
-| 19  | `isFail` at 5.45/5.46/5.5                   | display: `grade-boundaries`; stats: `gradeGroupIdx`                           |
-| 20  | RTTI rounding                               | grades: `rtti-thirds`, `rtti-half-percent`                                    |
-| 21  | Override input                              | scoregrid: `parseGradeInput`, `sameOverride`                                  |
-| 22  | Override stale flag                         | grades: `override-*`; scoregrid: `grid-O0` gradeInfo                          |
-| 23  | Override without scores                     | grades: `examResults-override-only`                                           |
-| 24  | Resit worse than original                   | attempts: `student-1`, `computeBestGradeMap`                                  |
-| 25  | Resit tie                                   | attempts: `student-2`                                                         |
-| 26  | Override decides the best attempt           | attempts: `student-3`                                                         |
-| 27  | Only the resit taken                        | attempts: `student-4`, `student-8`                                            |
-| 28  | Original with null grade                    | attempts: `student-5`                                                         |
-| 29  | Resit with another structure / n-term       | attempts: `student-6`; stats: `overview-summary`, `computeBestGradeStats`     |
-| 30  | Weighted year / SE averages                 | averages: `student-*`, `calcWeightedAvg-direct`, `dossierAverages`            |
-| 31  | Score-grid summary rows vs overview         | scoregrid: `grid-O0`, `grid-O2`, `grid-one-row`; stats: `computeExamStats`    |
-| 32  | Histogram binning                           | stats: `makeHistBins`                                                         |
-| 33  | Boxplot quartiles                           | stats: `boxStats`                                                             |
-| 34  | Vraaganalyse with N and over-max            | stats: `overview-exam` (`qStats`, `qPcts`)                                    |
-| 35  | "Cijfer onder" threshold vs rounding        | opdrachten: `getOpdrachtAssignments` (students 1, 2, 6)                       |
-| 36  | Card threshold input                        | scoregrid: `cijfer-onder-input`                                               |
-| 37  | Coupling default vs saved                   | opdrachten: `getOpdrachtCoupling`, `getOpdrachtCijferCards`                   |
-| 38  | Same opdracht for two reasons               | opdrachten: `getOpdrachtAssignments` (students 3, 4)                          |
-| 39  | Assignment sorting                          | opdrachten: `getOpdrachtAssignments` (order, student 4 last)                  |
-| 40  | `opdrachtMatchesExam` matrix                | opdrachten: `opdrachtMatchesExam-matrix`                                      |
-| 41  | Rapport inclusion                           | rapport: `compileRapport-exam-jaarlaag-3` (students 5, 6, 7, 8)               |
-| 42  | Leeradvies bracket at 40/70, no I row       | rapport: `getScoreBracket`, `compileRapport-*`                                |
-| 43  | Class average rounded before the percentage | rapport: `compileRapport-exam-jaarlaag-3` (`class_avg` 1.3 -> `class_pct` 43) |
-| 44  | CSV parser                                  | csv: `parseCSV-*` (19 cases)                                                  |
-| 45  | Student CSV mapping                         | csv: `student-csv`, `student-csv-lowercase-comma`                             |
-| 46  | `currentSchoolYear`                         | ids: `currentSchoolYear`                                                      |
-| 47  | `makeExamId`, `volgnummer`                  | ids: `makeExamId`, `makeGroupId`, `upsertExam-volgnummer-meta`                |
-| 48  | Unknown `rtti` tag throws                   | grades: `unknown-rtti-tag`                                                    |
+| #   | Behaviour                                   | Golden                                                                                                                                 |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Linear grade, n = 1                         | grades: `linear-n1-*`, `calcGrade-sweep`                                                                                               |
+| 2   | n-term bound lo1                            | grades: `nterm-lo1`, `calcGrade-sweep`                                                                                                 |
+| 3   | n-term bound hi1                            | grades: `nterm-hi1`                                                                                                                    |
+| 4   | n-term bounds lo2/hi2                       | grades: `nterm-lo2`, `nterm-hi2`                                                                                                       |
+| 5   | n = 1.3 and spinner rounding                | grades: `nterm-1.3-*`; scoregrid: `nterm-spinner`                                                                                      |
+| 6   | Full marks via bonus, Totaal `(+)`          | grades: `bonus-full-marks`; scoregrid: `grid-O0` row 0                                                                                 |
+| 7   | Bonus partly compensating                   | grades: `bonus-partial`                                                                                                                |
+| 8   | No entries                                  | grades: `empty-entries`                                                                                                                |
+| 9   | All N                                       | grades: `all-N`, `all-N-string`                                                                                                        |
+| 10  | Only a bonus question, N                    | grades: `only-bonus-N`                                                                                                                 |
+| 11  | Only a diag question                        | grades: `only-diag`, `diag-and-normal`                                                                                                 |
+| 12  | Only invalid values                         | grades: `only-invalid`, `invalid-plus-valid`, `negative-score`                                                                         |
+| 13  | Partial entry                               | grades: `partial-entry`                                                                                                                |
+| 14  | Only bonus/diag questions, with override    | grades: `only-bonus-diag-exam*`                                                                                                        |
+| 15  | `max_points = 0`                            | grades: `max-points-0-*`; scoregrid: `normalizeScore-max-0`                                                                            |
+| 16  | Decimal comma and odd input                 | scoregrid: `normalizeScore`; grades: `string-numbers`                                                                                  |
+| 17  | Float accumulation                          | grades: `float-accumulation*`                                                                                                          |
+| 18  | Rounding boundaries                         | display: `grade-boundaries`                                                                                                            |
+| 19  | `isFail` at 5.45/5.46/5.5                   | display: `grade-boundaries`; stats: `gradeGroupIdx`                                                                                    |
+| 20  | RTTI rounding                               | grades: `rtti-thirds`, `rtti-half-percent`                                                                                             |
+| 21  | Override input                              | scoregrid: `parseGradeInput`, `sameOverride`                                                                                           |
+| 22  | Override stale flag                         | grades: `override-*`; scoregrid: `grid-O0` gradeInfo                                                                                   |
+| 23  | Override without scores                     | grades: `examResults-override-only`                                                                                                    |
+| 24  | Resit worse than original                   | attempts: `student-1`, `computeBestGradeMap`; averages: `student-7` (group and profile)                                                |
+| 25  | Resit tie                                   | attempts: `student-2`; averages: `student-6`                                                                                           |
+| 26  | Override decides the best attempt           | attempts: `student-3`                                                                                                                  |
+| 27  | Only the resit taken                        | attempts: `student-4`, `student-8`                                                                                                     |
+| 28  | Original with null grade                    | attempts: `student-5`                                                                                                                  |
+| 29  | Resit with another structure / n-term       | attempts: `student-6`; stats: `overview-summary`, `computeBestGradeStats`                                                              |
+| 30  | Weighted year / SE averages                 | averages: `student-*` (`profileYearAvg`, `profilePtaAvg`, `groupYearAvg`), `examFamilies`, `dossierAverages`, `calcWeightedAvg-direct` |
+| 31  | Score-grid summary rows vs overview         | scoregrid: `grid-O0`, `grid-O2`, `grid-one-row`; stats: `computeExamStats`                                                             |
+| 32  | Histogram binning                           | stats: `makeHistBins`                                                                                                                  |
+| 33  | Boxplot quartiles                           | stats: `boxStats`                                                                                                                      |
+| 34  | Vraaganalyse with N and over-max            | stats: `overview-exam` (`qStats`, `qPcts`)                                                                                             |
+| 35  | "Cijfer onder" threshold vs rounding        | opdrachten: `getOpdrachtAssignments` (students 1, 2, 6), `getOpdrachtAssignments-exact-boundary` (computed 5,45)                       |
+| 36  | Card threshold input                        | scoregrid: `cijfer-onder-input`                                                                                                        |
+| 37  | Coupling default vs saved                   | opdrachten: `getOpdrachtCoupling`, `getOpdrachtCijferCards`                                                                            |
+| 38  | Same opdracht for two reasons               | opdrachten: `getOpdrachtAssignments` (students 3, 4)                                                                                   |
+| 39  | Assignment sorting                          | opdrachten: `getOpdrachtAssignments` (order, student 4 last)                                                                           |
+| 40  | `opdrachtMatchesExam` matrix                | opdrachten: `opdrachtMatchesExam-matrix`                                                                                               |
+| 41  | Rapport inclusion                           | rapport: `compileRapport-exam-jaarlaag-3` (students 5, 6, 7, 8)                                                                        |
+| 42  | Leeradvies bracket at 40/70, no I row       | rapport: `getScoreBracket`, `compileRapport-*`                                                                                         |
+| 43  | Class average rounded before the percentage | rapport: `compileRapport-exam-jaarlaag-3` (`class_avg` 1.3 -> `class_pct` 43)                                                          |
+| 44  | CSV parser                                  | csv: `parseCSV-*` (19 cases)                                                                                                           |
+| 45  | Student CSV mapping                         | csv: `student-csv`, `student-csv-lowercase-comma`                                                                                      |
+| 46  | `currentSchoolYear`                         | ids: `currentSchoolYear`                                                                                                               |
+| 47  | `makeExamId`, `volgnummer`                  | ids: `makeExamId`, `makeGroupId`, `upsertExam-volgnummer-meta`                                                                         |
+| 48  | Unknown `rtti` tag throws                   | grades: `unknown-rtti-tag`                                                                                                             |
 
 Beyond section 11: group CSV and group assignment import (csv: `group-csv`,
 `group-assignment-csv`, BR 9.3-9.4, quirk D34), score-file write format (score-writes:
@@ -142,8 +143,8 @@ helpers (ids: `fullName`, `jaarlaagFromStamklas`, `sortStudents`, `group-name-pa
 
 ### Storage and sync
 
-`docs/specs/storage-spec.md` rows S01-S36 -> `tools/reference-shims/storage.test.mjs` (one test
-per row, same id).
+`docs/specs/storage-spec.md` rows S01-S40 -> `tools/reference-shims/storage.test.mjs` (one test
+per row, same id; rows are grouped by topic, not by number).
 
 ### Not covered yet, on purpose
 

@@ -9,7 +9,7 @@ import path from 'node:path';
 import { Suite } from '../golden.mjs';
 import { bindFunctions, extractConst, extractFunction } from '../extract.mjs';
 import { openReference } from '../session.mjs';
-import { YEAR, buildData, exam, student } from '../scenario.mjs';
+import { YEAR, buildData, readTree, exam, student } from '../scenario.mjs';
 
 const RAPPORT = 'renderer/modals/rapport.js';
 
@@ -189,12 +189,14 @@ function spec() {
 export default async function rapport() {
   const suite = new Suite('rapport', 'Data the rapport dialog builds for the Typst report.');
   const data = spec();
+  let tree;
   const s = await openReference({
     fixture: (dir) => {
       buildData(dir, data);
       const t = path.join(dir, 'templates', 'RTTI explanations and advices');
       fs.mkdirSync(t, { recursive: true });
       fs.writeFileSync(path.join(t, 'rtti_expl_adv_nat_3.json'), JSON.stringify(TEMPLATE, null, 2));
+      tree = readTree(dir);
     },
     subject: 'nat',
   });
@@ -235,7 +237,7 @@ export default async function rapport() {
     ];
     const { fns, refs } = bindFunctions(defs, { Store, qKind, window });
     suite.ref(refs);
-    suite.add('data', 'BR 8', { ...data, template: TEMPLATE }, null);
+    suite.add('data', 'BR 8', { files: tree }, null);
 
     for (const [label, e] of [
       ['exam-jaarlaag-3', EXAM3],

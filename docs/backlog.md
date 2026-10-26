@@ -2,6 +2,11 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From the Step 2a review (`docs/reviews/step-02a.md`)
+
+- **n4:** `attempts` golden: store the grade `resolveBestAttempts` compared
+  (`Store.calcResults(...).grade`) next to each history entry, so the case explains itself.
+
 ## From the Step 0 review (`docs/reviews/step-00.md`)
 
 - **m6 (Step 6):** full third-party notices for the ~300 bundled crates (e.g. `cargo about`) and an

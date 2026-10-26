@@ -105,7 +105,7 @@ export default async function scoreWrites() {
     const out = [];
     for (const [label, op, id] of steps) {
       const r = await capture(op);
-      out.push({ step: label, result: r ?? null, file: text(id) });
+      out.push({ step: label, result: r, file: text(id) });
     }
     suite.add(
       'sequence',

@@ -114,7 +114,7 @@ async function runCase(c) {
       c.prepare?.(dir);
     },
     subject: 'nat',
-    main: { onWrite: (file, data) => writes.push({ file, data: String(data) }) },
+    main: { typst: true, onWrite: (file, data) => writes.push({ file, data: String(data) }) },
   });
   try {
     const { Store, qKind, mp } = s;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Golden file format for logic suites (tests/golden/README.md).
+// Golden file format for logic suites (docs/testing.md, "Golden format").
 
 import fs from 'node:fs';
 import path from 'node:path';

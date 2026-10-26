@@ -31,62 +31,86 @@
       "output": [
         {
           "step": "setScore 1 E1 q1 = 1.5",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q1\": 1.5\n    }\n  }\n}"
         },
         {
           "step": "setScore 1 E1 q2 = null (N)",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q1\": 1.5,\n      \"q2\": null\n    }\n  }\n}"
         },
         {
           "step": "setScore 1 E1 q2 = \"abc\" (invalid kept)",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q1\": 1.5,\n      \"q2\": \"abc\"\n    }\n  }\n}"
         },
         {
           "step": "setScore 1 E1 q1 = undefined (cleared)",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  }\n}"
         },
         {
           "step": "setGradeOverride 1 E1 6.3 / 5.4",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  },\n  \"overrides\": {\n    \"nat-sw-1-2025-2026\": {\n      \"cijfer\": 6.3,\n      \"berekend\": 5.4\n    }\n  }\n}"
         },
         {
           "step": "setGradeOverride 1 E2 7 / undefined",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  },\n  \"overrides\": {\n    \"nat-sw-1-2025-2026\": {\n      \"cijfer\": 6.3,\n      \"berekend\": 5.4\n    },\n    \"nat-sw-2-2025-2026\": {\n      \"cijfer\": 7,\n      \"berekend\": null\n    }\n  }\n}"
         },
         {
           "step": "setGradeOverride 1 E1 null (removed)",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  },\n  \"overrides\": {\n    \"nat-sw-2-2025-2026\": {\n      \"cijfer\": 7,\n      \"berekend\": null\n    }\n  }\n}"
         },
         {
           "step": "setGradeOverride 1 E2 null (last one removed)",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  }\n}"
         },
         {
           "step": "setObservation 1 E1 obs-b on",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  },\n  \"observations\": {\n    \"nat-sw-1-2025-2026\": [\n      \"obs-b\"\n    ]\n  }\n}"
         },
         {
           "step": "setObservation 1 E1 obs-b on again",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  },\n  \"observations\": {\n    \"nat-sw-1-2025-2026\": [\n      \"obs-b\"\n    ]\n  }\n}"
         },
         {
           "step": "setObservation 1 E1 obs-b off",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 1,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q2\": \"abc\"\n    }\n  },\n  \"observations\": {}\n}"
         },
         {
           "step": "removeObsFromExamScores obs-a E1",
-          "result": null,
+          "result": {
+            "$undefined": true
+          },
           "file": "{\n  \"student_id\": 2,\n  \"scores\": {\n    \"nat-sw-1-2025-2026\": {\n      \"q1\": 1\n    }\n  },\n  \"observations\": {\n    \"nat-sw-1-2025-2026\": [],\n    \"nat-sw-2-2025-2026\": [\n      \"obs-a\"\n    ]\n  }\n}"
         }
       ]

@@ -194,9 +194,9 @@ export default async function scoregrid() {
     {
       const exam = makeExam([[10, 'R']]);
       const grid = [
-        ['1', 'A', '7', '', '', '', '', '', '', '', '', ''],
-        Array(12).fill('x'),
-        Array(12).fill('x'),
+        ['1', 'A', '7', '', '', '', '', '', '', '', ''],
+        Array(11).fill('x'),
+        Array(11).fill('x'),
       ];
       fns.recomputeRow(grid, exam, 0);
       fns.recomputeSummaryRow(grid, 1, 2, exam);
@@ -208,7 +208,9 @@ export default async function scoregrid() {
     // n-term spinner set() (nested in wireSpinners; step/min/max/dec/sp/inp are its free variables).
     const values = [1.3, 1.25, 1.35, 0.05, -1, 3.04, 3.06, 2.95, 0.1 + 0.2, 1 / 3, NaN];
     const spin = values.map((v) => {
-      const sp = { dataset: {} };
+      // A DOM dataset stores strings.
+      const dataset = new Proxy({}, { set: (o, k, v) => ((o[k] = String(v)), true) });
+      const sp = { dataset };
       const inp = { value: '' };
       const { fns: f } = bindFunctions([extractFunction(SPIN, 'set')], {
         step: 0.1,

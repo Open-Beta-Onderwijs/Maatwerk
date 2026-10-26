@@ -364,6 +364,59 @@ test(
   }),
 );
 
+test(
+  'S37 CAS is not atomic: a foreign write landing between the hash check and the rename is lost',
+  withDir(async (dir) => {
+    for (const rel of ['exams/a.json', '2025-2026/scores/nat/1.json']) {
+      const m = createMainStorage({ dataDir: dir });
+      const { hash } = await m.invoke('fs:writeJson', rel, { v: 'base' });
+      const real = fs.renameSync;
+      let raced = false;
+      fs.renameSync = (from, to) => {
+        if (!raced) {
+          raced = true;
+          fs.writeFileSync(to, pretty({ v: 'colleague' }));
+        }
+        return real(from, to);
+      };
+      let r;
+      try {
+        r = await m.invoke('fs:writeJson', rel, { v: 'mine' }, { cas: true, expectedHash: hash });
+      } finally {
+        fs.renameSync = real;
+      }
+      assert.equal(r.ok, true, rel);
+      assert.deepEqual(
+        JSON.parse(read(dir, rel)),
+        { v: 'mine' },
+        `${rel}: colleague's write is gone`,
+      );
+    }
+  }),
+);
+
+test(
+  'S38 writes without cas (Store.save) overwrite a newer version from another instance',
+  withDir(async (dir) => {
+    const a = createMainStorage({ dataDir: dir });
+    const b = createMainStorage({ dataDir: dir });
+    for (const rel of [
+      'school.json',
+      'config.json',
+      '2025-2026/students-2025-2026.json',
+      '2025-2026/scores/nat/1.json',
+    ]) {
+      await a.invoke('fs:writeJson', rel, { v: 1 });
+      await b.invoke('fs:writeJson', rel, { v: 2, by: 'b' });
+      assert.deepEqual(await a.invoke('fs:writeJson', rel, { v: 1, by: 'a' }), {
+        ok: true,
+        hash: sha1(pretty({ v: 1, by: 'a' })),
+      });
+      assert.deepEqual(JSON.parse(read(dir, rel)), { v: 1, by: 'a' }, rel);
+    }
+  }),
+);
+
 // ── Compare-and-swap in the renderer (store.js update / saveEntity) ──────────
 
 test(
@@ -562,9 +615,17 @@ test(
 function startWatcher(dir) {
   const realWatch = fs.watch;
   let notify = null;
+  let onError = null;
+  const watchCalls = { count: 0, closed: 0 };
   fs.watch = (_dir, _opts, cb) => {
     notify = cb;
-    return { on() {}, close() {} };
+    watchCalls.count++;
+    return {
+      on: (ev, fn) => {
+        if (ev === 'error') onError = fn;
+      },
+      close: () => watchCalls.closed++,
+    };
   };
   mock.timers.enable({ apis: ['setTimeout', 'setInterval'] });
   const batches = [];
@@ -572,6 +633,8 @@ function startWatcher(dir) {
   return {
     w,
     batches,
+    watchCalls,
+    fail: (msg) => quiet(() => onError(new Error(msg))),
     watch: (rel) => notify('change', rel.split('/').join(path.sep)),
     // Step in 10 ms increments: a timer set while timers run fires on a later step.
     tick: (ms) => {
@@ -812,6 +875,59 @@ test(
         ['added a.json', 'added b.json'],
       );
     } finally {
+      t.stop();
+    }
+  }),
+);
+
+test(
+  'S39 after an fs.watch error the watcher closes it, polls meanwhile and restarts it after 30 s',
+  withDir((dir) => {
+    put(dir, 'config.json', pretty({ activeYear: '2025-2026' }));
+    const t = startWatcher(dir);
+    try {
+      assert.equal(t.watchCalls.count, 1);
+      t.fail('EPERM');
+      assert.equal(t.watchCalls.closed, 1);
+      put(dir, 'observaties/x.json', '{}');
+      t.tick(20_000 + 600);
+      assert.deepEqual(
+        t.changes().map((c) => c.relPath),
+        ['observaties/x.json'],
+        'poll still works',
+      );
+      assert.equal(t.watchCalls.count, 1);
+      t.tick(10_000);
+      assert.equal(t.watchCalls.count, 2, 'fs.watch restarted 30 s after the error');
+    } finally {
+      t.stop();
+    }
+  }),
+);
+
+test(
+  'S40 a file that cannot be read during a check (EBUSY) is skipped silently until the next event or poll',
+  withDir((dir) => {
+    const t = startWatcher(dir);
+    const real = fs.readFileSync;
+    try {
+      put(dir, 'a.json', '{}');
+      let busy = true;
+      fs.readFileSync = (file, ...rest) => {
+        if (busy && String(file).endsWith('a.json')) {
+          busy = false;
+          throw Object.assign(new Error('EBUSY'), { code: 'EBUSY' });
+        }
+        return real(file, ...rest);
+      };
+      t.watch('a.json');
+      t.tick(5000);
+      assert.deepEqual(t.changes(), [], 'no event and no retry timer');
+      t.watch('a.json');
+      t.tick(600);
+      assert.deepEqual(t.changes(), [{ relPath: 'a.json', kind: 'added', meta: null }]);
+    } finally {
+      fs.readFileSync = real;
       t.stop();
     }
   }),

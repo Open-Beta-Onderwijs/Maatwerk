@@ -424,6 +424,20 @@ Paths in this section are relative to `_reference/renderer/`.
   bonus and diag questions.
 - **Why it matters:** An exam can show ⚠ "onvolledig" for every student who skipped the bonus.
 
+### B31. Results depend on the order files come back from the folder
+
+- **Where:** `main.js:163-176` (`fs:readAllJson` returns `readdirSync` order, unsorted), used by
+  `store.js:283-293` for exams and groups. Order-sensitive consumers: `store.js:1337-1339`
+  (`getOpdrachtAssignments` picks the first group of the exam's jaarlaag), `rapport.js`
+  `compileRapport` (`groups.find`), `toets-overzicht.js:49-54` (first group per student), and float
+  sums over exams (`profiel.js` `yearAvg`).
+- **Evidence (Step 2a review M2):** a student in two groups of the same jaarlaag gets the group whose
+  file name sorts first on NTFS (`g-10a` before `g-9b`); with the listing reversed the student gets
+  the other group and sorts elsewhere. Averages change in the last float digit.
+- **Why it matters:** on Windows the order is stable (NTFS returns names sorted case-insensitively),
+  so the app is consistent there, but the port and a macOS build must pick the order on purpose. The
+  harness pins NTFS order (`docs/testing.md`, harness assumptions).
+
 ## T. Typst
 
 ### T1. The rapport needs network access: cetz/oxifmt/unify are not vendored

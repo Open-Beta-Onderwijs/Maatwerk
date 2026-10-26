@@ -48,3 +48,23 @@ test('clock is frozen', () => {
   assert.equal(new Date().toISOString(), new Date(Date.now()).toISOString());
   assert.equal(new Date().getFullYear(), 2026);
 });
+
+test(
+  'directory order is pinned: reversed raw listings give identical goldens',
+  { skip },
+  async () => {
+    const { execFileSync } = await import('node:child_process');
+    const fs = await import('node:fs');
+    const { goldenPath } = await import('./golden.mjs');
+    const { fileURLToPath } = await import('node:url');
+    const script = fileURLToPath(new URL('./run-suite.mjs', import.meta.url));
+    for (const name of ['opdrachten', 'csv', 'averages']) {
+      const out = execFileSync(process.execPath, [script, name], {
+        encoding: 'utf8',
+        maxBuffer: 64 * 1024 * 1024,
+        env: { ...process.env, TZ: 'Europe/Amsterdam', MAATWERK_READDIR_REVERSE: '1' },
+      });
+      assert.equal(out, fs.readFileSync(goldenPath(name), 'utf8'), name);
+    }
+  },
+);

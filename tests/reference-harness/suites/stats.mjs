@@ -6,7 +6,16 @@
 import { Suite, capture } from '../golden.mjs';
 import { bindFunctions, extractFunction, extractSnippet } from '../extract.mjs';
 import { openReference } from '../session.mjs';
-import { TEN_BY_TEN, YEAR, buildData, exam, pointsFor, student, tenByTen } from '../scenario.mjs';
+import {
+  TEN_BY_TEN,
+  YEAR,
+  buildData,
+  readTree,
+  exam,
+  pointsFor,
+  student,
+  tenByTen,
+} from '../scenario.mjs';
 
 const TOETSEN = 'renderer/screens/toetsen.js';
 const OVERZICHT = 'renderer/modals/toets-overzicht.js';
@@ -82,7 +91,14 @@ export default async function stats() {
     'Exam statistics, overview accumulation, histogram and boxplot.',
   );
   const data = spec();
-  const s = await openReference({ fixture: (dir) => buildData(dir, data), subject: 'nat' });
+  let tree;
+  const s = await openReference({
+    fixture: (dir) => {
+      buildData(dir, data);
+      tree = readTree(dir);
+    },
+    subject: 'nat',
+  });
   try {
     const { Store, qKind } = s;
     const colorDefs = ['hexToRgb', 'lerpColor', 'isFail'].map((n) => extractFunction(COLORS, n));
@@ -97,7 +113,7 @@ export default async function stats() {
       { Store, qKind },
     );
     suite.ref(cards.refs);
-    suite.add('data', 'BR 6', data, null);
+    suite.add('data', 'BR 6', { files: tree }, null);
     suite.add(
       'computeExamStats',
       'BR 6.1, 11.31',
@@ -142,8 +158,7 @@ export default async function stats() {
       name: 'summary',
       params: ['grades'],
       contains: ['const mean =', 'const fails ='],
-      epilogue:
-        'return { mean, sd, fails, shown: `${mean.toFixed(1).replace(".", ",")} ± ${sd.toFixed(1).replace(".", ",")}` };',
+      epilogue: 'return { mean, sd, fails };',
     });
     const qPcts = extractSnippet(OVERZICHT, {
       start: 800,

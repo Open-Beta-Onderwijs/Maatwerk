@@ -5,7 +5,7 @@
 import { Suite, capture } from '../golden.mjs';
 import { extractFunction, refOf } from '../extract.mjs';
 import { openReference } from '../session.mjs';
-import { TEN_BY_TEN, YEAR, buildData, exam, student, tenByTen } from '../scenario.mjs';
+import { TEN_BY_TEN, YEAR, buildData, readTree, exam, student, tenByTen } from '../scenario.mjs';
 
 const STORE = 'renderer/store.js';
 
@@ -45,6 +45,12 @@ const EXAM = exam('nat-opd-2025-2026', TEN_BY_TEN, {
     { id: 'cijfer-2', onder: 4, opdrachten: ['op-3'] },
   ],
 });
+
+const EXAM_EDGE = exam(
+  'nat-opd-rand-2025-2026',
+  Array.from({ length: 9 }, (_, i) => [10, ['R', 'T1', 'T2', 'I'][i % 4]]),
+  { volgnummer: 302 },
+);
 
 // Students: grade (100-point exam: S * 0.09 + 1), observaties, group membership.
 const STUDENTS = [
@@ -150,6 +156,10 @@ function spec() {
       ...(st.override ? { overrides: { [EXAM.id]: st.override } } : {}),
     };
   }
+  // Grades that land exactly on x.x5 in floating point (candidate 35).
+  scores[1].scores[EXAM_EDGE.id] = { q1: 10, q2: 10, q3: 10, q4: 10, q5: 4.5 }; // 44.5 / 90
+  scores[2].scores[EXAM_EDGE.id] = { q1: 10, q2: 10, q3: 10, q4: 10, q5: 5.5 }; // 45.5 / 90
+  scores[3].scores[EXAM_EDGE.id] = { q1: 10, q2: 10, q3: 10, q4: 5 }; // 35 / 90
   return {
     observaties: OBS,
     opdrachten: OPS,
@@ -162,7 +172,7 @@ function spec() {
             achternaam: st.name[2],
           }),
         ),
-        exams: [EXAM],
+        exams: [EXAM, EXAM_EDGE],
         groups,
         scores: { nat: scores },
       },
@@ -198,7 +208,14 @@ export default async function opdrachten() {
     ].map((n) => refOf(extractFunction(STORE, n))),
   );
   const data = spec();
-  const s = await openReference({ fixture: (dir) => buildData(dir, data), subject: 'nat' });
+  let tree;
+  const s = await openReference({
+    fixture: (dir) => {
+      buildData(dir, data);
+      tree = readTree(dir);
+    },
+    subject: 'nat',
+  });
   try {
     const { Store } = s;
     await Store.getOpdrachten();
@@ -232,7 +249,7 @@ export default async function opdrachten() {
       matrix,
     );
 
-    suite.add('data', 'BR 7', data, null);
+    suite.add('data', 'BR 7', { files: tree }, null);
     const coupling = Store.getOpdrachtCoupling(EXAM);
     suite.add('getOpdrachtCoupling', 'BR 7.3, 11.37', { exam: EXAM.id }, coupling);
     const cards = Store.getOpdrachtCijferCards(EXAM);
@@ -249,6 +266,17 @@ export default async function opdrachten() {
       'BR 7.5, 11.35, 11.38, 11.39',
       { exam: EXAM.id, students: STUDENTS.map(({ id, why }) => ({ id, why })) },
       res.$throws ? res : slimAssignments(res),
+    );
+    const edgeCards = [{ id: 'cijfer-rand', onder: 5.5, opdrachten: ['op-1'] }];
+    const edge = await capture(() => Store.getOpdrachtAssignments(EXAM_EDGE, YEAR, {}, edgeCards));
+    const edgeGrades = {};
+    for (const id of [1, 2, 3])
+      edgeGrades[id] = Store.examResults(await Store.getStudentScores(id, YEAR), EXAM_EDGE)?.grade;
+    suite.add(
+      'getOpdrachtAssignments-exact-boundary',
+      'BR 7.4, 11.35 (Math.round(g * 10) / 10 < onder on a computed x.x5 grade)',
+      { exam: EXAM_EDGE.id, cards: edgeCards, grades: edgeGrades },
+      edge.$throws ? edge : slimAssignments(edge),
     );
     const noCards = await capture(() => Store.getOpdrachtAssignments(EXAM, YEAR, coupling));
     suite.add(

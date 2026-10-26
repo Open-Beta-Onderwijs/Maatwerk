@@ -5,7 +5,16 @@
 import { Suite, capture } from '../golden.mjs';
 import { extractFunction, refOf } from '../extract.mjs';
 import { openReference } from '../session.mjs';
-import { TEN_BY_TEN, YEAR, buildData, exam, pointsFor, student, tenByTen } from '../scenario.mjs';
+import {
+  TEN_BY_TEN,
+  YEAR,
+  buildData,
+  readTree,
+  exam,
+  pointsFor,
+  student,
+  tenByTen,
+} from '../scenario.mjs';
 
 const STORE = 'renderer/store.js';
 const PREV = '2024-2025';
@@ -100,11 +109,18 @@ export default async function attempts() {
     ),
   );
   const data = spec();
-  const s = await openReference({ fixture: (dir) => buildData(dir, data), subject: 'nat' });
+  let tree;
+  const s = await openReference({
+    fixture: (dir) => {
+      buildData(dir, data);
+      tree = readTree(dir);
+    },
+    subject: 'nat',
+  });
   try {
     const { Store } = s;
     await Store.loadYear(PREV, 'nat');
-    suite.add('data', 'BR 5', data, null);
+    suite.add('data', 'BR 5', { files: tree }, null);
 
     suite.add(
       'getResitsSync',
