@@ -20,6 +20,8 @@ storage, watcher).
   first; minors fixed or in `docs/backlog.md` (triage table in the review).
 - Visual: score modal within ~1 px of Handsontable; ↶/↷ now disabled when empty. Local visual
   baseline updated after the grid change.
+- Follow-up (user feedback): question numbers and observation icons in the header now sit on the
+  same line as Totaal/Cijfer; checkboxes centred in their cells.
 
 ## Step 3a summary (tag `step-03a`)
 
