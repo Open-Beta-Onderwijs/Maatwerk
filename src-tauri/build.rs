@@ -1,5 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 fn main() {
-    tauri_build::build();
+    // tauri-build links its app manifest into the exe only. Test binaries that link Tauri need
+    // it too (Common Controls v6, else STATUS_ENTRYPOINT_NOT_FOUND at start), so on MSVC the
+    // manifest is passed to the linker for every target instead.
+    let msvc = std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc");
+    let mut windows = tauri_build::WindowsAttributes::new();
+    if msvc {
+        windows = tauri_build::WindowsAttributes::new_without_app_manifest();
+        let manifest =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("windows-app-manifest.xml");
+        println!("cargo:rerun-if-changed={}", manifest.display());
+        println!("cargo:rustc-link-arg=/MANIFEST:EMBED");
+        println!("cargo:rustc-link-arg=/MANIFESTINPUT:{}", manifest.display());
+    }
+    tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows))
+        .expect("tauri-build failed");
 }

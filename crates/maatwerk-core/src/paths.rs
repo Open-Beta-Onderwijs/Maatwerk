@@ -220,6 +220,19 @@ impl DataDir {
     }
 }
 
+/// A path as the UI shows it: without the `\\?\` verbatim prefix that canonicalising adds on
+/// Windows.
+pub fn display_path(path: &Path) -> String {
+    let s = path.display().to_string();
+    if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
+        return format!(r"\\{rest}");
+    }
+    match s.strip_prefix(r"\\?\") {
+        Some(rest) => rest.to_owned(),
+        None => s,
+    }
+}
+
 /// `YYYY-YYYY` year folder name (`main.js:126`).
 pub fn is_year_name(name: &str) -> bool {
     let b = name.as_bytes();
@@ -233,6 +246,16 @@ pub fn is_year_name(name: &str) -> bool {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+
+    #[test]
+    fn display_path_drops_the_verbatim_prefix() {
+        assert_eq!(display_path(Path::new(r"\\?\C:\a\data")), r"C:\a\data");
+        assert_eq!(
+            display_path(Path::new(r"\\?\UNC\srv\share\data")),
+            r"\\srv\share\data"
+        );
+        assert_eq!(display_path(Path::new("/home/a/data")), "/home/a/data");
+    }
 
     #[test]
     fn accepts_normal_paths() {
