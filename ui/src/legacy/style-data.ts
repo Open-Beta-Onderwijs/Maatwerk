@@ -42,8 +42,9 @@ export function applyStyleData(root: ParentNode): void {
 
 /**
  * Keeps style data applied for everything added to the document later. The
- * observer runs before the next paint; code that measures right after setting
- * innerHTML calls applyStyleData itself.
+ * observer runs as a microtask: before the next paint, but after the rest of
+ * the current task. Code that measures layout or toggles el.style right after
+ * setting innerHTML must call applyStyleData first (showModal in app.js does).
  */
 export function watchStyleData(doc: Document = document): void {
   applyStyleData(doc);

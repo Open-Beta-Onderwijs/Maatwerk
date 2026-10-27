@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // A minimal, valid one-page PDF per page of text, so the mock backend can hand
-// the PDF viewer something real to render. ASCII text only.
+// the PDF viewer something real to render. Non-ASCII characters print as ?.
 
 export function cannedPdf(pages: string[][]): Uint8Array {
   const objects: string[] = [];
@@ -12,7 +12,8 @@ export function cannedPdf(pages: string[][]): Uint8Array {
   pages.forEach((lines, i) => {
     const text = lines
       .map((line, j) => {
-        const escaped = line.replace(/[\\()]/g, (c) => `\\${c}`);
+        // Byte offsets below assume one byte per character: non-ASCII becomes '?'.
+        const escaped = line.replace(/[^\x20-\x7e]/g, '?').replace(/[\\()]/g, (c) => `\\${c}`);
         return `BT /F1 ${j === 0 ? 20 : 12} Tf 72 ${770 - j * 28} Td (${escaped}) Tj ET`;
       })
       .join('\n');

@@ -38,5 +38,35 @@ export default defineConfig(
       '@typescript-eslint/no-unused-expressions': ['error', { allowTernary: true }],
     },
   },
+  {
+    // Domain modules are pure (ADR-0002 section 6): no window/DOM, no I/O.
+    files: ['src/domain/**/*.ts'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        ...['window', 'document', 'navigator', 'localStorage', 'sessionStorage', 'fetch'].map(
+          (name) => ({ name, message: 'Domain code is pure: pass the value in.' }),
+        ),
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '../bridge*',
+                '../store*',
+                '../app*',
+                '../legacy*',
+                '../screens*',
+                '../modals*',
+              ],
+              message: 'Domain code does not depend on the bridge or the legacy UI.',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 );

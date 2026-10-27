@@ -249,6 +249,9 @@ export class MockApi implements MaatwerkApi {
       const current = this.files.get(relPath);
       const currentHash = current ? await sha1(current) : null;
       if (currentHash !== (opts.expectedHash ?? null)) return { ok: false, reason: 'conflict' };
+      // The hash is async: a write that landed meanwhile is a conflict too (the
+      // reference compares and writes in one synchronous handler).
+      if (this.files.get(relPath) !== current) return { ok: false, reason: 'conflict' };
     }
     const bytes = encoder.encode(JSON.stringify(data, null, 2));
     this.putFile(relPath, bytes);
@@ -478,7 +481,7 @@ export class MockApi implements MaatwerkApi {
     examInfo: Record<string, unknown>,
   ): Promise<RenderResult<{ pdfPath: string }>> {
     this.record('renderRapportPdf', [examId, students, examInfo]);
-    const title = String(examInfo?.title ?? examId);
+    const title = String(examInfo?.name ?? examId); // payload field is name (domain/rapport.ts)
     const pages = students.map((s, i) => {
       const name = (s as { name?: unknown })?.name;
       return ['Rapport (mock)', title, typeof name === 'string' ? name : `Leerling ${i + 1}`];

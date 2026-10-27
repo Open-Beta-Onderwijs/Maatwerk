@@ -18,6 +18,7 @@ import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
+import { applyStyleData } from './legacy/style-data';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -122,6 +123,8 @@ export function showModal(html, onShow, wide = false, onClose) {
   clearModalSubs();
   destroyModalCharts();
   modalContent.innerHTML = html;
+  // Before onShow, which may measure (charts): see src/legacy/style-data.ts.
+  applyStyleData(modalContent);
   modalBox.className = '';
   if (wide === true) modalBox.classList.add('modal-xl');
   else if (typeof wide === 'string') modalBox.classList.add(wide);

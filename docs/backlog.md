@@ -10,6 +10,13 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   component classes and fix the inconsistencies they preserve (e.g. grade pills 34 vs 36 px, two
   panel paddings `10px` vs `10px 12px 14px`, `#aaa` vs `#9aa0ab` greys). Each visible change needs
   the user's eye; `npm run test:visual` shows the diff.
+- **Step 6 CSP checklist (review 3a m8):** add the PDF output scheme of ADR-0002 section 9 to
+  `connect-src` in `ui/vite/csp.ts`; pass `isEvalSupported: false` to pdf.js `getDocument`; run
+  `ui/e2e/csp.spec.ts` on a real compiled rapport (the mock PDF uses only Helvetica).
+- **Utilities are `!important` (review 3a m7):** a later `el.style.x = …` on an element with a
+  `u-*` class for the same property is ignored. Use a component class there instead.
+- **Review 3a n5:** `csp.spec.ts` waits a fixed 600 ms; `smoke.spec.ts` retries opening the exam
+  menu while the list re-renders. Replace with a "list rendered" signal when the screens are touched.
 - **U18:** the period separators in the group students modal never rendered; add them if wanted.
 - **Dependency updates after parity (Step 10):** pdfjs-dist 4.9.155, chart.js 4.4.2 and
   chartjs-plugin-annotation 3.0.1 are pinned to the reference versions.

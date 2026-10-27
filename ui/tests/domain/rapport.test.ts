@@ -176,3 +176,23 @@ describe('rapport golden (compileRapport on the Store)', () => {
     expect(await run(() => calls[0] ?? null)).toEqual(c.output);
   });
 });
+
+describe('C8: rapport group lookup compares ids as strings', () => {
+  it('a string id in student_ids matches a numeric student id', async () => {
+    const { buildRapportData } = await import('../../src/domain/rapport');
+    const exam = {
+      id: 'e',
+      jaarlaag: '3',
+      questions: [{ id: 'q1', max_points: 2, rtti: 'R', section: 'I', number: 1 }],
+    } as Exam;
+    const { studentData } = buildRapportData({
+      exam,
+      students: [{ id: 7, voornaam: 'A', achternaam: 'B', stamklas: '3a' }],
+      groups: [{ id: 'g', name: '3a nat', student_ids: ['7'] }],
+      recordOf: () => ({ scores: { e: { q1: 1 } } }),
+      observaties: [],
+      adviesData: defaultTabData(),
+    });
+    expect(studentData[0]!.group).toBe('3a nat'); // the reference showed '—'
+  });
+});

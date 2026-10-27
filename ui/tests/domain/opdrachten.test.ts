@@ -94,3 +94,21 @@ describe('opdrachten golden (Store)', () => {
     expect(await run(() => slimAssignments(res))).toEqual(c.output);
   });
 });
+
+describe('C8: student ids compare as strings', () => {
+  it('finds the group when student_ids holds the id as a string', async () => {
+    const { assignOpdrachten } = await import('../../src/domain/opdrachten');
+    const exam = { id: 'e', questions: [], obs_ids: ['o1'], jaarlaag: '3' } as Exam;
+    const res = assignOpdrachten({
+      exam,
+      students: [{ id: 123, achternaam: 'A' }],
+      recordOf: () => ({ observations: { e: ['o1'] } }),
+      observaties: [{ id: 'o1' }],
+      opdrachten: [{ id: 'op' }],
+      groups: [{ id: 'g', name: '3a', jaarlaag: '3', student_ids: ['123'] }],
+      coupling: { o1: ['op'] },
+    });
+    // The reference used includes(123) and found no group here.
+    expect(res.students[0]!.group?.id).toBe('g');
+  });
+});

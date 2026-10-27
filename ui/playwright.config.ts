@@ -28,6 +28,7 @@ export default defineConfig({
   webServer: {
     command: 'npx vite preview --outDir dist-mock --port 4173 --strictPort',
     url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
+    // Never reuse: a preview left running may serve an older dist-mock (review 3a n6).
+    reuseExistingServer: false,
   },
 });

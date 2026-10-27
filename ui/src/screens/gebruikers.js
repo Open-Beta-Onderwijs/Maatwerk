@@ -156,7 +156,7 @@ function openUserModal(user) {
       </div>
       <div class="u-flex-1 form-group">
         <label>Kleur (badge rand)</label>
-        <input id="f-ukleur" type="color" value="${user?.kleur ?? '#4a90d9'}" class="u-w-48 u-h-28 u-p-2 u-cursor-pointer u-align-middle" />
+        <input id="f-ukleur" type="color" value="${escHtml(user?.kleur ?? '#4a90d9')}" class="u-w-48 u-h-28 u-p-2 u-cursor-pointer u-align-middle" />
       </div>
     </div>
     <div class="form-group">

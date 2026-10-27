@@ -60,6 +60,18 @@ function postToParent(type, data = {}) {
   });
 }
 
+/**
+ * postToParent for the figure and clipboard actions: a failed call (D25) shows
+ * the reason in the status bar and yields `fallback` instead of an unhandled
+ * rejection (review 3a m3).
+ */
+function askParent(type, data, fallback) {
+  return postToParent(type, data).catch((err) => {
+    setStatus('Fout bij afbeelding', err.message);
+    return typeof fallback === 'function' ? fallback(err) : fallback;
+  });
+}
+
 window.addEventListener('message', (evt) => {
   const msg = evt.data;
   if (msg?.type === 'maatwerk-response' && _pending[msg.id]) {
@@ -1299,7 +1311,7 @@ function showFigurePopup() {
 
 // First free "afbeelding-N" for a pasted image.
 async function nextImageName() {
-  const images = (await postToParent('maatwerk-list-images', { opdrachtId })) ?? [];
+  const images = (await askParent('maatwerk-list-images', { opdrachtId }, [])) ?? [];
   const taken = new Set(images.map((i) => i.name));
   let n = 1;
   while (taken.has(`afbeelding-${n}`)) n++;
@@ -1311,7 +1323,7 @@ async function showFigureMenu() {
   showFigurePopup();
   const panel = figPanel();
   panel.innerHTML = '<div class="tb-fig-hint">Laden…</div>';
-  const images = (await postToParent('maatwerk-list-images', { opdrachtId })) ?? [];
+  const images = (await askParent('maatwerk-list-images', { opdrachtId }, [])) ?? [];
   const items = images
     .map(
       (img) => `
@@ -1375,19 +1387,27 @@ async function saveNamedImage(overwrite) {
   const name = panel.querySelector('#fig-name').value.trim();
   const result =
     source.kind === 'paste'
-      ? await postToParent('maatwerk-save-image', {
-          opdrachtId,
-          name,
-          ext: source.ext,
-          base64: source.base64,
-          overwrite,
-        })
-      : await postToParent('maatwerk-import-image', {
-          opdrachtId,
-          token: source.token,
-          name,
-          overwrite,
-        });
+      ? await askParent(
+          'maatwerk-save-image',
+          {
+            opdrachtId,
+            name,
+            ext: source.ext,
+            base64: source.base64,
+            overwrite,
+          },
+          (err) => ({ ok: false, error: err.message }),
+        )
+      : await askParent(
+          'maatwerk-import-image',
+          {
+            opdrachtId,
+            token: source.token,
+            name,
+            overwrite,
+          },
+          (err) => ({ ok: false, error: err.message }),
+        );
   if (result?.ok) {
     closeActivePopup();
     insertFigure(result.file, result.name);
@@ -1406,7 +1426,7 @@ async function pasteImage(base64, ext) {
 }
 
 async function pasteImageFromClipboard() {
-  const base64 = await postToParent('maatwerk-clipboard-image');
+  const base64 = await askParent('maatwerk-clipboard-image', {}, null);
   if (base64) await pasteImage(base64, 'png');
   else showFigError('Er staat geen afbeelding op het klembord.');
 }
@@ -1421,7 +1441,7 @@ function setupFigurePopup() {
         insertFigure(btn.dataset.file, btn.dataset.name);
         break;
       case 'pick': {
-        const picked = await postToParent('maatwerk-pick-image');
+        const picked = await askParent('maatwerk-pick-image', {}, null);
         if (picked) showNameForm({ kind: 'file', token: picked.token }, picked.name);
         break;
       }
@@ -1727,7 +1747,7 @@ function setupContextMenu() {
         });
         view.focus();
       } else {
-        const image = await postToParent('maatwerk-clipboard-image');
+        const image = await askParent('maatwerk-clipboard-image', {}, null);
         if (image) await pasteImage(image, 'png');
       }
     } else if (action === 'comment') {

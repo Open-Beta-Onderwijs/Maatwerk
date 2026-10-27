@@ -106,3 +106,24 @@ test('U9: after a failed save the editor can still be closed, after confirming',
   expect(dialogs).toHaveLength(2);
   expect(dialogs[0]).toContain('niet opgeslagen');
 });
+
+test('U7: the user dialog keeps the colour attribute intact', async ({ page }) => {
+  await page.goto('/');
+  const users = await readMockJson<Record<string, unknown>[]>(page, 'gebruikers.json');
+  const kleur = '#123456" data-x="1';
+  await seedFiles(page, {
+    'gebruikers.json': users.map((u) => (u.id === TEACHER ? { ...u, kleur } : u)),
+  });
+  await login(page, 'nat', 'admin');
+  await page.locator('.nav-btn[data-screen="gebruikers"]').click();
+  await page.locator(`[data-action="edit-user"][data-id="${TEACHER}"]`).click();
+  await expect(page.locator('#f-ukleur')).not.toHaveAttribute('data-x');
+});
+
+test('D25: a failed image call in the editor is reported, not swallowed', async ({ page }) => {
+  await login(page);
+  const frame = await openFirstOpdrachtInEditor(page);
+  await withMock(page, (m) => m.fail('listOpdrachtImages', ''));
+  await frame.locator('[data-action="figure"]').click();
+  await expect(frame.locator('#editor-status')).toContainText('Fout bij afbeelding');
+});

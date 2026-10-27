@@ -51,6 +51,15 @@ describe('MockApi', () => {
     expect(await api.readJson('c.json')).toBe(3);
   });
 
+  it('CAS: a write landing while the hash is computed is a conflict, not lost', async () => {
+    await api.writeJson('r.json', { v: 1 });
+    const { hash } = (await api.readJsonVersioned('r.json')) as { hash: string };
+    const pending = api.writeJson('r.json', { v: 2 }, { cas: true, expectedHash: hash });
+    api.externalWrite('r.json', { v: 'colleague' }); // synchronous, during the await
+    expect(await pending).toEqual({ ok: false, reason: 'conflict' });
+    expect(await api.readJson('r.json')).toEqual({ v: 'colleague' });
+  });
+
   it('readAllJson skips unparsable and null files, in NTFS order (B31)', async () => {
     await api.writeTextFile('d/b.json', '{"n":"b"}');
     await api.writeTextFile('d/A.json', '{"n":"A"}');

@@ -44,6 +44,7 @@ import {
   opdrachtCoupling,
   opdrachtMatchesExam as opdrachtMatchesExamFor,
 } from './domain/opdrachten';
+import { SUBJECT_DISPLAY } from './domain/rapport';
 
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
@@ -217,12 +218,7 @@ const Store = (() => {
   const ypScore = (year, subj, id) => `${year}/scores/${subj}/${id}.json`;
 
   // ── Subject helpers ────────────────────────────────────────────────────────
-  const SUBJECT_DISPLAY = {
-    nat: 'Natuurkunde',
-    bio: 'Biologie',
-    schk: 'Scheikunde',
-    wi: 'Wiskunde',
-  };
+  // SUBJECT_DISPLAY: src/domain/rapport.ts (one copy)
 
   function obsMatchesSubject(obs, subject) {
     const subjectsArr = Array.isArray(obs.subjects)

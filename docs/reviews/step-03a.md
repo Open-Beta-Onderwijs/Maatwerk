@@ -213,3 +213,21 @@ None.
 - **n7.** `ui/src/screens/scores.js:783`: the U3 message tells the teacher to enter the score again.
   The cell still shows the value, so typing the same value may not count as a change. This is fine
   for 3a; carry it into the 3b grid spec (save state per cell).
+
+## Triage (implementer, 2026-10-27)
+
+| Id  | Outcome                                                                                                                          |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- |
+| M1  | Fixed: `frame-ancestors 'self'` (`ui/vite/csp.ts`, `tauri.conf.json`); ADR-0002 section 7 notes the amendment (user to confirm). |
+| M2  | Fixed: close retries a failed save, then asks before discarding; e2e "U9: after a failed save…" (written first, failed first).   |
+| M3  | Fixed: CI builds the exe but no longer uploads it until 3b removes Handsontable.                                                 |
+| m1  | Fixed: `showModal` applies style data before `onShow`; comment corrected. Covered by the visual and CSP walkthroughs.            |
+| m2  | Fixed: the mock re-checks the file after hashing; test "CAS: a write landing while the hash is computed…" (failed first).        |
+| m3  | Fixed: `askParent` in `editor-init.js` reports failed figure/clipboard calls; e2e "D25: a failed image call…".                   |
+| m4  | Fixed: "C8" tests in `tests/domain/opdrachten.test.ts` and `rapport.test.ts`; parity rows mention C8.                            |
+| m5  | Fixed: colour input escaped; e2e "U7: the user dialog keeps the colour attribute intact".                                        |
+| m6  | Fixed: ESLint override for `src/domain/**` (restricted globals and imports).                                                     |
+| m7  | Recorded as a deviation in ADR-0002 section 7 and in the backlog (`!important` note); for the user to confirm.                   |
+| m8  | Backlog: Step 6 CSP checklist.                                                                                                   |
+| n1  | Fixed (mock reads `examInfo.name`). n2: fixed (non-ASCII prints as `?`). n3: fixed (one `SUBJECT_DISPLAY`).                      |
+| n4  | Documented in `docs/dev-setup.md`. n5: backlog. n6: fixed (`reuseExistingServer: false`). n7: added to G53 in the grid spec.     |
