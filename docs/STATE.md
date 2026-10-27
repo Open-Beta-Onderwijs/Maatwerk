@@ -1,11 +1,11 @@
 # State
 
-Last updated: 2026-10-27 (Step 3b, waiting for the user's grid choice) Branch:
+Last updated: 2026-10-27 (Step 3b, own grid implemented) Branch:
 `step/03-ui-foundation` Last tag: `step-03a` (on the branch; Step 3 merges into `main` after 3b)
 
 ## Current step
 
-Step 3b (score grid replacement), stopped at the decision point: the user chooses the grid.
+Step 3b (score grid replacement): implementation in progress.
 
 ## Done since last tag (`step-03a`)
 
@@ -36,18 +36,18 @@ test:visual`); CSP walkthrough of 37 views in CI; smoke test; `docs/parity.md`.
 
 ## In progress
 
-- Nothing; waiting for the user.
+- Own grid done (`ui/src/components/score-grid/`, commit `dd65ba0`): all 79 e2e pass, Handsontable
+  removed, licence check bans it, CI uploads the exe again. U1, U2, U4, U19 fixed; G53, G59 added.
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: implement the own grid behind a `ScoreGrid` interface
-   (`ui/src/components/score-grid/`), make `ui/e2e/grid-driver.ts` point at it, flip the
-   `test.fail` pins (U2, U4, U19) to normal tests, remove `handsontable` (package, licence
-   exception in `tools/check-npm-licenses.mjs`, `THIRD_PARTY_LICENSES.md`), restore the CI exe
-   upload, run the visual test (the grid views will differ: review with the user), 3b review,
-   gate, merge `step/03-ui-foundation` into `main`, tag `step-03`.
+1. Visual test of the grid views (they differ from Handsontable): update the local baseline after
+   checking the screenshots; perf check at 4 groups x 35 x 60.
 2. D34: confirmation dialog with old-vs-new overview before overwriting groups (failing test
-   first; csv.json `group-csv` pins today's behaviour). G46: un-`fixme` with the new grid.
+   first; csv.json `group-csv` pins today's behaviour).
+3. Docs: spec (G31/G46/G52/G53/G59, Shift+Tab), quirks U1/U2/U4/U19 status, parity.md, ADR-0004.
+4. 3b review (`docs/reviews/step-03b.md`), gate, merge `step/03-ui-foundation` into `main`, tag
+   `step-03`, stop and report.
 
 ## Decisions (user, 2026-10-27)
 
