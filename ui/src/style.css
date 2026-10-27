@@ -1837,7 +1837,7 @@ body::after {
 }
 .score-grid-table td {
   position: relative;
-  height: 22px;
+  height: 23px;
   line-height: 21px;
   background: #fff;
   cursor: cell;
@@ -1863,8 +1863,7 @@ body::after {
   white-space: normal;
   word-break: keep-all;
   line-height: 1;
-  padding-top: 1px;
-  padding-bottom: 4px;
+  padding: 5px 4px 8px;
   font-weight: bold;
   font-style: italic;
   vertical-align: bottom;

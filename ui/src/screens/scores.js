@@ -860,9 +860,10 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
     rowStatus[row] = computeRowStatus(row);
     recomputeRow(gridData, exam, row, O);
     recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
-    grid.render();
+    const rows = [row, summaryIdx, stdIdx];
+    grid.render({ rows });
     setTimeout(() => {
-      if (!grid.isDestroyed) grid.render();
+      if (!grid.isDestroyed) grid.render({ rows });
     }, REMOTE_FLASH_MS + 50);
   }
   rowUpdaters.push(applyRemoteRecord);
@@ -981,12 +982,13 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
     TD.style.backgroundImage = `linear-gradient(rgba(74,144,217,${alpha}), rgba(74,144,217,${alpha}))`;
   }
 
-  // Recompute a student's row and the summary rows after a change, and redraw.
+  // Recompute a student's row and the summary rows after a change, and redraw
+  // them (only them: a modal can hold 10,000 cells).
   function refreshRow(row) {
     rowStatus[row] = computeRowStatus(row);
     recomputeRow(gridData, exam, row, O);
     recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
-    renderAllGrids();
+    grid.render({ rows: [row, summaryIdx, stdIdx] });
   }
 
   // ── Scores ────────────────────────────────────────────────────────────────
@@ -1040,7 +1042,7 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
     const prevVal = gridData[row][col] === true;
     const apply = (val) => {
       gridData[row][col] = val;
-      renderAllGrids();
+      grid.render({ rows: [row] });
       return save(row, col, () => Store.setObservation(student.id, exam.id, obs.id, val, year));
     };
     pushHistory({
@@ -1440,8 +1442,10 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
           Presence.setPosition(students[row].id, `obs:${obsArr[col - firstObsCol].id}`);
         }
       }
+      // Redraw the cross-hair (G58): the old and the new row and column.
+      const prev = selectedCell;
       selectedCell = { row, col };
-      grid.render();
+      grid.render({ rows: [prev.row, row], cols: [prev.col, col] });
     },
     onRender() {
       if (remoteCursors.length) drawCursors();

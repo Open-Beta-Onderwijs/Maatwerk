@@ -54,7 +54,11 @@ export interface ScoreGrid {
   readonly element: HTMLElement;
   readonly table: HTMLTableElement;
   readonly isDestroyed: boolean;
-  render(): void;
+  /**
+   * Redraws the cells from the data: all of them, or only those in one of
+   * `rows` or `cols` (cheaper while typing in a large grid).
+   */
+  render(region?: RenderRegion): void;
   selectCell(row: number, col: number): void;
   /** The current cell, or null before the first selection. */
   getSelected(): [number, number] | null;
@@ -68,6 +72,11 @@ export interface ScoreGrid {
   getCell(row: number, col: number): HTMLTableCellElement | null;
   getCoords(td: Element): { row: number; col: number } | null;
   destroy(): void;
+}
+
+export interface RenderRegion {
+  rows?: number[];
+  cols?: number[];
 }
 
 interface Pos {
@@ -196,24 +205,44 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
     options.renderCell?.(td, row, col, value);
   }
 
+  // Cells that carry the `current` or `area` class, so a new selection only
+  // touches what changes.
+  let marked: HTMLTableCellElement[] = [];
+
   function renderSelection(): void {
+    for (const td of marked) td.classList.remove('current', 'area');
+    marked = [];
     const area = range();
-    const multi = area && (area.top !== area.bottom || area.left !== area.right);
-    for (let r = 0; r < rowCount; r++) {
-      for (let c = 0; c < colCount; c++) {
-        const td = cells[r]![c]!;
-        td.classList.toggle('current', !!current && current.row === r && current.col === c);
-        td.classList.toggle(
-          'area',
-          !!multi && r >= area.top && r <= area.bottom && c >= area.left && c <= area.right,
-        );
+    if (!current || !area) return;
+    if (area.top !== area.bottom || area.left !== area.right) {
+      for (let r = area.top; r <= area.bottom; r++) {
+        for (let c = area.left; c <= area.right; c++) {
+          const td = cells[r]![c]!;
+          td.classList.add('area');
+          marked.push(td);
+        }
       }
     }
+    const td = cells[current.row]![current.col]!;
+    td.classList.add('current');
+    marked.push(td);
   }
 
-  function render(): void {
+  function render(region?: RenderRegion): void {
     if (destroyed) return;
-    for (let r = 0; r < rowCount; r++) for (let c = 0; c < colCount; c++) renderCell(r, c);
+    if (!region) {
+      for (let r = 0; r < rowCount; r++) for (let c = 0; c < colCount; c++) renderCell(r, c);
+    } else {
+      const rows = new Set((region.rows ?? []).filter((r) => r >= 0 && r < rowCount));
+      for (const r of rows) for (let c = 0; c < colCount; c++) renderCell(r, c);
+      for (const c of new Set(region.cols ?? [])) {
+        if (c < 0 || c >= colCount) continue;
+        for (let r = 0; r < rowCount; r++) if (!rows.has(r)) renderCell(r, c);
+      }
+    }
+    // renderCell resets the class names.
+    for (const td of marked) td.classList.remove('current', 'area');
+    marked = [];
     renderSelection();
     if (editor) placeEditor();
     options.onRender?.();
