@@ -293,7 +293,22 @@ test.describe('keyboard', () => {
     expect(await selected(page)).toEqual([1, H2.q1]);
   });
 
-  test.fixme('G46 Ctrl+Z / Ctrl+Y use the app history (U1: decision)', async () => {});
+  test('G46 Ctrl+Z / Ctrl+Y use the app history (U1)', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await typeInto(page, 0, E.q1, '4');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 4 });
+    await page.keyboard.press('Control+Z');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({});
+    // The app's history has a redo step (Handsontable's own undo saves a new change instead).
+    await expect(page.locator('#sc-redo')).toBeEnabled({ timeout: 2000 });
+    await page.keyboard.press('Control+Y');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 4 });
+    await page.keyboard.press('Control+Z');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({});
+    await page.keyboard.press('Control+Shift+Z');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 4 });
+  });
 });
 
 test.describe('undo, saving, colleagues', () => {
