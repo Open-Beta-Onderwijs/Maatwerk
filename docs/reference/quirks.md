@@ -13,16 +13,19 @@ are relative to `_reference/` unless a section says otherwise.
    - Where: `main.js:56-235`, `:460-483` (`fs:readJson`, `writeJson`, `deleteFile`, `readTextFile`, `writeTextFile`, `ensureDir`, `readPhotoAsDataUrl`, `savePhoto`, `createAssignmentTypFile`)
    - Evidence: `path.join(getDataDir(), relPath)` with no `..`/absolute check. `typst:compile` and `shell:openPath` take any absolute path (`main.js:532`, `:934`).
    - Port: Tauri commands must canonicalise and confine to `data/` (or offer typed commands per entity instead of raw paths).
+   - **Done (4a):** `paths::RelPath` + `DataDir::resolve` (lexical checks, reserved Windows names, symlink/junction escape). `ensure_year` also requires a `YYYY-YYYY` name (the reference accepted any string).
 
 2. **D2 · Inconsistent error shapes**
    - Where: `main.js:100-119` (`{ok,reason}`), `:269-275` (`{ok,error}` / `{ok:false,exists}`), `:523-537` (`{success,error}`), `:58-63` (`null`), plus handlers that throw (reject).
    - Evidence: four result conventions; `fs:readJson` returns `null` for both missing and corrupt files.
    - Port: decide one `Result` error enum; keep "missing" vs "corrupt" distinct.
+   - **Done (4a):** `maatwerk_core::Error` with stable `code()`; `read_json` returns `corrupt_json` for an unparsable file.
 
 3. **D3 · Lock not exclusive and errors outside try**
    - Where: `main.js:33-42`, `:111`, `:193`
    - Evidence: `existsSync` + `writeFileSync` (no `wx`); a stale lock is deleted and re-created non-atomically. `acquireLock` is called outside the `try`, so an fs error rejects instead of `{ok:false}`. `fs:deleteFile` does no mkdir, so deleting in a missing dir throws while writing the lock.
    - Port: the lock only lasts one synchronous handler, so within one process it never blocks; across PCs it depends on OneDrive syncing `.lock` files and on mtimes. Likely drop it (CAS covers the case) or document why it stays.
+   - **Done (4a):** no `.lock` files (C3). The CAS check + rename runs under a commit lock (process mutex + OS lock in a local folder), see the S37 decision in `docs/specs/storage-spec.md`. `locked` now means "the commit lock was not free within 10 s".
 
 4. **D4 · `locked` is not retried**
    - Where: `store.js:79-82`
@@ -38,6 +41,7 @@ are relative to `_reference/` unless a section says otherwise.
    - Where: `store.js:43-47`, `:154-156`, `:363-367`; `modals/rapport.js:735-737`
    - Evidence: `school.json`, `config.json` and the RTTI template files are overwritten from the cache (last writer wins). The RTTI modal writes **all** tabs (up to 15 files for wi) even if only one changed.
    - Port: CAS for all shared files would be a behaviour change; decide consciously.
+   - **Done (4a, C6/S38):** `Store.updateSchool(patch)` and `setActiveYear` patch the latest file via `update()`; the RTTI modal saves each tab with the hash it loaded (`Store.saveVersioned`) and reports a conflict. It still writes all tabs.
 
 7. **D7 · `config.json` activeYear is shared between all teachers**
    - Where: `store.js:363-367`, `sync.js:185-191`
@@ -53,10 +57,12 @@ are relative to `_reference/` unless a section says otherwise.
    - Where: `sync.js:58-63`
    - Evidence: after 5 failed renames (or any other error) the target is written directly; the retry sleep is a synchronous `Atomics.wait` on the main process (max ~450 ms).
    - Port: keep the "never lose the change" rule but in a blocking thread, not the UI/event loop.
+   - **Done (4a):** same rule in `storage::atomic` (blocking; commands use `spawn_blocking` from 4b).
 
 10. **D10 · Some writes are not atomic and not noted**
     - Where: `main.js:978` (seed `gebruikers.json`), `:482` (`savePhoto`), `:454` (session), temp files
     - Evidence: plain `writeFileSync`; the seed is written before the watcher exists, so fine, but `savePhoto` can leave half-written photos on OneDrive.
+    - **Done (4a):** seed (CAS "must not exist"), `save_photo` and the local session are atomic. The seed no longer copies `lib.typ` (ADR-0002 5a; embedded assets in Step 5).
 
 11. **D11 · `deleteImages` has no `noteDelete` and no change event**
     - Where: `main.js:373-381`; `sync.js:22`

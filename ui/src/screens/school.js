@@ -125,7 +125,7 @@ function attachListeners(container, school) {
         (b) => b.dataset.ss,
       );
       try {
-        await Store.saveSchool(school);
+        await Store.updateSchool({ schoolsoort: school.schoolsoort });
       } catch (_) {
         toast('Opslaan mislukt.', 'error');
       }
@@ -182,7 +182,7 @@ function startTextEdit(field, container, school) {
     const newValue = input.value.trim();
     school[field] = newValue;
     try {
-      await Store.saveSchool(school);
+      await Store.updateSchool({ [field]: newValue });
     } catch (_) {
       toast('Opslaan mislukt.', 'error');
     }
@@ -237,7 +237,7 @@ async function saveImageField(file, fileBaseName, field, school, container) {
   school[field] = relPath;
 
   try {
-    await Store.saveSchool(school);
+    await Store.updateSchool({ [field]: relPath });
     toast('Afbeelding opgeslagen.', 'success');
   } catch (_) {
     toast('Opslaan mislukt.', 'error');
