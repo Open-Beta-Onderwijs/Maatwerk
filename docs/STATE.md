@@ -1,48 +1,40 @@
 # State
 
-Last updated: 2026-10-27 (Step 4b in progress) Branch: `step/04-core-storage` Last tag: `step-04a`
+Last updated: 2026-10-27 (Step 4 done) Branch: `main` Last tag: `step-04`
 
 ## Current step
 
-Step 4b in progress on `step/04-core-storage` (4a tagged `step-04a`; `main` is merged after 4b).
+Step 4 is done (4a `step-04a`, 4b `step-04b`, merged into `main`, tag `step-04`). Waiting for the
+user before Step 5 (Typst service).
 
-User decisions (2026-10-27), recorded in `docs/specs/storage-spec.md`:
+## Step 4b summary
 
-- S37: commit lock = process-wide mutex per data folder + OS file lock (`std::fs::File::lock`) on
-  a file in `%LOCALAPPDATA%\maatwerk\locks`, held only for check + rename.
-- S38: every JSON write uses CAS; school/config via `update()` (C6); RTTI templates hash-CAS;
-  unused `saveStudents`/`saveStudentScores` removed.
-
-## Step 4a summary
-
-- `maatwerk-core`: `error` (typed `Error`, stable `code()`), `paths` (`RelPath`, `DataDir`,
-  junction/symlink escape check, proptest), `jsonfmt` (`JSON.stringify(x, null, 2)` incl. JS
-  number formatting; `serde_json` with `preserve_order` + `float_roundtrip`), `storage` (atomic
-  write, CAS under the commit lock, `update`, `save_entity`, `_meta` stamping, years, read-all,
-  text, photos, seed, `schema_version` check C1, `LocalSession`). Spec rows S01-S27, S37, S38 as
-  Rust tests; cross-process test (`crates/maatwerk-core/tests/cross_process.rs`).
-- Bug found by the cross-process test, fixed test first: `resolve` canonicalised the file itself;
-  a file being replaced resolves under `\$Extend\$Deleted` on NTFS -> spurious `invalid_path`.
-- UI: `Store.updateSchool(patch | fn)`, `setActiveYear` via `update()`, RTTI modal saves changed
-  tabs over the loaded version (`Store.loadVersioned/saveVersioned`).
-- Review `docs/reviews/step-04a.md`: M1 (float round trip) fixed test first; m1-m5 fixed; m6 and
-  most nits in `docs/backlog.md` (triage table in the review).
-- Deferred on purpose: C7 (per-teacher active year) to 6a; `lib.typ` seeding to Step 5;
-  `removeEmptyImageDirs` to Step 6; watcher, presence and Tauri commands to 4b.
+- Core `watcher` (spec S28-S40): engine on a virtual clock + thread driver on `notify` 8.2.1
+  (CC0-1.0); 20 s poll, 500 ms debounce, 100 ms batches, parse retry, restart after errors and
+  every 60 s (review M1: Windows `notify` stops silently). Own writes: `WriteObserver`
+  `will_change`/`note_write`/`note_delete`/`change_failed`. `rapporten/` ignored. Quirk D36 fixed
+  (own writes to ignored paths), D35/S34 kept.
+- Core `presence`: `users/<id>.json`, previous user offline on switch, `close` on quit.
+- App: 16 commands (storage, presence, session) on `spawn_blocking`, `CommandError {code,
+message, details}`, event `data:changed`. Bindings by `tauri-specta` rc.26 (ADR-0005),
+  `ui/src/bridge/bindings.ts`, stale check in `cargo test`, `npm run bindings`. `build.rs` links
+  the Common Controls manifest into test binaries (else `STATUS_ENTRYPOINT_NOT_FOUND`).
+- UI: `TauriApi` compat layer (`tauri-api.ts`) with contract tests; presence calls queued.
+- `npm run data:dev` + `npm run dev`: real app on synthetic data (smoke run: subject picker).
+- Review `docs/reviews/step-04b.md`: M1, m1-m4, m6 fixed; m5 partly; rest in `docs/backlog.md`.
+- `/security-review` could not run (needs `origin/HEAD`; no remote). The reviewer's checklist
+  covered security.
+- Not wired yet: `Watcher::set_scope_year` (C7, Step 6a); opdracht images, Typst, `openPath`
+  still throw "nog niet beschikbaar" (Steps 5-6).
 
 ## In progress
 
-- 4b implemented: core `watcher` (S28-S40) + `presence`; Tauri commands for storage, presence
-  and session with `CommandError`; `tauri-specta` bindings (ADR-0005, stale check in
-  `cargo test`); `TauriApi` compat layer + contract tests; `npm run data:dev`. Smoke run: the
-  real app starts on synthetic data and shows the subject picker.
-- Now: end-of-step review (`docs/reviews/step-04b.md`), `/security-review`, then merge + tag.
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. If the review is not written yet: spawn the reviewer subagent (diff `step-04a..HEAD`,
-   Appendix C), triage, fix blockers/majors, gate, merge `step/04-core-storage` into `main`
-   with a merge commit, tag `step-04b` and `step-04`, update PLAN section 3. Then stop and report.
+1. When the user says go: Step 5 (PLAN.md section 6, Step 5). Run `/security-review` once a
+   remote exists.
 
 ## Open questions for the user
 
