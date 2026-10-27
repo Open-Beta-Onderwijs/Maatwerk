@@ -3,19 +3,11 @@
 // Smoke test of the main teacher flow on the mock build (PLAN.md Step 3a):
 // boot, every tab, create an exam, enter a score, open the rapport.
 
-import { expect, test, type Page } from '@playwright/test';
-import { YEAR, login, readMockJson, watchErrors, withMock } from './helpers';
+import { expect, test } from '@playwright/test';
+import { YEAR, examMenuItem, login, readMockJson, watchErrors, withMock } from './helpers';
 import { screen } from './views';
 
 const EXAM_ID = `nat-smoketoets-${YEAR}`;
-
-/** Opens the exam menu and picks an item; retries while the list is still re-rendering. */
-async function examMenuItem(page: Page, item: string) {
-  await expect(async () => {
-    await page.locator(`[data-action="exam-menu"][data-id="${EXAM_ID}"]`).click();
-    await page.getByRole('menuitem', { name: item }).click({ timeout: 1000 });
-  }).toPass();
-}
 
 interface ScoreFile {
   scores?: Record<string, Record<string, unknown>>;
@@ -49,7 +41,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await expect(page.locator(`[data-action="exam-menu"][data-id="${EXAM_ID}"]`)).toBeVisible();
 
   // Enter a score in the first question cell of the first student.
-  await examMenuItem(page, 'Scores invoeren');
+  await examMenuItem(page, EXAM_ID, 'Scores invoeren');
   const firstRow = page.locator('.handsontable .htCore tbody tr').first();
   const studentId = (await firstRow.locator('td').first().innerText()).trim();
   await firstRow.locator('td').nth(2).click();
@@ -62,7 +54,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await page.locator('#modal-close').click();
 
   // Rapport: the mock compiles a canned PDF that the PDF viewer renders.
-  await examMenuItem(page, 'Rapport genereren');
+  await examMenuItem(page, EXAM_ID, 'Rapport genereren');
   const viewer = page.frameLocator('.rapport-pdf-frame');
   await expect(viewer.locator('canvas').first()).toBeVisible();
   const calls = await withMock(page, (m) => m.calls.filter((c) => c[0] === 'renderRapportPdf'));

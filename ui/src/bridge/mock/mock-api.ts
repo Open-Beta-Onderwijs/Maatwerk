@@ -189,6 +189,13 @@ export class MockApi implements MaatwerkApi {
     this.faults.clear();
   }
 
+  private writeDelayMs = 0;
+
+  /** Makes every writeJson take `ms` (like a slow OneDrive folder), to test fast entry (U2). */
+  slowWrites(ms: number): void {
+    this.writeDelayMs = ms;
+  }
+
   /** A colleague's write arriving through OneDrive: changes the file and emits `data:changed`. */
   externalWrite(relPath: string, data: Json): void {
     const kind = this.files.has(relPath) ? 'changed' : 'added';
@@ -243,6 +250,7 @@ export class MockApi implements MaatwerkApi {
     opts: { cas?: boolean; expectedHash?: string | null } = {},
   ): Promise<FsResult> {
     this.record('writeJson', [relPath, data, opts]);
+    if (this.writeDelayMs) await new Promise((res) => setTimeout(res, this.writeDelayMs));
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
     if (opts.cas) {

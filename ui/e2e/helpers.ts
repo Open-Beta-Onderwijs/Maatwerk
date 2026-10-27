@@ -50,3 +50,15 @@ export async function login(page: Page, subject = 'nat', userId = TEACHER): Prom
   await page.locator(`.user-badge[data-user-id="${userId}"]`).click();
   await expect(page.locator('#topbar')).toBeVisible();
 }
+
+/**
+ * Opens an exam's menu on the Toetsen screen and picks an item. The exam list
+ * re-renders once its statistics are loaded, which can detach an open menu, so
+ * this retries until the click lands (backlog: wait for a "list rendered" signal).
+ */
+export async function examMenuItem(page: Page, examId: string, item: string): Promise<void> {
+  await expect(async () => {
+    await page.locator(`[data-action="exam-menu"][data-id="${examId}"]`).click();
+    await page.getByRole('menuitem', { name: item }).click({ timeout: 1000 });
+  }).toPass();
+}

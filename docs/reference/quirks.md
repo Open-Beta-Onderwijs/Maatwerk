@@ -819,3 +819,13 @@ Read from code only; "probable" means the code path is clear but not confirmed i
 - Port (Step 3a, inline styles -> classes): kept as rendered (`.gl-th` only), so the look does not
   change. If the separators were intended, adding them is a visual change for the user to approve
   (backlog).
+
+### U19. Score grid: a letter on an observatie cell opens Handsontable's text editor
+
+- Where: `renderer/screens/scores.js` `beforeKeyDown` (swallows printable keys on observatie
+  cells) and the capture-phase listener (handles `0`/`1` only when no editor is open).
+- Evidence (Step 3b, `ui/e2e/score-grid.spec.ts` "G31 other printable keys do nothing"): pressing
+  `a` on a selected observatie cell still opens Handsontable's text editor; the next `1` is typed
+  into it instead of checking the box.
+- Port: pinned as a known failure on Handsontable (`test.fail`); the replacement grid ignores the
+  key, as `metrics.md` section 8 item 12 describes the intent.
