@@ -1,11 +1,10 @@
 # State
 
-Last updated: 2026-10-27 (Step 4a done) Branch: `step/04-core-storage` Last tag: `step-04a`
+Last updated: 2026-10-27 (Step 4b in progress) Branch: `step/04-core-storage` Last tag: `step-04a`
 
 ## Current step
 
-Step 4a is done (tag `step-04a` on the step branch; `main` is merged after 4b). Waiting for the
-user before 4b (watcher, presence, Tauri commands, `TauriApi`, typed errors + generated bindings).
+Step 4b in progress on `step/04-core-storage` (4a tagged `step-04a`; `main` is merged after 4b).
 
 User decisions (2026-10-27), recorded in `docs/specs/storage-spec.md`:
 
@@ -33,7 +32,10 @@ User decisions (2026-10-27), recorded in `docs/specs/storage-spec.md`:
 
 ## In progress
 
-- Nothing.
+- 4b done so far: core `watcher` (S28-S40, engine on a virtual clock + `notify` driver) and
+  `presence` (commit `feat(core): watcher and presence`).
+- Next: Tauri commands + typed errors + `tauri-specta` bindings (ADR-0005), then `TauriApi`
+  compat mapping + contract tests, then synthetic dev data, gate, review, merge.
 
 ## Next action (concrete, resumable)
 
