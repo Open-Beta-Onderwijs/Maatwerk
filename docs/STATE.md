@@ -32,15 +32,17 @@ User decisions (2026-10-27), recorded in `docs/specs/storage-spec.md`:
 
 ## In progress
 
-- 4b done so far: core `watcher` (S28-S40, engine on a virtual clock + `notify` driver) and
-  `presence` (commit `feat(core): watcher and presence`).
-- Next: Tauri commands + typed errors + `tauri-specta` bindings (ADR-0005), then `TauriApi`
-  compat mapping + contract tests, then synthetic dev data, gate, review, merge.
+- 4b implemented: core `watcher` (S28-S40) + `presence`; Tauri commands for storage, presence
+  and session with `CommandError`; `tauri-specta` bindings (ADR-0005, stale check in
+  `cargo test`); `TauriApi` compat layer + contract tests; `npm run data:dev`. Smoke run: the
+  real app starts on synthetic data and shows the subject picker.
+- Now: end-of-step review (`docs/reviews/step-04b.md`), `/security-review`, then merge + tag.
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 4b (PLAN.md section 6, Step 4, "4b"). ADR for the bindings tool
-   (`tauri-specta` per ADR-0002 section 2). Run `/security-review` at the end of Step 4.
+1. If the review is not written yet: spawn the reviewer subagent (diff `step-04a..HEAD`,
+   Appendix C), triage, fix blockers/majors, gate, merge `step/04-core-storage` into `main`
+   with a merge commit, tag `step-04b` and `step-04`, update PLAN section 3. Then stop and report.
 
 ## Open questions for the user
 
