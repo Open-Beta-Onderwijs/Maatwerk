@@ -95,7 +95,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 0 | Bootstrap | S | done (`step-00`) |
 | 1 | Reference study + architecture review (**approval gate**) | M | done (`step-01`) |
 | 2 | Safety net: golden tests on the old app | L (2a, 2b) | done (`step-02`) |
-| 3 | UI foundation: Vite, bridge, domain extraction (3a); score-grid replacement (3b) | L (3a, 3b) | todo |
+| 3 | UI foundation: Vite, bridge, domain extraction (3a); score-grid replacement (3b) | L (3a, 3b) | done (`step-03`) |
 | 4 | Rust core: paths, storage, watcher | L (4a, 4b) | todo |
 | 5 | Typst service (parity with the old output) | L (5a, 5b) | todo |
 | 6 | Tauri wiring + parity + portable build | L (6a, 6b) | todo |
@@ -447,7 +447,7 @@ Order: biggest risk first, always with tests around the code you touch.
 
 ## 9. Open decisions (ask the user when you reach them)
 
-1. **Score grid replacement** (Handsontable is not usable under AGPL): which permissive library or custom grid? Decide in Step 3b.
+1. **Score grid replacement** (Handsontable is not usable under AGPL): which permissive library or custom grid? Decided 2026-10-27: own grid on a `<table>` (ADR-0004).
 2. **Emoji/icon font**: rely on system emoji fonts or bundle one (Step 5).
 3. **`.lock` files**: decided in Step 1: CAS only, no lock files (ADR-0003 C3).
 4. **Domain logic in Rust or JS?** (Step 10, with measurements).

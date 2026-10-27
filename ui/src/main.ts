@@ -1,20 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { invoke } from '@tauri-apps/api/core';
-import { formatGreeting, type GreetReply } from './greet';
+// Entry point of the main window. Order matters: the bridge (window.maatwerk)
+// and the legacy globals must exist before app.js evaluates, so they are
+// awaited and app.js is imported dynamically.
+import { installBridge } from './bridge';
+import { watchStyleData } from './legacy/style-data';
 
-const form = document.querySelector<HTMLFormElement>('#greet-form');
-const input = document.querySelector<HTMLInputElement>('#greet-name');
-const output = document.querySelector<HTMLParagraphElement>('#greet-output');
-
-form?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  if (!input || !output) return;
-  invoke<GreetReply>('greet', { name: input.value })
-    .then((reply) => {
-      output.textContent = formatGreeting(reply);
-    })
-    .catch((error: unknown) => {
-      output.textContent = `Er ging iets mis: ${String(error)}`;
-    });
-});
+watchStyleData();
+await installBridge();
+await import('./legacy/globals');
+await import('./app.js');

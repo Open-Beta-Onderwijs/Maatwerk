@@ -3,20 +3,298 @@
 <html lang="nl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maatwerk</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <main>
-      <h1>Maatwerk</h1>
-      <form id="greet-form">
-        <label for="greet-name">Naam</label>
-        <input id="greet-name" autocomplete="off" />
-        <button type="submit">Begroet</button>
-      </form>
-      <p id="greet-output" role="status"></p>
+    <header id="topbar" class="hidden">
+      <button class="app-title" disabled>Maatwerk</button>
+      <nav id="main-nav">
+        <button class="nav-btn" data-screen="leerlingen">Leerlingen</button>
+        <button class="nav-btn" data-screen="groepen">Groepen</button>
+        <button class="nav-btn" data-screen="toetsen">Toetsen</button>
+        <button class="nav-btn" data-screen="observaties">Observaties</button>
+        <button class="nav-btn" data-screen="opdrachten">Opdrachten</button>
+        <button class="nav-btn hidden" data-screen="gebruikers">Gebruikers</button>
+        <button class="nav-btn hidden" data-screen="school">School</button>
+      </nav>
+      <button
+        id="user-badge-btn"
+        class="user-badge-mini badge-circle hidden"
+        data-badge-color="#888"
+      >
+        —
+      </button>
+    </header>
+
+    <main id="app">
+      <!-- Startup: subject picker -->
+      <section id="screen-startup" class="screen active"></section>
+
+      <!-- Leerlingen -->
+      <section id="screen-leerlingen" class="screen">
+        <div class="screen-header screen-header--h32">
+          <h2>Leerlingen</h2>
+          <div class="header-actions">
+            <button class="btn-secondary" id="btn-import-students">&#8593; CSV importeren</button>
+            <button class="btn-primary" id="btn-add-student">+ Leerling toevoegen</button>
+            <input id="student-search" type="search" placeholder="Zoeken…" class="search-input" />
+            <label class="toolbar-inline-label">Schooljaar:</label>
+            <div id="student-year-select" class="csel-host"></div>
+          </div>
+        </div>
+        <div class="filter-row" id="filter-row-leerlingen">
+          <!-- #filter-bar lives here initially and is moved between screens on navigation -->
+          <div id="filter-bar" class="filter-bar">
+            <!-- Admin-only: vakken selector -->
+            <div class="filter-popover-wrap hidden" id="admin-vak-wrap">
+              <button id="btn-filter-vak" class="filter-btn">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                  />
+                </svg>
+                <span class="filter-btn-label" id="lbl-filter-vak">Alle vakken</span>
+              </button>
+              <div id="pop-vak" class="filter-popover hidden">
+                <div id="pop-vak-toggles"></div>
+                <hr />
+                <div class="filter-popover-actions">
+                  <button class="filter-pop-alles" id="pop-vak-alles">Alles</button>
+                </div>
+              </div>
+            </div>
+            <!-- Schoolsoort filter -->
+            <div class="filter-popover-wrap">
+              <button id="btn-filter-ss" class="filter-btn">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                  />
+                </svg>
+                <span class="filter-btn-label" id="lbl-filter-ss">Alle schoolsoorten</span>
+              </button>
+              <div id="pop-ss" class="filter-popover hidden">
+                <div id="pop-ss-toggles"></div>
+                <hr />
+                <div class="filter-popover-actions">
+                  <button class="filter-pop-alles" id="pop-ss-alles">Alles</button>
+                  <button class="filter-pop-niets" id="pop-ss-niets">Niets</button>
+                </div>
+              </div>
+            </div>
+            <!-- Jaarlaag klas filter (wiskunde only) -->
+            <div class="filter-popover-wrap hidden" id="jl-klas-wrap">
+              <button id="btn-filter-jl-klas" class="filter-btn">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                  />
+                </svg>
+                <span class="filter-btn-label" id="lbl-filter-jl-klas">Alle jaarlagen</span>
+              </button>
+              <div id="pop-jl-klas" class="filter-popover hidden">
+                <div id="pop-jl-klas-toggles"></div>
+                <hr />
+                <div class="filter-popover-actions">
+                  <button class="filter-pop-alles" id="pop-jl-klas-alles">Alles</button>
+                  <button class="filter-pop-niets" id="pop-jl-klas-niets">Niets</button>
+                </div>
+              </div>
+            </div>
+            <!-- Jaarlaag filter -->
+            <div class="filter-popover-wrap">
+              <button id="btn-filter-jl" class="filter-btn">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                  />
+                </svg>
+                <span class="filter-btn-label" id="lbl-filter-jl">Alle jaarlagen</span>
+              </button>
+              <div id="pop-jl" class="filter-popover hidden">
+                <div id="pop-jl-toggles"></div>
+                <hr />
+                <div class="filter-popover-actions">
+                  <button class="filter-pop-alles" id="pop-jl-alles">Alles</button>
+                  <button class="filter-pop-niets" id="pop-jl-niets">Niets</button>
+                </div>
+              </div>
+            </div>
+            <!-- Observatie filter (opdrachten only) -->
+            <div class="filter-popover-wrap filter-screen-hidden" id="obs-filter-wrap">
+              <button id="btn-filter-obs" class="filter-btn">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                  />
+                </svg>
+                <span class="filter-btn-label" id="lbl-filter-obs">Alle observaties</span>
+              </button>
+              <div id="pop-obs" class="filter-popover hidden">
+                <div id="pop-obs-toggles"></div>
+                <hr />
+                <div class="filter-popover-actions">
+                  <button class="filter-pop-alles" id="pop-obs-alles">Alles</button>
+                  <button class="filter-pop-niets" id="pop-obs-niets">Niets</button>
+                </div>
+              </div>
+            </div>
+            <!-- Eigen/Alle toggle (teacher only) -->
+            <button id="btn-filter-eigen" class="filter-btn hidden">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                />
+              </svg>
+              <span class="filter-btn-label" id="lbl-filter-eigen">Alle leerlingen</span>
+            </button>
+          </div>
+        </div>
+        <div id="student-list" class="card-list"></div>
+      </section>
+
+      <!-- Groepen -->
+      <section id="screen-groepen" class="screen">
+        <div class="screen-header screen-header--h32">
+          <h2>Groepen</h2>
+          <div class="header-actions">
+            <button class="btn-secondary" id="btn-import-groups">
+              &#8593; Groepen CSV importeren
+            </button>
+            <button class="btn-secondary" id="btn-import-group-assignment">
+              &#8593; Groepsindeling CSV importeren
+            </button>
+            <button class="btn-primary" id="btn-add-group">+ Groep toevoegen</button>
+            <label class="toolbar-inline-label">Schooljaar:</label>
+            <div id="groups-year-select" class="csel-host"></div>
+          </div>
+        </div>
+        <div class="filter-row" id="filter-row-groepen"></div>
+        <div id="group-list" class="card-list"></div>
+      </section>
+
+      <!-- Toetsen -->
+      <section id="screen-toetsen" class="screen">
+        <div class="screen-header screen-header--h32">
+          <h2>Toetsen</h2>
+          <div class="header-actions">
+            <button class="btn-primary" id="btn-add-exam">+ Toets toevoegen</button>
+            <button id="btn-toetsen-rtti-uitleg" class="btn btn-secondary u-nowrap">
+              RTTI uitleg / leeradvies
+            </button>
+            <label class="toolbar-inline-label">Schooljaar:</label>
+            <div id="toetsen-year-select" class="csel-host"></div>
+          </div>
+        </div>
+        <div class="filter-row" id="filter-row-toetsen"></div>
+        <div id="exam-list" class="card-list"></div>
+      </section>
+
+      <!-- Observaties -->
+      <section id="screen-observaties" class="screen">
+        <div class="screen-header screen-header--h32">
+          <h2>Observaties</h2>
+          <div class="header-actions">
+            <button class="btn-primary" id="btn-add-obs">+ Observatie toevoegen</button>
+          </div>
+        </div>
+        <div class="filter-row" id="filter-row-observaties"></div>
+        <div id="obs-list" class="card-list"></div>
+      </section>
+
+      <!-- Opdrachten -->
+      <section id="screen-opdrachten" class="screen">
+        <div class="screen-header screen-header--h32">
+          <h2>Opdrachten</h2>
+          <div class="header-actions">
+            <button class="btn-primary" id="btn-add-opdracht">+ Opdracht toevoegen</button>
+          </div>
+        </div>
+        <div class="filter-row" id="filter-row-opdrachten"></div>
+        <div id="opdracht-list" class="card-list"></div>
+      </section>
+
+      <!-- Gebruikers (admin only) -->
+      <section id="screen-gebruikers" class="screen"></section>
+
+      <!-- School (admin only) -->
+      <section id="screen-school" class="screen"></section>
     </main>
+
+    <div id="editor-overlay" class="hidden">
+      <iframe id="editor-frame" src="" allowfullscreen></iframe>
+    </div>
+
+    <div id="modal-overlay" class="hidden">
+      <div id="modal-box">
+        <button id="modal-close">&#x2715;</button>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+
+    <div id="toast-container"></div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

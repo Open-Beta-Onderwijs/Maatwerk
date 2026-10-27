@@ -27,6 +27,15 @@ const ALLOWED = new Set([
   'AGPL-3.0-or-later',
 ]);
 
+// Temporary, documented exceptions: the package and its whole subtree are
+// skipped with a warning. Each entry names the step that removes it.
+const TEMPORARY = new Map([]);
+
+// Packages that must never ship, whatever licence string they declare.
+const BANNED = new Map([
+  ['handsontable', 'proprietary licence (HandsOnCode Non-Commercial); replaced in Step 3b'],
+]);
+
 const tree = JSON.parse(
   execFileSync('npm', ['ls', '-w', 'ui', '--omit=dev', '--all', '--json', '--long'], {
     encoding: 'utf8',
@@ -37,6 +46,17 @@ const tree = JSON.parse(
 const seen = new Map();
 (function walk(node) {
   for (const [name, dep] of Object.entries(node.dependencies ?? {})) {
+    if (BANNED.has(name)) {
+      console.error(`FAIL ${name}@${dep.version}: banned (${BANNED.get(name)})`);
+      process.exitCode = 1;
+      continue;
+    }
+    if (TEMPORARY.has(name)) {
+      console.warn(
+        `WARN ${name}@${dep.version}: skipped with its subtree (${TEMPORARY.get(name)})`,
+      );
+      continue;
+    }
     if (dep.path && !seen.has(dep.path)) {
       seen.set(dep.path, name);
       walk(dep);
@@ -57,4 +77,4 @@ for (const [path, name] of seen) {
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}@${pkg.version}: ${license}`);
   failed ||= !ok;
 }
-process.exit(failed ? 1 : 0);
+process.exit(failed || process.exitCode ? 1 : 0);

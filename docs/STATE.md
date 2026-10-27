@@ -1,48 +1,49 @@
 # State
 
-Last updated: 2026-10-26 (end of Step 2, decisions recorded) Branch: `main` Last tag: `step-02`
+Last updated: 2026-10-27 (Step 3 done) Branch: `main` Last tag: `step-03`
 
 ## Current step
 
-Step 2 done. Next: Step 3, UI foundation (only when the user says so).
+Step 3 is done and merged (`step-03`). Waiting for the user before Step 4 (Rust core: paths,
+storage, watcher).
 
-## Done since last tag
+## Step 3b summary (on `step/03-ui-foundation`, tag `step-03b`, merged as `step-03`)
 
-- (nothing yet)
+- Own score grid `ui/src/components/score-grid/` (ADR-0004 outcome) driven by
+  `ui/src/screens/scores.js`; pure logic in `ui/src/domain/scoregrid.ts` (scoregrid.json golden).
+  Handsontable removed and banned by `npm run licenses`; CI uploads the exe again after that check.
+- Fixed: U1 (Ctrl+Z/Y drive the app history; buttons disabled when empty), U2 (save queue),
+  U4 (paste into observaties), U19, D34 (confirmation with old-vs-new overview,
+  `ui/src/domain/groups.ts`). New rules G53, G59-G63 in `docs/specs/score-grid.md`.
+- Performance: ~14 ms per keystroke at 6 grids / 11,410 cells (incremental redraw).
+- Review `docs/reviews/step-03b.md`: M1 (queued saves could land in another subject) fixed test
+  first; minors fixed or in `docs/backlog.md` (triage table in the review).
+- Visual: score modal within ~1 px of Handsontable; ↶/↷ now disabled when empty. Local visual
+  baseline updated after the grid change.
 
-## Step 2 summary
+## Step 3a summary (tag `step-03a`)
 
-- Harness `tests/reference-harness/`: the real reference `main.js`, `preload.js` and `store.js` run
-  in Node (fake Electron); UI helpers are extracted by name or checked line range. Pinned: clock,
-  TZ Europe/Amsterdam, nl-NL collation, NTFS directory order (quirk B31).
-- Fixtures `tools/fixtures/` (`tiny`, `school`), hashes in `manifest.json`.
-- Logic goldens `tests/golden/logic/` (11 suites), Typst goldens `tests/golden/typst/` (21 cases,
-  paths A-D, PNG 30 ppi, PDF text). `npm run golden:regen`, `golden:typst`, `golden:check`.
-- Storage spec `docs/specs/storage-spec.md` rows S01-S40 on verbatim shims in
-  `tools/reference-shims/` (CI-executable).
-- `docs/testing.md`: commands, format, assumptions, coverage matrix.
-- Reviews `docs/reviews/step-02a.md`, `step-02.md`: all blockers/majors fixed; rest in backlog.
-- New quirks: B31, D35, T26, T27; B22 corrected.
+- Reference renderer in Vite, bridge `ui/src/bridge/api.ts` + `MockApi`, domain modules, strict CSP,
+  quirk fixes B22, T26, T27, B9, U3, U6, U7, U9, D25. Review `docs/reviews/step-03a.md`.
 
 ## In progress
 
-- (nothing)
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. When the user says so: `git checkout -b step/03-ui-foundation`, read PLAN.md Step 3 and its notes.
+1. When the user says go: Step 4 (PLAN.md section 6, Step 4). Ask S37/S38 again there.
 
 ## Open questions for the user
 
-- Decided 2026-10-26: T26 and T27 are fixed in the port (3a/5a, failing test first). S37/S38: the
-  user will probably rule that Step 4 fixes them; **ask again in Step 4** with a concrete proposal.
-- Remote: still to create (repo `maatwerk`, public). `gh` CLI is not installed.
-- Open decisions still pending (PLAN section 9): emoji font (Step 5), score grid choice (Step 3b),
-  domain logic location (Step 10), versioning/update policy, macOS items.
+- S37/S38 (Step 4); remote repo still to create (`gh` not installed), so CI has not run on 3b;
+  PLAN section 9 items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
 
 ## How to resume
 
-PowerShell (not Git Bash, whose `link` shadows MSVC's): `npm ci; npm run build:ui`, then the gate
-commands in `CLAUDE.md`. Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the
-Typst packages cetz/unify/oxifmt in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is
-installed.
+PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with the editor or
+Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). `npm ci; npm run build:ui`, then
+the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright install chromium`
+in `ui/`). `npm run test:visual -w ui` needs a local baseline (`-- --update-snapshots` before a
+change). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the Typst packages
+cetz/unify/oxifmt in `%LOCALAPPDATA%	ypst\packages`). `cargo-deny` 0.20.2 is installed.

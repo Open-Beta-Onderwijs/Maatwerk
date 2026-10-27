@@ -2,6 +2,39 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 3b
+
+- **Cut (Ctrl+X) in the score grid (review 3b m5):** Handsontable had it; the own grid has copy,
+  paste and Delete. Add if teachers miss it (copy + Delete is the workaround).
+- **Licence ban covers production deps only (review 3b m8):** `tools/check-npm-licenses.mjs` walks
+  `--omit=dev`; Vite would bundle a dev dependency if UI code imported it. Add a check on the
+  built bundle (or an ESLint import rule) when the dependency list grows.
+- **Colleague change on an unsaved cell (review 3b n4):** a background update can replace a cell
+  whose save failed; the cell keeps its "not saved" mark. Clear the mark when a colleague's value
+  replaces it.
+- **Queued saves stamp the user at run time:** `updateStudentScores` stamps `_meta.updatedBy` when
+  the save runs. Logging in waits for the queue (review 3b M1), so this only matters if the user
+  could change without the login screen.
+
+## From Step 3a
+
+- **Styling cleanup (Step 10):** the 268 inline styles became pixel-identical CSS (Step 3a): about
+  130 one-declaration `u-*` utilities (`!important`, mirroring inline precedence) plus a few
+  component classes (`grade-pill`, `gl-*`, `obs-icon-btn`). Consolidate them into semantic
+  component classes and fix the inconsistencies they preserve (e.g. grade pills 34 vs 36 px, two
+  panel paddings `10px` vs `10px 12px 14px`, `#aaa` vs `#9aa0ab` greys). Each visible change needs
+  the user's eye; `npm run test:visual` shows the diff.
+- **Step 6 CSP checklist (review 3a m8):** add the PDF output scheme of ADR-0002 section 9 to
+  `connect-src` in `ui/vite/csp.ts`; pass `isEvalSupported: false` to pdf.js `getDocument`; run
+  `ui/e2e/csp.spec.ts` on a real compiled rapport (the mock PDF uses only Helvetica).
+- **Utilities are `!important` (review 3a m7):** a later `el.style.x = …` on an element with a
+  `u-*` class for the same property is ignored. Use a component class there instead.
+- **Review 3a n5:** `csp.spec.ts` waits a fixed 600 ms; `smoke.spec.ts` retries opening the exam
+  menu while the list re-renders. Replace with a "list rendered" signal when the screens are touched.
+- **U18:** the period separators in the group students modal never rendered; add them if wanted.
+- **Dependency updates after parity (Step 10):** pdfjs-dist 4.9.155, chart.js 4.4.2 and
+  chartjs-plugin-annotation 3.0.1 are pinned to the reference versions.
+
 ## From the Step 2 review (`docs/reviews/step-02.md`)
 
 - **m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
@@ -20,9 +53,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **m6 (Step 6):** full third-party notices for the ~300 bundled crates (e.g. `cargo about`) and an
   "Over Maatwerk" screen with licence text and a source link, before the exe is distributed (AGPL
   section 13 / GPL section 6).
-- **n1 (Step 3):** CSP. The reference UI has ~262 inline `style=` attributes, which
-  `style-src 'self'` blocks. Decide in Step 3 (move to classes vs. a nonce/hash); do not add
-  `'unsafe-inline'` silently. Also add `object-src 'none'; base-uri 'self'; frame-ancestors 'none'`.
+- ~~**n1 (Step 3):** CSP~~: done in Step 3a (classes + CSSOM style data, `ui/vite/csp.ts`,
+  `ui/e2e/csp.spec.ts`).
 - **n3:** `LICENSE` is the SPDX reflowed AGPL-3.0 text; replace with the verbatim gnu.org text when
   gnu.org is reachable.
 - **n5:** `src-tauri/tauri.conf.json` `version` duplicates the Cargo workspace version; drop it

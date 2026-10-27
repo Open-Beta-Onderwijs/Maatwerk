@@ -6,16 +6,30 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev:mock": "vite --mode mock",
+    "build": "npm run typecheck && vite build",
+    "build:mock": "vite build --mode mock --outDir dist-mock",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.e2e.json",
+    "test": "vitest run",
+    "test:e2e": "npm run build:mock && playwright test --project chromium",
+    "test:visual": "npm run build:mock && playwright test --project visual"
   },
   "dependencies": {
-    "@tauri-apps/api": "2.12.4"
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "@lezer/highlight": "1.2.5",
+    "@tauri-apps/api": "2.12.4",
+    "chart.js": "4.4.2",
+    "chartjs-plugin-annotation": "3.0.1",
+    "pdfjs-dist": "4.9.155"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
     "eslint": "10.13.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "17.13.0",

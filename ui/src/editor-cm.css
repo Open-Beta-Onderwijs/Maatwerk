@@ -1,0 +1,84 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* The editor lives in a shadow root of #cm-container (editor-init.js): CodeMirror
+   then uses constructable stylesheets, which the strict CSP allows, instead of a
+   <style> element. This sheet is adopted into that shadow root. :host(#cm-container)
+   keeps the specificity of the former #cm-container rules. */
+
+/* ── CodeMirror light theme ──────────────────────────────────────────────── */
+:host(#cm-container) .cm-editor {
+  height: 100%;
+  font-size: 14px;
+  background: #ffffff;
+  color: #24292e;
+}
+
+:host(#cm-container) .cm-scroller {
+  overflow: auto;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+:host(#cm-container) .cm-content {
+  caret-color: #24292e;
+}
+
+:host(#cm-container) .cm-cursor {
+  border-left-color: #24292e;
+}
+
+:host(#cm-container) .cm-gutters {
+  background: #f6f8fa;
+  color: #8b949e;
+  border-right: 1px solid #d0d7de;
+}
+
+:host(#cm-container) .cm-lineNumbers .cm-gutterElement {
+  padding: 0 8px 0 4px;
+}
+
+:host(#cm-container) .cm-activeLine {
+  background: transparent;
+  box-shadow: inset 3px 0 0 #4a90d9;
+}
+
+:host(#cm-container) .cm-activeLineGutter {
+  background: #e8edf4;
+  color: #24292e;
+}
+
+:host(#cm-container) .cm-selectionBackground {
+  background: #b3d7ff !important;
+}
+
+/* Typst syntax token colours */
+:host(#cm-container) .cm-comment {
+  color: #6a737d;
+  font-style: italic;
+}
+:host(#cm-container) .cm-keyword {
+  color: #6f42c1;
+}
+:host(#cm-container) .cm-string {
+  color: #22863a;
+}
+:host(#cm-container) .cm-number {
+  color: #e36209;
+}
+:host(#cm-container) .cm-heading {
+  color: #0550ae;
+  font-weight: bold;
+}
+:host(#cm-container) .cm-strong {
+  color: #b31d28;
+  font-weight: bold;
+}
+:host(#cm-container) .cm-em {
+  color: #735c0f;
+  font-style: italic;
+}
+:host(#cm-container) .cm-meta {
+  color: #d73a49;
+}
+:host(#cm-container) .cm-underline {
+  text-decoration: underline;
+}

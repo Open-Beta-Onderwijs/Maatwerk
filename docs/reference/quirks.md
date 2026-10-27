@@ -126,6 +126,7 @@ are relative to `_reference/` unless a section says otherwise.
 25. **D25 · Editor proxy never answers on rejection**
     - Where: `modals/editor.js:61-95`; `editor-init.js:46-52`
     - Evidence: `.then(reply)` without `.catch`; a thrown handler error (e.g. invalid opdracht id in `opdrachtImagesDir`) leaves the iframe promise pending forever.
+    - **Fixed in the port (Step 3a):** the proxy answers a failed call with `{ error }` and the editor's `postToParent` rejects; a failed load shows "Fout bij laden" and creates no editor view (so nothing can overwrite the file). Test: `ui/e2e/quirks.spec.ts` "D25".
 
 26. **D26 · Store ignores `deleteFile` results**
     - Where: `store.js:487`, `:572`, `:798`, `:1201`, `:1203`
@@ -166,6 +167,8 @@ are relative to `_reference/` unless a section says otherwise.
       existence check and no confirmation, so re-importing a CSV with an existing group name empties
       that group's student list and replaces its teachers.
     - Port: pin with a test; ask the user whether to fix (merge or confirm) during the port.
+    - **Decision (user, 2026-10-27):** keep overwriting, but ask for confirmation first. Ideally the confirmation shows an overview of old vs new per group with the changes: removed students as red rows, added students as green rows. Failing test first (csv.json `group-csv` pins today's behaviour).
+    - **Fixed (Step 3b):** before `upsertGroups`, `groupOverwrites` (`ui/src/domain/groups.ts`) lists the existing groups the import changes; if any, a confirmation shows changed fields and removed (red) / added (green) students per group. New or unchanged groups import without a question. The `group-csv` golden (parsing) is unchanged. Tests: `ui/tests/domain/groups.test.ts`, `ui/e2e/quirks.spec.ts` "D34".
 
 35. **D35 · Watcher reports an untouched file as changed the first time its mtime moves**
     - Where: `sync.js:240-244` (initial snapshot without hash), `:149-157` (`check`)
@@ -251,6 +254,10 @@ Paths in this section are relative to `_reference/renderer/`.
   jaarlaag 4–6, so the rapport falls back to `defaultTabData()` (empty advice, bounds 40/70).
   `exam.subcategory` is not used.
 - **Why it matters:** Wiskunde A/B/C/D reports silently leave out all leeradvies.
+- **Fixed in the port (Step 3a, data side):** the rapport reads `rtti_expl_adv_<wisa..wisd>_<jaar>.json`
+  first (from `exam.subcategory`), then the old `wi_<jaar>` key, then the defaults
+  (`ui/src/domain/rapport.ts` `rttiExplFileCandidates`, `ui/src/services/rapport.ts`). The folder and
+  key merge on disk stays for Step 7 (ADR-0003 C11). Tests: `ui/tests/domain/rapport.test.ts` ("B9").
 
 ### B10. Rapport leaves out students with only `N`s or only an override
 
@@ -361,6 +368,10 @@ Paths in this section are relative to `_reference/renderer/`.
   row is then dropped (`filter(s => s.id && …)`). An ANSI file turns é into U+FFFD. A doubled `""`
   inside quotes is not handled, and a newline inside quotes breaks the row.
 - **Why it matters:** The usual Excel exports may import zero students without any error.
+- **Fixed in the port (Step 3a, `ui/src/domain/csv.ts`):** `""` inside quotes is a literal quote;
+  files that are not valid UTF-8 decode as Windows-1252. Still line-based: a newline inside quotes
+  and an unbalanced quote behave as before (`parseCSV-unbalanced-quote`). Tests:
+  `ui/tests/domain/csv.test.ts` ("B22").
 
 ### B23. Score input accepts hex and exponent notation
 
@@ -595,6 +606,11 @@ Paths in this section are relative to `_reference/renderer/`.
   test expects a compiled rapport. Data side (`assembleVragen`/`scoreDotColor`) in Step 3a, template
   side in Step 5. Proposed treatment, confirm with a test: no points and a grey dot, like an empty
   score, consistent with `calcResults` (BR 3.1).
+- **Fixed in the port (Step 3a, data side):** `assembleVragen` treats a non-numeric score as not
+  entered (`score: null`, grey dot), so its category also counts 0 points. Visible effect besides the
+  rapport compiling: that category's leeradvies row reads e.g. `0 / 5 (0%)` with the "laag" advice; the
+  reference showed `NaN / 5 (NaN%)` with the "hoog" advice (NaN compares false). Template side: Step 5.
+  Tests: `ui/tests/domain/rapport.test.ts` ("T26", and `compileRapport-exam-jaarlaag-3`).
 
 ### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
 
@@ -605,6 +621,9 @@ Paths in this section are relative to `_reference/renderer/`.
   `$`, so the guarded text compiles and shows the red warning. Failing test first: the
   `rapport-markup` golden is the old (failing) behaviour. `sanitizeTypstMarkup` in Step 3a; the
   `uitleg_rtti` fields (T11, no guard at all) get the same treatment in Step 5.
+- **Fixed in the port (Step 3a):** the warning reads `[\$-teken niet gesloten …]`, so every `$` of a
+  guarded text is escaped (`ui/src/domain/rapport.ts` `sanitizeTypstMarkup`). Tests:
+  `ui/tests/domain/rapport.test.ts` ("T27").
 
 ## U. UI
 
@@ -625,6 +644,12 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   (`updateUndoRedoBtns` no-ops with null refs, `scores.js:84-87`).
 - Why it matters: undo semantics a replacement grid must define (and the parity tests must pin down);
   two competing undo systems today.
+- **Decision (user, 2026-10-27):** in the new grid (Step 3b) Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z drive
+  the app's undo history, the same as the ↶/↷ buttons (spec G46).
+- **Fixed (Step 3b):** `loadScoreGrid` only replaces the grids (`destroyGridInstances`); the undo
+  listener, buttons and history are reset by `resetScoreModal` when the modal opens or closes. The
+  key compare is case-insensitive (Playwright and Shift send `Z`). The ↶/↷ buttons are disabled when
+  their stack is empty. Test: `ui/e2e/score-grid.spec.ts` "G46".
 
 ### U2. Score grid: changes arriving while an earlier save is in flight are dropped (not saved)
 
@@ -636,6 +661,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   but it is never written to disk, never gets an undo entry, and row totals are not recomputed for it.
   On reopen the score is gone. Fast numpad entry is exactly the intended workflow.
 - Why it matters: silent data loss; the replacement must queue, not drop, changes.
+- **Fixed (Step 3b):** `saveCell` queues every save behind the previous one (one chain for the app session; logging in again and reopening the modal wait for it; each save keeps the subject it was typed in, review 3b M1),
+  the cell shows the value at once and counts as "save in flight" from the moment it is typed.
+  Test: score-grid.spec "G52" (with `MockApi.slowWrites`).
 
 ### U3. Score grid: save errors other than CAS conflicts are invisible
 
@@ -645,6 +673,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   (no `preventDefault`, no toast).
 - Effect: the cell shows the value as saved; the user is not told (OneDrive lock, disk full, broken
   JSON).
+- **Fixed in the port (Step 3a):** `saveCell` (`ui/src/screens/scores.js`) shows a persistent error with the
+  student and the reason; conflicts still go to the global handler. The cell keeps the typed value (the
+  grid itself is replaced in 3b). Test: `ui/e2e/quirks.spec.ts` "U3".
 
 ### U4. Score grid: pasting or auto-filling into observatie columns is not saved
 
@@ -655,6 +686,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   unchecked (`value === true` fails, `scores.js:1228`), nothing is saved, and the next save of that
   student keeps the old observations. A paste range spanning questions and observaties saves only the
   question part.
+- **Fixed (Step 3b):** the own grid reports pasted observatie cells as booleans (`1`, `true`, `x`
+  check; `0`, `false`, empty uncheck; anything else is ignored) and the score modal saves them like a
+  click (`setObs`, undoable). There is no fill handle. Test: score-grid.spec "G33".
 
 ### U5. Score grid: average Totaal truncates half points; Totaal uses a decimal point
 
@@ -675,6 +709,8 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   back); `</textarea>` in the text breaks the form. Script execution is blocked by the CSP.
 - Same modal: saves all tabs with plain `writeJson` (no CAS, no `_meta`) (`rapport.js:735-737`), so
   it silently overwrites a colleague's edits of the same files, and has no `Sync` subscription.
+- **Fixed in the port (Step 3a):** the textareas escape their content (`escHtml`). The blind write
+  (no CAS) stays until Step 4a (ADR-0003 C6). Test: `ui/e2e/quirks.spec.ts` "U6".
 
 ### U7. Login screen builds user badges from unescaped user data
 
@@ -684,6 +720,8 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   escaped.
 - Effect: a first name or abbreviation with `<`, `&` or `"` renders wrong or injects markup on the
   very first screen; inconsistent with the rest of the app.
+- **Fixed in the port (Step 3a):** `screens/startup.js` escapes every user field; `gebruikers.js` escapes
+  `kleur`. Test: `ui/e2e/quirks.spec.ts` "U7".
 
 ### U8. Exam description unescaped in a `title` attribute
 
@@ -698,6 +736,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   in-flight `postToParent` promise (the parent listener is removed, so `_pending` never resolves).
 - Also: `.typ` saves use `writeTextFile` without CAS or Sync, so two teachers editing the same
   opdracht overwrite each other without notice.
+- **Fixed in the port (Step 3a):** closing via the app title or the badge first writes a pending autosave
+  and waits for writes in flight (`flushSave` in `editor-init.js`); if the write fails the editor stays
+  open with "Fout bij opslaan". No CAS on `.typ` yet (Step 8). Test: `ui/e2e/quirks.spec.ts` "U9".
 
 ### U10. Editor iframe proxy: untyped, path-based, and reachable by CDN code
 
@@ -782,3 +823,25 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   login overwrites them.
 - `toTypst` emits object keys unquoted (`main.js:570`), so any key that is not a valid Typst
   identifier (e.g. one starting with a digit or containing a space) would break the rapport compile; today the keys are fixed field names, so this is latent.
+
+### U18. Group students modal: header styles that never applied
+
+- Where: `renderer/modals/groep-leerlingen.js:115-131` (reference). The "Periode N" and
+  "Gemiddelde" header cells carry `${thStyle}` (a `style="…"`) **and** a second literal
+  `style="…"` (border-right between periodes, border-left before Gemiddelde, 1px bottom border).
+  HTML ignores a duplicate attribute, so only `thStyle` ever rendered.
+- Port (Step 3a, inline styles -> classes): kept as rendered (`.gl-th` only), so the look does not
+  change. If the separators were intended, adding them is a visual change for the user to approve
+  (backlog).
+
+### U19. Score grid: a letter on an observatie cell opens Handsontable's text editor
+
+- Where: `renderer/screens/scores.js` `beforeKeyDown` (swallows printable keys on observatie
+  cells) and the capture-phase listener (handles `0`/`1` only when no editor is open).
+- Evidence (Step 3b, `ui/e2e/score-grid.spec.ts` "G31 other printable keys do nothing"): pressing
+  `a` on a selected observatie cell still opens Handsontable's text editor; the next `1` is typed
+  into it instead of checking the box.
+- Port: pinned as a known failure on Handsontable (`test.fail`); the replacement grid ignores the
+  key, as `metrics.md` section 8 item 12 describes the intent.
+- **Fixed (Step 3b):** the own grid never opens an editor on checkbox cells. Test: score-grid.spec
+  "G31 other printable keys do nothing (U19)".

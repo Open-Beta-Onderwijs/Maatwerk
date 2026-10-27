@@ -59,6 +59,10 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # Playwright on the mock build: smoke, UI quirks, CSP walkthrough (not the local visual project).
+      - run: npx playwright install chromium
+        working-directory: ui
+      - run: npm run test:e2e
       # tauri::generate_context! needs ui/dist to exist before clippy and test.
       - run: npm run build:ui
       - run: cargo fmt --all --check
@@ -66,6 +70,9 @@ jobs:
       - run: cargo test --workspace
       - name: Portable exe
         run: npm run build:exe
+      # Only upload an exe whose shipped npm dependencies pass the allowlist (review 3a M3).
+      - name: npm licence allowlist (before upload)
+        run: npm run licenses
       - uses: actions/upload-artifact@v7
         with:
           name: maatwerk-windows-x64

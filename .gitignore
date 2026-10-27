@@ -8,6 +8,9 @@ node_modules/
 
 # Build output
 /ui/dist/
+/ui/dist-mock/
+/ui/test-results/
+/ui/playwright-report/
 /src-tauri/gen/
 
 # Local tooling
@@ -15,3 +18,4 @@ node_modules/
 !.vscode/extensions.json
 .idea/
 *.log
+/ui/e2e/visual.spec.ts-snapshots/

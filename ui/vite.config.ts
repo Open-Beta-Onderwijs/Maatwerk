@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+import { mockCsp } from './vite/csp.ts';
+import { mockFixtures } from './vite/mock-fixtures.ts';
 
 // Tauri expects a fixed dev port; see src-tauri/tauri.conf.json (devUrl).
 export default defineConfig({
   clearScreen: false,
+  plugins: [mockFixtures(), mockCsp()],
   server: {
     port: 1420,
     strictPort: true,
@@ -13,8 +17,20 @@ export default defineConfig({
     target: 'es2022',
     outDir: 'dist',
     emptyOutDir: true,
+    // Desktop app loading from disk: one large chunk is fine.
+    chunkSizeWarningLimit: 2000,
+    rolldownOptions: {
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        editor: fileURLToPath(new URL('editor.html', import.meta.url)),
+        'pdf-viewer': fileURLToPath(new URL('pdf-viewer.html', import.meta.url)),
+      },
+    },
   },
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    setupFiles: ['tests/setup.ts'],
+    // Set before the worker starts: Node reads TZ once.
+    env: { TZ: 'Europe/Amsterdam' },
   },
 });

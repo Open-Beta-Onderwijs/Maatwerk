@@ -15,9 +15,16 @@ Transitive crates: run `cargo deny list` for the full inventory.
 
 ## npm packages bundled in the UI
 
-| Package         | Licence           |
-| --------------- | ----------------- |
-| @tauri-apps/api | Apache-2.0 OR MIT |
+| Package                                                       | Licence           |
+| ------------------------------------------------------------- | ----------------- |
+| @tauri-apps/api                                               | Apache-2.0 OR MIT |
+| @codemirror/state, view, commands, language; @lezer/highlight | MIT               |
+| chart.js                                                      | MIT               |
+| chartjs-plugin-annotation                                     | MIT               |
+| pdfjs-dist                                                    | Apache-2.0        |
+
+`handsontable` (HandsOnCode Non-Commercial licence), used by the reference app, was removed in
+Step 3b (own score grid, ADR-0004); the npm licence check rejects it.
 
 ## Assets
 
