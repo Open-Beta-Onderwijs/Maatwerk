@@ -52,12 +52,12 @@ functions (golden `scoregrid.json`); **manual** = checked by hand (listed in the
 
 ## Observaties
 
-| Id  | Rule                                                                                                        | Test           |
-| --- | ----------------------------------------------------------------------------------------------------------- | -------------- |
-| G30 | Observatie cells are checkboxes; one click toggles, even when the cell was not selected; saved per student. | e2e            |
-| G31 | On a selected observatie cell `1` checks and `0` unchecks; other printable keys do nothing.                 | e2e            |
-| G32 | `F1`…`Fn` toggle the n-th observatie of the current student from any cell of the row, without moving.       | e2e            |
-| G33 | Pasting or filling into observatie cells saves them (fix U4; today they are not saved).                     | e2e (new grid) |
+| Id  | Rule                                                                                                                               | Test           |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| G30 | Observatie cells are checkboxes; one click toggles, even when the cell was not selected; saved per student.                        | e2e            |
+| G31 | On a selected observatie cell `1` checks and `0` unchecks; other printable keys do nothing (today they open the text editor, U19). | e2e            |
+| G32 | `F1`…`Fn` toggle the n-th observatie of the current student from any cell of the row, without moving.                              | e2e            |
+| G33 | Pasting or filling into observatie cells saves them (fix U4; today they are not saved).                                            | e2e (new grid) |
 
 ## Keyboard
 
