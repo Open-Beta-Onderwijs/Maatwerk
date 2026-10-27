@@ -16,6 +16,16 @@ import {
 } from '../app.js';
 import * as Presence from '../presence.js';
 import { createScoreGrid } from '../components/score-grid/score-grid';
+import {
+  computeRowStatus as rowStatusOf,
+  normalizeScore,
+  parseGradeInput,
+  parseScoreNum,
+  recomputeRow,
+  recomputeSummaryRow,
+  sameOverride,
+  scoreCellText,
+} from '../domain/scoregrid';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Scores invoeren
@@ -564,173 +574,6 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
   }
 }
 
-/**
- * Col layout (N = questions, O = applicable obs, TOFF = O > 0 ? O + 1 : 0):
- *   0..1        = id, naam
- *   2..N+1      = question scores
- *   N+2         = spacer1
- *   N+3..N+2+O  = obs checkboxes (if O > 0)
- *   N+3+O       = spacer2 (if O > 0)
- *   N+3+TOFF    = Totaal
- *   N+4+TOFF    = Cijfer
- *   N+5+TOFF    = spacer3
- *   N+6+TOFF    = R%
- *   N+7+TOFF    = T1%
- *   N+8+TOFF    = T2%
- *   N+9+TOFF    = I%
- * A grade overwritten by the teacher (gridData.overrides[rowIdx]) replaces the
- * calculated one; gridData.gradeInfo[rowIdx] tells the renderer about it.
- */
-export function recomputeRow(gridData, exam, rowIdx, O = 0) {
-  const N = exam.questions.length;
-  const TOFF = O > 0 ? O + 1 : 0;
-  const row = gridData[rowIdx];
-
-  const questionScores = {};
-  exam.questions.forEach((q, qi) => {
-    const raw = row[2 + qi];
-    if (raw === '' || raw === undefined || raw === null) return;
-    const s = String(raw).toUpperCase().trim();
-    if (s === 'N') {
-      questionScores[q.id] = null;
-      return;
-    }
-    const n = parseScoreNum(raw);
-    questionScores[q.id] = isNaN(n) ? raw : n;
-  });
-
-  const override = gridData.overrides?.[rowIdx];
-  const setGradeInfo = (res) => {
-    if (!gridData.gradeInfo) return;
-    gridData.gradeInfo[rowIdx] = {
-      calculatedGrade: res.calculatedGrade,
-      overridden: res.overridden,
-      stale: res.overrideStale,
-      berekend: override?.berekend ?? null,
-    };
-  };
-
-  if (Object.keys(questionScores).length === 0) {
-    setGradeInfo(Store.calcResults(exam, {}, override));
-    row[N + 2] = ''; // spacer1
-    if (O > 0) row[N + 3 + O] = ''; // spacer2
-    row[N + 3 + TOFF] = '';
-    row[N + 4 + TOFF] = override ? formatGrade(override.cijfer) : '';
-    row[N + 5 + TOFF] = '';
-    row[N + 6 + TOFF] = '';
-    row[N + 7 + TOFF] = '';
-    row[N + 8 + TOFF] = '';
-    row[N + 9 + TOFF] = '';
-    return;
-  }
-
-  const res = Store.calcResults(exam, questionScores, override);
-  setGradeInfo(res);
-  row[N + 2] = ''; // spacer1
-  if (O > 0) row[N + 3 + O] = ''; // spacer2 — obs cols untouched
-  row[N + 3 + TOFF] =
-    res.hasBonus && res.scored > res.normalMax
-      ? `${res.scored} / ${res.normalMax} (+)`
-      : `${res.scored} / ${res.normalMax}`;
-  row[N + 4 + TOFF] = res.grade !== null ? formatGrade(res.grade) : '';
-  row[N + 5 + TOFF] = ''; // spacer3
-  row[N + 6 + TOFF] = res.R === 'NVT' ? 'NVT' : res.R + '%';
-  row[N + 7 + TOFF] = res.T1 === 'NVT' ? 'NVT' : res.T1 + '%';
-  row[N + 8 + TOFF] = res.T2 === 'NVT' ? 'NVT' : res.T2 + '%';
-  row[N + 9 + TOFF] = res.I === 'NVT' ? 'NVT' : res.I + '%';
-}
-
-export function recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O = 0) {
-  const N = exam.questions.length;
-  const TOFF = O > 0 ? O + 1 : 0;
-  const examMaxTotal = exam.questions.reduce((s, q) => s + q.max_points, 0);
-  const totaals = [],
-    grades = [];
-
-  for (let r = 0; r < summaryIdx; r++) {
-    const totaalStr = gridData[r][N + 3 + TOFF];
-    const gradeStr = gridData[r][N + 4 + TOFF];
-    if (totaalStr) {
-      const scored = parseInt(totaalStr, 10);
-      if (!isNaN(scored)) totaals.push(scored);
-    }
-    if (gradeStr && gradeStr !== '—') {
-      const g = parseFloat(gradeStr.replace(',', '.'));
-      if (!isNaN(g)) grades.push(g);
-    }
-  }
-
-  function clearSpecialRow(row) {
-    row[N + 2] = ''; // spacer1
-    if (O > 0) {
-      for (let i = 0; i < O; i++) row[N + 3 + i] = '';
-      row[N + 3 + O] = ''; // spacer2
-    }
-    row[N + 3 + TOFF] = '';
-    row[N + 4 + TOFF] = '';
-    row[N + 5 + TOFF] = '';
-    row[N + 6 + TOFF] = '';
-    row[N + 7 + TOFF] = '';
-    row[N + 8 + TOFF] = '';
-    row[N + 9 + TOFF] = '';
-  }
-
-  // Avg row
-  const avgRow = gridData[summaryIdx];
-  const meanTotaal =
-    totaals.length > 0 ? totaals.reduce((a, b) => a + b, 0) / totaals.length : null;
-  const meanGrade = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
-  clearSpecialRow(avgRow);
-  avgRow[N + 3 + TOFF] =
-    meanTotaal !== null ? meanTotaal.toFixed(1).replace('.', ',') + ' / ' + examMaxTotal : '';
-  avgRow[N + 4 + TOFF] = meanGrade !== null ? meanGrade.toFixed(1).replace('.', ',') : '';
-
-  // Std dev row
-  if (stdIdx == null) return;
-  const sdRow = gridData[stdIdx];
-  function sdFn(arr, mean) {
-    if (arr.length < 2) return null;
-    return Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / arr.length);
-  }
-  const sdTotaal = meanTotaal !== null ? sdFn(totaals, meanTotaal) : null;
-  const sdGrade = meanGrade !== null ? sdFn(grades, meanGrade) : null;
-  clearSpecialRow(sdRow);
-  sdRow[N + 3 + TOFF] = sdTotaal !== null ? sdTotaal.toFixed(1).replace('.', ',') : '';
-  sdRow[N + 4 + TOFF] = sdGrade !== null ? sdGrade.toFixed(1).replace('.', ',') : '';
-}
-
-// Scores may be typed with a decimal comma or point; the grid shows a comma.
-function parseScoreNum(v) {
-  return Number(String(v).trim().replace(',', '.'));
-}
-function scoreCellText(v) {
-  return String(v).replace('.', ',');
-}
-
-// A typed grade (comma or point) rounded to one decimal; NaN when not 1–10.
-function parseGradeInput(raw) {
-  const n = parseScoreNum(raw);
-  if (isNaN(n) || n < 1 || n > 10) return NaN;
-  return Math.round(n * 10) / 10;
-}
-
-const sameOverride = (a, b) =>
-  (a?.cijfer ?? null) === (b?.cijfer ?? null) && (a?.berekend ?? null) === (b?.berekend ?? null);
-
-/**
- * How typed input is shown in the grid (`cell`) and stored (`value`):
- * empty → removed, N → null (not evaluated), valid number → number,
- * anything else → kept as typed so it can be corrected.
- */
-function normalizeScore(input, q) {
-  const raw = String(input ?? '').trim();
-  if (raw === '') return { cell: '', value: undefined };
-  if (raw.toUpperCase() === 'N') return { cell: 'N', value: null };
-  const num = parseScoreNum(raw);
-  if (isNaN(num) || num < 0 || num > q.max_points) return { cell: raw, value: raw };
-  return { cell: scoreCellText(num), value: num };
-}
-
 // Small context menu at (x, y) with the look of the exam card menus.
 // items: [{ icon, label, run }]
 function showCellMenu(x, y, items) {
@@ -944,23 +787,7 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
   // ── Row validation status ─────────────────────────────────────────────────
 
   function computeRowStatus(rowIdx) {
-    const row = gridData[rowIdx];
-    if (!row || row[0] === '__avg__' || row[0] === '__std__') return 'ok';
-    let filled = 0,
-      invalid = false;
-    for (let qi = 0; qi < exam.questions.length; qi++) {
-      const q = exam.questions[qi];
-      const val = row[2 + qi];
-      if (val === '' || val === undefined || val === null) continue;
-      filled++;
-      const upper = String(val).toUpperCase().trim();
-      if (upper === 'N') continue;
-      const num = parseScoreNum(val);
-      if (isNaN(num) || num < 0 || num > q.max_points) invalid = true;
-    }
-    if (invalid) return 'invalid';
-    if (filled > 0 && filled < exam.questions.length) return 'partial';
-    return 'ok';
+    return rowStatusOf(gridData[rowIdx], exam);
   }
 
   const rowStatus = gridData.map((_, i) => computeRowStatus(i));
