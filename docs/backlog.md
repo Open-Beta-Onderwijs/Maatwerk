@@ -2,6 +2,20 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 3b
+
+- **Cut (Ctrl+X) in the score grid (review 3b m5):** Handsontable had it; the own grid has copy,
+  paste and Delete. Add if teachers miss it (copy + Delete is the workaround).
+- **Licence ban covers production deps only (review 3b m8):** `tools/check-npm-licenses.mjs` walks
+  `--omit=dev`; Vite would bundle a dev dependency if UI code imported it. Add a check on the
+  built bundle (or an ESLint import rule) when the dependency list grows.
+- **Colleague change on an unsaved cell (review 3b n4):** a background update can replace a cell
+  whose save failed; the cell keeps its "not saved" mark. Clear the mark when a colleague's value
+  replaces it.
+- **Queued saves stamp the user at run time:** `updateStudentScores` stamps `_meta.updatedBy` when
+  the save runs. Logging in waits for the queue (review 3b M1), so this only matters if the user
+  could change without the login screen.
+
 ## From Step 3a
 
 - **Styling cleanup (Step 10):** the 268 inline styles became pixel-identical CSS (Step 3a): about

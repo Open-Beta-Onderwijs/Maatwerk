@@ -63,7 +63,7 @@ options)` returns a `ScoreGrid` (render, selectCell, editor control, getCell/get
   Keys go to the owner's `onKeyDown` first (numpad scheme, F-keys, Home/End, Tab).
 - `ui/src/screens/scores.js` keeps saving, undo, presence and colours; the pure logic moved to
   `ui/src/domain/scoregrid.ts`.
-- The spec's Playwright tests pass unchanged except for the grid driver (and one header locator moved
+- The spec's Playwright tests pass with a new grid driver (one header locator moved
   into it). U1, U2, U4 and U19 are fixed; G53, G59-G63 are new.
 - Rendering is incremental (changed row, summary rows, cross-hair): ~14 ms per keystroke at 11,410
   cells. The visual test shows the score modal within about 1 px of the Handsontable layout.

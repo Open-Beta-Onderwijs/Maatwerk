@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
 // UI quirks the port fixes (ADR-0002 section 10; docs/reference/quirks.md).
 // Each test failed on the imported reference code before its fix.

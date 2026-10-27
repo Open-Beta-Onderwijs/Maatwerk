@@ -1,6 +1,6 @@
-﻿/* SPDX-License-Identifier: AGPL-3.0-or-later */
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
 
-/* â”€â”€ Reset & base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -50,7 +50,7 @@ body::after {
   z-index: -1;
 }
 
-/* â”€â”€ Top bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
 #topbar {
   display: flex;
   align-items: center;
@@ -69,7 +69,7 @@ body::after {
   font-size: 16px;
   letter-spacing: 0.5px;
   margin-right: 8px;
-  /* button resets â€” element is a disabled <button> for consistent vertical alignment */
+  /* button resets — element is a disabled <button> for consistent vertical alignment */
   font-family: inherit;
   background: transparent;
   border: none;
@@ -127,7 +127,7 @@ body::after {
   display: none !important;
 }
 
-/* â”€â”€ Main content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Main content ─────────────────────────────────────────────────────────── */
 #app {
   padding: 24px;
   max-width: 1400px;
@@ -225,7 +225,7 @@ body::after {
   margin-left: auto;
 }
 
-/* â”€â”€ Section headings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section headings ─────────────────────────────────────────────────────── */
 .section-heading-jaarlaag {
   font-size: 13px;
   font-weight: 700;
@@ -247,7 +247,7 @@ body::after {
   margin-bottom: 4px;
 }
 
-/* â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Cards ────────────────────────────────────────────────────────────────── */
 .card-list {
   display: flex;
   flex-direction: column;
@@ -315,7 +315,7 @@ body::after {
   flex-shrink: 0;
 }
 
-/* â‹® action-menu button on exam cards */
+/* ⋮ action-menu button on exam cards */
 .exam-menu-btn {
   display: inline-flex !important;
   align-items: center;
@@ -510,7 +510,7 @@ body::after {
   /* background overridden inline per exam type: blue=regular, red=pta, amber=po */
 }
 
-/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
 .btn-primary {
   background: var(--primary);
   color: #fff;
@@ -586,7 +586,7 @@ body::after {
   border-color: #3578c5;
 }
 
-/* â”€â”€ Toggle buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Toggle buttons ───────────────────────────────────────────────────────── */
 .btn-toggle-group {
   display: flex;
   flex-wrap: nowrap;
@@ -615,7 +615,7 @@ body::after {
   border-color: var(--primary);
 }
 
-/* Jaarlaag buttons: square 30Ã—30 */
+/* Jaarlaag buttons: square 30×30 */
 .jl-btn {
   width: 30px !important;
   height: 30px !important;
@@ -656,7 +656,7 @@ body::after {
   flex-shrink: 0;
 }
 
-/* â”€â”€ Schoolsoort + Vakken toggle buttons (all contexts) â€” 30 px tall â”€â”€â”€â”€â”€ */
+/* ── Schoolsoort + Vakken toggle buttons (all contexts) — 30 px tall ───── */
 .ss-toggle,
 .ss-s-toggle,
 .ss-btn,
@@ -672,7 +672,7 @@ body::after {
   align-items: center !important;
 }
 
-/* â”€â”€ School screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── School screen ────────────────────────────────────────────────────────── */
 .school-card {
   display: flex;
   background: var(--surface);
@@ -683,7 +683,7 @@ body::after {
   min-height: 220px;
 }
 
-/* Left: logo â€” 1/3 of available width */
+/* Left: logo — 1/3 of available width */
 .school-logo-wrap {
   width: 33.333%;
   flex-shrink: 0;
@@ -729,7 +729,7 @@ body::after {
   opacity: 1;
 }
 
-/* Right: fields â€” remaining width */
+/* Right: fields — remaining width */
 .school-fields {
   flex: 1;
   padding: 20px 24px;
@@ -760,7 +760,7 @@ body::after {
   min-height: 28px;
 }
 
-/* Field display text â€” base */
+/* Field display text — base */
 .school-field-text {
   flex: 1;
   font-size: 14px;
@@ -787,7 +787,7 @@ body::after {
   font-weight: 400;
 }
 
-/* Inline text input â€” inherits size/style from field modifier class */
+/* Inline text input — inherits size/style from field modifier class */
 .school-field-input {
   flex: 1;
   padding: 3px 8px;
@@ -857,7 +857,7 @@ body::after {
   cursor: not-allowed;
 }
 
-/* â”€â”€ Number spinner (replaces <input type="number">) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Number spinner (replaces <input type="number">) ──────────────────────── */
 .num-spinner {
   display: flex;
   align-items: stretch;
@@ -980,7 +980,7 @@ body::after {
   padding: 0 4px;
 }
 
-/* â”€â”€ Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Forms ────────────────────────────────────────────────────────────────── */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -1055,7 +1055,7 @@ body::after {
   cursor: pointer;
 }
 
-/* â”€â”€ Questions table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Questions table ──────────────────────────────────────────────────────── */
 .questions-scroll {
   max-height: 420px;
   overflow-y: auto;
@@ -1095,7 +1095,7 @@ body::after {
   font-size: 12px;
 }
 
-/* â”€â”€ CSV preview table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── CSV preview table ────────────────────────────────────────────────────── */
 .preview-table {
   width: 100%;
   border-collapse: collapse;
@@ -1118,7 +1118,7 @@ body::after {
   border-bottom: none;
 }
 
-/* â”€â”€ Group-students assignment table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Group-students assignment table ──────────────────────────────────────── */
 .gst-label-row {
   display: flex;
   align-items: flex-end;
@@ -1175,7 +1175,7 @@ body::after {
   text-align: center;
 }
 
-/* â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Modal ────────────────────────────────────────────────────────────────── */
 #modal-overlay {
   position: fixed;
   inset: 0;
@@ -1423,7 +1423,7 @@ body::after {
   flex-direction: column;
 }
 
-/* â”€â”€ Opdrachten genereren modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Opdrachten genereren modal ───────────────────────────────────────────── */
 .og-root,
 .og-settings,
 .og-result {
@@ -1616,7 +1616,7 @@ body::after {
   color: var(--text);
 }
 
-/* â”€â”€ Exam overview tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Exam overview tabs ───────────────────────────────────────────────────── */
 .overview-tab-bar {
   display: flex;
   border-bottom: 2px solid var(--border);
@@ -1658,7 +1658,7 @@ body::after {
   margin-bottom: 16px;
 }
 
-/* â”€â”€ Toast notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Toast notifications ──────────────────────────────────────────────────── */
 #toast-container {
   position: fixed;
   bottom: 24px;
@@ -1720,7 +1720,7 @@ body::after {
   color: #fff;
 }
 
-/* â”€â”€ Score grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Score grid ───────────────────────────────────────────────────────────── */
 .score-group-section {
   margin-bottom: 28px;
 }
@@ -1735,7 +1735,7 @@ body::after {
 #score-grid-container {
   overflow-x: auto;
 }
-/* Numpad '.' â†’ N toggle in the score modal header, styled as a button */
+/* Numpad '.' → N toggle in the score modal header, styled as a button */
 .sc-dot-toggle {
   display: inline-flex;
   align-items: center;
@@ -1760,7 +1760,7 @@ body::after {
   cursor: pointer;
 }
 
-/* â”€â”€ Score grid keyboard help panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Score grid keyboard help panel ──────────────────────────────────────── */
 #scores-help-panel {
   background: #f4f6f9;
   border: 1px solid var(--border);
@@ -1809,7 +1809,7 @@ body::after {
   font-style: italic;
 }
 
-/* â”€â”€ Score grid table (components/score-grid, ADR-0004) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Score grid table (components/score-grid, ADR-0004) ────────────────────── */
 .score-grid {
   position: relative;
   outline: none;
@@ -1878,9 +1878,13 @@ body::after {
   background: #d0d6df;
 }
 /* Current cell and selected range */
+/* Several grids share the modal: only the focused one shows a strong cursor. */
 .score-grid-table td.current {
-  outline: 2px solid #4b89ff;
+  outline: 2px solid #b9cdf2;
   outline-offset: -2px;
+}
+.score-grid:focus-within .score-grid-table td.current {
+  outline-color: #4b89ff;
 }
 .score-grid-table td.area::before {
   content: '';
@@ -1908,7 +1912,7 @@ body::after {
   outline: none;
 }
 
-/* Question header spans â€” new order: RTTI, pts (+ gap), section, number */
+/* Question header spans — new order: RTTI, pts (+ gap), section, number */
 /* th is bold+italic; rtti and pts override back to normal weight/style    */
 .hdr-rtti,
 .hdr-pts {
@@ -1942,7 +1946,7 @@ body::after {
   color: var(--text, #2c3e50);
 }
 
-/* â”€â”€ Cell colours (question columns) â€” set via inline style in renderers â”€â”€â”€â”€â”€â”€ */
+/* ── Cell colours (question columns) — set via inline style in renderers ────── */
 /* These classes are kept for legacy / fallback but renderers set inline styles */
 .cell-header-col {
   background: #f8f9fb !important;
@@ -1977,7 +1981,7 @@ code {
   font-size: 12px;
 }
 
-/* â”€â”€ CustomSelect â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── CustomSelect ─────────────────────────────────────────────────────────── */
 .csel-host {
   display: inline-block;
 }
@@ -2081,7 +2085,7 @@ code {
   white-space: nowrap;
 }
 
-/* â”€â”€ Exam title link (Toetsen tab) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Exam title link (Toetsen tab) ────────────────────────────────────────── */
 .exam-title-link {
   background: none;
   border: none;
@@ -2097,7 +2101,7 @@ code {
   text-decoration: underline;
 }
 
-/* â”€â”€ Resit / multi-attempt exam cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Resit / multi-attempt exam cards ────────────────────────────────────── */
 .exam-summary-card {
   border-left: 3px solid var(--primary);
 }
@@ -2141,7 +2145,7 @@ code {
   height: calc(100% + 4px);
 }
 
-/* â”€â”€ Group name button (Groepen tab) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Group name button (Groepen tab) ──────────────────────────────────────── */
 .group-name-btn {
   background: none;
   border: none;
@@ -2157,7 +2161,7 @@ code {
   text-decoration: underline;
 }
 
-/* â”€â”€ Group students list in modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Group students list in modal ─────────────────────────────────────────── */
 .group-student-list {
   display: flex;
   flex-direction: column;
@@ -2197,19 +2201,19 @@ code {
   flex-shrink: 0;
 }
 
-/* â”€â”€ Disabled spinner overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Disabled spinner overlay ─────────────────────────────────────────────── */
 .spinner-disabled {
   opacity: 0.45;
   pointer-events: none;
 }
 
-/* â”€â”€ Toets bewerken btn in scores toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Toets bewerken btn in scores toolbar ──────────────────────────────────── */
 #btn-edit-exam-scores:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* â”€â”€ Observaties screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Observaties screen ───────────────────────────────────────────────────── */
 .obs-card-icon {
   font-size: 18px;
   line-height: 1;
@@ -2221,7 +2225,7 @@ code {
   color: var(--text);
 }
 
-/* â”€â”€ Obs col header in the score grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Obs col header in the score grid ────────────────────────────────────────── */
 .hdr-obs {
   display: block;
   font-size: 14px;
@@ -2229,7 +2233,7 @@ code {
   padding: 2px 0;
 }
 
-/* â”€â”€ Obs icon picker â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Obs icon picker ──────────────────────────────────────────────────────── */
 .obs-icon-btn:hover {
   border-color: var(--primary) !important;
   background: #f0f5ff !important;
@@ -2281,12 +2285,12 @@ code {
   font-style: italic;
 }
 
-/* Subject toggle group â€” allow wrapping for longer labels */
+/* Subject toggle group — allow wrapping for longer labels */
 #obs-subj-group {
   flex-wrap: wrap;
 }
 
-/* â”€â”€ Startup screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Startup screen ──────────────────────────────────────────────────────── */
 .startup-layout {
   display: flex;
   min-height: calc(100vh - 50px - 48px);
@@ -2390,7 +2394,7 @@ code {
   border-color: var(--border) !important;
 }
 
-/* â”€â”€ User badge grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── User badge grid ─────────────────────────────────────────────────────── */
 .user-badge-grid {
   display: flex;
   flex-wrap: wrap;
@@ -2404,7 +2408,7 @@ code {
   margin: 4px 0;
 }
 
-/* â”€â”€ User badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── User badge ──────────────────────────────────────────────────────────── */
 .user-badge {
   display: flex;
   flex-direction: column;
@@ -2455,7 +2459,7 @@ code {
   white-space: nowrap;
 }
 
-/* â”€â”€ Mini user badge in topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Mini user badge in topbar ───────────────────────────────────────────── */
 .user-badge-mini {
   width: 30px;
   height: 30px;
@@ -2489,7 +2493,7 @@ code {
   opacity: 0.8;
 }
 
-/* â”€â”€ Generic section header in card lists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Generic section header in card lists ────────────────────────────────── */
 .list-section-header {
   font-size: 0.75rem;
   font-weight: 600;
@@ -2505,7 +2509,7 @@ code {
   opacity: 0.6;
 }
 
-/* â”€â”€ Gebruikers screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Gebruikers screen ───────────────────────────────────────────────────── */
 .gebruiker-card {
   display: flex;
   align-items: center;
@@ -2534,13 +2538,13 @@ code {
   gap: 6px;
 }
 
-/* â”€â”€ Admin filter disabled state (e.g. vakken on leerlingen screen) â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Admin filter disabled state (e.g. vakken on leerlingen screen) ──────── */
 .admin-filter-disabled {
   opacity: 0.35;
   pointer-events: none;
 }
 
-/* â”€â”€ Filter row (strip below screen title) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Filter row (strip below screen title) ──────────────────────────────── */
 .filter-row {
   margin: 0 -24px 16px;
   padding: 8px 24px;
@@ -2552,7 +2556,7 @@ code {
   display: none;
 }
 
-/* â”€â”€ Filter bar (schoolsoort + jaarlaag + eigen buttons) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Filter bar (schoolsoort + jaarlaag + eigen buttons) ─────────────────── */
 .filter-bar {
   display: flex;
   gap: 6px;
@@ -2662,7 +2666,7 @@ code {
   display: none !important;
 }
 
-/* Observatie filter can hold many options â€” keep it scrollable */
+/* Observatie filter can hold many options — keep it scrollable */
 #pop-obs {
   min-width: 220px;
 }
@@ -2718,7 +2722,7 @@ code {
   opacity: 0.85;
 }
 
-/* â”€â”€ RTTI uitleg / leeradvies modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── RTTI uitleg / leeradvies modal ──────────────────────────────────────── */
 .rtti-uitleg-tab-bar {
   flex-wrap: wrap;
 }
@@ -2896,13 +2900,13 @@ code {
   flex-shrink: 0;
 }
 
-/* â”€â”€ Disabled toggle button (greyed out, not interactive) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Disabled toggle button (greyed out, not interactive) ────────────────── */
 .tog-btn-disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-/* â”€â”€ Editor overlay (full-screen Typst editor) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Editor overlay (full-screen Typst editor) ───────────────────────────── */
 #editor-overlay {
   position: fixed;
   inset: 0;
@@ -2921,7 +2925,7 @@ code {
   display: block;
 }
 
-/* â”€â”€ Obs icon toggle buttons in Opdrachten modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Obs icon toggle buttons in Opdrachten modal ─────────────────────────── */
 .obs-icon-op-btn {
   width: 30px;
   height: 30px;
@@ -2948,7 +2952,7 @@ code {
   border-color: var(--primary);
 }
 
-/* Exam overview â€” Resultaten tab */
+/* Exam overview — Resultaten tab */
 .results-table-wrap {
   overflow-x: auto;
   margin-bottom: 18px;
@@ -3014,7 +3018,7 @@ td.grade-override-stale {
   position: relative;
 }
 td.grade-override-stale::after {
-  content: 'âš ';
+  content: '⚠';
   position: absolute;
   top: 1px;
   right: 3px;
@@ -3023,7 +3027,7 @@ td.grade-override-stale::after {
   color: #b35900;
 }
 
-/* â•â• Former inline styles (Step 3a, strict CSP) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ══ Former inline styles (Step 3a, strict CSP) ═══════════════════════════════
    The reference set these with style="" attributes, which the CSP blocks.
    Values computed at render time use data attributes (src/legacy/style-data.ts).
    Small utilities first, then per component. Pixel-identical to the reference. */
@@ -3050,7 +3054,7 @@ td.grade-override-stale::after {
   font-weight: bold;
 }
 
-/* Mean Â± sd line with a coloured dot (utils/grades.js gradeStatHtml) */
+/* Mean ± sd line with a coloured dot (utils/grades.js gradeStatHtml) */
 .stat-line {
   display: flex;
   align-items: center;
@@ -3531,7 +3535,7 @@ td.grade-override-stale::after {
   letter-spacing: 0.4px;
 }
 
-/* â”€â”€ Group import: old vs new per overwritten group (D34) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Group import: old vs new per overwritten group (D34) ─────────────────── */
 .app-dialog-details {
   max-height: 50vh;
   overflow: auto;

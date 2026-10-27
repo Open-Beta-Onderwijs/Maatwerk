@@ -536,8 +536,10 @@ const Store = (() => {
     return cache[file];
   }
 
-  async function setScore(studentId, examId, questionId, value, year) {
-    await updateStudentScores(studentId, year, _activeSubject, (rec) => {
+  // `subject` defaults to the active one; the score grid passes the subject the
+  // value was typed in, because its saves are queued (review 3b M1).
+  async function setScore(studentId, examId, questionId, value, year, subject = _activeSubject) {
+    await updateStudentScores(studentId, year, subject, (rec) => {
       if (!rec.scores[examId]) rec.scores[examId] = {};
       if (value === undefined) delete rec.scores[examId][questionId];
       else rec.scores[examId][questionId] = value;
@@ -548,8 +550,15 @@ const Store = (() => {
   // `berekend` is the calculated grade (rounded to one decimal, or null) when the
   // override was set, so a later change of the calculated grade can be flagged.
   // cijfer === null removes the override.
-  async function setGradeOverride(studentId, examId, cijfer, berekend, year) {
-    await updateStudentScores(studentId, year, _activeSubject, (rec) => {
+  async function setGradeOverride(
+    studentId,
+    examId,
+    cijfer,
+    berekend,
+    year,
+    subject = _activeSubject,
+  ) {
+    await updateStudentScores(studentId, year, subject, (rec) => {
       if (cijfer === null) {
         if (rec.overrides) delete rec.overrides[examId];
         if (rec.overrides && !Object.keys(rec.overrides).length) delete rec.overrides;
@@ -619,8 +628,8 @@ const Store = (() => {
     await loadObservaties(subject);
   }
 
-  async function setObservation(studentId, examId, obsId, checked, year) {
-    await updateStudentScores(studentId, year, _activeSubject, (rec) => {
+  async function setObservation(studentId, examId, obsId, checked, year, subject = _activeSubject) {
+    await updateStudentScores(studentId, year, subject, (rec) => {
       if (!rec.observations) rec.observations = {};
       if (!rec.observations[examId]) rec.observations[examId] = [];
       if (checked) {

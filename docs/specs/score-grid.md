@@ -7,7 +7,7 @@ What the score grid does, written as testable rules. Written in Step 3b against 
 quirks U1-U5 in `docs/reference/quirks.md`. Line numbers in the quirks refer to the reference.
 
 Each rule has an id (`G..`) and how it is tested: **e2e** = `ui/e2e/score-grid.spec.ts`, run first
-against Handsontable and then, unchanged except for `ui/e2e/grid-driver.ts`, against the own grid;
+against Handsontable and then against the own grid (the grid driver `ui/e2e/grid-driver.ts` changed, one header locator moved into it, and the U-quirk pins became normal tests);
 **unit** = Vitest on `ui/src/domain/scoregrid.ts` (`ui/tests/domain/scoregrid.test.ts`, golden
 `scoregrid.json`); **manual** = checked by hand (listed in the 3b report).
 
@@ -55,12 +55,12 @@ against Handsontable and then, unchanged except for `ui/e2e/grid-driver.ts`, aga
 
 ## Observaties
 
-| Id  | Rule                                                                                                                               | Test                  |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| G30 | Observatie cells are checkboxes; one click toggles, even when the cell was not selected; saved per student.                        | e2e                   |
-| G31 | On a selected observatie cell `1` checks and `0` unchecks; other printable keys do nothing (today they open the text editor, U19). | e2e (U19 fixed in 3b) |
-| G32 | `F1`…`Fn` toggle the n-th observatie of the current student from any cell of the row, without moving.                              | e2e                   |
-| G33 | Pasting into observatie cells saves them (`1`/`true`/`x` check, `0`/`false`/empty uncheck; fix U4).                                | e2e                   |
+| Id  | Rule                                                                                                                                                           | Test                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| G30 | Observatie cells are checkboxes; one click toggles, even when the cell was not selected; saved per student.                                                    | e2e                   |
+| G31 | On a selected observatie cell `1` checks and `0` unchecks; other printable keys do nothing (today they open the text editor, U19).                             | e2e (U19 fixed in 3b) |
+| G32 | `F1`…`Fn` toggle the n-th observatie of the current student from any cell of the row, without moving, also while a score is being typed (the edit stays open). | e2e                   |
+| G33 | Pasting into observatie cells saves them (`1`/`true`/`x` check, `0`/`false`/empty uncheck; fix U4).                                                            | e2e                   |
 
 ## Keyboard
 
@@ -76,29 +76,29 @@ against Handsontable and then, unchanged except for `ui/e2e/grid-driver.ts`, aga
 
 ## Undo, saving, colleagues
 
-| Id  | Rule                                                                                                                                                                                       | Test   |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| G50 | The ↶/↷ buttons undo/redo scores, observaties and grade overrides (50 steps); an entry whose cell a colleague changed in the meantime is skipped with a toast.                             | e2e    |
-| G51 | Every change is saved per cell right away (CAS write of the student's score file); scores another teacher saved in the meantime are kept.                                                  | e2e    |
-| G52 | Fast entry never loses a value: changes made while an earlier save is in flight are queued and saved in order (fix U2).                                                                    | e2e    |
-| G53 | A failed save shows a persistent error (U3, fixed in 3a). The new grid marks the cell as not saved and retries it when it is typed again, even with the same value (review 3a n7).         | e2e    |
-| G54 | Copy (Ctrl+C) copies the selected range as tab-separated text with the displayed values; paste (Ctrl+V) of a rectangular range fills cells from the selection and saves each like typing.  | e2e    |
-| G55 | A colleague's change to a shown student updates the row in place (not the cell being edited or one with a save in flight) and flashes the changed cells for 2 s in the colleague's colour. | e2e    |
-| G56 | Colleagues' cursors are drawn over their cell with a coloured border and name flag; their badges appear in the modal header.                                                               | manual |
-| G57 | A colleague's N-term change updates the spinner and all rows in place; other exam/group/student changes show a blocking reload notice.                                                     | e2e    |
-| G58 | The selected row and column are highlighted (cross-hair).                                                                                                                                  | manual |
+| Id  | Rule                                                                                                                                                                                                                                                                                                                                  | Test   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| G50 | The ↶/↷ buttons undo/redo scores, observaties and grade overrides (50 steps); an entry whose cell a colleague changed in the meantime is skipped with a toast.                                                                                                                                                                        | e2e    |
+| G51 | Every change is saved per cell right away (CAS write of the student's score file); scores another teacher saved in the meantime are kept.                                                                                                                                                                                             | e2e    |
+| G52 | Fast entry never loses a value: changes made while an earlier save is in flight are queued and saved in order (fix U2).                                                                                                                                                                                                               | e2e    |
+| G53 | A failed save shows a persistent error (U3, fixed in 3a). The new grid marks the cell as not saved and retries it when it is typed again, even with the same value (review 3a n7).                                                                                                                                                    | e2e    |
+| G54 | Copy (Ctrl+C) copies the selected range as tab-separated text with the displayed values; paste (Ctrl+V) of a rectangular range fills cells from the selection and saves each like typing; a selection that is a whole multiple of the block is filled by repeating it (one value into a range). One paste or Delete is one undo step. | e2e    |
+| G55 | A colleague's change to a shown student updates the row in place (not the cell being edited or one with a save in flight) and flashes the changed cells for 2 s in the colleague's colour.                                                                                                                                            | e2e    |
+| G56 | Colleagues' cursors are drawn over their cell with a coloured border and name flag; their badges appear in the modal header.                                                                                                                                                                                                          | manual |
+| G57 | A colleague's N-term change updates the spinner and all rows in place; other exam/group/student changes show a blocking reload notice.                                                                                                                                                                                                | e2e    |
+| G58 | The selected row and column are highlighted (cross-hair).                                                                                                                                                                                                                                                                             | manual |
 
 ## Own grid (Step 3b)
 
 Behaviour the own grid adds or defines where Handsontable had its own defaults.
 
-| Id  | Rule                                                                                                                                                | Test   |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| G59 | Delete / Backspace clear the selected question and Cijfer cells (as Handsontable did); observaties stay as they are.                                | e2e    |
-| G60 | A range is selected with Shift+click, Shift+arrows or by dragging; Ctrl+A selects the whole grid. Paste selects the pasted block.                   | e2e    |
-| G61 | F2 or a double-click edits the cell's current value; typing replaces it. While typing, arrows commit and move; after F2, Left/Right move the caret. | manual |
-| G62 | Clicking outside the grid commits an open edit; Escape cancels it and stays inside the score modal.                                                 | e2e    |
-| G63 | The ↶/↷ buttons are disabled while their history is empty (U1).                                                                                     | manual |
+| Id  | Rule                                                                                                                                                                                                                                       | Test   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| G59 | Delete / Backspace clear the selected question and Cijfer cells (as Handsontable did); observaties stay as they are.                                                                                                                       | e2e    |
+| G60 | A range is selected with Shift+click, Shift+arrows or by dragging; Ctrl+A selects the whole grid. Paste selects the pasted block. Reaching a grid with Tab selects its first cell; only the focused grid shows a strong cursor.            | e2e    |
+| G61 | F2 (when the exam has fewer than two observaties; otherwise F2 toggles observatie 2, G32) or a double-click edits the cell's current value; typing replaces it. While typing, arrows commit and move; after F2, Left/Right move the caret. | manual |
+| G62 | Clicking outside the grid commits an open edit; Escape cancels it and stays inside the score modal. Ctrl+Z inside an open edit undoes the typing, not the app history.                                                                     | e2e    |
+| G63 | The ↶/↷ buttons are disabled while their history is empty (U1).                                                                                                                                                                            | manual |
 
 Not reproduced (Handsontable details): fill handle, column resizing, context menu except G22,
 Handsontable's own undo, the `aria-hidden` workaround on its textarea. A fill handle would be new

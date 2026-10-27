@@ -356,28 +356,45 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
     return toClipboardText(values);
   }
 
+  /**
+   * Pastes a block from the top-left of the selection. When the selection is
+   * larger and a whole multiple of the block (one value into a range, for
+   * example), the block is repeated to fill it, as spreadsheets do.
+   */
   function paste(text: string): void {
     const area = range();
     if (!area) return;
     const block = parseClipboardText(text);
+    const blockRows = block.length;
+    const blockCols = Math.max(...block.map((l) => l.length));
+    const selRows = area.bottom - area.top + 1;
+    const selCols = area.right - area.left + 1;
+    const tile =
+      selRows >= blockRows &&
+      selCols >= blockCols &&
+      selRows % blockRows === 0 &&
+      selCols % blockCols === 0;
+    const rows = tile ? selRows : blockRows;
+    const cols = tile ? selCols : blockCols;
     const changes: CellChange[] = [];
-    block.forEach((line, dr) => {
-      line.forEach((raw, dc) => {
+    for (let dr = 0; dr < rows; dr++) {
+      for (let dc = 0; dc < cols; dc++) {
+        const raw = block[dr % blockRows]![dc % blockCols];
         const r = area.top + dr;
         const c = area.left + dc;
-        if (!inside(r, c) || !options.isEditable(r, c)) return;
+        if (raw === undefined || !inside(r, c) || !options.isEditable(r, c)) continue;
         if (isCheckbox(c)) {
           const checked = parseCheckboxText(raw);
-          if (checked === null || checked === (valueAt(r, c) === true)) return;
+          if (checked === null || checked === (valueAt(r, c) === true)) continue;
           changes.push({ row: r, col: c, oldValue: valueAt(r, c), newValue: checked });
         } else {
           changes.push({ row: r, col: c, oldValue: valueAt(r, c), newValue: raw });
         }
-      });
-    });
+      }
+    }
     // Select what was pasted, as spreadsheets do.
-    const bottom = Math.min(rowCount - 1, area.top + block.length - 1);
-    const right = Math.min(colCount - 1, area.left + Math.max(...block.map((l) => l.length)) - 1);
+    const bottom = Math.min(rowCount - 1, area.top + rows - 1);
+    const right = Math.min(colCount - 1, area.left + cols - 1);
     anchor = { row: area.top, col: area.left };
     current = { row: area.top, col: area.left };
     renderSelection();
@@ -534,6 +551,10 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
     startEditing(String(valueAt(pos.row, pos.col) ?? ''), false);
   }
 
+  // Reaching the grid with Tab selects its first cell, so the keys work at once.
+  root.addEventListener('focus', () => {
+    if (!current && rowCount && colCount) select(0, 0);
+  });
   root.addEventListener('keydown', onKeyDown);
   root.addEventListener('mousedown', onMouseDown);
   root.addEventListener('mouseover', onMouseOver);

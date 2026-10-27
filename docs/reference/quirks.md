@@ -661,7 +661,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   but it is never written to disk, never gets an undo entry, and row totals are not recomputed for it.
   On reopen the score is gone. Fast numpad entry is exactly the intended workflow.
 - Why it matters: silent data loss; the replacement must queue, not drop, changes.
-- **Fixed (Step 3b):** `saveCell` queues every save behind the previous one (one chain per modal),
+- **Fixed (Step 3b):** `saveCell` queues every save behind the previous one (one chain for the app session; logging in again and reopening the modal wait for it; each save keeps the subject it was typed in, review 3b M1),
   the cell shows the value at once and counts as "save in flight" from the moment it is typed.
   Test: score-grid.spec "G52" (with `MockApi.slowWrites`).
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { escHtml, navigateTo, showUserBadge } from '../app.js';
+import { scoreSavesDone } from './scores.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Startup — two-step subject + user picker
@@ -112,6 +113,8 @@ export async function renderStartup() {
         const userId = btn.dataset.userId;
         const user = users.find((u) => u.id === userId);
         if (!user) return;
+        // Score saves still queued belong to the previous user (review 3b M1).
+        await scoreSavesDone();
         Store.setActiveUser(user);
         await Store.initSubject(selectedSubject);
         await Store.saveLastSession(selectedSubject, userId);

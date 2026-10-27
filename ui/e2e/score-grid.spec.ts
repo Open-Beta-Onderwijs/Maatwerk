@@ -20,7 +20,7 @@ import {
   studentIdOf,
   typeInto,
 } from './grid-driver';
-import { YEAR, readMockJson, withMock } from './helpers';
+import { TEACHER, YEAR, readMockJson, withMock } from './helpers';
 
 // Column indices. Lege toets: 3 questions, no observaties.
 const E = { q1: 2, q2: 3, q3: 4, totaal: 6, cijfer: 7, columns: 13 };
@@ -210,6 +210,18 @@ test.describe('observaties', () => {
     expect(await selected(page)).toEqual([1, H2.q1]);
   });
 
+  test('G32 F-keys also work while typing a score, keeping the edit', async ({ page }) => {
+    await openGrid(page, EXAMS.h2);
+    const box = cell(page, 1, H2.obs1).locator('input[type="checkbox"]');
+    const was = await box.isChecked();
+    await select(page, 1, H2.q1);
+    await page.keyboard.type('1');
+    await page.keyboard.press('F1');
+    await expect(box).toBeChecked({ checked: !was });
+    await page.keyboard.press('Enter');
+    await expect(cell(page, 1, H2.q1)).toHaveText('1');
+  });
+
   test('G33 pasting into observatie cells saves them (U4)', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openGrid(page, EXAMS.h2);
@@ -385,6 +397,54 @@ test.describe('undo, saving, colleagues', () => {
     await page.keyboard.press('Delete');
     await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q3: 3 });
     await expect(cell(page, 0, E.q1)).toHaveText('');
+  });
+
+  test('G52 queued saves stay in the subject they were typed in (review 3b M1)', async ({
+    page,
+  }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await withMock(page, (m) => m.slowWrites(500));
+    await select(page, 0, E.q1);
+    for (const v of ['1', '2', '3']) {
+      await page.keyboard.type(v);
+      await page.keyboard.press('Enter');
+    }
+    // Log in to another subject while the saves are still queued.
+    await page.locator('#modal-close').click();
+    await page.locator('#user-badge-btn').click();
+    await page.locator('.subject-card[data-subject="schk"]').click();
+    await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
+    await expect
+      .poll(() => storedScores(page, id, EXAMS.empty), { timeout: 5000 })
+      .toEqual({ q1: 1, q2: 2, q3: 3 });
+    const schk = await readMockJson<{ scores?: Record<string, unknown> } | null>(
+      page,
+      `${YEAR}/scores/schk/${id}.json`,
+    );
+    expect(schk?.scores?.[EXAMS.empty]).toBeUndefined();
+  });
+
+  test('G54 one value pasted into a range fills it; one undo step', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await page.evaluate(() => navigator.clipboard.writeText('2'));
+    await select(page, 0, E.q1);
+    await cell(page, 0, E.q3).click({ modifiers: ['Shift'] });
+    await page.keyboard.press('Control+V');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 2, q2: 2, q3: 2 });
+    await page.locator('#sc-undo').click();
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({});
+  });
+
+  test('G63 the undo buttons are disabled while their history is empty', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    await expect(page.locator('#sc-undo')).toBeDisabled();
+    await expect(page.locator('#sc-redo')).toBeDisabled();
+    await typeInto(page, 0, E.q1, '1');
+    await expect(page.locator('#sc-undo')).toBeEnabled();
+    await expect(page.locator('#sc-redo')).toBeDisabled();
   });
 
   test('G53 a failed save marks the cell; typing the same value retries it', async ({ page }) => {

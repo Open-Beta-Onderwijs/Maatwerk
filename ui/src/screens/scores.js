@@ -123,6 +123,11 @@ function saveCell(student, col, write) {
   return run;
 }
 
+/** Resolves when every queued score save has run (before a change of user or subject). */
+export function scoreSavesDone() {
+  return saveChain;
+}
+
 async function waitForPendingSaves(timeoutMs = 5000) {
   const end = Date.now() + timeoutMs;
   while (pendingSaves.size > 0 && Date.now() < end) {
@@ -140,7 +145,15 @@ function updateUndoRedoBtns() {
   if (redoBtnEl) redoBtnEl.disabled = redoHistory.length === 0;
 }
 
+// While set, pushHistory collects entries here (one undo step for a paste or
+// Delete of a range, review 3b m6).
+let historyBatch = null;
+
 function pushHistory(entry) {
+  if (historyBatch) {
+    historyBatch.push(entry);
+    return;
+  }
   scoreHistory.push(entry);
   if (scoreHistory.length > MAX_HISTORY) scoreHistory.shift();
   redoHistory = []; // a new action clears the redo stack
@@ -262,6 +275,8 @@ export async function openScoreModal(examId, year, deps) {
 
       // Also from the score grid, which leaves these keys to the app (G46, U1).
       undoKeydownHandler = (e) => {
+        // While typing in a cell, Ctrl+Z undoes the typing (native text undo).
+        if (e.target?.classList?.contains('score-grid-editor')) return;
         const key = e.key.toLowerCase(); // 'Z' with Shift or Caps Lock
         if (e.ctrlKey && !e.shiftKey && key === 'z') {
           e.preventDefault();
@@ -469,6 +484,8 @@ async function reloadScoreModal(examId, year, deps) {
 
 export async function loadScoreGrid(jaarlaag, examId, container, year) {
   destroyGridInstances();
+  // Saves queued from a previous modal must land before the files are read (review 3b m7).
+  await saveChain;
   if (!container) container = document.getElementById('score-grid-container');
   if (!examId) {
     container.innerHTML = '<p class="hint">Selecteer een toets.</p>';
@@ -663,6 +680,8 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
 
   // ── Saving & background changes ───────────────────────────────────────────
   const save = (row, col, write) => saveCell(students[row], col, write);
+  // Saves are queued and may run after a switch of subject: pin this one.
+  const subject = Store.getActiveSubject();
 
   // Cells recently changed by someone else ("row:col" -> time the flash ends).
   const flashUntil = new Map();
@@ -764,7 +783,7 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
         `<span class="hdr-rtti">${escHtml(q.rtti)}</span>` +
         `<span class="hdr-pts">${q.max_points}p</span>` +
         `<span class="u-text-subtle hdr-opgave">${escHtml(q.section)}</span>` +
-        `<span class="u-text-subtle hdr-vraag">${q.number}</span>` +
+        `<span class="u-text-subtle hdr-vraag">${escHtml(String(q.number))}</span>` +
         `</span>`
       );
     }
@@ -772,7 +791,7 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
       `<span class="hdr-rtti">${escHtml(q.rtti)}</span>` +
       `<span class="hdr-pts">${q.max_points}p</span>` +
       `<span class="hdr-opgave">${escHtml(q.section)}</span>` +
-      `<span class="hdr-vraag">${q.number}</span>`
+      `<span class="hdr-vraag">${escHtml(String(q.number))}</span>`
     );
   });
   // Tint bonus/diag question headers to match the cell background.
@@ -836,7 +855,7 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
       const { cell, value } = normalizeScore(str, q);
       gridData[row][col] = cell;
       refreshRow(row);
-      return save(row, col, () => Store.setScore(student.id, exam.id, q.id, value, year));
+      return save(row, col, () => Store.setScore(student.id, exam.id, q.id, value, year, subject));
     };
     pushHistory({
       undo: () =>
@@ -870,7 +889,9 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
     const apply = (val) => {
       gridData[row][col] = val;
       grid.render({ rows: [row] });
-      return save(row, col, () => Store.setObservation(student.id, exam.id, obs.id, val, year));
+      return save(row, col, () =>
+        Store.setObservation(student.id, exam.id, obs.id, val, year, subject),
+      );
     };
     pushHistory({
       undo: () =>
@@ -898,7 +919,14 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
       gridData.overrides[row] = ov;
       refreshRow(row);
       return save(row, gradeCol, () =>
-        Store.setGradeOverride(student.id, exam.id, ov?.cijfer ?? null, ov?.berekend, year),
+        Store.setGradeOverride(
+          student.id,
+          exam.id,
+          ov?.cijfer ?? null,
+          ov?.berekend,
+          year,
+          subject,
+        ),
       );
     };
     pushHistory({
@@ -937,11 +965,29 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
 
   // Edits from the grid: typed, pasted (also into observaties, U4) or cleared.
   function onGridChange(changes) {
-    for (const { row, col, oldValue, newValue } of changes) {
-      if (row > lastDataRow) continue;
-      if (col === gradeCol) gradeTyped(row, oldValue, newValue);
-      else if (isQCol(col)) scoreTyped(row, col, oldValue, newValue);
-      else if (isObsCol(col)) setObs(row, col - firstObsCol, newValue === true);
+    const batch = [];
+    historyBatch = batch;
+    try {
+      for (const { row, col, oldValue, newValue } of changes) {
+        if (row > lastDataRow) continue;
+        if (col === gradeCol) gradeTyped(row, oldValue, newValue);
+        else if (isQCol(col)) scoreTyped(row, col, oldValue, newValue);
+        else if (isObsCol(col)) setObs(row, col - firstObsCol, newValue === true);
+      }
+    } finally {
+      historyBatch = null;
+    }
+    if (batch.length === 1) pushHistory(batch[0]);
+    else if (batch.length > 1) {
+      // Entries changed by a colleague in the meantime are skipped one by one.
+      pushHistory({
+        undo: async () => {
+          for (const e of [...batch].reverse()) await e.undo();
+        },
+        redo: async () => {
+          for (const e of batch) await e.redo();
+        },
+      });
     }
   }
 
@@ -1192,6 +1238,16 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
       return handled();
     }
 
+    // ── F1, F2, … → toggle observation 1, 2, … of this student, without
+    // moving the selection or closing an open editor (as the reference) ────────────────────────────────────────────────
+    const fKey = /^F(\d{1,2})$/.exec(event.key);
+    if (fKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+      const obsIdx = Number(fKey[1]) - 1;
+      if (obsIdx >= O) return false;
+      setObs(row, obsIdx, gridData[row][obsStart + obsIdx] !== true);
+      return handled();
+    }
+
     // The keys below only apply when not typing in a cell.
     if (editing) return false;
 
@@ -1238,15 +1294,6 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
       return handled();
     }
 
-    // ── F1, F2, … → toggle observation 1, 2, … of this student, without
-    // moving the selection ────────────────────────────────────────────────
-    const fKey = /^F(\d{1,2})$/.exec(event.key);
-    if (fKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-      const obsIdx = Number(fKey[1]) - 1;
-      if (obsIdx >= O) return false;
-      setObs(row, obsIdx, gridData[row][obsStart + obsIdx] !== true);
-      return handled();
-    }
     return false;
   }
 
