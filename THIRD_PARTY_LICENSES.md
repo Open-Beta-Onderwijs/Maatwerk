@@ -23,8 +23,8 @@ Transitive crates: run `cargo deny list` for the full inventory.
 | chartjs-plugin-annotation                                     | MIT               |
 | pdfjs-dist                                                    | Apache-2.0        |
 
-**Temporary, must not ship:** `handsontable` 14.3.0 (HandsOnCode Non-Commercial licence) is used
-during Step 3a only and is removed in Step 3b. The npm licence check skips it with a warning.
+`handsontable` (HandsOnCode Non-Commercial licence), used by the reference app, was removed in
+Step 3b (own score grid, ADR-0004); the npm licence check rejects it.
 
 ## Assets
 

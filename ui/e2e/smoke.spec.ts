@@ -42,7 +42,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
 
   // Enter a score in the first question cell of the first student.
   await examMenuItem(page, EXAM_ID, 'Scores invoeren');
-  const firstRow = page.locator('.handsontable .htCore tbody tr').first();
+  const firstRow = page.locator('.score-grid-table tbody tr').first();
   const studentId = (await firstRow.locator('td').first().innerText()).trim();
   await firstRow.locator('td').nth(2).click();
   await page.keyboard.type('1');

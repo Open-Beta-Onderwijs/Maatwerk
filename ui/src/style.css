@@ -1809,16 +1809,104 @@ body::after {
   font-style: italic;
 }
 
-/* ── HOT column headers — bold, italic, bottom-aligned ─────────────────────── */
-.handsontable th {
-  white-space: normal !important;
+/* ── Score grid table (components/score-grid, ADR-0004) ────────────────────── */
+.score-grid {
+  position: relative;
+  outline: none;
+  width: max-content;
+  max-width: 100%;
+}
+.score-grid-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-top: 1px solid #ccc;
+  border-left: 1px solid #ccc;
+  font-size: 13px;
+  color: #222;
+  user-select: none;
+}
+.score-grid-table th,
+.score-grid-table td {
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 0 4px;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.score-grid-table td {
+  position: relative;
+  height: 22px;
+  line-height: 21px;
+  background: #fff;
+  cursor: cell;
+}
+.score-grid-table td.sg-readonly {
+  color: #777;
+}
+.score-grid-table td.sg-checkbox {
+  text-align: center;
+  vertical-align: middle;
+}
+.score-grid-table td.sg-checkbox input {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  vertical-align: middle;
+}
+/* Column headers: bold, italic, bottom-aligned */
+.score-grid-table th {
+  background: #f0f0f0;
+  text-align: center;
+  white-space: normal;
   word-break: keep-all;
-  line-height: 1 !important;
-  padding-top: 1px !important;
-  padding-bottom: 4px !important;
-  font-weight: bold !important;
-  font-style: italic !important;
-  vertical-align: bottom !important;
+  line-height: 1;
+  padding-top: 1px;
+  padding-bottom: 4px;
+  font-weight: bold;
+  font-style: italic;
+  vertical-align: bottom;
+}
+.score-grid-table th.sg-left {
+  text-align: left;
+}
+.score-grid-table th.sg-hdr-bonus {
+  background: #cce5ff;
+}
+.score-grid-table th.sg-hdr-diag {
+  background: #d0d6df;
+}
+/* Current cell and selected range */
+.score-grid-table td.current {
+  outline: 2px solid #4b89ff;
+  outline-offset: -2px;
+}
+.score-grid-table td.area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(75, 137, 255, 0.15);
+  pointer-events: none;
+}
+/* The last save of this cell failed (G53): retried when typed again. */
+.score-grid-table td.cell-unsaved {
+  outline: 2px dashed #c0392b;
+  outline-offset: -2px;
+}
+.score-grid-editor {
+  position: absolute;
+  z-index: 10;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 3px;
+  border: 2px solid #4b89ff;
+  font: inherit;
+  font-size: 13px;
+  background: #fff;
+  color: #222;
+  outline: none;
 }
 
 /* Question header spans — new order: RTTI, pts (+ gap), section, number */
@@ -2134,7 +2222,7 @@ code {
   color: var(--text);
 }
 
-/* ── Obs col header in HOT grid ────────────────────────────────────────────── */
+/* ── Obs col header in the score grid ────────────────────────────────────────── */
 .hdr-obs {
   display: block;
   font-size: 14px;
@@ -2920,7 +3008,6 @@ code {
 }
 
 /* Grade overwritten by the teacher (score modal, exam overview Resultaten) */
-.handsontable td.grade-override,
 td.grade-override {
   box-shadow: inset 0 0 0 3px #1f5fbf;
 }

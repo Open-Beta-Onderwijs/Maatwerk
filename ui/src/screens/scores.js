@@ -15,6 +15,7 @@ import {
   onModalCleanup,
 } from '../app.js';
 import * as Presence from '../presence.js';
+import { createScoreGrid } from '../components/score-grid/score-grid';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Scores invoeren
@@ -37,7 +38,7 @@ import * as Presence from '../presence.js';
 let activeExam = null;
 let activeObs = []; // observaties applicable to current exam jaarlaag
 let activeGridData = [];
-let hotInstances = [];
+let gridInstances = [];
 let scoreHistory = []; // undo stack
 let redoHistory = []; // redo stack
 let undoKeydownHandler = null;
@@ -64,6 +65,53 @@ const REMOTE_FLASH_COLOR = '#f5a623';
 let remoteFlashColor = REMOTE_FLASH_COLOR;
 // One per group grid: (cursors) => draws colleagues' positions in that grid.
 let cursorUpdaters = [];
+
+// Saves run one after the other, in the order they were made: a value typed
+// while an earlier save is still in flight is queued, never dropped (U2).
+let saveChain = Promise.resolve();
+// Cells whose last save failed ("studentId:col"); typing the same value again
+// retries the save (G53).
+const unsavedCells = new Set();
+
+const cellKey = (student, col) => `${student?.id}:${col}`;
+const isUnsaved = (student, col) => unsavedCells.has(cellKey(student, col));
+
+function renderAllGrids() {
+  gridInstances.forEach((g) => g.render());
+}
+
+/**
+ * Queues `write` (a Store call saving one cell of `student`) behind the saves
+ * before it. The cell counts as "save in flight" from now on, so background
+ * updates leave it alone (see pendingSaves). A conflict rejects the returned
+ * promise (reported by the global handler in app.js); any other failure is
+ * shown and marks the cell as not saved.
+ */
+function saveCell(student, col, write) {
+  const key = cellKey(student, col);
+  pendingSaves.set(key, (pendingSaves.get(key) ?? 0) + 1);
+  Presence.markEdit();
+  const run = saveChain.then(async () => {
+    try {
+      await write();
+      if (unsavedCells.delete(key)) renderAllGrids();
+    } catch (err) {
+      if (err?.code === 'conflict') throw err;
+      // U3: any other failure (locked file, broken JSON, disk full) was silently lost.
+      unsavedCells.add(key);
+      renderAllGrids();
+      persistentError(
+        `Score niet opgeslagen (${student ? Store.fullName(student) : 'onbekend'}): ${err?.message ?? err}. Controleer de gedeelde map en voer de score opnieuw in.`,
+      );
+    } finally {
+      const n = pendingSaves.get(key) - 1;
+      if (n > 0) pendingSaves.set(key, n);
+      else pendingSaves.delete(key);
+    }
+  });
+  saveChain = run.catch(() => {});
+  return run;
+}
 
 async function waitForPendingSaves(timeoutMs = 5000) {
   const end = Date.now() + timeoutMs;
@@ -107,19 +155,23 @@ async function redoLast() {
   updateUndoRedoBtns();
 }
 
-export function destroyHotInstances() {
-  hotInstances.forEach((h) => {
-    try {
-      h.destroy();
-    } catch (_) {}
-  });
-  hotInstances = [];
+export function destroyGridInstances() {
+  gridInstances.forEach((g) => g.destroy());
+  gridInstances = [];
+  unsavedCells.clear();
   rowUpdaters = [];
   cursorUpdaters = [];
   activeRoster = null;
   activeGridData = [];
   activeExam = null;
   activeObs = [];
+}
+
+// Everything the score modal set up: the grids, the undo history and its
+// buttons, and the Ctrl+Z / Ctrl+Y listener. loadScoreGrid only replaces the
+// grids, so the listener and buttons stay wired (U1).
+function resetScoreModal() {
+  destroyGridInstances();
   scoreHistory = [];
   redoHistory = [];
   undoBtnEl = null;
@@ -131,7 +183,7 @@ export function destroyHotInstances() {
 }
 
 export async function openScoreModal(examId, year, deps) {
-  destroyHotInstances();
+  resetScoreModal();
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
   if (!exam) return;
 
@@ -196,18 +248,22 @@ export async function openScoreModal(examId, year, deps) {
       redoBtnEl = el.querySelector('#sc-redo');
       undoBtnEl.addEventListener('click', () => undoLast());
       redoBtnEl.addEventListener('click', () => redoLast());
+      updateUndoRedoBtns();
 
+      // Also from the score grid, which leaves these keys to the app (G46, U1).
       undoKeydownHandler = (e) => {
-        if (e.ctrlKey && !e.shiftKey && e.key === 'z') {
+        const key = e.key.toLowerCase(); // 'Z' with Shift or Caps Lock
+        if (e.ctrlKey && !e.shiftKey && key === 'z') {
           e.preventDefault();
           undoLast();
         }
-        if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+        if ((e.ctrlKey && key === 'y') || (e.ctrlKey && e.shiftKey && key === 'z')) {
           e.preventDefault();
           redoLast();
         }
       };
       document.addEventListener('keydown', undoKeydownHandler);
+      onModalCleanup(resetScoreModal);
 
       el.querySelector('#sc-edit-exam').addEventListener('click', () => {
         closeModal();
@@ -337,7 +393,7 @@ function recomputeAllRows() {
     });
     recomputeSummaryRow(gd, ai, si2, activeExam, _O);
   });
-  hotInstances.forEach((h) => h.render());
+  renderAllGrids();
 }
 
 // JSON with sorted keys, so two versions of an object compare regardless of key order.
@@ -395,17 +451,14 @@ function rosterSignature(exam, year) {
 
 // Close and reopen the score modal after committing any open cell editor.
 async function reloadScoreModal(examId, year, deps) {
-  hotInstances.forEach((h) => {
-    const editor = h.getActiveEditor();
-    if (editor?.isOpened?.()) editor.finishEditing();
-  });
+  gridInstances.forEach((g) => g.finishEditing());
   await waitForPendingSaves();
   closeModal();
   if (Store.getExamsSync(year).some((e) => e.id === examId)) openScoreModal(examId, year, deps);
 }
 
 export async function loadScoreGrid(jaarlaag, examId, container, year) {
-  destroyHotInstances();
+  destroyGridInstances();
   if (!container) container = document.getElementById('score-grid-container');
   if (!examId) {
     container.innerHTML = '<p class="hint">Selecteer een toets.</p>';
@@ -435,7 +488,7 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
 
     const section = document.createElement('div');
     section.className = 'score-group-section';
-    section.innerHTML = `<h3 class="group-heading">${escHtml(group.name)}</h3><div id="hot-g${gi}"></div>`;
+    section.innerHTML = `<h3 class="group-heading">${escHtml(group.name)}</h3><div class="score-grid-host"></div>`;
     container.appendChild(section);
 
     // Row: [id, naam, ...N scores, spacer1, ...O obs, spacer2?, Totaal, Cijfer, spacer3, R%, T1%, T2%, I%]
@@ -492,22 +545,21 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
     recomputeSummaryRow(gridData, avgIdx, stdIdx, activeExam, O);
     activeGridData.push(gridData);
 
-    const hot = createGroupHOT(
-      document.getElementById(`hot-g${gi}`),
+    const grid = createGroupGrid(
+      section.querySelector('.score-grid-host'),
       activeExam,
       groupStudents,
       gridData,
       year,
       activeObs,
     );
-    hotInstances.push(hot);
+    gridInstances.push(grid);
 
     // Center the grid (and its heading) when it is narrower than the modal.
-    const tableWidth = section.querySelector('.ht_master .htCore')?.offsetWidth ?? 0;
+    const tableWidth = grid.table.offsetWidth;
     if (tableWidth > 0) {
       section.style.maxWidth = `${tableWidth + 2}px`;
       section.style.marginInline = 'auto';
-      hot.refreshDimensions();
     }
   }
 }
@@ -723,7 +775,7 @@ function showCellMenu(x, y, items) {
   onModalCleanup(close);
 }
 
-export function createGroupHOT(container, exam, students, gridData, year, obsArr = []) {
+export function createGroupGrid(container, exam, students, gridData, year, obsArr = []) {
   const N = exam.questions.length;
   const summaryIdx = gridData.findIndex((r) => r[0] === '__avg__');
   const stdIdx = gridData.findIndex((r) => r[0] === '__std__');
@@ -760,34 +812,14 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
   function goTo(row, col) {
     if (row < firstDataRow || row > lastDataRow) return;
     if (col < 0) return;
-    hot.selectCell(row, col);
+    grid.selectCell(row, col);
   }
 
-  // ── Selected cell tracking (per HOT instance) ─────────────────────────────
+  // ── Selected cell tracking (per grid) ─────────────────────────────────────
   let selectedCell = { row: -1, col: -1 };
 
   // ── Saving & background changes ───────────────────────────────────────────
-  // Every save goes through saveCell, so background updates can leave cells
-  // with a save in flight alone (see pendingSaves).
-  async function saveCell(row, col, write) {
-    const key = `${students[row].id}:${col}`;
-    pendingSaves.set(key, (pendingSaves.get(key) ?? 0) + 1);
-    Presence.markEdit();
-    try {
-      await write();
-    } catch (err) {
-      // Conflicts are reported by the global handler in app.js. U3: any other
-      // failure (locked file, broken JSON, disk full) was silently lost.
-      if (err?.code === 'conflict') throw err;
-      persistentError(
-        `Score niet opgeslagen (${students[row] ? Store.fullName(students[row]) : 'onbekend'}): ${err?.message ?? err}. Controleer de gedeelde map en voer de score opnieuw in.`,
-      );
-    } finally {
-      const n = pendingSaves.get(key) - 1;
-      if (n > 0) pendingSaves.set(key, n);
-      else pendingSaves.delete(key);
-    }
-  }
+  const save = (row, col, write) => saveCell(students[row], col, write);
 
   // Cells recently changed by someone else ("row:col" -> time the flash ends).
   const flashUntil = new Map();
@@ -795,16 +827,16 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
   // Apply a score file saved by another teacher to this student's row.
   function applyRemoteRecord(studentId, rec) {
     const row = students.findIndex((st) => String(st.id) === String(studentId));
-    if (row < 0 || hot.isDestroyed) return;
+    if (row < 0 || grid.isDestroyed) return;
     const examScores = rec?.scores?.[exam.id] ?? {};
     const obsIds = rec?.observations?.[exam.id] ?? [];
-    const editor = hot.getActiveEditor();
-    const editing = editor?.isOpened?.() ? { row: editor.row, col: editor.col } : null;
+    const editing = grid.getEditingCell();
+    const isEditing = (col) => editing && editing[0] === row && editing[1] === col;
     let changed = false;
     const setCell = (col, value) => {
       if (gridData[row][col] === value) return;
-      if (editing && editing.row === row && editing.col === col) return;
-      if (pendingSaves.has(`${students[row].id}:${col}`)) return;
+      if (isEditing(col)) return;
+      if (pendingSaves.has(cellKey(students[row], col))) return;
       gridData[row][col] = value;
       flashUntil.set(`${row}:${col}`, Date.now() + REMOTE_FLASH_MS);
       changed = true;
@@ -817,8 +849,8 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     const override = rec?.overrides?.[exam.id];
     if (
       !sameOverride(override, gridData.overrides[row]) &&
-      !pendingSaves.has(`${students[row].id}:${gradeCol}`) &&
-      !(editing && editing.row === row && editing.col === gradeCol)
+      !pendingSaves.has(cellKey(students[row], gradeCol)) &&
+      !isEditing(gradeCol)
     ) {
       gridData.overrides[row] = override;
       flashUntil.set(`${row}:${gradeCol}`, Date.now() + REMOTE_FLASH_MS);
@@ -828,9 +860,9 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     rowStatus[row] = computeRowStatus(row);
     recomputeRow(gridData, exam, row, O);
     recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
-    hot.render();
+    grid.render();
     setTimeout(() => {
-      if (!hot.isDestroyed) hot.render();
+      if (!grid.isDestroyed) grid.render();
     }, REMOTE_FLASH_MS + 50);
   }
   rowUpdaters.push(applyRemoteRecord);
@@ -855,11 +887,11 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
 
   function drawCursors() {
     layer.querySelectorAll(':scope > .remote-cursor').forEach((n) => n.remove());
-    if (hot.isDestroyed) return;
+    if (grid.isDestroyed) return;
     const base = layer.getBoundingClientRect();
     for (const cursor of remoteCursors) {
       const cell = cellOf(cursor);
-      const td = cell && hot.getCell(cell.row, cell.col);
+      const td = cell && grid.getCell(cell.row, cell.col);
       if (!td) continue;
       const r = td.getBoundingClientRect();
       const box = document.createElement('div');
@@ -899,33 +931,14 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
       `<span class="hdr-vraag">${q.number}</span>`
     );
   });
+  // Tint bonus/diag question headers to match the cell background.
+  const qHeaderClass = (q) =>
+    qKind(q) === 'bonus' ? 'sg-hdr-bonus' : qKind(q) === 'diag' ? 'sg-hdr-diag' : undefined;
 
-  const obsHeaders =
-    O > 0
-      ? [
-          ...obsArr.map(
-            (o, oi) =>
-              `<span class="hdr-obs" title="${escHtml(o.naam)}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon)}</span>`,
-          ),
-          '', // spacer2 header
-        ]
-      : [];
-
-  // New order: scores, spacer1, obs+spacer2, Totaal, Cijfer, spacer3, RTTI
-  const colHeaders = [
-    '#',
-    'Naam',
-    ...qHeaders,
-    '', // spacer1
-    ...obsHeaders,
-    'Totaal',
-    'Cijfer',
-    '', // spacer3
-    'R%',
-    'T1%',
-    'T2%',
-    'I%',
-  ];
+  const obsHeaders = obsArr.map(
+    (o, oi) =>
+      `<span class="hdr-obs" title="${escHtml(o.naam)}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon)}</span>`,
+  );
 
   // ── Row validation status ─────────────────────────────────────────────────
 
@@ -958,6 +971,8 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     const flashing = flashEnd !== undefined && flashEnd > Date.now();
     if (flashEnd !== undefined && !flashing) flashUntil.delete(`${row}:${col}`);
     TD.style.boxShadow = flashing ? `inset 0 0 0 2px ${remoteFlashColor}` : '';
+    // A save of this cell failed: it is retried when the value is typed again.
+    TD.classList.toggle('cell-unsaved', row <= lastDataRow && isUnsaved(students[row], col));
     const onRow = row === selectedCell.row;
     const onCol = col === selectedCell.col;
     if (!onRow && !onCol) return;
@@ -966,19 +981,67 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     TD.style.backgroundImage = `linear-gradient(rgba(74,144,217,${alpha}), rgba(74,144,217,${alpha}))`;
   }
 
+  // Recompute a student's row and the summary rows after a change, and redraw.
+  function refreshRow(row) {
+    rowStatus[row] = computeRowStatus(row);
+    recomputeRow(gridData, exam, row, O);
+    recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
+    renderAllGrids();
+  }
+
+  // ── Scores ────────────────────────────────────────────────────────────────
+  // Typed, pasted or cleared in a question cell. The cell shows the new value
+  // at once; the save is queued (saveCell), so fast entry is never lost (U2).
+  function scoreTyped(row, col, oldVal, newVal) {
+    const student = students[row];
+    const q = exam.questions[col - 2];
+    if (!student || !q) return;
+    const next = normalizeScore(newVal, q);
+    const before = normalizeScore(oldVal, q).cell;
+    // Unchanged: nothing to do, unless the last save of this cell failed.
+    if (next.cell === before && !isUnsaved(student, col)) return;
+
+    // Undo/redo only apply while the cell still holds the value this entry
+    // left behind (a colleague may have changed it).
+    const applyScore = (str) => {
+      const { cell, value } = normalizeScore(str, q);
+      gridData[row][col] = cell;
+      refreshRow(row);
+      return save(row, col, () => Store.setScore(student.id, exam.id, q.id, value, year));
+    };
+    pushHistory({
+      undo: () =>
+        gridData[row][col] === next.cell
+          ? applyScore(oldVal)
+          : changedInBackground('ongedaan gemaakt'),
+      redo: () =>
+        gridData[row][col] === before
+          ? applyScore(newVal)
+          : changedInBackground('opnieuw uitgevoerd'),
+    });
+    const saved = applyScore(newVal);
+    // Anything that is not empty, N or a number 0…max is kept as typed.
+    if (typeof next.value === 'string') {
+      persistentError(
+        `Ongeldige score "${next.value}" voor vraag ${q.section}${q.number} (max ${q.max_points}). Controleer en herstel.`,
+      );
+    }
+    return saved;
+  }
+
   // ── Observations ──────────────────────────────────────────────────────────
   // Check or uncheck observation obsIdx for the student on `row`: undoable and
-  // saved at once. Used by the checkboxes, the 0/1 keys and F1, F2, ….
+  // saved at once. Used by the checkboxes, the 0/1 keys, F1, F2, … and paste.
   function setObs(row, obsIdx, checked) {
     const col = obsStart + obsIdx;
     const obs = obsArr[obsIdx];
     const student = students[row];
     if (!obs || !student) return;
     const prevVal = gridData[row][col] === true;
-    const apply = async (val) => {
+    const apply = (val) => {
       gridData[row][col] = val;
-      hotInstances.forEach((h) => h.render());
-      await saveCell(row, col, () => Store.setObservation(student.id, exam.id, obs.id, val, year));
+      renderAllGrids();
+      return save(row, col, () => Store.setObservation(student.id, exam.id, obs.id, val, year));
     };
     pushHistory({
       undo: () =>
@@ -1002,12 +1065,10 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
       cijfer === null
         ? undefined
         : { cijfer, berekend: calc === null ? null : Math.round(calc * 10) / 10 };
-    const apply = async (ov) => {
+    const apply = (ov) => {
       gridData.overrides[row] = ov;
-      recomputeRow(gridData, exam, row, O);
-      recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
-      hotInstances.forEach((h) => h.render());
-      await saveCell(row, gradeCol, () =>
+      refreshRow(row);
+      return save(row, gradeCol, () =>
         Store.setGradeOverride(student.id, exam.id, ov?.cijfer ?? null, ov?.berekend, year),
       );
     };
@@ -1025,39 +1086,41 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
   }
 
   // Typed into the Cijfer cell: a grade overwrites, empty restores the calculated one.
-  async function gradeTyped(row, oldVal, newVal) {
+  function gradeTyped(row, oldVal, newVal) {
     const raw = String(newVal ?? '').trim();
     const prev = gridData.overrides[row];
-    const restore = () => {
-      recomputeRow(gridData, exam, row, O);
-      hotInstances.forEach((h) => h.render());
-    };
+    const retry = isUnsaved(students[row], gradeCol);
     if (raw === '') {
-      if (prev) await setGradeOverride(row, null);
-      else restore(); // the calculated grade can't be removed
-      return;
+      if (prev || retry) return setGradeOverride(row, null);
+      return; // the calculated grade can't be removed
     }
     const cijfer = parseGradeInput(raw);
     if (isNaN(cijfer)) {
-      restore();
       toast(`Ongeldig cijfer "${raw}": vul een cijfer van 1,0 tot en met 10,0 in.`, 'error');
       return;
     }
     // Unchanged: nothing to do — except confirming a flagged override again,
-    // which accepts the new calculated grade.
+    // which accepts the new calculated grade, or retrying a failed save.
     const unchanged = prev ? cijfer === prev.cijfer : raw === String(oldVal ?? '').trim();
-    if (unchanged && !gridData.gradeInfo[row]?.stale) {
-      restore();
-      return;
+    if (unchanged && !gridData.gradeInfo[row]?.stale && !retry) return;
+    return setGradeOverride(row, cijfer);
+  }
+
+  // Edits from the grid: typed, pasted (also into observaties, U4) or cleared.
+  function onGridChange(changes) {
+    for (const { row, col, oldValue, newValue } of changes) {
+      if (row > lastDataRow) continue;
+      if (col === gradeCol) gradeTyped(row, oldValue, newValue);
+      else if (isQCol(col)) scoreTyped(row, col, oldValue, newValue);
+      else if (isObsCol(col)) setObs(row, col - firstObsCol, newValue === true);
     }
-    await setGradeOverride(row, cijfer);
   }
 
   // Right-click on an overwritten grade: "Berekend cijfer herstellen".
   container.addEventListener('contextmenu', (e) => {
     const td = e.target.closest('td');
-    if (!td || hot.isDestroyed) return;
-    const coords = hot.getCoords(td);
+    if (!td || grid.isDestroyed) return;
+    const coords = grid.getCoords(td);
     if (!coords || coords.col !== gradeCol || coords.row < 0 || coords.row >= summaryIdx) return;
     if (!gridData.overrides[coords.row]) return;
     e.preventDefault();
@@ -1079,7 +1142,8 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     showCellMenu(e.clientX, e.clientY, items);
   });
 
-  // ── Custom renderers ──────────────────────────────────────────────────────
+  // ── Cell renderers ────────────────────────────────────────────────────────
+  // The grid has already reset the cell and set its text (or checkbox).
 
   // Background of the # and Naam cells: red for invalid scores, yellow for
   // missing scores, light blue for an overwritten grade.
@@ -1091,8 +1155,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     return '#f8f9fb';
   }
 
-  function idRenderer(hot, TD, row, col, prop, value) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+  function idRenderer(TD, row, col) {
     const isSpecial = row === summaryIdx || row === stdIdx;
     const status = isSpecial ? null : rowStatus[row];
     TD.style.background = rowBackground(row, status);
@@ -1102,8 +1165,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     applyHighlight(TD, row, col);
   }
 
-  function naamRenderer(hot, TD, row, col, prop, value) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+  function naamRenderer(TD, row, col) {
     const isSpecial = row === summaryIdx || row === stdIdx;
     const status = isSpecial ? null : rowStatus[row];
     TD.style.background = rowBackground(row, status);
@@ -1113,16 +1175,14 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     applyHighlight(TD, row, col);
   }
 
-  function calcCentered(hot, TD, row, col, prop, value) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+  function calcCentered(TD, row, col) {
     TD.style.textAlign = 'center';
     TD.style.background = row === summaryIdx || row === stdIdx ? '#dde4f0' : '#eef2f7';
     TD.style.fontWeight = '600';
     applyHighlight(TD, row, col);
   }
 
-  function gradeRenderer(hot, TD, row, col, prop, value) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+  function gradeRenderer(TD, row, col, value) {
     TD.style.textAlign = 'center';
     TD.style.fontWeight = 'bold';
     TD.style.color = '#000';
@@ -1147,18 +1207,15 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     applyHighlight(TD, row, col);
   }
 
-  function rttiRenderer(hot, TD, row, col, prop, value) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+  function rttiRenderer(TD, row, col, value) {
     TD.style.textAlign = 'center';
     TD.style.fontWeight = '500';
     TD.style.background = row === summaryIdx ? '#e8ecf2' : rttiPctColor(value) || '#eef2f7';
     applyHighlight(TD, row, col);
   }
 
-  function scoreRenderer(hot, TD, row, col, prop, value) {
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
+  function scoreRenderer(TD, row, col, value) {
     TD.style.textAlign = 'center';
-    TD.style.fontStyle = 'normal'; // reset in case HOT reuses the TD
     if (row === summaryIdx || row === stdIdx) {
       TD.style.background = '#e8ecf2';
       applyHighlight(TD, row, col);
@@ -1176,11 +1233,7 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
       TD.style.fontStyle = 'italic';
     }
 
-    if (!value) {
-      applyHighlight(TD, row, col);
-      return;
-    }
-    if (!q) {
+    if (!value || !q) {
       applyHighlight(TD, row, col);
       return;
     }
@@ -1217,365 +1270,184 @@ export function createGroupHOT(container, exam, students, gridData, year, obsArr
     applyHighlight(TD, row, col);
   }
 
-  function obsRenderer(hot, TD, row, col, prop, value) {
-    TD.innerHTML = '';
-    TD.style.textAlign = 'center';
-    TD.style.verticalAlign = 'middle';
-    TD.style.background = row === summaryIdx || row === stdIdx ? '#e8ecf2' : '';
-    if (row === summaryIdx || row === stdIdx) {
-      applyHighlight(TD, row, col);
-      return;
-    }
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = value === true;
-    cb.style.cssText = 'cursor:pointer;width:14px;height:14px;margin:0';
-    cb.addEventListener('mousedown', (e) => {
-      // Stop HOT from interfering with the checkbox.
-      e.stopPropagation();
-      // Cell already focused: let the native click/change flow handle the toggle.
-      if (selectedCell.row === row && selectedCell.col === col) return;
-      // Cell not yet selected: HOT's afterSelection re-renders and destroys this
-      // element before click/change can fire, so toggle here and prevent the
-      // native toggle.
-      e.preventDefault();
-      setObs(row, col - obsStart, !cb.checked);
-      hot.selectCell(row, col);
-    });
-    cb.addEventListener('change', () => setObs(row, col - obsStart, cb.checked));
-    TD.appendChild(cb);
+  function obsRenderer(TD, row, col) {
+    if (row === summaryIdx || row === stdIdx) TD.style.background = '#e8ecf2';
     applyHighlight(TD, row, col);
   }
 
-  const guard = { processing: false };
+  function plainRenderer(TD, row, col) {
+    applyHighlight(TD, row, col);
+  }
 
-  const hot = new Handsontable(container, {
-    data: gridData,
-    colHeaders,
-    rowHeaders: false,
-    height: 'auto',
-    licenseKey: 'non-commercial-and-evaluation',
-    // New column order: scores, spacer1, obs+spacer2, Totaal, Cijfer, spacer3, RTTI
-    columns: [
-      { type: 'text', readOnly: true, renderer: idRenderer, width: 72 }, // 0: #
-      { type: 'text', readOnly: true, renderer: naamRenderer, width: 150 }, // 1: naam
-      ...exam.questions.map(() => ({ type: 'text', renderer: scoreRenderer, width: 32 })),
-      { type: 'text', readOnly: true, width: 20 }, // spacer1
-      ...(O > 0
-        ? [
-            ...obsArr.map(() => ({ readOnly: false, renderer: obsRenderer, width: 28 })),
-            { type: 'text', readOnly: true, width: 20 }, // spacer2
-          ]
-        : []),
-      { type: 'text', readOnly: true, renderer: calcCentered, width: 72 }, // Totaal
-      { type: 'text', readOnly: true, renderer: gradeRenderer, width: 52 }, // Cijfer
-      { type: 'text', readOnly: true, width: 20 }, // spacer3
-      ...Array.from({ length: 4 }, () => ({
-        type: 'text',
-        readOnly: true,
-        renderer: rttiRenderer,
-        width: 44,
-      })),
-    ],
-    cells(row, col) {
-      if (row === summaryIdx || row === stdIdx) return { readOnly: true };
-      // Score input cols, and Cijfer (typing there overwrites the grade)
-      if (col >= 2 && col < 2 + N) return {};
-      if (col === gradeCol) return { readOnly: false };
-      // Obs cols
-      if (O > 0) {
-        const obsColStart = N + 3; // new layout: directly after spacer1
-        if (col >= obsColStart && col < obsColStart + O) return { readOnly: false };
+  // Column order: #, Naam, scores, spacer1, obs + spacer2, Totaal, Cijfer, spacer3, RTTI
+  const spacer = { width: 20, header: '', render: plainRenderer };
+  const columns = [
+    { width: 72, header: '#', render: idRenderer },
+    { width: 150, header: 'Naam', headerClass: 'sg-left', render: naamRenderer },
+    ...exam.questions.map((q, qi) => ({
+      width: 32,
+      header: qHeaders[qi],
+      headerClass: qHeaderClass(q),
+      render: scoreRenderer,
+    })),
+    spacer,
+    ...(O > 0
+      ? [
+          ...obsArr.map((_, oi) => ({
+            width: 28,
+            header: obsHeaders[oi],
+            kind: 'checkbox',
+            render: obsRenderer,
+          })),
+          spacer,
+        ]
+      : []),
+    { width: 72, header: 'Totaal', render: calcCentered },
+    { width: 52, header: 'Cijfer', render: gradeRenderer },
+    spacer,
+    ...['R%', 'T1%', 'T2%', 'I%'].map((header) => ({ width: 44, header, render: rttiRenderer })),
+  ];
+
+  // ── Keyboard ──────────────────────────────────────────────────────────────
+  // Runs before the grid's own handling (arrows, typing, Escape, F2, Delete).
+  // Returns true when the key was handled here.
+  function onKeyDown(event, { row, col, editing }) {
+    if (row >= summaryIdx) return false;
+    const handled = () => {
+      event.preventDefault();
+      event.stopPropagation();
+      return true;
+    };
+
+    // ── Numpad dot → write N directly into the question cell (also while
+    // typing, which discards the typed value) ──────────────────────────
+    if (event.code === 'NumpadDecimal' && numpadDotIsN && isQCol(col)) {
+      if (editing) grid.cancelEditing();
+      onGridChange([{ row, col, oldValue: gridData[row][col], newValue: 'N' }]);
+      return handled();
+    }
+
+    // ── Enter / Numpad Enter / multiply → confirm edit + next editable cell
+    if (event.code === 'Enter' || event.code === 'NumpadEnter' || event.code === 'NumpadMultiply') {
+      if (editing) grid.finishEditing();
+      if (col === gradeCol) {
+        // Cijfer: confirm and go to the next student's grade
+        if (row < lastDataRow) goTo(row + 1, col);
+        return handled();
       }
-      return { readOnly: true };
-    },
-    enterMoves: { row: 0, col: 0 },
-    tabMoves() {
-      const sel = hot.getSelected();
-      if (!sel) return { row: 0, col: 1 };
-      const [row, col] = sel[0];
+      const pos = editableCols.indexOf(col);
+      const isLastEditable = pos === editableCols.length - 1;
+      if (!isLastEditable) {
+        // Not the last editable cell: just advance right
+        goTo(row, editableCols[pos + 1]);
+      } else if (row < lastDataRow) {
+        // Last editable cell, next student exists: first empty Q or same col
+        goTo(row + 1, firstEmptyQ(row + 1) ?? col);
+      }
+      // Last editable cell of last student: stay
+      return handled();
+    }
 
+    // ── Tab → next question, then the observaties, then the next student's
+    // first question; stops after the last student. Shift+Tab: previous one.
+    if (event.key === 'Tab' && (isQCol(col) || isObsCol(col))) {
+      if (editing) grid.finishEditing();
+      const pos = editableCols.indexOf(col);
+      if (event.shiftKey) {
+        if (pos > 0) goTo(row, editableCols[pos - 1]);
+      } else if (pos < editableCols.length - 1) {
+        goTo(row, editableCols[pos + 1]);
+      } else if (row < lastDataRow) {
+        goTo(row + 1, firstQCol);
+      }
+      return handled();
+    }
+
+    // The keys below only apply when not typing in a cell.
+    if (editing) return false;
+
+    // ── Numpad divide → previous editable cell ────────────────────────────
+    if (event.code === 'NumpadDivide') {
+      const pos = editableCols.indexOf(col);
+      if (pos > 0) goTo(row, editableCols[pos - 1]);
+      return handled();
+    }
+
+    // ── Numpad minus / plus → previous / next student (first empty Q, or
+    // same col) ────────────────────────────────────────────────────────────
+    if (event.code === 'NumpadSubtract' || event.code === 'NumpadAdd') {
+      const targetRow = event.code === 'NumpadAdd' ? row + 1 : row - 1;
+      if (targetRow >= firstDataRow && targetRow <= lastDataRow) {
+        goTo(targetRow, firstEmptyQ(targetRow) ?? col);
+      }
+      return handled();
+    }
+
+    // ── Home ──────────────────────────────────────────────────────────────
+    if (event.key === 'Home') {
       if (isQCol(col)) {
-        if (col < lastQCol) {
-          return { row: 0, col: 1 };
-        } else if (O > 0) {
-          // Last question → first obs
-          return { row: 0, col: firstObsCol - col };
-        } else {
-          // Last question, no obs → first question of next student
-          if (row < lastDataRow) {
-            return { row: 1, col: firstQCol - col };
-          } else {
-            return { row: 0, col: 0 }; // last student, stop
-          }
-        }
+        goTo(row, firstQCol);
+      } else if (isObsCol(col)) {
+        goTo(row, col === firstObsCol ? firstQCol : firstObsCol);
       }
+      return handled();
+    }
 
-      if (isObsCol(col)) {
-        if (col < lastObsCol) {
-          return { row: 0, col: 1 };
-        } else {
-          // Last obs → first question of next student
-          if (row < lastDataRow) {
-            return { row: 1, col: firstQCol - col };
-          } else {
-            return { row: 0, col: 0 }; // last student, stop
-          }
-        }
+    // ── End ───────────────────────────────────────────────────────────────
+    if (event.key === 'End') {
+      if (isQCol(col)) {
+        goTo(row, col === lastQCol && O > 0 ? lastObsCol : lastQCol);
+      } else if (isObsCol(col)) {
+        goTo(row, lastObsCol);
       }
+      return handled();
+    }
 
-      return { row: 0, col: 1 };
+    // ── Obs cells: 0 unchecks, 1 checks (other printable keys do nothing) ─
+    if (isObsCol(col) && (event.key === '0' || event.key === '1')) {
+      setObs(row, col - firstObsCol, event.key === '1');
+      return handled();
+    }
+
+    // ── F1, F2, … → toggle observation 1, 2, … of this student, without
+    // moving the selection ────────────────────────────────────────────────
+    const fKey = /^F(\d{1,2})$/.exec(event.key);
+    if (fKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+      const obsIdx = Number(fKey[1]) - 1;
+      if (obsIdx >= O) return false;
+      setObs(row, obsIdx, gridData[row][obsStart + obsIdx] !== true);
+      return handled();
+    }
+    return false;
+  }
+
+  const grid = createScoreGrid(container, {
+    data: gridData,
+    columns,
+    isEditable(row, col) {
+      if (row === summaryIdx || row === stdIdx) return false;
+      // Score cols, observaties, and Cijfer (typing there overwrites the grade)
+      return isQCol(col) || isObsCol(col) || col === gradeCol;
     },
-    afterRender() {
-      // (Also runs while HOT is being constructed, before there are cursors.)
-      if (remoteCursors.length) drawCursors();
+    renderCell(td, row, col, value) {
+      columns[col].render(td, row, col, value);
     },
-    afterSelection(row, col) {
+    onChange: onGridChange,
+    onSelect(row, col) {
       if (row < summaryIdx && students[row]) {
         if (isQCol(col)) Presence.setPosition(students[row].id, exam.questions[col - 2].id);
         else if (isObsCol(col)) {
           Presence.setPosition(students[row].id, `obs:${obsArr[col - firstObsCol].id}`);
         }
       }
-      if (selectedCell.row !== row || selectedCell.col !== col) {
-        selectedCell = { row, col };
-        hot.render();
-      }
+      selectedCell = { row, col };
+      grid.render();
     },
-    afterGetColHeader(col, TH) {
-      // Bottom-align all headers
-      TH.style.verticalAlign = 'bottom';
-      // Left-align Naam header
-      if (col === 1) TH.style.textAlign = 'left';
-      // Tint bonus/diag question headers to match cell background
-      const q = exam.questions[col - 2];
-      if (q) {
-        const kind = qKind(q);
-        if (kind === 'bonus') TH.style.background = '#cce5ff';
-        else if (kind === 'diag') TH.style.background = '#d0d6df';
-      }
+    onRender() {
+      if (remoteCursors.length) drawCursors();
     },
-    afterBeginEditing() {
-      // Handsontable bug: it sets aria-hidden on its own focused textarea.
-      const ta = container.querySelector('textarea.handsontableInput');
-      if (ta) ta.removeAttribute('aria-hidden');
-    },
-    afterChange: async (changes) => {
-      if (!changes || guard.processing) return;
-      guard.processing = true;
-      try {
-        for (const [row, col, oldVal, newVal] of changes) {
-          if (row === summaryIdx || row === stdIdx) continue;
-          if (col === gradeCol) {
-            await gradeTyped(row, oldVal, newVal);
-            continue;
-          }
-          if (col < 2 || col >= 2 + N) continue;
-          const student = students[row];
-          const q = exam.questions[col - 2];
-          if (!student || !q) continue;
-
-          const raw = String(newVal ?? '').trim();
-          const upper = raw.toUpperCase();
-          const prevRaw = oldVal;
-
-          // Snapshot for undo/redo. Undo/redo only apply while the cell still
-          // holds the value this entry left behind (a colleague may have changed it).
-          const applyScore = async (str) => {
-            const { cell, value } = normalizeScore(str, q);
-            gridData[row][col] = cell;
-            rowStatus[row] = computeRowStatus(row);
-            await saveCell(row, col, () => Store.setScore(student.id, exam.id, q.id, value, year));
-            recomputeRow(gridData, exam, row, activeObs.length);
-            recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, activeObs.length);
-            hotInstances.forEach((h) => h.render());
-          };
-          const entry = {
-            before: normalizeScore(prevRaw, q).cell,
-            after: normalizeScore(newVal, q).cell,
-            undo: () =>
-              gridData[row][col] === entry.after
-                ? applyScore(prevRaw)
-                : changedInBackground('ongedaan gemaakt'),
-            redo: () =>
-              gridData[row][col] === entry.before
-                ? applyScore(newVal)
-                : changedInBackground('opnieuw uitgevoerd'),
-          };
-          pushHistory(entry);
-
-          if (raw === '') {
-            gridData[row][col] = '';
-            await saveCell(row, col, () =>
-              Store.setScore(student.id, exam.id, q.id, undefined, year),
-            );
-          } else if (upper === 'N') {
-            gridData[row][col] = 'N';
-            await saveCell(row, col, () => Store.setScore(student.id, exam.id, q.id, null, year));
-          } else {
-            const num = parseScoreNum(raw);
-            if (isNaN(num) || num < 0 || num > q.max_points) {
-              gridData[row][col] = raw;
-              await saveCell(row, col, () => Store.setScore(student.id, exam.id, q.id, raw, year));
-              persistentError(
-                `Ongeldige score "${raw}" voor vraag ${q.section}${q.number} (max ${q.max_points}). Controleer en herstel.`,
-              );
-            } else {
-              gridData[row][col] = scoreCellText(num);
-              await saveCell(row, col, () => Store.setScore(student.id, exam.id, q.id, num, year));
-            }
-          }
-          rowStatus[row] = computeRowStatus(row);
-          recomputeRow(gridData, exam, row, activeObs.length);
-          recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, activeObs.length);
-        }
-      } finally {
-        guard.processing = false;
-        hot.render();
-      }
-    },
-    beforeKeyDown(event) {
-      const sel = hot.getSelected();
-      if (!sel) return;
-      const [row, col] = sel[0];
-      if (row >= summaryIdx) return;
-      const isEditing = hot.getActiveEditor()?.isOpened?.() ?? false;
-      // Obs cells: block all printable keypresses so HOT cannot open its editor.
-      // Specific keys (0, 1, nav, Enter) are handled in the capture-phase listener
-      // and never reach this hook.
-      if (isObsCol(col) && !isEditing && event.key.length === 1) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-      }
-    },
+    onKeyDown,
   });
 
-  // ── Capture-phase listener ────────────────────────────────────────────────
-  // Fires before HOT's own bubble-phase handlers, so we can fully intercept
-  // keys that HOT would otherwise eat (Home, End, NumpadDecimal, Enter, etc.).
-  container.addEventListener(
-    'keydown',
-    (event) => {
-      const sel = hot.getSelected();
-      if (!sel) return;
-      const [row, col] = sel[0];
-      if (row >= summaryIdx) return;
-      const isEditing = hot.getActiveEditor()?.isOpened?.() ?? false;
-
-      // ── Numpad dot → write N directly into the question cell (also while
-      // typing, which discards the typed value) ──────────────────────────
-      if (event.code === 'NumpadDecimal' && numpadDotIsN && isQCol(col)) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        if (isEditing) hot.getActiveEditor().cancelChanges();
-        hot.setDataAtCell(row, col, 'N');
-        return;
-      }
-
-      // ── Enter / Numpad Enter / multiply → confirm edit + next editable cell
-      if (
-        event.code === 'Enter' ||
-        event.code === 'NumpadEnter' ||
-        event.code === 'NumpadMultiply'
-      ) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        if (isEditing) hot.getActiveEditor().finishEditing();
-        if (col === gradeCol) {
-          // Cijfer: confirm and go to the next student's grade
-          if (row < lastDataRow) goTo(row + 1, col);
-          return;
-        }
-        const pos = editableCols.indexOf(col);
-        const isLastEditable = pos === editableCols.length - 1;
-        if (!isLastEditable) {
-          // Not the last editable cell: just advance right
-          goTo(row, editableCols[pos + 1]);
-        } else if (row < lastDataRow) {
-          // Last editable cell, next student exists: first empty Q or same col
-          goTo(row + 1, firstEmptyQ(row + 1) ?? col);
-        }
-        // Last editable cell of last student: stay
-        return;
-      }
-
-      // ── Numpad divide → previous editable cell ────────────────────────────
-      if (event.code === 'NumpadDivide' && !isEditing) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        const pos = editableCols.indexOf(col);
-        if (pos > 0) goTo(row, editableCols[pos - 1]);
-        return;
-      }
-
-      // ── Numpad minus → previous student (first empty Q, or same col) ─────
-      if (event.code === 'NumpadSubtract' && !isEditing) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        const targetRow = row - 1;
-        if (targetRow >= firstDataRow) {
-          goTo(targetRow, firstEmptyQ(targetRow) ?? col);
-        }
-        return;
-      }
-
-      // ── Numpad plus → next student (first empty Q, or same col) ──────────
-      if (event.code === 'NumpadAdd' && !isEditing) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        const targetRow = row + 1;
-        if (targetRow <= lastDataRow) {
-          goTo(targetRow, firstEmptyQ(targetRow) ?? col);
-        }
-        return;
-      }
-
-      // ── Home ──────────────────────────────────────────────────────────────
-      if (event.key === 'Home' && !isEditing) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        if (isQCol(col)) {
-          goTo(row, firstQCol);
-        } else if (isObsCol(col)) {
-          goTo(row, col === firstObsCol ? firstQCol : firstObsCol);
-        }
-        return;
-      }
-
-      // ── End ───────────────────────────────────────────────────────────────
-      if (event.key === 'End' && !isEditing) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        if (isQCol(col)) {
-          goTo(row, col === lastQCol && O > 0 ? lastObsCol : lastQCol);
-        } else if (isObsCol(col)) {
-          goTo(row, lastObsCol);
-        }
-        return;
-      }
-
-      // ── Obs cells: 0 unchecks, 1 checks; handled here to prevent edit mode
-      if (isObsCol(col) && !isEditing && (event.key === '0' || event.key === '1')) {
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        setObs(row, col - firstObsCol, event.key === '1');
-        return;
-      }
-
-      // ── F1, F2, … → toggle observation 1, 2, … of this student, without
-      // moving the selection or closing an open editor ──────────────────────
-      const fKey = /^F(\d{1,2})$/.exec(event.key);
-      if (fKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
-        const obsIdx = Number(fKey[1]) - 1;
-        if (obsIdx >= O) return;
-        event.stopImmediatePropagation();
-        event.preventDefault();
-        setObs(row, obsIdx, gridData[row][obsStart + obsIdx] !== true);
-        return;
-      }
-    },
-    true, // capture phase
-  );
-
-  return hot;
+  return grid;
 }

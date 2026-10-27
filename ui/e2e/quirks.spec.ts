@@ -14,7 +14,7 @@ async function openScoreGrid(page: Page) {
   // A summary card (exam with resits) has "Scores invoeren" disabled.
   await page.locator('[data-action="exam-menu"]:not([data-kind="summary"])').first().click();
   await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
-  await expect(page.locator('.handsontable td').first()).toBeVisible();
+  await expect(page.locator('.score-grid-table td').first()).toBeVisible();
 }
 
 async function openFirstOpdrachtInEditor(page: Page) {
@@ -56,7 +56,7 @@ test('U3: a failed score save is reported', async ({ page }) => {
   await login(page);
   await openScoreGrid(page);
   await withMock(page, (m) => m.fail('writeJson', '/scores/'));
-  const cell = page.locator('.handsontable .htCore tbody tr').first().locator('td').nth(2);
+  const cell = page.locator('.score-grid-table tbody tr').first().locator('td').nth(2);
   await cell.click();
   await page.keyboard.type('1');
   await page.keyboard.press('Enter');

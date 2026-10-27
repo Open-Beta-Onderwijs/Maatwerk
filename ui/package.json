@@ -24,7 +24,6 @@
     "@tauri-apps/api": "2.12.4",
     "chart.js": "4.4.2",
     "chartjs-plugin-annotation": "3.0.1",
-    "handsontable": "14.3.0",
     "pdfjs-dist": "4.9.155"
   },
   "devDependencies": {

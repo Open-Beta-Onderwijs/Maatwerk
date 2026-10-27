@@ -26,7 +26,6 @@ export default defineConfig(
         qKind: 'readonly',
         CustomSelect: 'readonly',
         Chart: 'readonly',
-        Handsontable: 'readonly',
       },
     },
     rules: {

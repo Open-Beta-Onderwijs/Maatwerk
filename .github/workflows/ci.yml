@@ -70,5 +70,11 @@ jobs:
       - run: cargo test --workspace
       - name: Portable exe
         run: npm run build:exe
-      # No artifact upload until Step 3b removes Handsontable: its licence forbids
-      # distributing the exe (review 3a M3). Restore the upload-artifact step then.
+      # Only upload an exe whose shipped npm dependencies pass the allowlist (review 3a M3).
+      - name: npm licence allowlist (before upload)
+        run: npm run licenses
+      - uses: actions/upload-artifact@v7
+        with:
+          name: maatwerk-windows-x64
+          path: target/release/maatwerk.exe
+          if-no-files-found: error

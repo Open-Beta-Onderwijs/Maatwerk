@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // The only place where the score-grid tests know how the grid is built
-// (docs/specs/score-grid.md). Today: Handsontable. When the grid is replaced
-// (Step 3b), only this file changes; ui/e2e/score-grid.spec.ts stays as is.
+// (docs/specs/score-grid.md). The tests were written against Handsontable and
+// now run against the own grid (ui/src/components/score-grid, Step 3b).
 
 import { expect, type Locator, type Page } from '@playwright/test';
 import { YEAR, examMenuItem, login, readMockJson } from './helpers';
@@ -26,7 +26,7 @@ export async function openGrid(page: Page, examId: string): Promise<void> {
 
 /** The table of the g-th group grid in the modal (0 = first). */
 export function gridTable(page: Page, g = 0): Locator {
-  return page.locator('#modal-box .ht_master .htCore').nth(g);
+  return page.locator('#modal-box .score-grid-table').nth(g);
 }
 
 /** Data and summary rows of a grid (header rows excluded). */
@@ -38,13 +38,21 @@ export function cell(page: Page, row: number, col: number, g = 0): Locator {
   return rows(page, g).nth(row).locator('td').nth(col);
 }
 
+/** The column header of grid g. */
+export function header(page: Page, g = 0): Locator {
+  return gridTable(page, g).locator('thead');
+}
+
 /** Header cell texts of the last header row (one per column). */
 export async function headerTexts(page: Page, g = 0): Promise<string[]> {
-  const header = page.locator('#modal-box .ht_master .htCore thead').nth(g);
-  // textContent: Handsontable shows a clone of the header; the master one is hidden.
-  return (await header.locator('tr').last().locator('th').allTextContents()).map((t) =>
+  return (await header(page, g).locator('tr').last().locator('th').allTextContents()).map((t) =>
     t.replace(/\s+/g, ' ').trim(),
   );
+}
+
+/** True when the cell is marked as not saved (G53). */
+export async function isMarkedUnsaved(page: Page, row: number, col: number, g = 0) {
+  return cell(page, row, col, g).evaluate((td) => td.classList.contains('cell-unsaved'));
 }
 
 /** Selected cell [row, col] of grid g, or null. */

@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // The score grid against its behaviour spec (docs/specs/score-grid.md, ids
-// G..). Written against Handsontable first; the replacement must pass the same
-// tests (only e2e/grid-driver.ts may change). Tests marked test.fail() pin a
-// reference bug that the new grid fixes (U2, U4); they flip when fixed.
+// G..). Written against Handsontable first; the own grid (Step 3b) passes the
+// same tests (only e2e/grid-driver.ts changed). The new grid fixes U2, U4 and
+// U19, which were pinned here as known failures on Handsontable.
 
 import { expect, test, type Page } from '@playwright/test';
 import {
   EXAMS,
   cell,
+  header,
   headerTexts,
+  isMarkedUnsaved,
   openGrid,
   rows,
   select,
@@ -52,9 +54,8 @@ test.describe('layout', () => {
     const h = await headerTexts(page);
     expect(h).toHaveLength(H2.columns);
     expect(h[H2.q1]).toMatch(/^\w+\s*\d+p/); // RTTI tag + points
-    const header = page.locator('#modal-box .ht_master .htCore thead').first();
-    await expect(header.locator('[title$="(F1)"]')).toHaveCount(1);
-    await expect(header.locator('[title$="(F3)"]')).toHaveCount(1);
+    await expect(header(page).locator('[title$="(F1)"]')).toHaveCount(1);
+    await expect(header(page).locator('[title$="(F3)"]')).toHaveCount(1);
   });
 
   test('G04 summary rows', async ({ page }) => {
@@ -189,12 +190,12 @@ test.describe('observaties', () => {
     await expect(box).toBeChecked();
   });
 
-  test.fail('G31 other printable keys do nothing (U19; new grid)', async ({ page }) => {
+  test('G31 other printable keys do nothing (U19)', async ({ page }) => {
     await openGrid(page, EXAMS.h2);
     const box = cell(page, 0, H2.obs3).locator('input[type="checkbox"]');
     await select(page, 0, H2.obs3);
     await page.keyboard.press('0');
-    await page.keyboard.press('a'); // Handsontable opens its text editor here
+    await page.keyboard.press('a'); // Handsontable opened its text editor here
     await page.keyboard.press('1');
     await expect(box).toBeChecked({ timeout: 2000 });
   });
@@ -209,7 +210,8 @@ test.describe('observaties', () => {
     expect(await selected(page)).toEqual([1, H2.q1]);
   });
 
-  test.fail('G33 pasting into observatie cells saves them (U4; new grid)', async ({ page }) => {
+  test('G33 pasting into observatie cells saves them (U4)', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openGrid(page, EXAMS.h2);
     const id = await studentIdOf(page, 0);
     const before = await storedObservations(page, id, EXAMS.h2);
@@ -345,7 +347,7 @@ test.describe('undo, saving, colleagues', () => {
       .toMatchObject({ 'nat-iets-anders': { q1: 1 }, [EXAMS.empty]: { q1: 2 } });
   });
 
-  test.fail('G52 fast entry is never dropped (U2; new grid)', async ({ page }) => {
+  test('G52 fast entry is never dropped (U2)', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
     const id = await studentIdOf(page, 0);
     await withMock(page, (m) => m.slowWrites(300));
@@ -360,6 +362,33 @@ test.describe('undo, saving, colleagues', () => {
     await expect
       .poll(() => storedScores(page, id, EXAMS.empty), { timeout: 2000 })
       .toEqual({ q1: 1, q2: 2, q3: 3 });
+  });
+
+  test('G59 Delete clears the selected scores', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await typeInto(page, 0, E.q1, '1');
+    await typeInto(page, 0, E.q2, '2');
+    await typeInto(page, 0, E.q3, '3');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 1, q2: 2, q3: 3 });
+    await select(page, 0, E.q1);
+    await cell(page, 0, E.q2).click({ modifiers: ['Shift'] });
+    await page.keyboard.press('Delete');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q3: 3 });
+    await expect(cell(page, 0, E.q1)).toHaveText('');
+  });
+
+  test('G53 a failed save marks the cell; typing the same value retries it', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await withMock(page, (m) => m.fail('writeJson', '/scores/'));
+    await typeInto(page, 0, E.q1, '2');
+    await expect(page.locator('.toast-persistent').first()).toContainText('niet opgeslagen');
+    await expect.poll(() => isMarkedUnsaved(page, 0, E.q1)).toBe(true);
+    await withMock(page, (m) => m.clearFaults());
+    await typeInto(page, 0, E.q1, '2');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 2 });
+    await expect.poll(() => isMarkedUnsaved(page, 0, E.q1)).toBe(false);
   });
 
   test('G54 copy and paste a range', async ({ page, context }) => {
