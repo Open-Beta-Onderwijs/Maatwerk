@@ -36,18 +36,16 @@ test:visual`); CSP walkthrough of 37 views in CI; smoke test; `docs/parity.md`.
 
 ## In progress
 
-- Own grid done (`ui/src/components/score-grid/`, commit `dd65ba0`): all 79 e2e pass, Handsontable
-  removed, licence check bans it, CI uploads the exe again. U1, U2, U4, U19 fixed; G53, G59 added.
+- Step 3b implementation done (commits `81b2281`..HEAD): own grid, U1/U2/U4/U19 fixed, D34
+  confirmation, `ui/src/domain/scoregrid.ts` on the golden, Handsontable removed, CI exe upload
+  restored behind the licence check. Docs (spec G59-G63, quirks, parity, ADR-0004) updated.
 
 ## Next action (concrete, resumable)
 
-1. Visual test of the grid views (they differ from Handsontable): update the local baseline after
-   checking the screenshots; perf check at 4 groups x 35 x 60.
-2. D34: confirmation dialog with old-vs-new overview before overwriting groups (failing test
-   first; csv.json `group-csv` pins today's behaviour).
-3. Docs: spec (G31/G46/G52/G53/G59, Shift+Tab), quirks U1/U2/U4/U19 status, parity.md, ADR-0004.
-4. 3b review (`docs/reviews/step-03b.md`), gate, merge `step/03-ui-foundation` into `main`, tag
-   `step-03`, stop and report.
+1. 3b review by a fresh-context subagent (`docs/reviews/step-03b.md`), fix blockers/majors.
+2. Gate (fmt, clippy, cargo test, lint, typecheck, npm test, e2e, licences, cargo deny, SPDX),
+   merge `step/03-ui-foundation` into `main` (merge commit), tag `step-03`, update PLAN section 3,
+   stop and report (include the score modal screenshots for the user).
 
 ## Decisions (user, 2026-10-27)
 

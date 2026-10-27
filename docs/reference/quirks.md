@@ -168,6 +168,7 @@ are relative to `_reference/` unless a section says otherwise.
       that group's student list and replaces its teachers.
     - Port: pin with a test; ask the user whether to fix (merge or confirm) during the port.
     - **Decision (user, 2026-10-27):** keep overwriting, but ask for confirmation first. Ideally the confirmation shows an overview of old vs new per group with the changes: removed students as red rows, added students as green rows. Failing test first (csv.json `group-csv` pins today's behaviour).
+    - **Fixed (Step 3b):** before `upsertGroups`, `groupOverwrites` (`ui/src/domain/groups.ts`) lists the existing groups the import changes; if any, a confirmation shows changed fields and removed (red) / added (green) students per group. New or unchanged groups import without a question. The `group-csv` golden (parsing) is unchanged. Tests: `ui/tests/domain/groups.test.ts`, `ui/e2e/quirks.spec.ts` "D34".
 
 35. **D35 · Watcher reports an untouched file as changed the first time its mtime moves**
     - Where: `sync.js:240-244` (initial snapshot without hash), `:149-157` (`check`)
@@ -645,6 +646,10 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   two competing undo systems today.
 - **Decision (user, 2026-10-27):** in the new grid (Step 3b) Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z drive
   the app's undo history, the same as the ↶/↷ buttons (spec G46).
+- **Fixed (Step 3b):** `loadScoreGrid` only replaces the grids (`destroyGridInstances`); the undo
+  listener, buttons and history are reset by `resetScoreModal` when the modal opens or closes. The
+  key compare is case-insensitive (Playwright and Shift send `Z`). The ↶/↷ buttons are disabled when
+  their stack is empty. Test: `ui/e2e/score-grid.spec.ts` "G46".
 
 ### U2. Score grid: changes arriving while an earlier save is in flight are dropped (not saved)
 
@@ -656,6 +661,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   but it is never written to disk, never gets an undo entry, and row totals are not recomputed for it.
   On reopen the score is gone. Fast numpad entry is exactly the intended workflow.
 - Why it matters: silent data loss; the replacement must queue, not drop, changes.
+- **Fixed (Step 3b):** `saveCell` queues every save behind the previous one (one chain per modal),
+  the cell shows the value at once and counts as "save in flight" from the moment it is typed.
+  Test: score-grid.spec "G52" (with `MockApi.slowWrites`).
 
 ### U3. Score grid: save errors other than CAS conflicts are invisible
 
@@ -678,6 +686,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   unchecked (`value === true` fails, `scores.js:1228`), nothing is saved, and the next save of that
   student keeps the old observations. A paste range spanning questions and observaties saves only the
   question part.
+- **Fixed (Step 3b):** the own grid reports pasted observatie cells as booleans (`1`, `true`, `x`
+  check; `0`, `false`, empty uncheck; anything else is ignored) and the score modal saves them like a
+  click (`setObs`, undoable). There is no fill handle. Test: score-grid.spec "G33".
 
 ### U5. Score grid: average Totaal truncates half points; Totaal uses a decimal point
 
@@ -832,3 +843,5 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   into it instead of checking the box.
 - Port: pinned as a known failure on Handsontable (`test.fail`); the replacement grid ignores the
   key, as `metrics.md` section 8 item 12 describes the intent.
+- **Fixed (Step 3b):** the own grid never opens an editor on checkbox cells. Test: score-grid.spec
+  "G31 other printable keys do nothing (U19)".

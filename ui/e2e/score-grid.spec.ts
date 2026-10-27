@@ -240,6 +240,15 @@ test.describe('keyboard', () => {
     expect(await storedScores(page, id, EXAMS.empty)).toBeUndefined();
   });
 
+  test('G62 clicking outside the grid commits an edit', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await select(page, 0, E.q1);
+    await page.keyboard.type('3');
+    await page.locator('#modal-box .group-heading').first().click();
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 3 });
+  });
+
   test('G41 Enter: next editable cell, then the next student', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
     await select(page, 0, E.q1);

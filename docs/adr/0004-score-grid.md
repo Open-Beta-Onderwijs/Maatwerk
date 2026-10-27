@@ -2,6 +2,7 @@
 
 Status: **accepted** (user, 2026-10-27): option A, own grid on a `<table>`. Ctrl+Z / Ctrl+Y drive
 the app's undo history (U1, same decision). Proposed in Step 3b (PLAN section 9, open decision 1).
+**Implemented in Step 3b** (see "Outcome").
 
 ## Context
 
@@ -53,3 +54,18 @@ Fallback if A turns out too costly during 3b: C (Tabulator), with the same Playw
   (decision needed, see the 3b questions).
 - `handsontable` and its licence exception are removed from `ui/package.json`,
   `tools/check-npm-licenses.mjs` and `THIRD_PARTY_LICENSES.md`.
+
+## Outcome (Step 3b)
+
+- `ui/src/components/score-grid/score-grid.ts` (~590 lines, TypeScript): `createScoreGrid(container,
+options)` returns a `ScoreGrid` (render, selectCell, editor control, getCell/getCoords, destroy).
+  The owner keeps the data; the grid reports edits through `onChange` and never writes the data.
+  Keys go to the owner's `onKeyDown` first (numpad scheme, F-keys, Home/End, Tab).
+- `ui/src/screens/scores.js` keeps saving, undo, presence and colours; the pure logic moved to
+  `ui/src/domain/scoregrid.ts`.
+- The spec's Playwright tests pass unchanged except for the grid driver (and one header locator moved
+  into it). U1, U2, U4 and U19 are fixed; G53, G59-G63 are new.
+- Rendering is incremental (changed row, summary rows, cross-hair): ~14 ms per keystroke at 11,410
+  cells. The visual test shows the score modal within about 1 px of the Handsontable layout.
+- Handsontable is removed; `tools/check-npm-licenses.mjs` bans it, and CI uploads the exe again only
+  after that check.
