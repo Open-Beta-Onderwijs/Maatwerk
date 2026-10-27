@@ -1,70 +1,49 @@
 # State
 
-Last updated: 2026-10-27 (Step 3b, own grid implemented) Branch:
-`step/03-ui-foundation` Last tag: `step-03a` (on the branch; Step 3 merges into `main` after 3b)
+Last updated: 2026-10-27 (Step 3 done) Branch: `main` Last tag: `step-03`
 
 ## Current step
 
-Step 3b (score grid replacement): implementation in progress.
+Step 3 is done and merged (`step-03`). Waiting for the user before Step 4 (Rust core: paths,
+storage, watcher).
 
-## Done since last tag (`step-03a`)
+## Step 3b summary (on `step/03-ui-foundation`, tag `step-03b`, merged as `step-03`)
 
-- `ui/e2e/score-grid.spec.ts` + `ui/e2e/grid-driver.ts`: the spec `docs/specs/score-grid.md`
-  (G01-G57) runs against Handsontable, 30 tests, stable. Pinned known failures (`test.fail`) that
-  the new grid must fix: G33 (U4), G52 (U2, with `MockApi.slowWrites`), G31 letters (new quirk
-  U19). G46 (Ctrl+Z, U1) is `fixme` until the user decides.
-- ADR-0004 (proposed): own `<table>` grid recommended; Tabulator as fallback.
+- Own score grid `ui/src/components/score-grid/` (ADR-0004 outcome) driven by
+  `ui/src/screens/scores.js`; pure logic in `ui/src/domain/scoregrid.ts` (scoregrid.json golden).
+  Handsontable removed and banned by `npm run licenses`; CI uploads the exe again after that check.
+- Fixed: U1 (Ctrl+Z/Y drive the app history; buttons disabled when empty), U2 (save queue),
+  U4 (paste into observaties), U19, D34 (confirmation with old-vs-new overview,
+  `ui/src/domain/groups.ts`). New rules G53, G59-G63 in `docs/specs/score-grid.md`.
+- Performance: ~14 ms per keystroke at 6 grids / 11,410 cells (incremental redraw).
+- Review `docs/reviews/step-03b.md`: M1 (queued saves could land in another subject) fixed test
+  first; minors fixed or in `docs/backlog.md` (triage table in the review).
+- Visual: score modal within ~1 px of Handsontable; ↶/↷ now disabled when empty. Local visual
+  baseline updated after the grid change.
 
 ## Step 3a summary (tag `step-03a`)
 
-- Reference renderer in Vite (verbatim import, codemod `window.maatwerk`, Prettier), npm deps at
-  reference versions, offline test. Bridge `ui/src/bridge/api.ts` (28 methods + `pdfUrl`),
-  `MockApi` on the fixtures, `TauriApi` stub, `npm run dev:mock`.
-- Domain modules `ui/src/domain/*` (+ `services/rapport.ts`), Store delegates; Vitest against the
-  logic goldens (grades, attempts, ids, opdrachten, csv, rapport, score-writes); ESLint keeps
-  domain code pure. `migrate()` dropped.
-- Fixed with failing tests first: B22, T26, T27, B9 (data side), U3, U6, U7, U9 (+ close after a
-  failed save), D25 (+ image calls).
-- Strict CSP from `ui/vite/csp.ts`; all inline styles gone, pixel-identical (`npm run
-test:visual`); CSP walkthrough of 37 views in CI; smoke test; `docs/parity.md`.
-- Review `docs/reviews/step-03a.md`: 3 majors and all minors fixed or recorded (triage table).
-
-## Step 2 summary
-
-- Harness `tests/reference-harness/`, fixtures `tools/fixtures/`, logic and Typst goldens,
-  storage spec S01-S40, `docs/testing.md`. Details: `docs/reviews/step-02.md`.
+- Reference renderer in Vite, bridge `ui/src/bridge/api.ts` + `MockApi`, domain modules, strict CSP,
+  quirk fixes B22, T26, T27, B9, U3, U6, U7, U9, D25. Review `docs/reviews/step-03a.md`.
 
 ## In progress
 
-- Step 3b implementation done (commits `81b2281`..HEAD): own grid, U1/U2/U4/U19 fixed, D34
-  confirmation, `ui/src/domain/scoregrid.ts` on the golden, Handsontable removed, CI exe upload
-  restored behind the licence check. Docs (spec G59-G63, quirks, parity, ADR-0004) updated.
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. 3b review by a fresh-context subagent (`docs/reviews/step-03b.md`), fix blockers/majors.
-2. Gate (fmt, clippy, cargo test, lint, typecheck, npm test, e2e, licences, cargo deny, SPDX),
-   merge `step/03-ui-foundation` into `main` (merge commit), tag `step-03`, update PLAN section 3,
-   stop and report (include the score modal screenshots for the user).
-
-## Decisions (user, 2026-10-27)
-
-- **Score grid:** own grid on a `<table>` (ADR-0004 accepted).
-- **D34:** keep overwriting, but ask for confirmation first; ideally the dialog shows old vs new per
-  group with removed students as red rows and added students as green rows (quirks.md D34).
-- **U1:** Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z drive the app's undo history in the new grid (spec G46).
-- **ADR-0002 deviations confirmed:** CSP `frame-ancestors 'self'`; styling cleanup in Step 10.
-- The user asked to only record these; start 3b implementation when the user says so.
+1. When the user says go: Step 4 (PLAN.md section 6, Step 4). Ask S37/S38 again there.
 
 ## Open questions for the user
 
-- Earlier: S37/S38 to ask again in Step 4; remote repo still to create (`gh` not installed);
+- S37/S38 (Step 4); remote repo still to create (`gh` not installed), so CI has not run on 3b;
   PLAN section 9 items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
 
 ## How to resume
 
-PowerShell (not Git Bash, whose `link` shadows MSVC's): `npm ci; npm run build:ui`, then the gate
-commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright install chromium` in
-`ui/`). `npm run test:visual -w ui` needs a local baseline (`-- --update-snapshots` before a
+PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with the editor or
+Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). `npm ci; npm run build:ui`, then
+the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright install chromium`
+in `ui/`). `npm run test:visual -w ui` needs a local baseline (`-- --update-snapshots` before a
 change). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the Typst packages
-cetz/unify/oxifmt in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.
+cetz/unify/oxifmt in `%LOCALAPPDATA%	ypst\packages`). `cargo-deny` 0.20.2 is installed.
