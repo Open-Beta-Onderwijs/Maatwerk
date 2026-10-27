@@ -62,7 +62,7 @@ are relative to `_reference/` unless a section says otherwise.
 10. **D10 · Some writes are not atomic and not noted**
     - Where: `main.js:978` (seed `gebruikers.json`), `:482` (`savePhoto`), `:454` (session), temp files
     - Evidence: plain `writeFileSync`; the seed is written before the watcher exists, so fine, but `savePhoto` can leave half-written photos on OneDrive.
-    - **Done (4a):** seed (CAS "must not exist"), `save_photo` and the local session are atomic. The seed no longer copies `lib.typ` (ADR-0002 5a; embedded assets in Step 5).
+    - **Done (4a):** seed (CAS "must not exist"), `save_photo` and the local session are atomic. The seed no longer copies `lib.typ` (ADR-0002 5a; embedded assets in Step 5). `removeEmptyImageDirs()` moves with the opdracht image handlers (Step 6).
 
 11. **D11 · `deleteImages` has no `noteDelete` and no change event**
     - Where: `main.js:373-381`; `sync.js:22`

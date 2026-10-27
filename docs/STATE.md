@@ -1,40 +1,44 @@
 # State
 
-Last updated: 2026-10-27 (Step 4a in progress) Branch: `step/04-core-storage` Last tag: `step-03`
+Last updated: 2026-10-27 (Step 4a done) Branch: `step/04-core-storage` Last tag: `step-04a`
 
 ## Current step
 
-Step 4a: paths and storage in `maatwerk-core`.
+Step 4a is done (tag `step-04a` on the step branch; `main` is merged after 4b). Waiting for the
+user before 4b (watcher, presence, Tauri commands, `TauriApi`, typed errors + generated bindings).
 
 User decisions (2026-10-27), recorded in `docs/specs/storage-spec.md`:
 
 - S37: commit lock = process-wide mutex per data folder + OS file lock (`std::fs::File::lock`) on
-  a file in a local folder (`%TEMP%/maatwerk-locks`), held only for check + rename.
-- S38: every JSON write uses CAS; school/config/RTTI templates via `update()` (C6); unused
-  `saveStudents`/`saveStudentScores` removed.
+  a file in `%LOCALAPPDATA%\maatwerk\locks`, held only for check + rename.
+- S38: every JSON write uses CAS; school/config via `update()` (C6); RTTI templates hash-CAS;
+  unused `saveStudents`/`saveStudentScores` removed.
 
-## Done since last tag
+## Step 4a summary
 
-- `maatwerk-core`: `error` (typed `Error` with stable `code()`), `paths` (`RelPath`, `DataDir`,
+- `maatwerk-core`: `error` (typed `Error`, stable `code()`), `paths` (`RelPath`, `DataDir`,
   junction/symlink escape check, proptest), `jsonfmt` (`JSON.stringify(x, null, 2)` incl. JS
-  number formatting), `storage` (atomic write, CAS, commit lock, `update`, `save_entity`,
-  `_meta` stamping, years, read-all, text, photos, seed, schema_version check C1,
-  `LocalSession`). Spec rows S01-S27, S37, S38 as Rust tests; cross-process test
-  (`crates/maatwerk-core/tests/cross_process.rs`).
-- Bug found by the cross-process test and fixed test-first: `resolve` canonicalised the file
-  itself; a file being replaced resolves under `\$Extend\$Deleted` on NTFS -> spurious
-  `invalid_path`.
+  number formatting; `serde_json` with `preserve_order` + `float_roundtrip`), `storage` (atomic
+  write, CAS under the commit lock, `update`, `save_entity`, `_meta` stamping, years, read-all,
+  text, photos, seed, `schema_version` check C1, `LocalSession`). Spec rows S01-S27, S37, S38 as
+  Rust tests; cross-process test (`crates/maatwerk-core/tests/cross_process.rs`).
+- Bug found by the cross-process test, fixed test first: `resolve` canonicalised the file itself;
+  a file being replaced resolves under `\$Extend\$Deleted` on NTFS -> spurious `invalid_path`.
+- UI: `Store.updateSchool(patch | fn)`, `setActiveYear` via `update()`, RTTI modal saves changed
+  tabs over the loaded version (`Store.loadVersioned/saveVersioned`).
+- Review `docs/reviews/step-04a.md`: M1 (float round trip) fixed test first; m1-m5 fixed; m6 and
+  most nits in `docs/backlog.md` (triage table in the review).
+- Deferred on purpose: C7 (per-teacher active year) to 6a; `lib.typ` seeding to Step 5;
+  `removeEmptyImageDirs` to Step 6; watcher, presence and Tauri commands to 4b.
 
 ## In progress
 
-- Nothing uncommitted.
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. UI side of S38/C6: `saveSchool`, `setActiveYear`, RTTI templates (`modals/rapport.js:447`)
-   through `update()`; delete `saveStudents`/`saveStudentScores`; tests.
-2. Docs: parity rows, quirks (ensure_year validates the year; lib.typ not seeded; C7 in 6a).
-3. Gate, review subagent (`docs/reviews/step-04a.md`), tag `step-04a`, stop and report.
+1. When the user says go: Step 4b (PLAN.md section 6, Step 4, "4b"). ADR for the bindings tool
+   (`tauri-specta` per ADR-0002 section 2). Run `/security-review` at the end of Step 4.
 
 ## Open questions for the user
 

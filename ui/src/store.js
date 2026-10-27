@@ -178,14 +178,18 @@ const Store = (() => {
     return await load('school.json');
   }
 
-  // Apply the changed fields to the latest school.json on disk, so a change
-  // another teacher made to another field in the meantime is kept (ADR-0003 C6).
-  async function updateSchool(patch) {
-    cache['school.json'] = await update(
+  // Apply a change to the latest school.json on disk, so a change another
+  // teacher made in the meantime is kept (ADR-0003 C6). `change` is either an
+  // object of fields to set or a function that edits the school in place.
+  async function updateSchool(change) {
+    const school = await update(
       'school.json',
-      (current) => Object.assign(current, patch),
+      (current) =>
+        typeof change === 'function' ? (change(current), current) : Object.assign(current, change),
       () => ({}),
     );
+    cache['school.json'] = school;
+    return school;
   }
 
   async function upsertUser(user) {

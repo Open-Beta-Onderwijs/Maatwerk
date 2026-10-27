@@ -82,11 +82,6 @@ impl RelPath {
             .filter(|&i| i > 0)
             .map(|i| name[i + 1..].to_ascii_lowercase())
     }
-
-    /// True for files under a `scores/` folder at any depth.
-    pub fn is_score_file(&self) -> bool {
-        self.0.split('/').rev().skip(1).any(|s| s == "scores")
-    }
 }
 
 impl fmt::Debug for RelPath {
@@ -286,24 +281,6 @@ mod tests {
         ] {
             assert!(RelPath::parse(bad).is_err(), "{bad:?}");
         }
-    }
-
-    #[test]
-    fn score_file_detection_needs_a_scores_folder() {
-        assert!(
-            RelPath::parse("2025-2026/scores/nat/1.json")
-                .unwrap()
-                .is_score_file()
-        );
-        // S17: the reference missed top-level `scores/x.json`; without locks it no longer matters,
-        // but the helper should still say what it means.
-        assert!(RelPath::parse("scores/1.json").unwrap().is_score_file());
-        assert!(!RelPath::parse("2025-2026/scores").unwrap().is_score_file());
-        assert!(
-            !RelPath::parse("2025-2026/exams/x.json")
-                .unwrap()
-                .is_score_file()
-        );
     }
 
     #[test]

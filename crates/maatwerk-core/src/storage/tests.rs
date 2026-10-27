@@ -111,6 +111,12 @@ fn s11_cas_writes_on_matching_hash_and_conflicts_otherwise() {
         .unwrap_err();
     assert_eq!(err.code(), "conflict");
     assert_eq!(disk(&s, "c.json"), b"2");
+    // The temp file written before the check is removed on a conflict.
+    let names: Vec<_> = walk(s.data_dir().root())
+        .iter()
+        .map(|p| s.data_dir().rel_of(p).unwrap())
+        .collect();
+    assert_eq!(names, vec!["c.json"]);
     assert_eq!(h2, hash_hex(b"2"));
 }
 

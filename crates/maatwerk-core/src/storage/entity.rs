@@ -20,6 +20,7 @@ impl Storage {
     /// (S20, S21). `current` is the on-disk value or `fallback()` for a missing file; `on_disk`
     /// is `None` for a missing file. An error from the mutator aborts without writing. Updates
     /// of one file through this handle run one after another (S25).
+    /// The mutator must not call `update` on the same file (it would wait for itself).
     pub fn update<F>(
         &self,
         rel: &RelPath,

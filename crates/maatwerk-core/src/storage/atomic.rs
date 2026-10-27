@@ -30,15 +30,70 @@ pub(crate) fn write_atomic_with(
     rename: &dyn Fn(&Path, &Path) -> io::Result<()>,
     sleep: &dyn Fn(Duration),
 ) -> io::Result<()> {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
+    let tmp = TempFile::write(path, bytes)?;
+    tmp.commit_with(path, bytes, rename, sleep)
+}
+
+/// A temp file written next to its target, not yet renamed over it. Writing it is the slow
+/// part, so storage does it before taking the commit lock; dropping it without a commit removes
+/// it.
+pub(crate) struct TempFile {
+    path: Option<PathBuf>,
+}
+
+impl TempFile {
+    /// Creates missing parent folders and writes `bytes` to a fresh temp file.
+    pub(crate) fn write(target: &Path, bytes: &[u8]) -> io::Result<TempFile> {
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let path = temp_path(target);
+        let tmp = TempFile { path: Some(path) };
+        fs::write(tmp.path.as_ref().unwrap(), bytes)?;
+        Ok(tmp)
     }
-    let tmp = temp_path(path);
-    fs::write(&tmp, bytes)?;
+
+    /// Renames the temp file over `target` (with retries and the direct-write fallback).
+    pub(crate) fn commit(self, target: &Path, bytes: &[u8]) -> io::Result<()> {
+        self.commit_with(
+            target,
+            bytes,
+            &|from, to| fs::rename(from, to),
+            &std::thread::sleep,
+        )
+    }
+
+    fn commit_with(
+        mut self,
+        target: &Path,
+        bytes: &[u8],
+        rename: &dyn Fn(&Path, &Path) -> io::Result<()>,
+        sleep: &dyn Fn(Duration),
+    ) -> io::Result<()> {
+        let tmp = self.path.take().expect("temp file committed twice");
+        rename_or_write(&tmp, target, bytes, rename, sleep)
+    }
+}
+
+impl Drop for TempFile {
+    fn drop(&mut self) {
+        if let Some(path) = self.path.take() {
+            let _ = fs::remove_file(path);
+        }
+    }
+}
+
+fn rename_or_write(
+    tmp: &Path,
+    path: &Path,
+    bytes: &[u8],
+    rename: &dyn Fn(&Path, &Path) -> io::Result<()>,
+    sleep: &dyn Fn(Duration),
+) -> io::Result<()> {
     // OneDrive or a virus scanner can briefly hold the target open; retry the rename.
     let mut attempt = 0;
     loop {
-        match rename(&tmp, path) {
+        match rename(tmp, path) {
             Ok(()) => return Ok(()),
             Err(e) if attempt + 1 < RENAME_ATTEMPTS && is_sharing_error(&e) => {
                 attempt += 1;
@@ -47,7 +102,7 @@ pub(crate) fn write_atomic_with(
             Err(_) => {
                 // Last resort (S04, S05): a direct write is better than losing the change. A
                 // crash here can leave a partial file; readers then refuse it (S24).
-                let _ = fs::remove_file(&tmp);
+                let _ = fs::remove_file(tmp);
                 return fs::write(path, bytes);
             }
         }

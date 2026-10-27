@@ -35,6 +35,23 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
     expect(writes.mock.calls.every((c) => c[2]?.cas === true)).toBe(true);
   });
 
+  it('updateSchool with a function edits the latest version (schoolsoort toggle)', async () => {
+    const { Store, api } = await session({
+      'config.json': JSON.stringify({ activeYear: YEAR }),
+      'school.json': JSON.stringify({ naam: 'A', schoolsoort: ['vmbo'] }),
+    });
+    await Store.loadSchool!();
+    await api.writeJson('school.json', { naam: 'A', schoolsoort: ['vmbo', 'vwo'] });
+    const saved = await Store.updateSchool!((cur: { schoolsoort: string[] }) => {
+      cur.schoolsoort = [...cur.schoolsoort, 'havo'];
+    });
+    expect(saved.schoolsoort).toEqual(['vmbo', 'vwo', 'havo']);
+    expect(await disk(api, 'school.json')).toEqual({
+      naam: 'A',
+      schoolsoort: ['vmbo', 'vwo', 'havo'],
+    });
+  });
+
   it('updateSchool creates school.json when it is missing', async () => {
     const { Store, api } = await session({ 'config.json': JSON.stringify({ activeYear: YEAR }) });
     await Store.updateSchool!({ schoolsoort: ['havo'] });

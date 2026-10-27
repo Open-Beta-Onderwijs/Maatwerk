@@ -214,6 +214,21 @@ mod tests {
     }
 
     #[test]
+    fn parsed_floats_round_trip_exactly() {
+        // Review 4a M1: without serde_json's `float_roundtrip` the parser can be one ULP off,
+        // so a read-modify-write would silently change numbers.
+        for text in [
+            "1.8699999999999999",
+            "123456789012345680000",
+            "0.30000000000000004",
+            "6.65",
+        ] {
+            let v: Value = serde_json::from_str(text).unwrap();
+            assert_eq!(to_js_json(&v), text);
+        }
+    }
+
+    #[test]
     fn parsed_floats_reprint_like_js() {
         // What the webview sends is already JS-formatted; reading and writing must not change it.
         let text = r#"[0.5,7,1e+21,1e-7,0.000001,-0,12.000]"#;

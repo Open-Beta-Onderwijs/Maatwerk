@@ -21,9 +21,14 @@ use crate::error::{Error, Result};
 /// milliseconds; only a hung process holds the lock this long.
 pub(crate) const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Default folder for the lock files: per user, local, never synced.
+/// Default folder for the lock files: per user, local, never synced. `%LOCALAPPDATA%` rather
+/// than `%TEMP%`, whose value a process can change (review 4a m2). Exclusion covers processes of
+/// the same user on this PC; another user on the same PC has their own OneDrive copy anyway.
 pub fn default_lock_dir() -> PathBuf {
-    std::env::temp_dir().join("maatwerk-locks")
+    match std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()) {
+        Some(local) => PathBuf::from(local).join("maatwerk").join("locks"),
+        None => std::env::temp_dir().join("maatwerk-locks"),
+    }
 }
 
 pub(crate) struct CommitLock {

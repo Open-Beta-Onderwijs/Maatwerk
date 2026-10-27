@@ -254,6 +254,8 @@ export async function openRttiUitlegModal() {
   // unreadable file shows the defaults and then conflicts on save.
   const tabData = {};
   const tabHash = {};
+  const tabSaved = {}; // JSON of the version on disk, to skip unchanged tabs
+
   await Promise.all(
     tabs.map(async (t, i) => {
       const relPath = rttiExplFilePath(t.fileKey, t.jaar);
@@ -261,6 +263,7 @@ export async function openRttiUitlegModal() {
         const { data, hash } = await Store.loadVersioned(relPath);
         tabData[i] = data ?? defaultTabData();
         tabHash[i] = hash;
+        tabSaved[i] = data ? JSON.stringify(data) : null;
       } catch (_) {
         tabData[i] = defaultTabData();
         tabHash[i] = 'onleesbaar';
@@ -453,23 +456,31 @@ export async function openRttiUitlegModal() {
         const saveBtn = el.querySelector('#btn-rtti-uitleg-save');
         saveBtn.disabled = true;
         saveBtn.textContent = 'Bezig\u2026';
+        // Unchanged tabs whose file exists are skipped, so they cannot conflict.
+        // A missing file is still written, as in the reference: the rapport
+        // falls back from a missing variant file to the subject file.
         const results = await Promise.allSettled(
           tabs.map(async (t, i) => {
+            const json = JSON.stringify(tabData[i]);
+            if (tabSaved[i] !== null && tabSaved[i] === json) return;
             const relPath = rttiExplFilePath(t.fileKey, t.jaar);
             tabHash[i] = await Store.saveVersioned(relPath, tabData[i], tabHash[i]);
+            tabSaved[i] = json;
           }),
         );
         saveBtn.disabled = false;
         saveBtn.textContent = 'Opslaan';
-        const failed = results.filter((r) => r.status === 'rejected').map((r) => r.reason);
+        const failed = tabs.filter((_, i) => results[i].status === 'rejected');
         if (failed.length === 0) {
           _dirty = false;
           toast('RTTI uitleg en leeradvies opgeslagen.', 'success');
           cleanupAndClose();
-        } else if (failed.some((e) => e?.code === 'conflict')) {
+        } else if (results.some((r) => r.status === 'rejected' && r.reason?.code === 'conflict')) {
+          const names = failed.map((t) => `tabblad ${t.label}`).join(', ');
           toast(
-            'Iemand anders heeft deze uitleg intussen gewijzigd (of het bestand is onleesbaar). ' +
-              'Sluit het venster en open het opnieuw; je wijzigingen zijn niet opgeslagen.',
+            `Niet opgeslagen: ${names}. Iemand anders heeft dit intussen gewijzigd ` +
+              '(of het bestand is onleesbaar). De andere tabbladen zijn wel opgeslagen. ' +
+              'Sluit het venster en open het opnieuw om de nieuwste versie te zien.',
             'error',
           );
         } else {

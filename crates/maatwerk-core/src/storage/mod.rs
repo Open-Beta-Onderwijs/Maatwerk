@@ -266,6 +266,9 @@ impl Storage {
         note: bool,
     ) -> Result<()> {
         let path = self.dir.resolve(rel)?;
+        // The temp file is written before the commit lock, so the lock covers only the check
+        // and the rename (plus its retries and fallback, which are part of the rename).
+        let tmp = atomic::TempFile::write(&path, bytes).map_err(|e| Error::io(rel.as_str(), e))?;
         let _guard = self.commit.acquire()?;
         if expect != Expect::Any {
             let current = self.read_bytes(rel)?.map(|b| hash_hex(&b));
@@ -281,7 +284,9 @@ impl Storage {
                 });
             }
         }
-        atomic::write_atomic(&path, bytes).map_err(|e| Error::io(rel.as_str(), e))?;
+        tmp.commit(&path, bytes)
+            .map_err(|e| Error::io(rel.as_str(), e))?;
+        // Called under the commit lock: an observer must not call back into this Storage.
         if note && let Some(observer) = &self.observer {
             observer.note_write(rel, bytes);
         }
