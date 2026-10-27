@@ -1850,11 +1850,12 @@ body::after {
   vertical-align: middle;
 }
 .score-grid-table td.sg-checkbox input {
+  /* A block box centres exactly; inline middle-alignment sits off by the x-height. */
+  display: block;
   cursor: pointer;
   width: 14px;
   height: 14px;
-  margin: 0;
-  vertical-align: middle;
+  margin: 0 auto;
 }
 /* Column headers: bold, italic, bottom-aligned */
 .score-grid-table th {
@@ -1944,6 +1945,7 @@ body::after {
 }
 .hdr-vraag {
   color: var(--text, #2c3e50);
+  line-height: 1; /* bottom line on the same baseline as Totaal, Cijfer, ... */
 }
 
 /* ── Cell colours (question columns) — set via inline style in renderers ────── */
@@ -2230,7 +2232,7 @@ code {
   display: block;
   font-size: 14px;
   line-height: 1;
-  padding: 2px 0;
+  padding: 2px 0 0; /* no bottom padding: sits level with the other headers */
 }
 
 /* ── Obs icon picker ──────────────────────────────────────────────────────── */
