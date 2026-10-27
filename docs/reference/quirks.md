@@ -167,6 +167,7 @@ are relative to `_reference/` unless a section says otherwise.
       existence check and no confirmation, so re-importing a CSV with an existing group name empties
       that group's student list and replaces its teachers.
     - Port: pin with a test; ask the user whether to fix (merge or confirm) during the port.
+    - **Decision (user, 2026-10-27):** keep overwriting, but ask for confirmation first. Ideally the confirmation shows an overview of old vs new per group with the changes: removed students as red rows, added students as green rows. Failing test first (csv.json `group-csv` pins today's behaviour).
 
 35. **D35 · Watcher reports an untouched file as changed the first time its mtime moves**
     - Where: `sync.js:240-244` (initial snapshot without hash), `:149-157` (`check`)
@@ -642,6 +643,8 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   (`updateUndoRedoBtns` no-ops with null refs, `scores.js:84-87`).
 - Why it matters: undo semantics a replacement grid must define (and the parity tests must pin down);
   two competing undo systems today.
+- **Decision (user, 2026-10-27):** in the new grid (Step 3b) Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z drive
+  the app's undo history, the same as the ↶/↷ buttons (spec G46).
 
 ### U2. Score grid: changes arriving while an earlier save is in flight are dropped (not saved)
 

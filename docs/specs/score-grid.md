@@ -69,7 +69,7 @@ functions (golden `scoregrid.json`); **manual** = checked by hand (listed in the
 | G43 | Numpad `/`: previous editable cell. Numpad `-` / `+`: previous / next student, at the first empty question (or same column).                                                                      | e2e            |
 | G44 | Home / End: first / last question; from the first/last question to the observatie block and back.                                                                                                 | e2e            |
 | G45 | Tab: next question, then observaties, then the next student's first question; stops after the last student.                                                                                       | e2e            |
-| G46 | Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) undo / redo the app's history (see G50). Today they reach Handsontable's own undo instead (quirk U1).                                                          | e2e (decision) |
+| G46 | Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) undo / redo the app's history (see G50). Today they reach Handsontable's own undo instead (quirk U1; user decided 2026-10-27: app history).                    | e2e (new grid) |
 
 ## Undo, saving, colleagues
 

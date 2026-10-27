@@ -1,6 +1,7 @@
 # ADR-0004: Score grid replacement
 
-Status: **proposed** (Step 3b). The user chooses (PLAN section 9, open decision 1).
+Status: **accepted** (user, 2026-10-27): option A, own grid on a `<table>`. Ctrl+Z / Ctrl+Y drive
+the app's undo history (U1, same decision). Proposed in Step 3b (PLAN section 9, open decision 1).
 
 ## Context
 

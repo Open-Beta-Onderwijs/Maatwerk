@@ -40,22 +40,26 @@ test:visual`); CSP walkthrough of 37 views in CI; smoke test; `docs/parity.md`.
 
 ## Next action (concrete, resumable)
 
-1. Get the user's answers (below). Then implement the chosen grid behind a `ScoreGrid` interface
+1. When the user says go: implement the own grid behind a `ScoreGrid` interface
    (`ui/src/components/score-grid/`), make `ui/e2e/grid-driver.ts` point at it, flip the
    `test.fail` pins (U2, U4, U19) to normal tests, remove `handsontable` (package, licence
    exception in `tools/check-npm-licenses.mjs`, `THIRD_PARTY_LICENSES.md`), restore the CI exe
    upload, run the visual test (the grid views will differ: review with the user), 3b review,
    gate, merge `step/03-ui-foundation` into `main`, tag `step-03`.
-2. D34 per the user's answer (failing test first; csv.json `group-csv` pins today's behaviour).
+2. D34: confirmation dialog with old-vs-new overview before overwriting groups (failing test
+   first; csv.json `group-csv` pins today's behaviour). G46: un-`fixme` with the new grid.
+
+## Decisions (user, 2026-10-27)
+
+- **Score grid:** own grid on a `<table>` (ADR-0004 accepted).
+- **D34:** keep overwriting, but ask for confirmation first; ideally the dialog shows old vs new per
+  group with removed students as red rows and added students as green rows (quirks.md D34).
+- **U1:** Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z drive the app's undo history in the new grid (spec G46).
+- **ADR-0002 deviations confirmed:** CSP `frame-ancestors 'self'`; styling cleanup in Step 10.
+- The user asked to only record these; start 3b implementation when the user says so.
 
 ## Open questions for the user
 
-- **Score grid** (ADR-0004): own grid (recommended), Tabulator, AG Grid Community, or another.
-- **D34**: groups CSV re-import empties existing groups. Merge (keep existing students, add new
-  ones) or ask for confirmation before replacing?
-- **U1**: in the new grid, should Ctrl+Z / Ctrl+Y drive the app's undo history (the ↶/↷ buttons)?
-- **Confirm deviations from ADR-0002**: CSP `frame-ancestors 'self'` (not `'none'`); styling
-  cleanup moved to Step 10 (the 3a move is pixel-identical).
 - Earlier: S37/S38 to ask again in Step 4; remote repo still to create (`gh` not installed);
   PLAN section 9 items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
 

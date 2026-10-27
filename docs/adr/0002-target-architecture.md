@@ -181,9 +181,9 @@ opdrachten/<id>/
 
 - CSP (decided): `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:
 blob:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'self';
-frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a:** `frame-ancestors 'self'`, because the app frames its own `editor.html` and `pdf-viewer.html`; also `font-src`, `worker-src`, `frame-src 'self'`; source of truth `ui/vite/csp.ts`. **No inline styles:** the ~262 inline
+frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (confirmed by the user, 2026-10-27):** `frame-ancestors 'self'`, because the app frames its own `editor.html` and `pdf-viewer.html`; also `font-src`, `worker-src`, `frame-src 'self'`; source of truth `ui/vite/csp.ts`. **No inline styles:** the ~262 inline
   `style=` attributes of the reference move into CSS classes during Step 3, and the inconsistent
-  styling is cleaned up while doing so. **Deviation (Step 3a, to confirm with the user):** the move
+  styling is cleaned up while doing so. **Deviation (Step 3a, confirmed by the user, 2026-10-27):** the move
   is pixel-identical (`u-*` utilities with `!important`, a few component classes; checked with
   `npm run test:visual`); the cleanup itself, which changes the look, moves to Step 10
   (`docs/backlog.md`). Styles set from JS through the CSSOM (`el.style.x = ...`,

@@ -447,7 +447,7 @@ Order: biggest risk first, always with tests around the code you touch.
 
 ## 9. Open decisions (ask the user when you reach them)
 
-1. **Score grid replacement** (Handsontable is not usable under AGPL): which permissive library or custom grid? Decide in Step 3b.
+1. **Score grid replacement** (Handsontable is not usable under AGPL): which permissive library or custom grid? Decided 2026-10-27: own grid on a `<table>` (ADR-0004).
 2. **Emoji/icon font**: rely on system emoji fonts or bundle one (Step 5).
 3. **`.lock` files**: decided in Step 1: CAS only, no lock files (ADR-0003 C3).
 4. **Domain logic in Rust or JS?** (Step 10, with measurements).
