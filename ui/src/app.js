@@ -209,10 +209,12 @@ export function formSnapshot(root) {
  * receive typed characters afterwards. Resolves true for the confirm button,
  * false for Annuleren, Escape or a click next to the dialog.
  * With cancelLabel: null it is a plain notice with one button (like alert()).
+ * detailsHtml: optional scrollable block under the message; the caller escapes
+ * every text in it.
  */
 export function confirmDialog(
   message,
-  { title = '', okLabel = 'OK', cancelLabel = 'Annuleren', danger = false } = {},
+  { title = '', okLabel = 'OK', cancelLabel = 'Annuleren', danger = false, detailsHtml = '' } = {},
 ) {
   return new Promise((resolve) => {
     const prevFocus = document.activeElement;
@@ -222,6 +224,7 @@ export function confirmDialog(
       <div class="app-dialog" role="alertdialog" aria-modal="true" aria-describedby="app-dialog-msg">
         ${title ? `<h4 class="app-dialog-title">${escHtml(title)}</h4>` : ''}
         <p id="app-dialog-msg">${escHtml(message)}</p>
+        ${detailsHtml ? `<div class="app-dialog-details">${detailsHtml}</div>` : ''}
         <div class="app-dialog-actions">
           ${cancelLabel !== null ? `<button class="btn-secondary" data-answer="0">${escHtml(cancelLabel)}</button>` : ''}
           <button class="${danger ? 'btn-danger' : 'btn-primary'}" data-answer="1">${escHtml(okLabel)}</button>

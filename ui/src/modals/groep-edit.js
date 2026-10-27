@@ -14,6 +14,7 @@ import {
   confirmDialog,
 } from '../app.js';
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
+import { groupOverwrites } from '../domain/groups';
 import { renderGroepen } from '../screens/groepen.js';
 
 export async function openGroupModal(id) {
@@ -448,6 +449,61 @@ const VAKKEN_MAP = {
 };
 const VALID_JAARLAGEN = ['1', '2', '3', '4', '5', '6'];
 
+const GROUP_FIELD_LABELS = {
+  name: 'Naam',
+  jaarlaag: 'Leerjaar',
+  subject: 'Vak',
+  schoolsoort: 'Schoolsoort',
+  subcategory: 'Subcategorie',
+  docenten: 'Docenten',
+};
+
+// Overview of old vs new per overwritten group (D34): changed fields, then
+// removed students (red) and added students (green).
+function groupOverwritesHtml(overwrites, students, users) {
+  const studentName = (id) => {
+    const s = students.find((x) => String(x.id) === String(id));
+    return s ? Store.fullName(s) : '(onbekende leerling)';
+  };
+  const show = (field, v) => {
+    const list = Array.isArray(v) ? v : v === undefined || v === null || v === '' ? [] : [v];
+    const names =
+      field === 'docenten'
+        ? list.map((id) => {
+            const u = users.find((x) => x.id === id);
+            return u ? Store.fullName(u) : String(id);
+          })
+        : list.map(String);
+    return names.length ? escHtml(names.join(', ')) : '—';
+  };
+  return overwrites
+    .map(
+      (o) => `
+      <h5 class="group-diff-title">${escHtml(o.name)}</h5>
+      <table class="preview-table group-diff"><tbody>
+        ${o.fields
+          .map(
+            (f) =>
+              `<tr class="diff-field"><td>${GROUP_FIELD_LABELS[f.field]}</td><td><span class="diff-old">${show(f.field, f.before)}</span> → ${show(f.field, f.after)}</td></tr>`,
+          )
+          .join('')}
+        ${o.removedStudentIds
+          .map(
+            (id) =>
+              `<tr class="diff-removed"><td>− ${escHtml(String(id))}</td><td>${escHtml(studentName(id))}</td></tr>`,
+          )
+          .join('')}
+        ${o.addedStudentIds
+          .map(
+            (id) =>
+              `<tr class="diff-added"><td>+ ${escHtml(String(id))}</td><td>${escHtml(studentName(id))}</td></tr>`,
+          )
+          .join('')}
+      </tbody></table>`,
+    )
+    .join('');
+}
+
 export async function openGroupCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
@@ -564,6 +620,23 @@ export async function openGroupCSVImport() {
 
       el.querySelector('#f-csv-grp-import').addEventListener('click', async () => {
         if (!toImport || toImport.length === 0) return;
+        // D34: an import replaces existing groups with the same name, including
+        // their students; show what changes and ask first.
+        const overwrites = groupOverwrites(await Store.getGroups(year, null), toImport);
+        if (
+          overwrites.length > 0 &&
+          !(await confirmDialog(
+            `Deze import overschrijft ${overwrites.length === 1 ? '1 bestaande groep' : `${overwrites.length} bestaande groepen`}. Rood: leerlingen die uit de groep verdwijnen; groen: leerlingen die erbij komen.`,
+            {
+              title: 'Groepen overschrijven?',
+              okLabel: 'Overschrijven',
+              danger: true,
+              detailsHtml: groupOverwritesHtml(overwrites, Store.getStudentsSync(year), users),
+            },
+          ))
+        ) {
+          return;
+        }
         await Store.upsertGroups(toImport, year);
         closeModal();
         toast(`${toImport.length} groepen geïmporteerd voor ${year}.`, 'success');

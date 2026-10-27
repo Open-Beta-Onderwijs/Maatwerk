@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+﻿// SPDX-License-Identifier: AGPL-3.0-or-later
 
 // UI quirks the port fixes (ADR-0002 section 10; docs/reference/quirks.md).
 // Each test failed on the imported reference code before its fix.
 // Every page load starts a fresh MockApi, so tests do not share data.
 
 import { expect, test, type Page } from '@playwright/test';
-import { TEACHER, login, readMockJson, seedFiles, withMock } from './helpers';
+import { TEACHER, YEAR, login, readMockJson, seedFiles, withMock } from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
 
@@ -126,4 +126,41 @@ test('D25: a failed image call in the editor is reported, not swallowed', async 
   await withMock(page, (m) => m.fail('listOpdrachtImages', ''));
   await frame.locator('[data-action="figure"]').click();
   await expect(frame.locator('#editor-status')).toContainText('Fout bij afbeelding');
+});
+
+test('D34: a group CSV import asks before overwriting an existing group', async ({ page }) => {
+  await login(page, 'nat', 'admin');
+  const file = `${YEAR}/groups/3a-nat-${YEAR}.json`;
+  const added = `${YEAR}/groups/nieuwe-groep-${YEAR}.json`;
+  const before = await readMockJson<{ student_ids: number[] }>(page, file);
+  expect(before.student_ids.length).toBeGreaterThan(0);
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  await page.locator('#btn-import-groups').click();
+  await page.locator('#f-year-ok').click();
+  await page.locator('#f-csv-groups').setInputFiles({
+    name: 'groepen.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from(
+      'Naam;Schoolsoort;Vak;Leerjaar;Docent\n3a nat;Havo;nat;3;\nnieuwe groep;Havo;nat;3;\n',
+    ),
+  });
+  await page.locator('#f-csv-grp-import').click();
+
+  // Old vs new per overwritten group: its students are removed (red rows).
+  const dialog = page.locator('.app-dialog');
+  await expect(dialog).toContainText('3a nat');
+  await expect(dialog.locator('tr.diff-removed')).toHaveCount(before.student_ids.length);
+  await expect(dialog).not.toContainText('nieuwe groep');
+  await dialog.getByRole('button', { name: 'Annuleren' }).click();
+  expect((await readMockJson<{ student_ids: number[] }>(page, file)).student_ids).toEqual(
+    before.student_ids,
+  );
+  expect(await readMockJson(page, added)).toBeNull();
+
+  await page.locator('#f-csv-grp-import').click();
+  await dialog.getByRole('button', { name: 'Overschrijven' }).click();
+  await expect
+    .poll(async () => (await readMockJson<{ student_ids: number[] }>(page, file)).student_ids)
+    .toEqual([]);
+  expect(await readMockJson(page, added)).not.toBeNull();
 });
