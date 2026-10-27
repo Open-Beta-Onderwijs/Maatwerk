@@ -46,4 +46,4 @@ Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). `npm ci; npm r
 the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright install chromium`
 in `ui/`). `npm run test:visual -w ui` needs a local baseline (`-- --update-snapshots` before a
 change). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the Typst packages
-cetz/unify/oxifmt in `%LOCALAPPDATA%	ypst\packages`). `cargo-deny` 0.20.2 is installed.
+cetz/unify/oxifmt in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.
