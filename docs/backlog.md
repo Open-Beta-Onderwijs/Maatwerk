@@ -2,6 +2,44 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 4b
+
+- **Startup error screen (review 4b m5):** an unusable data folder (unsupported
+  `schema_version`, I/O error at open) now makes reads throw, but the UI has no dedicated
+  message or retry. Step 6.
+- **Watcher thread panic (n6):** a panic ends change reporting silently; shutdown also waits for
+  a slow OneDrive read in progress. Catch, log and restart the thread.
+- **`save_photo` / `write_text_file` accept any data path (n8):** restrict to `fotos/` and
+  opdracht `.typ` files (ADR-0002 section 7 hardening, Step 6), so they cannot overwrite JSON
+  without CAS.
+- **Lock folder errors carry an absolute local path (n4, remaining part):** `CommitLock` errors
+  name the lock folder under `%LOCALAPPDATA%` (with the Windows user name) in `details.path`.
+- **Overflow of `ReadDirectoryChangesW` (review 4b M1 note):** `notify` drops it silently; the
+  periodic re-start of OS notifications plus the poll limit the damage. Revisit if colleagues
+  report missed changes in non-active years.
+- **`set_scope_year` not wired (n3):** C7, Step 6a.
+
+## From Step 4a
+
+- **`update()` does not retry a read that fails with `io` (review 4a m6):** on Windows a read can
+  hit a file that is being replaced. Retry with the rename backoff; needs read fault injection.
+- **RTTI modal and an unreadable template file (review 4a m4):** the tab shows defaults and every
+  save conflicts; offer "overwrite the unreadable file" explicitly.
+- **`Locked.path` names the local lock file, not the data file (n4).**
+- **`update_locks` map never shrinks (n6):** one small entry per file updated in a session.
+- **`read_all_json` skips non-UTF-8 files, `read_json` decodes lossily (n7):** align (lossy).
+- **`save_photo` is stricter than Node's base64 (n8):** invalid characters are an error, not
+  skipped. Record in quirks if a real caller ever sends such data.
+- **`schema_version` checked only at open (n9):** re-check before writes once Step 7 can migrate a
+  folder while an app is running.
+- **Blind `Expect::Any` writes still possible in the core API (n10):** used for text files and
+  presence; consider removing it for JSON in 4b.
+- **JSON edge cases (n11):** integers above 2^53 are printed exactly (JS would round); a file with
+  a lone surrogate escape is rejected as corrupt.
+- **No on-disk test for non-ASCII names or paths over 260 characters (n12).**
+- **Junction created between `resolve` and the write (n13):** needs local write access to the data
+  folder; accepted.
+
 ## From Step 3b
 
 - **Cut (Ctrl+X) in the score grid (review 3b m5):** Handsontable had it; the own grid has copy,

@@ -1,32 +1,31 @@
 # State
 
-Last updated: 2026-10-27 (Step 3 done) Branch: `main` Last tag: `step-03`
+Last updated: 2026-10-27 (Step 4 done) Branch: `main` Last tag: `step-04`
 
 ## Current step
 
-Step 3 is done and merged (`step-03`). Waiting for the user before Step 4 (Rust core: paths,
-storage, watcher).
+Step 4 is done (4a `step-04a`, 4b `step-04b`, merged into `main`, tag `step-04`). Waiting for the
+user before Step 5 (Typst service).
 
-## Step 3b summary (on `step/03-ui-foundation`, tag `step-03b`, merged as `step-03`)
+## Step 4b summary
 
-- Own score grid `ui/src/components/score-grid/` (ADR-0004 outcome) driven by
-  `ui/src/screens/scores.js`; pure logic in `ui/src/domain/scoregrid.ts` (scoregrid.json golden).
-  Handsontable removed and banned by `npm run licenses`; CI uploads the exe again after that check.
-- Fixed: U1 (Ctrl+Z/Y drive the app history; buttons disabled when empty), U2 (save queue),
-  U4 (paste into observaties), U19, D34 (confirmation with old-vs-new overview,
-  `ui/src/domain/groups.ts`). New rules G53, G59-G63 in `docs/specs/score-grid.md`.
-- Performance: ~14 ms per keystroke at 6 grids / 11,410 cells (incremental redraw).
-- Review `docs/reviews/step-03b.md`: M1 (queued saves could land in another subject) fixed test
-  first; minors fixed or in `docs/backlog.md` (triage table in the review).
-- Visual: score modal within ~1 px of Handsontable; ↶/↷ now disabled when empty. Local visual
-  baseline updated after the grid change.
-- Follow-up (user feedback): question numbers and observation icons in the header now sit on the
-  same line as Totaal/Cijfer; checkboxes centred in their cells.
-
-## Step 3a summary (tag `step-03a`)
-
-- Reference renderer in Vite, bridge `ui/src/bridge/api.ts` + `MockApi`, domain modules, strict CSP,
-  quirk fixes B22, T26, T27, B9, U3, U6, U7, U9, D25. Review `docs/reviews/step-03a.md`.
+- Core `watcher` (spec S28-S40): engine on a virtual clock + thread driver on `notify` 8.2.1
+  (CC0-1.0); 20 s poll, 500 ms debounce, 100 ms batches, parse retry, restart after errors and
+  every 60 s (review M1: Windows `notify` stops silently). Own writes: `WriteObserver`
+  `will_change`/`note_write`/`note_delete`/`change_failed`. `rapporten/` ignored. Quirk D36 fixed
+  (own writes to ignored paths), D35/S34 kept.
+- Core `presence`: `users/<id>.json`, previous user offline on switch, `close` on quit.
+- App: 16 commands (storage, presence, session) on `spawn_blocking`, `CommandError {code,
+message, details}`, event `data:changed`. Bindings by `tauri-specta` rc.26 (ADR-0005),
+  `ui/src/bridge/bindings.ts`, stale check in `cargo test`, `npm run bindings`. `build.rs` links
+  the Common Controls manifest into test binaries (else `STATUS_ENTRYPOINT_NOT_FOUND`).
+- UI: `TauriApi` compat layer (`tauri-api.ts`) with contract tests; presence calls queued.
+- `npm run data:dev` + `npm run dev`: real app on synthetic data (smoke run: subject picker).
+- Review `docs/reviews/step-04b.md`: M1, m1-m4, m6 fixed; m5 partly; rest in `docs/backlog.md`.
+- `/security-review` could not run (needs `origin/HEAD`; no remote). The reviewer's checklist
+  covered security.
+- Not wired yet: `Watcher::set_scope_year` (C7, Step 6a); opdracht images, Typst, `openPath`
+  still throw "nog niet beschikbaar" (Steps 5-6).
 
 ## In progress
 
@@ -34,12 +33,13 @@ storage, watcher).
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 4 (PLAN.md section 6, Step 4). Ask S37/S38 again there.
+1. When the user says go: Step 5 (PLAN.md section 6, Step 5). Run `/security-review` once a
+   remote exists.
 
 ## Open questions for the user
 
-- S37/S38 (Step 4); remote repo still to create (`gh` not installed), so CI has not run on 3b;
-  PLAN section 9 items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
+- Remote repo still to create (`gh` not installed), so CI has not run on 3b/4a; PLAN section 9
+  items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
 
 ## How to resume
 

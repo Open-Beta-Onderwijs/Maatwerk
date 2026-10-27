@@ -4,7 +4,7 @@
 // reference `window.rtti` (docs/reference/ipc-api.md; ADR-0002 section 2) plus
 // the two event subscriptions. Result shapes are the reference's ("compat
 // shapes"), so the legacy screens run unchanged. Typed errors from Rust are
-// mapped to these shapes by TauriApi (Step 6).
+// mapped to these shapes by TauriApi (tauri-api.ts, ADR-0005).
 //
 // Dropped on purpose: listScoreFiles, typstVersion, compileTypst (no call
 // site) and renderAssignmentPdf (only reachable through a dead editor proxy

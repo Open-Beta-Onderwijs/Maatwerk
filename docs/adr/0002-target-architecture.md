@@ -49,8 +49,9 @@ core has no `tauri` dependency.
   argument/result types and the command wrappers, so a renamed command fails `npm run typecheck`.
   CI fails on stale bindings. Fallback if it blocks us: `ts-rs` for types plus a hand-written
   `invoke` table checked by a test. (`tauri-specta` is still `2.0.0-rc.*`; acceptable because it
-  is build-time only and pinned.)
-- **Events:** `data:changed` (path, kind, `_meta`, own-write flag) and `assignment:progress`, as in
+  is pinned; the generated wrappers and `tauri-specta`'s invoke handler ship in the app, so
+  upgrades are deliberate, see ADR-0005.)
+- **Events:** `data:changed` (path, kind, `_meta`; own writes are suppressed, not flagged, section 4) and `assignment:progress`, as in
   the reference; typed by the same generator.
 
 ### 3. Storage

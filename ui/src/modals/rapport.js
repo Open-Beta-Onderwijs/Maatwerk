@@ -249,11 +249,25 @@ export async function openRttiUitlegModal() {
   const subject = Store.getActiveSubject() ?? 'nat';
   const tabs = buildTabs(subject);
 
+  // Each tab remembers the version it was loaded from, so saving cannot
+  // overwrite a change another teacher made meanwhile (ADR-0003 C6). An
+  // unreadable file shows the defaults and then conflicts on save.
   const tabData = {};
+  const tabHash = {};
+  const tabSaved = {}; // JSON of the version on disk, to skip unchanged tabs
+
   await Promise.all(
     tabs.map(async (t, i) => {
-      const raw = await window.maatwerk.readJson(rttiExplFilePath(t.fileKey, t.jaar));
-      tabData[i] = raw ?? defaultTabData();
+      const relPath = rttiExplFilePath(t.fileKey, t.jaar);
+      try {
+        const { data, hash } = await Store.loadVersioned(relPath);
+        tabData[i] = data ?? defaultTabData();
+        tabHash[i] = hash;
+        tabSaved[i] = data ? JSON.stringify(data) : null;
+      } catch (_) {
+        tabData[i] = defaultTabData();
+        tabHash[i] = 'onleesbaar';
+      }
     }),
   );
 
@@ -442,17 +456,33 @@ export async function openRttiUitlegModal() {
         const saveBtn = el.querySelector('#btn-rtti-uitleg-save');
         saveBtn.disabled = true;
         saveBtn.textContent = 'Bezig\u2026';
-        const results = await Promise.all(
-          tabs.map((t, i) =>
-            window.maatwerk.writeJson(rttiExplFilePath(t.fileKey, t.jaar), tabData[i]),
-          ),
+        // Unchanged tabs whose file exists are skipped, so they cannot conflict.
+        // A missing file is still written, as in the reference: the rapport
+        // falls back from a missing variant file to the subject file.
+        const results = await Promise.allSettled(
+          tabs.map(async (t, i) => {
+            const json = JSON.stringify(tabData[i]);
+            if (tabSaved[i] !== null && tabSaved[i] === json) return;
+            const relPath = rttiExplFilePath(t.fileKey, t.jaar);
+            tabHash[i] = await Store.saveVersioned(relPath, tabData[i], tabHash[i]);
+            tabSaved[i] = json;
+          }),
         );
         saveBtn.disabled = false;
         saveBtn.textContent = 'Opslaan';
-        if (results.every((r) => r.ok)) {
+        const failed = tabs.filter((_, i) => results[i].status === 'rejected');
+        if (failed.length === 0) {
           _dirty = false;
           toast('RTTI uitleg en leeradvies opgeslagen.', 'success');
           cleanupAndClose();
+        } else if (results.some((r) => r.status === 'rejected' && r.reason?.code === 'conflict')) {
+          const names = failed.map((t) => `tabblad ${t.label}`).join(', ');
+          toast(
+            `Niet opgeslagen: ${names}. Iemand anders heeft dit intussen gewijzigd ` +
+              '(of het bestand is onleesbaar). De andere tabbladen zijn wel opgeslagen. ' +
+              'Sluit het venster en open het opnieuw om de nieuwste versie te zien.',
+            'error',
+          );
         } else {
           toast('Fout bij opslaan. Controleer de logbestanden.', 'error');
         }

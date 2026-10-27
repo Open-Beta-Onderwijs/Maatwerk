@@ -61,12 +61,6 @@ const Store = (() => {
     return data;
   }
 
-  async function save(relPath, data) {
-    cache[relPath] = data;
-    const result = await window.maatwerk.writeJson(relPath, data);
-    if (!result?.ok) throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
-  }
-
   function invalidate(relPath) {
     delete cache[relPath];
   }
@@ -105,6 +99,28 @@ const Store = (() => {
       throw new Error(`Save failed for ${relPath}: conflict`);
     };
     return serialize(relPath, run);
+  }
+
+  // Whole-file editors (RTTI templates): read a file with its content hash and
+  // write it back only if it is still that version (ADR-0003 C6). A conflict
+  // throws an error with code 'conflict'.
+  async function loadVersioned(relPath) {
+    const read = await window.maatwerk.readJsonVersioned(relPath);
+    if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
+    return { data: read.data, hash: read.hash };
+  }
+
+  async function saveVersioned(relPath, data, hash) {
+    const result = await window.maatwerk.writeJson(relPath, data, {
+      cas: true,
+      expectedHash: hash ?? null,
+    });
+    if (result?.ok) {
+      invalidate(relPath);
+      return result.hash;
+    }
+    if (result?.reason === 'conflict') throw conflictError(null);
+    throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
   }
 
   // Version info stored in single-object files (exams, groups, observaties, opdrachten).
@@ -162,8 +178,18 @@ const Store = (() => {
     return await load('school.json');
   }
 
-  async function saveSchool(data) {
-    await save('school.json', data);
+  // Apply a change to the latest school.json on disk, so a change another
+  // teacher made in the meantime is kept (ADR-0003 C6). `change` is either an
+  // object of fields to set or a function that edits the school in place.
+  async function updateSchool(change) {
+    const school = await update(
+      'school.json',
+      (current) =>
+        typeof change === 'function' ? (change(current), current) : Object.assign(current, change),
+      () => ({}),
+    );
+    cache['school.json'] = school;
+    return school;
   }
 
   async function upsertUser(user) {
@@ -328,9 +354,11 @@ const Store = (() => {
   }
 
   async function setActiveYear(year) {
-    const cfg = await getConfig();
-    cfg.activeYear = year;
-    await save('config.json', cfg);
+    cache['config.json'] = await update(
+      'config.json',
+      (cfg) => Object.assign(cfg, { activeYear: year }),
+      () => ({}),
+    );
   }
 
   // currentSchoolYear: src/domain/ids.ts
@@ -341,11 +369,6 @@ const Store = (() => {
   // ── Students (year-scoped) ────────────────────────────────────────────────
   async function getStudents(year) {
     return (await load(ypStudents(year))) ?? [];
-  }
-
-  async function saveStudents(list, year) {
-    sortStudents(list);
-    await save(ypStudents(year), list);
   }
 
   // The students file is one shared array per year, so every change is applied
@@ -512,12 +535,6 @@ const Store = (() => {
   async function getStudentScores(studentId, year, subject = _activeSubject) {
     const file = ypScore(year, subject, studentId);
     return (await load(file)) ?? { student_id: studentId, scores: {} };
-  }
-
-  async function saveStudentScores(record, year, subject = _activeSubject) {
-    const file = ypScore(year, subject, record.student_id);
-    invalidate(file);
-    await save(file, record);
   }
 
   // Apply a change to the latest version of a student's score file on disk, so
@@ -1034,7 +1051,7 @@ const Store = (() => {
     loadUsers,
     upsertUser,
     loadSchool,
-    saveSchool,
+    updateSchool,
     getSchoolSync,
     saveLastSession,
     loadLastSession,
@@ -1045,12 +1062,13 @@ const Store = (() => {
     parseGroupName,
     getConfig,
     setActiveYear,
+    loadVersioned,
+    saveVersioned,
     currentSchoolYear,
     fullName,
     jaarlaagFromStamklas,
     sortStudents,
     getStudents,
-    saveStudents,
     upsertStudent,
     upsertStudents,
     deleteStudent,
@@ -1067,7 +1085,6 @@ const Store = (() => {
     setExamNTerm,
     deleteExam,
     getStudentScores,
-    saveStudentScores,
     setScore,
     getStudentHistory,
     calcResults,

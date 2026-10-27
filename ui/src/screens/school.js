@@ -121,11 +121,21 @@ function attachListeners(container, school) {
   container.querySelectorAll('.school-ss-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       btn.classList.toggle('selected');
-      school.schoolsoort = [...container.querySelectorAll('.school-ss-btn.selected')].map(
-        (b) => b.dataset.ss,
-      );
+      const on = btn.classList.contains('selected');
+      const ss = btn.dataset.ss;
       try {
-        await Store.saveSchool(school);
+        // Toggle this one entry in the list on disk, so a colleague's toggle of
+        // another entry in the meantime is kept.
+        const order = [...container.querySelectorAll('.school-ss-btn')].map((b) => b.dataset.ss);
+        const saved = await Store.updateSchool((cur) => {
+          const list = cur.schoolsoort ?? [];
+          const keep = (x) => (x === ss ? on : list.includes(x));
+          cur.schoolsoort = [...order.filter(keep), ...list.filter((x) => !order.includes(x))];
+        });
+        school.schoolsoort = saved.schoolsoort;
+        container.querySelectorAll('.school-ss-btn').forEach((b) => {
+          b.classList.toggle('selected', school.schoolsoort.includes(b.dataset.ss));
+        });
       } catch (_) {
         toast('Opslaan mislukt.', 'error');
       }
@@ -182,7 +192,7 @@ function startTextEdit(field, container, school) {
     const newValue = input.value.trim();
     school[field] = newValue;
     try {
-      await Store.saveSchool(school);
+      await Store.updateSchool({ [field]: newValue });
     } catch (_) {
       toast('Opslaan mislukt.', 'error');
     }
@@ -237,7 +247,7 @@ async function saveImageField(file, fileBaseName, field, school, container) {
   school[field] = relPath;
 
   try {
-    await Store.saveSchool(school);
+    await Store.updateSchool({ [field]: relPath });
     toast('Afbeelding opgeslagen.', 'success');
   } catch (_) {
     toast('Opslaan mislukt.', 'error');

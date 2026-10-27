@@ -13,16 +13,19 @@ are relative to `_reference/` unless a section says otherwise.
    - Where: `main.js:56-235`, `:460-483` (`fs:readJson`, `writeJson`, `deleteFile`, `readTextFile`, `writeTextFile`, `ensureDir`, `readPhotoAsDataUrl`, `savePhoto`, `createAssignmentTypFile`)
    - Evidence: `path.join(getDataDir(), relPath)` with no `..`/absolute check. `typst:compile` and `shell:openPath` take any absolute path (`main.js:532`, `:934`).
    - Port: Tauri commands must canonicalise and confine to `data/` (or offer typed commands per entity instead of raw paths).
+   - **Done (4a):** `paths::RelPath` + `DataDir::resolve` (lexical checks, reserved Windows names, symlink/junction escape). `ensure_year` also requires a `YYYY-YYYY` name (the reference accepted any string).
 
 2. **D2 · Inconsistent error shapes**
    - Where: `main.js:100-119` (`{ok,reason}`), `:269-275` (`{ok,error}` / `{ok:false,exists}`), `:523-537` (`{success,error}`), `:58-63` (`null`), plus handlers that throw (reject).
    - Evidence: four result conventions; `fs:readJson` returns `null` for both missing and corrupt files.
    - Port: decide one `Result` error enum; keep "missing" vs "corrupt" distinct.
+   - **Done (4a):** `maatwerk_core::Error` with stable `code()`; `read_json` returns `corrupt_json` for an unparsable file.
 
 3. **D3 · Lock not exclusive and errors outside try**
    - Where: `main.js:33-42`, `:111`, `:193`
    - Evidence: `existsSync` + `writeFileSync` (no `wx`); a stale lock is deleted and re-created non-atomically. `acquireLock` is called outside the `try`, so an fs error rejects instead of `{ok:false}`. `fs:deleteFile` does no mkdir, so deleting in a missing dir throws while writing the lock.
    - Port: the lock only lasts one synchronous handler, so within one process it never blocks; across PCs it depends on OneDrive syncing `.lock` files and on mtimes. Likely drop it (CAS covers the case) or document why it stays.
+   - **Done (4a):** no `.lock` files (C3). The CAS check + rename runs under a commit lock (process mutex + OS lock in a local folder), see the S37 decision in `docs/specs/storage-spec.md`. `locked` now means "the commit lock was not free within 10 s".
 
 4. **D4 · `locked` is not retried**
    - Where: `store.js:79-82`
@@ -38,6 +41,7 @@ are relative to `_reference/` unless a section says otherwise.
    - Where: `store.js:43-47`, `:154-156`, `:363-367`; `modals/rapport.js:735-737`
    - Evidence: `school.json`, `config.json` and the RTTI template files are overwritten from the cache (last writer wins). The RTTI modal writes **all** tabs (up to 15 files for wi) even if only one changed.
    - Port: CAS for all shared files would be a behaviour change; decide consciously.
+   - **Done (4a, C6/S38):** `Store.updateSchool(patch)` and `setActiveYear` patch the latest file via `update()`; the RTTI modal saves each tab with the hash it loaded (`Store.saveVersioned`) and reports a conflict. It still writes all tabs.
 
 7. **D7 · `config.json` activeYear is shared between all teachers**
    - Where: `store.js:363-367`, `sync.js:185-191`
@@ -53,10 +57,12 @@ are relative to `_reference/` unless a section says otherwise.
    - Where: `sync.js:58-63`
    - Evidence: after 5 failed renames (or any other error) the target is written directly; the retry sleep is a synchronous `Atomics.wait` on the main process (max ~450 ms).
    - Port: keep the "never lose the change" rule but in a blocking thread, not the UI/event loop.
+   - **Done (4a):** same rule in `storage::atomic` (blocking; commands use `spawn_blocking` from 4b).
 
 10. **D10 · Some writes are not atomic and not noted**
     - Where: `main.js:978` (seed `gebruikers.json`), `:482` (`savePhoto`), `:454` (session), temp files
     - Evidence: plain `writeFileSync`; the seed is written before the watcher exists, so fine, but `savePhoto` can leave half-written photos on OneDrive.
+    - **Done (4a):** seed (CAS "must not exist"), `save_photo` and the local session are atomic. The seed no longer copies `lib.typ` (ADR-0002 5a; embedded assets in Step 5). `removeEmptyImageDirs()` moves with the opdracht image handlers (Step 6).
 
 11. **D11 · `deleteImages` has no `noteDelete` and no change event**
     - Where: `main.js:373-381`; `sync.js:22`
@@ -176,6 +182,19 @@ are relative to `_reference/` unless a section says otherwise.
       mtime reports `changed` even when the bytes are identical; later touches compare hashes.
       Found in Step 2a, pinned by storage spec S34.
     - Port: harmless (a spurious refresh); the Rust watcher may hash up front.
+    - **Kept (Step 4b):** hashing up front would read every file at start, which downloads
+      every file on OneDrive Files On-Demand. Pinned by `watcher::tests::s34_*`.
+
+36. **D36 · Own writes to ignored paths make the watcher report them after all**
+    - Where: `sync.js:256-259` (`noteWrite`), `:217-219` (poll: every known file in scope)
+    - Evidence: `noteWrite` records any path, also `templates/...` (RTTI templates), which S31
+      ignores. The poll walk skips `templates/` but then finds the known entry "gone" and checks
+      it every 20 s: a colleague's change to such a file is reported, and the file is re-read on
+      every poll.
+    - **Fixed (Step 4b, review 4b m4):** the Rust watcher ignores own writes to ignored paths, so
+      S31 holds for them too. Only `data:changed` events of type `other` for `templates/`
+      disappear; the UI re-reads the RTTI templates when the modal opens. Test:
+      `watcher::tests::m4_own_writes_to_ignored_paths_are_not_tracked`.
 
 ## B. Business logic
 
