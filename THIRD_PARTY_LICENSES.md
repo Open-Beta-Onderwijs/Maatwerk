@@ -14,6 +14,8 @@ dependencies and every non-code asset (fonts, Typst packages, images); update it
 | thiserror          | MIT OR Apache-2.0     |
 | base64             | MIT OR Apache-2.0     |
 | ryu                | Apache-2.0 OR BSL-1.0 |
+| notify             | CC0-1.0               |
+| tracing            | MIT                   |
 
 Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0).
 
