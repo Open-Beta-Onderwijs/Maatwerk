@@ -6,10 +6,16 @@ dependencies and every non-code asset (fonts, Typst packages, images); update it
 
 ## Rust crates (direct)
 
-| Crate              | Licence           |
-| ------------------ | ----------------- |
-| tauri, tauri-build | Apache-2.0 OR MIT |
-| serde, serde_json  | MIT OR Apache-2.0 |
+| Crate              | Licence                 |
+| ------------------ | ----------------------- |
+| tauri, tauri-build | Apache-2.0 OR MIT       |
+| serde, serde_json  | MIT OR Apache-2.0       |
+| sha1               | MIT OR Apache-2.0       |
+| thiserror          | MIT OR Apache-2.0       |
+| base64             | MIT OR Apache-2.0       |
+| ryu                | Apache-2.0 OR BSL-1.0   |
+
+Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0).
 
 Transitive crates: run `cargo deny list` for the full inventory.
 

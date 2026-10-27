@@ -2,8 +2,15 @@
 
 //! Maatwerk core. Pure Rust; must never depend on `tauri`.
 //!
-//! The modules from PLAN.md section 4 (paths, storage, watcher, model,
-//! migrate, typst_svc, pdf_merge, assets) are added from Step 4 onward.
+//! Modules follow ADR-0002 section 1; watcher, model, migrate, typst_svc, pdf_merge and assets
+//! are added in later steps.
+
+pub mod error;
+pub mod jsonfmt;
+pub mod paths;
+pub mod storage;
+
+pub use error::{Error, Result};
 
 /// Version of the core crate, shown in the UI for diagnostics.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

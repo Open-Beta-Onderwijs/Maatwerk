@@ -1,45 +1,45 @@
 # State
 
-Last updated: 2026-10-27 (Step 3 done) Branch: `main` Last tag: `step-03`
+Last updated: 2026-10-27 (Step 4a in progress) Branch: `step/04-core-storage` Last tag: `step-03`
 
 ## Current step
 
-Step 3 is done and merged (`step-03`). Waiting for the user before Step 4 (Rust core: paths,
-storage, watcher).
+Step 4a: paths and storage in `maatwerk-core`.
 
-## Step 3b summary (on `step/03-ui-foundation`, tag `step-03b`, merged as `step-03`)
+User decisions (2026-10-27), recorded in `docs/specs/storage-spec.md`:
 
-- Own score grid `ui/src/components/score-grid/` (ADR-0004 outcome) driven by
-  `ui/src/screens/scores.js`; pure logic in `ui/src/domain/scoregrid.ts` (scoregrid.json golden).
-  Handsontable removed and banned by `npm run licenses`; CI uploads the exe again after that check.
-- Fixed: U1 (Ctrl+Z/Y drive the app history; buttons disabled when empty), U2 (save queue),
-  U4 (paste into observaties), U19, D34 (confirmation with old-vs-new overview,
-  `ui/src/domain/groups.ts`). New rules G53, G59-G63 in `docs/specs/score-grid.md`.
-- Performance: ~14 ms per keystroke at 6 grids / 11,410 cells (incremental redraw).
-- Review `docs/reviews/step-03b.md`: M1 (queued saves could land in another subject) fixed test
-  first; minors fixed or in `docs/backlog.md` (triage table in the review).
-- Visual: score modal within ~1 px of Handsontable; ↶/↷ now disabled when empty. Local visual
-  baseline updated after the grid change.
-- Follow-up (user feedback): question numbers and observation icons in the header now sit on the
-  same line as Totaal/Cijfer; checkboxes centred in their cells.
+- S37: commit lock = process-wide mutex per data folder + OS file lock (`std::fs::File::lock`) on
+  a file in a local folder (`%TEMP%/maatwerk-locks`), held only for check + rename.
+- S38: every JSON write uses CAS; school/config/RTTI templates via `update()` (C6); unused
+  `saveStudents`/`saveStudentScores` removed.
 
-## Step 3a summary (tag `step-03a`)
+## Done since last tag
 
-- Reference renderer in Vite, bridge `ui/src/bridge/api.ts` + `MockApi`, domain modules, strict CSP,
-  quirk fixes B22, T26, T27, B9, U3, U6, U7, U9, D25. Review `docs/reviews/step-03a.md`.
+- `maatwerk-core`: `error` (typed `Error` with stable `code()`), `paths` (`RelPath`, `DataDir`,
+  junction/symlink escape check, proptest), `jsonfmt` (`JSON.stringify(x, null, 2)` incl. JS
+  number formatting), `storage` (atomic write, CAS, commit lock, `update`, `save_entity`,
+  `_meta` stamping, years, read-all, text, photos, seed, schema_version check C1,
+  `LocalSession`). Spec rows S01-S27, S37, S38 as Rust tests; cross-process test
+  (`crates/maatwerk-core/tests/cross_process.rs`).
+- Bug found by the cross-process test and fixed test-first: `resolve` canonicalised the file
+  itself; a file being replaced resolves under `\$Extend\$Deleted` on NTFS -> spurious
+  `invalid_path`.
 
 ## In progress
 
-- Nothing.
+- Nothing uncommitted.
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 4 (PLAN.md section 6, Step 4). Ask S37/S38 again there.
+1. UI side of S38/C6: `saveSchool`, `setActiveYear`, RTTI templates (`modals/rapport.js:447`)
+   through `update()`; delete `saveStudents`/`saveStudentScores`; tests.
+2. Docs: parity rows, quirks (ensure_year validates the year; lib.typ not seeded; C7 in 6a).
+3. Gate, review subagent (`docs/reviews/step-04a.md`), tag `step-04a`, stop and report.
 
 ## Open questions for the user
 
-- S37/S38 (Step 4); remote repo still to create (`gh` not installed), so CI has not run on 3b;
-  PLAN section 9 items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
+- Remote repo still to create (`gh` not installed), so CI has not run on 3b/4a; PLAN section 9
+  items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
 
 ## How to resume
 

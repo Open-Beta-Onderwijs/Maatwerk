@@ -16,6 +16,18 @@ rule that Step 4 fixes them, but wants to be asked again once Step 4 knows concr
 (e.g. how to make the CAS check atomic without `.lock` files, and which of students and score files
 get CAS). Step 4 must stop and ask before implementing a fix.
 
+**Decision (user, 2026-10-27, Step 4a):**
+
+- **S37:** the check + rename becomes atomic for everything on one PC: a process-wide mutex per
+  data folder plus a short OS file lock (`std::fs::File::lock`) on a lock file in a **local**
+  folder (never in the shared data folder), held only for the check and the rename. It covers
+  two windows, two app instances and the CLI; the OS releases it if a process dies. Across PCs no
+  mechanism can be atomic (OneDrive makes a conflict copy, as it does today with `.lock` files);
+  this is a documented limitation, not a regression.
+- **S38:** every JSON write in the app uses CAS. `school.json`, `config.json` and the RTTI
+  templates move to `update()` (C6). The unused blind helpers `saveStudents` and
+  `saveStudentScores` are removed; students and score files already use CAS in live code.
+
 The Rust storage layer (Step 4) must pass the same table, except where a Step 1 decision changes
 the behaviour (column "Port"). "Keep" means the port must behave the same. Times are the
 reference constants: lock TTL 10 s, debounce 500 ms, flush 100 ms, poll 20 s, parse retry 1 s.
