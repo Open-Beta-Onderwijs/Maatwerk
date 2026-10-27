@@ -60,10 +60,15 @@ pub struct Versioned {
 }
 
 /// Told about every write and delete this process makes, so the watcher does not report them
-/// back as external changes (S18).
+/// back as external changes (S18). All calls happen under the commit lock: an observer must not
+/// call back into the [`Storage`].
 pub trait WriteObserver: Send + Sync {
+    /// Just before the rename or removal; followed by exactly one of the other three calls.
+    fn will_change(&self, _rel: &RelPath) {}
     fn note_write(&self, rel: &RelPath, content: &[u8]);
     fn note_delete(&self, rel: &RelPath);
+    /// The announced write or delete failed.
+    fn change_failed(&self, _rel: &RelPath) {}
 }
 
 /// Handle on one data folder. Cheap to share behind an `Arc`; several handles on the same
@@ -284,28 +289,38 @@ impl Storage {
                 });
             }
         }
-        tmp.commit(&path, bytes)
-            .map_err(|e| Error::io(rel.as_str(), e))?;
-        // Called under the commit lock: an observer must not call back into this Storage.
-        if note && let Some(observer) = &self.observer {
-            observer.note_write(rel, bytes);
+        let observer = self.observer.as_ref().filter(|_| note);
+        if let Some(observer) = observer {
+            observer.will_change(rel);
         }
-        Ok(())
+        let result = tmp.commit(&path, bytes);
+        if let Some(observer) = observer {
+            match &result {
+                Ok(()) => observer.note_write(rel, bytes),
+                Err(_) => observer.change_failed(rel),
+            }
+        }
+        result.map_err(|e| Error::io(rel.as_str(), e))
     }
 
     /// Removes the file; a missing file is fine (S19). Reported to the watcher (S18).
     pub fn delete(&self, rel: &RelPath) -> Result<()> {
         let path = self.dir.resolve(rel)?;
         let _guard = self.commit.acquire()?;
-        match fs::remove_file(&path) {
-            Ok(()) => {}
-            Err(e) if e.kind() == io::ErrorKind::NotFound => {}
-            Err(e) => return Err(Error::io(rel.as_str(), e)),
-        }
         if let Some(observer) = &self.observer {
-            observer.note_delete(rel);
+            observer.will_change(rel);
         }
-        Ok(())
+        let result = match fs::remove_file(&path) {
+            Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),
+            _ => Ok(()),
+        };
+        if let Some(observer) = &self.observer {
+            match &result {
+                Ok(()) => observer.note_delete(rel),
+                Err(_) => observer.change_failed(rel),
+            }
+        }
+        result.map_err(|e| Error::io(rel.as_str(), e))
     }
 
     /// `mkdir -p` (`fs:ensureDir`).
@@ -409,10 +424,11 @@ impl LocalSession {
         serde_json::from_slice(&bytes).ok()
     }
 
-    /// Atomic (the reference wrote in place).
+    /// Atomic (the reference wrote in place). Errors name only the file: the full path holds
+    /// the Windows user name and travels to the UI.
     pub fn write(&self, value: &Value) -> Result<()> {
         atomic::write_atomic(&self.path, to_js_json(value).as_bytes())
-            .map_err(|e| Error::io(self.path.display().to_string(), e))
+            .map_err(|e| Error::io("session.json", e))
     }
 }
 

@@ -5,7 +5,7 @@
 //! [`Engine::advance`] when [`Engine::next_deadline`] is due. Tests drive it on a virtual clock
 //! against a real temp folder (spec rows S28-S40).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -46,7 +46,7 @@ pub fn is_relevant(rel: &str) -> bool {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct Stat {
+pub(crate) struct Stat {
     mtime: Option<SystemTime>,
     size: u64,
 }
@@ -75,7 +75,15 @@ pub(crate) struct Engine {
     /// The year the poll covers. `None`: read `activeYear` from `config.json` as the reference
     /// does; set by the app once the year is per teacher (ADR-0003 C7).
     scope_year: Option<String>,
+    /// Files this process is writing or deleting right now (between `will_change` and
+    /// `note_write`/`note_delete`/`change_failed`). A check finding one waits: it could see
+    /// our new bytes before `note_write` has recorded them (review 4b m1).
+    in_flight: HashSet<String>,
 }
+
+/// Every relevant file below the root with its stat (a snapshot or poll walk). Runs without
+/// the engine lock: it can take seconds on a large OneDrive folder.
+pub(crate) type Scan = Vec<(String, Stat)>;
 
 impl Engine {
     pub(crate) fn new(dir: DataDir) -> Engine {
@@ -86,7 +94,12 @@ impl Engine {
             batch: vec![],
             flush_at: None,
             scope_year: None,
+            in_flight: HashSet::new(),
         }
+    }
+
+    pub(crate) fn root_path(&self) -> PathBuf {
+        self.root().to_path_buf()
     }
 
     fn root(&self) -> &Path {
@@ -94,13 +107,16 @@ impl Engine {
     }
 
     /// Initial snapshot: mtime and size of every relevant file (no hashes, so no file is read).
+    #[cfg(test)]
     pub(crate) fn snapshot(&mut self) {
-        let mut found = vec![];
-        walk(self.root(), "", &mut |rel| found.push(rel));
-        for rel in found {
-            if let Some(stat) = self.stat_of(&rel) {
-                self.known.insert(rel, Known { stat, hash: None });
-            }
+        let scan = scan_all(self.root());
+        self.apply_snapshot(scan);
+    }
+
+    /// Records a snapshot scan; files our own writes recorded meanwhile keep their hash.
+    pub(crate) fn apply_snapshot(&mut self, scan: Scan) {
+        for (rel, stat) in scan {
+            self.known.entry(rel).or_insert(Known { stat, hash: None });
         }
     }
 
@@ -117,8 +133,26 @@ impl Engine {
         }
     }
 
-    /// Own write: remember the hash so the change is not reported (S30).
+    /// Own write or delete about to happen (before the rename).
+    pub(crate) fn will_change(&mut self, rel: &str) {
+        if is_relevant(rel) {
+            self.in_flight.insert(rel.to_owned());
+        }
+    }
+
+    /// The own write or delete did not happen.
+    pub(crate) fn change_failed(&mut self, rel: &str) {
+        self.in_flight.remove(rel);
+    }
+
+    /// Own write: remember the hash so the change is not reported (S30). Ignored paths are not
+    /// tracked: the reference did, so its poll re-checked them and reported a colleague's
+    /// change to them despite S31 (review 4b m4, quirks.md).
     pub(crate) fn note_write(&mut self, rel: &str, content: &[u8]) {
+        self.in_flight.remove(rel);
+        if !is_relevant(rel) {
+            return;
+        }
         if let Some(stat) = self.stat_of(rel) {
             let hash = Some(hash_hex(content));
             self.known.insert(rel.to_owned(), Known { stat, hash });
@@ -126,6 +160,7 @@ impl Engine {
     }
 
     pub(crate) fn note_delete(&mut self, rel: &str) {
+        self.in_flight.remove(rel);
         self.known.remove(rel);
     }
 
@@ -182,6 +217,11 @@ impl Engine {
     }
 
     fn check(&mut self, rel: &str, retried: bool, now: Instant) {
+        if self.in_flight.contains(rel) {
+            // Our own write is landing; look again once it is noted.
+            self.schedule(rel.to_owned(), now);
+            return;
+        }
         let prev = self.known.get(rel).cloned();
         let bytes = match self.read(rel) {
             Ok(Some(bytes)) => bytes,
@@ -245,7 +285,7 @@ impl Engine {
     }
 
     /// The year the poll covers: the override, else `config.json` `activeYear`.
-    fn poll_year(&self) -> Option<String> {
+    pub(crate) fn poll_year(&self) -> Option<String> {
         if let Some(year) = &self.scope_year {
             return Some(year.clone());
         }
@@ -254,41 +294,22 @@ impl Engine {
         config.get("activeYear")?.as_str().map(str::to_owned)
     }
 
-    /// Compares mtime and size of everything in scope and schedules a check for whatever
-    /// differs or disappeared (S32, S33). Year folders other than the active one are skipped.
+    #[cfg(test)]
     pub(crate) fn poll(&mut self, now: Instant) {
         let year = self.poll_year();
+        let scan = scan_poll(self.root(), year.as_deref());
+        self.apply_poll(year.as_deref(), scan, now);
+    }
+
+    /// Schedules a check for whatever the poll scan found changed, and for known files in scope
+    /// it did not find (S32, S33).
+    pub(crate) fn apply_poll(&mut self, year: Option<&str>, scan: Scan, now: Instant) {
         let in_scope = |rel: &str| match rel.split_once('/') {
             None => true,
-            Some((first, _)) => Some(first) == year.as_deref() || !is_year_name(first),
+            Some((first, _)) => Some(first) == year || !is_year_name(first),
         };
-        let Ok(entries) = fs::read_dir(self.root()) else {
-            return;
-        };
-        let mut found = vec![];
-        for entry in entries.filter_map(|e| e.ok()) {
-            let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
-                continue;
-            };
-            let Ok(file_type) = entry.file_type() else {
-                continue;
-            };
-            if file_type.is_dir() {
-                if IGNORED_DIRS.contains(&name.as_str())
-                    || (is_year_name(&name) && Some(&name) != year.as_ref())
-                {
-                    continue;
-                }
-                walk(self.root(), &name, &mut |rel| found.push(rel));
-            } else if file_type.is_file() && is_relevant(&name) {
-                found.push(name);
-            }
-        }
-        let mut seen = std::collections::HashSet::new();
-        for rel in found {
-            let Some(stat) = self.stat_of(&rel) else {
-                continue;
-            };
+        let mut seen = HashSet::new();
+        for (rel, stat) in scan {
             let changed = self.known.get(&rel).is_none_or(|k| k.stat != stat);
             seen.insert(rel.clone());
             if changed {
@@ -322,17 +343,61 @@ impl Engine {
         }
     }
 
-    /// Without the path guard: the poll stats every file in scope every 20 s, and a stat
-    /// exposes nothing; only [`Engine::read`] needs the guard.
     fn stat_of(&self, rel: &str) -> Option<Stat> {
-        let mut path = self.root().to_path_buf();
-        path.extend(rel.split('/'));
-        let meta = fs::metadata(path).ok()?;
-        Some(Stat {
-            mtime: meta.modified().ok(),
-            size: meta.len(),
-        })
+        stat_of(self.root(), rel)
     }
+}
+
+/// Without the path guard: the poll stats every file in scope every 20 s, and a stat exposes
+/// nothing; only [`Engine::read`] needs the guard.
+fn stat_of(root: &Path, rel: &str) -> Option<Stat> {
+    let mut path = root.to_path_buf();
+    path.extend(rel.split('/'));
+    let meta = fs::metadata(path).ok()?;
+    Some(Stat {
+        mtime: meta.modified().ok(),
+        size: meta.len(),
+    })
+}
+
+/// Every relevant file (the snapshot).
+pub(crate) fn scan_all(root: &Path) -> Scan {
+    let mut found = vec![];
+    walk(root, "", &mut |rel| found.push(rel));
+    with_stats(root, found)
+}
+
+/// Relevant files outside year folders and in `year` (the poll, S32).
+pub(crate) fn scan_poll(root: &Path, year: Option<&str>) -> Scan {
+    let Ok(entries) = fs::read_dir(root) else {
+        return vec![];
+    };
+    let mut found = vec![];
+    for entry in entries.filter_map(|e| e.ok()) {
+        let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+            continue;
+        };
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+        if file_type.is_dir() {
+            if IGNORED_DIRS.contains(&name.as_str())
+                || (is_year_name(&name) && Some(name.as_str()) != year)
+            {
+                continue;
+            }
+            walk(root, &name, &mut |rel| found.push(rel));
+        } else if file_type.is_file() && is_relevant(&name) {
+            found.push(name);
+        }
+    }
+    with_stats(root, found)
+}
+
+fn with_stats(root: &Path, rels: Vec<String>) -> Scan {
+    rels.into_iter()
+        .filter_map(|rel| stat_of(root, &rel).map(|stat| (rel, stat)))
+        .collect()
 }
 
 /// Visits every relevant file below `root/rel_dir`, skipping the ignored top-level folders.

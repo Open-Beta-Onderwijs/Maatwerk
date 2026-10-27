@@ -67,7 +67,7 @@ impl Core {
     /// On quit: marks the teacher offline and stops the watcher.
     pub fn shutdown(&self) {
         if let Ok(storage) = self.storage() {
-            self.presence.mark_offline(storage);
+            self.presence.close(storage);
         }
         let watcher = self
             .watcher

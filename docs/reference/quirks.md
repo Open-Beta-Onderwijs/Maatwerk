@@ -182,6 +182,19 @@ are relative to `_reference/` unless a section says otherwise.
       mtime reports `changed` even when the bytes are identical; later touches compare hashes.
       Found in Step 2a, pinned by storage spec S34.
     - Port: harmless (a spurious refresh); the Rust watcher may hash up front.
+    - **Kept (Step 4b):** hashing up front would read every file at start, which downloads
+      every file on OneDrive Files On-Demand. Pinned by `watcher::tests::s34_*`.
+
+36. **D36 · Own writes to ignored paths make the watcher report them after all**
+    - Where: `sync.js:256-259` (`noteWrite`), `:217-219` (poll: every known file in scope)
+    - Evidence: `noteWrite` records any path, also `templates/...` (RTTI templates), which S31
+      ignores. The poll walk skips `templates/` but then finds the known entry "gone" and checks
+      it every 20 s: a colleague's change to such a file is reported, and the file is re-read on
+      every poll.
+    - **Fixed (Step 4b, review 4b m4):** the Rust watcher ignores own writes to ignored paths, so
+      S31 holds for them too. Only `data:changed` events of type `other` for `templates/`
+      disappear; the UI re-reads the RTTI templates when the modal opens. Test:
+      `watcher::tests::m4_own_writes_to_ignored_paths_are_not_tracked`.
 
 ## B. Business logic
 

@@ -34,6 +34,12 @@ fn put(s: &Storage, p: &str, bytes: &[u8]) {
 struct Notes(Mutex<Vec<String>>);
 
 impl WriteObserver for Notes {
+    fn will_change(&self, rel: &RelPath) {
+        self.0.lock().unwrap().push(format!("will {rel}"));
+    }
+    fn change_failed(&self, rel: &RelPath) {
+        self.0.lock().unwrap().push(format!("failed {rel}"));
+    }
     fn note_write(&self, rel: &RelPath, content: &[u8]) {
         self.0
             .lock()
@@ -181,8 +187,11 @@ fn s18_own_writes_and_deletes_are_noted() {
     assert_eq!(
         *notes.0.lock().unwrap(),
         vec![
+            "will a.json",
             "write a.json [\n  1\n]",
+            "will opdrachten/x.typ",
             "write opdrachten/x.typ = Hi",
+            "will gone.json",
             "delete gone.json"
         ]
     );

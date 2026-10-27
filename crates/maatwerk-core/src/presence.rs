@@ -20,7 +20,15 @@ use crate::storage::{Expect, Storage, iso_utc};
 /// What this app last wrote: the user and their state (`None` if the UI sent none).
 #[derive(Default)]
 pub struct Presence {
-    last: Mutex<Option<(String, Option<Value>)>>,
+    state: Mutex<State>,
+}
+
+#[derive(Default)]
+struct State {
+    last: Option<(String, Option<Value>)>,
+    /// Set on quit: a heartbeat still in flight must not mark the teacher online again (Tauri
+    /// runs commands concurrently, review 4b m3).
+    closed: bool,
 }
 
 impl Presence {
@@ -37,17 +45,22 @@ impl Presence {
         state: Option<Value>,
     ) -> Result<()> {
         let user_id = user_id.filter(|id| !id.is_empty());
-        let rel = user_id.map(presence_path).transpose()?;
-        let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut guard = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        if guard.closed {
+            return Ok(());
+        }
+        let last = &mut guard.last;
+        // The previous user goes offline first, as in the reference, even if the new id is bad.
         if last
             .as_ref()
             .is_some_and(|(id, _)| Some(id.as_str()) != user_id)
         {
-            mark_offline(storage, &mut last, SystemTime::now());
+            mark_offline(storage, last, SystemTime::now());
         }
-        let (Some(user_id), Some(rel)) = (user_id, rel) else {
+        let Some(user_id) = user_id else {
             return Ok(());
         };
+        let rel = presence_path(user_id)?;
         if let Some(state) = &state {
             write(storage, &rel, state);
         }
@@ -55,10 +68,12 @@ impl Presence {
         Ok(())
     }
 
-    /// On quit: marks the last user offline (`before-quit`, `window-all-closed`).
-    pub fn mark_offline(&self, storage: &Storage) {
-        let mut last = self.last.lock().unwrap_or_else(PoisonError::into_inner);
-        mark_offline(storage, &mut last, SystemTime::now());
+    /// On quit: marks the last user offline (`before-quit`, `window-all-closed`) and ignores
+    /// any later update.
+    pub fn close(&self, storage: &Storage) {
+        let mut guard = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        guard.closed = true;
+        mark_offline(storage, &mut guard.last, SystemTime::now());
     }
 }
 
@@ -171,13 +186,41 @@ mod tests {
     }
 
     #[test]
+    fn after_quit_a_late_heartbeat_is_ignored() {
+        let (_d, _l, s) = storage();
+        let p = Presence::new();
+        p.update(&s, Some("jan"), Some(state("jan"))).unwrap();
+        p.close(&s);
+        p.update(&s, Some("jan"), Some(state("jan"))).unwrap();
+        assert_eq!(read(&s, "jan").unwrap()["online"], false);
+    }
+
+    #[test]
+    fn an_invalid_new_id_still_marks_the_previous_user_offline() {
+        let (_d, _l, s) = storage();
+        let p = Presence::new();
+        p.update(&s, Some("jan"), Some(state("jan"))).unwrap();
+        assert!(p.update(&s, Some("a/b"), Some(json!({}))).is_err());
+        assert_eq!(read(&s, "jan").unwrap()["online"], false);
+    }
+
+    #[test]
+    fn quit_without_a_user_writes_nothing() {
+        let (_d, _l, s) = storage();
+        Presence::new().close(&s);
+        assert!(
+            s.read_all_json(&RelPath::parse("users").unwrap())
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
     fn mark_offline_on_quit_runs_once() {
         let (_d, _l, s) = storage();
         let p = Presence::new();
-        p.mark_offline(&s); // nobody logged in: nothing written
-        assert_eq!(read(&s, "jan"), None);
         p.update(&s, Some("jan"), Some(state("jan"))).unwrap();
-        p.mark_offline(&s);
+        p.close(&s);
         assert_eq!(read(&s, "jan").unwrap()["online"], false);
         s.write_json(
             &RelPath::parse("users/jan.json").unwrap(),
@@ -185,7 +228,7 @@ mod tests {
             Expect::Any,
         )
         .unwrap();
-        p.mark_offline(&s);
+        p.close(&s);
         assert_eq!(read(&s, "jan").unwrap()["online"], true, "already marked");
     }
 

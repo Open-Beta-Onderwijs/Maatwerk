@@ -485,8 +485,9 @@ fn s39_after_a_notification_error_the_os_watch_is_restarted() {
         Ok(Box::new(()))
     });
     let options = WatchOptions {
-        poll: Duration::from_millis(50),
+        poll: Duration::from_secs(60),
         restart: Duration::from_millis(200),
+        refresh: Duration::from_secs(60),
     };
     let watcher = Watcher::start_with(dir, options, start, |_| {});
     let deadline = Instant::now() + Duration::from_secs(5);
@@ -502,16 +503,16 @@ fn s39_polling_continues_without_os_notifications() {
     let tmp = tempfile::tempdir().unwrap();
     let dir = DataDir::open(tmp.path()).unwrap();
     let start: Box<StartOsWatch> = Box::new(|_, _| Err("unavailable".into()));
-    // Longer than the debounce: each poll re-schedules a file it has not checked yet.
     let options = WatchOptions {
         poll: Duration::from_millis(700),
         restart: Duration::from_secs(60),
+        refresh: Duration::from_secs(60),
     };
     let (tx, rx) = mpsc::channel();
     let watcher = Watcher::start_with(dir.clone(), options, start, move |b| {
         let _ = tx.send(b);
     });
-    std::thread::sleep(Duration::from_millis(100)); // let the snapshot run first
+    watcher.wait_ready();
     write_file(dir.root(), "a.json", "{}");
     let got = recv_changes(&rx, Duration::from_secs(3));
     watcher.close();
@@ -532,7 +533,7 @@ fn driver_reports_external_writes_but_not_own_writes() {
         },
     );
     storage.set_observer(watcher.observer());
-    std::thread::sleep(Duration::from_millis(200));
+    watcher.wait_ready();
     let own = RelPath::parse("eigen.json").unwrap();
     storage
         .write_json(&own, &json!({"a": 1}), Expect::Any)
@@ -541,4 +542,81 @@ fn driver_reports_external_writes_but_not_own_writes() {
     let got = recv_changes(&rx, Duration::from_secs(3));
     watcher.close();
     assert_eq!(got, [change("extern.json", ChangeKind::Added, None)]);
+}
+
+// ── Review 4b ────────────────────────────────────────────────────────────────
+
+#[test]
+fn m1_review_os_notifications_are_started_afresh_periodically() {
+    // The Windows backend of notify stops silently on errors, so S39 alone is not enough.
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = DataDir::open(tmp.path()).unwrap();
+    let starts = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&starts);
+    let start: Box<StartOsWatch> = Box::new(move |_root, _tx| {
+        counted.fetch_add(1, Ordering::SeqCst);
+        Ok(Box::new(()))
+    });
+    let options = WatchOptions {
+        poll: Duration::from_secs(60),
+        restart: Duration::from_secs(60),
+        refresh: Duration::from_millis(100),
+    };
+    let watcher = Watcher::start_with(dir, options, start, |_| {});
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while starts.load(Ordering::SeqCst) < 3 && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    watcher.close();
+    assert!(starts.load(Ordering::SeqCst) >= 3);
+}
+
+#[test]
+#[should_panic(expected = "poll interval")]
+fn n7_a_poll_shorter_than_the_debounce_is_refused() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = DataDir::open(tmp.path()).unwrap();
+    let options = WatchOptions {
+        poll: Duration::from_millis(100),
+        ..WatchOptions::default()
+    };
+    let _ = Watcher::start(dir, options, |_| {});
+}
+
+#[test]
+fn m1_a_check_during_an_own_write_waits_until_the_write_is_noted() {
+    let mut rig = Rig::with_files(&[("a.json", r#"{"v":1}"#)]);
+    // Storage: will_change, rename ... (the check runs here) ... note_write.
+    rig.engine.will_change("a.json");
+    rig.write("a.json", r#"{"v":2}"#);
+    rig.event("a.json", 0);
+    assert!(rig.changes_to(5_000).is_empty(), "not reported mid-write");
+    rig.engine.note_write("a.json", br#"{"v":2}"#);
+    assert!(rig.changes_to(20_000).is_empty(), "nor after it");
+}
+
+#[test]
+fn m1_a_failed_own_write_releases_the_file() {
+    let mut rig = Rig::with_files(&[("a.json", r#"{"v":1}"#)]);
+    rig.engine.will_change("a.json");
+    rig.engine.change_failed("a.json");
+    rig.write("a.json", r#"{"v":3}"#); // a colleague's write
+    rig.event("a.json", 0);
+    assert_eq!(
+        rig.changes_to(SETTLE),
+        [change("a.json", ChangeKind::Changed, None)]
+    );
+}
+
+#[test]
+fn m4_own_writes_to_ignored_paths_are_not_tracked() {
+    let mut rig = Rig::new();
+    rig.write("templates/t.json", "{}");
+    rig.engine.note_write("templates/t.json", b"{}");
+    rig.write("templates/t.json", r#"{"colleague":1}"#);
+    rig.poll(0);
+    assert!(
+        rig.changes_to(10_000).is_empty(),
+        "S31: templates/ is ignored"
+    );
 }

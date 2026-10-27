@@ -160,6 +160,31 @@ describe('TauriApi', () => {
     warn.mockRestore();
   });
 
+  it('an unusable data folder throws even where the reference returns null (m5)', async () => {
+    const { api } = fakeBackend(() => err('unsupported_schema'));
+    await expect(api.readJson('config.json')).rejects.toBeInstanceOf(BackendError);
+    await expect(api.listYears()).rejects.toThrow('unsupported_schema happened');
+  });
+
+  it('presence calls reach the backend in call order (m3)', async () => {
+    const order: string[] = [];
+    let release: () => void = () => {};
+    const slow = new Promise<void>((r) => (release = r));
+    const commands = {
+      updatePresence: async (userId: string | null) => {
+        if (userId === 'jan') await slow; // the heartbeat is slow
+        order.push(String(userId));
+        return { status: 'ok', data: null };
+      },
+    } as unknown as Backend['commands'];
+    const api = createTauriApi({ commands, listenDataChanged: async () => () => {} });
+    const heartbeat = api.updatePresence('jan', { online: true });
+    const logout = api.updatePresence(null);
+    release();
+    await Promise.all([heartbeat, logout]);
+    expect(order).toEqual(['jan', 'null']);
+  });
+
   it('onDataChanged delivers batches and unsubscribes', async () => {
     const f = fakeBackend(() => null);
     const got: DataChange[][] = [];

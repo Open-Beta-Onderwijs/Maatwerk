@@ -57,10 +57,16 @@ async function orThrow<T>(call: Promise<Result<T>>): Promise<T> {
   return r.data;
 }
 
-/** The data or a fallback: for methods whose reference handler never rejects. */
+/**
+ * The data or a fallback: for methods whose reference handler never rejects.
+ * An unusable data folder still throws: an empty app without a message would
+ * hide it (review 4b m5).
+ */
 async function orElse<T, F>(call: Promise<Result<T>>, fallback: F): Promise<T | F> {
   const r = await call;
-  return r.status === 'ok' ? r.data : fallback;
+  if (r.status === 'ok') return r.data;
+  if (asCommandError(r.error)?.code === 'unsupported_schema') throw new BackendError(r.error);
+  return fallback;
 }
 
 /** `{ ok: false, reason }`: `conflict` and `locked` by code, else the message. */
@@ -76,6 +82,9 @@ function notYet(method: string): never {
 
 export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
   const c = backend.commands;
+  // Presence calls run in call order: Tauri runs commands concurrently, and a
+  // logout overtaken by a heartbeat would leave the teacher online (review 4b m3).
+  let presenceQueue: Promise<unknown> = Promise.resolve();
   const api: Partial<MaatwerkApi> = {
     // ── JSON storage ────────────────────────────────────────────────────────
     // Missing and corrupt both give null (D2); store.js reads through
@@ -117,9 +126,13 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
 
     // ── Presence, session, photos ───────────────────────────────────────────
     // The reference only logs presence failures; a heartbeat must not throw.
-    async updatePresence(userId, state) {
-      const r = await c.updatePresence(userId ?? null, (state ?? null) as Value);
-      if (r.status === 'error') console.warn('[presence]', message(r.error));
+    updatePresence(userId, state) {
+      const run = presenceQueue.then(async () => {
+        const r = await c.updatePresence(userId ?? null, (state ?? null) as Value);
+        if (r.status === 'error') console.warn('[presence]', message(r.error));
+      });
+      presenceQueue = run.catch(() => {});
+      return run;
     },
     readLocalSession: () =>
       orElse(c.readLocalSession(), null) as Promise<Record<string, unknown> | null>,

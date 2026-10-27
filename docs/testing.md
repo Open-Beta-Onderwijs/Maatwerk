@@ -6,19 +6,19 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 
 ## Commands
 
-| Command                                                 | Needs `_reference/`                       | What it does                                                                             |
-| ------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `npm test`                                              | no                                        | UI unit tests, tool tests, fixture determinism, storage spec, golden structure checks    |
-| `npm run golden:regen [-- <suite> ...]`                 | yes, at `0e30a70`                         | Re-runs the reference code and rewrites `tests/golden/logic/*.json`                      |
-| `npm run golden:check`                                  | yes                                       | Re-runs the reference and fails on any byte difference                                   |
-| `npm run golden:typst [-- --check] [-- <case> ...]`     | yes, plus the Typst package cache (below) | Renders the Typst goldens with the reference CLI 0.14.2 (or checks them byte for byte)   |
-| `node tests/reference-harness/make-shims.mjs`           | yes                                       | Rewrites `tools/reference-shims/*.cjs` from the reference                                |
-| `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                           |
-| `npm run test:e2e`                                      | no                                        | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)      |
-| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 37 views; baseline is machine-specific, not committed     |
-| `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)      |
-| `npm run bindings`                                      | no                                        | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005) |
-| `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data in `data/` (refuses a non-empty folder), then the real app on it |
+| Command                                                 | Needs `_reference/`                       | What it does                                                                                                                                        |
+| ------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                                              | no                                        | UI unit tests, tool tests, fixture determinism, storage spec, golden structure checks                                                               |
+| `npm run golden:regen [-- <suite> ...]`                 | yes, at `0e30a70`                         | Re-runs the reference code and rewrites `tests/golden/logic/*.json`                                                                                 |
+| `npm run golden:check`                                  | yes                                       | Re-runs the reference and fails on any byte difference                                                                                              |
+| `npm run golden:typst [-- --check] [-- <case> ...]`     | yes, plus the Typst package cache (below) | Renders the Typst goldens with the reference CLI 0.14.2 (or checks them byte for byte)                                                              |
+| `node tests/reference-harness/make-shims.mjs`           | yes                                       | Rewrites `tools/reference-shims/*.cjs` from the reference                                                                                           |
+| `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                                                                                      |
+| `npm run test:e2e`                                      | no                                        | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)                                                                 |
+| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 37 views; baseline is machine-specific, not committed                                                                |
+| `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)                                                                 |
+| `npm run bindings`                                      | no                                        | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005); run it from PowerShell (Git Bash's `link` shadows MSVC's) |
+| `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data in `data/` (refuses a non-empty folder), then the real app on it                                                            |
 
 ### UI tests (Step 3a)
 

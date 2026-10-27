@@ -11,8 +11,8 @@
 mod engine;
 
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, RecvTimeoutError, Sender};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
+use std::sync::{Arc, Condvar, Mutex, PoisonError};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -54,12 +54,17 @@ pub enum ChangeKind {
     Deleted,
 }
 
-/// Timings of the driver; the defaults are the reference's constants.
+/// Timings of the driver; the defaults are the reference's constants plus `refresh`.
 #[derive(Debug, Clone)]
 pub struct WatchOptions {
+    /// Must be longer than the 500 ms debounce, or each poll postpones the checks it scheduled.
     pub poll: Duration,
     /// Wait before starting OS notifications again after an error (S39).
     pub restart: Duration,
+    /// OS notifications are also started afresh this often. On Windows `notify` stops a watch
+    /// on an unknown `ReadDirectoryChangesW` error without telling anyone (review 4b M1), and
+    /// the poll covers only the active year.
+    pub refresh: Duration,
 }
 
 impl Default for WatchOptions {
@@ -67,6 +72,7 @@ impl Default for WatchOptions {
         WatchOptions {
             poll: Duration::from_secs(20),
             restart: Duration::from_secs(30),
+            refresh: Duration::from_secs(60),
         }
     }
 }
@@ -81,11 +87,16 @@ enum Msg {
 /// keeps them running until dropped.
 type StartOsWatch = dyn Fn(&Path, Sender<Msg>) -> Result<Box<dyn Send>, String> + Send;
 
+/// Set once the initial snapshot is taken and OS notifications are started.
+type Ready = Arc<(Mutex<bool>, Condvar)>;
+
 /// A running watcher. Stops when closed or dropped.
 pub struct Watcher {
     engine: Arc<Mutex<Engine>>,
     tx: Sender<Msg>,
     thread: Option<JoinHandle<()>>,
+    #[cfg_attr(not(test), allow(dead_code))]
+    ready: Ready,
 }
 
 impl Watcher {
@@ -104,78 +115,40 @@ impl Watcher {
         start_os_watch: Box<StartOsWatch>,
         on_changes: impl Fn(Vec<Change>) + Send + 'static,
     ) -> Watcher {
-        let engine = Arc::new(Mutex::new(Engine::new(dir.clone())));
+        assert!(
+            options.poll > engine::DEBOUNCE,
+            "the poll interval must exceed the debounce"
+        );
+        let engine = Arc::new(Mutex::new(Engine::new(dir)));
         let (tx, rx) = mpsc::channel();
-        let thread_engine = Arc::clone(&engine);
-        let thread_tx = tx.clone();
+        let ready: Ready = Arc::new((Mutex::new(false), Condvar::new()));
+        let driver = Driver {
+            engine: Arc::clone(&engine),
+            tx: tx.clone(),
+            options,
+            start_os_watch,
+        };
+        let thread_ready = Arc::clone(&ready);
         let thread = std::thread::Builder::new()
             .name("maatwerk-watcher".into())
-            .spawn(move || {
-                let root = dir.root().to_path_buf();
-                lock(&thread_engine).snapshot();
-                let mut os_watch = start_os_watch(&root, thread_tx.clone())
-                    .inspect_err(|e| {
-                        tracing::warn!("OS file notifications unavailable, polling only: {e}")
-                    })
-                    .ok();
-                let mut restart_at: Option<Instant> = None;
-                let mut next_poll = Instant::now() + options.poll;
-                loop {
-                    let now = Instant::now();
-                    let wake = [
-                        Some(next_poll),
-                        restart_at,
-                        lock(&thread_engine).next_deadline(),
-                    ]
-                    .into_iter()
-                    .flatten()
-                    .min()
-                    .expect("next_poll is always set");
-                    match rx.recv_timeout(wake.saturating_duration_since(now)) {
-                        Ok(Msg::Paths(paths)) => {
-                            let now = Instant::now();
-                            let mut engine = lock(&thread_engine);
-                            for path in &paths {
-                                engine.on_event(path, now);
-                            }
-                        }
-                        Ok(Msg::WatchError(e)) => {
-                            // S39: close it, keep polling, try again later.
-                            tracing::warn!("file notifications failed, polling only: {e}");
-                            os_watch = None;
-                            restart_at = Some(Instant::now() + options.restart);
-                        }
-                        Ok(Msg::Stop) | Err(RecvTimeoutError::Disconnected) => break,
-                        Err(RecvTimeoutError::Timeout) => {}
-                    }
-                    let now = Instant::now();
-                    if restart_at.is_some_and(|t| t <= now) {
-                        restart_at = None;
-                        match start_os_watch(&root, thread_tx.clone()) {
-                            Ok(w) => os_watch = Some(w),
-                            Err(e) => {
-                                tracing::warn!("restarting file notifications failed: {e}");
-                                restart_at = Some(now + options.restart);
-                            }
-                        }
-                    }
-                    if next_poll <= now {
-                        lock(&thread_engine).poll(now);
-                        next_poll = now + options.poll;
-                    }
-                    let batches = lock(&thread_engine).advance(now);
-                    for batch in batches {
-                        on_changes(batch);
-                    }
-                }
-                drop(os_watch);
-            })
+            .spawn(move || driver.run(&rx, &thread_ready, &on_changes))
             .expect("failed to start the watcher thread");
         Watcher {
             engine,
             tx,
             thread: Some(thread),
+            ready,
         }
+    }
+
+    /// Waits until the snapshot is taken and notifications run (tests).
+    #[cfg(test)]
+    fn wait_ready(&self) {
+        let (flag, cv) = &*self.ready;
+        let guard = flag.lock().unwrap_or_else(PoisonError::into_inner);
+        let _ready = cv
+            .wait_timeout_while(guard, Duration::from_secs(10), |ready| !*ready)
+            .unwrap_or_else(PoisonError::into_inner);
     }
 
     /// The observer to install on the [`crate::storage::Storage`] of the same folder (S30).
@@ -210,17 +183,113 @@ impl Drop for Watcher {
     }
 }
 
+/// The watcher thread. Directory walks run without the engine lock (review 4b m2): the
+/// storage's observer takes that lock while holding the commit lock.
+struct Driver {
+    engine: Arc<Mutex<Engine>>,
+    tx: Sender<Msg>,
+    options: WatchOptions,
+    start_os_watch: Box<StartOsWatch>,
+}
+
+impl Driver {
+    fn run(self, rx: &Receiver<Msg>, ready: &Ready, on_changes: &dyn Fn(Vec<Change>)) {
+        let root = lock(&self.engine).root_path();
+        let scan = engine::scan_all(&root);
+        lock(&self.engine).apply_snapshot(scan);
+        let mut os_watch = None;
+        let mut next_start = Instant::now();
+        self.start_os_watch(&root, &mut os_watch, &mut next_start);
+        {
+            let (flag, cv) = &**ready;
+            *flag.lock().unwrap_or_else(PoisonError::into_inner) = true;
+            cv.notify_all();
+        }
+        let mut next_poll = Instant::now() + self.options.poll;
+        loop {
+            let now = Instant::now();
+            let wake = [
+                Some(next_poll),
+                Some(next_start),
+                lock(&self.engine).next_deadline(),
+            ]
+            .into_iter()
+            .flatten()
+            .min()
+            .expect("always set");
+            match rx.recv_timeout(wake.saturating_duration_since(now)) {
+                Ok(Msg::Paths(paths)) => {
+                    let now = Instant::now();
+                    let mut engine = lock(&self.engine);
+                    for path in &paths {
+                        engine.on_event(path, now);
+                    }
+                }
+                Ok(Msg::WatchError(e)) => {
+                    // S39: close it, keep polling, try again later.
+                    tracing::warn!("file notifications failed, polling only: {e}");
+                    os_watch = None;
+                    next_start = Instant::now() + self.options.restart;
+                }
+                Ok(Msg::Stop) | Err(RecvTimeoutError::Disconnected) => break,
+                Err(RecvTimeoutError::Timeout) => {}
+            }
+            if next_start <= Instant::now() {
+                self.start_os_watch(&root, &mut os_watch, &mut next_start);
+            }
+            if next_poll <= Instant::now() {
+                let year = lock(&self.engine).poll_year();
+                let scan = engine::scan_poll(&root, year.as_deref());
+                lock(&self.engine).apply_poll(year.as_deref(), scan, Instant::now());
+                next_poll = Instant::now() + self.options.poll;
+            }
+            let batches = lock(&self.engine).advance(Instant::now());
+            for batch in batches {
+                on_changes(batch);
+            }
+        }
+    }
+
+    /// Starts a new OS watch; the old one is dropped only after the new one runs, so no event
+    /// falls in between (a few may arrive twice, which only re-schedules a check).
+    fn start_os_watch(
+        &self,
+        root: &Path,
+        os_watch: &mut Option<Box<dyn Send>>,
+        next_start: &mut Instant,
+    ) {
+        match (self.start_os_watch)(root, self.tx.clone()) {
+            Ok(w) => {
+                *os_watch = Some(w);
+                *next_start = Instant::now() + self.options.refresh;
+            }
+            Err(e) => {
+                tracing::warn!("file notifications unavailable, polling only: {e}");
+                *next_start = Instant::now() + self.options.restart;
+            }
+        }
+    }
+}
+
 struct Observer {
     engine: Arc<Mutex<Engine>>,
 }
 
 impl WriteObserver for Observer {
+    fn will_change(&self, rel: &RelPath) {
+        lock(&self.engine).will_change(rel.as_str());
+    }
+
     fn note_write(&self, rel: &RelPath, content: &[u8]) {
         lock(&self.engine).note_write(rel.as_str(), content);
     }
 
     fn note_delete(&self, rel: &RelPath) {
         lock(&self.engine).note_delete(rel.as_str());
+    }
+
+    fn change_failed(&self, rel: &RelPath) {
+        lock(&self.engine).change_failed(rel.as_str());
     }
 }
 
