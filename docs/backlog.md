@@ -35,10 +35,16 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   done in 5b.
 
 - **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
-  through hayagriva/citationberg; the fix needs quick-xml 0.41. Re-check when moving off the
-  typst 0.14 line.
+  through hayagriva/citationberg; the fix needs quick-xml 0.41. Ignore accepted by the user
+  (2026-10-28); resolved by the Typst upgrade below.
+- **Step 10: upgrade Typst to a current version (user, 2026-10-28).** The 0.14.2 pin only serves
+  (near) parity with the reference CLI through Step 6; there is no other reason to stay on it.
+  Upgrade `typst`, `typst-pdf`, `typst-svg`, `typst-kit` (and `typst-render` in tests) together,
+  then: re-check the embedded packages' `compiler` versions, rerun the Typst goldens and record any
+  visible change (the goldens stay the record of the reference), drop the quick-xml ignores from
+  `deny.toml`, and check `typst-ide` for the Step 8 editor if that comes first.
 - **Golden pixel tests depend on the system emoji font:** `rapport-valid` is pixel-identical with
-  this machine's Segoe UI Emoji. CI (windows-latest) has never run these tests (no remote yet); if
+  this machine's Segoe UI Emoji. CI (windows-latest) runs them from the first push after Step 5; if
   its emoji font differs, compare emoji regions with a tolerance or bundle an emoji font (PLAN
   section 9, open decision 2).
 

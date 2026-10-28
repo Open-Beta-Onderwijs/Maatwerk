@@ -453,7 +453,7 @@ Order: biggest risk first, always with tests around the code you touch.
 4. **Domain logic in Rust or JS?** (Step 10, with measurements).
 5. **Data-folder policy** on macOS and first run (Step 11).
 6. **macOS signing** (Step 11).
-7. **Repo name and remote** (Step 0). Decided: `maatwerk`, public, AGPL-3.0-or-later. Remote not created yet (user's call).
+7. **Repo name and remote** (Step 0). Decided: `maatwerk`, public, AGPL-3.0-or-later. Remote created by the user (`github.com/Open-Beta-Onderwijs/Maatwerk`); first push after Step 5 (2026-10-28).
 8. **App identifier**: decided in Step 0: `nl.openbetaonderwijs.maatwerk` (was `nl.school.rtti-app`). Changing it moves the local app-config folder, which is fine because of the cutover.
 9. **Versioning and update policy** for a portable exe on OneDrive.
 10. **AI integration style** (Step 9 ADR lists the questions).

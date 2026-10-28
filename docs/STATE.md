@@ -54,9 +54,11 @@ security review clean), merged into `main`, tag `step-05`. Waiting for the user 
 
 ## Open questions for the user
 
-- quick-xml advisory ignore (local DoS only, needs typst > 0.14): accept?
-- Remote repo still to create, so CI has never run (also not the pixel tests, which depend on the
-  system emoji font). Emoji (PLAN section 9, decision 2): Segoe UI Emoji renders pixel-identical
+- None blocking. Decided 2026-10-28: quick-xml ignore accepted (Typst upgrade in the backlog,
+  Step 10); remote `github.com/Open-Beta-Onderwijs/Maatwerk` exists, `main` and tags pushed. Watch
+  the first CI run (pixel goldens depend on the runner's emoji font).
+
+- Emoji (PLAN section 9, decision 2): Segoe UI Emoji renders pixel-identical
   on Windows and missing glyphs now warn; a bundled emoji font is only needed for macOS/CI. Other
   section 9 items: domain logic location (Step 10), versioning, macOS.
 
