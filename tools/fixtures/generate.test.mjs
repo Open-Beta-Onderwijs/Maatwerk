@@ -6,7 +6,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { exportOpdrachten } from './export-opdrachten.mjs';
 import { generate, treeHash } from './generate.mjs';
+
+test('the Rust opdracht fixtures match the tiny fixture (node tools/fixtures/export-opdrachten.mjs)', () => {
+  assert.deepEqual(exportOpdrachten(undefined, { check: true }), []);
+});
 
 const manifest = JSON.parse(fs.readFileSync(new URL('./manifest.json', import.meta.url), 'utf8'));
 

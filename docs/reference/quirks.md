@@ -630,6 +630,10 @@ Paths in this section are relative to `_reference/renderer/`.
   rapport compiling: that category's leeradvies row reads e.g. `0 / 5 (0%)` with the "laag" advice; the
   reference showed `NaN / 5 (NaN%)` with the "hoog" advice (NaN compares false). Template side: Step 5.
   Tests: `ui/tests/domain/rapport.test.ts` ("T26", and `compileRapport-exam-jaarlaag-3`).
+- **Fixed in the port (Step 5a, template side):** `rapport.typ` draws a colour that is not a hex
+  colour (`dot_color`, `rtti_color`) in the not-entered grey `#b0b8c1`, and treats a `score` that
+  is not a number as not entered (`_color`, `_guard_vraag`). The `rapport-tiny` data now compiles.
+  Tests: `crates/maatwerk-core/tests/typst_rapport.rs` `t26_*`.
 
 ### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
 
@@ -643,6 +647,46 @@ Paths in this section are relative to `_reference/renderer/`.
 - **Fixed in the port (Step 3a):** the warning reads `[\$-teken niet gesloten …]`, so every `$` of a
   guarded text is escaped (`ui/src/domain/rapport.ts` `sanitizeTypstMarkup`). Tests:
   `ui/tests/domain/rapport.test.ts` ("T27").
+- **Fixed in the port (Step 5a, template side, also T11 for `uitleg_rtti`):** `rapport.typ`
+  `_guard_markup` applies the same `$` rule before every `eval` (leeradvies and the four
+  `uitleg_rtti` texts). Text the UI already guarded has an even `$` count, so it is unchanged. Other
+  invalid markup (unbalanced `[`, unknown functions) still fails the rapport, as in the reference.
+  Tests: `crates/maatwerk-core/tests/typst_rapport.rs` `t11_*`, `even_dollars_in_uitleg_rtti_stay_math`.
+- **Refined (review 5a M2):** both guards count and escape only **unescaped** `$` (an escape `\`
+  plus any character is kept). Before, `Kost \$5` in an uitleg (unguarded in the reference, so it
+  rendered) would have been broken by the new guard, and `\$ ontsnapt $` passed the reference guard
+  but failed the rapport. The `rapport-markup` golden data now compiles with the warning.
+
+### T28. The Typst CLI prints 0-based columns in its error text
+
+- Where: the reference shows the Typst CLI's stderr (`typst-contract.md` section 1); goldens
+  `svg-preview-error` (`opdracht_….typ:9:27`) and `batch-error` (`kapot.typ:3:23`).
+- Evidence (found in Step 5b): the error spans start at the 28th and 24th character of their lines
+  (`#let render_opgaven() = [ #onbekend()`: `onbekend` starts at character 28). The CLI's
+  `column_number` returns the 0-based column, while the line number is 1-based.
+- **Port (Step 5b):** `Diagnostic.location.column` and the text from `to_text` are 1-based, as an
+  editor expects; the error text therefore shows a column one higher than the reference. Not a
+  data change; the location is what the Step 8 editor will jump to. Tests:
+  `crates/maatwerk-core/tests/typst_opdracht.rs` `svg_preview_error_*`, `a_syntax_error_*`.
+
+### T29. Opdracht files can read anything under the app folder
+
+- Where: `typst-contract.md` section 6 (root = appDir).
+- Evidence: an opdracht can `read("/data/gebruikers.json")`, any score file or another opdracht.
+- **Port (Step 5b, ADR-0002 section 5, decided in Step 1):** the opdracht World sees only its own
+  project: `main.typ`, `lib.typ`, `opdracht.typ` and its own images (`images/<id>/` for a v1
+  opdracht). Absolute `/data/...` paths, other opdrachten and `..` above the project fail with
+  "file not found" or "access denied". The synthetic opdrachten of the goldens only use their own
+  images, so no golden changes. Test: `typst_opdracht.rs`
+  `the_opdracht_world_sees_its_own_images_and_nothing_else`.
+- **Further v1 details (review 5b m5):** a v1 opdracht is served as `opdracht.typ`, so
+  diagnostics name `opdracht.typ`, not `opdracht_<id>.typ` (the batch error still names the
+  opdracht by its label). Its images stay at `images/<id>/...` (ADR-0002 5a says "mapped to
+  `images/`": the mapping to `images/` happens on disk in the Step 7 migration, which rewrites
+  the source; until then the virtual project keeps the old path so v1 sources compile unchanged).
+  The `images/<id>` prefix is matched case-sensitively, while the reference read through the
+  case-insensitive Windows file system: `Images/<id>/x.png` worked there and fails here. Editor
+  snippets always write `images/<id>/`; Step 7 checks existing sources.
 
 ## U. UI
 

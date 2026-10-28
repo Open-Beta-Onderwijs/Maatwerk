@@ -368,10 +368,11 @@ function setStatus(msg, errorText = null) {
 
 // ── Cursor marker ─────────────────────────────────────────────────────────────
 // The preview is compiled from a copy of the document with an invisible
-// `#metadata(none)<__rtti_cursor>` inserted near the cursor. The wrapper (main.js)
-// draws an <a href="rtti-cursor:"> at that spot in the SVG, which we scroll to.
+// `#metadata(none)<__maatwerk_cursor>` inserted near the cursor. The opdracht's
+// main.typ (cursor mode) draws an <a href="maatwerk-cursor:"> at that spot in the
+// SVG, which we scroll to.
 
-const CURSOR_MARKER = '#metadata(none)<__rtti_cursor>';
+const CURSOR_MARKER = '#metadata(none)<__maatwerk_cursor>';
 
 // Insert the marker at pos. On a blank line the marker gets its own line, so the
 // blank line stays blank and the paragraphs around it are not joined into one.
@@ -599,7 +600,7 @@ function showPages(pages) {
 
 // Scroll the cursor marker into view (about 1/3 from the top) if it is out of view.
 function scrollToCursorMarker() {
-  const marker = svgViewer.querySelector('a[href="rtti-cursor:"]');
+  const marker = svgViewer.querySelector('a[href="maatwerk-cursor:"]');
   if (!marker) return;
   const m = marker.getBoundingClientRect();
   const v = svgViewer.getBoundingClientRect();
@@ -984,7 +985,7 @@ function wrapWithFunction(editorView, fn) {
 }
 
 // Labels in the document (<naam>; Typst allows letters, digits, _ - : and . in
-// them, e.g. <eq:energie>), without the internal <__rtti_…> markers.
+// them, e.g. <eq:energie>), without the internal <__maatwerk_…> markers.
 function extractLabels(editorView) {
   const doc = editorView.state.doc.toString();
   const matches = [...doc.matchAll(/<([\p{L}\p{N}_][\p{L}\p{N}_:.-]*)>/gu)];

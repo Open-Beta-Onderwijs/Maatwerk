@@ -180,10 +180,29 @@ export function fmtNum(n: number): string {
  * a red warning is put in front. T27: the warning's own `$` is escaped too;
  * in the reference it was not, so the guard itself broke the rapport.
  */
+/**
+ * Prepares the rapport payload for JSON (review 5a M1). The reference serialised it with
+ * `toTypst` (main.js:558-574): `undefined` became `none` and a non-finite number became `0`.
+ * JSON would drop `undefined` keys (the template then fails on the missing key) and turn `NaN`
+ * into `null`; this restores the `toTypst` values: `undefined` -> `null`, non-finite -> `0`.
+ */
+export function normaliseForTypst(value: unknown): unknown {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (Array.isArray(value)) return value.map(normaliseForTypst);
+  if (typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, normaliseForTypst(v)]));
+  }
+  return value;
+}
+
 export function sanitizeTypstMarkup(text: string): string {
-  const dollarCount = (text.match(/\$/g) ?? []).length;
+  // An escape (`\` plus any character, so `\$` and `\\`) is matched first and kept as it is;
+  // only unescaped `$` count (review 5a M2). Same rule as `_guard_markup` in rapport.typ.
+  const escapeOrDollar = /\\[\s\S]|\$/g;
+  const dollarCount = (text.match(escapeOrDollar) ?? []).filter((m) => m === '$').length;
   if (dollarCount % 2 !== 0) {
-    const escaped = text.replace(/\$/g, '\\$');
+    const escaped = text.replace(escapeOrDollar, (m) => (m === '$' ? '\\$' : m));
     return `#text(fill: red, weight: "bold")[\\$-teken niet gesloten — controleer de tekst: ] ${escaped}`;
   }
   return text;

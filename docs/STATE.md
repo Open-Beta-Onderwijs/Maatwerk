@@ -1,31 +1,47 @@
 # State
 
-Last updated: 2026-10-27 (Step 4 done) Branch: `main` Last tag: `step-04`
+Last updated: 2026-10-28 (Step 5 done) Branch: `main` Last tag: `step-05`
 
 ## Current step
 
-Step 4 is done (4a `step-04a`, 4b `step-04b`, merged into `main`, tag `step-04`). Waiting for the
-user before Step 5 (Typst service).
+Step 5 (Typst service) is done: 5b reviewed (`docs/reviews/step-05b.md`, no blockers/majors,
+security review clean), merged into `main`, tag `step-05`. Waiting for the user before Step 6.
 
-## Step 4b summary
+## Step 5b summary
 
-- Core `watcher` (spec S28-S40): engine on a virtual clock + thread driver on `notify` 8.2.1
-  (CC0-1.0); 20 s poll, 500 ms debounce, 100 ms batches, parse retry, restart after errors and
-  every 60 s (review M1: Windows `notify` stops silently). Own writes: `WriteObserver`
-  `will_change`/`note_write`/`note_delete`/`change_failed`. `rapporten/` ignored. Quirk D36 fixed
-  (own writes to ignored paths), D35/S34 kept.
-- Core `presence`: `users/<id>.json`, previous user offline on switch, `close` on quit.
-- App: 16 commands (storage, presence, session) on `spawn_blocking`, `CommandError {code,
-message, details}`, event `data:changed`. Bindings by `tauri-specta` rc.26 (ADR-0005),
-  `ui/src/bridge/bindings.ts`, stale check in `cargo test`, `npm run bindings`. `build.rs` links
-  the Common Controls manifest into test binaries (else `STATUS_ENTRYPOINT_NOT_FOUND`).
-- UI: `TauriApi` compat layer (`tauri-api.ts`) with contract tests; presence calls queued.
-- `npm run data:dev` + `npm run dev`: real app on synthetic data (smoke run: subject picker).
-- Review `docs/reviews/step-04b.md`: M1, m1-m4, m6 fixed; m5 partly; rest in `docs/backlog.md`.
-- `/security-review` could not run (needs `origin/HEAD`; no remote). The reviewer's checklist
-  covered security.
-- Not wired yet: `Watcher::set_scope_year` (C7, Step 6a); opdracht images, Typst, `openPath`
-  still throw "nog niet beschikbaar" (Steps 5-6).
+- `TypstProject` (`folder` for the CLI, `opdracht_v1` = virtual project: bundled `main.typ` and
+  `lib.typ`, `opdracht.typ`, own `images/<id>/` only); `opdracht-main.typ` replaces the generated
+  wrapper, data via `sys.inputs` `maatwerk-data` (`OpdrachtInputs`; placeholder only for preview).
+- `render_assignment_pdf`, `render_assignment_svg_pages` (in memory), `render_assignment_batch`
+  (workers `max(2, min(4, cpus-1))`, monotonic progress, first failure stops), `pdf_merge`
+  (lopdf 0.46, duplex padding), tofu warning, `maatwerk-cli typst compile`, version lines +
+  released hashes (`assets::ProjectFile`), cursor marker `__maatwerk_cursor`/`maatwerk-cursor:`.
+- Parity: all opdracht/SVG/batch goldens (`tests/typst_opdracht.rs`, 24 tests); JPEG within 3
+  levels; quirks T28 (1-based columns) and T29 (sandbox, v1 details). `docs/perf.md`: 30-student
+  batch ~118 MiB. **Step 6 must** map Tauri args to `OpdrachtInputs`/`BatchJob` (label fallback
+  `label ?? typFile`), run them in `spawn_blocking`, and call `normaliseForTypst` for the rapport.
+
+## Step 5a summary
+
+- `maatwerk-core::assets`: embedded `rapport.typ` (= `rtti_export.typ`, SPDX header, input
+  guards), `rapport-main.typ` (entry, reads `data.json`), `lib.typ` (markers `__maatwerk_*`,
+  counters `maatwerk-vraag*`), `base_assignment.typ` (unchanged); fonts Source Serif 4 (12) +
+  STIX Two Math; packages zero/cetz/oxifmt/unify embedded by `build.rs` (`PACKAGE_FILES`).
+- `maatwerk-core::typst_svc`: `MaatwerkWorld` (virtual files + `Mount`s behind
+  canonicalise/prefix check, embedded packages only, injectable clock for `today()` and the PDF
+  date), `FontStore` (template fonts, system fonts searched once via `FontStore::shared()`, then
+  Typst's), `Diagnostic`/`Location`/`TraceFrame` + `to_text` (CLI-like, virtual paths only),
+  `compile_document`, `compile_pdf`, `render_rapport_pdf(fonts, &RapportData, &DataDir, now)`.
+- Parity: `tests/typst_rapport.rs` (12 tests) matches `rapport-one-student` and `rapport-valid`
+  **pixel for pixel** (30 ppi) plus page count/sizes/text; no-watermark gives the same error.
+- Quirks fixed template side: T26 (non-colour colours, non-number scores), T11/T27 (`$` guard on
+  `uitleg_rtti` and leeradvies; only unescaped `$` count, review M2, also in the UI's
+  `sanitizeTypstMarkup`). `rapport-markup` and `rapport-tiny` data now compile.
+- Review M1: `normaliseForTypst` (UI) restores the `toTypst` values (`undefined` -> `null`,
+  non-finite -> `0`) for the JSON payload. **Step 6 must call it** in `TauriApi.renderRapportPdf`.
+- `deny.toml`: RUSTSEC-2026-0194/0195 (quick-xml via typst 0.14.2) ignored with reason; backlog.
+- Watcher test `m1_a_failed_own_write_releases_the_file` was flaky (same-size content); test fixed,
+  product edge case in the backlog.
 
 ## In progress
 
@@ -33,19 +49,24 @@ message, details}`, event `data:changed`. Bindings by `tauri-specta` rc.26 (ADR-
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 5 (PLAN.md section 6, Step 5). Run `/security-review` once a
-   remote exists.
+1. When the user says go: Step 6 (PLAN.md section 6, Step 6), new branch `step/06-tauri` from
+   `main`.
 
 ## Open questions for the user
 
-- Remote repo still to create (`gh` not installed), so CI has not run on 3b/4a; PLAN section 9
-  items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
+- quick-xml advisory ignore (local DoS only, needs typst > 0.14): accept?
+- Remote repo still to create, so CI has never run (also not the pixel tests, which depend on the
+  system emoji font). Emoji (PLAN section 9, decision 2): Segoe UI Emoji renders pixel-identical
+  on Windows and missing glyphs now warn; a bundled emoji font is only needed for macOS/CI. Other
+  section 9 items: domain logic location (Step 10), versioning, macOS.
 
 ## How to resume
 
 PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with the editor or
-Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). `npm ci; npm run build:ui`, then
-the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright install chromium`
-in `ui/`). `npm run test:visual -w ui` needs a local baseline (`-- --update-snapshots` before a
-change). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the Typst packages
-cetz/unify/oxifmt in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.
+Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). In PowerShell 5.1, commit with
+`git commit -F <file>` (inline messages with quotes get split into pathspecs). `npm ci; npm run
+build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright
+install chromium` in `ui/`). Rapport parity: `cargo test -p maatwerk-core --test typst_rapport` / `--test typst_opdracht`
+(needs system fonts incl. Segoe UI Emoji; failing pages are written to
+`target/tmp/golden/<case>/`). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and
+the Typst packages in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.

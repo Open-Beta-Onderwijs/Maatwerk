@@ -600,7 +600,9 @@ fn m1_a_failed_own_write_releases_the_file() {
     let mut rig = Rig::with_files(&[("a.json", r#"{"v":1}"#)]);
     rig.engine.will_change("a.json");
     rig.engine.change_failed("a.json");
-    rig.write("a.json", r#"{"v":3}"#); // a colleague's write
+    // A colleague's write. Different size: same-size content within one mtime tick is not seen
+    // as a change by the stat check (review 5a m4, backlog), which is not what this test is about.
+    rig.write("a.json", r#"{"v":33}"#);
     rig.event("a.json", 0);
     assert_eq!(
         rig.changes_to(SETTLE),

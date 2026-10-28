@@ -2,6 +2,46 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 5b
+
+- **Review 5b m2 (Step 6):** `TypstProject::folder` accepts any root and does not bound links on
+  it; today only the CLI uses it (a path the user typed). Before the app opens v2 opdracht folders
+  (Step 7/8), add an app constructor from `DataDir` + `RelPath` with `.within(data root)` and keep
+  `folder` for the CLI.
+- **Review 5b n1:** a panic inside one compile is not caught; the other workers run all remaining
+  jobs before it surfaces. Catch per job (`catch_unwind`) and report it as that job's error.
+- **Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
+  `docs/perf.md`); opdrachten with large photos could change that. Merge in job order as results
+  arrive if a real class batch gets heavy.
+- **Review 5b n3:** tofu warnings repeat once per job in a batch; deduplicate across jobs when the
+  Step 6 UI shows them.
+- **Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
+  normalisation also ignores trailing whitespace/final newline.
+- **Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
+  opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.
+- **Review 5b n6:** the CLI panics on a non-UTF-8 argument and writes its output non-atomically.
+- **Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
+  Step 7 migration deletes them.
+
+## From Step 5a
+
+- **Review 5a m3:** an error in eval'd teacher text (leeradvies, uitleg) points at the `eval`
+  call in `rapport.typ`; pre-parse each field and name it (student, category) in the diagnostic.
+- **Review 5a m4 (watcher, Step 4b code):** a colleague's write with the same size inside one
+  mtime tick of the previous state is not seen as a change by the stat check. Compare a content
+  hash when size and mtime are equal but an event arrived.
+- **Review 5a nit n8 (open):** system fonts can shadow Typst's own fonts in the pixel tests (a
+  machine with another "Libertinus Serif" installed renders differently). Nits n1-n6 and n9 were
+  done in 5b.
+
+- **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
+  through hayagriva/citationberg; the fix needs quick-xml 0.41. Re-check when moving off the
+  typst 0.14 line.
+- **Golden pixel tests depend on the system emoji font:** `rapport-valid` is pixel-identical with
+  this machine's Segoe UI Emoji. CI (windows-latest) has never run these tests (no remote yet); if
+  its emoji font differs, compare emoji regions with a tolerance or bundle an emoji font (PLAN
+  section 9, open decision 2).
+
 ## From Step 4b
 
 - **Startup error screen (review 4b m5):** an unusable data folder (unsupported

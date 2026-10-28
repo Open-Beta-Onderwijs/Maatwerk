@@ -48,3 +48,11 @@ unknown-git = "deny"
 [advisories]
 unmaintained = "workspace"
 yanked = "deny"
+ignore = [
+  # quick-xml 0.38 comes in through typst 0.14.2 -> hayagriva -> citationberg (CSL styles for
+  # bibliographies). The fix needs quick-xml >= 0.41, which the pinned typst 0.14 line cannot take.
+  # Impact: slow parsing / memory use on a hostile CSL/XML file that a teacher's own opdracht
+  # names; no remote input. Re-check when leaving typst 0.14 (Step 5, docs/backlog.md).
+  { id = "RUSTSEC-2026-0194", reason = "typst 0.14.2 pins quick-xml 0.38; local DoS only" },
+  { id = "RUSTSEC-2026-0195", reason = "typst 0.14.2 pins quick-xml 0.38; local DoS only" },
+]
