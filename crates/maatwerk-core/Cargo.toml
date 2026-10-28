@@ -22,6 +22,7 @@ tracing = { version = "0.1.44", default-features = false, features = ["std"] }
 typst = "=0.14.2"
 typst-kit = { version = "=0.14.2", default-features = false, features = ["fonts", "embed-fonts"] }
 typst-pdf = "=0.14.2"
+typst-svg = "=0.14.2"
 
 [lints]
 workspace = true

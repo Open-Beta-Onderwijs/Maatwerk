@@ -2,6 +2,8 @@
 
 //! Reading the Step 2b Typst goldens (`tests/golden/typst/<case>/`) and comparing a compiled
 //! document with them: page count, page sizes, text and pixels (PNG at the golden's ppi).
+//! Shared by several test binaries, each using a part of it.
+#![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
 
@@ -59,46 +61,49 @@ pub fn frame_text(frame: &Frame, out: &mut String) {
     }
 }
 
-fn squash(s: &str) -> String {
-    s.chars().filter(|c| !c.is_whitespace()).collect()
+/// Page count of a golden: its PDF, or its SVG pages (path C has no PDF).
+pub fn golden_page_count(case: &Value) -> usize {
+    match case["pdf"]["pages"].as_array() {
+        Some(pages) => pages.len(),
+        None => case["svg"].as_array().map_or(0, Vec::len),
+    }
 }
 
-/// Compares `doc` with the golden's `pdf` and `png` entries. Text is compared without
-/// whitespace (pdf.js inserts line breaks where Typst has none); the golden's `schema` lines come
-/// from the watermark SVG, which is an image in Typst's frames, so they are dropped.
+/// Compares `doc` with the golden's `pdf` (page sizes, text) and `png` entries. Text is compared
+/// without whitespace (pdf.js inserts line breaks where Typst has none); the golden's `schema`
+/// lines come from the watermark SVG, which is an image in Typst's frames, so they are dropped.
 pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
-    let pdf = &case["pdf"];
-    let pages = pdf["pages"].as_array().unwrap();
-    assert_eq!(doc.pages.len(), pages.len(), "{id}: page count");
+    assert_eq!(doc.pages.len(), golden_page_count(case), "{id}: page count");
     let ppi = case["reference"]["ppi"].as_f64().unwrap() as f32;
-    let pngs = case["png"].as_array().unwrap();
     let out_dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
         .join("golden")
         .join(id);
     std::fs::create_dir_all(&out_dir).unwrap();
 
-    for (i, (page, golden)) in doc.pages.iter().zip(pages).enumerate() {
+    for (i, page) in doc.pages.iter().enumerate() {
         let n = i + 1;
-        let size = page.frame.size();
-        let want = golden["size"].as_array().unwrap();
-        assert!(
-            (size.x.to_pt() - want[0].as_f64().unwrap()).abs() < 0.01
-                && (size.y.to_pt() - want[1].as_f64().unwrap()).abs() < 0.01,
-            "{id} p{n}: page size"
-        );
+        if let Some(golden) = case["pdf"]["pages"].get(i) {
+            let size = page.frame.size();
+            let want = golden["size"].as_array().unwrap();
+            assert!(
+                (size.x.to_pt() - want[0].as_f64().unwrap()).abs() < 0.01
+                    && (size.y.to_pt() - want[1].as_f64().unwrap()).abs() < 0.01,
+                "{id} p{n}: page size"
+            );
+            let mut text = String::new();
+            frame_text(&page.frame, &mut text);
+            assert_eq!(
+                squash(&text),
+                squash(&golden_text(golden)),
+                "{id} p{n}: text"
+            );
+        }
 
-        let mut text = String::new();
-        frame_text(&page.frame, &mut text);
-        let golden_text: String = golden["text"]
-            .as_str()
-            .unwrap()
-            .lines()
-            .filter(|l| *l != "schema")
-            .collect();
-        assert_eq!(squash(&text), squash(&golden_text), "{id} p{n}: text");
-
+        let Some(png) = case["png"].get(i) else {
+            continue;
+        };
         let actual = typst_render::render(page, ppi / 72.0);
-        let file = pngs[i]["file"].as_str().unwrap();
+        let file = png["file"].as_str().unwrap();
         let expected = Pixmap::load_png(golden_dir(id).join(file)).unwrap();
         assert_eq!(
             (actual.width(), actual.height()),
@@ -109,7 +114,7 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
             .pixels()
             .iter()
             .zip(expected.pixels())
-            .filter(|(a, b)| a != b)
+            .filter(|(a, b)| !close(**a, **b))
             .count();
         if differing > 0 {
             actual.save_png(out_dir.join(file)).unwrap();
@@ -121,4 +126,35 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
             out_dir.display()
         );
     }
+}
+
+/// Equal up to [`PIXEL_TOLERANCE`] per channel. Everything Typst draws itself matches exactly;
+/// JPEG photos differ by up to 3 levels because our `image` crate decodes with zune-jpeg 0.5
+/// and the reference CLI's build used an older decoder (`opdracht-images-student`, `foto.jpg`).
+fn close(a: tiny_skia::PremultipliedColorU8, b: tiny_skia::PremultipliedColorU8) -> bool {
+    let d = |x: u8, y: u8| x.abs_diff(y) <= PIXEL_TOLERANCE;
+    d(a.red(), b.red())
+        && d(a.green(), b.green())
+        && d(a.blue(), b.blue())
+        && d(a.alpha(), b.alpha())
+}
+
+pub const PIXEL_TOLERANCE: u8 = 3;
+
+/// The text of one golden PDF page without the watermark's `schema` line.
+pub fn golden_text(page: &Value) -> String {
+    page["text"]
+        .as_str()
+        .unwrap()
+        .lines()
+        .filter(|l| *l != "schema")
+        .collect()
+}
+
+/// Text without whitespace and soft hyphens, for comparing Typst frame text with pdf.js text
+/// (Typst keeps a U+00AD where it hyphenated; pdf.js joins the word).
+pub fn squash(s: &str) -> String {
+    s.chars()
+        .filter(|c| !c.is_whitespace() && *c != '\u{ad}')
+        .collect()
 }

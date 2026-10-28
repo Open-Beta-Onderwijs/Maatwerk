@@ -657,6 +657,29 @@ Paths in this section are relative to `_reference/renderer/`.
   rendered) would have been broken by the new guard, and `\$ ontsnapt $` passed the reference guard
   but failed the rapport. The `rapport-markup` golden data now compiles with the warning.
 
+### T28. The Typst CLI prints 0-based columns in its error text
+
+- Where: the reference shows the Typst CLI's stderr (`typst-contract.md` section 1); goldens
+  `svg-preview-error` (`opdracht_….typ:9:27`) and `batch-error` (`kapot.typ:3:23`).
+- Evidence (found in Step 5b): the error spans start at the 28th and 24th character of their lines
+  (`#let render_opgaven() = [ #onbekend()`: `onbekend` starts at character 28). The CLI's
+  `column_number` returns the 0-based column, while the line number is 1-based.
+- **Port (Step 5b):** `Diagnostic.location.column` and the text from `to_text` are 1-based, as an
+  editor expects; the error text therefore shows a column one higher than the reference. Not a
+  data change; the location is what the Step 8 editor will jump to. Tests:
+  `crates/maatwerk-core/tests/typst_opdracht.rs` `svg_preview_error_*`, `a_syntax_error_*`.
+
+### T29. Opdracht files can read anything under the app folder
+
+- Where: `typst-contract.md` section 6 (root = appDir).
+- Evidence: an opdracht can `read("/data/gebruikers.json")`, any score file or another opdracht.
+- **Port (Step 5b, ADR-0002 section 5, decided in Step 1):** the opdracht World sees only its own
+  project: `main.typ`, `lib.typ`, `opdracht.typ` and its own images (`images/<id>/` for a v1
+  opdracht). Absolute `/data/...` paths, other opdrachten and `..` above the project fail with
+  "file not found" or "access denied". The synthetic opdrachten of the goldens only use their own
+  images, so no golden changes. Test: `typst_opdracht.rs`
+  `the_opdracht_world_sees_its_own_images_and_nothing_else`.
+
 ## U. UI
 
 Read from code only; "probable" means the code path is clear but not confirmed in the running app.

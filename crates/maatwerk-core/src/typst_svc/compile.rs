@@ -85,6 +85,16 @@ pub fn compile_pdf(world: &MaatwerkWorld) -> Result<Compiled<Vec<u8>>, CompileEr
     }
 }
 
+/// Compiles to one SVG string per page (`typst_svg::svg`, as the CLI's `--format svg`). Images
+/// are embedded as data URIs, which the editor's CSP (`img-src data: blob:`) needs.
+pub fn compile_svg_pages(world: &MaatwerkWorld) -> Result<Compiled<Vec<String>>, CompileError> {
+    let Compiled { output, warnings } = compile_document(world)?;
+    Ok(Compiled {
+        output: output.pages.iter().map(typst_svg::svg).collect(),
+        warnings,
+    })
+}
+
 fn pdf_timestamp(now: OffsetDateTime) -> Option<Timestamp> {
     let datetime = Datetime::from_ymd_hms(
         now.year(),

@@ -1,0 +1,389 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+//! Opdracht parity with the Step 2b goldens (`docs/parity.md`, Typst rows, paths B, C and D for
+//! one job): a v1 opdracht as a virtual project, `main.typ` driven by `sys.inputs`, SVG pages
+//! and the sandbox of the opdracht World.
+
+mod support;
+
+use std::path::Path;
+
+use maatwerk_core::assets;
+use maatwerk_core::paths::{DataDir, RelPath};
+use maatwerk_core::typst_svc::{
+    CompileError, Compiled, FontStore, Mode, OpdrachtHeader, OpdrachtInputs, TypstProject,
+    compile_document, opdracht_world, render_assignment_svg_pages,
+};
+use serde_json::Value;
+use support::{assert_matches_golden, decode, frame_text, load_case};
+use time::OffsetDateTime;
+use typst::layout::PagedDocument;
+
+/// 2026-01-01 00:00 UTC.
+fn fixed_now() -> OffsetDateTime {
+    OffsetDateTime::from_unix_timestamp(1_767_225_600).unwrap()
+}
+
+/// The tiny fixture's `opdrachten/` (tools/fixtures/export-opdrachten.mjs) plus the files the
+/// golden cases add (`basis.typ`, `kapot.typ`, tests/reference-harness/typst/cases.mjs).
+fn data_dir() -> (tempfile::TempDir, DataDir) {
+    let tmp = tempfile::tempdir().unwrap();
+    let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/opdrachten");
+    copy_dir(&src, &tmp.path().join("opdrachten"));
+    let opdrachten = tmp.path().join("opdrachten");
+    std::fs::write(opdrachten.join("basis.typ"), assets::BASE_ASSIGNMENT_TYP).unwrap();
+    std::fs::write(
+        opdrachten.join("kapot.typ"),
+        "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [ Uitleg\n#let render_opgaven() = []\n",
+    )
+    .unwrap();
+    let dir = DataDir::open(tmp.path()).unwrap();
+    (tmp, dir)
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    std::fs::create_dir_all(to).unwrap();
+    for entry in std::fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+/// The reference's cursor marker, renamed (naming map).
+fn renamed_marker(source: &str) -> String {
+    source.replace("<__rtti_cursor>", "<__maatwerk_cursor>")
+}
+
+/// What a golden call compiles: the project and its inputs. Batch goldens of one job only.
+fn golden_job(case: &Value, dir: &DataDir) -> (TypstProject, OpdrachtInputs) {
+    let args = decode(&case["call"]["args"]);
+    let str_arg = |i: usize| args[i].as_str().unwrap();
+    match case["call"]["channel"].as_str().unwrap() {
+        // Path B: placeholder header, no cursor.
+        "app:renderAssignmentPdf" => (
+            TypstProject::opdracht_v1(dir, str_arg(0)).unwrap(),
+            OpdrachtInputs::preview(str_arg(1), false),
+        ),
+        // Path C: the editor buffer instead of the file, with the cursor foreground.
+        "app:renderAssignmentSvg" => (
+            TypstProject::opdracht_v1(dir, str_arg(0))
+                .unwrap()
+                .with_file(
+                    &RelPath::parse("opdracht.typ").unwrap(),
+                    renamed_marker(str_arg(2)),
+                ),
+            OpdrachtInputs::preview(str_arg(1), true),
+        ),
+        "app:renderAssignmentBatch" => {
+            let jobs = args[0].as_array().unwrap();
+            assert_eq!(jobs.len(), 1, "one job per opdracht golden");
+            batch_job(&jobs[0], &args[1], dir)
+        }
+        other => panic!("unexpected channel {other}"),
+    }
+}
+
+/// One `renderAssignmentBatch` job with the batch options.
+pub fn batch_job(job: &Value, opts: &Value, dir: &DataDir) -> (TypstProject, OpdrachtInputs) {
+    let inputs = OpdrachtInputs {
+        mode: serde_json::from_value(job["mode"].clone()).unwrap(),
+        include_answers: opts["includeAnswers"].as_bool().unwrap_or(true),
+        cursor: false,
+        header: serde_json::from_value(job["header"].clone()).unwrap(),
+    };
+    let project = TypstProject::opdracht_v1(dir, job["typFile"].as_str().unwrap()).unwrap();
+    (project, inputs)
+}
+
+fn compile(
+    project: TypstProject,
+    inputs: &OpdrachtInputs,
+) -> Result<Compiled<PagedDocument>, CompileError> {
+    compile_document(&opdracht_world(
+        FontStore::shared(),
+        project,
+        inputs,
+        fixed_now(),
+    ))
+}
+
+fn golden(id: &str) -> PagedDocument {
+    let case = load_case(id);
+    assert!(case["result"]["success"].as_bool().unwrap(), "{id}");
+    let (_tmp, dir) = data_dir();
+    let (project, inputs) = golden_job(&case, &dir);
+    let compiled = compile(project, &inputs).unwrap_or_else(|e| panic!("{id}: {}", e.to_text()));
+    assert!(
+        compiled.warnings.is_empty(),
+        "{id}: {:?}",
+        compiled.warnings
+    );
+    assert_matches_golden(id, &case, &compiled.output);
+    compiled.output
+}
+
+fn page_text(doc: &PagedDocument, page: usize) -> String {
+    let mut text = String::new();
+    frame_text(&doc.pages[page].frame, &mut text);
+    text
+}
+
+#[test]
+fn opdracht_base_template_matches_the_golden() {
+    golden("opdracht-base-template");
+}
+
+#[test]
+fn opdracht_base_template_answers_matches_the_golden() {
+    golden("opdracht-base-template-answers");
+}
+
+#[test]
+fn opdracht_placeholder_pdf_matches_the_golden() {
+    golden("opdracht-placeholder-pdf");
+}
+
+#[test]
+fn opdracht_images_student_matches_the_golden() {
+    // Also the emoji check of PLAN Step 5b: 📏, 👩‍🔬 and the keycap 5️⃣ in the header.
+    golden("opdracht-images-student");
+}
+
+#[test]
+fn opdracht_grid_no_answers_matches_the_golden() {
+    golden("opdracht-grid-no-answers");
+}
+
+#[test]
+fn opdracht_grid_answers_matches_the_golden() {
+    golden("opdracht-grid-answers");
+}
+
+#[test]
+fn opdracht_zero_vragen_matches_the_golden() {
+    golden("opdracht-zero-vragen");
+}
+
+#[test]
+fn opdracht_long_odd_matches_the_golden() {
+    golden("opdracht-long-odd");
+}
+
+#[test]
+fn opdracht_lib_features_matches_the_golden() {
+    golden("opdracht-lib-features");
+}
+
+/// Path C: the document matches the golden PNGs, and the SVG pages match the golden's SVG facts.
+fn svg_golden(id: &str) {
+    golden(id);
+    let case = load_case(id);
+    let (_tmp, dir) = data_dir();
+    let (project, inputs) = golden_job(&case, &dir);
+    let pages = render_assignment_svg_pages(FontStore::shared(), project, &inputs, fixed_now())
+        .unwrap()
+        .output;
+    let want = case["svg"].as_array().unwrap();
+    assert_eq!(pages.len(), want.len(), "{id}: SVG pages");
+    for (n, (svg, want)) in pages.iter().zip(want).enumerate() {
+        assert!(svg.starts_with("<svg class=\"typst-doc\""), "{id} p{n}");
+        assert!(
+            svg.contains(&format!(
+                "viewBox=\"{}\"",
+                want["viewBox"].as_str().unwrap()
+            )),
+            "{id} p{n}: viewBox"
+        );
+        // As the golden counted them: `<a ...>` tags with `href="rtti-cursor:"` (renamed).
+        let anchors = svg
+            .split("<a ")
+            .skip(1)
+            .filter(|tag| {
+                tag.split('>')
+                    .next()
+                    .unwrap()
+                    .contains("href=\"maatwerk-cursor:\"")
+            })
+            .count();
+        assert_eq!(
+            anchors,
+            want["cursorLinks"].as_u64().unwrap() as usize,
+            "{id} p{n}: cursor links"
+        );
+        assert!(!svg.contains("rtti-cursor:"), "{id} p{n}");
+        assert_eq!(
+            svg.matches("<image ").count(),
+            want["images"].as_u64().unwrap() as usize,
+            "{id} p{n}: images"
+        );
+        if want["images"].as_u64().unwrap() > 0 {
+            assert!(
+                svg.contains("data:image/"),
+                "{id} p{n}: images are data URIs"
+            );
+        }
+    }
+}
+
+#[test]
+fn svg_preview_matches_the_golden() {
+    svg_golden("svg-preview");
+}
+
+#[test]
+fn svg_preview_cursor_matches_the_golden() {
+    svg_golden("svg-preview-cursor");
+}
+
+#[test]
+fn svg_preview_many_pages_matches_the_golden() {
+    svg_golden("svg-preview-many-pages");
+}
+
+#[test]
+fn svg_preview_error_names_the_opdracht_file_with_line_and_column() {
+    // TC 9 / 10.11: the reference mapped `_preview_<file>` back to `<file>` and showed machine
+    // paths. Here the editor buffer is `opdracht.typ` of the project and no machine path shows.
+    let case = load_case("svg-preview-error");
+    assert!(!case["result"]["success"].as_bool().unwrap());
+    let (_tmp, dir) = data_dir();
+    let (project, inputs) = golden_job(&case, &dir);
+    let err = compile(project, &inputs).unwrap_err();
+    let first = &err.diagnostics[0];
+    assert_eq!(first.message, "unknown variable: onbekend");
+    let loc = first.location.as_ref().unwrap();
+    // Quirk T28: the Typst CLI printed 0-based columns (`:9:27`); columns here are 1-based.
+    assert_eq!(
+        (loc.file.as_str(), loc.line, loc.column),
+        ("opdracht.typ", 9, 28)
+    );
+    let text = err.to_text();
+    assert!(
+        text.starts_with("error: unknown variable: onbekend\n"),
+        "{text}"
+    );
+    assert!(text.contains("┌─ opdracht.typ:9:28"), "{text}");
+    assert!(
+        text.contains("help: error occurred in this call of function `render_opgaven`"),
+        "{text}"
+    );
+    assert!(text.contains("┌─ main.typ:"), "{text}");
+    assert!(
+        !text.contains(":\\") && !text.contains("_preview_"),
+        "{text}"
+    );
+}
+
+#[test]
+fn a_syntax_error_in_an_opdracht_points_into_opdracht_typ() {
+    let (_tmp, dir) = data_dir();
+    let project = TypstProject::opdracht_v1(&dir, "kapot.typ").unwrap();
+    let err = compile(project, &OpdrachtInputs::default()).unwrap_err();
+    let first = &err.diagnostics[0];
+    assert_eq!(first.message, "unclosed delimiter");
+    let loc = first.location.as_ref().unwrap();
+    // batch-error golden: `kapot.typ:3:23` (0-based column, quirk T28).
+    assert_eq!(
+        (loc.file.as_str(), loc.line, loc.column),
+        ("opdracht.typ", 3, 24)
+    );
+}
+
+#[test]
+fn main_typ_without_inputs_uses_the_placeholder_header_and_student_mode() {
+    let (_tmp, dir) = data_dir();
+    let project = || TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
+    let plain = compile_document(&project().world(FontStore::shared(), fixed_now()))
+        .unwrap()
+        .output;
+    let with = compile(project(), &OpdrachtInputs::preview("Titel", false))
+        .unwrap()
+        .output;
+    assert_eq!(plain.pages.len(), with.pages.len());
+    for p in 0..plain.pages.len() {
+        assert_eq!(page_text(&plain, p), page_text(&with, p));
+    }
+    assert!(page_text(&plain, 0).contains("Leerling Voornaam Achternaam"));
+}
+
+#[test]
+fn answers_mode_ignores_the_student_fields() {
+    let (_tmp, dir) = data_dir();
+    let project = TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
+    let inputs = OpdrachtInputs {
+        mode: Mode::Answers,
+        header: OpdrachtHeader {
+            title: "Sleutel".into(),
+            ..OpdrachtHeader::default()
+        },
+        ..OpdrachtInputs::default()
+    };
+    let doc = compile(project, &inputs).unwrap().output;
+    assert_eq!(doc.pages.len(), 1);
+    let text = page_text(&doc, 0);
+    assert!(text.starts_with("SleutelAntwoordsleutel"), "{text}");
+}
+
+/// An opdracht whose source is `body`, compiled in the fixture data dir.
+fn compile_source(body: &str) -> Result<Compiled<PagedDocument>, CompileError> {
+    let (_tmp, dir) = data_dir();
+    std::fs::write(dir.root().join("geheim.json"), "{\"geheim\": 1}").unwrap();
+    let source = format!(
+        "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [{body}]\n#let render_opgaven() = []\n"
+    );
+    let project = TypstProject::opdracht_v1(&dir, "opdracht_1756713600200.typ")
+        .unwrap()
+        .with_file(&RelPath::parse("opdracht.typ").unwrap(), source);
+    compile(project, &OpdrachtInputs::default())
+}
+
+#[test]
+fn the_opdracht_world_sees_its_own_images_and_nothing_else() {
+    // Own images (v1 path), as the golden opdracht does.
+    compile_source("#image(\"images/opdracht_1756713600200/figuur.png\")").unwrap();
+    // The sandbox (ADR-0002 section 5): the reference could read anything under its app dir.
+    for path in [
+        "/data/geheim.json",
+        "../geheim.json",
+        "../../geheim.json",
+        "/geheim.json",
+        "opdracht_1756713600201.typ",
+        "/opdrachten/opdracht_1756713600201.typ",
+        "images/opdracht_1756713600201/figuur.png",
+        "C:/Windows/win.ini",
+    ] {
+        let err = compile_source(&format!("#read(\"{path}\")")).unwrap_err();
+        let message = &err.diagnostics[0].message;
+        assert!(
+            message.starts_with("file not found") || message.contains("access denied"),
+            "{path}: {message}"
+        );
+        assert!(
+            !err.to_text().contains("--root"),
+            "review 5a n3: {}",
+            err.to_text()
+        );
+    }
+}
+
+#[test]
+fn a_folder_project_compiles_main_typ_from_disk() {
+    // The v2 layout (ADR-0002 5a): main.typ, opdracht.typ, lib.typ and images/ in one folder.
+    let tmp = tempfile::tempdir().unwrap();
+    let root = tmp.path();
+    std::fs::write(root.join("main.typ"), assets::OPDRACHT_MAIN_TYP).unwrap();
+    std::fs::write(root.join("lib.typ"), assets::LIB_TYP).unwrap();
+    std::fs::write(root.join("opdracht.typ"), assets::BASE_ASSIGNMENT_TYP).unwrap();
+    let project = TypstProject::folder(root, &RelPath::parse("main.typ").unwrap());
+    let doc = compile(project, &OpdrachtInputs::preview("Remweg", false))
+        .unwrap()
+        .output;
+    // TC 10.1: the base template is 2 pages in student mode.
+    assert_eq!(doc.pages.len(), 2);
+    assert!(page_text(&doc, 0).starts_with("Remweg"));
+}

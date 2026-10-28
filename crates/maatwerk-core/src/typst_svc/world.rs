@@ -29,31 +29,65 @@ use crate::paths::RelPath;
 /// Virtual folder for files the service provides (templates, data). Hidden in diagnostics.
 pub(crate) const INTERNAL_DIR: &str = "__maatwerk";
 
-/// A virtual folder backed by a real one, e.g. `/data/fotos` -> `<data dir>/fotos`.
+/// A virtual folder backed by a real one, e.g. `/data/fotos` -> `<data dir>/fotos`, or a single
+/// virtual file backed by a real file. Built by the per-kind constructors ([`TypstProject`],
+/// `rapport_world`), never by callers (review 5a n6).
+///
+/// [`TypstProject`]: super::TypstProject
 #[derive(Debug, Clone)]
-pub struct Mount {
+pub(crate) struct Mount {
     prefix: Vec<String>,
     dir: PathBuf,
+    /// `Some(name)`: the mount is the one file `<dir>/<name>`, seen at `prefix`.
+    file: Option<String>,
+    /// The canonical `dir` must lie inside this folder (the data dir), or the mount is empty
+    /// (review 5a n2: `fotos` itself could be a junction).
+    within: Option<PathBuf>,
 }
 
 impl Mount {
-    /// `prefix` is a rooted virtual path such as `/data/fotos`.
-    pub fn new(prefix: &str, dir: impl Into<PathBuf>) -> Mount {
+    /// `prefix` is a rooted virtual path such as `/data/fotos`; `/` mounts a whole folder.
+    pub(crate) fn dir(prefix: &str, dir: impl Into<PathBuf>) -> Mount {
         Mount {
             prefix: split_virtual(prefix),
             dir: dir.into(),
+            file: None,
+            within: None,
+        }
+    }
+
+    /// The single file `<dir>/<name>` at the virtual path `path`. `name` is a checked basename.
+    pub(crate) fn file(path: &str, dir: impl Into<PathBuf>, name: &str) -> Mount {
+        Mount {
+            file: Some(name.to_owned()),
+            ..Mount::dir(path, dir)
+        }
+    }
+
+    /// Restricts the mount to folders inside `root`.
+    pub(crate) fn within(mut self, root: &Path) -> Mount {
+        self.within = Some(root.to_path_buf());
+        self
+    }
+
+    /// The canonical folder behind the mount, if it exists and lies inside `within`.
+    fn resolve(&self) -> Option<PathBuf> {
+        let real = self.dir.canonicalize().ok()?;
+        match &self.within {
+            Some(root) if !real.starts_with(root.canonicalize().ok()?) => None,
+            _ => Some(real),
         }
     }
 }
 
 /// What one compile can see. Built per compile; cheap.
-pub struct WorldSpec {
+pub(crate) struct WorldSpec {
     /// Rooted virtual path of the entry file, e.g. `/__maatwerk/main.typ`.
     pub main: String,
-    /// In-memory files by rooted virtual path.
+    /// In-memory files by rooted virtual path; they shadow mounts.
     pub files: Vec<(String, Bytes)>,
     pub mounts: Vec<Mount>,
-    /// `sys.inputs` (opdracht runtime data, Step 5b).
+    /// `sys.inputs` (opdracht runtime data).
     pub inputs: Option<Dict>,
     /// The clock behind `datetime.today()`.
     pub now: OffsetDateTime,
@@ -71,7 +105,7 @@ pub struct MaatwerkWorld {
 }
 
 impl MaatwerkWorld {
-    pub fn new(fonts: Arc<FontStore>, spec: WorldSpec) -> MaatwerkWorld {
+    pub(crate) fn new(fonts: Arc<FontStore>, spec: WorldSpec) -> MaatwerkWorld {
         let mut builder = Library::builder();
         if let Some(inputs) = spec.inputs {
             builder = builder.with_inputs(inputs);
@@ -86,7 +120,7 @@ impl MaatwerkWorld {
             .mounts
             .into_iter()
             .map(|m| {
-                let real = m.dir.canonicalize().ok();
+                let real = m.resolve();
                 (m, real)
             })
             .collect();
@@ -132,12 +166,15 @@ impl MaatwerkWorld {
         }
         for (mount, real) in &self.mounts {
             let n = mount.prefix.len();
-            if parts.len() > n && parts[..n] == mount.prefix[..] {
-                let Some(root) = real else {
-                    return Err(FileError::NotFound(shown()));
-                };
-                return load_mounted(root, &parts[n..], &shown());
-            }
+            let rest = match &mount.file {
+                Some(name) if parts == mount.prefix => vec![name.clone()],
+                None if parts.len() > n && parts[..n] == mount.prefix[..] => parts[n..].to_vec(),
+                _ => continue,
+            };
+            let Some(root) = real else {
+                return Err(FileError::NotFound(shown()));
+            };
+            return load_mounted(root, &rest, &shown());
         }
         Err(FileError::NotFound(shown()))
     }
@@ -178,14 +215,17 @@ fn load_package(spec: &PackageSpec, parts: &[String], shown: PathBuf) -> FileRes
     Err(FileError::NotFound(shown))
 }
 
-/// Normal components of a virtual path (`VirtualPath` already resolved `.` and `..`).
+/// Normal components of a virtual path. `VirtualPath` resolves `.` and inner `..`; a `..` left
+/// above the root or a drive prefix (`C:`) makes the path invalid instead of being dropped
+/// silently (review 5a n1).
 fn vpath_parts(vpath: &VirtualPath) -> Option<Vec<String>> {
     vpath
         .as_rooted_path()
         .components()
         .filter_map(|c| match c {
             Component::Normal(s) => Some(s.to_str().map(str::to_owned)),
-            _ => None,
+            Component::RootDir | Component::CurDir => None,
+            Component::ParentDir | Component::Prefix(_) => Some(None),
         })
         .collect()
 }
@@ -286,7 +326,7 @@ mod tests {
         std::fs::create_dir_all(dir.path().join("fotos")).unwrap();
         std::fs::write(dir.path().join("fotos/a.svg"), "<svg/>").unwrap();
         std::fs::write(dir.path().join("secret.json"), "{}").unwrap();
-        let w = world(vec![Mount::new("/data/fotos", dir.path().join("fotos"))]);
+        let w = world(vec![Mount::dir("/data/fotos", dir.path().join("fotos"))]);
         assert_eq!(
             w.file(id("/data/fotos/a.svg")).unwrap().as_slice(),
             b"<svg/>"
@@ -304,7 +344,7 @@ mod tests {
     #[test]
     fn a_missing_mount_folder_has_no_files() {
         let dir = tempfile::tempdir().unwrap();
-        let w = world(vec![Mount::new("/data/fotos", dir.path().join("nope"))]);
+        let w = world(vec![Mount::dir("/data/fotos", dir.path().join("nope"))]);
         let err = w.file(id("/data/fotos/a.svg")).unwrap_err();
         assert_eq!(
             err.to_string(),
@@ -328,11 +368,54 @@ mod tests {
             .output()
             .unwrap();
         assert!(status.status.success());
-        let w = world(vec![Mount::new("/data/fotos", dir.path().join("fotos"))]);
+        let w = world(vec![Mount::dir("/data/fotos", dir.path().join("fotos"))]);
         assert!(matches!(
             w.file(id("/data/fotos/link/x.svg")),
             Err(FileError::AccessDenied)
         ));
+    }
+
+    #[test]
+    fn review_n1_dot_dot_above_the_root_and_drive_prefixes_are_denied() {
+        let w = world(vec![]);
+        for path in ["/../../Windows/win.ini", "/data/../../x.typ"] {
+            assert!(
+                matches!(w.file(id(path)), Err(FileError::AccessDenied)),
+                "{path}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_file_mount_serves_exactly_one_file() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("opdracht_1.typ"), "een").unwrap();
+        std::fs::write(dir.path().join("opdracht_2.typ"), "twee").unwrap();
+        let w = world(vec![Mount::file(
+            "/opdracht.typ",
+            dir.path(),
+            "opdracht_1.typ",
+        )]);
+        assert_eq!(w.file(id("/opdracht.typ")).unwrap().as_slice(), b"een");
+        assert!(w.file(id("/opdracht_2.typ")).is_err());
+        assert!(w.file(id("/opdracht.typ/x")).is_err());
+    }
+
+    #[test]
+    fn review_n2_a_mount_outside_its_boundary_is_empty() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = dir.path().join("data");
+        let outside = dir.path().join("outside");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(outside.join("a.svg"), "<svg/>").unwrap();
+        let w = world(vec![Mount::dir("/data/fotos", &outside).within(&data)]);
+        assert!(matches!(
+            w.file(id("/data/fotos/a.svg")),
+            Err(FileError::NotFound(_))
+        ));
+        let w = world(vec![Mount::dir("/data/fotos", &outside).within(dir.path())]);
+        assert!(w.file(id("/data/fotos/a.svg")).is_ok());
     }
 
     #[test]

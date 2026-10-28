@@ -9,6 +9,9 @@ pub const RAPPORT_TYP: &str = include_str!("../assets/templates/rapport.typ");
 /// Entry point of the rapport World: imports `rapport.typ` and reads `data.json`.
 pub const RAPPORT_MAIN_TYP: &str = include_str!("../assets/templates/rapport-main.typ");
 
+/// Entry point of an opdracht (`main.typ`): the old generated wrapper, driven by `sys.inputs`.
+pub const OPDRACHT_MAIN_TYP: &str = include_str!("../assets/templates/opdracht-main.typ");
+
 /// The opdracht library (`include/templates/lib.typ`), with markers renamed to `__maatwerk_*`.
 pub const LIB_TYP: &str = include_str!("../assets/templates/lib.typ");
 

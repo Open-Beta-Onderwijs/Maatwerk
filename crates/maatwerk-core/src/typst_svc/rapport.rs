@@ -46,7 +46,9 @@ pub fn rapport_world(
                 (file("rapport.typ"), Bytes::from_string(assets::RAPPORT_TYP)),
                 (file("data.json"), Bytes::new(json)),
             ],
-            mounts: vec![Mount::new("/data/fotos", data_dir.root().join("fotos"))],
+            mounts: vec![
+                Mount::dir("/data/fotos", data_dir.root().join("fotos")).within(data_dir.root()),
+            ],
             inputs: None,
             now,
         },

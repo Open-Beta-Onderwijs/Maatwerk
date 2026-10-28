@@ -70,7 +70,12 @@ pub(crate) fn convert(world: &MaatwerkWorld, diags: &[SourceDiagnostic]) -> Vec<
                 TypstSeverity::Warning => Severity::Warning,
             },
             message: d.message.to_string(),
-            hints: d.hints.iter().map(ToString::to_string).collect(),
+            hints: d
+                .hints
+                .iter()
+                .map(ToString::to_string)
+                .filter(|h| !is_cli_hint(h))
+                .collect(),
             location: locate(world, d.span),
             trace: d
                 .trace
@@ -83,6 +88,12 @@ pub(crate) fn convert(world: &MaatwerkWorld, diags: &[SourceDiagnostic]) -> Vec<
                 .collect(),
         })
         .collect()
+}
+
+/// Typst's hints about the CLI's `--root` (on access denied) mean nothing in the app
+/// (review 5a n3).
+fn is_cli_hint(hint: &str) -> bool {
+    hint.contains("--root") || hint.contains("outside of project root")
 }
 
 fn locate(world: &MaatwerkWorld, span: Span) -> Option<Location> {

@@ -6,20 +6,20 @@ dependencies and every non-code asset (fonts, Typst packages, images); update it
 
 ## Rust crates (direct)
 
-| Crate                                   | Licence               |
-| --------------------------------------- | --------------------- |
-| tauri, tauri-build                      | Apache-2.0 OR MIT     |
-| serde, serde_json                       | MIT OR Apache-2.0     |
-| sha1                                    | MIT OR Apache-2.0     |
-| thiserror                               | MIT OR Apache-2.0     |
-| base64                                  | MIT OR Apache-2.0     |
-| ryu                                     | Apache-2.0 OR BSL-1.0 |
-| notify                                  | CC0-1.0               |
-| tracing                                 | MIT                   |
-| tracing-subscriber                      | MIT                   |
-| specta, specta-typescript, tauri-specta | MIT                   |
-| typst, typst-pdf, typst-kit (0.14.2)    | Apache-2.0            |
-| time                                    | MIT OR Apache-2.0     |
+| Crate                                           | Licence               |
+| ----------------------------------------------- | --------------------- |
+| tauri, tauri-build                              | Apache-2.0 OR MIT     |
+| serde, serde_json                               | MIT OR Apache-2.0     |
+| sha1                                            | MIT OR Apache-2.0     |
+| thiserror                                       | MIT OR Apache-2.0     |
+| base64                                          | MIT OR Apache-2.0     |
+| ryu                                             | Apache-2.0 OR BSL-1.0 |
+| notify                                          | CC0-1.0               |
+| tracing                                         | MIT                   |
+| tracing-subscriber                              | MIT                   |
+| specta, specta-typescript, tauri-specta         | MIT                   |
+| typst, typst-pdf, typst-svg, typst-kit (0.14.2) | Apache-2.0            |
+| time                                            | MIT OR Apache-2.0     |
 
 Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0), typst-render
 (Apache-2.0), tiny-skia (BSD-3-Clause).
