@@ -1,11 +1,12 @@
 # State
 
-Last updated: 2026-10-28 (Step 5a done) Branch: `main` Last tag: `step-05a`
+Last updated: 2026-10-28 (Step 5a done) Branch: `step/05-typst` Last tag: `step-05a`
 
 ## Current step
 
 Step 5a (Typst World and rapport PDF) is done: reviewed (`docs/reviews/step-05a.md`), majors
-fixed, merged into `main`, tag `step-05a`. Waiting for the user before 5b.
+fixed, tag `step-05a` on `step/05-typst` (merged into `main` after 5b, as in Step 4).
+Waiting for the user before 5b.
 
 ## Step 5a summary
 
