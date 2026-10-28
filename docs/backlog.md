@@ -43,6 +43,14 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   then: re-check the embedded packages' `compiler` versions, rerun the Typst goldens and record any
   visible change (the goldens stay the record of the reference), drop the quick-xml ignores from
   `deny.toml`, and check `typst-ide` for the Step 8 editor if that comes first.
+- **Step 10: bundle an emoji font (user, 2026-10-28).** Embed a colour emoji font with an
+  AGPL-compatible licence (e.g. Noto Color Emoji, OFL-1.1, or Twemoji Mozilla, CC-BY 4.0; check
+  that Typst 0.14+ renders its format in PDF and SVG) in `assets::FONTS`, after the template fonts
+  and before system fonts, so opdrachten and rapporten look the same on every machine (Windows,
+  macOS in Step 11, CI). Closes PLAN section 9 decision 2. The emoji will look different from
+  Segoe UI Emoji: record it, update `THIRD_PARTY_LICENSES.md`, and give the pixel goldens with
+  emoji (`rapport-valid`, `opdracht-images-student`, others with observatie icons) a tolerance or
+  emoji regions masked, since the goldens stay the record of the reference.
 - **Golden pixel tests depend on the system emoji font:** `rapport-valid` is pixel-identical with
   this machine's Segoe UI Emoji. CI (windows-latest) runs them from the first push after Step 5; if
   its emoji font differs, compare emoji regions with a tolerance or bundle an emoji font (PLAN
