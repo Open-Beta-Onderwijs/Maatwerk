@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-28 (Step 5a done) Branch: `step/05-typst` Last tag: `step-05a`
+Last updated: 2026-10-28 (Step 5b in progress) Branch: `step/05-typst` Last tag: `step-05a`
 
 ## Current step
 
@@ -41,12 +41,20 @@ Waiting for the user before 5b.
 
 ## In progress
 
-- Nothing.
+Step 5b, sub-tasks (each one commit):
+
+1. Done (`0d66b93`): `TypstProject`, `opdracht-main.typ` (sys.inputs), PDF + SVG pages, cursor
+   rename, 12 opdracht/SVG goldens pass (`tests/typst_opdracht.rs`), quirks T28/T29.
+2. Tofu warning (glyph id 0) + emoji check.
+3. `pdf_merge` (lopdf) + `render_assignment_batch` (threads, progress) + batch goldens.
+4. `maatwerk-cli typst compile`.
+5. lib.typ/main.typ version line + released hashes.
+6. Rest of review 5a nits (n4, n5, n8), `docs/perf.md` batch memory, parity rows, STATE.
+7. Gate, review subagent (`docs/reviews/step-05b.md`), fixes, merge to main, tag `step-05`.
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 5b (PLAN.md section 6, Step 5, "5b"), branch `step/05-typst`
-   continues from `step-05a`.
+1. Continue with the first open sub-task above.
 
 ## Open questions for the user
 
