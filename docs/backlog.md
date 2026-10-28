@@ -30,9 +30,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Review 5a m4 (watcher, Step 4b code):** a colleague's write with the same size inside one
   mtime tick of the previous state is not seen as a change by the stat check. Compare a content
   hash when size and mtime are equal but an event arrived.
-- **Review 5a nit n8 (open):** system fonts can shadow Typst's own fonts in the pixel tests (a
-  machine with another "Libertinus Serif" installed renders differently). Nits n1-n6 and n9 were
-  done in 5b.
+- **Review 5a nit n8 (done 2026-10-28):** the pixel tests and golden PNGs no longer use system
+  fonts (`support::fonts`, `--ignore-system-fonts`). The app still uses them; an installed
+  "Libertinus Serif" could still shadow Typst's own copy there. Nits n1-n6 and n9 were done in 5b.
 
 - **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
   through hayagriva/citationberg; the fix needs quick-xml 0.41. Ignore accepted by the user
@@ -43,18 +43,11 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   then: re-check the embedded packages' `compiler` versions, rerun the Typst goldens and record any
   visible change (the goldens stay the record of the reference), drop the quick-xml ignores from
   `deny.toml`, and check `typst-ide` for the Step 8 editor if that comes first.
-- **Step 10: bundle an emoji font (user, 2026-10-28).** Embed a colour emoji font with an
-  AGPL-compatible licence (e.g. Noto Color Emoji, OFL-1.1, or Twemoji Mozilla, CC-BY 4.0; check
-  that Typst 0.14+ renders its format in PDF and SVG) in `assets::FONTS`, after the template fonts
-  and before system fonts, so opdrachten and rapporten look the same on every machine (Windows,
-  macOS in Step 11, CI). Closes PLAN section 9 decision 2. The emoji will look different from
-  Segoe UI Emoji: record it, update `THIRD_PARTY_LICENSES.md`, and give the pixel goldens with
-  emoji (`rapport-valid`, `opdracht-images-student`, others with observatie icons) a tolerance or
-  emoji regions masked, since the goldens stay the record of the reference.
-- **Golden pixel tests depend on the system emoji font:** `rapport-valid` is pixel-identical with
-  this machine's Segoe UI Emoji. CI (windows-latest) runs them from the first push after Step 5; if
-  its emoji font differs, compare emoji regions with a tolerance or bundle an emoji font (PLAN
-  section 9, open decision 2).
+- **Emoji font (done 2026-10-28, pulled forward from Step 10):** the first CI run failed on
+  `rapport-valid` p14 (1 pixel in 🥈: the runner's Segoe UI Emoji differs). Noto Color Emoji
+  (COLRv1) is bundled and the goldens were regenerated with it (quirk T2). With the Typst upgrade
+  below, update Noto with it and check COLRv1 still renders; a newer Noto release changes emoji
+  pixels, so regenerate the goldens and say so in the commit.
 
 ## From Step 4b
 

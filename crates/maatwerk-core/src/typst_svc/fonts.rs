@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Fonts for every compile: the embedded template fonts first (as the reference's
-//! `--font-path include/fonts`), then system fonts (emoji come from Segoe UI Emoji on Windows,
-//! `typst-contract.md` 7.1), then Typst's own embedded fonts (Libertinus Serif, New Computer
-//! Modern, DejaVu Sans Mono). System fonts are searched once per process.
+//! Fonts for every compile: the embedded fonts first (the template fonts, as the reference's
+//! `--font-path include/fonts`, and Noto Color Emoji, which wins over a system emoji font such
+//! as Segoe UI Emoji: quirk T2), then system fonts, then Typst's own embedded fonts (Libertinus
+//! Serif, New Computer Modern, DejaVu Sans Mono). System fonts are searched once per process.
 
 use std::sync::{Arc, OnceLock};
 
 use typst::foundations::Bytes;
-use typst::text::{Font, FontBook};
+use typst::text::{Coverage, Font, FontBook, FontInfo};
 use typst::utils::LazyHash;
 use typst_kit::fonts::{FontSearcher, FontSlot};
 
@@ -40,19 +40,29 @@ impl FontStore {
     pub fn new(system_fonts: bool) -> FontStore {
         let mut book = FontBook::new();
         let mut slots = Vec::new();
+        let mut emoji = Vec::new();
         for data in assets::FONTS {
             for font in Font::iter(Bytes::new(*data)) {
+                if font.info().family == EMOJI_FAMILY {
+                    emoji.extend(font.info().coverage.iter().filter(|&c| c >= 0x80));
+                }
                 book.push(font.info().clone());
                 slots.push(Slot::Embedded(font));
             }
         }
+        emoji.sort_unstable();
         let kit = FontSearcher::new()
             .include_system_fonts(system_fonts)
             .include_embedded_fonts(true)
             .search();
         for (index, slot) in kit.fonts.into_iter().enumerate() {
             if let Some(info) = kit.book.info(index) {
-                book.push(info.clone());
+                // Typst-embedded fonts (no path) stay as they are, as in the goldens.
+                let info = match slot.path() {
+                    Some(_) => without_emoji(info, &emoji),
+                    None => info.clone(),
+                };
+                book.push(info);
                 slots.push(Slot::Kit(slot));
             }
         }
@@ -80,6 +90,25 @@ impl FontStore {
 
     pub fn is_empty(&self) -> bool {
         self.slots.is_empty()
+    }
+}
+
+/// Family of the bundled emoji font in `assets::FONTS`.
+const EMOJI_FAMILY: &str = "Noto Color Emoji";
+
+/// `info` without the code points of the bundled emoji font (`emoji`, sorted), so a system font
+/// is never the fallback for them. Typst's fallback prefers the shorter family name on a tie
+/// (`FontBook::find_best_variant`), so Segoe UI Emoji or Segoe UI Symbol would otherwise win
+/// over Noto Color Emoji and emoji would differ per machine (quirk T2). A system font chosen by
+/// name still draws them: selection by family does not look at the coverage.
+fn without_emoji(info: &FontInfo, emoji: &[u32]) -> FontInfo {
+    let bundled = |c: &u32| emoji.binary_search(c).is_ok();
+    if !info.coverage.iter().any(|c| bundled(&c)) {
+        return info.clone();
+    }
+    FontInfo {
+        coverage: Coverage::from_vec(info.coverage.iter().filter(|c| !bundled(c)).collect()),
+        ..info.clone()
     }
 }
 
@@ -118,5 +147,31 @@ mod tests {
         // Typst's own fonts: the rapport uses Libertinus Serif Bold for the table header glyphs.
         assert!(family_index(&store, "libertinus serif", regular).is_some());
         assert!(store.font(serif).is_some());
+    }
+
+    #[test]
+    fn emoji_come_from_the_bundled_font_even_with_system_fonts() {
+        // Segoe UI Emoji (Windows) or Apple Color Emoji also cover them; the bundled font must
+        // win so every machine renders the same (quirk T2).
+        let store = FontStore::new(true);
+        let book = store.book();
+        for weight in [FontWeight::REGULAR, FontWeight::BOLD] {
+            let variant = FontVariant {
+                weight,
+                ..FontVariant::default()
+            };
+            let serif = book.select("source serif 4", variant).unwrap();
+            for emoji in ["🥈", "👑", "📏", "❌", "👩‍🔬"] {
+                let index = book
+                    .select_fallback(book.info(serif), variant, emoji)
+                    .unwrap_or_else(|| panic!("no font for {emoji}"));
+                assert_eq!(
+                    book.info(index).unwrap().family,
+                    "Noto Color Emoji",
+                    "{emoji} ({weight:?})"
+                );
+                assert!(index < assets::FONTS.len(), "{emoji}: embedded copy");
+            }
+        }
     }
 }

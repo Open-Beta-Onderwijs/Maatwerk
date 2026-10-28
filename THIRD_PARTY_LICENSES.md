@@ -52,6 +52,7 @@ Step 3b (own score grid, ADR-0004); the npm licence check rejects it.
 | --------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ |
 | Source Serif 4 (12 static styles)                               | `crates/maatwerk-core/assets/fonts/` (from the reference) | OFL-1.1 (`OFL-SourceSerif4.md`)                              |
 | STIX Two Math                                                   | `crates/maatwerk-core/assets/fonts/` (from the reference) | OFL-1.1 (`OFL-STIXTwo.txt`)                                  |
+| Noto Color Emoji (COLRv1, `NotoColorEmoji-COLRv1.ttf`)          | `crates/maatwerk-core/assets/fonts/` (see below)          | OFL-1.1 (`OFL-NotoColorEmoji.txt`)                           |
 | Libertinus Serif                                                | `typst-assets` 0.14.2 (`fonts` feature, via `typst-kit`)  | OFL-1.1                                                      |
 | New Computer Modern 10, New Computer Modern Math                | `typst-assets` 0.14.2                                     | GUST Font License                                            |
 | DejaVu Sans Mono                                                | `typst-assets` 0.14.2                                     | Bitstream Vera Fonts licence (DejaVu changes: public domain) |
@@ -59,7 +60,9 @@ Step 3b (own score grid, ADR-0004); the npm licence check rejects it.
 
 The Typst-embedded fonts are kept for parity: the reference CLI had them too (raw text uses DejaVu
 Sans Mono, the rapport's bold table header uses Libertinus Serif for `●`/`◇`). Emoji come from the
-system (Segoe UI Emoji on Windows); nothing is bundled for them (open decision, PLAN section 9).
+bundled Noto Color Emoji (Google), not from the system (PLAN section 9, decision 2): file
+`2D/fonts/Noto-COLRv1.ttf` of github.com/googlefonts/noto-emoji, tag `v2026-09-24-unicode18_0`
+(Unicode 18), SHA-256 `b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c`.
 
 ### Typst packages (embedded, `crates/maatwerk-core/assets/packages/preview/`)
 

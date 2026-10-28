@@ -8,7 +8,7 @@ import Module, { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
-import { REF_DIR, readRef } from './reference.mjs';
+import { REF_DIR, REPO_ROOT, readRef } from './reference.mjs';
 
 function fakeElectron({ userDataDir }) {
   const handlers = new Map();
@@ -102,7 +102,53 @@ export function ntfsOrder(entries) {
   });
 }
 
-const LINKS = ['bin', 'include'];
+/**
+ * Maatwerk's bundled emoji font. The goldens record the reference with this font
+ * in `include/fonts` instead of the system's Segoe UI Emoji (quirk T2), so they
+ * do not depend on the machine.
+ */
+export const EMOJI_FONT = path.join(
+  REPO_ROOT,
+  'crates',
+  'maatwerk-core',
+  'assets',
+  'fonts',
+  'NotoColorEmoji-COLRv1.ttf',
+);
+
+/**
+ * Links `bin/` and every entry of `include/` except `fonts/` to the reference
+ * (junctions); `include/fonts/` is a copy of the reference fonts plus EMOJI_FONT.
+ */
+function linkReference(appDir) {
+  fs.symlinkSync(path.join(REF_DIR, 'bin'), path.join(appDir, 'bin'), 'junction');
+  const include = path.join(appDir, 'include');
+  fs.mkdirSync(include);
+  for (const entry of fs.readdirSync(path.join(REF_DIR, 'include'))) {
+    if (entry === 'fonts') continue;
+    fs.symlinkSync(path.join(REF_DIR, 'include', entry), path.join(include, entry), 'junction');
+  }
+  const fonts = path.join(include, 'fonts');
+  fs.cpSync(path.join(REF_DIR, 'include', 'fonts'), fonts, { recursive: true });
+  fs.copyFileSync(EMOJI_FONT, path.join(fonts, path.basename(EMOJI_FONT)));
+}
+
+/** Unlinks the junctions of linkReference, so rmSync never follows them into _reference/. */
+function unlinkReference(appDir) {
+  fs.rmSync(path.join(appDir, 'bin'), { force: true });
+  const include = path.join(appDir, 'include');
+  let stat;
+  try {
+    stat = fs.lstatSync(include);
+  } catch (_) {
+    return;
+  }
+  // Runs from before include/fonts was a copy linked include/ itself.
+  if (stat.isSymbolicLink()) return fs.rmSync(include, { force: true });
+  for (const entry of fs.readdirSync(include)) {
+    if (entry !== 'fonts') fs.rmSync(path.join(include, entry), { force: true });
+  }
+}
 
 /** Removes leftovers of killed runs; junctions are unlinked before the folder. */
 function sweepStale(tmp) {
@@ -112,7 +158,7 @@ function sweepStale(tmp) {
     const root = path.join(tmp, name);
     try {
       if (fs.statSync(root).mtimeMs > dayAgo) continue;
-      for (const dir of LINKS) fs.rmSync(path.join(root, 'app', dir), { force: true });
+      unlinkReference(path.join(root, 'app'));
       fs.rmSync(root, { recursive: true, force: true });
     } catch (_) {
       // Another run may own it; leave it.
@@ -123,7 +169,8 @@ function sweepStale(tmp) {
 /**
  * Creates a throw-away app folder (`<tmp>/app/data`) and loads main.js +
  * preload.js against it. With `typst: true`, `bin/` and `include/` are linked
- * (junctions) to the reference so the Typst handlers find the CLI and templates.
+ * to the reference so the Typst handlers find the CLI and templates, with
+ * EMOJI_FONT added to `include/fonts/` (linkReference).
  * Returns { appDir, dataDir, rtti (the window.rtti bridge), invoke, sent, dispose }.
  */
 export function startMainProcess({ tmpRoot, onWrite, typst = false } = {}) {
@@ -132,18 +179,14 @@ export function startMainProcess({ tmpRoot, onWrite, typst = false } = {}) {
   const root = fs.mkdtempSync(path.join(tmp, 'maatwerk-ref-'));
   const appDir = path.join(root, 'app');
   const dispose = () => {
-    // Remove junctions first so rmSync never follows them into _reference/.
-    for (const dir of LINKS) fs.rmSync(path.join(appDir, dir), { force: true });
+    unlinkReference(appDir);
     fs.rmSync(root, { recursive: true, force: true });
   };
   try {
     const userDataDir = path.join(root, 'userData');
     fs.mkdirSync(path.join(appDir, 'data'), { recursive: true });
     fs.mkdirSync(userDataDir);
-    if (typst) {
-      for (const dir of LINKS)
-        fs.symlinkSync(path.join(REF_DIR, dir), path.join(appDir, dir), 'junction');
-    }
+    if (typst) linkReference(appDir);
     const { electron, handlers, sent } = fakeElectron({ userDataDir });
     // main.js gets an fs whose readdirSync has a pinned order and whose
     // writeFileSync reports to onWrite (Typst wrappers, preview copies).

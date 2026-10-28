@@ -7,6 +7,7 @@
 // packages cetz 0.3.4 / unify 0.8.0 / oxifmt in the local package cache (quirk T1).
 // Every case calls a real reference IPC handler; the wrapper sources it writes
 // are recorded, compiled once more to PNG (30 ppi) and the PDF text is extracted.
+// The reference fonts get Maatwerk's bundled emoji font next to them (quirk T2).
 
 import { setupEnvironment, freezeClock } from '../environment.mjs';
 setupEnvironment();
@@ -58,13 +59,19 @@ function normalizeDeep(v, norm) {
   return v;
 }
 
-/** Compiles `wrapperRel` (relative to appDir) to PNGs with the reference arguments plus --format png. */
+/**
+ * Compiles `wrapperRel` (relative to appDir) to PNGs with the reference arguments plus
+ * --format png and --ignore-system-fonts: every font comes from `include/fonts` (with the
+ * bundled emoji font, main-process.mjs EMOJI_FONT) or Typst itself, so the PNGs do not
+ * depend on the machine (quirk T2, review 5a n8).
+ */
 function renderPngs(appDir, wrapperRel, outDir) {
   fs.mkdirSync(outDir, { recursive: true });
   execFileSync(
     typstBinary(appDir),
     [
       'compile',
+      '--ignore-system-fonts',
       '--font-path',
       path.join(appDir, 'include', 'fonts'),
       '--package-path',
