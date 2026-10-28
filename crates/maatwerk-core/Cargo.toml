@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 base64 = "0.23.1"
+# PDF merge for batches (ADR-0002 5a). No default features: no chrono clock, no rayon.
+lopdf = { version = "0.46.0", default-features = false }
 notify = "8.2.1"
 ryu = "1.0.23"
 serde = { workspace = true, features = ["derive"] }

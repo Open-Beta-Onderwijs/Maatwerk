@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! The Typst service (ADR-0002 section 5): a sandboxed `World` per compile, embedded templates,
-//! packages and fonts, structured diagnostics. Rapport (5a); opdracht projects, SVG pages, batch and merge (5b).
+//! packages and fonts, structured diagnostics.
+//! Rapport (5a); opdracht projects, SVG pages, batch and merge (5b).
 
+mod batch;
 mod compile;
 mod diagnostics;
 mod fonts;
@@ -11,6 +13,10 @@ mod project;
 mod rapport;
 mod world;
 
+pub use batch::{
+    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, JobWarning, batch_workers,
+    render_assignment_batch,
+};
 pub use compile::{
     CompileError, Compiled, compile_document, compile_pdf, compile_svg_pages, local_now,
 };

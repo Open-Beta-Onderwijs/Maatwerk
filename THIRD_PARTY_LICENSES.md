@@ -20,6 +20,7 @@ dependencies and every non-code asset (fonts, Typst packages, images); update it
 | specta, specta-typescript, tauri-specta         | MIT                   |
 | typst, typst-pdf, typst-svg, typst-kit (0.14.2) | Apache-2.0            |
 | time                                            | MIT OR Apache-2.0     |
+| lopdf (PDF merge)                               | MIT                   |
 
 Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0), typst-render
 (Apache-2.0), tiny-skia (BSD-3-Clause).

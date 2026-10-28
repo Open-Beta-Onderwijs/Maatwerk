@@ -2,12 +2,13 @@
 
 //! Maatwerk core. Pure Rust; must never depend on `tauri`.
 //!
-//! Modules follow ADR-0002 section 1; model, migrate and pdf_merge are added in later steps.
+//! Modules follow ADR-0002 section 1; model and migrate are added in later steps.
 
 pub mod assets;
 pub mod error;
 pub mod jsonfmt;
 pub mod paths;
+pub mod pdf_merge;
 pub mod presence;
 pub mod storage;
 pub mod typst_svc;
