@@ -1,7 +1,7 @@
 # Review: Step 4b (watcher, presence, Tauri commands, typed errors, bindings)
 
 Reviewer: fresh-context subagent, 2026-10-27. Scope: `git diff step-04a..HEAD` on
-`step/04-core-storage` (`5ed4a54` watcher + presence, `271acc9` commands/errors/bindings/TauriApi,
+`step/04-core-storage` (`9894f77` watcher + presence, `6cb4271` commands/errors/bindings/TauriApi,
 plus STATE commits). I read every new or changed Rust and TS file in the diff, ADR-0005 and the
 parity/testing changes. I compared them with `_reference/sync.js` (`createWatcher`),
 `_reference/main.js` (fs handlers 54-228, presence/session 398-455, lifecycle 1005-1025),

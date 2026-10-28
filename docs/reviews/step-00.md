@@ -1,7 +1,7 @@
 # Review: Step 0 (Bootstrap)
 
 Reviewer: fresh-context subagent, 2026-10-25. Scope: everything committed on `step/00-bootstrap`
-(`9bf56da`, `545067b`, `8195d9c`; no tags yet), checked against PLAN.md sections 2, 4, 6 (Step 0)
+(`9d802a0`, `0293034`, `8f1ffdf`; no tags yet), checked against PLAN.md sections 2, 4, 6 (Step 0)
 and Appendix C. The implementer's summary was not trusted; every fact below was re-checked from the
 files, the reference clone or by running the command.
 
@@ -83,13 +83,13 @@ None.
 
 ### m3. There is no `main` branch to merge into
 
-- Evidence: `git branch -a` lists only `step/00-bootstrap`. The root commit `9bf56da` was made on
+- Evidence: `git branch -a` lists only `step/00-bootstrap`. The root commit `9d802a0` was made on
   the step branch. PLAN 2.4 needs "merge with a merge commit" into `main`, and STATE next action 3
   assumes `main` exists.
 - Fix: decide and write down how `main` is created, for example
   `git checkout --orphan main && git rm -rf --cached . && git commit --allow-empty -m "chore: initial empty commit"`
   then `git merge --no-ff --allow-unrelated-histories step/00-bootstrap`. The simpler option is
-  `git branch main 9bf56da` and merging the rest with `--no-ff`. Record the choice in STATE.
+  `git branch main 9d802a0` and merging the rest with `--no-ff`. Record the choice in STATE.
 
 ### m4. The command round trip has no automated test of the bridge contract
 
@@ -248,7 +248,7 @@ None.
 | M2                        | Fixed: real SPDX parser `tools/spdx.mjs` with precedence and parens, 6 tests in `tools/spdx.test.mjs` (run by `npm test`). |
 | m1                        | Fixed: `cargo tree` output captured under `set -euo pipefail`, `--target all`.                                             |
 | m2                        | Fixed: STATE.md, PLAN.md section 3 and open decisions 7/8 updated.                                                         |
-| m3                        | Fixed: `main` created at `9bf56da` (first commit; same code passes the gate), step branch merged with `--no-ff`.           |
+| m3                        | Fixed: `main` created at `9d802a0` (first commit; same code passes the gate), step branch merged with `--no-ff`.           |
 | m4                        | Fixed: `greet_reply_matches_the_ui_contract` test in `src-tauri/src/lib.rs`. The manual click is left to the user.         |
 | m5                        | Fixed: `permissions: contents: read`.                                                                                      |
 | m6                        | Backlog (Step 6).                                                                                                          |

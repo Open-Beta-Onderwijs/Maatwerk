@@ -1,7 +1,7 @@
 # Review: Step 1 (reference study and architecture review)
 
 Reviewer: fresh-context subagent, 2026-10-25. Scope: `git diff step-00..HEAD` on
-`step/01-reference-study` (docs only, 5 commits `3d732bf..09ce1bc`), checked against `_reference/`
+`step/01-reference-study` (docs only, 5 commits `ea0874d..06cdb14`), checked against `_reference/`
 at `0e30a70` and PLAN.md sections 1, 2, 4, 6 (Step 1), 7-9. The authors' summaries were not
 trusted; every claim below was checked in the reference source.
 

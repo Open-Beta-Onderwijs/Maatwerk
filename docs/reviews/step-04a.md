@@ -1,7 +1,7 @@
 # Review: Step 4a (paths and storage in `maatwerk-core`)
 
 Reviewer: fresh-context subagent, 2026-10-27. Scope: `git diff step-03..HEAD` on
-`step/04-core-storage`. The two Step 4a commits are `1b93ae7` (core) and `1220fd0` (UI CAS). The
+`step/04-core-storage`. The two Step 4a commits are `81b787e` (core) and `d7f0d63` (UI CAS). The
 range also contains the merged `fix/score-grid-alignment` branch (`style.css` only), which I did not
 review. I read every new Rust file, the UI changes and the doc changes. I compared them with
 `_reference/main.js` (fs handlers, presence/session/photos, seed), `_reference/sync.js:1-84`,
@@ -158,7 +158,7 @@ s.delete(v); cur.schoolsoort = [...s]; return cur; })`. Then re-render from the 
 ## Nits
 
 - **n1.** `docs/STATE.md` is stale. "Next action 1" (UI side of S38) and "2" (docs) are done in
-  `1220fd0`, and "Done since last tag" does not mention the UI commit.
+  `d7f0d63`, and "Done since last tag" does not mention the UI commit.
 - **n2.** The seed omits the reference's `removeEmptyImageDirs()` (`_reference/main.js:1002`)
   without a note. Record it as Step 6 (opdracht images) in quirks or parity.
 - **n3.** `WriteObserver::note_write`/`note_delete` run while the commit lock is held

@@ -1,7 +1,7 @@
 # Review: Step 3b (score-grid replacement)
 
 Reviewer: fresh-context subagent, 2026-10-27. Scope: `git diff step-03a..HEAD` on
-`step/03-ui-foundation` (10 commits, `1843fd9`..`b53b5f6`). I compared `ui/src/screens/scores.js`
+`step/03-ui-foundation` (10 commits, `1cc1fed`..`cd7447f`). I compared `ui/src/screens/scores.js`
 with the Handsontable version in `_reference/renderer/screens/scores.js` and with
 `git show step-03a:ui/src/screens/scores.js`, and read the new grid, the domain module, the D34
 change, the CI and licence changes and the docs.
@@ -153,7 +153,7 @@ None.
 
 ### m9. U1 test was not failing first; G63 has no test
 
-- **Where:** commit `81b2281` ("Passes on Handsontable as well"); `ui/e2e/score-grid.spec.ts:307`;
+- **Where:** commit `4000e36` ("Passes on Handsontable as well"); `ui/e2e/score-grid.spec.ts:307`;
   `docs/specs/score-grid.md:101` (G63 manual).
 - **Evidence:** on Handsontable the undo buttons were never disabled (U1), so
   `#sc-redo toBeEnabled` passed for the wrong reason. The test does guard the fix now. But the bug

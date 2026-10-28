@@ -1,7 +1,7 @@
 # Review: Step 3a (UI foundation)
 
-Reviewer: fresh-context subagent, 2026-10-26. Scope: `git diff 7ae8d24..e1163e0` on
-`step/03-ui-foundation`, read relative to the verbatim import (`git diff 8c27793..e1163e0`). I compared
+Reviewer: fresh-context subagent, 2026-10-26. Scope: `git diff dcc5052..9eb74ce` on
+`step/03-ui-foundation`, read relative to the verbatim import (`git diff 91d2d39..9eb74ce`). I compared
 the extracted code against `_reference/renderer/store.js`, `modals/rapport.js` and `utils/csv.js`,
 and the MockApi against `docs/reference/ipc-api.md`.
 
@@ -11,7 +11,7 @@ What I ran (PowerShell for npm, Git Bash for the rest):
 - `npm test`: Vitest 184/184 and node 121/121 pass.
 - `npm run test:e2e`, twice: 43/43 pass both times, with no retries configured. I saw no flakes.
 - `npm run test:visual -w ui`: 37/37 pass at `maxDiffPixels: 0`. The baseline PNGs date from
-  23:13, before the inline-style commit `440795b` (23:29), so the "pixel-identical" claim holds for
+  23:13, before the inline-style commit `b9ac98d` (23:29), so the "pixel-identical" claim holds for
   these 37 views (tiny fixture, 1280x2000).
 - `npm run build:ui`: `ui/dist` has no `MockApi`, fixtures, `__maatwerkMock*` or `Maatwerk-mock`
   strings. The mock is only reached through `import.meta.env.MODE === 'mock'`. `tauri-api` is a

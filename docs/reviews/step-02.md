@@ -2,7 +2,7 @@
 
 Sub-step 2a (logic goldens, storage spec) was reviewed separately in `docs/reviews/step-02a.md`
 (tag `step-02a`). This review covers 2b: `git diff step-02a..HEAD` plus the 2b files from commit
-`c0a8c94` (`tests/reference-harness/typst/`, `tests/golden/typst/**`, `tests/golden/typst.test.mjs`,
+`94b68c0` (`tests/reference-harness/typst/`, `tests/golden/typst/**`, `tests/golden/typst.test.mjs`,
 `tools/reference-shims/typst-wrappers.cjs`, `make-shims.mjs`, fixture changes, quirks T26/T27,
 Typst section of `docs/testing.md`).
 

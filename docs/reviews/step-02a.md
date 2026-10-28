@@ -1,7 +1,7 @@
 # Review: Step 2a (fixtures, logic goldens, storage spec)
 
 Reviewer: fresh-context subagent, 2026-10-25. Scope: `git diff step-01..HEAD` on
-`step/02-safety-net` (HEAD `9dca97e`). Uncommitted 2b work in the tree (`tests/reference-harness/typst/`,
+`step/02-safety-net` (HEAD `8877a96`). Uncommitted 2b work in the tree (`tests/reference-harness/typst/`,
 edits to `main-process.mjs`/`session.mjs`/`golden.mjs`) was not reviewed; it does not change 2a behaviour.
 
 What I ran:
