@@ -387,3 +387,27 @@ fn a_folder_project_compiles_main_typ_from_disk() {
     assert_eq!(doc.pages.len(), 2);
     assert!(page_text(&doc, 0).starts_with("Remweg"));
 }
+
+#[test]
+fn characters_without_a_font_give_one_tofu_warning_each() {
+    // Quirk T2: without system fonts the reference drew emoji as boxes and said nothing.
+    let case = load_case("opdracht-images-student");
+    let (_tmp, dir) = data_dir();
+    let (project, inputs) = golden_job(&case, &dir);
+    let fonts = std::sync::Arc::new(FontStore::new(false));
+    let compiled = compile_document(&opdracht_world(fonts, project, &inputs, fixed_now())).unwrap();
+    let messages: Vec<&str> = compiled
+        .warnings
+        .iter()
+        .map(|w| w.message.as_str())
+        .collect();
+    assert!(
+        messages.contains(&"no font can display `📏` (U+1F4CF); it is shown as a box"),
+        "{messages:?}"
+    );
+    let ruler = messages.iter().filter(|m| m.contains("`📏`")).count();
+    assert_eq!(ruler, 1, "one warning per character: {messages:?}");
+    let first = &compiled.warnings[0];
+    assert_eq!(first.location.as_ref().unwrap().file, "lib.typ");
+    assert!(!first.hints.is_empty());
+}

@@ -7,7 +7,9 @@
 use serde::Serialize;
 use typst::World;
 use typst::diag::{Severity as TypstSeverity, SourceDiagnostic};
+use typst::layout::{Frame, FrameItem, PagedDocument};
 use typst::syntax::Span;
+use typst::text::TextItem;
 
 use super::world::MaatwerkWorld;
 
@@ -88,6 +90,56 @@ pub(crate) fn convert(world: &MaatwerkWorld, diags: &[SourceDiagnostic]) -> Vec<
                 .collect(),
         })
         .collect()
+}
+
+/// Warnings for characters no font could draw. Typst draws a box ("tofu", glyph 0) and says
+/// nothing, as the reference did for emoji without system fonts (quirk T2, ADR-0002 5a). One
+/// warning per distinct character, at its first place in the document.
+pub(crate) fn tofu_warnings(world: &MaatwerkWorld, doc: &PagedDocument) -> Vec<Diagnostic> {
+    let mut seen: Vec<String> = Vec::new();
+    let mut out = Vec::new();
+    for page in &doc.pages {
+        each_text(&page.frame, &mut |item| {
+            for glyph in item.glyphs.iter().filter(|g| g.id == 0) {
+                let Some(text) = item.text.get(glyph.range()) else {
+                    continue;
+                };
+                if text.trim().is_empty() || seen.iter().any(|t| t == text) {
+                    continue;
+                }
+                seen.push(text.to_owned());
+                let codes: Vec<String> = text
+                    .chars()
+                    .map(|c| format!("U+{:04X}", c as u32))
+                    .collect();
+                out.push(Diagnostic {
+                    severity: Severity::Warning,
+                    message: format!(
+                        "no font can display `{text}` ({}); it is shown as a box",
+                        codes.join(" ")
+                    ),
+                    hints: vec![
+                        "emoji need an emoji font (on Windows: Segoe UI Emoji); other characters \
+                         need an installed font that has them"
+                            .to_owned(),
+                    ],
+                    location: locate(world, glyph.span.0),
+                    trace: Vec::new(),
+                });
+            }
+        });
+    }
+    out
+}
+
+fn each_text(frame: &Frame, f: &mut impl FnMut(&TextItem)) {
+    for (_, item) in frame.items() {
+        match item {
+            FrameItem::Group(group) => each_text(&group.frame, f),
+            FrameItem::Text(text) => f(text),
+            _ => {}
+        }
+    }
 }
 
 /// Typst's hints about the CLI's `--root` (on access denied) mean nothing in the app

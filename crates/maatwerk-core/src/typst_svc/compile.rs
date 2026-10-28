@@ -45,17 +45,20 @@ pub fn local_now() -> OffsetDateTime {
     OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc())
 }
 
-/// Lays out the document.
+/// Lays out the document. Warnings include characters that no font could draw.
 pub fn compile_document(world: &MaatwerkWorld) -> Result<Compiled<PagedDocument>, CompileError> {
     let Warned { output, warnings } = typst::compile::<PagedDocument>(world);
-    let warnings = diagnostics::convert(world, &warnings);
+    let mut warnings = diagnostics::convert(world, &warnings);
     // Bound the memoisation cache between compiles, as the Typst CLI does.
     typst::comemo::evict(10);
     match output {
-        Ok(document) => Ok(Compiled {
-            output: document,
-            warnings,
-        }),
+        Ok(document) => {
+            warnings.extend(diagnostics::tofu_warnings(world, &document));
+            Ok(Compiled {
+                output: document,
+                warnings,
+            })
+        }
         Err(errors) => {
             let mut diagnostics = diagnostics::convert(world, &errors);
             diagnostics.extend(warnings);
