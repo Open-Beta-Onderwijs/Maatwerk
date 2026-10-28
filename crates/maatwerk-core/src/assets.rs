@@ -18,6 +18,76 @@ pub const LIB_TYP: &str = include_str!("../assets/templates/lib.typ");
 /// Starting point for a new opdracht (`include/templates/base_assignment.typ`), unchanged.
 pub const BASE_ASSIGNMENT_TYP: &str = include_str!("../assets/templates/base_assignment.typ");
 
+/// A bundled file that every opdracht folder has its own copy of (ADR-0002 5a). Teachers may
+/// change their copy; the version line (`// maatwerk-lib 1`) and the hashes of every released
+/// version tell an unmodified old copy (update silently) from a changed one (never overwrite).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectFile {
+    /// `lib.typ`, version line `// maatwerk-lib <n>`.
+    Lib,
+    /// `main.typ`, version line `// maatwerk-main <n>`.
+    Main,
+}
+
+impl ProjectFile {
+    /// The bundled text of the current version.
+    pub fn bundled(self) -> &'static str {
+        match self {
+            ProjectFile::Lib => LIB_TYP,
+            ProjectFile::Main => OPDRACHT_MAIN_TYP,
+        }
+    }
+
+    /// Every released version with the SHA-1 of its normalised text, oldest first. Add a row
+    /// (never change one) when the bundled file changes; a test checks the last row.
+    fn releases(self) -> &'static [(u32, &'static str)] {
+        match self {
+            ProjectFile::Lib => &[(1, "e340d281c7d275c2df798a12adf916adf3634b57")],
+            ProjectFile::Main => &[(1, "7b59d765923398c424fe61cc3fa0b3d76f967548")],
+        }
+    }
+
+    fn marker(self) -> &'static str {
+        match self {
+            ProjectFile::Lib => "// maatwerk-lib ",
+            ProjectFile::Main => "// maatwerk-main ",
+        }
+    }
+
+    /// The version the bundled file has now.
+    pub fn current_version(self) -> u32 {
+        self.releases().last().expect("at least one release").0
+    }
+
+    /// The version a copy claims in its version line (within the first lines), if any.
+    pub fn version_line(self, text: &str) -> Option<u32> {
+        text.lines()
+            .take(5)
+            .find_map(|l| l.trim().strip_prefix(self.marker()))
+            .and_then(|v| v.trim().parse().ok())
+    }
+
+    /// `Some(version)` when `text` is exactly a released version (line endings and a BOM
+    /// aside), `None` when the teacher changed it.
+    pub fn released_version(self, text: &str) -> Option<u32> {
+        let hash = normalised_sha1(text);
+        self.releases()
+            .iter()
+            .find(|(_, h)| *h == hash)
+            .map(|(v, _)| *v)
+    }
+}
+
+/// SHA-1 (hex) of the text with a BOM removed and CRLF as LF, so a copy saved by an editor that
+/// changes line endings still counts as unmodified.
+fn normalised_sha1(text: &str) -> String {
+    let text = text
+        .strip_prefix('\u{feff}')
+        .unwrap_or(text)
+        .replace("\r\n", "\n");
+    crate::storage::hash_hex(text.as_bytes())
+}
+
 /// Source Serif 4 (all 12 static styles, as the reference ships them) and STIX Two Math. Both OFL.
 pub(crate) static FONTS: &[&[u8]] = &[
     include_bytes!("../assets/fonts/SourceSerif4-ExtraLight.otf"),
@@ -76,6 +146,37 @@ mod tests {
             assert!(package_file(&format!("preview/{name}/{version}/LICENSE")).is_some());
         }
         assert!(!has_package("preview", "zero", "0.7.0"));
+    }
+
+    #[test]
+    fn the_bundled_project_files_are_their_last_released_version() {
+        for file in [ProjectFile::Lib, ProjectFile::Main] {
+            let text = file.bundled();
+            assert_eq!(
+                file.releases().last().unwrap().1,
+                normalised_sha1(text),
+                "{file:?} changed: add a release row with a new version (and bump its version line)"
+            );
+            assert_eq!(
+                file.version_line(text),
+                Some(file.current_version()),
+                "{file:?}"
+            );
+            assert_eq!(file.released_version(text), Some(file.current_version()));
+        }
+    }
+
+    #[test]
+    fn a_changed_copy_is_not_a_released_version() {
+        let lib = ProjectFile::Lib;
+        let crlf = format!("\u{feff}{}", LIB_TYP.replace('\n', "\r\n"));
+        assert_eq!(lib.released_version(&crlf), Some(1));
+        let changed = LIB_TYP.replace("size: 10.5pt", "size: 11pt");
+        assert_ne!(changed, LIB_TYP);
+        assert_eq!(lib.released_version(&changed), None);
+        assert_eq!(lib.version_line(&changed), Some(1));
+        assert_eq!(lib.version_line("#import \"x\""), None);
+        assert_eq!(ProjectFile::Main.released_version(LIB_TYP), None);
     }
 
     #[test]

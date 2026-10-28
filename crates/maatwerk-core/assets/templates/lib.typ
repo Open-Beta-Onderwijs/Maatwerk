@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
+// maatwerk-lib 1
 // lib.typ — shared helpers for opdracht templates.
-// Embedded in Maatwerk; each opdracht folder gets its own copy (ADR-0002 5a, versioning in 5b).
+// Embedded in Maatwerk; each opdracht folder gets its own copy (ADR-0002 5a). Maatwerk updates
+// an unmodified copy when a new version ships and never overwrites a copy you changed.
 
 // Number/unit formatting, available in every opdracht via `#import "lib.typ": *`.
 // The package is embedded in Maatwerk; nothing is downloaded.

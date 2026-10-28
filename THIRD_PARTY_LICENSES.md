@@ -77,3 +77,5 @@ complete source is in this repository, which satisfies the LGPL for `cetz`.
 
 `crates/maatwerk-core/assets/templates/` (`rapport.typ`, `lib.typ`, `base_assignment.typ`) come
 from the reference repo (`include/templates/`), same author, AGPL-3.0-or-later.
+`rapport-main.typ` and `opdracht-main.typ` (the former generated wrappers) are Maatwerk's own,
+AGPL-3.0-or-later.
