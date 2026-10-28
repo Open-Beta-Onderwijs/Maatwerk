@@ -1,12 +1,25 @@
 # State
 
-Last updated: 2026-10-28 (Step 5b in progress) Branch: `step/05-typst` Last tag: `step-05a`
+Last updated: 2026-10-28 (Step 5 done) Branch: `main` Last tag: `step-05`
 
 ## Current step
 
-Step 5a (Typst World and rapport PDF) is done: reviewed (`docs/reviews/step-05a.md`), majors
-fixed, tag `step-05a` on `step/05-typst` (merged into `main` after 5b, as in Step 4).
-Waiting for the user before 5b.
+Step 5 (Typst service) is done: 5b reviewed (`docs/reviews/step-05b.md`, no blockers/majors,
+security review clean), merged into `main`, tag `step-05`. Waiting for the user before Step 6.
+
+## Step 5b summary
+
+- `TypstProject` (`folder` for the CLI, `opdracht_v1` = virtual project: bundled `main.typ` and
+  `lib.typ`, `opdracht.typ`, own `images/<id>/` only); `opdracht-main.typ` replaces the generated
+  wrapper, data via `sys.inputs` `maatwerk-data` (`OpdrachtInputs`; placeholder only for preview).
+- `render_assignment_pdf`, `render_assignment_svg_pages` (in memory), `render_assignment_batch`
+  (workers `max(2, min(4, cpus-1))`, monotonic progress, first failure stops), `pdf_merge`
+  (lopdf 0.46, duplex padding), tofu warning, `maatwerk-cli typst compile`, version lines +
+  released hashes (`assets::ProjectFile`), cursor marker `__maatwerk_cursor`/`maatwerk-cursor:`.
+- Parity: all opdracht/SVG/batch goldens (`tests/typst_opdracht.rs`, 24 tests); JPEG within 3
+  levels; quirks T28 (1-based columns) and T29 (sandbox, v1 details). `docs/perf.md`: 30-student
+  batch ~118 MiB. **Step 6 must** map Tauri args to `OpdrachtInputs`/`BatchJob` (label fallback
+  `label ?? typFile`), run them in `spawn_blocking`, and call `normaliseForTypst` for the rapport.
 
 ## Step 5a summary
 
@@ -30,42 +43,22 @@ Waiting for the user before 5b.
 - Watcher test `m1_a_failed_own_write_releases_the_file` was flaky (same-size content); test fixed,
   product edge case in the backlog.
 
-## Deferred to 5b
-
-- Opdracht World (one project folder, `main.typ` with `sys.inputs` header: covers "same for the
-  assignment header"), cursor marker rename (`__maatwerk_cursor`, `maatwerk-cursor:`) with the
-  editor label filter, SVG pages, batch + progress, `pdf_merge` (lopdf), CLI `typst compile`,
-  emoji/tofu check, lib.typ version line, memory measurement (`docs/perf.md`), review 5a nits
-  (backlog).
-- No Tauri command yet: Step 6 (rapport command via `spawn_blocking` + `FontStore::shared()`).
-
 ## In progress
 
-Step 5b, sub-tasks (each one commit):
-
-1. Done (`0d66b93`): `TypstProject`, `opdracht-main.typ` (sys.inputs), PDF + SVG pages, cursor
-   rename, 12 opdracht/SVG goldens pass (`tests/typst_opdracht.rs`), quirks T28/T29.
-2. Done (`dc7e97b`): tofu warning (glyph id 0), emoji verified by the pixel golden.
-3. Done (`42291cf`): `pdf_merge` (lopdf 0.46) + `render_assignment_batch` + batch goldens.
-4. Done (`174a526`): `maatwerk-cli typst compile`.
-5. Done (`06029b9`): lib.typ/main.typ version line + released hashes (`assets::ProjectFile`).
-6. Done (`534a8b4`): `docs/perf.md` (30-student batch ~118 MiB peak, no cap), review 5a n4/n5,
-   parity rows.
-7. **Now:** gate (2.2) and review subagent (`docs/reviews/step-05b.md`), then fix blockers/majors,
-   merge `step/05-typst` into `main` (merge commit), tag `step-05`, report.
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. If the review file exists: triage it (fix blockers/majors, minors to `docs/backlog.md`), rerun
-   the gate. If not: rerun the review (PLAN 2.3, Appendix C) on `git diff step-05a..HEAD`.
-2. Merge into `main` with a merge commit, tag `step-05`, update PLAN section 3 and this file.
+1. When the user says go: Step 6 (PLAN.md section 6, Step 6), new branch `step/06-tauri` from
+   `main`.
 
 ## Open questions for the user
 
 - quick-xml advisory ignore (local DoS only, needs typst > 0.14): accept?
-- Remote repo still to create, so CI has never run (also not the new pixel tests, which depend on
-  the emoji font); PLAN section 9 items (emoji font 5b, domain logic location Step 10,
-  versioning, macOS).
+- Remote repo still to create, so CI has never run (also not the pixel tests, which depend on the
+  system emoji font). Emoji (PLAN section 9, decision 2): Segoe UI Emoji renders pixel-identical
+  on Windows and missing glyphs now warn; a bundled emoji font is only needed for macOS/CI. Other
+  section 9 items: domain logic location (Step 10), versioning, macOS.
 
 ## How to resume
 
@@ -73,7 +66,7 @@ PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with
 Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). In PowerShell 5.1, commit with
 `git commit -F <file>` (inline messages with quotes get split into pathspecs). `npm ci; npm run
 build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright
-install chromium` in `ui/`). Rapport parity: `cargo test -p maatwerk-core --test typst_rapport`
+install chromium` in `ui/`). Rapport parity: `cargo test -p maatwerk-core --test typst_rapport` / `--test typst_opdracht`
 (needs system fonts incl. Segoe UI Emoji; failing pages are written to
 `target/tmp/golden/<case>/`). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and
 the Typst packages in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.

@@ -256,3 +256,15 @@ No blockers or majors.
 - **m5 recorded** in quirk T29 (file name in diagnostics, `images/<id>` path, case sensitivity).
 - **n8 fixed** (SPDX exemption narrowed to `tests/fixtures/opdrachten/*`).
 - **n1-n7:** `docs/backlog.md` ("From Step 5b").
+
+## Security review (PLAN 2.3 item 4, 2026-10-28)
+
+`/security-review` on `main..step/05-typst`: no findings at or above the 80% confidence bar.
+Checked: World virtual paths (`..`, drive/UNC prefixes, `/C:/x`), mounted reads (RelPath, then
+canonicalise and prefix check; junctions), mount roots `within` the data dir, file mounts,
+embedded-only packages, `opdracht_v1` name validation (NTFS streams, trailing dots), JSON inputs
+(never source text), `eval` of teacher markup (same sandbox as the rapport), SVG in the editor
+(CSP `script-src 'self'`, links neutralised), `pdf_merge` (only Typst's own PDFs), CLI, machine
+paths in diagnostics. Hardening notes: NTFS hard links cannot be detected by canonicalising
+(local write access needed); `TypstProject::folder` needs `.within` before the app uses it
+(backlog m2).
