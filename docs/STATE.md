@@ -1,51 +1,64 @@
 # State
 
-Last updated: 2026-10-27 (Step 4 done) Branch: `main` Last tag: `step-04`
+Last updated: 2026-10-28 (Step 5a, before review) Branch: `step/05-typst` Last tag: `step-04`
 
 ## Current step
 
-Step 4 is done (4a `step-04a`, 4b `step-04b`, merged into `main`, tag `step-04`). Waiting for the
-user before Step 5 (Typst service).
+Step 5a (Typst World and rapport PDF). Code done and committed (`4f14a72`); docs updated. Next:
+mid-step review (`docs/reviews/step-05a.md`), fix blockers/majors, tag `step-05a`, then stop and
+report to the user.
 
-## Step 4b summary
+## Step 5a summary
 
-- Core `watcher` (spec S28-S40): engine on a virtual clock + thread driver on `notify` 8.2.1
-  (CC0-1.0); 20 s poll, 500 ms debounce, 100 ms batches, parse retry, restart after errors and
-  every 60 s (review M1: Windows `notify` stops silently). Own writes: `WriteObserver`
-  `will_change`/`note_write`/`note_delete`/`change_failed`. `rapporten/` ignored. Quirk D36 fixed
-  (own writes to ignored paths), D35/S34 kept.
-- Core `presence`: `users/<id>.json`, previous user offline on switch, `close` on quit.
-- App: 16 commands (storage, presence, session) on `spawn_blocking`, `CommandError {code,
-message, details}`, event `data:changed`. Bindings by `tauri-specta` rc.26 (ADR-0005),
-  `ui/src/bridge/bindings.ts`, stale check in `cargo test`, `npm run bindings`. `build.rs` links
-  the Common Controls manifest into test binaries (else `STATUS_ENTRYPOINT_NOT_FOUND`).
-- UI: `TauriApi` compat layer (`tauri-api.ts`) with contract tests; presence calls queued.
-- `npm run data:dev` + `npm run dev`: real app on synthetic data (smoke run: subject picker).
-- Review `docs/reviews/step-04b.md`: M1, m1-m4, m6 fixed; m5 partly; rest in `docs/backlog.md`.
-- `/security-review` could not run (needs `origin/HEAD`; no remote). The reviewer's checklist
-  covered security.
-- Not wired yet: `Watcher::set_scope_year` (C7, Step 6a); opdracht images, Typst, `openPath`
-  still throw "nog niet beschikbaar" (Steps 5-6).
+- `maatwerk-core::assets`: embedded `rapport.typ` (= `rtti_export.typ`, SPDX header, input
+  guards), `rapport-main.typ` (entry, reads `data.json`), `lib.typ` (markers `__maatwerk_*`,
+  counters `maatwerk-vraag*`), `base_assignment.typ` (unchanged); fonts Source Serif 4 (12) +
+  STIX Two Math; packages zero/cetz/oxifmt/unify embedded by `build.rs` (`PACKAGE_FILES`).
+- `maatwerk-core::typst_svc`: `MaatwerkWorld` (virtual files + `Mount`s behind
+  canonicalise/prefix check, embedded packages only, injectable clock for `today()` and the PDF
+  date), `FontStore` (template fonts, system fonts searched once via `FontStore::shared()`, then
+  Typst's), `Diagnostic`/`Location`/`TraceFrame` + `to_text` (CLI-like, virtual paths only),
+  `compile_document`, `compile_pdf`, `render_rapport_pdf(fonts, &RapportData, &DataDir, now)`.
+- Parity: `tests/typst_rapport.rs` matches `rapport-one-student` and `rapport-valid` **pixel for
+  pixel** (30 ppi) plus page count/sizes/text; no-watermark and markup goldens give the same errors.
+- Quirks fixed template side: T26 (non-colour colours, non-number scores), T11/T27 (`$` guard on
+  `uitleg_rtti`). Failing tests first (see commit message).
+- `deny.toml`: RUSTSEC-2026-0194/0195 (quick-xml via typst 0.14.2) ignored with reason; backlog.
+- SPDX check skips vendored packages and `base_assignment.typ`; `.prettierignore` skips vendored
+  fonts/packages.
+
+## Deviations / deferred to 5b
+
+- "Same for the assignment header" (PLAN 5a): per ADR-0002 5a the opdracht header comes through
+  `sys.inputs` in `main.typ`; done with the opdracht World in 5b (`WorldSpec::inputs` exists).
+- Cursor marker rename (`__maatwerk_cursor`, `maatwerk-cursor:`) and the editor label filter: 5b,
+  together with the preview wrapper (naming map).
+- Opdracht sandbox (one project folder), SVG, batch, merge, CLI, emoji check: 5b.
+- No Tauri command yet: Step 6 (rapport command uses `spawn_blocking` + `FontStore::shared()`).
 
 ## In progress
 
-- Nothing.
+- Review of 5a.
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 5 (PLAN.md section 6, Step 5). Run `/security-review` once a
-   remote exists.
+1. Spawn the reviewer subagent for 5a (diff `step-04..HEAD`, PLAN Step 5 section, Appendix C),
+   write `docs/reviews/step-05a.md`, fix blockers/majors, re-run the gate, tag `step-05a`.
+2. Stop and report. Then 5b when the user says go.
 
 ## Open questions for the user
 
-- Remote repo still to create (`gh` not installed), so CI has not run on 3b/4a; PLAN section 9
-  items (emoji font Step 5, domain logic location Step 10, versioning, macOS).
+- quick-xml advisory ignore (local DoS only, needs typst > 0.14): accept?
+- Remote repo still to create, so CI has never run (also not the new pixel tests); PLAN section 9
+  items (emoji font Step 5b, domain logic location Step 10, versioning, macOS).
 
 ## How to resume
 
 PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with the editor or
-Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). `npm ci; npm run build:ui`, then
-the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright install chromium`
-in `ui/`). `npm run test:visual -w ui` needs a local baseline (`-- --update-snapshots` before a
-change). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and the Typst packages
-cetz/unify/oxifmt in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.
+Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). In PowerShell 5.1, commit with
+`git commit -F <file>` (inline messages with quotes get split into pathspecs). `npm ci; npm run
+build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright
+install chromium` in `ui/`). Rapport parity: `cargo test -p maatwerk-core --test typst_rapport`
+(needs system fonts incl. Segoe UI Emoji; failing pages are written to
+`target/tmp/golden/<case>/`). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and
+the Typst packages in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.

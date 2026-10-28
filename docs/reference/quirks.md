@@ -630,6 +630,10 @@ Paths in this section are relative to `_reference/renderer/`.
   rapport compiling: that category's leeradvies row reads e.g. `0 / 5 (0%)` with the "laag" advice; the
   reference showed `NaN / 5 (NaN%)` with the "hoog" advice (NaN compares false). Template side: Step 5.
   Tests: `ui/tests/domain/rapport.test.ts` ("T26", and `compileRapport-exam-jaarlaag-3`).
+- **Fixed in the port (Step 5a, template side):** `rapport.typ` draws a colour that is not a hex
+  colour (`dot_color`, `rtti_color`) in the not-entered grey `#b0b8c1`, and treats a `score` that
+  is not a number as not entered (`_color`, `_guard_vraag`). The `rapport-tiny` data now compiles.
+  Tests: `crates/maatwerk-core/tests/typst_rapport.rs` `t26_*`.
 
 ### T27. The unclosed-`$` guard breaks the rapport it is meant to protect
 
@@ -643,6 +647,11 @@ Paths in this section are relative to `_reference/renderer/`.
 - **Fixed in the port (Step 3a):** the warning reads `[\$-teken niet gesloten …]`, so every `$` of a
   guarded text is escaped (`ui/src/domain/rapport.ts` `sanitizeTypstMarkup`). Tests:
   `ui/tests/domain/rapport.test.ts` ("T27").
+- **Fixed in the port (Step 5a, template side, also T11 for `uitleg_rtti`):** `rapport.typ`
+  `_guard_markup` applies the same `$` rule before every `eval` (leeradvies and the four
+  `uitleg_rtti` texts). Text the UI already guarded has an even `$` count, so it is unchanged. Other
+  invalid markup (unbalanced `[`, unknown functions) still fails the rapport, as in the reference.
+  Tests: `crates/maatwerk-core/tests/typst_rapport.rs` `t11_*`, `even_dollars_in_uitleg_rtti_stay_math`.
 
 ## U. UI
 

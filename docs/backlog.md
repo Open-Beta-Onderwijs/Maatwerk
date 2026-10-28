@@ -2,6 +2,16 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 5a
+
+- **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
+  through hayagriva/citationberg; the fix needs quick-xml 0.41. Re-check when moving off the
+  typst 0.14 line.
+- **Golden pixel tests depend on the system emoji font:** `rapport-valid` is pixel-identical with
+  this machine's Segoe UI Emoji. CI (windows-latest) has never run these tests (no remote yet); if
+  its emoji font differs, compare emoji regions with a tolerance or bundle an emoji font (PLAN
+  section 9, open decision 2).
+
 ## From Step 4b
 
 - **Startup error screen (review 4b m5):** an unusable data folder (unsupported
