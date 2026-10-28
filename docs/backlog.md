@@ -9,11 +9,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Review 5a m4 (watcher, Step 4b code):** a colleague's write with the same size inside one
   mtime tick of the previous state is not seen as a change by the stat check. Compare a content
   hash when size and mtime are equal but an event arrived.
-- **Review 5a nits for 5b:** deny `..` above the root explicitly (n1); check that a mount root
-  lies inside the data folder (n2); drop Typst's CLI `--root` hints from access-denied
-  diagnostics (n3); keep `WorldSpec`/`Mount` construction behind per-kind constructors (n6);
-  test PDF determinism across processes (n4); stronger `rapport-tiny` assertions (n5); system
-  fonts can shadow Typst's own fonts in pixel tests (n8); general tofu warning, not only emoji (n9).
+- **Review 5a nit n8 (open):** system fonts can shadow Typst's own fonts in the pixel tests (a
+  machine with another "Libertinus Serif" installed renders differently). Nits n1-n6 and n9 were
+  done in 5b.
 
 - **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
   through hayagriva/citationberg; the fix needs quick-xml 0.41. Re-check when moving off the

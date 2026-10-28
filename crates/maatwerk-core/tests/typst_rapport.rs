@@ -136,6 +136,18 @@ fn t26_a_score_colour_that_is_not_a_colour_does_not_break_the_rapport() {
         .unwrap_or_else(|e| panic!("{}", e.to_text()))
         .output;
     assert_eq!(doc.pages.len(), 2 * students);
+    // Review 5a n5: the two rows with the broken colour are drawn. Their score arrives as 0
+    // (`toTypst(NaN)` in the old payload), so they read "0 / max", as the reference would have.
+    let vragen = data.students[0]["vragen"].as_array().unwrap();
+    let broken: Vec<&str> = vragen
+        .iter()
+        .filter(|v| v["dot_color"] == "#NaNNaNNaN")
+        .map(|v| v["label"].as_str().unwrap())
+        .collect();
+    assert_eq!(broken, ["III12", "III16"]);
+    let text = page_text(&doc, 0);
+    assert!(text.contains("III12I0 / 3"), "{text}");
+    assert!(text.contains("III16IDiag.0 / 1"), "{text}");
 }
 
 #[test]
@@ -218,6 +230,9 @@ fn the_pdf_is_deterministic_with_a_fixed_clock() {
     let data = case_data(&case);
     let (_tmp, dir) = data_dir(true);
     let a = render_rapport_pdf(FontStore::shared(), &data, &dir, fixed_now()).unwrap();
+    // Review 5a n4: without the memoisation cache the second compile does all the work again,
+    // as a new process would.
+    typst::comemo::evict(0);
     let b = render_rapport_pdf(FontStore::shared(), &data, &dir, fixed_now()).unwrap();
     assert!(a.output.starts_with(b"%PDF-"));
     assert_eq!(a.output, b.output);
