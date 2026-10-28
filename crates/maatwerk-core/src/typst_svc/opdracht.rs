@@ -48,6 +48,7 @@ pub struct OpdrachtHeader {
     pub group: String,
     #[serde(deserialize_with = "text")]
     pub exam: String,
+    #[serde(deserialize_with = "or_default")]
     pub observaties: Vec<Observatie>,
 }
 
@@ -69,15 +70,21 @@ impl OpdrachtHeader {
     }
 }
 
-/// The runtime data of one compile.
+/// The runtime data of one compile. Missing or `null` fields take the reference's defaults:
+/// student mode, answers included, an empty header (`job.header ?? {}`, `typStr(s ?? '')`; review
+/// 5b m1). Only the editor preview uses the placeholder header ([`OpdrachtInputs::preview`]).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct OpdrachtInputs {
+    #[serde(deserialize_with = "or_default")]
     pub mode: Mode,
     /// Student mode: print the answers upside down at the bottom (`includeAnswers`).
+    #[serde(deserialize_with = "or_true")]
     pub include_answers: bool,
     /// Draw a `maatwerk-cursor:` link at `<__maatwerk_cursor>` (live preview).
+    #[serde(deserialize_with = "or_default")]
     pub cursor: bool,
+    #[serde(deserialize_with = "or_default")]
     pub header: OpdrachtHeader,
 }
 
@@ -87,7 +94,7 @@ impl Default for OpdrachtInputs {
             mode: Mode::Student,
             include_answers: true,
             cursor: false,
-            header: OpdrachtHeader::placeholder("Titel"),
+            header: OpdrachtHeader::default(),
         }
     }
 }
@@ -113,7 +120,19 @@ impl OpdrachtInputs {
 
 /// `null` as `""` (the reference's `typStr(s ?? '')`).
 fn text<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
-    Ok(Option::<String>::deserialize(d)?.unwrap_or_default())
+    or_default(d)
+}
+
+/// `null` as the default value.
+fn or_default<'de, D: Deserializer<'de>, T: Deserialize<'de> + Default>(
+    d: D,
+) -> Result<T, D::Error> {
+    Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
+}
+
+/// `null` as `true` (`includeAnswers` defaults to true).
+fn or_true<'de, D: Deserializer<'de>>(d: D) -> Result<bool, D::Error> {
+    Ok(Option::<bool>::deserialize(d)?.unwrap_or(true))
 }
 
 /// The sandboxed World for one opdracht job.
@@ -170,6 +189,18 @@ mod tests {
         let json = serde_json::to_value(&inputs).unwrap();
         assert_eq!(json["mode"], "answers");
         assert_eq!(json["include_answers"], true);
-        assert_eq!(json["header"]["title"], "Titel");
+        assert_eq!(json["header"]["title"], "");
+    }
+
+    #[test]
+    fn review_m1_missing_or_null_fields_take_the_reference_defaults() {
+        let inputs: OpdrachtInputs = serde_json::from_str(
+            r#"{"mode": null, "include_answers": null, "header": {"observaties": null}}"#,
+        )
+        .unwrap();
+        assert_eq!(inputs, OpdrachtInputs::default());
+        let inputs: OpdrachtInputs = serde_json::from_str("{}").unwrap();
+        assert_eq!(inputs.header.student, "", "no placeholder on a real sheet");
+        assert!(inputs.include_answers);
     }
 }

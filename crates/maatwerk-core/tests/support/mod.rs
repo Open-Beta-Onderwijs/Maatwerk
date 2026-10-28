@@ -114,7 +114,7 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
             .pixels()
             .iter()
             .zip(expected.pixels())
-            .filter(|(a, b)| !close(**a, **b))
+            .filter(|(a, b)| !close(**a, **b, tolerance(id)))
             .count();
         if differing > 0 {
             actual.save_png(out_dir.join(file)).unwrap();
@@ -128,18 +128,24 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
     }
 }
 
-/// Equal up to [`PIXEL_TOLERANCE`] per channel. Everything Typst draws itself matches exactly;
-/// JPEG photos differ by up to 3 levels because our `image` crate decodes with zune-jpeg 0.5
-/// and the reference CLI's build used an older decoder (`opdracht-images-student`, `foto.jpg`).
-fn close(a: tiny_skia::PremultipliedColorU8, b: tiny_skia::PremultipliedColorU8) -> bool {
-    let d = |x: u8, y: u8| x.abs_diff(y) <= PIXEL_TOLERANCE;
+/// Per-channel tolerance of a golden: 0, except where a JPEG photo is drawn. JPEGs differ by up
+/// to 3 levels because our `image` crate decodes with zune-jpeg 0.5 and the reference CLI's
+/// build used an older decoder (`foto.jpg`; review 5b m3).
+fn tolerance(id: &str) -> u8 {
+    if id == "opdracht-images-student" {
+        3
+    } else {
+        0
+    }
+}
+
+fn close(a: tiny_skia::PremultipliedColorU8, b: tiny_skia::PremultipliedColorU8, tol: u8) -> bool {
+    let d = |x: u8, y: u8| x.abs_diff(y) <= tol;
     d(a.red(), b.red())
         && d(a.green(), b.green())
         && d(a.blue(), b.blue())
         && d(a.alpha(), b.alpha())
 }
-
-pub const PIXEL_TOLERANCE: u8 = 3;
 
 /// The text of one golden PDF page without the watermark's `schema` line.
 pub fn golden_text(page: &Value) -> String {

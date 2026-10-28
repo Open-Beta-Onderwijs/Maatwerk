@@ -98,7 +98,8 @@ pub fn render_assignment_batch(
         jobs.into_iter().map(|j| Mutex::new(Some(j))).collect();
     let results: Vec<Mutex<Option<JobResult>>> = (0..total).map(|_| Mutex::new(None)).collect();
     let next = AtomicUsize::new(0);
-    let done = AtomicUsize::new(0);
+    // Counted and reported under one lock, so `done` never goes backwards (review 5b m4).
+    let done = Mutex::new(0usize);
     let failed = AtomicBool::new(false);
 
     progress(BatchProgress { done: 0, total });
@@ -121,9 +122,10 @@ pub fn render_assignment_batch(
                         failed.store(true, Ordering::SeqCst);
                     }
                     *lock(&results[index]) = Some(result);
-                    let finished = done.fetch_add(1, Ordering::SeqCst) + 1;
+                    let mut finished = lock(&done);
+                    *finished += 1;
                     progress(BatchProgress {
-                        done: finished,
+                        done: *finished,
                         total,
                     });
                 }

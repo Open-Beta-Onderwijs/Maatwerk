@@ -45,16 +45,20 @@ Step 5b, sub-tasks (each one commit):
 
 1. Done (`0d66b93`): `TypstProject`, `opdracht-main.typ` (sys.inputs), PDF + SVG pages, cursor
    rename, 12 opdracht/SVG goldens pass (`tests/typst_opdracht.rs`), quirks T28/T29.
-2. Tofu warning (glyph id 0) + emoji check.
-3. `pdf_merge` (lopdf) + `render_assignment_batch` (threads, progress) + batch goldens.
-4. `maatwerk-cli typst compile`.
-5. lib.typ/main.typ version line + released hashes.
-6. Rest of review 5a nits (n4, n5, n8), `docs/perf.md` batch memory, parity rows, STATE.
-7. Gate, review subagent (`docs/reviews/step-05b.md`), fixes, merge to main, tag `step-05`.
+2. Done (`dc7e97b`): tofu warning (glyph id 0), emoji verified by the pixel golden.
+3. Done (`42291cf`): `pdf_merge` (lopdf 0.46) + `render_assignment_batch` + batch goldens.
+4. Done (`174a526`): `maatwerk-cli typst compile`.
+5. Done (`06029b9`): lib.typ/main.typ version line + released hashes (`assets::ProjectFile`).
+6. Done (`534a8b4`): `docs/perf.md` (30-student batch ~118 MiB peak, no cap), review 5a n4/n5,
+   parity rows.
+7. **Now:** gate (2.2) and review subagent (`docs/reviews/step-05b.md`), then fix blockers/majors,
+   merge `step/05-typst` into `main` (merge commit), tag `step-05`, report.
 
 ## Next action (concrete, resumable)
 
-1. Continue with the first open sub-task above.
+1. If the review file exists: triage it (fix blockers/majors, minors to `docs/backlog.md`), rerun
+   the gate. If not: rerun the review (PLAN 2.3, Appendix C) on `git diff step-05a..HEAD`.
+2. Merge into `main` with a merge commit, tag `step-05`, update PLAN section 3 and this file.
 
 ## Open questions for the user
 

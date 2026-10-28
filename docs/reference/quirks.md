@@ -679,6 +679,14 @@ Paths in this section are relative to `_reference/renderer/`.
   "file not found" or "access denied". The synthetic opdrachten of the goldens only use their own
   images, so no golden changes. Test: `typst_opdracht.rs`
   `the_opdracht_world_sees_its_own_images_and_nothing_else`.
+- **Further v1 details (review 5b m5):** a v1 opdracht is served as `opdracht.typ`, so
+  diagnostics name `opdracht.typ`, not `opdracht_<id>.typ` (the batch error still names the
+  opdracht by its label). Its images stay at `images/<id>/...` (ADR-0002 5a says "mapped to
+  `images/`": the mapping to `images/` happens on disk in the Step 7 migration, which rewrites
+  the source; until then the virtual project keeps the old path so v1 sources compile unchanged).
+  The `images/<id>` prefix is matched case-sensitively, while the reference read through the
+  case-insensitive Windows file system: `Images/<id>/x.png` worked there and fails here. Editor
+  snippets always write `images/<id>/`; Step 7 checks existing sources.
 
 ## U. UI
 

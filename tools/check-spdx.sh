@@ -9,7 +9,7 @@ set -euo pipefail
 missing=0
 while IFS= read -r file; do
   case "$file" in
-    crates/maatwerk-core/assets/packages/* | crates/maatwerk-core/assets/templates/base_assignment.typ | crates/maatwerk-core/tests/fixtures/*) continue ;;
+    crates/maatwerk-core/assets/packages/* | crates/maatwerk-core/assets/templates/base_assignment.typ | crates/maatwerk-core/tests/fixtures/opdrachten/*) continue ;;
   esac
   if ! head -n 3 "$file" | grep -q 'SPDX-License-Identifier: AGPL-3.0-or-later'; then
     echo "missing SPDX header: $file"
