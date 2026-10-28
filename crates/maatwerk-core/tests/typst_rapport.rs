@@ -89,13 +89,39 @@ fn rapport_without_watermark_fails_on_the_missing_file() {
 }
 
 #[test]
-fn rapport_markup_with_the_old_guard_output_still_fails() {
-    // The golden's data is what the reference UI sent: its `$` guard produced invalid markup
-    // (T27). The port fixed that on the data side (Step 3a); the template evaluates the same
-    // input the same way.
+fn other_invalid_teacher_markup_still_fails_with_a_call_trace() {
+    // As in the reference (T11): only the `$` count is guarded.
+    let case = load_case("rapport-one-student");
+    let mut data = case_data(&case);
+    data.exam_info["uitleg_rtti"]["I"] = Value::from("#bestaatniet()");
+    let err = compile(&data, true).unwrap_err();
+    assert_eq!(err.diagnostics[0].message, "unknown variable: bestaatniet");
+    let text = err.to_text();
+    assert!(
+        text.contains("help: error occurred in this call of function `rtti_uitleg_section`"),
+        "{text}"
+    );
+    assert!(
+        !text.contains("error occurred error occurred"),
+        "review m1: {text}"
+    );
+}
+
+#[test]
+fn t27_rapport_markup_with_the_old_guard_output_now_compiles() {
+    // The golden's data is what the reference UI sent: its `$` guard left one unescaped `$` in
+    // its own warning, so the reference failed with "unclosed delimiter" (T27). The template
+    // guard counts that `$` and escapes it, so the rapport compiles with the red warning.
     let case = load_case("rapport-markup");
-    let err = compile(&case_data(&case), true).unwrap_err();
-    assert_eq!(err.diagnostics[0].message, "unclosed delimiter");
+    assert!(!case["result"]["success"].as_bool().unwrap());
+    let data = case_data(&case);
+    let students = data.students.as_array().unwrap().len();
+    let doc = compile(&data, true)
+        .unwrap_or_else(|e| panic!("{}", e.to_text()))
+        .output;
+    assert_eq!(doc.pages.len(), 2 * students);
+    let all: String = (0..doc.pages.len()).map(|p| page_text(&doc, p)).collect();
+    assert!(all.contains("$-teken niet gesloten"), "{all}");
 }
 
 #[test]
@@ -131,6 +157,21 @@ fn t26_a_score_that_is_not_a_number_counts_as_not_entered() {
 }
 
 #[test]
+fn review_m1_optional_fields_sent_as_null_compile_as_in_the_reference() {
+    // `normaliseForTypst` sends an `undefined` field as `null` (toTypst: `none`) and `NaN` as 0.
+    let case = load_case("rapport-one-student");
+    let mut data = case_data(&case);
+    data.students[0]["observaties"] = serde_json::json!([
+        { "icon": "🧮", "naam": "Rekenfout", "uitleg": null, "leeradvies": null }
+    ]);
+    data.students[0]["vragen"][0]["class_avg"] = Value::from(0);
+    let doc = compile(&data, true)
+        .unwrap_or_else(|e| panic!("{}", e.to_text()))
+        .output;
+    assert!(page_text(&doc, 0).contains("Rekenfout"));
+}
+
+#[test]
 fn t11_an_odd_dollar_in_uitleg_rtti_shows_the_warning_instead_of_failing() {
     let case = load_case("rapport-one-student");
     let mut data = case_data(&case);
@@ -141,6 +182,21 @@ fn t11_an_odd_dollar_in_uitleg_rtti_shows_the_warning_instead_of_failing() {
     let text = page_text(&doc, 1);
     assert!(text.contains("$-teken niet gesloten"), "{text}");
     assert!(text.contains("Kost $5 per stuk."), "{text}");
+}
+
+#[test]
+fn review_m2_an_escaped_dollar_is_not_counted_by_the_guard() {
+    // The reference rendered `\$` as a literal dollar (uitleg had no guard).
+    let case = load_case("rapport-one-student");
+    let mut data = case_data(&case);
+    data.exam_info["uitleg_rtti"]["T1"] = Value::from("Kost \\$5.");
+    data.exam_info["uitleg_rtti"]["T2"] = Value::from("Kost \\$5 of $x$ en $.");
+    let doc = compile(&data, true)
+        .unwrap_or_else(|e| panic!("{}", e.to_text()))
+        .output;
+    let text = page_text(&doc, 1);
+    assert!(text.contains("Kost $5."), "{text}");
+    assert_eq!(text.matches("niet gesloten").count(), 1, "{text}");
 }
 
 #[test]

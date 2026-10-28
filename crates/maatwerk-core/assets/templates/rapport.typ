@@ -28,12 +28,17 @@
   if q.score != none and type(q.score) != int and type(q.score) != float { q.score = none }
   q
 }
-// Markup with an odd number of `$` is escaped with a red warning, as `sanitizeTypstMarkup` in
-// ui/src/domain/rapport.ts does. Text that went through that function has an even count, so
-// guarding it again changes nothing.
-#let _guard_markup(s) = if calc.odd(s.matches("$").len()) {
-  "#text(fill: red, weight: \"bold\")[\\$-teken niet gesloten — controleer de tekst: ] " + s.replace("$", "\\$")
-} else { s }
+// Markup with an odd number of unescaped `$` gets those escaped and a red warning, as
+// `sanitizeTypstMarkup` in ui/src/domain/rapport.ts does. An escape (`\` plus any character, so
+// `\$` and `\\`) is matched first and kept. Guarded text has no unescaped `$` left, so guarding
+// it again changes nothing.
+#let _escape_or_dollar = regex("\\\\.|\\$")
+#let _guard_markup(s) = {
+  let dollars = s.matches(_escape_or_dollar).filter(m => m.text == "$").len()
+  if calc.odd(dollars) {
+    "#text(fill: red, weight: \"bold\")[\\$-teken niet gesloten — controleer de tekst: ] " + s.replace(_escape_or_dollar, m => if m.text == "$" { "\\$" } else { m.text })
+  } else { s }
+}
 
 // Per-student footer state (updated at the start of each student in render)
 #let _footer_text = state("footer-text", "")

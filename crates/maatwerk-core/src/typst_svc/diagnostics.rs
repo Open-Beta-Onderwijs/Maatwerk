@@ -6,7 +6,7 @@
 
 use serde::Serialize;
 use typst::World;
-use typst::diag::{Severity as TypstSeverity, SourceDiagnostic, Tracepoint};
+use typst::diag::{Severity as TypstSeverity, SourceDiagnostic};
 use typst::syntax::Span;
 
 use super::world::MaatwerkWorld;
@@ -18,8 +18,9 @@ pub enum Severity {
     Warning,
 }
 
-/// Where a diagnostic or trace frame points. `line`/`column` are 1-based (column in characters);
-/// `range` is the byte range in the file.
+/// Where a diagnostic or trace frame points. `line`/`column` are 1-based, the column counted in
+/// Unicode scalar values (not UTF-16 units, as JS/CodeMirror count); `range` is the UTF-8 byte
+/// range in the file's text after a leading BOM is stripped. The editor (Steps 5b/8) converts.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Location {
     pub file: String,
@@ -74,18 +75,14 @@ pub(crate) fn convert(world: &MaatwerkWorld, diags: &[SourceDiagnostic]) -> Vec<
             trace: d
                 .trace
                 .iter()
+                // Typst's own wording, as the CLI: "error occurred in this call of function `x`".
                 .map(|t| TraceFrame {
-                    message: trace_message(&t.v),
+                    message: t.v.to_string(),
                     location: locate(world, t.span),
                 })
                 .collect(),
         })
         .collect()
-}
-
-/// Same wording as the CLI ("error occurred in this call of function `x`").
-fn trace_message(point: &Tracepoint) -> String {
-    format!("error occurred {point}")
 }
 
 fn locate(world: &MaatwerkWorld, span: Span) -> Option<Location> {

@@ -7,6 +7,7 @@ import {
   fmtNum,
   getScoreBracket,
   rttiExplFileCandidates,
+  normaliseForTypst,
   sanitizeTypstMarkup,
   scoreDotColor,
   subjectDisplayName,
@@ -69,7 +70,35 @@ describe('rapport golden (domain)', () => {
     const { markup } = inputOf<{ markup: string[] }>(c);
     const expected = c.output as string[];
     markup.forEach((m, i) => {
+      // Review 5a M2: `\$ ontsnapt $` has one unescaped `$`; the reference counted the escaped
+      // one too, left the text alone and the rapport then failed (T27). Now it is guarded.
+      if (m === '\\$ ontsnapt $') {
+        expect(sanitizeTypstMarkup(m)).toMatch(/\] \\\$ ontsnapt \\\$$/);
+        return;
+      }
       if (!expected[i]!.startsWith('#text(')) expect(sanitizeTypstMarkup(m)).toBe(expected[i]);
+    });
+  });
+});
+
+describe('review 5a M1: normaliseForTypst gives the toTypst values through JSON', () => {
+  it('undefined -> null (key kept), non-finite -> 0, everything else unchanged', () => {
+    const input = {
+      a: 1.5,
+      b: undefined,
+      c: NaN,
+      d: [undefined, Infinity, { e: -Infinity, f: 'x', g: true }],
+      h: null,
+      i: {},
+    };
+    const out = JSON.parse(JSON.stringify(normaliseForTypst(input)));
+    expect(out).toEqual({
+      a: 1.5,
+      b: null,
+      c: 0,
+      d: [null, 0, { e: 0, f: 'x', g: true }],
+      h: null,
+      i: {},
     });
   });
 });
@@ -85,6 +114,13 @@ describe('T27: the $ guard no longer breaks the rapport', () => {
   it('every $ in a guarded text is escaped', () => {
     const out = sanitizeTypstMarkup('a $b$ c $d');
     expect(out.match(/(?<!\\)\$/g)).toBeNull();
+  });
+
+  it('review 5a M2: an escaped \\$ is neither counted nor escaped again', () => {
+    expect(sanitizeTypstMarkup('Kost \\$5')).toBe('Kost \\$5');
+    expect(sanitizeTypstMarkup('Kost \\$5 en $x')).toMatch(/\] Kost \\\$5 en \\\$x$/);
+    // `\\` is an escaped backslash, so the `$` after it is unescaped.
+    expect(sanitizeTypstMarkup('a\\\\$b')).toMatch(/\] a\\\\\\\$b$/);
   });
 });
 

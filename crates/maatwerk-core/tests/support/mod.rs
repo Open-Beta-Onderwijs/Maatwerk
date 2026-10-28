@@ -21,8 +21,9 @@ pub fn load_case(id: &str) -> Value {
 }
 
 /// Undoes the golden encoding (`tests/reference-harness/golden.mjs` `decode`) the way the data
-/// reaches Rust through JSON: `{"$number": "NaN"}` (and other non-finite numbers) becomes `null`,
-/// as `JSON.stringify` does; `{"$undefined": true}` disappears from objects.
+/// reaches Rust: through `normaliseForTypst` (ui/src/domain/rapport.ts) and JSON, which gives
+/// the `toTypst` values: `{"$undefined": true}` becomes `null` (key kept) and a non-finite
+/// `{"$number": "NaN"}` becomes `0`.
 pub fn decode(v: &Value) -> Value {
     match v {
         Value::Array(items) => Value::Array(items.iter().map(decode).collect()),
@@ -31,27 +32,17 @@ pub fn decode(v: &Value) -> Value {
                 if let Some(Value::String(n)) = map.get("$number") {
                     return match n.parse::<f64>() {
                         Ok(f) if f.is_finite() => serde_json::json!(f),
-                        _ => Value::Null,
+                        _ => Value::from(0),
                     };
                 }
                 if map.contains_key("$undefined") {
                     return Value::Null;
                 }
             }
-            Value::Object(
-                map.iter()
-                    .filter(|(_, v)| !is_undefined(v))
-                    .map(|(k, v)| (k.clone(), decode(v)))
-                    .collect(),
-            )
+            Value::Object(map.iter().map(|(k, v)| (k.clone(), decode(v))).collect())
         }
         other => other.clone(),
     }
-}
-
-fn is_undefined(v: &Value) -> bool {
-    v.as_object()
-        .is_some_and(|m| m.len() == 1 && m.contains_key("$undefined"))
 }
 
 /// The SVG watermark of the synthetic data folder (`tools/fixtures/generate.mjs`, `SVG`).

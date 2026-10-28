@@ -97,7 +97,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 2 | Safety net: golden tests on the old app | L (2a, 2b) | done (`step-02`) |
 | 3 | UI foundation: Vite, bridge, domain extraction (3a); score-grid replacement (3b) | L (3a, 3b) | done (`step-03`) |
 | 4 | Rust core: paths, storage, watcher | L (4a, 4b) | done (`step-04`) |
-| 5 | Typst service (parity with the old output) | L (5a, 5b) | todo |
+| 5 | Typst service (parity with the old output) | L (5a, 5b) | 5a done (`step-05a`), 5b todo |
 | 6 | Tauri wiring + parity + portable build | L (6a, 6b) | todo |
 | 7 | Data format v2, migration, cutover runbook | M | todo |
 | 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | todo |

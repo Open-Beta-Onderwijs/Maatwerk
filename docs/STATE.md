@@ -1,12 +1,11 @@
 # State
 
-Last updated: 2026-10-28 (Step 5a, before review) Branch: `step/05-typst` Last tag: `step-04`
+Last updated: 2026-10-28 (Step 5a done) Branch: `main` Last tag: `step-05a`
 
 ## Current step
 
-Step 5a (Typst World and rapport PDF). Code done and committed (`4f14a72`); docs updated. Next:
-mid-step review (`docs/reviews/step-05a.md`), fix blockers/majors, tag `step-05a`, then stop and
-report to the user.
+Step 5a (Typst World and rapport PDF) is done: reviewed (`docs/reviews/step-05a.md`), majors
+fixed, merged into `main`, tag `step-05a`. Waiting for the user before 5b.
 
 ## Step 5a summary
 
@@ -19,38 +18,41 @@ report to the user.
   date), `FontStore` (template fonts, system fonts searched once via `FontStore::shared()`, then
   Typst's), `Diagnostic`/`Location`/`TraceFrame` + `to_text` (CLI-like, virtual paths only),
   `compile_document`, `compile_pdf`, `render_rapport_pdf(fonts, &RapportData, &DataDir, now)`.
-- Parity: `tests/typst_rapport.rs` matches `rapport-one-student` and `rapport-valid` **pixel for
-  pixel** (30 ppi) plus page count/sizes/text; no-watermark and markup goldens give the same errors.
+- Parity: `tests/typst_rapport.rs` (12 tests) matches `rapport-one-student` and `rapport-valid`
+  **pixel for pixel** (30 ppi) plus page count/sizes/text; no-watermark gives the same error.
 - Quirks fixed template side: T26 (non-colour colours, non-number scores), T11/T27 (`$` guard on
-  `uitleg_rtti`). Failing tests first (see commit message).
+  `uitleg_rtti` and leeradvies; only unescaped `$` count, review M2, also in the UI's
+  `sanitizeTypstMarkup`). `rapport-markup` and `rapport-tiny` data now compile.
+- Review M1: `normaliseForTypst` (UI) restores the `toTypst` values (`undefined` -> `null`,
+  non-finite -> `0`) for the JSON payload. **Step 6 must call it** in `TauriApi.renderRapportPdf`.
 - `deny.toml`: RUSTSEC-2026-0194/0195 (quick-xml via typst 0.14.2) ignored with reason; backlog.
-- SPDX check skips vendored packages and `base_assignment.typ`; `.prettierignore` skips vendored
-  fonts/packages.
+- Watcher test `m1_a_failed_own_write_releases_the_file` was flaky (same-size content); test fixed,
+  product edge case in the backlog.
 
-## Deviations / deferred to 5b
+## Deferred to 5b
 
-- "Same for the assignment header" (PLAN 5a): per ADR-0002 5a the opdracht header comes through
-  `sys.inputs` in `main.typ`; done with the opdracht World in 5b (`WorldSpec::inputs` exists).
-- Cursor marker rename (`__maatwerk_cursor`, `maatwerk-cursor:`) and the editor label filter: 5b,
-  together with the preview wrapper (naming map).
-- Opdracht sandbox (one project folder), SVG, batch, merge, CLI, emoji check: 5b.
-- No Tauri command yet: Step 6 (rapport command uses `spawn_blocking` + `FontStore::shared()`).
+- Opdracht World (one project folder, `main.typ` with `sys.inputs` header: covers "same for the
+  assignment header"), cursor marker rename (`__maatwerk_cursor`, `maatwerk-cursor:`) with the
+  editor label filter, SVG pages, batch + progress, `pdf_merge` (lopdf), CLI `typst compile`,
+  emoji/tofu check, lib.typ version line, memory measurement (`docs/perf.md`), review 5a nits
+  (backlog).
+- No Tauri command yet: Step 6 (rapport command via `spawn_blocking` + `FontStore::shared()`).
 
 ## In progress
 
-- Review of 5a.
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. Spawn the reviewer subagent for 5a (diff `step-04..HEAD`, PLAN Step 5 section, Appendix C),
-   write `docs/reviews/step-05a.md`, fix blockers/majors, re-run the gate, tag `step-05a`.
-2. Stop and report. Then 5b when the user says go.
+1. When the user says go: Step 5b (PLAN.md section 6, Step 5, "5b"), branch `step/05-typst`
+   continues from `step-05a`.
 
 ## Open questions for the user
 
 - quick-xml advisory ignore (local DoS only, needs typst > 0.14): accept?
-- Remote repo still to create, so CI has never run (also not the new pixel tests); PLAN section 9
-  items (emoji font Step 5b, domain logic location Step 10, versioning, macOS).
+- Remote repo still to create, so CI has never run (also not the new pixel tests, which depend on
+  the emoji font); PLAN section 9 items (emoji font 5b, domain logic location Step 10,
+  versioning, macOS).
 
 ## How to resume
 

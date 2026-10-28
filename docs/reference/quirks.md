@@ -652,6 +652,10 @@ Paths in this section are relative to `_reference/renderer/`.
   `uitleg_rtti` texts). Text the UI already guarded has an even `$` count, so it is unchanged. Other
   invalid markup (unbalanced `[`, unknown functions) still fails the rapport, as in the reference.
   Tests: `crates/maatwerk-core/tests/typst_rapport.rs` `t11_*`, `even_dollars_in_uitleg_rtti_stay_math`.
+- **Refined (review 5a M2):** both guards count and escape only **unescaped** `$` (an escape `\`
+  plus any character is kept). Before, `Kost \$5` in an uitleg (unguarded in the reference, so it
+  rendered) would have been broken by the new guard, and `\$ ontsnapt $` passed the reference guard
+  but failed the rapport. The `rapport-markup` golden data now compiles with the warning.
 
 ## U. UI
 

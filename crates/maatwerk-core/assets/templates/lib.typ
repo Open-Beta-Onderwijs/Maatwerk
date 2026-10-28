@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // lib.typ — shared helpers for opdracht templates.
-// Copied to data/opdrachten/lib.typ on startup (always overwritten — edit here, not there).
+// Embedded in Maatwerk; each opdracht folder gets its own copy (ADR-0002 5a, versioning in 5b).
 
 // Number/unit formatting, available in every opdracht via `#import "lib.typ": *`.
-// The package is bundled in include/packages (passed to Typst with --package-path).
+// The package is embedded in Maatwerk; nothing is downloaded.
 #import "@preview/zero:0.7.1": quan, num, set-num
 
 // ── Shared block renderer — called from setup's show rules ─────────────────────
