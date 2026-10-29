@@ -31,7 +31,7 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
 - [ ] **M-START-4** No WebView2 (simulated): `$env:WEBVIEW2_BROWSER_EXECUTABLE_FOLDER =
-  'C:\bestaat-niet'; .\maatwerk.exe`. Expect a Windows message box "Maatwerk kan niet
+'C:\bestaat-niet'; .\maatwerk.exe`. Expect a Windows message box "Maatwerk kan niet
       starten" with WebView2 install advice and a technical line; no silent exit.
 - [ ] **M-START-5** Start without internet (Wi-Fi off): everything below still works (no CDN).
 
