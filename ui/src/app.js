@@ -380,6 +380,7 @@ function initSelects() {
   SEL.studentYear = new CustomSelect(document.getElementById('student-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       leerlingenState.year = v;
       renderStudentList();
@@ -388,6 +389,7 @@ function initSelects() {
   SEL.groupsYear = new CustomSelect(document.getElementById('groups-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderGroepenForYear(v);
     },
@@ -395,6 +397,7 @@ function initSelects() {
   SEL.toetsenYear = new CustomSelect(document.getElementById('toetsen-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderToetsenList();
       Store.preloadScores(v);

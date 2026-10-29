@@ -3,25 +3,51 @@
 // The real backend: the generated tauri-specta commands (bindings.ts, ADR-0005)
 // plus the compat layer that turns their typed `{ code, message, details }`
 // errors into each method's reference result shape (docs/reference/ipc-api.md),
-// so the legacy screens run unchanged. Methods whose Rust side comes in Steps
-// 5-6 (opdracht images, Typst, openPath) still throw.
+// so the legacy screens run unchanged.
 
-import { PORTED_METHODS, type DataChange, type FsResult, type Json, type MaatwerkApi } from './api';
-import { commands, events, type CommandError, type ErrorCode, type Value } from './bindings';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { normaliseForTypst } from '../domain/rapport';
+import {
+  PORTED_METHODS,
+  type DataChange,
+  type FsResult,
+  type ImageResult,
+  type Json,
+  type MaatwerkApi,
+  type Unsubscribe,
+} from './api';
+import {
+  commands,
+  events,
+  type CommandError,
+  type ErrorCode,
+  type ImageStored,
+  type Value,
+} from './bindings';
 
 type Commands = typeof commands;
 type Result<T> = { status: 'ok'; data: T } | { status: 'error'; error: CommandError };
+type Progress = { done: number; total: number };
+
+/** The URI scheme that serves render outputs (src-tauri/src/scheme.rs). */
+export const OUTPUT_SCHEME = 'maatwerk-out';
 
 /** What the API needs from Tauri; tests pass a fake. */
 export interface Backend {
   commands: Commands;
   listenDataChanged(cb: (changes: DataChange[]) => void): Promise<() => void>;
+  listenAssignmentProgress(cb: (progress: Progress) => void): Promise<() => void>;
+  /** URL of a render output for the viewer iframe. */
+  outputUrl(outputId: string): string;
 }
 
 const tauriBackend: Backend = {
   commands,
   // `meta` is whatever the file's `_meta` holds; the UI only reads objects from it.
   listenDataChanged: (cb) => events.dataChanged.listen((e) => cb(e.payload as DataChange[])),
+  listenAssignmentProgress: (cb) => events.assignmentProgress.listen((e) => cb(e.payload)),
+  // `http://maatwerk-out.localhost/<id>` on Windows, `maatwerk-out://localhost/<id>` elsewhere.
+  outputUrl: (outputId) => convertFileSrc(outputId, OUTPUT_SCHEME),
 };
 
 /** A rejected backend call, with the stable code from Rust. */
@@ -76,8 +102,41 @@ function fsFailure(error: unknown): FsResult {
   return { ok: false, reason: message(error) };
 }
 
-function notYet(method: string): never {
-  throw new Error(`window.maatwerk.${method} is nog niet beschikbaar in deze versie (Step 6).`);
+/** `{ status }` from Rust to the reference's `{ ok, ... }` image results. */
+function imageResult(stored: ImageStored): ImageResult {
+  switch (stored.status) {
+    case 'saved':
+      return { ok: true, file: stored.file, name: stored.name };
+    case 'exists':
+      return { ok: false, exists: true, name: stored.name };
+    case 'rejected':
+      return { ok: false, error: stored.message };
+  }
+}
+
+/** Compile warnings (e.g. characters without a font); the reference dropped them (T14). */
+function logWarnings(warnings: string[]): void {
+  for (const w of warnings) console.warn('[typst]', w);
+}
+
+/** Subscribes through a promise-returning listen; the returned function also works before it resolves. */
+function subscribe<T>(
+  listen: (cb: (payload: T) => void) => Promise<() => void>,
+  cb: (payload: T) => void,
+  what: string,
+): Unsubscribe {
+  let stopped = false;
+  let unlisten: (() => void) | null = null;
+  listen(cb)
+    .then((fn) => {
+      if (stopped) fn();
+      else unlisten = fn;
+    })
+    .catch((e) => console.error(`[${what}] cannot listen:`, e));
+  return () => {
+    stopped = true;
+    unlisten?.();
+  };
 }
 
 export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
@@ -123,6 +182,34 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       await orThrow(c.writeTextFile(relPath, content));
       return { ok: true };
     },
+    async createAssignmentTypFile(typFile) {
+      await orThrow(c.createAssignmentTypFile(typFile));
+      return { ok: true };
+    },
+
+    // ── Opdracht images ─────────────────────────────────────────────────────
+    // An invalid opdracht id rejects ('Ongeldige opdracht.'), as in the reference.
+    listOpdrachtImages: (opdrachtId) => orThrow(c.listOpdrachtImages(opdrachtId)),
+    async saveOpdrachtImage(opdrachtId, name, ext, base64, overwrite) {
+      return imageResult(
+        await orThrow(c.saveOpdrachtImage(opdrachtId, name, ext, base64, Boolean(overwrite))),
+      );
+    },
+    pickImageFile: () => orThrow(c.pickImageFile()),
+    async importOpdrachtImage(opdrachtId, token, name, overwrite) {
+      return imageResult(
+        await orThrow(c.importOpdrachtImage(opdrachtId, token, name, Boolean(overwrite))),
+      );
+    },
+    readClipboardImage: () => orElse(c.readClipboardImage(), null),
+    async copyOpdrachtImages(fromId, toId) {
+      await orThrow(c.copyOpdrachtImages(fromId, toId));
+      return { ok: true };
+    },
+    async deleteOpdrachtImages(opdrachtId) {
+      await orThrow(c.deleteOpdrachtImages(opdrachtId));
+      return { ok: true };
+    },
 
     // ── Presence, session, photos ───────────────────────────────────────────
     // The reference only logs presence failures; a heartbeat must not throw.
@@ -144,29 +231,67 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       await orThrow(c.savePhoto(relPath, base64Data));
     },
 
-    // ── Events ──────────────────────────────────────────────────────────────
-    onDataChanged(cb) {
-      let stopped = false;
-      let unlisten: (() => void) | null = null;
-      backend
-        .listenDataChanged(cb)
-        .then((fn) => {
-          if (stopped) fn();
-          else unlisten = fn;
-        })
-        .catch((e) => console.error('[sync] cannot listen for data changes:', e));
-      return () => {
-        stopped = true;
-        unlisten?.();
-      };
+    // ── Typst ───────────────────────────────────────────────────────────────
+    // Every failure is `{ success: false, error }`; a compile error's message
+    // is Typst's error text.
+    async renderRapportPdf(examId, students, examInfo) {
+      // Restores what the reference's toTypst did to the payload (review 5a M1).
+      const r = await c.renderRapportPdf(
+        examId,
+        normaliseForTypst(students) as Value,
+        normaliseForTypst(examInfo) as Value,
+      );
+      if (r.status === 'error') return { success: false, error: message(r.error) };
+      logWarnings(r.data.warnings);
+      return { success: true, pdfPath: r.data.pdfPath };
     },
-    onAssignmentProgress: () => () => {},
-    pdfUrl: (pdfPath) => notYet(`pdfUrl(${pdfPath})`),
+    async renderAssignmentSvg(typFile, title, previewContent) {
+      const r = await c.renderAssignmentSvg(typFile, title, previewContent ?? null);
+      if (r.status === 'error') return { success: false, error: message(r.error) };
+      logWarnings(r.data.warnings);
+      return { success: true, pages: r.data.pages };
+    },
+    async renderAssignmentBatch(jobs, opts) {
+      if (!Array.isArray(jobs) || jobs.length === 0)
+        return { success: false, error: 'Er is niets om te genereren.' };
+      const r = await c.renderAssignmentBatch(
+        jobs.map((j) => ({
+          key: String(j.key),
+          typFile: j.typFile,
+          label: j.label ?? null,
+          header: (j.header ?? null) as Value,
+          mode: j.mode ?? null,
+        })),
+        {
+          includeAnswers: opts?.includeAnswers ?? null,
+          duplex: opts?.duplex ?? null,
+          outputName: opts?.outputName ?? null,
+        },
+      );
+      if (r.status === 'error') return { success: false, error: message(r.error) };
+      logWarnings(r.data.warnings);
+      return { success: true, pdfPath: r.data.pdfPath, pages: r.data.pages };
+    },
+
+    // ── Shell ───────────────────────────────────────────────────────────────
+    async openPath(target) {
+      const r = await c.openPath(target);
+      return r.status === 'ok' ? '' : message(r.error);
+    },
+    printPdf: (pdfPath, name) => orThrow(c.printPdf(pdfPath, name)),
+    async setWatchYear(year) {
+      const r = await c.setWatchYear(year);
+      if (r.status === 'error') console.warn('[sync]', message(r.error));
+    },
+
+    // ── Events ──────────────────────────────────────────────────────────────
+    onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),
+    onAssignmentProgress: (cb) =>
+      subscribe((f) => backend.listenAssignmentProgress(f), cb, 'assignment progress'),
+    pdfUrl: (pdfPath) => backend.outputUrl(pdfPath),
   };
   for (const method of PORTED_METHODS) {
-    if (!(method in api)) {
-      (api as Record<string, unknown>)[method] = async () => notYet(method);
-    }
+    if (!(method in api)) throw new Error(`TauriApi misses ${method}`);
   }
   return api as MaatwerkApi;
 }

@@ -15,10 +15,10 @@ use tauri::State;
 use crate::error::CommandError;
 use crate::state::{Core, Shared};
 
-type Res<T> = Result<T, CommandError>;
+pub(crate) type Res<T> = Result<T, CommandError>;
 
 /// Runs `f` with the core on a blocking thread (all file work blocks).
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     state: State<'_, Shared>,
     f: impl FnOnce(&Core) -> Res<T> + Send + 'static,
 ) -> Res<T> {
@@ -28,7 +28,7 @@ async fn blocking<T: Send + 'static>(
         .map_err(|e| CommandError::internal(format!("blocking task failed: {e}")))?
 }
 
-fn rel(raw: &str) -> Res<RelPath> {
+pub(crate) fn rel(raw: &str) -> Res<RelPath> {
     Ok(RelPath::parse(raw)?)
 }
 
@@ -159,6 +159,18 @@ pub async fn write_text_file(
 ) -> Res<()> {
     blocking(state, move |c| {
         Ok(c.storage()?.write_text(&rel(&rel_path)?, &content)?)
+    })
+    .await
+}
+
+/// The school year whose folder the watcher polls (ADR-0003 C7); `null`: `config.json`
+/// `activeYear`. Not a reference method.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_watch_year(state: State<'_, Shared>, year: Option<String>) -> Res<()> {
+    blocking(state, move |c| {
+        c.set_watch_year(year);
+        Ok(())
     })
     .await
 }

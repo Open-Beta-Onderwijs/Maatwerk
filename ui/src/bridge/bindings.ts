@@ -40,14 +40,85 @@ export const commands = {
 	/**  `data:<mime>;base64,...`; `null` if missing or unreadable. */
 	readPhotoAsDataUrl: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_photo_as_data_url", { relPath })),
 	savePhoto: (relPath: string, base64Data: string) => typedError<null, CommandError>(__TAURI_INVOKE("save_photo", { relPath, base64Data })),
+	/**
+	 *  The school year whose folder the watcher polls (ADR-0003 C7); `null`: `config.json`
+	 *  `activeYear`. Not a reference method.
+	 */
+	setWatchYear: (year: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("set_watch_year", { year })),
+	/**  Writes the base template to `opdrachten/<typFile>` (a bare `.typ` name). */
+	createAssignmentTypFile: (typFile: string) => typedError<null, CommandError>(__TAURI_INVOKE("create_assignment_typ_file", { typFile })),
+	listOpdrachtImages: (opdrachtId: string) => typedError<ImageInfo[], CommandError>(__TAURI_INVOKE("list_opdracht_images", { opdrachtId })),
+	/**  Saves a pasted image (base64) under a cleaned name. */
+	saveOpdrachtImage: (opdrachtId: string, name: string, ext: string, base64: string, overwrite: boolean) => typedError<ImageStored, CommandError>(__TAURI_INVOKE("save_opdracht_image", { opdrachtId, name, ext, base64, overwrite })),
+	/**  Opens the file dialog (`Afbeelding kiezen`); `null` if cancelled. The path stays here. */
+	pickImageFile: () => typedError<PickedImage | null, CommandError>(__TAURI_INVOKE("pick_image_file")),
+	/**
+	 *  Copies the file chosen with `pick_image_file` into the opdracht's images. The token is kept
+	 *  until the import succeeds.
+	 */
+	importOpdrachtImage: (opdrachtId: string, token: string, name: string, overwrite: boolean) => typedError<ImageStored, CommandError>(__TAURI_INVOKE("import_opdracht_image", { opdrachtId, token, name, overwrite })),
+	/**  The clipboard image as base64 PNG, or `null`. */
+	readClipboardImage: () => typedError<string | null, CommandError>(__TAURI_INVOKE("read_clipboard_image")),
+	copyOpdrachtImages: (fromId: string, toId: string) => typedError<null, CommandError>(__TAURI_INVOKE("copy_opdracht_images", { fromId, toId })),
+	/**  Deletes the images; a folder OneDrive keeps locked is retried in the background. */
+	deleteOpdrachtImages: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_images", { opdrachtId })),
+	/**
+	 *  All students of one toets in one PDF. `examId` is unused, as in the reference. The UI passes
+	 *  the payload through `normaliseForTypst` first.
+	 */
+	renderRapportPdf: (examId: string, students: Value, examInfo: Value) => typedError<RenderedPdf, CommandError>(__TAURI_INVOKE("render_rapport_pdf", { examId, students, examInfo })),
+	/**
+	 *  The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
+	 *  with the placeholder header and the cursor marker, one SVG per page.
+	 */
+	renderAssignmentSvg: (typFile: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { typFile, title, previewContent })),
+	/**  Compiles every job and merges them in job order; reports `assignment:progress`. */
+	renderAssignmentBatch: (jobs: BatchJobArg[], opts: BatchOptionsArg | null) => typedError<RenderedBatch, CommandError>(__TAURI_INVOKE("render_assignment_batch", { jobs, opts })),
+	/**
+	 *  Opens an output (by ID) or a file in the data folder (data-relative path) with the OS
+	 *  (ADR-0002 section 7). Not an absolute path, unlike the reference.
+	 */
+	openPath: (target: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_path", { target })),
+	/**
+	 *  "Afdrukken": copies the output into `rapporten/<schooljaar>/` under a descriptive name, opens
+	 *  the copy with the OS and returns its data-relative path.
+	 */
+	printPdf: (pdfPath: string, name: PrintNameArg) => typedError<string, CommandError>(__TAURI_INVOKE("print_pdf", { pdfPath, name })),
 };
 
 /** Events */
 export const events = {
+	assignmentProgress: makeEvent<AssignmentProgress, AssignmentProgress>("assignment:progress"),
 	dataChanged: makeEvent<DataChanged, DataChanged>("data:changed"),
 };
 
 /* Types */
+/**  Progress of a batch: once with `done: 0`, then after every job (`assignment:progress`). */
+export type AssignmentProgress = {
+	done: number,
+	total: number,
+};
+
+/**  One `renderAssignmentBatch` job, as `modals/opdrachten-genereren.js` builds it. */
+export type BatchJobArg = {
+	key: string,
+	typFile: string,
+	label: string | null,
+	/**  `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing. */
+	header: Value | null,
+	/**  `answers` for the answer key; anything else is the student's opdracht. */
+	mode: string | null,
+};
+
+export type BatchOptionsArg = {
+	/**  Default true. */
+	includeAnswers: boolean | null,
+	/**  Default false. */
+	duplex: boolean | null,
+	/**  Default `opdrachten.pdf`. */
+	outputName: string | null,
+};
+
 export type CommandError = {
 	code: ErrorCode,
 	/**  English, for logs and developers; the UI shows its own Dutch text per `code`. */
@@ -68,10 +139,11 @@ export type DataChangeKind = "added" | "changed" | "deleted";
 export type DataChanged = DataChange[];
 
 /**
- *  Stable error codes. One per core error variant, plus `internal` for failures of the shell
- *  itself (a crashed blocking task).
+ *  Stable error codes. One per core error variant, `typst` for a failed compile (the message is
+ *  the diagnostics as text), plus `internal` for failures of the shell itself (a crashed blocking
+ *  task).
  */
-export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "invalid_argument" | "io" | "internal";
+export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "invalid_argument" | "io" | "typst" | "internal";
 
 /**  Structured context; only the fields that apply are set. */
 export type ErrorDetails = {
@@ -81,6 +153,63 @@ export type ErrorDetails = {
 	updatedBy?: string | null,
 	/**  `unsupported_schema`: the `schema_version` found. */
 	found?: string | null,
+};
+
+/**  One image of an opdracht. */
+export type ImageInfo = {
+	/**  Relative to `opdrachten/`: `images/<id>/<name>.<ext>`. */
+	file: string,
+	name: string,
+	/**  PNG data URL, 48 px high; `null` for SVG and files that do not decode. */
+	thumb: string | null,
+};
+
+/**  The outcome of saving or importing an image. */
+export type ImageStored = { status: "saved"; file: string; name: string } | 
+/**  An image with this name exists and `overwrite` was not set. */
+{ status: "exists"; name: string } | 
+/**  Not saved; `message` is Dutch text for the teacher. */
+{ status: "rejected"; message: string };
+
+/**  A file chosen in the dialog: a token for the import, the cleaned name and the extension. */
+export type PickedImage = {
+	token: string,
+	name: string,
+	ext: string,
+};
+
+/**
+ *  What a printed copy is called (ADR-0002 section 9): `rapporten/<schooljaar>/<YYYY-MM-DD HHmm>
+ *  <soort> <vak> <groep> <toets>.pdf`. Empty parts are left out.
+ */
+export type PrintNameArg = {
+	schooljaar: string,
+	soort: string,
+	vak: string,
+	groep: string,
+	toets: string,
+};
+
+/**  A merged batch in the output folder. */
+export type RenderedBatch = {
+	pdfPath: string,
+	/**  Pages of the merged PDF, blank duplex pages included. */
+	pages: number,
+	warnings: string[],
+};
+
+/**  A compiled PDF in the output folder. */
+export type RenderedPdf = {
+	/**  The output ID (not a path): for `pdfUrl`, `open_path` and `print_pdf`. */
+	pdfPath: string,
+	/**  Warnings as text, e.g. characters no font can draw (the reference dropped them; T14). */
+	warnings: string[],
+};
+
+export type RenderedSvg = {
+	/**  One SVG document per page. */
+	pages: string[],
+	warnings: string[],
 };
 
 export type Value = null | boolean | number | string | Value[] | { [key in string]: Value };

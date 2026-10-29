@@ -15,6 +15,7 @@ import type {
   Json,
   MaatwerkApi,
   OpdrachtImage,
+  PrintName,
   RenderResult,
   Unsubscribe,
 } from '../api';
@@ -547,9 +548,23 @@ export class MockApi implements MaatwerkApi {
 
   // ── Shell ─────────────────────────────────────────────────────────────────
 
-  async openPath(absPath: string): Promise<string> {
-    this.record('openPath', [absPath]);
+  async openPath(target: string): Promise<string> {
+    this.record('openPath', [target]);
     return '';
+  }
+
+  async printPdf(pdfPath: string, name: PrintName): Promise<string> {
+    this.record('printPdf', [pdfPath, name]);
+    const bytes = this.pdfs.get(pdfPath);
+    if (!bytes) throw new Error(`not found: ${pdfPath}`);
+    const parts = [name.soort, name.vak, name.groep, name.toets].filter((p) => p.trim());
+    const relPath = `rapporten/${name.schooljaar}/2026-01-01 0000 ${parts.join(' ')}.pdf`;
+    this.putFile(relPath, bytes);
+    return relPath;
+  }
+
+  async setWatchYear(year: string | null): Promise<void> {
+    this.record('setWatchYear', [year]);
   }
 
   // ── Events ────────────────────────────────────────────────────────────────

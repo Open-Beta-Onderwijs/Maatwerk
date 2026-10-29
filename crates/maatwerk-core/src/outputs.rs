@@ -99,6 +99,11 @@ fn parse_id(id: &str) -> Option<(u64, &str)> {
     Some((n, name))
 }
 
+/// Checks an output name before any work is done (`Ongeldige bestandsnaam: <name>`).
+pub fn check_output_name(name: &str) -> Result<()> {
+    output_name(name).map(drop)
+}
+
 /// A bare `.pdf` file name of `[A-Za-z0-9_.-]`, as the UI passes (`opdrachten.pdf`).
 fn output_name(name: &str) -> Result<String> {
     let valid = name.len() <= MAX_PART

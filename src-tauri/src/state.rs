@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! What the commands share: storage on the data folder, presence, the local session file and the
-//! watcher. Built once in `setup`.
+//! What the commands share: storage on the data folder, presence, the local session file, the
+//! watcher, the PDF output folder and the image files picked in a dialog. Built once in `setup`.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
+use maatwerk_core::opdracht_images;
+use maatwerk_core::outputs::OutputStore;
 use maatwerk_core::paths::{DATA_DIR_ENV, data_dir_location};
 use maatwerk_core::presence::Presence;
 use maatwerk_core::storage::{LocalSession, Storage};
+use maatwerk_core::typst_svc::FontStore;
 use maatwerk_core::watcher::{Change, WatchOptions, Watcher};
 
 use crate::error::CommandError;
@@ -20,17 +25,21 @@ pub struct Core {
     pub presence: Presence,
     pub session: LocalSession,
     watcher: Mutex<Option<Watcher>>,
+    /// `Err` when the cache folder cannot be created; only the render commands need it.
+    outputs: Result<OutputStore, CommandError>,
+    picked: Picked,
 }
 
 /// Managed Tauri state; cloned into blocking tasks.
 pub type Shared = Arc<Core>;
 
 impl Core {
-    /// Opens the data folder, seeds it on first run and starts the watcher, which hands each
-    /// batch of external changes to `on_changes`.
+    /// Opens the data folder, seeds it on first run, starts the watcher (which hands each batch
+    /// of external changes to `on_changes`) and empties the PDF output folder.
     pub fn open(
         data_dir: PathBuf,
         session_file: PathBuf,
+        output_dir: PathBuf,
         on_changes: impl Fn(Vec<Change>) + Send + 'static,
     ) -> Core {
         let mut watcher = None;
@@ -46,17 +55,26 @@ impl Core {
                 if let Err(e) = storage.seed_initial_data() {
                     tracing::warn!("seeding the data folder failed: {e}");
                 }
+                if let Err(e) = opdracht_images::remove_empty_dirs(&storage) {
+                    tracing::warn!("removing empty image folders failed: {e}");
+                }
                 Arc::new(storage)
             })
             .map_err(|e| {
                 tracing::error!("cannot open the data folder {}: {e}", data_dir.display());
                 CommandError::from(e)
             });
+        let outputs = OutputStore::open(output_dir).map_err(|e| {
+            tracing::error!("cannot create the PDF output folder: {e}");
+            CommandError::internal(format!("cannot create the PDF output folder: {e}"))
+        });
         Core {
             storage,
             presence: Presence::new(),
             session: LocalSession::new(session_file),
             watcher: Mutex::new(watcher),
+            outputs,
+            picked: Picked::default(),
         }
     }
 
@@ -64,20 +82,70 @@ impl Core {
         self.storage.as_deref().map_err(Clone::clone)
     }
 
-    /// On quit: marks the teacher offline and stops the watcher.
-    pub fn shutdown(&self) {
+    pub fn outputs(&self) -> Result<&OutputStore, CommandError> {
+        self.outputs.as_ref().map_err(Clone::clone)
+    }
+
+    /// Template fonts plus the system fonts, searched once on first use.
+    pub fn fonts(&self) -> Arc<FontStore> {
+        FontStore::shared()
+    }
+
+    pub fn picked(&self) -> &Picked {
+        &self.picked
+    }
+
+    /// The year the watcher's poll covers (ADR-0003 C7); `None`: `config.json` `activeYear`.
+    pub fn set_watch_year(&self, year: Option<String>) {
+        if let Some(watcher) = lock(&self.watcher).as_ref() {
+            watcher.set_scope_year(year);
+        }
+    }
+
+    /// On window close: marks the teacher offline (`window-all-closed`). Later updates are
+    /// ignored.
+    pub fn mark_offline(&self) {
         if let Ok(storage) = self.storage() {
             self.presence.close(storage);
         }
-        let watcher = self
-            .watcher
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .take();
+    }
+
+    /// On quit: marks the teacher offline and stops the watcher.
+    pub fn shutdown(&self) {
+        self.mark_offline();
+        let watcher = lock(&self.watcher).take();
         if let Some(watcher) = watcher {
             watcher.close();
         }
     }
+}
+
+/// Files chosen in the image dialog, by token: the absolute path never reaches the UI
+/// (`pickedImages`, `main.js:243-245`). Tokens live until imported or the app quits.
+#[derive(Default)]
+pub struct Picked {
+    seq: AtomicU64,
+    paths: Mutex<HashMap<String, PathBuf>>,
+}
+
+impl Picked {
+    pub fn add(&self, path: PathBuf) -> String {
+        let token = (self.seq.fetch_add(1, Ordering::SeqCst) + 1).to_string();
+        lock(&self.paths).insert(token.clone(), path);
+        token
+    }
+
+    pub fn get(&self, token: &str) -> Option<PathBuf> {
+        lock(&self.paths).get(token).cloned()
+    }
+
+    pub fn remove(&self, token: &str) {
+        lock(&self.paths).remove(token);
+    }
+}
+
+fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
 /// The data folder: `$MAATWERK_DATA_DIR`, else `data/` in the project folder for a debug

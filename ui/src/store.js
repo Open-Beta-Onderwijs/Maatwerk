@@ -318,6 +318,8 @@ const Store = (() => {
 
   async function initSubject(subject) {
     const year = getConfigSync().activeYear ?? currentSchoolYear();
+    // The watcher polls the year this teacher works in (ADR-0003 C7).
+    void window.maatwerk.setWatchYear(year);
     if (isAdminActive()) {
       // Admin sees all subjects — only preload students and all groups
       await loadYear(year, null);

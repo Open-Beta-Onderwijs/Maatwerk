@@ -5,6 +5,9 @@
 
 mod commands;
 mod error;
+mod opdrachten;
+mod render;
+mod scheme;
 mod state;
 
 use std::sync::Arc;
@@ -75,8 +78,22 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::write_local_session,
             commands::read_photo_as_data_url,
             commands::save_photo,
+            commands::set_watch_year,
+            opdrachten::create_assignment_typ_file,
+            opdrachten::list_opdracht_images,
+            opdrachten::save_opdracht_image,
+            opdrachten::pick_image_file,
+            opdrachten::import_opdracht_image,
+            opdrachten::read_clipboard_image,
+            opdrachten::copy_opdracht_images,
+            opdrachten::delete_opdracht_images,
+            render::render_rapport_pdf,
+            render::render_assignment_svg,
+            render::render_assignment_batch,
+            render::open_path,
+            render::print_pdf,
         ])
-        .events(collect_events![DataChanged])
+        .events(collect_events![DataChanged, render::AssignmentProgress])
         // `serde_json::Value` numbers are i64/u64/f64 in Rust but plain JS numbers on the wire
         // (they came from the UI as such). No command takes or returns another 64-bit integer.
         .dangerously_cast_bigints_to_number()
@@ -105,28 +122,45 @@ pub fn run() {
         .init();
     let builder = specta_builder();
     let app = tauri::Builder::default()
+        // Used from Rust only (image dialog, clipboard image, opening PDFs): the capabilities
+        // grant the UI none of their commands (ADR-0002 section 7).
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_opener::init())
+        .register_asynchronous_uri_scheme_protocol(scheme::SCHEME, scheme::handle)
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
             let session_file = app.path().app_config_dir()?.join("session.json");
+            // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output`, emptied at start.
+            let output_dir = app.path().app_cache_dir()?.join("output");
             let handle = app.handle().clone();
-            let core = state::Core::open(state::data_dir(), session_file, move |batch| {
-                let batch = batch.into_iter().map(DataChange::from).collect();
-                if let Err(e) = DataChanged(batch).emit(&handle) {
-                    tracing::warn!("emitting data:changed failed: {e}");
-                }
-            });
+            let core =
+                state::Core::open(state::data_dir(), session_file, output_dir, move |batch| {
+                    let batch = batch.into_iter().map(DataChange::from).collect();
+                    if let Err(e) = DataChanged(batch).emit(&handle) {
+                        tracing::warn!("emitting data:changed failed: {e}");
+                    }
+                });
             app.manage::<state::Shared>(Arc::new(core));
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("failed to start the Tauri application");
     app.run(|handle, event| {
-        // `before-quit` / `window-all-closed` in the reference.
-        if let tauri::RunEvent::Exit = event
-            && let Some(core) = handle.try_state::<state::Shared>()
-        {
-            core.shutdown();
+        let Some(core) = handle.try_state::<state::Shared>() else {
+            return;
+        };
+        match event {
+            // `window-all-closed` in the reference: offline as soon as the window goes, even
+            // if the process takes a moment to exit.
+            tauri::RunEvent::WindowEvent {
+                event: tauri::WindowEvent::Destroyed,
+                ..
+            } => core.mark_offline(),
+            // `before-quit`.
+            tauri::RunEvent::Exit => core.shutdown(),
+            _ => {}
         }
     });
 }

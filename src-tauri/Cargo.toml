@@ -25,6 +25,9 @@ serde_json.workspace = true
 specta = { version = "=2.0.0-rc.26", features = ["derive", "serde_json"] }
 specta-typescript = "=0.0.13"
 tauri.workspace = true
+tauri-plugin-clipboard-manager = "2.5.0"
+tauri-plugin-dialog = "2.8.4"
+tauri-plugin-opener = "2.7.2"
 tauri-specta = { version = "=2.0.0-rc.26", features = ["derive", "typescript"] }
 tracing = { version = "0.1.44", default-features = false, features = ["std"] }
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "std", "ansi", "tracing-log"] }

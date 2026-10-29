@@ -7,8 +7,9 @@ use maatwerk_core::Error;
 use serde::Serialize;
 use specta::Type;
 
-/// Stable error codes. One per core error variant, plus `internal` for failures of the shell
-/// itself (a crashed blocking task).
+/// Stable error codes. One per core error variant, `typst` for a failed compile (the message is
+/// the diagnostics as text), plus `internal` for failures of the shell itself (a crashed blocking
+/// task).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorCode {
@@ -20,6 +21,7 @@ pub enum ErrorCode {
     UnsupportedSchema,
     InvalidArgument,
     Io,
+    Typst,
     Internal,
 }
 
@@ -54,11 +56,24 @@ impl CommandError {
             details: ErrorDetails::default(),
         }
     }
+
+    /// A compile that failed; `message` is what the teacher sees (Typst's error text).
+    pub fn typst(message: impl Into<String>) -> CommandError {
+        CommandError {
+            code: ErrorCode::Typst,
+            message: message.into(),
+            details: ErrorDetails::default(),
+        }
+    }
 }
 
 impl From<Error> for CommandError {
     fn from(e: Error) -> CommandError {
-        let message = e.to_string();
+        // An invalid argument's message is already the text for the UI (`Ongeldige opdracht.`).
+        let message = match &e {
+            Error::InvalidArgument { message } => message.clone(),
+            other => other.to_string(),
+        };
         let path = |p: &str| ErrorDetails {
             path: Some(p.to_owned()),
             ..ErrorDetails::default()

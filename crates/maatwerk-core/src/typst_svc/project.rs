@@ -14,6 +14,7 @@ use super::fonts::FontStore;
 use super::world::{MaatwerkWorld, Mount, WorldSpec};
 use crate::assets;
 use crate::paths::{DataDir, RelPath};
+use crate::storage::Storage;
 use crate::{Error, Result};
 
 /// A root folder (real or virtual), its entry file and the `sys.inputs` for one compile.
@@ -100,9 +101,17 @@ impl TypstProject {
     }
 }
 
+/// Writes the base template to `opdrachten/<typ_file>`, replacing what is there
+/// (`app:createAssignmentTypFile`). Unlike the reference, `typ_file` must be a bare `.typ` name.
+pub fn create_v1_opdracht_file(storage: &Storage, typ_file: &str) -> Result<()> {
+    v1_opdracht_id(typ_file)?;
+    let rel = RelPath::parse(&format!("opdrachten/{typ_file}"))?;
+    storage.write_text(&rel, assets::BASE_ASSIGNMENT_TYP)
+}
+
 /// `opdracht_<n>.typ` -> `opdracht_<n>`. The reference accepted any bare basename
 /// (`main.js:738-740`, `:820-826`); the image folder is named after the file stem.
-fn v1_opdracht_id(typ_file: &str) -> Result<&str> {
+pub fn v1_opdracht_id(typ_file: &str) -> Result<&str> {
     let invalid = |reason| Error::InvalidPath {
         path: typ_file.to_owned(),
         reason,
@@ -137,6 +146,23 @@ mod tests {
             ".typ/..",
         ] {
             assert!(v1_opdracht_id(bad).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn create_writes_the_base_template_and_checks_the_name() {
+        let tmp = tempfile::tempdir().unwrap();
+        let storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        create_v1_opdracht_file(&storage, "opdracht_1.typ").unwrap();
+        let rel = RelPath::parse("opdrachten/opdracht_1.typ").unwrap();
+        assert_eq!(
+            storage.read_text(&rel).unwrap().unwrap(),
+            assets::BASE_ASSIGNMENT_TYP
+        );
+        for bad in ["../x.typ", "images/x.typ", "x.json"] {
+            assert!(create_v1_opdracht_file(&storage, bad).is_err(), "{bad}");
         }
     }
 }
