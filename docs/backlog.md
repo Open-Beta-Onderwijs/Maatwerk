@@ -2,6 +2,18 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 6a
+
+- **Typst warnings are only logged:** the render commands return compile warnings (tofu etc.,
+  deduplicated); `TauriApi` writes them to the console. Show them in the editor preview and the
+  generate/rapport modals (6b or Step 8).
+- **`rapporten/` retention:** printed copies are never cleaned up (ADR-0002 section 9). Decide on
+  a policy with the user.
+- **Command-level tests:** the Tauri commands are thin and their core functions are tested, but
+  no test invokes a command through Tauri (`tauri::test` mock runtime). Add a few for the
+  render/print/image commands, or cover them in the 6b manual checklist.
+- **Startup error screen (4b m5)** is still open: Step 6b.
+
 ## From Step 5b
 
 - **Review 5b m2 (Step 6):** `TypstProject::folder` accepts any root and does not bound links on
@@ -13,8 +25,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
   `docs/perf.md`); opdrachten with large photos could change that. Merge in job order as results
   arrive if a real class batch gets heavy.
-- **Review 5b n3:** tofu warnings repeat once per job in a batch; deduplicate across jobs when the
-  Step 6 UI shows them.
+- ~~**Review 5b n3:** tofu warnings repeat once per job in a batch~~ Done (6a): the batch
+  command deduplicates the warning texts across jobs.
 - **Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
   normalisation also ignores trailing whitespace/final newline.
 - **Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
@@ -56,15 +68,15 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   message or retry. Step 6.
 - **Watcher thread panic (n6):** a panic ends change reporting silently; shutdown also waits for
   a slow OneDrive read in progress. Catch, log and restart the thread.
-- **`save_photo` / `write_text_file` accept any data path (n8):** restrict to `fotos/` and
-  opdracht `.typ` files (ADR-0002 section 7 hardening, Step 6), so they cannot overwrite JSON
-  without CAS.
+- ~~**`save_photo` / `write_text_file` accept any data path (n8)**~~ Done (6a):
+  `check_photo_path` (`fotos/<name>`) and `check_opdracht_typ_path` (`opdrachten/<name>.typ`).
 - **Lock folder errors carry an absolute local path (n4, remaining part):** `CommitLock` errors
   name the lock folder under `%LOCALAPPDATA%` (with the Windows user name) in `details.path`.
 - **Overflow of `ReadDirectoryChangesW` (review 4b M1 note):** `notify` drops it silently; the
   periodic re-start of OS notifications plus the poll limit the damage. Revisit if colleagues
   report missed changes in non-active years.
-- **`set_scope_year` not wired (n3):** C7, Step 6a.
+- ~~**`set_scope_year` not wired (n3)**~~ Done (6a): `set_watch_year`, called by the UI at
+  `initSubject` and on the year selectors.
 
 ## From Step 4a
 
@@ -109,9 +121,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   component classes and fix the inconsistencies they preserve (e.g. grade pills 34 vs 36 px, two
   panel paddings `10px` vs `10px 12px 14px`, `#aaa` vs `#9aa0ab` greys). Each visible change needs
   the user's eye; `npm run test:visual` shows the diff.
-- **Step 6 CSP checklist (review 3a m8):** add the PDF output scheme of ADR-0002 section 9 to
-  `connect-src` in `ui/vite/csp.ts`; pass `isEvalSupported: false` to pdf.js `getDocument`; run
-  `ui/e2e/csp.spec.ts` on a real compiled rapport (the mock PDF uses only Helvetica).
+- **Step 6 CSP checklist (review 3a m8):** ~~add the PDF output scheme to `connect-src`~~ and
+  ~~`isEvalSupported: false`~~ done in 6a. Still open (6b): run `ui/e2e/csp.spec.ts` on a real
+  compiled rapport (the mock PDF uses only Helvetica).
 - **Utilities are `!important` (review 3a m7):** a later `el.style.x = …` on an element with a
   `u-*` class for the same property is ignored. Use a component class there instead.
 - **Review 3a n5:** `csp.spec.ts` waits a fixed 600 ms; `smoke.spec.ts` retries opening the exam
@@ -126,7 +138,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   diagnostics separator-neutrally (`\` vs `/`).
 - **m6 (Step 5/6):** store an explicit merged-page map for batch goldens (job, page, blank) and
   PNGs for multi-job batches if pixel parity of the merge matters.
-- **m7 (Step 6):** record `assignment:progress` events in the batch goldens.
+- **m7 (Step 6):** record `assignment:progress` events in the batch goldens. (6a: the event is
+  wired; the goldens still only check "0, then one per job".)
 
 ## From the Step 2a review (`docs/reviews/step-02a.md`)
 

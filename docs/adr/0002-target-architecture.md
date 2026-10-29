@@ -194,6 +194,10 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
   clipboard for the reference's image paste, Step 3/8). No `fs` plugin: the UI never touches the
   filesystem except through Maatwerk commands.
 - Opening files/folders (`shell:openPath`) takes a data-relative path or a known output ID.
+- **Implemented (Step 6a):** the dialog, clipboard-manager and opener plugins are called from
+  Rust only (image picker, clipboard image, opening PDFs), so `capabilities/default.json` still
+  grants just `core:default`. A picked image's absolute path stays in Rust behind a token.
+  `write_text_file` only writes `opdrachten/<name>.typ` and `save_photo` only `fotos/<name>`.
 
 ### 8. Logging and local state
 
@@ -202,6 +206,7 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
   names in logs.
 - Machine-local session state (the reference's `%APPDATA%\rtti-app\session.json`) moves to the
   app-config dir of the new identifier; not migrated (cutover starts fresh).
+- **Implemented (Step 6a):** daily files `maatwerk.<date>.log` (14 kept) plus stderr, level INFO.
 
 ### 9. Output files (PDFs)
 
@@ -227,6 +232,13 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
   the rest of the data folder. Retention/cleanup: not automatic; backlog item.
 
 - "Opslaan als" writes to a path the teacher picks (dialog plugin).
+- **Implemented (Step 6a):** output IDs are `<n>-<name>.pdf` (`outputs::OutputStore`; a new
+  output replaces older ones with the same name). On Windows the webview reaches the scheme as
+  `http://maatwerk-out.localhost/<id>` (`convertFileSrc`); the handler sends CORS headers for the
+  app's own origins only. Printing is a new bridge method `printPdf(pdfPath, name)` (the
+  reference's `openPath(pdfPath)` call sites moved to it); the `<groep>` part lists up to three
+  group names, more give none (a whole jaarlaag). "Opslaan als" is not built yet (no screen asks
+  for it).
 
 ### 10. Quirks fixed during the port (user, 2026-10-25)
 
