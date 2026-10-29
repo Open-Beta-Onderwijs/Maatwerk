@@ -169,7 +169,7 @@ pub fn run() {
             init_logging(app.path().app_log_dir().ok());
             builder.mount_events(app);
             let session_file = app.path().app_config_dir()?.join("session.json");
-            // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output`, emptied at start.
+            // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output\<pid>`; old runs' folders go after a day.
             let output_dir = app.path().app_cache_dir()?.join("output");
             let handle = app.handle().clone();
             let core =
