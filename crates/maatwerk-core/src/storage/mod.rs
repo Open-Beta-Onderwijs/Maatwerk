@@ -41,6 +41,36 @@ pub fn hash_hex(bytes: &[u8]) -> String {
         .collect()
 }
 
+/// `opdrachten/<name>.typ`: the only text files the UI writes (`fs:writeTextFile`; backlog n8).
+/// Keeps an unchecked text write away from the JSON files, which need CAS.
+pub fn check_opdracht_typ_path(rel: &RelPath) -> Result<()> {
+    let ok = rel
+        .as_str()
+        .strip_prefix("opdrachten/")
+        .is_some_and(|name| !name.contains('/') && rel.extension().as_deref() == Some("typ"));
+    require(ok, rel, "expected opdrachten/<name>.typ")
+}
+
+/// `fotos/<name>`: where the UI saves photos and logos (`fs:savePhoto`; backlog n8).
+pub fn check_photo_path(rel: &RelPath) -> Result<()> {
+    let ok = rel
+        .as_str()
+        .strip_prefix("fotos/")
+        .is_some_and(|name| !name.contains('/'));
+    require(ok, rel, "expected fotos/<name>")
+}
+
+fn require(ok: bool, rel: &RelPath, reason: &'static str) -> Result<()> {
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::InvalidPath {
+            path: rel.to_string(),
+            reason,
+        })
+    }
+}
+
 /// What a write expects to find on disk.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Expect<'a> {

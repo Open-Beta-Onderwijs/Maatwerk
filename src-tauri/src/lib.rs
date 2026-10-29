@@ -113,13 +113,36 @@ pub fn export_bindings(path: &std::path::Path) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-pub fn run() {
-    // Warnings and errors to stderr; the rolling log file in the app-data dir (ADR-0002
-    // section 8) comes with Step 6.
-    tracing_subscriber::fmt()
+/// Log lines to stderr and to a daily file in the app's log folder (ADR-0002 section 8; on
+/// Windows `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs`), never in the shared data folder.
+/// The last 14 files are kept. No student data goes into log messages.
+fn init_logging(log_dir: Option<std::path::PathBuf>) {
+    use tracing_appender::rolling::{Builder, Rotation};
+    use tracing_subscriber::fmt::writer::MakeWriterExt;
+
+    let file = log_dir.and_then(|dir| {
+        Builder::new()
+            .rotation(Rotation::DAILY)
+            .filename_prefix("maatwerk")
+            .filename_suffix("log")
+            .max_log_files(14)
+            .build(dir)
+            .map_err(|e| eprintln!("no log file: {e}"))
+            .ok()
+    });
+    let subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
-        .with_writer(std::io::stderr)
-        .init();
+        .with_ansi(false);
+    let result = match file {
+        Some(file) => subscriber.with_writer(std::io::stderr.and(file)).try_init(),
+        None => subscriber.with_writer(std::io::stderr).try_init(),
+    };
+    if let Err(e) = result {
+        eprintln!("logging is already set up: {e}");
+    }
+}
+
+pub fn run() {
     let builder = specta_builder();
     let app = tauri::Builder::default()
         // Used from Rust only (image dialog, clipboard image, opening PDFs): the capabilities
@@ -130,6 +153,7 @@ pub fn run() {
         .register_asynchronous_uri_scheme_protocol(scheme::SCHEME, scheme::handle)
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
+            init_logging(app.path().app_log_dir().ok());
             builder.mount_events(app);
             let session_file = app.path().app_config_dir()?.join("session.json");
             // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output`, emptied at start.

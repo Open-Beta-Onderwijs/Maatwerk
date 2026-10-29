@@ -30,7 +30,7 @@ export const commands = {
 	getDataDir: () => typedError<string, CommandError>(__TAURI_INVOKE("get_data_dir")),
 	/**  UTF-8 text; `null` if missing. */
 	readTextFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_text_file", { relPath })),
-	/**  Atomic text write without a check (opdracht `.typ` files). */
+	/**  Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8). */
 	writeTextFile: (relPath: string, content: string) => typedError<null, CommandError>(__TAURI_INVOKE("write_text_file", { relPath, content })),
 	/**  Writes `users/<userId>.json`; `null` user = logged out. Write failures are only logged. */
 	updatePresence: (userId: string | null, presence: Value | null) => typedError<null, CommandError>(__TAURI_INVOKE("update_presence", { userId, presence })),
@@ -39,6 +39,7 @@ export const commands = {
 	writeLocalSession: (data: Value) => typedError<null, CommandError>(__TAURI_INVOKE("write_local_session", { data })),
 	/**  `data:<mime>;base64,...`; `null` if missing or unreadable. */
 	readPhotoAsDataUrl: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_photo_as_data_url", { relPath })),
+	/**  Only `fotos/<name>` (backlog n8). */
 	savePhoto: (relPath: string, base64Data: string) => typedError<null, CommandError>(__TAURI_INVOKE("save_photo", { relPath, base64Data })),
 	/**
 	 *  The school year whose folder the watcher polls (ADR-0003 C7); `null`: `config.json`

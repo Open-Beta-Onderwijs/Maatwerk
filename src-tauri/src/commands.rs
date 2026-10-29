@@ -6,7 +6,7 @@
 //! result shapes.
 
 use maatwerk_core::paths::{RelPath, display_path};
-use maatwerk_core::storage::Expect;
+use maatwerk_core::storage::{Expect, check_opdracht_typ_path, check_photo_path};
 use serde::Serialize;
 use serde_json::Value;
 use specta::Type;
@@ -149,7 +149,7 @@ pub async fn read_text_file(state: State<'_, Shared>, rel_path: String) -> Res<O
     .await
 }
 
-/// Atomic text write without a check (opdracht `.typ` files).
+/// Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8).
 #[tauri::command]
 #[specta::specta]
 pub async fn write_text_file(
@@ -158,7 +158,9 @@ pub async fn write_text_file(
     content: String,
 ) -> Res<()> {
     blocking(state, move |c| {
-        Ok(c.storage()?.write_text(&rel(&rel_path)?, &content)?)
+        let rel = rel(&rel_path)?;
+        check_opdracht_typ_path(&rel)?;
+        Ok(c.storage()?.write_text(&rel, &content)?)
     })
     .await
 }
@@ -216,6 +218,7 @@ pub async fn read_photo_as_data_url(
     .await
 }
 
+/// Only `fotos/<name>` (backlog n8).
 #[tauri::command]
 #[specta::specta]
 pub async fn save_photo(
@@ -224,7 +227,9 @@ pub async fn save_photo(
     base64_data: String,
 ) -> Res<()> {
     blocking(state, move |c| {
-        Ok(c.storage()?.save_photo(&rel(&rel_path)?, &base64_data)?)
+        let rel = rel(&rel_path)?;
+        check_photo_path(&rel)?;
+        Ok(c.storage()?.save_photo(&rel, &base64_data)?)
     })
     .await
 }
