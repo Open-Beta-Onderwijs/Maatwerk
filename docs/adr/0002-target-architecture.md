@@ -194,6 +194,13 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
   clipboard for the reference's image paste, Step 3/8). No `fs` plugin: the UI never touches the
   filesystem except through Maatwerk commands.
 - Opening files/folders (`shell:openPath`) takes a data-relative path or a known output ID.
+- **Implemented (Step 6a):** the dialog, clipboard-manager and opener plugins are called from
+  Rust only (image picker, clipboard image, opening PDFs), so `capabilities/default.json` still
+  grants just `core:default`. A picked image's absolute path stays in Rust behind a token.
+  `write_text_file` only writes `opdrachten/<name>.typ` (not `lib.typ`) and `save_photo` only
+  `fotos/<name>` with an image extension. `open_path` opens only render outputs and printed copies
+  in `rapporten/<schooljaar>/` (review 6a M1). Render outputs live in a per-process folder
+  `output/<pid>/`; other runs' folders are removed after a day (review 6a m1).
 
 ### 8. Logging and local state
 
@@ -202,6 +209,7 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
   names in logs.
 - Machine-local session state (the reference's `%APPDATA%\rtti-app\session.json`) moves to the
   app-config dir of the new identifier; not migrated (cutover starts fresh).
+- **Implemented (Step 6a):** daily files `maatwerk.<date>.log` (14 kept) plus stderr, level INFO.
 
 ### 9. Output files (PDFs)
 
@@ -227,6 +235,13 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
   the rest of the data folder. Retention/cleanup: not automatic; backlog item.
 
 - "Opslaan als" writes to a path the teacher picks (dialog plugin).
+- **Implemented (Step 6a):** output IDs are `<n>-<name>.pdf` (`outputs::OutputStore`; a new
+  output replaces older ones with the same name). On Windows the webview reaches the scheme as
+  `http://maatwerk-out.localhost/<id>` (`convertFileSrc`); the handler sends CORS headers for the
+  app's own origins only. Printing is a new bridge method `printPdf(pdfPath, name)` (the
+  reference's `openPath(pdfPath)` call sites moved to it); the `<groep>` part lists up to three
+  group names, more give none (a whole jaarlaag). "Opslaan als" is not built yet (no screen asks
+  for it).
 
 ### 10. Quirks fixed during the port (user, 2026-10-25)
 
@@ -247,6 +262,28 @@ a failing test (PLAN 2.5), and the golden or spec row records the old behaviour 
 | D6    | blind writes on `school.json`, `config.json`, RTTI templates   | 4a (ADR-0003 C6)                  |
 
 Other quirks stay as they are until after parity, unless the user decides otherwise.
+
+### 11. Recorded at the Step 6 drift check (`docs/reviews/step-06.md`)
+
+These record what was built; none changes a decided behaviour.
+
+- **Core modules (section 1):** `maatwerk-core` also has `outputs` (render outputs, print copies,
+  section 9), `opdracht_images` (section 7) and `presence`.
+- **Dutch text from Rust (section 2):** the old app's own Dutch messages (image name and type
+  errors, "Kies de afbeelding opnieuw.", the image dialog title, the print-then-open message) come
+  from Rust as they did from `main.js`, for parity. New error codes are mapped to Dutch in the UI.
+  The start error message box (`start_error.rs`) is Dutch from Rust, since no UI exists then.
+- **Commands beyond the reference (section 2):** `print_pdf`, `set_watch_year` and the
+  `maatwerk-out` scheme (sections 7, 9), plus `data_folder_status` and `restart_app` for the
+  startup error screen (Step 6b, review 4b m5).
+- **Work outside `spawn_blocking` (section 3):** `Core::open` at start (schema check, seeding,
+  image-folder cleanup, output folder) runs in Tauri's setup on the main thread, and the presence
+  write on window close runs on the event loop. Both are short and happen once; moving `Core::open`
+  off the main thread is in the backlog. `import_opdracht_image` reads the picked file in the shell
+  (backlog: move into core with a size limit).
+- **Logging (section 8):** on Windows logging starts before Tauri, so start failures are logged.
+- **Dependency:** `rfd` (MIT) for the start error message box and `wry` (pinned to Tauri's) for
+  the WebView2 pre-check; both were already in the tree.
 
 ## Consequences
 

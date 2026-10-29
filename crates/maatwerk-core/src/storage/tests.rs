@@ -764,3 +764,32 @@ fn iso_utc_matches_to_iso_string() {
         "1969-12-31T23:59:59.999Z"
     );
 }
+
+#[test]
+fn n8_text_and_photo_writes_are_limited_to_their_folders() {
+    for ok in ["opdrachten/opdracht_1.typ", "opdrachten/A.TYP"] {
+        assert!(check_opdracht_typ_path(&rel(ok)).is_ok(), "{ok}");
+    }
+    for bad in [
+        "config.json",
+        "opdrachten/opdracht_1.json",
+        "opdrachten/images/a.typ",
+        "2025-2026/exams/t1.typ",
+        "opdrachten",
+        "opdrachten/lib.typ",
+    ] {
+        assert!(check_opdracht_typ_path(&rel(bad)).is_err(), "{bad}");
+    }
+    assert!(check_photo_path(&rel("fotos/logo.png")).is_ok());
+    for bad in [
+        "gebruikers.json",
+        "fotos/sub/a.png",
+        "fotos",
+        "opdrachten/fotos/a.png",
+        "fotos/x.bat",
+        "fotos/x.lnk",
+        "fotos/x",
+    ] {
+        assert!(check_photo_path(&rel(bad)).is_err(), "{bad}");
+    }
+}

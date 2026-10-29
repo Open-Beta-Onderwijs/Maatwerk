@@ -19,7 +19,10 @@ describe('CSP', () => {
     ['mock', MOCK_CSP],
   ]) {
     it(`${name}: no inline code, no eval, no remote origins`, () => {
-      expect(csp).not.toMatch(/unsafe-inline|unsafe-eval|https?:\/\/(?!ipc\.localhost)|\*/);
+      // The only http origins are the app's own URI schemes as Windows exposes them.
+      expect(csp).not.toMatch(
+        /unsafe-inline|unsafe-eval|https?:\/\/(?!(ipc|maatwerk-out)\.localhost[ ;])|\*/,
+      );
       expect(csp).toMatch(/style-src 'self';/);
       expect(csp).toMatch(/script-src 'self';/);
       expect(csp).toMatch(/object-src 'none'/);

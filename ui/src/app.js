@@ -8,6 +8,7 @@
 
 // ── Screen imports ────────────────────────────────────────────────────────────
 import { renderStartup } from './screens/startup.js';
+import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
 import { renderToetsen, renderToetsenList } from './screens/toetsen.js';
@@ -380,6 +381,7 @@ function initSelects() {
   SEL.studentYear = new CustomSelect(document.getElementById('student-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       leerlingenState.year = v;
       renderStudentList();
@@ -388,6 +390,7 @@ function initSelects() {
   SEL.groupsYear = new CustomSelect(document.getElementById('groups-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderGroepenForYear(v);
     },
@@ -395,6 +398,7 @@ function initSelects() {
   SEL.toetsenYear = new CustomSelect(document.getElementById('toetsen-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderToetsenList();
       Store.preloadScores(v);
@@ -1104,7 +1108,20 @@ Sync.start();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 async function init() {
-  await Store.preload();
+  // An unusable data folder gets its own screen instead of an empty app (review 4b m5).
+  const container = document.getElementById('screen-startup');
+  let status;
+  try {
+    status = await window.maatwerk.dataFolderStatus();
+    if (!status.error) await Store.preload();
+  } catch (e) {
+    status = { dataDir: status?.dataDir ?? '', error: asFolderError(e) };
+  }
+  if (status.error) {
+    console.error('[startup]', status.error.code, status.error.message);
+    renderStartupError(container, status.dataDir, status.error, window.maatwerk);
+    return;
+  }
   applyWatermerk();
   initSelects();
   navigateTo('startup');

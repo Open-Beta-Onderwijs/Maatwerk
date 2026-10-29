@@ -5,6 +5,10 @@
 
 mod commands;
 mod error;
+mod opdrachten;
+mod render;
+mod scheme;
+mod start_error;
 mod state;
 
 use std::sync::Arc;
@@ -68,6 +72,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::delete_file,
             commands::ensure_dir,
             commands::get_data_dir,
+            commands::data_folder_status,
+            commands::restart_app,
             commands::read_text_file,
             commands::write_text_file,
             commands::update_presence,
@@ -75,8 +81,22 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::write_local_session,
             commands::read_photo_as_data_url,
             commands::save_photo,
+            commands::set_watch_year,
+            opdrachten::create_assignment_typ_file,
+            opdrachten::list_opdracht_images,
+            opdrachten::save_opdracht_image,
+            opdrachten::pick_image_file,
+            opdrachten::import_opdracht_image,
+            opdrachten::read_clipboard_image,
+            opdrachten::copy_opdracht_images,
+            opdrachten::delete_opdracht_images,
+            render::render_rapport_pdf,
+            render::render_assignment_svg,
+            render::render_assignment_batch,
+            render::open_path,
+            render::print_pdf,
         ])
-        .events(collect_events![DataChanged])
+        .events(collect_events![DataChanged, render::AssignmentProgress])
         // `serde_json::Value` numbers are i64/u64/f64 in Rust but plain JS numbers on the wire
         // (they came from the UI as such). No command takes or returns another 64-bit integer.
         .dangerously_cast_bigints_to_number()
@@ -96,37 +116,125 @@ pub fn export_bindings(path: &std::path::Path) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
-pub fn run() {
-    // Warnings and errors to stderr; the rolling log file in the app-data dir (ADR-0002
-    // section 8) comes with Step 6.
-    tracing_subscriber::fmt()
+/// Log lines to stderr and to a daily file in the app's log folder (ADR-0002 section 8; on
+/// Windows `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs`), never in the shared data folder.
+/// The last 14 files are kept. No student data goes into log messages.
+fn init_logging(log_dir: Option<std::path::PathBuf>) {
+    use tracing_appender::rolling::{Builder, Rotation};
+    use tracing_subscriber::fmt::writer::MakeWriterExt;
+
+    let file = log_dir.and_then(|dir| {
+        // The appender lists the folder to prune old files, before it would create it.
+        if let Err(e) = std::fs::create_dir_all(&dir) {
+            eprintln!("no log folder: {e}");
+        }
+        Builder::new()
+            .rotation(Rotation::DAILY)
+            .filename_prefix("maatwerk")
+            .filename_suffix("log")
+            .max_log_files(14)
+            .build(dir)
+            .map_err(|e| eprintln!("no log file: {e}"))
+            .ok()
+    });
+    let subscriber = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
-        .with_writer(std::io::stderr)
-        .init();
+        .with_ansi(false);
+    let result = match file {
+        Some(file) => subscriber.with_writer(std::io::stderr.and(file)).try_init(),
+        None => subscriber.with_writer(std::io::stderr).try_init(),
+    };
+    if let Err(e) = result {
+        eprintln!("logging is already set up: {e}");
+    }
+}
+
+/// The log folder Tauri's `app_log_dir` resolves to, known before the app is built so that
+/// start failures are logged too (review 6 M1). Elsewhere logging starts in `setup`.
+fn early_log_dir(identifier: &str) -> Option<std::path::PathBuf> {
+    if cfg!(windows) {
+        std::env::var_os("LOCALAPPDATA")
+            .map(|dir| std::path::PathBuf::from(dir).join(identifier).join("logs"))
+    } else {
+        None
+    }
+}
+
+pub fn run() {
+    let context = tauri::generate_context!();
+    let early_logs = early_log_dir(&context.config().identifier);
+    if early_logs.is_some() {
+        init_logging(early_logs);
+    }
+    start_error::install_panic_hook();
+    // Before Tauri: without WebView2 a release build would first show Tauri's English box.
+    if let Err(e) = start_error::check_webview() {
+        tracing::error!("cannot start: {e}");
+        start_error::explain_start_error(&e);
+        std::process::exit(1);
+    }
     let builder = specta_builder();
     let app = tauri::Builder::default()
+        // Used from Rust only (image dialog, clipboard image, opening PDFs): the capabilities
+        // grant the UI none of their commands (ADR-0002 section 7).
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        // No click handler for `target=_blank` links in the webview (review 6a n2).
+        .plugin(
+            tauri_plugin_opener::Builder::new()
+                .open_js_links_on_click(false)
+                .build(),
+        )
+        .register_asynchronous_uri_scheme_protocol(scheme::SCHEME, scheme::handle)
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
+            if cfg!(not(windows)) {
+                init_logging(app.path().app_log_dir().ok());
+            }
             builder.mount_events(app);
             let session_file = app.path().app_config_dir()?.join("session.json");
+            // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output\<pid>`; old runs' folders go after a day.
+            let output_dir = app.path().app_cache_dir()?.join("output");
             let handle = app.handle().clone();
-            let core = state::Core::open(state::data_dir(), session_file, move |batch| {
-                let batch = batch.into_iter().map(DataChange::from).collect();
-                if let Err(e) = DataChanged(batch).emit(&handle) {
-                    tracing::warn!("emitting data:changed failed: {e}");
-                }
-            });
+            let core =
+                state::Core::open(state::data_dir(), session_file, output_dir, move |batch| {
+                    let batch = batch.into_iter().map(DataChange::from).collect();
+                    if let Err(e) = DataChanged(batch).emit(&handle) {
+                        tracing::warn!("emitting data:changed failed: {e}");
+                    }
+                });
             app.manage::<state::Shared>(Arc::new(core));
             Ok(())
         })
-        .build(tauri::generate_context!())
-        .expect("failed to start the Tauri application");
+        .build(context);
+    let app = match app {
+        Ok(app) => app,
+        Err(e) => {
+            // E.g. no WebView2 runtime: say so in Dutch instead of exiting silently.
+            let error = e.to_string();
+            tracing::error!("cannot start: {error}");
+            start_error::explain_start_error(&error);
+            std::process::exit(1);
+        }
+    };
     app.run(|handle, event| {
-        // `before-quit` / `window-all-closed` in the reference.
-        if let tauri::RunEvent::Exit = event
-            && let Some(core) = handle.try_state::<state::Shared>()
-        {
-            core.shutdown();
+        if let tauri::RunEvent::Ready = event {
+            start_error::mark_started();
+        }
+        let Some(core) = handle.try_state::<state::Shared>() else {
+            return;
+        };
+        match event {
+            // `window-all-closed` in the reference: offline as soon as the window goes, even
+            // if the process takes a moment to exit.
+            tauri::RunEvent::WindowEvent {
+                label,
+                event: tauri::WindowEvent::Destroyed,
+                ..
+            } if label == "main" => core.mark_offline(),
+            // `before-quit`.
+            tauri::RunEvent::Exit => core.shutdown(),
+            _ => {}
         }
     });
 }

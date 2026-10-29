@@ -3566,3 +3566,32 @@ td.grade-override-stale::after {
   color: var(--muted);
   text-decoration: line-through;
 }
+
+/* ── Startup error screen (review 4b m5) ─────────────────────────────────── */
+.startup-error {
+  max-width: 560px;
+  margin: 80px auto;
+  padding: 28px 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.startup-error-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.startup-error-advice {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.startup-error-folder code {
+  word-break: break-all;
+}
+.startup-error-detail {
+  margin: 0 0 20px;
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-word;
+}

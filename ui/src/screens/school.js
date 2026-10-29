@@ -3,6 +3,11 @@
 import { toast, escHtml } from '../app.js';
 import { ICONS } from '../utils/icons.js';
 
+// Image types the data folder takes for fotos/ (maatwerk-core IMAGE_EXTS) and Typst can show.
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
+const IMAGE_EXTS_TEXT = 'PNG-, JPG-, GIF-, SVG- of WebP';
+const LOGO_ACCEPT = IMAGE_EXTS.map((ext) => `.${ext}`).join(',');
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: School — admin-only school information
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -36,7 +41,7 @@ function buildHtml(school, logoUrl, watermerkUrl) {
         <div class="school-logo-area" id="school-logo-area">
           ${logoHtml(logoUrl)}
           <button class="school-logo-edit-btn btn-sm btn-sm-icon" id="btn-edit-logo" title="Logo wijzigen">${ICONS.pen}</button>
-          <input type="file" id="input-logo" accept="image/*" class="hidden" />
+          <input type="file" id="input-logo" accept="${LOGO_ACCEPT}" class="hidden" />
         </div>
       </div>
       <div class="school-fields">
@@ -237,13 +242,28 @@ function restoreDisplay(field, value, confirmBtn, cancelBtn, container, school) 
 // ── Image saving ──────────────────────────────────────────────────────────────
 
 async function saveImageField(file, fileBaseName, field, school, container) {
-  const ext = file.name.split('.').pop().toLowerCase();
+  const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+  // savePhoto takes image types only (review 6a M1); the reference accepted any file.
+  if (!IMAGE_EXTS.includes(ext)) {
+    toast(
+      `${ext ? `Bestandstype .${ext}` : 'Dit bestandstype'} wordt niet ondersteund. ` +
+        `Kies een ${IMAGE_EXTS_TEXT}-bestand.`,
+      'error',
+    );
+    return;
+  }
   const relPath = `fotos/${fileBaseName}.${ext}`;
 
   const dataUrl = await readFileAsDataUrl(file);
   const base64 = dataUrl.split(',')[1];
 
-  await window.maatwerk.savePhoto(relPath, base64);
+  try {
+    await window.maatwerk.savePhoto(relPath, base64);
+  } catch (e) {
+    console.error('[school]', e);
+    toast('Opslaan mislukt.', 'error');
+    return;
+  }
   school[field] = relPath;
 
   try {

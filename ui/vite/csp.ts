@@ -28,7 +28,9 @@ const render = (directives: Record<string, string[]>) =>
 /** The app (tauri.conf.json app.security.csp; a test keeps them equal). */
 export const APP_CSP = render({
   ...COMMON,
-  'connect-src': ['ipc:', 'http://ipc.localhost'],
+  // ipc: commands; maatwerk-out: render outputs for pdf.js (src-tauri/src/scheme.rs;
+  // http://maatwerk-out.localhost on Windows).
+  'connect-src': ['ipc:', 'http://ipc.localhost', 'maatwerk-out:', 'http://maatwerk-out.localhost'],
   // 'self', not 'none': editor.html and pdf-viewer.html are framed by the app (review 3a M1).
   'frame-ancestors': ["'self'"],
 });

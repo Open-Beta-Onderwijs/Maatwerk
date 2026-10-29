@@ -10,11 +10,13 @@ import type {
   BatchJob,
   BatchOptions,
   DataChange,
+  DataFolderStatus,
   FsResult,
   ImageResult,
   Json,
   MaatwerkApi,
   OpdrachtImage,
+  PrintName,
   RenderResult,
   Unsubscribe,
 } from '../api';
@@ -112,6 +114,8 @@ export class MockApi implements MaatwerkApi {
   private progressListeners = new Set<(p: { done: number; total: number }) => void>();
   private pdfUrls = new Map<string, string>();
   private pdfs = new Map<string, Uint8Array>();
+  /** What `dataFolderStatus` reports; tests set an error to show the startup error screen. */
+  folderStatus: DataFolderStatus = { dataDir: MOCK_DATA_DIR, error: null };
   /** Calls made through the bridge, for tests (`[method, ...args]`). */
   readonly calls: [string, ...unknown[]][] = [];
 
@@ -474,9 +478,16 @@ export class MockApi implements MaatwerkApi {
 
   // ── Typst (canned output) ─────────────────────────────────────────────────
 
+  /** A real PDF the next renders return instead of the canned one (tests, base64). */
+  private realPdf: Uint8Array | null = null;
+
+  useRealPdf(base64: string): void {
+    this.realPdf = fromBase64(base64);
+  }
+
   private storePdf(name: string, pages: string[][]): string {
     const pdfPath = `C:\\Maatwerk-mock\\temp\\${name}`;
-    this.pdfs.set(pdfPath, cannedPdf(pages));
+    this.pdfs.set(pdfPath, this.realPdf ?? cannedPdf(pages));
     const old = this.pdfUrls.get(pdfPath);
     if (old) URL.revokeObjectURL(old);
     this.pdfUrls.delete(pdfPath);
@@ -547,9 +558,32 @@ export class MockApi implements MaatwerkApi {
 
   // ── Shell ─────────────────────────────────────────────────────────────────
 
-  async openPath(absPath: string): Promise<string> {
-    this.record('openPath', [absPath]);
+  async openPath(target: string): Promise<string> {
+    this.record('openPath', [target]);
     return '';
+  }
+
+  async printPdf(pdfPath: string, name: PrintName): Promise<string> {
+    this.record('printPdf', [pdfPath, name]);
+    const bytes = this.pdfs.get(pdfPath);
+    if (!bytes) throw new Error(`not found: ${pdfPath}`);
+    const parts = [name.soort, name.vak, name.groep, name.toets].filter((p) => p.trim());
+    const relPath = `rapporten/${name.schooljaar}/2026-01-01 0000 ${parts.join(' ')}.pdf`;
+    this.putFile(relPath, bytes);
+    return relPath;
+  }
+
+  async setWatchYear(year: string | null): Promise<void> {
+    this.record('setWatchYear', [year]);
+  }
+
+  async dataFolderStatus(): Promise<DataFolderStatus> {
+    this.record('dataFolderStatus', []);
+    return structuredClone(this.folderStatus);
+  }
+
+  async restartApp(): Promise<void> {
+    this.record('restartApp', []);
   }
 
   // ── Events ────────────────────────────────────────────────────────────────

@@ -34,7 +34,8 @@ const pageWraps = [];
 const activeRenders = new Map(); // pageNum → RenderTask
 
 try {
-  pdfDoc = await pdfjsLib.getDocument(fileUrl).promise;
+  // No eval: the CSP has no 'unsafe-eval' (review 3a m8).
+  pdfDoc = await pdfjsLib.getDocument({ url: fileUrl, isEvalSupported: false }).promise;
 } catch (err) {
   statusEl.textContent = 'Fout bij laden: ' + (err?.message ?? err);
   throw err;

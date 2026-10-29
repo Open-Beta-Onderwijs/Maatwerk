@@ -1,11 +1,50 @@
 # State
 
-Last updated: 2026-10-28 (emoji font fix) Branch: `fix/emoji-font` Last tag: `step-05`
+Last updated: 2026-10-29 (Step 6 done) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-Step 5 (Typst service) is done: 5b reviewed (`docs/reviews/step-05b.md`, no blockers/majors,
-security review clean), merged into `main`, tag `step-05`. Waiting for the user before Step 6.
+Step 6 (Tauri wiring, parity, portable build) is **done**: merged into `main`, tagged `step-06`
+and `v0.2.0-parity`. Waiting for the user: manual tests on a copy of real data
+(`docs/manual-test.md`), then Step 7 when the user says go.
+
+## Step 6b summary
+
+- Startup error screen (4b m5): commands `data_folder_status`, `restart_app`; UI
+  `screens/startup-error.ts` (Dutch reason, folder, "Opnieuw proberen" = restart); quirks.spec.
+- Start failure (no WebView2): main-thread panic hook + `build()` error -> Dutch `rfd` message
+  box (`src-tauri/src/start_error.rs`); checked by hand with `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`
+  set to a missing folder (Tauri panics "Could not find the webview runtime" in the event loop).
+- School logo input: six image types, Dutch toast otherwise (6a M1).
+- `ui/e2e/real-pdf.spec.ts`: real rapport PDF (written by `typst_rapport`) in pdf.js under the
+  CSP; CI step after `cargo test`.
+- CI already built and uploaded the portable exe (since Step 0); new CI checks: no MockApi in the
+  app bundle, real-PDF spec after `cargo test`.
+- Docs: `docs/manual-test.md` (click-through, ids `M-…`), `docs/parity.md` complete (all 32
+  handlers; manual ids linked), backlog "From Step 6b" (compat layer stays until Step 10).
+- Review `docs/reviews/step-06.md`: 0 blockers, M1 (Tauri's English WebView2 box came first in
+  release builds -> `wry::webview_version()` pre-check before Tauri, logging before Tauri) and
+  m1-m5, n1-n9 fixed; m6, n10 in the backlog; drift notes in ADR-0002 section 11.
+  `/security-review`: no findings. Release exe checked without WebView2: one Dutch box.
+
+## Step 6a so far
+
+- Core: `opdracht_images` (list with 48 px PNG thumbs, store/overwrite, copy, delete with
+  background folder retry, empty-folder cleanup at start, clipboard RGBA -> PNG; quirk T30) and
+  `outputs` (`OutputStore` in the OS cache dir under output IDs `<n>-<name>.pdf`, emptied at
+  start; `print_copy` to `rapporten/<schooljaar>/<YYYY-MM-DD HHmm> <soort> <vak> <groep>
+<toets>.pdf` with ` (2)` on a clash). `create_v1_opdracht_file`, `storage.write_bytes/list_dir`.
+- App: commands `create_assignment_typ_file`, 7 image commands, `render_rapport_pdf`,
+  `render_assignment_svg`, `render_assignment_batch` (+ `assignment:progress` event),
+  `open_path` (output ID or data-relative path), `print_pdf`, `set_watch_year` (C7). Plugins
+  dialog/clipboard/opener used from Rust only (no capability grants). URI scheme `maatwerk-out`
+  (`scheme.rs`, CORS for the app origins). Error code `typst`. Presence offline on window
+  destroy.
+- UI: TauriApi complete (no stubs); `printPdf` + `setWatchYear` added to the bridge (mock too);
+  print listeners use `printOutput` with `domain/print.ts` names; CSP `connect-src` has the
+  scheme; pdf.js `isEvalSupported: false`; `setWatchYear` at `initSubject` and year selectors.
+- Kept the current app icon (already the Maatwerk icon from the reference, step 0) instead of
+  the older `_reference/build/icon.ico`; window config was already right; no splash.
 
 ## Fix between steps: bundled emoji font (`fix/emoji-font`)
 
@@ -62,9 +101,9 @@ security review clean), merged into `main`, tag `step-05`. Waiting for the user 
 
 ## Next action (concrete, resumable)
 
-1. `fix/emoji-font`: full gate, commit, user approves merge into `main` and push; check CI green.
-2. When the user says go: Step 6 (PLAN.md section 6, Step 6), new branch `step/06-tauri` from
-   `main`.
+1. The user tests the exe on a copy of real data with `docs/manual-test.md` and reports
+   differences; fix them in a follow-up branch before Step 7 (PLAN Step 6, last paragraph).
+2. When the user says go: Step 7 (data format v2, migration, cutover runbook).
 
 ## Open questions for the user
 
@@ -76,7 +115,9 @@ security review clean), merged into `main`, tag `step-05`. Waiting for the user 
 
 ## How to resume
 
-PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with the editor or
+After the folder move, release builds also needed `cargo clean --release -p maatwerk-core -p
+maatwerk-app -p maatwerk-cli` (stale build-script path). PowerShell for npm/cargo (Git Bash's
+`link` shadows MSVC's), but edit files with the editor or
 Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). In PowerShell 5.1, commit with
 `git commit -F <file>` (inline messages with quotes get split into pathspecs). `npm ci; npm run
 build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright

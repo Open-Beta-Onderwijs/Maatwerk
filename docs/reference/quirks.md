@@ -689,6 +689,20 @@ Paths in this section are relative to `_reference/renderer/`.
   case-insensitive Windows file system: `Images/<id>/x.png` worked there and fails here. Editor
   snippets always write `images/<id>/`; Step 7 checks existing sources.
 
+### T30. Opdracht image names that differ only in case overwrite each other
+
+- Where: `main.js:267-281` (`storeOpdrachtImage`): `path.parse(f).name === name` is case-sensitive.
+- Evidence: on Windows (case-insensitive file names) saving `foto` while `Foto.png` exists finds no
+  match, skips the "already exists" question and overwrites `Foto.png` silently.
+- **Port (Step 6a):** the comparison ignores ASCII case (cleaned names are ASCII), so the teacher
+  gets the "already exists" question. Only changes the outcome where the reference silently lost
+  an image. Test: `opdracht_images::tests::store_list_overwrite_copy_delete`.
+- Related, not changed: thumbnails now exist for GIF and WebP too (Electron's `nativeImage` could
+  not decode them, so the reference showed none); the list is sorted by an approximation of
+  `localeCompare(…, 'nl')` (`nl_compare`), equal for ordinary file names; folders inside an
+  opdracht's image folder are skipped by copy and left alone by delete (the reference threw on
+  them when copying and removed them when deleting).
+
 ## U. UI
 
 Read from code only; "probable" means the code path is clear but not confirmed in the running app.
@@ -909,3 +923,13 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   key, as `metrics.md` section 8 item 12 describes the intent.
 - **Fixed (Step 3b):** the own grid never opens an editor on checkbox cells. Test: score-grid.spec
   "G31 other printable keys do nothing (U19)".
+
+### U20. Dropping a file on the window navigates away from the app
+
+- Where: the reference has no drop handler (`renderer/editor-init.js`) and no `will-navigate`
+  guard (`main.js`), so Electron's default applies: a file dropped anywhere on the window,
+  e.g. an image on the editor, replaces the app with the file (review 6 n7).
+- Port: Tauri's window-level drag and drop is on by default (`dragDropEnabled`) and takes file
+  drops away from the webview, so a dropped file does nothing. Not a supported way to add images
+  in either app ("Figuur toevoegen" and paste are). Manual check `M-OPD-6`: dropping a file does
+  nothing, and dragging **selected text** inside the editor still moves it.

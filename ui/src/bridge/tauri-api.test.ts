@@ -19,6 +19,7 @@ function err(code: ErrorCode, message = `${code} happened`): CommandError {
 function fakeBackend(reply: (command: string, args: unknown[]) => unknown) {
   const calls: Call[] = [];
   let listener: ((c: DataChange[]) => void) | null = null;
+  let progressListener: ((p: { done: number; total: number }) => void) | null = null;
   const unlisten = vi.fn();
   const commands = new Proxy(
     {},
@@ -42,11 +43,17 @@ function fakeBackend(reply: (command: string, args: unknown[]) => unknown) {
       listener = cb;
       return unlisten;
     },
+    listenAssignmentProgress: async (cb) => {
+      progressListener = cb;
+      return unlisten;
+    },
+    outputUrl: (id) => `http://maatwerk-out.localhost/${id}`,
   };
   return {
     api: createTauriApi(backend),
     calls,
     emit: (c: DataChange[]) => listener?.(c),
+    progress: (p: { done: number; total: number }) => progressListener?.(p),
     unlisten,
   };
 }
@@ -177,7 +184,12 @@ describe('TauriApi', () => {
         return { status: 'ok', data: null };
       },
     } as unknown as Backend['commands'];
-    const api = createTauriApi({ commands, listenDataChanged: async () => () => {} });
+    const api = createTauriApi({
+      commands,
+      listenDataChanged: async () => () => {},
+      listenAssignmentProgress: async () => () => {},
+      outputUrl: (id) => id,
+    });
     const heartbeat = api.updatePresence('jan', { online: true });
     const logout = api.updatePresence(null);
     release();
@@ -206,9 +218,139 @@ describe('TauriApi', () => {
     expect(f.unlisten).toHaveBeenCalled();
   });
 
-  it('methods of later steps still say they are not available', async () => {
-    const { api } = fakeBackend(() => null);
-    await expect(api.renderRapportPdf('t1', [], {})).rejects.toThrow(/nog niet beschikbaar/);
-    await expect(api.listOpdrachtImages('o1')).rejects.toThrow(/nog niet beschikbaar/);
+  it('opdracht images: {ok, file, name}, {exists}, {error}; an invalid id rejects', async () => {
+    const saved = fakeBackend(() => ({ status: 'saved', file: 'images/o1/a.png', name: 'a' }));
+    expect(await saved.api.saveOpdrachtImage('o1', 'a', 'png', 'AA==')).toEqual({
+      ok: true,
+      file: 'images/o1/a.png',
+      name: 'a',
+    });
+    expect(saved.calls[0]?.args).toEqual(['o1', 'a', 'png', 'AA==', false]);
+    const exists = fakeBackend(() => ({ status: 'exists', name: 'a' }));
+    expect(await exists.api.importOpdrachtImage('o1', '1', 'a', true)).toEqual({
+      ok: false,
+      exists: true,
+      name: 'a',
+    });
+    expect(exists.calls[0]?.args).toEqual(['o1', '1', 'a', true]);
+    const rejected = fakeBackend(() => ({
+      status: 'rejected',
+      message: 'Kies de afbeelding opnieuw.',
+    }));
+    expect(await rejected.api.importOpdrachtImage('o1', '9', 'a')).toEqual({
+      ok: false,
+      error: 'Kies de afbeelding opnieuw.',
+    });
+    const invalid = fakeBackend(() => err('invalid_argument', 'Ongeldige opdracht.'));
+    for (const p of [
+      invalid.api.listOpdrachtImages('../x'),
+      invalid.api.saveOpdrachtImage('../x', 'a', 'png', ''),
+      invalid.api.copyOpdrachtImages('a', '../x'),
+      invalid.api.deleteOpdrachtImages('../x'),
+      invalid.api.createAssignmentTypFile('../x.typ'),
+    ]) {
+      await expect(p).rejects.toThrow('Ongeldige opdracht.');
+    }
+    const ok = fakeBackend(() => null);
+    expect(await ok.api.copyOpdrachtImages('a', 'b')).toEqual({ ok: true });
+    expect(await ok.api.deleteOpdrachtImages('a')).toEqual({ ok: true });
+    expect(await ok.api.createAssignmentTypFile('opdracht_1.typ')).toEqual({ ok: true });
+    expect(await ok.api.pickImageFile()).toBeNull();
+    expect(await fakeBackend(() => err('io')).api.readClipboardImage()).toBeNull();
+  });
+
+  it('renderRapportPdf normalises the payload (review 5a M1) and maps errors', async () => {
+    const f = fakeBackend(() => ({ pdfPath: '1-rapport_preview.pdf', warnings: [] }));
+    const students = [{ name: 'A', score: undefined, pct: Number.NaN }];
+    expect(await f.api.renderRapportPdf('t1', students, { name: 'T' })).toEqual({
+      success: true,
+      pdfPath: '1-rapport_preview.pdf',
+    });
+    expect(f.calls[0]?.args).toEqual(['t1', [{ name: 'A', score: null, pct: 0 }], { name: 'T' }]);
+    const bad = fakeBackend(() => err('typst', 'error: unknown variable'));
+    expect(await bad.api.renderRapportPdf('t1', [], {})).toEqual({
+      success: false,
+      error: 'error: unknown variable',
+    });
+  });
+
+  it('renderAssignmentSvg: pages; preview content defaults to null; warnings are logged', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const f = fakeBackend(() => ({ pages: ['<svg/>'], warnings: ['warning: tofu'] }));
+    expect(await f.api.renderAssignmentSvg('o.typ', 'T')).toEqual({
+      success: true,
+      pages: ['<svg/>'],
+    });
+    expect(f.calls[0]?.args).toEqual(['o.typ', 'T', null]);
+    expect(warn).toHaveBeenCalledWith('[typst]', 'warning: tofu');
+    warn.mockRestore();
+    const bad = fakeBackend(() => err('invalid_argument', 'Ongeldige bestandsnaam: ../o.typ'));
+    expect(await bad.api.renderAssignmentSvg('../o.typ', 'T', '')).toEqual({
+      success: false,
+      error: 'Ongeldige bestandsnaam: ../o.typ',
+    });
+  });
+
+  it('renderAssignmentBatch: jobs and options with nulls for missing fields; progress events', async () => {
+    const f = fakeBackend(() => ({ pdfPath: '2-opdrachten.pdf', pages: 3, warnings: [] }));
+    const seen: unknown[] = [];
+    const off = f.api.onAssignmentProgress((p) => seen.push(p));
+    await Promise.resolve();
+    f.progress({ done: 0, total: 1 });
+    const r = await f.api.renderAssignmentBatch([{ key: 's1', typFile: 'o.typ' }], {
+      duplex: true,
+    });
+    expect(r).toEqual({ success: true, pdfPath: '2-opdrachten.pdf', pages: 3 });
+    expect(f.calls[0]?.args).toEqual([
+      [{ key: 's1', typFile: 'o.typ', label: null, header: null, mode: null }],
+      { includeAnswers: null, duplex: true, outputName: null },
+    ]);
+    expect(seen).toEqual([{ done: 0, total: 1 }]);
+    off();
+    expect(f.unlisten).toHaveBeenCalled();
+    expect(await f.api.renderAssignmentBatch([])).toEqual({
+      success: false,
+      error: 'Er is niets om te genereren.',
+    });
+    const bad = fakeBackend(() => err('typst', 'Fout in opdracht "A":\n\nerror: x'));
+    expect(await bad.api.renderAssignmentBatch([{ key: 's', typFile: 'o.typ' }])).toEqual({
+      success: false,
+      error: 'Fout in opdracht "A":\n\nerror: x',
+    });
+  });
+
+  it('outputs: pdfUrl uses the output scheme; openPath gives "" or the message; printPdf', async () => {
+    const f = fakeBackend((command) =>
+      command === 'printPdf' ? 'rapporten/2025-2026/x.pdf' : null,
+    );
+    expect(f.api.pdfUrl('1-rapport_preview.pdf')).toBe(
+      'http://maatwerk-out.localhost/1-rapport_preview.pdf',
+    );
+    expect(await f.api.openPath('1-rapport_preview.pdf')).toBe('');
+    const name = {
+      schooljaar: '2025-2026',
+      soort: 'Rapport' as const,
+      vak: 'nat',
+      groep: '3a',
+      toets: 'T',
+    };
+    expect(await f.api.printPdf('1-rapport_preview.pdf', name)).toBe('rapporten/2025-2026/x.pdf');
+    expect(f.calls.at(-1)?.args).toEqual(['1-rapport_preview.pdf', name]);
+    const bad = fakeBackend(() => err('not_found', 'not found: 9-x.pdf'));
+    expect(await bad.api.openPath('9-x.pdf')).toBe('not found: 9-x.pdf');
+    await expect(bad.api.printPdf('9-x.pdf', name)).rejects.toThrow('not found: 9-x.pdf');
+  });
+
+  it('dataFolderStatus passes the status through; a failed call throws; restartApp', async () => {
+    const status = {
+      dataDir: 'D:/data',
+      error: { code: 'unsupported_schema' as const, message: 'm', details: { found: '9' } },
+    };
+    const f = fakeBackend((command) => (command === 'dataFolderStatus' ? status : null));
+    expect(await f.api.dataFolderStatus()).toEqual(status);
+    await f.api.restartApp();
+    expect(f.calls.map((c) => c.command)).toEqual(['dataFolderStatus', 'restartApp']);
+    const bad = fakeBackend(() => err('internal', 'blocking task failed'));
+    await expect(bad.api.dataFolderStatus()).rejects.toThrow(BackendError);
   });
 });
