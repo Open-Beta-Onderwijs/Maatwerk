@@ -138,7 +138,7 @@ impl Storage {
     // ── Reads ────────────────────────────────────────────────────────────────
 
     /// Raw bytes, `None` if missing (`readWithHash`, S07).
-    fn read_bytes(&self, rel: &RelPath) -> Result<Option<Vec<u8>>> {
+    pub fn read_bytes(&self, rel: &RelPath) -> Result<Option<Vec<u8>>> {
         let path = self.dir.resolve(rel)?;
         match fs::read(&path) {
             Ok(bytes) => Ok(Some(bytes)),
@@ -209,6 +209,29 @@ impl Storage {
         Ok(out)
     }
 
+    /// Names of the entries directly in `dir` that are files (`dirs: false`) or folders
+    /// (`dirs: true`), in directory order. Links and non-UTF-8 names are skipped; a missing
+    /// folder gives an empty list.
+    pub fn list_dir(&self, dir: &RelPath, dirs: bool) -> Result<Vec<String>> {
+        let path = self.dir.resolve(dir)?;
+        let entries = match fs::read_dir(&path) {
+            Ok(entries) => entries,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(vec![]),
+            Err(e) => return Err(Error::io(dir.as_str(), e)),
+        };
+        let mut out = vec![];
+        for entry in entries {
+            let entry = entry.map_err(|e| Error::io(dir.as_str(), e))?;
+            let wanted = entry
+                .file_type()
+                .is_ok_and(|t| if dirs { t.is_dir() } else { t.is_file() });
+            if let (true, Ok(name)) = (wanted, entry.file_name().into_string()) {
+                out.push(name);
+            }
+        }
+        Ok(out)
+    }
+
     /// Year folders (`YYYY-YYYY`), newest first; empty on any error (`fs:listYears`).
     pub fn list_years(&self) -> Vec<String> {
         let Ok(entries) = fs::read_dir(self.dir.root()) else {
@@ -254,6 +277,11 @@ impl Storage {
     /// Atomic text write without a check (`fs:writeTextFile`; opdracht `.typ` files).
     pub fn write_text(&self, rel: &RelPath, content: &str) -> Result<()> {
         self.commit_bytes(rel, content.as_bytes(), Expect::Any, true)
+    }
+
+    /// Writes bytes atomically if the file matches `expect` (opdracht images, printed PDFs).
+    pub fn write_bytes(&self, rel: &RelPath, bytes: &[u8], expect: Expect<'_>) -> Result<()> {
+        self.commit_bytes(rel, bytes, expect, true)
     }
 
     /// Decodes base64 and writes the bytes (`fs:savePhoto`). Atomic, unlike the reference; not
@@ -323,6 +351,17 @@ impl Storage {
         result.map_err(|e| Error::io(rel.as_str(), e))
     }
 
+    /// Removes the folder if it is empty. `Ok(false)` if it is missing; an error if it is not
+    /// empty or locked.
+    pub fn remove_empty_dir(&self, rel: &RelPath) -> Result<bool> {
+        let path = self.dir.resolve(rel)?;
+        match fs::remove_dir(&path) {
+            Ok(()) => Ok(true),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(Error::io(rel.as_str(), e)),
+        }
+    }
+
     /// `mkdir -p` (`fs:ensureDir`).
     pub fn ensure_dir(&self, rel: &RelPath) -> Result<PathBuf> {
         let path = self.dir.resolve(rel)?;
@@ -386,7 +425,7 @@ fn parse_json(rel: &RelPath, bytes: &[u8]) -> Result<Value> {
 
 /// Node's `Buffer.from(s, 'base64')` is lenient: whitespace and missing padding are fine, and
 /// the URL-safe alphabet is accepted.
-fn decode_base64_lenient(s: &str) -> Result<Vec<u8>> {
+pub fn decode_base64_lenient(s: &str) -> Result<Vec<u8>> {
     use base64::engine::{DecodePaddingMode, GeneralPurpose, GeneralPurposeConfig};
     let cleaned: String = s
         .chars()
