@@ -22,6 +22,8 @@ tauri-build.workspace = true
 maatwerk-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# Start error message box without a webview (`start_error.rs`); in the tree via the dialog plugin.
+rfd = { version = "0.17.2", default-features = false }
 specta = { version = "=2.0.0-rc.26", features = ["derive", "serde_json"] }
 specta-typescript = "=0.0.13"
 tauri.workspace = true

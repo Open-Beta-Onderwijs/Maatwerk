@@ -3196,6 +3196,7 @@ name = "maatwerk-app"
 version = "0.1.0"
 dependencies = [
  "maatwerk-core",
+ "rfd",
  "serde",
  "serde_json",
  "specta",

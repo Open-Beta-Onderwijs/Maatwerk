@@ -8,6 +8,7 @@ mod error;
 mod opdrachten;
 mod render;
 mod scheme;
+mod start_error;
 mod state;
 
 use std::sync::Arc;
@@ -149,6 +150,7 @@ fn init_logging(log_dir: Option<std::path::PathBuf>) {
 }
 
 pub fn run() {
+    start_error::install_panic_hook();
     let builder = specta_builder();
     let app = tauri::Builder::default()
         // Used from Rust only (image dialog, clipboard image, opening PDFs): the capabilities
@@ -180,8 +182,18 @@ pub fn run() {
             app.manage::<state::Shared>(Arc::new(core));
             Ok(())
         })
-        .build(tauri::generate_context!())
-        .expect("failed to start the Tauri application");
+        .build(tauri::generate_context!());
+    let app = match app {
+        Ok(app) => app,
+        Err(e) => {
+            // E.g. no WebView2 runtime: say so in Dutch instead of exiting silently.
+            let error = format!("{e:?}");
+            tracing::error!("cannot start: {error}");
+            eprintln!("cannot start: {error}");
+            start_error::explain_start_error(&error);
+            std::process::exit(1);
+        }
+    };
     app.run(|handle, event| {
         let Some(core) = handle.try_state::<state::Shared>() else {
             return;
