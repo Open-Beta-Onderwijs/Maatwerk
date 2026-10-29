@@ -71,6 +71,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::delete_file,
             commands::ensure_dir,
             commands::get_data_dir,
+            commands::data_folder_status,
+            commands::restart_app,
             commands::read_text_file,
             commands::write_text_file,
             commands::update_presence,

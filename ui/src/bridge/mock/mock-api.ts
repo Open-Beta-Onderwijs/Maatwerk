@@ -10,6 +10,7 @@ import type {
   BatchJob,
   BatchOptions,
   DataChange,
+  DataFolderStatus,
   FsResult,
   ImageResult,
   Json,
@@ -113,6 +114,8 @@ export class MockApi implements MaatwerkApi {
   private progressListeners = new Set<(p: { done: number; total: number }) => void>();
   private pdfUrls = new Map<string, string>();
   private pdfs = new Map<string, Uint8Array>();
+  /** What `dataFolderStatus` reports; tests set an error to show the startup error screen. */
+  folderStatus: DataFolderStatus = { dataDir: MOCK_DATA_DIR, error: null };
   /** Calls made through the bridge, for tests (`[method, ...args]`). */
   readonly calls: [string, ...unknown[]][] = [];
 
@@ -565,6 +568,15 @@ export class MockApi implements MaatwerkApi {
 
   async setWatchYear(year: string | null): Promise<void> {
     this.record('setWatchYear', [year]);
+  }
+
+  async dataFolderStatus(): Promise<DataFolderStatus> {
+    this.record('dataFolderStatus', []);
+    return structuredClone(this.folderStatus);
+  }
+
+  async restartApp(): Promise<void> {
+    this.record('restartApp', []);
   }
 
   // ── Events ────────────────────────────────────────────────────────────────

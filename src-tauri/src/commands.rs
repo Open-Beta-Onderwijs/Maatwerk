@@ -13,7 +13,7 @@ use specta::Type;
 use tauri::State;
 
 use crate::error::CommandError;
-use crate::state::{Core, Shared};
+use crate::state::{Core, DataFolderStatus, Shared};
 
 pub(crate) type Res<T> = Result<T, CommandError>;
 
@@ -137,6 +137,22 @@ pub async fn ensure_dir(state: State<'_, Shared>, rel_path: String) -> Res<()> {
 #[specta::specta]
 pub async fn get_data_dir(state: State<'_, Shared>) -> Res<String> {
     blocking(state, |c| Ok(display_path(c.storage()?.data_dir().root()))).await
+}
+
+/// The data folder and why it could not be opened, if so. Not a reference method: the UI calls
+/// it before anything else to show a startup error screen (review 4b m5).
+#[tauri::command]
+#[specta::specta]
+pub async fn data_folder_status(state: State<'_, Shared>) -> Res<DataFolderStatus> {
+    blocking(state, |c| Ok(c.data_folder_status())).await
+}
+
+/// Restarts the app: "Opnieuw proberen" on the startup error screen opens the folder again.
+#[tauri::command]
+#[specta::specta]
+pub fn restart_app(app: tauri::AppHandle) {
+    tracing::info!("restart requested from the startup error screen");
+    app.restart();
 }
 
 /// UTF-8 text; `null` if missing.

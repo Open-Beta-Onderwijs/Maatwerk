@@ -28,6 +28,13 @@ export const commands = {
 	ensureDir: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("ensure_dir", { relPath })),
 	/**  Absolute data folder. */
 	getDataDir: () => typedError<string, CommandError>(__TAURI_INVOKE("get_data_dir")),
+	/**
+	 *  The data folder and why it could not be opened, if so. Not a reference method: the UI calls
+	 *  it before anything else to show a startup error screen (review 4b m5).
+	 */
+	dataFolderStatus: () => typedError<DataFolderStatus, CommandError>(__TAURI_INVOKE("data_folder_status")),
+	/**  Restarts the app: "Opnieuw proberen" on the startup error screen opens the folder again. */
+	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
 	/**  UTF-8 text; `null` if missing. */
 	readTextFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_text_file", { relPath })),
 	/**  Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8). */
@@ -140,6 +147,13 @@ export type DataChangeKind = "added" | "changed" | "deleted";
 
 /**  External changes in the data folder, one batch per event. */
 export type DataChanged = DataChange[];
+
+/**  What the UI checks first at start (review 4b m5): an unusable folder gets its own screen. */
+export type DataFolderStatus = {
+	dataDir: string,
+	/**  `null` when the folder opened; else e.g. `unsupported_schema` or `io`. */
+	error: CommandError | null,
+};
 
 /**
  *  Stable error codes. One per core error variant, `typst` for a failed compile (the message is

@@ -10,15 +10,19 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use maatwerk_core::opdracht_images;
 use maatwerk_core::outputs::OutputStore;
-use maatwerk_core::paths::{DATA_DIR_ENV, data_dir_location};
+use maatwerk_core::paths::{DATA_DIR_ENV, data_dir_location, display_path};
 use maatwerk_core::presence::Presence;
 use maatwerk_core::storage::{LocalSession, Storage};
 use maatwerk_core::typst_svc::FontStore;
 use maatwerk_core::watcher::{Change, WatchOptions, Watcher};
+use serde::Serialize;
+use specta::Type;
 
 use crate::error::CommandError;
 
 pub struct Core {
+    /// The data folder as configured, for the startup error screen when it cannot be opened.
+    data_dir: PathBuf,
     /// `Err` when the data folder cannot be used (e.g. an unsupported `schema_version`, C1):
     /// every storage command then returns this error, so the UI can show it.
     storage: Result<Arc<Storage>, CommandError>,
@@ -28,6 +32,15 @@ pub struct Core {
     /// `Err` when the cache folder cannot be created; only the render commands need it.
     outputs: Result<OutputStore, CommandError>,
     picked: Picked,
+}
+
+/// What the UI checks first at start (review 4b m5): an unusable folder gets its own screen.
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DataFolderStatus {
+    pub data_dir: String,
+    /// `null` when the folder opened; else e.g. `unsupported_schema` or `io`.
+    pub error: Option<CommandError>,
 }
 
 /// Managed Tauri state; cloned into blocking tasks.
@@ -69,6 +82,7 @@ impl Core {
             CommandError::internal(format!("cannot create the PDF output folder: {e}"))
         });
         Core {
+            data_dir,
             storage,
             presence: Presence::new(),
             session: LocalSession::new(session_file),
@@ -80,6 +94,20 @@ impl Core {
 
     pub fn storage(&self) -> Result<&Storage, CommandError> {
         self.storage.as_deref().map_err(Clone::clone)
+    }
+
+    /// The data folder (the opened root when it opened) and why it could not be opened.
+    pub fn data_folder_status(&self) -> DataFolderStatus {
+        match &self.storage {
+            Ok(storage) => DataFolderStatus {
+                data_dir: display_path(storage.data_dir().root()),
+                error: None,
+            },
+            Err(e) => DataFolderStatus {
+                data_dir: display_path(&self.data_dir),
+                error: Some(e.clone()),
+            },
+        }
     }
 
     pub fn outputs(&self) -> Result<&OutputStore, CommandError> {
@@ -155,4 +183,45 @@ pub fn data_dir() -> PathBuf {
     let project =
         cfg!(debug_assertions).then(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."));
     data_dir_location(std::env::var_os(DATA_DIR_ENV), &exe, project.as_deref())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::ErrorCode;
+
+    fn open(data_dir: PathBuf, tmp: &std::path::Path) -> Core {
+        Core::open(
+            data_dir,
+            tmp.join("session.json"),
+            tmp.join("output"),
+            |_| {},
+        )
+    }
+
+    #[test]
+    fn a_usable_data_folder_reports_no_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let core = open(tmp.path().join("data"), tmp.path());
+        let status = core.data_folder_status();
+        assert!(status.error.is_none());
+        assert!(status.data_dir.ends_with("data"), "{}", status.data_dir);
+        core.shutdown();
+    }
+
+    /// Review 4b m5: the UI shows the reason and the folder instead of an empty app.
+    #[test]
+    fn an_unsupported_schema_reports_the_folder_and_the_code() {
+        let tmp = tempfile::tempdir().unwrap();
+        let data = tmp.path().join("data");
+        std::fs::create_dir_all(&data).unwrap();
+        std::fs::write(data.join("config.json"), r#"{"schema_version": 99}"#).unwrap();
+        let core = open(data.clone(), tmp.path());
+        let status = core.data_folder_status();
+        let error = status.error.expect("an error");
+        assert_eq!(error.code, ErrorCode::UnsupportedSchema);
+        assert_eq!(error.details.found.as_deref(), Some("99"));
+        assert_eq!(status.data_dir, display_path(&data));
+        assert!(core.storage().is_err());
+    }
 }

@@ -283,6 +283,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       const r = await c.setWatchYear(year);
       if (r.status === 'error') console.warn('[sync]', message(r.error));
     },
+    dataFolderStatus: () => orThrow(c.dataFolderStatus()),
+    restartApp: () => c.restartApp(),
 
     // ── Events ──────────────────────────────────────────────────────────────
     onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),

@@ -35,6 +35,16 @@ export interface DataChange {
   meta: Record<string, unknown> | null;
 }
 
+/**
+ * The data folder as opened at start. `error` is set when it cannot be used
+ * (e.g. `unsupported_schema`, `io`); the app then shows the startup error
+ * screen instead of running on empty data (review 4b m5).
+ */
+export interface DataFolderStatus {
+  dataDir: string;
+  error: { code: string; message: string; details: { found?: string | null } } | null;
+}
+
 export interface BatchJob {
   key: string;
   typFile: string;
@@ -168,6 +178,10 @@ export interface MaatwerkApi {
   printPdf(pdfPath: string, name: PrintName): Promise<string>;
   /** The school year whose folder the watcher polls (ADR-0003 C7); null: config.json. */
   setWatchYear(year: string | null): Promise<void>;
+  /** Checked before anything else at start (not a reference method). */
+  dataFolderStatus(): Promise<DataFolderStatus>;
+  /** "Opnieuw proberen" on the startup error screen: restarts the app. */
+  restartApp(): Promise<void>;
 }
 
 /** The 28 ported reference methods, for contract tests and the parity table. */
