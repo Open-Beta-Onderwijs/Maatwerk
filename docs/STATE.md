@@ -77,13 +77,17 @@ The emoji-font fix was merged into `main` (PR #1) before the step started.
 
 ## In progress
 
-- Step 6a: remaining: restrict `write_text_file`/`save_photo` (backlog n8), rolling log file
-  (ADR-0002 section 8), docs (parity rows, ADR notes, backlog), gate, review.
+- Step 6a done in code (also: n8 write restrictions, rolling log file, docs). Gate passed
+  locally (fmt, clippy, cargo test, lint, typecheck, npm test 247, e2e 85, licences, deny, SPDX).
+  Reviewer subagent running -> `docs/reviews/step-06a.md`.
+- After the folder move (OneDrive -> `C:\Users\Matthias\git\maatwerk`): `cargo clean -p
+  maatwerk-core -p maatwerk-app -p maatwerk-cli` (stale build-script path) and `npm ci` (the
+  `node_modules/maatwerk-ui` junction pointed at the old folder) were needed.
 
 ## Next action (concrete, resumable)
 
-1. Finish the 6a items above on `step/06-tauri`, run the full gate (incl. `npm run test:e2e`),
-   reviewer subagent -> `docs/reviews/step-06a.md`, fix blockers/majors, tag `step-06a`, report.
+1. Triage `docs/reviews/step-06a.md`: fix blockers/majors, cheap minors, rest to backlog.
+2. Re-run the gate, tag `step-06a`, update STATE, stop and report to the user.
 
 ## Open questions for the user
 
