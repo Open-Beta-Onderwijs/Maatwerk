@@ -1,11 +1,23 @@
 # State
 
-Last updated: 2026-10-29 (Step 6a done) Branch: `step/06-tauri` Last tag: `step-05`
+Last updated: 2026-10-29 (Step 6b in progress) Branch: `step/06-tauri` Last tag: `step-05`
 
 ## Current step
 
-Step 6 (Tauri wiring, parity, portable build), sub-step **6a** (remaining commands and plugins).
-The emoji-font fix was merged into `main` (PR #1) before the step started.
+Step 6 (Tauri wiring, parity, portable build), sub-step **6b** (parity and build). 6a is tagged
+`step-06a`. The emoji-font fix was merged into `main` (PR #1) before the step started.
+
+## Step 6b so far
+
+- Startup error screen (4b m5): commands `data_folder_status`, `restart_app`; UI
+  `screens/startup-error.ts` (Dutch reason, folder, "Opnieuw proberen" = restart); quirks.spec.
+- Start failure (no WebView2): main-thread panic hook + `build()` error -> Dutch `rfd` message
+  box (`src-tauri/src/start_error.rs`); checked by hand with `WEBVIEW2_BROWSER_EXECUTABLE_FOLDER`
+  set to a missing folder (Tauri panics "Could not find the webview runtime" in the event loop).
+- School logo input: six image types, Dutch toast otherwise (6a M1).
+- `ui/e2e/real-pdf.spec.ts`: real rapport PDF (written by `typst_rapport`) in pdf.js under the
+  CSP; CI step after `cargo test`.
+- CI already built and uploaded the portable exe (since Step 0).
 
 ## Step 6a so far
 
@@ -77,19 +89,16 @@ The emoji-font fix was merged into `main` (PR #1) before the step started.
 
 ## In progress
 
-- Nothing. Step 6a is done: reviewed (`docs/reviews/step-06a.md`, 0 blockers, M1/M2 and most
-  minors/nits fixed, m4/n7 in the backlog), gate green, tagged `step-06a` on `step/06-tauri`
-  (not merged into `main`; that happens at the end of Step 6).
-- After the folder move (OneDrive -> `C:\Users\Matthias\git\maatwerk`): `cargo clean -p
-maatwerk-core -p maatwerk-app -p maatwerk-cli` (stale build-script path) and `npm ci` (the
-  `node_modules/maatwerk-ui` junction pointed at the old folder) were needed.
+- Step 6b: `docs/parity.md` completion and `docs/manual-test.md` next.
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 6b (PLAN.md section 6, Step 6, "6b: parity and build") on
-   `step/06-tauri`: `docs/manual-test.md`, finish `docs/parity.md`, startup error screen (4b m5),
-   CI builds the portable exe, WebView2 message, CSP e2e on a real rapport, `/security-review`,
-   architecture drift check, tag `v0.2.0-parity`.
+1. Finish `docs/parity.md` (rows "manual (6b checklist)" point at `docs/manual-test.md`), write
+   `docs/manual-test.md`, record the compat-layer remainder in the backlog (ADR-0002: deleted
+   screen by screen in Step 10).
+2. Gate, reviewer subagent (`docs/reviews/step-06b.md`), `/security-review`, architecture drift
+   check vs ADR-0002, fix blockers/majors, merge `step/06-tauri` into `main`, tag `step-06` and
+   `v0.2.0-parity`, report.
 
 ## Open questions for the user
 
