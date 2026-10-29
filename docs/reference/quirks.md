@@ -685,6 +685,9 @@ Paths in this section are relative to `_reference/renderer/`.
   opdracht by its label). Its images stay at `images/<id>/...` (ADR-0002 5a says "mapped to
   `images/`": the mapping to `images/` happens on disk in the Step 7 migration, which rewrites
   the source; until then the virtual project keeps the old path so v1 sources compile unchanged).
+  The `images/<id>` prefix is matched case-sensitively, while the reference read through the
+  case-insensitive Windows file system: `Images/<id>/x.png` worked there and fails here. Editor
+  snippets always write `images/<id>/`; Step 7 checks existing sources.
 
 ### T30. Opdracht image names that differ only in case overwrite each other
 
@@ -696,10 +699,9 @@ Paths in this section are relative to `_reference/renderer/`.
   an image. Test: `opdracht_images::tests::store_list_overwrite_copy_delete`.
 - Related, not changed: thumbnails now exist for GIF and WebP too (Electron's `nativeImage` could
   not decode them, so the reference showed none); the list is sorted by an approximation of
-  `localeCompare(…, 'nl')` (`nl_compare`), equal for ordinary file names.
-  The `images/<id>` prefix is matched case-sensitively, while the reference read through the
-  case-insensitive Windows file system: `Images/<id>/x.png` worked there and fails here. Editor
-  snippets always write `images/<id>/`; Step 7 checks existing sources.
+  `localeCompare(…, 'nl')` (`nl_compare`), equal for ordinary file names; folders inside an
+  opdracht's image folder are skipped by copy and left alone by delete (the reference threw on
+  them when copying and removed them when deleting).
 
 ## U. UI
 

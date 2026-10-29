@@ -153,7 +153,12 @@ pub fn run() {
         // grant the UI none of their commands (ADR-0002 section 7).
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_opener::init())
+        // No click handler for `target=_blank` links in the webview (review 6a n2).
+        .plugin(
+            tauri_plugin_opener::Builder::new()
+                .open_js_links_on_click(false)
+                .build(),
+        )
         .register_asynchronous_uri_scheme_protocol(scheme::SCHEME, scheme::handle)
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
@@ -183,9 +188,10 @@ pub fn run() {
             // `window-all-closed` in the reference: offline as soon as the window goes, even
             // if the process takes a moment to exit.
             tauri::RunEvent::WindowEvent {
+                label,
                 event: tauri::WindowEvent::Destroyed,
                 ..
-            } => core.mark_offline(),
+            } if label == "main" => core.mark_offline(),
             // `before-quit`.
             tauri::RunEvent::Exit => core.shutdown(),
             _ => {}

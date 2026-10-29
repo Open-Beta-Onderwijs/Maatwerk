@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-29 (Step 6a in progress) Branch: `step/06-tauri` Last tag: `step-05`
+Last updated: 2026-10-29 (Step 6a done) Branch: `step/06-tauri` Last tag: `step-05`
 
 ## Current step
 
@@ -13,7 +13,7 @@ The emoji-font fix was merged into `main` (PR #1) before the step started.
   background folder retry, empty-folder cleanup at start, clipboard RGBA -> PNG; quirk T30) and
   `outputs` (`OutputStore` in the OS cache dir under output IDs `<n>-<name>.pdf`, emptied at
   start; `print_copy` to `rapporten/<schooljaar>/<YYYY-MM-DD HHmm> <soort> <vak> <groep>
-  <toets>.pdf` with ` (2)` on a clash). `create_v1_opdracht_file`, `storage.write_bytes/list_dir`.
+<toets>.pdf` with ` (2)` on a clash). `create_v1_opdracht_file`, `storage.write_bytes/list_dir`.
 - App: commands `create_assignment_typ_file`, 7 image commands, `render_rapport_pdf`,
   `render_assignment_svg`, `render_assignment_batch` (+ `assignment:progress` event),
   `open_path` (output ID or data-relative path), `print_pdf`, `set_watch_year` (C7). Plugins
@@ -77,17 +77,19 @@ The emoji-font fix was merged into `main` (PR #1) before the step started.
 
 ## In progress
 
-- Step 6a done in code (also: n8 write restrictions, rolling log file, docs). Gate passed
-  locally (fmt, clippy, cargo test, lint, typecheck, npm test 247, e2e 85, licences, deny, SPDX).
-  Reviewer subagent running -> `docs/reviews/step-06a.md`.
+- Nothing. Step 6a is done: reviewed (`docs/reviews/step-06a.md`, 0 blockers, M1/M2 and most
+  minors/nits fixed, m4/n7 in the backlog), gate green, tagged `step-06a` on `step/06-tauri`
+  (not merged into `main`; that happens at the end of Step 6).
 - After the folder move (OneDrive -> `C:\Users\Matthias\git\maatwerk`): `cargo clean -p
-  maatwerk-core -p maatwerk-app -p maatwerk-cli` (stale build-script path) and `npm ci` (the
+maatwerk-core -p maatwerk-app -p maatwerk-cli` (stale build-script path) and `npm ci` (the
   `node_modules/maatwerk-ui` junction pointed at the old folder) were needed.
 
 ## Next action (concrete, resumable)
 
-1. Triage `docs/reviews/step-06a.md`: fix blockers/majors, cheap minors, rest to backlog.
-2. Re-run the gate, tag `step-06a`, update STATE, stop and report to the user.
+1. When the user says go: Step 6b (PLAN.md section 6, Step 6, "6b: parity and build") on
+   `step/06-tauri`: `docs/manual-test.md`, finish `docs/parity.md`, startup error screen (4b m5),
+   CI builds the portable exe, WebView2 message, CSP e2e on a real rapport, `/security-review`,
+   architecture drift check, tag `v0.2.0-parity`.
 
 ## Open questions for the user
 

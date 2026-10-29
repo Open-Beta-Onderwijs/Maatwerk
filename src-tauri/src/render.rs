@@ -111,8 +111,10 @@ fn invalid_file_name(name: &str) -> CommandError {
 
 /// A v1 opdracht project for a bare `.typ` name, else the reference's error text.
 fn opdracht_project(core: &Core, typ_file: &str) -> Res<TypstProject> {
-    TypstProject::opdracht_v1(core.storage()?.data_dir(), typ_file)
-        .map_err(|_| invalid_file_name(typ_file))
+    TypstProject::opdracht_v1(core.storage()?.data_dir(), typ_file).map_err(|e| match e {
+        maatwerk_core::Error::InvalidPath { .. } => invalid_file_name(typ_file),
+        e => e.into(),
+    })
 }
 
 /// All students of one toets in one PDF. `examId` is unused, as in the reference. The UI passes
@@ -251,29 +253,22 @@ fn header(value: Option<Value>) -> Res<OpdrachtHeader> {
     }
 }
 
-/// Opens an output (by ID) or a file in the data folder (data-relative path) with the OS
-/// (ADR-0002 section 7). Not an absolute path, unlike the reference.
+/// Opens a render output (by ID) or a printed copy (`rapporten/<schooljaar>/<name>.pdf`) with
+/// the OS. Unlike the reference, nothing else: not an absolute path and not other files in the
+/// shared folder (ADR-0002 section 7, review 6a M1).
 #[tauri::command]
 #[specta::specta]
 pub async fn open_path(state: State<'_, Shared>, app: AppHandle, target: String) -> Res<()> {
     let path = blocking(state, move |c| {
-        if let Ok(path) = c.outputs()?.path(&target) {
-            return Ok(path);
-        }
-        let rel = RelPath::parse(&target)?;
-        let path = c.storage()?.data_dir().resolve(&rel)?;
-        if path.exists() {
-            Ok(path)
-        } else {
-            Err(maatwerk_core::Error::NotFound { path: target }.into())
-        }
+        Ok(outputs::openable_path(c.storage()?, c.outputs()?, &target)?)
     })
     .await?;
-    open_with_os(&app, &path)
+    open_with_os(app, path).await
 }
 
 /// "Afdrukken": copies the output into `rapporten/<schooljaar>/` under a descriptive name, opens
-/// the copy with the OS and returns its data-relative path.
+/// the copy with the OS and returns its data-relative path. If only the opening fails, the error
+/// says where the copy was saved.
 #[tauri::command]
 #[specta::specta]
 pub async fn print_pdf(
@@ -297,14 +292,24 @@ pub async fn print_pdf(
         Ok((rel.as_str().to_owned(), abs))
     })
     .await?;
-    open_with_os(&app, &abs)?;
+    open_with_os(app, abs).await.map_err(|e| {
+        CommandError::internal(format!(
+            "Opgeslagen als {rel}, maar openen lukte niet: {}",
+            e.message
+        ))
+    })?;
     Ok(rel)
 }
 
-fn open_with_os(app: &AppHandle, path: &std::path::Path) -> Res<()> {
-    app.opener()
-        .open_path(path.to_string_lossy(), None::<&str>)
-        .map_err(|e| CommandError::internal(format!("opening the file failed: {e}")))
+/// ShellExecute can block (file associations, a slow share): off the async runtime (m5).
+async fn open_with_os(app: AppHandle, path: std::path::PathBuf) -> Res<()> {
+    tauri::async_runtime::spawn_blocking(move || {
+        app.opener()
+            .open_path(path.to_string_lossy(), None::<&str>)
+            .map_err(|e| CommandError::internal(format!("opening the file failed: {e}")))
+    })
+    .await
+    .map_err(|e| CommandError::internal(format!("open task failed: {e}")))?
 }
 
 #[cfg(test)]

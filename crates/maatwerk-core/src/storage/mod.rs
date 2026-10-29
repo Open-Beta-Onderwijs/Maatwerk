@@ -47,17 +47,28 @@ pub fn check_opdracht_typ_path(rel: &RelPath) -> Result<()> {
     let ok = rel
         .as_str()
         .strip_prefix("opdrachten/")
-        .is_some_and(|name| !name.contains('/') && rel.extension().as_deref() == Some("typ"));
+        .is_some_and(|name| {
+            // `lib.typ` belongs to the app (review 6a n4).
+            !name.contains('/')
+                && !name.eq_ignore_ascii_case("lib.typ")
+                && rel.extension().as_deref() == Some("typ")
+        });
     require(ok, rel, "expected opdrachten/<name>.typ")
 }
 
-/// `fotos/<name>`: where the UI saves photos and logos (`fs:savePhoto`; backlog n8).
+/// `fotos/<name>.<image ext>`: where the UI saves photos and logos (`fs:savePhoto`; backlog n8).
+/// Image types only, so the shared folder never receives a file that runs when opened (review
+/// 6a M1).
 pub fn check_photo_path(rel: &RelPath) -> Result<()> {
-    let ok = rel
-        .as_str()
-        .strip_prefix("fotos/")
-        .is_some_and(|name| !name.contains('/'));
-    require(ok, rel, "expected fotos/<name>")
+    let image = rel
+        .extension()
+        .is_some_and(|ext| crate::opdracht_images::IMAGE_EXTS.contains(&ext.as_str()));
+    let ok = image
+        && rel
+            .as_str()
+            .strip_prefix("fotos/")
+            .is_some_and(|name| !name.contains('/'));
+    require(ok, rel, "expected fotos/<name> with an image extension")
 }
 
 fn require(ok: bool, rel: &RelPath, reason: &'static str) -> Result<()> {

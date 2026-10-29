@@ -76,13 +76,15 @@ export const commands = {
 	/**  Compiles every job and merges them in job order; reports `assignment:progress`. */
 	renderAssignmentBatch: (jobs: BatchJobArg[], opts: BatchOptionsArg | null) => typedError<RenderedBatch, CommandError>(__TAURI_INVOKE("render_assignment_batch", { jobs, opts })),
 	/**
-	 *  Opens an output (by ID) or a file in the data folder (data-relative path) with the OS
-	 *  (ADR-0002 section 7). Not an absolute path, unlike the reference.
+	 *  Opens a render output (by ID) or a printed copy (`rapporten/<schooljaar>/<name>.pdf`) with
+	 *  the OS. Unlike the reference, nothing else: not an absolute path and not other files in the
+	 *  shared folder (ADR-0002 section 7, review 6a M1).
 	 */
 	openPath: (target: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_path", { target })),
 	/**
 	 *  "Afdrukken": copies the output into `rapporten/<schooljaar>/` under a descriptive name, opens
-	 *  the copy with the OS and returns its data-relative path.
+	 *  the copy with the OS and returns its data-relative path. If only the opening fails, the error
+	 *  says where the copy was saved.
 	 */
 	printPdf: (pdfPath: string, name: PrintNameArg) => typedError<string, CommandError>(__TAURI_INVOKE("print_pdf", { pdfPath, name })),
 };

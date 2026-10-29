@@ -199,11 +199,25 @@ pub fn copy(storage: &Storage, from_id: &str, to_id: &str) -> Result<()> {
 pub fn delete_all(storage: &Storage, id: &str) -> Result<Option<RelPath>> {
     let dir = images_dir(id)?;
     for f in storage.list_dir(&dir, false)? {
-        storage.delete(&dir.join(&f)?)?;
+        delete_retrying(storage, &dir.join(&f)?)?;
     }
     match storage.remove_empty_dir(&dir) {
         Ok(_) => Ok(None),
         Err(_) => Ok(Some(dir)),
+    }
+}
+
+/// `rmSync(..., { maxRetries: 5 })`: OneDrive can hold a file for a moment (review 6a m3).
+fn delete_retrying(storage: &Storage, rel: &RelPath) -> Result<()> {
+    let mut attempt = 0;
+    loop {
+        match storage.delete(rel) {
+            Err(Error::Io { .. }) if attempt < 5 => {
+                attempt += 1;
+                std::thread::sleep(Duration::from_millis(100 * attempt));
+            }
+            other => return other,
+        }
     }
 }
 

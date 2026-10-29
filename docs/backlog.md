@@ -13,6 +13,14 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   no test invokes a command through Tauri (`tauri::test` mock runtime). Add a few for the
   render/print/image commands, or cover them in the 6b manual checklist.
 - **Startup error screen (4b m5)** is still open: Step 6b.
+- **Review 6a m4:** `list_opdracht_images` decodes and resizes every image on each call (slow for
+  phone photos, no decode limits). Cache thumbnails by file hash/mtime and set
+  `image::Limits`.
+- **Review 6a n7:** a picked file whose name is not valid Unicode gets "Bestandstype . wordt niet
+  ondersteund." instead of a clear message.
+- **`save_photo` takes image types only (review 6a M1):** the school logo input accepts
+  `image/*`, so a BMP/ICO/AVIF logo is now refused (the rapport could not use it anyway). Narrow
+  the `accept` attribute and show a Dutch message (6b).
 
 ## From Step 5b
 

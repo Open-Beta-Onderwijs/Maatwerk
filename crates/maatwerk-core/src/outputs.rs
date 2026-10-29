@@ -8,6 +8,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use time::OffsetDateTime;
 
@@ -18,16 +19,25 @@ use crate::{Error, Result};
 /// Longest output name and name part, in characters.
 const MAX_PART: usize = 60;
 
-/// The cache folder of one app run: emptied when opened.
+/// Longest printed file name without ` (n).pdf`, in characters.
+const MAX_STEM: usize = 120;
+
+/// Folders of other runs older than this are removed at start; younger ones may belong to a
+/// second instance that is still running (review 6a m1).
+const STALE_RUN: Duration = Duration::from_secs(24 * 60 * 60);
+
+/// The cache folder of one app run, `<base>/<process id>`: started empty.
 pub struct OutputStore {
     dir: PathBuf,
     seq: AtomicU64,
 }
 
 impl OutputStore {
-    /// Creates `dir` and removes what an earlier run left in it.
-    pub fn open(dir: impl Into<PathBuf>) -> io::Result<OutputStore> {
-        let dir = dir.into();
+    /// Creates this process's folder under `base`, empty, and removes what old runs left there.
+    pub fn open(base: impl Into<PathBuf>) -> io::Result<OutputStore> {
+        let base = base.into();
+        let dir = base.join(std::process::id().to_string());
+        clear_stale(&base, &dir);
         match fs::remove_dir_all(&dir) {
             Err(e) if e.kind() != io::ErrorKind::NotFound => {
                 tracing::warn!("could not clear the output folder: {e}");
@@ -85,6 +95,56 @@ impl OutputStore {
     pub fn read(&self, id: &str) -> Result<Vec<u8>> {
         let path = self.path(id)?;
         fs::read(&path).map_err(|e| Error::io(id, e))
+    }
+}
+
+/// Removes loose files in `base` and run folders other than `own` not touched for a day.
+fn clear_stale(base: &Path, own: &Path) {
+    let Ok(entries) = fs::read_dir(base) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let Ok(meta) = entry.metadata() else { continue };
+        if meta.is_file() {
+            let _ = fs::remove_file(&path);
+        } else if meta.is_dir() && path != own {
+            let old = meta
+                .modified()
+                .ok()
+                .and_then(|m| m.elapsed().ok())
+                .is_some_and(|age| age > STALE_RUN);
+            if old {
+                let _ = fs::remove_dir_all(&path);
+            }
+        }
+    }
+}
+
+/// What `open_path` may open with the OS (review 6a M1): an output ID, or a printed copy
+/// `rapporten/<schooljaar>/<name>.pdf` that exists. Nothing else in the shared folder, which
+/// could hold files that run when opened.
+pub fn openable_path(storage: &Storage, outputs: &OutputStore, target: &str) -> Result<PathBuf> {
+    if let Ok(path) = outputs.path(target) {
+        return Ok(path);
+    }
+    let rel = RelPath::parse(target)?;
+    let parts: Vec<&str> = rel.as_str().split('/').collect();
+    let printed = matches!(parts.as_slice(), ["rapporten", year, _] if is_year_name(year))
+        && rel.extension().as_deref() == Some("pdf");
+    if !printed {
+        return Err(Error::InvalidPath {
+            path: target.to_owned(),
+            reason: "only render outputs and printed PDFs can be opened",
+        });
+    }
+    let path = storage.data_dir().resolve(&rel)?;
+    if path.is_file() {
+        Ok(path)
+    } else {
+        Err(Error::NotFound {
+            path: target.to_owned(),
+        })
     }
 }
 
@@ -183,6 +243,10 @@ pub fn print_copy(
         .map(|p| clean_name_part(p))
         .filter(|p| !p.is_empty())
         .fold(stamp, |acc, p| format!("{acc} {p}"));
+    // Keeps the full path well under Windows' 260 characters on a deep OneDrive folder
+    // (review 6a m2); ` (n).pdf` comes on top.
+    let stem: String = stem.chars().take(MAX_STEM).collect();
+    let stem = stem.trim_end_matches([' ', '.']).to_owned();
     let dir = RelPath::parse(&format!("rapporten/{}", name.schooljaar))?;
     storage.ensure_dir(&dir)?;
     for n in 1u32.. {
@@ -211,6 +275,11 @@ mod tests {
         fs::write(tmp.path().join("out/old.pdf"), b"x").unwrap();
         let store = OutputStore::open(tmp.path().join("out")).unwrap();
         assert!(!tmp.path().join("out/old.pdf").exists(), "cleared at open");
+        // A recent folder of another running instance is kept.
+        fs::create_dir_all(tmp.path().join("out/1")).unwrap();
+        fs::write(tmp.path().join("out/1/1-opdrachten.pdf"), b"x").unwrap();
+        let _again = OutputStore::open(tmp.path().join("out")).unwrap();
+        assert!(tmp.path().join("out/1/1-opdrachten.pdf").exists());
 
         let a = store.put("opdrachten.pdf", b"one").unwrap();
         let k = store.put("antwoordsleutel.pdf", b"key").unwrap();
@@ -238,7 +307,8 @@ mod tests {
             );
         }
         let id = store.put("rapport_preview.pdf", b"%PDF").unwrap();
-        assert_eq!(store.path(&id).unwrap(), tmp.path().join(&id));
+        let own = tmp.path().join(std::process::id().to_string());
+        assert_eq!(store.path(&id).unwrap(), own.join(&id));
         for bad in [
             "",
             "1-../x.pdf",
@@ -311,5 +381,59 @@ mod tests {
             ..name
         };
         assert!(print_copy(&storage, b"%PDF", &bad_year, now).is_err());
+    }
+
+    #[test]
+    fn m2_long_print_names_are_capped() {
+        let tmp = tempfile::tempdir().unwrap();
+        let storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        let name = PrintName {
+            schooljaar: "2025-2026".into(),
+            soort: "Opdrachten".into(),
+            vak: "nat".into(),
+            groep: "x".repeat(60),
+            toets: "y".repeat(60),
+        };
+        let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH).unwrap();
+        assert_eq!(rel.file_name().chars().count(), MAX_STEM + ".pdf".len());
+    }
+
+    #[test]
+    fn m1_open_accepts_outputs_and_printed_pdfs_only() {
+        let tmp = tempfile::tempdir().unwrap();
+        let storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        let outputs = OutputStore::open(tmp.path().join("out")).unwrap();
+        let id = outputs.put("rapport_preview.pdf", b"%PDF").unwrap();
+        assert!(openable_path(&storage, &outputs, &id).is_ok());
+        let name = PrintName {
+            schooljaar: "2025-2026".into(),
+            soort: "Rapport".into(),
+            ..PrintName::default()
+        };
+        let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH).unwrap();
+        assert!(openable_path(&storage, &outputs, rel.as_str()).is_ok());
+        for (file, bytes) in [
+            ("fotos/x.bat", &b"echo"[..]),
+            ("rapporten/2025-2026/x.lnk", b""),
+        ] {
+            let rel = RelPath::parse(file).unwrap();
+            storage.write_bytes(&rel, bytes, Expect::Any).unwrap();
+        }
+        for bad in [
+            "fotos/x.bat",
+            "rapporten/2025-2026/x.lnk",
+            "rapporten/2025-2026/missing.pdf",
+            "rapporten/x/a.pdf",
+            "rapporten",
+            "gebruikers.json",
+            "../x.pdf",
+            "C:/Windows/notepad.exe",
+        ] {
+            assert!(openable_path(&storage, &outputs, bad).is_err(), "{bad}");
+        }
     }
 }

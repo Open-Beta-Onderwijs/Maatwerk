@@ -197,7 +197,10 @@ frame-ancestors 'none'` (plus `worker-src` for pdf.js). **Amended in Step 3a (co
 - **Implemented (Step 6a):** the dialog, clipboard-manager and opener plugins are called from
   Rust only (image picker, clipboard image, opening PDFs), so `capabilities/default.json` still
   grants just `core:default`. A picked image's absolute path stays in Rust behind a token.
-  `write_text_file` only writes `opdrachten/<name>.typ` and `save_photo` only `fotos/<name>`.
+  `write_text_file` only writes `opdrachten/<name>.typ` (not `lib.typ`) and `save_photo` only
+  `fotos/<name>` with an image extension. `open_path` opens only render outputs and printed copies
+  in `rapporten/<schooljaar>/` (review 6a M1). Render outputs live in a per-process folder
+  `output/<pid>/`; other runs' folders are removed after a day (review 6a m1).
 
 ### 8. Logging and local state
 

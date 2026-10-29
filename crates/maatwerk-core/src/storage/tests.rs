@@ -776,6 +776,7 @@ fn n8_text_and_photo_writes_are_limited_to_their_folders() {
         "opdrachten/images/a.typ",
         "2025-2026/exams/t1.typ",
         "opdrachten",
+        "opdrachten/lib.typ",
     ] {
         assert!(check_opdracht_typ_path(&rel(bad)).is_err(), "{bad}");
     }
@@ -785,6 +786,9 @@ fn n8_text_and_photo_writes_are_limited_to_their_folders() {
         "fotos/sub/a.png",
         "fotos",
         "opdrachten/fotos/a.png",
+        "fotos/x.bat",
+        "fotos/x.lnk",
+        "fotos/x",
     ] {
         assert!(check_photo_path(&rel(bad)).is_err(), "{bad}");
     }

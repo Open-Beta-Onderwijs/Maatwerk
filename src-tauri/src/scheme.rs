@@ -13,12 +13,12 @@ use crate::state::Shared;
 
 pub const SCHEME: &str = "maatwerk-out";
 
-/// Origins of the app's own pages: production on Windows, other platforms, `tauri dev`.
-const APP_ORIGINS: [&str; 3] = [
-    "http://tauri.localhost",
-    "tauri://localhost",
-    "http://localhost:1420",
-];
+/// Origins of the app's own pages: production on Windows and other platforms, plus the Vite dev
+/// server in debug builds only (review 6a n6).
+fn is_app_origin(origin: &str) -> bool {
+    matches!(origin, "http://tauri.localhost" | "tauri://localhost")
+        || (cfg!(debug_assertions) && origin == "http://localhost:1420")
+}
 
 /// The handler for `register_asynchronous_uri_scheme_protocol`. Reads on a blocking thread.
 pub fn handle<R: Runtime>(
@@ -62,7 +62,7 @@ fn respond(
         .headers()
         .get(header::ORIGIN)
         .and_then(|o| o.to_str().ok())
-        .filter(|o| APP_ORIGINS.contains(o))
+        .filter(|o| is_app_origin(o))
     {
         builder = builder.header(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin);
     }
