@@ -68,6 +68,9 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      # A real compiled rapport (written by the typst_rapport tests) in pdf.js under the CSP.
+      - run: npx playwright test --project chromium real-pdf
+        working-directory: ui
       - name: Portable exe
         run: npm run build:exe
       # Only upload an exe whose shipped npm dependencies pass the allowlist (review 3a M3).

@@ -237,3 +237,16 @@ fn the_pdf_is_deterministic_with_a_fixed_clock() {
     assert_eq!(a.output, b.output);
     assert!(a.warnings.is_empty(), "{:?}", a.warnings);
 }
+
+/// A real rapport (embedded fonts, colour emoji as Type3 glyphs) for the Playwright check that
+/// pdf.js shows it under the strict CSP (`ui/e2e/real-pdf.spec.ts`, backlog 3a m8). The mock's
+/// canned PDF only uses Helvetica.
+#[test]
+fn writes_a_real_rapport_for_the_csp_check() {
+    let case = load_case("rapport-valid");
+    let (_tmp, dir) = data_dir(true);
+    let pdf = render_rapport_pdf(fonts(), &case_data(&case), &dir, fixed_now()).unwrap();
+    let out = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("e2e/rapport-valid.pdf");
+    std::fs::create_dir_all(out.parent().unwrap()).unwrap();
+    std::fs::write(&out, &pdf.output).unwrap();
+}

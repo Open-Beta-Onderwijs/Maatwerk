@@ -478,9 +478,16 @@ export class MockApi implements MaatwerkApi {
 
   // ── Typst (canned output) ─────────────────────────────────────────────────
 
+  /** A real PDF the next renders return instead of the canned one (tests, base64). */
+  private realPdf: Uint8Array | null = null;
+
+  useRealPdf(base64: string): void {
+    this.realPdf = fromBase64(base64);
+  }
+
   private storePdf(name: string, pages: string[][]): string {
     const pdfPath = `C:\\Maatwerk-mock\\temp\\${name}`;
-    this.pdfs.set(pdfPath, cannedPdf(pages));
+    this.pdfs.set(pdfPath, this.realPdf ?? cannedPdf(pages));
     const old = this.pdfUrls.get(pdfPath);
     if (old) URL.revokeObjectURL(old);
     this.pdfUrls.delete(pdfPath);

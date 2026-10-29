@@ -127,9 +127,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   component classes and fix the inconsistencies they preserve (e.g. grade pills 34 vs 36 px, two
   panel paddings `10px` vs `10px 12px 14px`, `#aaa` vs `#9aa0ab` greys). Each visible change needs
   the user's eye; `npm run test:visual` shows the diff.
-- **Step 6 CSP checklist (review 3a m8):** ~~add the PDF output scheme to `connect-src`~~ and
-  ~~`isEvalSupported: false`~~ done in 6a. Still open (6b): run `ui/e2e/csp.spec.ts` on a real
-  compiled rapport (the mock PDF uses only Helvetica).
+- ~~**Step 6 CSP checklist (review 3a m8)**~~ Done: scheme in `connect-src` and
+  `isEvalSupported: false` (6a); `ui/e2e/real-pdf.spec.ts` shows a real compiled rapport (from
+  the `typst_rapport` tests) in pdf.js under the CSP (6b, CI after `cargo test`).
 - **Utilities are `!important` (review 3a m7):** a later `el.style.x = …` on an element with a
   `u-*` class for the same property is ignored. Use a component class there instead.
 - **Review 3a n5:** `csp.spec.ts` waits a fixed 600 ms; `smoke.spec.ts` retries opening the exam
