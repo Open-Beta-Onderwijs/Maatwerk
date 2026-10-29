@@ -183,3 +183,14 @@ test('4b m5: an unusable data folder shows the startup error screen', async ({ p
   expect(calls).toContain('restartApp');
   expect(calls).not.toContain('listYears');
 });
+
+test('6a M1: an unsupported logo type is refused with a message', async ({ page }) => {
+  await login(page, 'nat', 'admin');
+  await page.locator('.nav-btn[data-screen="school"]').click();
+  const input = page.locator('#input-logo');
+  await expect(input).toHaveAttribute('accept', '.png,.jpg,.jpeg,.gif,.svg,.webp');
+  await input.setInputFiles({ name: 'logo.bmp', mimeType: 'image/bmp', buffer: Buffer.from('BM') });
+  await expect(page.locator('.toast')).toContainText('Bestandstype .bmp wordt niet ondersteund');
+  const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
+  expect(calls).not.toContain('savePhoto');
+});
