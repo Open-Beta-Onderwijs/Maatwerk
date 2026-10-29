@@ -1,13 +1,14 @@
 # State
 
-Last updated: 2026-10-29 (Step 6b in progress) Branch: `step/06-tauri` Last tag: `step-05`
+Last updated: 2026-10-29 (Step 6 done) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-Step 6 (Tauri wiring, parity, portable build), sub-step **6b** (parity and build). 6a is tagged
-`step-06a`. The emoji-font fix was merged into `main` (PR #1) before the step started.
+Step 6 (Tauri wiring, parity, portable build) is **done**: merged into `main`, tagged `step-06`
+and `v0.2.0-parity`. Waiting for the user: manual tests on a copy of real data
+(`docs/manual-test.md`), then Step 7 when the user says go.
 
-## Step 6b so far
+## Step 6b summary
 
 - Startup error screen (4b m5): commands `data_folder_status`, `restart_app`; UI
   `screens/startup-error.ts` (Dutch reason, folder, "Opnieuw proberen" = restart); quirks.spec.
@@ -17,7 +18,14 @@ Step 6 (Tauri wiring, parity, portable build), sub-step **6b** (parity and build
 - School logo input: six image types, Dutch toast otherwise (6a M1).
 - `ui/e2e/real-pdf.spec.ts`: real rapport PDF (written by `typst_rapport`) in pdf.js under the
   CSP; CI step after `cargo test`.
-- CI already built and uploaded the portable exe (since Step 0).
+- CI already built and uploaded the portable exe (since Step 0); new CI checks: no MockApi in the
+  app bundle, real-PDF spec after `cargo test`.
+- Docs: `docs/manual-test.md` (click-through, ids `M-…`), `docs/parity.md` complete (all 32
+  handlers; manual ids linked), backlog "From Step 6b" (compat layer stays until Step 10).
+- Review `docs/reviews/step-06.md`: 0 blockers, M1 (Tauri's English WebView2 box came first in
+  release builds -> `wry::webview_version()` pre-check before Tauri, logging before Tauri) and
+  m1-m5, n1-n9 fixed; m6, n10 in the backlog; drift notes in ADR-0002 section 11.
+  `/security-review`: no findings. Release exe checked without WebView2: one Dutch box.
 
 ## Step 6a so far
 
@@ -89,16 +97,13 @@ Step 6 (Tauri wiring, parity, portable build), sub-step **6b** (parity and build
 
 ## In progress
 
-- Step 6b: `docs/parity.md` completion and `docs/manual-test.md` next.
+- Nothing.
 
 ## Next action (concrete, resumable)
 
-1. Finish `docs/parity.md` (rows "manual (6b checklist)" point at `docs/manual-test.md`), write
-   `docs/manual-test.md`, record the compat-layer remainder in the backlog (ADR-0002: deleted
-   screen by screen in Step 10).
-2. Gate, reviewer subagent (`docs/reviews/step-06b.md`), `/security-review`, architecture drift
-   check vs ADR-0002, fix blockers/majors, merge `step/06-tauri` into `main`, tag `step-06` and
-   `v0.2.0-parity`, report.
+1. The user tests the exe on a copy of real data with `docs/manual-test.md` and reports
+   differences; fix them in a follow-up branch before Step 7 (PLAN Step 6, last paragraph).
+2. When the user says go: Step 7 (data format v2, migration, cutover runbook).
 
 ## Open questions for the user
 
@@ -110,7 +115,9 @@ Step 6 (Tauri wiring, parity, portable build), sub-step **6b** (parity and build
 
 ## How to resume
 
-PowerShell for npm/cargo (Git Bash's `link` shadows MSVC's), but edit files with the editor or
+After the folder move, release builds also needed `cargo clean --release -p maatwerk-core -p
+maatwerk-app -p maatwerk-cli` (stale build-script path). PowerShell for npm/cargo (Git Bash's
+`link` shadows MSVC's), but edit files with the editor or
 Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). In PowerShell 5.1, commit with
 `git commit -F <file>` (inline messages with quotes get split into pathspecs). `npm ci; npm run
 build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright
