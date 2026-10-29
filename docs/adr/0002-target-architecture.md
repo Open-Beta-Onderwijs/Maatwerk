@@ -152,8 +152,9 @@ opdrachten/<id>/
   `@preview/unify:0.8.0` (licences: MIT, LGPL-3.0-or-later, MIT-0, MIT). No downloads; an unknown
   package is a compile error with a clear message.
 - **Fonts:** embedded Source Serif 4, STIX Two Math, Typst's default assets (Libertinus etc.).
-  Emoji: open decision 2 (system Segoe UI Emoji on Windows vs a bundled OFL/CC-BY colour emoji
-  font). The service warns when a glyph falls back to tofu, since the reference silently does not.
+  Emoji: open decision 2, decided 2026-10-28: a bundled Noto Color Emoji (OFL-1.1), which wins
+  over system emoji fonts (quirk T2). The service warns when a glyph falls back to tofu, since the
+  reference silently does not.
 - **Diagnostics:** structured (`severity`, message, file, span, hints) instead of raw stderr; the
   compat layer can still produce the old text for unmigrated screens. Warnings are kept, not
   dropped.

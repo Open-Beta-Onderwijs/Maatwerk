@@ -119,8 +119,8 @@ pub(crate) fn tofu_warnings(world: &MaatwerkWorld, doc: &PagedDocument) -> Vec<D
                         codes.join(" ")
                     ),
                     hints: vec![
-                        "emoji need an emoji font (on Windows: Segoe UI Emoji); other characters \
-                         need an installed font that has them"
+                        "emoji come from the bundled Noto Color Emoji, which may not have very new \
+                         ones; other characters need an installed font that has them"
                             .to_owned(),
                     ],
                     location: locate(world, glyph.span.0),

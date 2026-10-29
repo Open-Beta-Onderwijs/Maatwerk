@@ -11,12 +11,12 @@ use std::path::Path;
 use maatwerk_core::assets;
 use maatwerk_core::paths::{DataDir, RelPath};
 use maatwerk_core::typst_svc::{
-    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, CompileError, Compiled,
-    FontStore, Mode, OpdrachtHeader, OpdrachtInputs, TypstProject, compile_document,
-    opdracht_world, render_assignment_batch, render_assignment_svg_pages,
+    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, CompileError, Compiled, Mode,
+    OpdrachtHeader, OpdrachtInputs, TypstProject, compile_document, opdracht_world,
+    render_assignment_batch, render_assignment_svg_pages,
 };
 use serde_json::Value;
-use support::{assert_matches_golden, decode, frame_text, load_case};
+use support::{assert_matches_golden, decode, fonts, frame_text, load_case};
 use time::OffsetDateTime;
 use typst::layout::PagedDocument;
 
@@ -105,12 +105,7 @@ fn compile(
     project: TypstProject,
     inputs: &OpdrachtInputs,
 ) -> Result<Compiled<PagedDocument>, CompileError> {
-    compile_document(&opdracht_world(
-        FontStore::shared(),
-        project,
-        inputs,
-        fixed_now(),
-    ))
+    compile_document(&opdracht_world(fonts(), project, inputs, fixed_now()))
 }
 
 fn golden(id: &str) -> PagedDocument {
@@ -186,7 +181,7 @@ fn svg_golden(id: &str) {
     let case = load_case(id);
     let (_tmp, dir) = data_dir();
     let (project, inputs) = golden_job(&case, &dir);
-    let pages = render_assignment_svg_pages(FontStore::shared(), project, &inputs, fixed_now())
+    let pages = render_assignment_svg_pages(fonts(), project, &inputs, fixed_now())
         .unwrap()
         .output;
     let want = case["svg"].as_array().unwrap();
@@ -299,7 +294,7 @@ fn a_syntax_error_in_an_opdracht_points_into_opdracht_typ() {
 fn main_typ_without_inputs_uses_the_placeholder_header_and_student_mode() {
     let (_tmp, dir) = data_dir();
     let project = || TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
-    let plain = compile_document(&project().world(FontStore::shared(), fixed_now()))
+    let plain = compile_document(&project().world(fonts(), fixed_now()))
         .unwrap()
         .output;
     let with = compile(project(), &OpdrachtInputs::preview("Titel", false))
@@ -391,23 +386,27 @@ fn a_folder_project_compiles_main_typ_from_disk() {
 
 #[test]
 fn characters_without_a_font_give_one_tofu_warning_each() {
-    // Quirk T2: without system fonts the reference drew emoji as boxes and said nothing.
+    // Quirk T2: the reference drew characters without a font as boxes and said nothing. Emoji
+    // now come from the bundled font, so a Tibetan icon (no bundled font has it) stands in.
     let case = load_case("opdracht-images-student");
     let (_tmp, dir) = data_dir();
-    let (project, inputs) = golden_job(&case, &dir);
-    let fonts = std::sync::Arc::new(FontStore::new(false));
-    let compiled = compile_document(&opdracht_world(fonts, project, &inputs, fixed_now())).unwrap();
+    let (project, mut inputs) = golden_job(&case, &dir);
+    for observatie in &mut inputs.header.observaties {
+        observatie.icon = "ༀ".to_owned();
+    }
+    let compiled =
+        compile_document(&opdracht_world(fonts(), project, &inputs, fixed_now())).unwrap();
     let messages: Vec<&str> = compiled
         .warnings
         .iter()
         .map(|w| w.message.as_str())
         .collect();
     assert!(
-        messages.contains(&"no font can display `📏` (U+1F4CF); it is shown as a box"),
+        messages.contains(&"no font can display `ༀ` (U+0F00); it is shown as a box"),
         "{messages:?}"
     );
-    let ruler = messages.iter().filter(|m| m.contains("`📏`")).count();
-    assert_eq!(ruler, 1, "one warning per character: {messages:?}");
+    let icon = messages.iter().filter(|m| m.contains("`ༀ`")).count();
+    assert_eq!(icon, 1, "one warning per character: {messages:?}");
     let first = &compiled.warnings[0];
     assert_eq!(first.location.as_ref().unwrap().file, "lib.typ");
     assert!(!first.hints.is_empty());
@@ -445,7 +444,7 @@ fn run_batch(
     options: BatchOptions,
 ) -> (Result<BatchOutput, BatchError>, Vec<BatchProgress>) {
     let seen = std::sync::Mutex::new(Vec::new());
-    let result = render_assignment_batch(FontStore::shared(), jobs, options, fixed_now(), &|p| {
+    let result = render_assignment_batch(fonts(), jobs, options, fixed_now(), &|p| {
         seen.lock().unwrap().push(p)
     });
     (result, seen.into_inner().unwrap())

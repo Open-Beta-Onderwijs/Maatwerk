@@ -61,7 +61,10 @@ Rust tests in `crates/maatwerk-core/tests/typst_rapport.rs` and `typst_opdracht.
 golden's call arguments with `typst_svc` and compare page count, page sizes, text (without
 whitespace and soft hyphens) and every pixel of the 30 ppi PNGs (`tests/support/mod.rs`). Pixels
 may differ by up to 3 levels per channel: only JPEG photos do (`opdracht-images-student`), because
-our `image` crate decodes with a newer zune-jpeg than the reference CLI's build. Opdracht inputs
+our `image` crate decodes with a newer zune-jpeg than the reference CLI's build. Emoji are Noto
+Color Emoji on both sides: the harness adds Maatwerk's bundled font to the reference's
+`include/fonts` and renders the PNGs with `--ignore-system-fonts`, and the tests compile without
+system fonts (`support::fonts`), so no golden depends on the machine (quirk T2). Opdracht inputs
 are the tiny fixture's `opdrachten/` (`crates/maatwerk-core/tests/fixtures`, kept in sync by
 `tools/fixtures/export-opdrachten.mjs`); a v1 opdracht compiles as a virtual project with the
 bundled `main.typ` (data via `sys.inputs`) and the cursor marker renamed (naming map). Batch

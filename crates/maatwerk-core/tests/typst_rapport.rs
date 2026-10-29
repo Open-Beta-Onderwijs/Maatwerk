@@ -7,11 +7,10 @@ mod support;
 
 use maatwerk_core::paths::DataDir;
 use maatwerk_core::typst_svc::{
-    CompileError, Compiled, FontStore, RapportData, compile_document, rapport_world,
-    render_rapport_pdf,
+    CompileError, Compiled, RapportData, compile_document, rapport_world, render_rapport_pdf,
 };
 use serde_json::Value;
-use support::{WATERMARK_SVG, assert_matches_golden, decode, frame_text, load_case};
+use support::{WATERMARK_SVG, assert_matches_golden, decode, fonts, frame_text, load_case};
 use time::OffsetDateTime;
 use typst::layout::PagedDocument;
 
@@ -43,7 +42,7 @@ fn data_dir(watermark: bool) -> (tempfile::TempDir, DataDir) {
 
 fn compile(data: &RapportData, watermark: bool) -> Result<Compiled<PagedDocument>, CompileError> {
     let (_tmp, dir) = data_dir(watermark);
-    compile_document(&rapport_world(FontStore::shared(), data, &dir, fixed_now()))
+    compile_document(&rapport_world(fonts(), data, &dir, fixed_now()))
 }
 
 fn page_text(doc: &PagedDocument, page: usize) -> String {
@@ -229,11 +228,11 @@ fn the_pdf_is_deterministic_with_a_fixed_clock() {
     let case = load_case("rapport-one-student");
     let data = case_data(&case);
     let (_tmp, dir) = data_dir(true);
-    let a = render_rapport_pdf(FontStore::shared(), &data, &dir, fixed_now()).unwrap();
+    let a = render_rapport_pdf(fonts(), &data, &dir, fixed_now()).unwrap();
     // Review 5a n4: without the memoisation cache the second compile does all the work again,
     // as a new process would.
     typst::comemo::evict(0);
-    let b = render_rapport_pdf(FontStore::shared(), &data, &dir, fixed_now()).unwrap();
+    let b = render_rapport_pdf(fonts(), &data, &dir, fixed_now()).unwrap();
     assert!(a.output.starts_with(b"%PDF-"));
     assert_eq!(a.output, b.output);
     assert!(a.warnings.is_empty(), "{:?}", a.warnings);

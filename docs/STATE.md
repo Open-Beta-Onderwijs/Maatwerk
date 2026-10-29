@@ -1,11 +1,24 @@
 # State
 
-Last updated: 2026-10-28 (Step 5 done) Branch: `main` Last tag: `step-05`
+Last updated: 2026-10-28 (emoji font fix) Branch: `fix/emoji-font` Last tag: `step-05`
 
 ## Current step
 
 Step 5 (Typst service) is done: 5b reviewed (`docs/reviews/step-05b.md`, no blockers/majors,
 security review clean), merged into `main`, tag `step-05`. Waiting for the user before Step 6.
+
+## Fix between steps: bundled emoji font (`fix/emoji-font`)
+
+- First CI run on `main` failed: `rapport_valid_matches_the_golden` p14, 1 pixel in 🥈 (the
+  runner's Segoe UI Emoji differs from this machine's). User decided: bundle Noto Color Emoji now
+  (PLAN section 9 decision 2) and regenerate the goldens with it.
+- `assets::FONTS` + `NotoColorEmoji-COLRv1.ttf` (5 MB, OFL, `THIRD_PARTY_LICENSES.md`).
+  `FontStore` drops its code points from system fonts' fallback coverage (`without_emoji`), since
+  Typst's fallback preferred "Segoe UI Emoji" (shorter name). Checked: PDF (Type3 colour glyphs,
+  Poppler render), SVG facts, PNG goldens with and without system fonts.
+- Harness: temp `include/fonts` is a copy + Noto (junctions for the rest), PNGs with
+  `--ignore-system-fonts`. Goldens regenerated: only PNG hashes/bytes changed. Tests use
+  `support::fonts()` (no system fonts); tofu test uses a Tibetan icon (U+0F00).
 
 ## Step 5b summary
 
@@ -49,18 +62,17 @@ security review clean), merged into `main`, tag `step-05`. Waiting for the user 
 
 ## Next action (concrete, resumable)
 
-1. When the user says go: Step 6 (PLAN.md section 6, Step 6), new branch `step/06-tauri` from
+1. `fix/emoji-font`: full gate, commit, user approves merge into `main` and push; check CI green.
+2. When the user says go: Step 6 (PLAN.md section 6, Step 6), new branch `step/06-tauri` from
    `main`.
 
 ## Open questions for the user
 
 - None blocking. Decided 2026-10-28: quick-xml ignore accepted (Typst upgrade in the backlog,
-  Step 10); remote `github.com/Open-Beta-Onderwijs/Maatwerk` exists, `main` and tags pushed. Watch
-  the first CI run (pixel goldens depend on the runner's emoji font).
+  Step 10); remote `github.com/Open-Beta-Onderwijs/Maatwerk` exists, `main` and tags pushed.
+  Emoji: bundled Noto Color Emoji (PLAN section 9 decision 2, quirk T2).
 
-- Emoji (PLAN section 9, decision 2): Segoe UI Emoji renders pixel-identical
-  on Windows and missing glyphs now warn; a bundled emoji font is only needed for macOS/CI. Other
-  section 9 items: domain logic location (Step 10), versioning, macOS.
+- Other section 9 items: domain logic location (Step 10), versioning, macOS.
 
 ## How to resume
 
@@ -69,6 +81,6 @@ Python, never `Get-Content`/`Set-Content` (they re-encode UTF-8). In PowerShell 
 `git commit -F <file>` (inline messages with quotes get split into pathspecs). `npm ci; npm run
 build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs `npx playwright
 install chromium` in `ui/`). Rapport parity: `cargo test -p maatwerk-core --test typst_rapport` / `--test typst_opdracht`
-(needs system fonts incl. Segoe UI Emoji; failing pages are written to
+(machine-independent, no system fonts; failing pages are written to
 `target/tmp/golden/<case>/`). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and
 the Typst packages in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.

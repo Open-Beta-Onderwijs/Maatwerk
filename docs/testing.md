@@ -178,9 +178,10 @@ recorded wrapper follows from the call arguments through the verbatim builders i
 
 Regen needs the Typst packages `@preview/cetz:0.3.4`, `@preview/unify:0.8.0` and `oxifmt` in the
 local package cache (`%LOCALAPPDATA%\typst\packages`), because the reference does not vendor them
-(quirk T1); the script stops if they are missing, so Typst never downloads them silently. PNGs
-depend on the fonts of the machine for emoji (quirk T2: Segoe UI Emoji on Windows), so regenerate
-on Windows. PNGs use 30 ppi instead of the 110-144 ppi in typst-contract.md section 10, to keep the
+(quirk T1); the script stops if they are missing, so Typst never downloads them silently. The
+temporary app folder gets a copy of the reference's `include/fonts` plus Maatwerk's bundled Noto
+Color Emoji (`main-process.mjs`, `EMOJI_FONT`; `_reference/` stays untouched), and PNGs are
+rendered with `--ignore-system-fonts`, so they do not depend on the machine (quirk T2). PNGs use 30 ppi instead of the 110-144 ppi in typst-contract.md section 10, to keep the
 repo small (size budget); Step 5 renders its own PNGs at the same 30 ppi for the comparison.
 
 | #   | Candidate                                           | Golden case(s)                                                                 |

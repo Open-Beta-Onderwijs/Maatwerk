@@ -6,10 +6,21 @@
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, OnceLock};
 
+use maatwerk_core::typst_svc::FontStore;
 use serde_json::Value;
 use tiny_skia::Pixmap;
 use typst::layout::{Frame, FrameItem, PagedDocument};
+
+/// The fonts of the goldens: embedded only, no system fonts, as the harness renders them with
+/// `--ignore-system-fonts` (emoji from the bundled Noto Color Emoji). One store per test binary.
+pub fn fonts() -> Arc<FontStore> {
+    static FONTS: OnceLock<Arc<FontStore>> = OnceLock::new();
+    FONTS
+        .get_or_init(|| Arc::new(FontStore::new(false)))
+        .clone()
+}
 
 pub fn golden_dir(id: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

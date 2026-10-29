@@ -32,7 +32,7 @@
   ],
   "svg": [
     {
-      "bytes": 726699,
+      "bytes": 715654,
       "viewBox": "0 0 595.2755905511812 841.8897637795276",
       "cursorLinks": 0,
       "images": 1
@@ -107,8 +107,8 @@
   "png": [
     {
       "file": "p01.png",
-      "sha256": "81bda5e99523be78cd4f010c8e5b4fae7c3b427e2deb0bb3966bb137e77d2835",
-      "bytes": 140765
+      "sha256": "5c6f13c454737f256b88c2253570e669224db339c4925218ba801a9b6fc0083f",
+      "bytes": 140792
     },
     {
       "file": "p02.png",
