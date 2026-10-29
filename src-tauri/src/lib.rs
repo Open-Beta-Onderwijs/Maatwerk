@@ -121,6 +121,10 @@ fn init_logging(log_dir: Option<std::path::PathBuf>) {
     use tracing_subscriber::fmt::writer::MakeWriterExt;
 
     let file = log_dir.and_then(|dir| {
+        // The appender lists the folder to prune old files, before it would create it.
+        if let Err(e) = std::fs::create_dir_all(&dir) {
+            eprintln!("no log folder: {e}");
+        }
         Builder::new()
             .rotation(Rotation::DAILY)
             .filename_prefix("maatwerk")
