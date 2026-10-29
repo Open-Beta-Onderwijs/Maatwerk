@@ -2,6 +2,15 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 6b
+
+- **Compat layer stays (PLAN Step 6b):** `TauriApi` is the only backend in the app bundle (CI
+  checks the bundle has no MockApi), but no legacy screen uses the typed results yet, so the
+  compat shapes in `ui/src/bridge/tauri-api.ts` stay. Per ADR-0002 they are removed screen by
+  screen in Step 10, as each screen moves to TypeScript and the typed `{ code, message }` errors.
+- **Command-level tests (from 6a):** covered by `docs/manual-test.md` for now (M-OPD-4/5,
+  M-TOE-6/7, M-START-3/4); a `tauri::test` mock-runtime test remains a Step 10 option.
+
 ## From Step 6a
 
 - **Typst warnings are only logged:** the render commands return compile warnings (tofu etc.,

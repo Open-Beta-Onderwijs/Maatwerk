@@ -65,6 +65,10 @@ jobs:
       - run: npm run test:e2e
       # tauri::generate_context! needs ui/dist to exist before clippy and test.
       - run: npm run build:ui
+      # TauriApi is the only backend in the app bundle (Step 6b): no MockApi or its test hooks.
+      - name: No MockApi in the app bundle
+        shell: bash
+        run: "! grep -rl -e '__maatwerkMock' -e 'Maatwerk-mock' ui/dist"
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
