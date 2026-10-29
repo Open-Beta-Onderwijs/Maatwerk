@@ -1,11 +1,30 @@
 # State
 
-Last updated: 2026-10-28 (emoji font fix) Branch: `fix/emoji-font` Last tag: `step-05`
+Last updated: 2026-10-29 (Step 6a in progress) Branch: `step/06-tauri` Last tag: `step-05`
 
 ## Current step
 
-Step 5 (Typst service) is done: 5b reviewed (`docs/reviews/step-05b.md`, no blockers/majors,
-security review clean), merged into `main`, tag `step-05`. Waiting for the user before Step 6.
+Step 6 (Tauri wiring, parity, portable build), sub-step **6a** (remaining commands and plugins).
+The emoji-font fix was merged into `main` (PR #1) before the step started.
+
+## Step 6a so far
+
+- Core: `opdracht_images` (list with 48 px PNG thumbs, store/overwrite, copy, delete with
+  background folder retry, empty-folder cleanup at start, clipboard RGBA -> PNG; quirk T30) and
+  `outputs` (`OutputStore` in the OS cache dir under output IDs `<n>-<name>.pdf`, emptied at
+  start; `print_copy` to `rapporten/<schooljaar>/<YYYY-MM-DD HHmm> <soort> <vak> <groep>
+  <toets>.pdf` with ` (2)` on a clash). `create_v1_opdracht_file`, `storage.write_bytes/list_dir`.
+- App: commands `create_assignment_typ_file`, 7 image commands, `render_rapport_pdf`,
+  `render_assignment_svg`, `render_assignment_batch` (+ `assignment:progress` event),
+  `open_path` (output ID or data-relative path), `print_pdf`, `set_watch_year` (C7). Plugins
+  dialog/clipboard/opener used from Rust only (no capability grants). URI scheme `maatwerk-out`
+  (`scheme.rs`, CORS for the app origins). Error code `typst`. Presence offline on window
+  destroy.
+- UI: TauriApi complete (no stubs); `printPdf` + `setWatchYear` added to the bridge (mock too);
+  print listeners use `printOutput` with `domain/print.ts` names; CSP `connect-src` has the
+  scheme; pdf.js `isEvalSupported: false`; `setWatchYear` at `initSubject` and year selectors.
+- Kept the current app icon (already the Maatwerk icon from the reference, step 0) instead of
+  the older `_reference/build/icon.ico`; window config was already right; no splash.
 
 ## Fix between steps: bundled emoji font (`fix/emoji-font`)
 
@@ -58,13 +77,13 @@ security review clean), merged into `main`, tag `step-05`. Waiting for the user 
 
 ## In progress
 
-- Nothing.
+- Step 6a: remaining: restrict `write_text_file`/`save_photo` (backlog n8), rolling log file
+  (ADR-0002 section 8), docs (parity rows, ADR notes, backlog), gate, review.
 
 ## Next action (concrete, resumable)
 
-1. `fix/emoji-font`: full gate, commit, user approves merge into `main` and push; check CI green.
-2. When the user says go: Step 6 (PLAN.md section 6, Step 6), new branch `step/06-tauri` from
-   `main`.
+1. Finish the 6a items above on `step/06-tauri`, run the full gate (incl. `npm run test:e2e`),
+   reviewer subagent -> `docs/reviews/step-06a.md`, fix blockers/majors, tag `step-06a`, report.
 
 ## Open questions for the user
 
