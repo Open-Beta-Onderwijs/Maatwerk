@@ -4,6 +4,16 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 6b
 
+- **Review 6 m6:** `Core::open` (schema check, seeding, image-folder walk, output cleanup) runs in
+  Tauri's setup on the main thread; a slow OneDrive folder delays the window. Open the core on a
+  blocking thread and let the UI wait on `data_folder_status`.
+- **Review 6 n10:** `import_opdracht_image` reads the picked file in the shell with `std::fs::read`
+  and no size cap. Move the read into `opdracht_images` with a limit (with 6a m4).
+- **Review 6 m3 (rest):** the real-PDF test runs under the mock CSP (`blob:`), not through the
+  `maatwerk-out` scheme, and does not fail on pdf.js warnings (manual `M-TOE-5` covers the scheme).
+- **Review 6 n9 (rest):** the watermark upload reuses the logo message, which lists PNG/JPG
+  although only SVG is offered there (unreachable today: the watermark input checks SVG first).
+
 - **Compat layer stays (PLAN Step 6b):** `TauriApi` is the only backend in the app bundle (CI
   checks the bundle has no MockApi), but no legacy screen uses the typed results yet, so the
   compat shapes in `ui/src/bridge/tauri-api.ts` stay. Per ADR-0002 they are removed screen by

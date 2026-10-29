@@ -30,9 +30,16 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
-- [ ] **M-START-4** No WebView2 (simulated): `$env:WEBVIEW2_BROWSER_EXECUTABLE_FOLDER =
-'C:\bestaat-niet'; .\maatwerk.exe`. Expect a Windows message box "Maatwerk kan niet
-      starten" with WebView2 install advice and a technical line; no silent exit.
+- [ ] **M-START-4** No WebView2 (simulated), on the **release** exe:
+
+      ```powershell
+      $env:WEBVIEW2_BROWSER_EXECUTABLE_FOLDER = 'C:\bestaat-niet'; .\maatwerk.exe
+      ```
+
+      Expect exactly one Windows message box, "Maatwerk kan niet starten", with WebView2 install
+      advice and a technical line (no English Tauri box first); no silent exit. The log file of
+      that day has a "cannot start" line.
+
 - [ ] **M-START-5** Start without internet (Wi-Fi off): everything below still works (no CDN).
 
 ## Leerlingen (M-LEER)
@@ -99,8 +106,9 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-OPD-5** "📋 Plakken van klembord" and Ctrl+V in the text after copying a screenshot
       (Win+Shift+S) and after copying an image in a browser: a PNG is saved and inserted. With
       text on the clipboard: a clear message, no crash.
-- [ ] **M-OPD-6** Drag and drop of an image into the editor: the port has no drop handler. Note
-      whether the old app did anything here; report it only if it did.
+- [ ] **M-OPD-6** Drop an image file on the editor: nothing happens (the old app replaced the
+      window with the file, quirk U20). Select text in the editor and drag it to another place:
+      it moves.
 
 ## Gebruikers and School (admin) (M-ADM)
 
@@ -116,8 +124,9 @@ Run two copies on two machines (or two Windows accounts) on the **same** test fo
 through OneDrive or a network share.
 
 - [ ] **M-SYNC-1** Presence: teacher B sees A's badge (green when active, orange when idle) on the
-      exam card and in the score grid ("<naam> werkt hierin"); closing A's window marks A
-      offline shortly after.
+      exam card ("<naam> werkt hierin") and in the score grid ("heeft dit scorescherm open", or
+      "heeft de afgelopen 2 minuten scores ingevoerd"); closing A's window marks A offline
+      shortly after.
 - [ ] **M-SYNC-2** A enters scores; B's open score grid updates the row and flashes it. A adds an
       exam; B gets the toast "Nieuwe toets toegevoegd".
 - [ ] **M-SYNC-3** Both edit the same student/group/exam modal: the second save shows "gewijzigd

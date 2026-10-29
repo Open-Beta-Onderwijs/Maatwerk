@@ -148,11 +148,12 @@ pub async fn data_folder_status(state: State<'_, Shared>) -> Res<DataFolderStatu
 }
 
 /// Restarts the app: "Opnieuw proberen" on the startup error screen opens the folder again.
+/// Goes through the normal exit (presence offline, watcher stopped; review 6 m1).
 #[tauri::command]
 #[specta::specta]
 pub fn restart_app(app: tauri::AppHandle) {
     tracing::info!("restart requested from the startup error screen");
-    app.restart();
+    app.request_restart();
 }
 
 /// UTF-8 text; `null` if missing.

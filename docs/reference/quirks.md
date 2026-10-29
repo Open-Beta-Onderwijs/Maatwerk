@@ -923,3 +923,13 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   key, as `metrics.md` section 8 item 12 describes the intent.
 - **Fixed (Step 3b):** the own grid never opens an editor on checkbox cells. Test: score-grid.spec
   "G31 other printable keys do nothing (U19)".
+
+### U20. Dropping a file on the window navigates away from the app
+
+- Where: the reference has no drop handler (`renderer/editor-init.js`) and no `will-navigate`
+  guard (`main.js`), so Electron's default applies: a file dropped anywhere on the window,
+  e.g. an image on the editor, replaces the app with the file (review 6 n7).
+- Port: Tauri's window-level drag and drop is on by default (`dragDropEnabled`) and takes file
+  drops away from the webview, so a dropped file does nothing. Not a supported way to add images
+  in either app ("Figuur toevoegen" and paste are). Manual check `M-OPD-6`: dropping a file does
+  nothing, and dragging **selected text** inside the editor still moves it.

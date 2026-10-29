@@ -15,15 +15,10 @@ describe('startup error screen (review 4b m5)', () => {
   });
 
   it('gives OneDrive advice for an I/O error and anything unknown', () => {
-    for (const code of ['io', 'unknown']) {
+    for (const code of ['io', 'corrupt_json', 'unknown']) {
       const text = startupErrorText({ code, message: 'x', details: {} });
       expect(text.advice).toContain('OneDrive klaar is met synchroniseren');
     }
-  });
-
-  it('points at a damaged file for corrupt JSON', () => {
-    const text = startupErrorText({ code: 'corrupt_json', message: 'x', details: {} });
-    expect(text.advice).toContain('beschadigd');
   });
 
   it('keeps the code and message of a rejected read', () => {

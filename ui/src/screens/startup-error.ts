@@ -6,14 +6,19 @@
 
 import type { DataFolderStatus, MaatwerkApi } from '../bridge/api';
 
-type FolderError = NonNullable<DataFolderStatus['error']>;
+/** The status error, or a rejection of the first reads (code `unknown` when it has none). */
+type FolderError = Omit<NonNullable<DataFolderStatus['error']>, 'code'> & { code: string };
 
 export interface StartupErrorText {
   title: string;
   advice: string;
 }
 
-/** The Dutch title and advice for an error from `dataFolderStatus` or the first reads. */
+/**
+ * The Dutch title and advice for an error from `dataFolderStatus` or the first
+ * reads. A corrupt `config.json` does not get here: the schema check skips an
+ * unreadable file and the compat `readJson` reads it as missing (review 6 n2).
+ */
 export function startupErrorText(error: FolderError): StartupErrorText {
   const title = 'Maatwerk kan de gegevensmap niet openen';
   switch (error.code) {
@@ -26,13 +31,6 @@ export function startupErrorText(error: FolderError): StartupErrorText {
           'Gebruik de nieuwste versie van Maatwerk.',
       };
     }
-    case 'corrupt_json':
-      return {
-        title,
-        advice:
-          'Een bestand in de gegevensmap is beschadigd. Herstel een eerdere versie ' +
-          '(bijvoorbeeld via de versiegeschiedenis van OneDrive) en probeer het opnieuw.',
-      };
     default:
       return {
         title,
@@ -82,11 +80,15 @@ export function renderStartupError(
     folder.append(el('code', '', dataDir));
     box.append(folder);
   }
-  box.append(el('p', 'startup-error-detail', `Technische melding: ${error.message}`));
+  const detail = el('p', 'startup-error-detail', `Technische melding: ${error.message}`);
+  box.append(detail);
   const retry = el('button', 'btn-primary startup-error-retry', 'Opnieuw proberen');
   retry.addEventListener('click', () => {
     (retry as HTMLButtonElement).disabled = true;
-    void api.restartApp();
+    api.restartApp().catch((e: unknown) => {
+      (retry as HTMLButtonElement).disabled = false;
+      detail.textContent = `Technische melding: ${asFolderError(e).message}`;
+    });
   });
   box.append(retry);
   container.replaceChildren(box);

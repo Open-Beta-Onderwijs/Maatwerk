@@ -263,6 +263,28 @@ a failing test (PLAN 2.5), and the golden or spec row records the old behaviour 
 
 Other quirks stay as they are until after parity, unless the user decides otherwise.
 
+### 11. Recorded at the Step 6 drift check (`docs/reviews/step-06.md`)
+
+These record what was built; none changes a decided behaviour.
+
+- **Core modules (section 1):** `maatwerk-core` also has `outputs` (render outputs, print copies,
+  section 9), `opdracht_images` (section 7) and `presence`.
+- **Dutch text from Rust (section 2):** the old app's own Dutch messages (image name and type
+  errors, "Kies de afbeelding opnieuw.", the image dialog title, the print-then-open message) come
+  from Rust as they did from `main.js`, for parity. New error codes are mapped to Dutch in the UI.
+  The start error message box (`start_error.rs`) is Dutch from Rust, since no UI exists then.
+- **Commands beyond the reference (section 2):** `print_pdf`, `set_watch_year` and the
+  `maatwerk-out` scheme (sections 7, 9), plus `data_folder_status` and `restart_app` for the
+  startup error screen (Step 6b, review 4b m5).
+- **Work outside `spawn_blocking` (section 3):** `Core::open` at start (schema check, seeding,
+  image-folder cleanup, output folder) runs in Tauri's setup on the main thread, and the presence
+  write on window close runs on the event loop. Both are short and happen once; moving `Core::open`
+  off the main thread is in the backlog. `import_opdracht_image` reads the picked file in the shell
+  (backlog: move into core with a size limit).
+- **Logging (section 8):** on Windows logging starts before Tauri, so start failures are logged.
+- **Dependency:** `rfd` (MIT) for the start error message box and `wry` (pinned to Tauri's) for
+  the WebView2 pre-check; both were already in the tree.
+
 ## Consequences
 
 - Step 2 characterises the reference against these seams (bridge contract per method, storage

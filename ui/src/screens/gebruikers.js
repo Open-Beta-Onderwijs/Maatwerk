@@ -215,17 +215,29 @@ function openUserModal(user) {
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const reader = new FileReader();
-        fotoPath = await new Promise((resolve) => {
-          reader.onload = async (ev) => {
-            const base64 = ev.target.result.split(',')[1];
-            const ext = file.name.endsWith('.png') ? 'png' : 'jpg';
-            const userId = user?.id ?? `gebr-${Date.now()}`;
-            const relPath = `fotos/${userId}.${ext}`;
-            await window.maatwerk.savePhoto(relPath, base64);
-            resolve(relPath);
-          };
-          reader.readAsDataURL(file);
-        });
+        try {
+          fotoPath = await new Promise((resolve, reject) => {
+            reader.onload = async (ev) => {
+              const base64 = ev.target.result.split(',')[1];
+              const ext = file.name.endsWith('.png') ? 'png' : 'jpg';
+              const userId = user?.id ?? `gebr-${Date.now()}`;
+              const relPath = `fotos/${userId}.${ext}`;
+              try {
+                await window.maatwerk.savePhoto(relPath, base64);
+                resolve(relPath);
+              } catch (e) {
+                reject(e);
+              }
+            };
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+          });
+        } catch (e) {
+          // The reference awaited a promise that never settled here (review 6 m5).
+          console.error('[gebruikers]', e);
+          toast('Foto opslaan mislukt.', 'error');
+          return;
+        }
       }
 
       const saved = {

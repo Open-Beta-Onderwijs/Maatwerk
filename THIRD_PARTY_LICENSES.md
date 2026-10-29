@@ -26,6 +26,7 @@ dependencies and every non-code asset (fonts, Typst packages, images); update it
 | tauri-plugin-dialog, -opener, -clipboard-manager | Apache-2.0 OR MIT     |
 | tracing-appender                                 | MIT                   |
 | rfd (start error message box)                    | MIT                   |
+| wry (WebView2 pre-check)                         | Apache-2.0 OR MIT     |
 
 Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0), typst-render
 (Apache-2.0), tiny-skia (BSD-3-Clause).

@@ -14,6 +14,7 @@
 export type Json = unknown;
 
 export type { PrintName } from '../domain/print';
+import type { DataFolderStatus } from './bindings';
 
 /** `{ ok, reason }` results of the fs write/delete methods. */
 export type FsResult = { ok: true; hash?: string } | { ok: false; reason: string };
@@ -36,14 +37,11 @@ export interface DataChange {
 }
 
 /**
- * The data folder as opened at start. `error` is set when it cannot be used
- * (e.g. `unsupported_schema`, `io`); the app then shows the startup error
- * screen instead of running on empty data (review 4b m5).
+ * The data folder as opened at start (generated from Rust). `error` is set
+ * when it cannot be used (e.g. `unsupported_schema`, `io`); the app then shows
+ * the startup error screen instead of running on empty data (review 4b m5).
  */
-export interface DataFolderStatus {
-  dataDir: string;
-  error: { code: string; message: string; details: { found?: string | null } } | null;
-}
+export type { DataFolderStatus } from './bindings';
 
 export interface BatchJob {
   key: string;

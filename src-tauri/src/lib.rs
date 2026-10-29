@@ -149,8 +149,30 @@ fn init_logging(log_dir: Option<std::path::PathBuf>) {
     }
 }
 
+/// The log folder Tauri's `app_log_dir` resolves to, known before the app is built so that
+/// start failures are logged too (review 6 M1). Elsewhere logging starts in `setup`.
+fn early_log_dir(identifier: &str) -> Option<std::path::PathBuf> {
+    if cfg!(windows) {
+        std::env::var_os("LOCALAPPDATA")
+            .map(|dir| std::path::PathBuf::from(dir).join(identifier).join("logs"))
+    } else {
+        None
+    }
+}
+
 pub fn run() {
+    let context = tauri::generate_context!();
+    let early_logs = early_log_dir(&context.config().identifier);
+    if early_logs.is_some() {
+        init_logging(early_logs);
+    }
     start_error::install_panic_hook();
+    // Before Tauri: without WebView2 a release build would first show Tauri's English box.
+    if let Err(e) = start_error::check_webview() {
+        tracing::error!("cannot start: {e}");
+        start_error::explain_start_error(&e);
+        std::process::exit(1);
+    }
     let builder = specta_builder();
     let app = tauri::Builder::default()
         // Used from Rust only (image dialog, clipboard image, opening PDFs): the capabilities
@@ -166,7 +188,9 @@ pub fn run() {
         .register_asynchronous_uri_scheme_protocol(scheme::SCHEME, scheme::handle)
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
-            init_logging(app.path().app_log_dir().ok());
+            if cfg!(not(windows)) {
+                init_logging(app.path().app_log_dir().ok());
+            }
             builder.mount_events(app);
             let session_file = app.path().app_config_dir()?.join("session.json");
             // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output\<pid>`; old runs' folders go after a day.
@@ -182,19 +206,21 @@ pub fn run() {
             app.manage::<state::Shared>(Arc::new(core));
             Ok(())
         })
-        .build(tauri::generate_context!());
+        .build(context);
     let app = match app {
         Ok(app) => app,
         Err(e) => {
             // E.g. no WebView2 runtime: say so in Dutch instead of exiting silently.
-            let error = format!("{e:?}");
+            let error = e.to_string();
             tracing::error!("cannot start: {error}");
-            eprintln!("cannot start: {error}");
             start_error::explain_start_error(&error);
             std::process::exit(1);
         }
     };
     app.run(|handle, event| {
+        if let tauri::RunEvent::Ready = event {
+            start_error::mark_started();
+        }
         let Some(core) = handle.try_state::<state::Shared>() else {
             return;
         };

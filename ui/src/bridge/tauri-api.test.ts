@@ -340,4 +340,17 @@ describe('TauriApi', () => {
     expect(await bad.api.openPath('9-x.pdf')).toBe('not found: 9-x.pdf');
     await expect(bad.api.printPdf('9-x.pdf', name)).rejects.toThrow('not found: 9-x.pdf');
   });
+
+  it('dataFolderStatus passes the status through; a failed call throws; restartApp', async () => {
+    const status = {
+      dataDir: 'D:/data',
+      error: { code: 'unsupported_schema' as const, message: 'm', details: { found: '9' } },
+    };
+    const f = fakeBackend((command) => (command === 'dataFolderStatus' ? status : null));
+    expect(await f.api.dataFolderStatus()).toEqual(status);
+    await f.api.restartApp();
+    expect(f.calls.map((c) => c.command)).toEqual(['dataFolderStatus', 'restartApp']);
+    const bad = fakeBackend(() => err('internal', 'blocking task failed'));
+    await expect(bad.api.dataFolderStatus()).rejects.toThrow(BackendError);
+  });
 });

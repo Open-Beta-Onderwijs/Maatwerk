@@ -33,7 +33,10 @@ export const commands = {
 	 *  it before anything else to show a startup error screen (review 4b m5).
 	 */
 	dataFolderStatus: () => typedError<DataFolderStatus, CommandError>(__TAURI_INVOKE("data_folder_status")),
-	/**  Restarts the app: "Opnieuw proberen" on the startup error screen opens the folder again. */
+	/**
+	 *  Restarts the app: "Opnieuw proberen" on the startup error screen opens the folder again.
+	 *  Goes through the normal exit (presence offline, watcher stopped; review 6 m1).
+	 */
 	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
 	/**  UTF-8 text; `null` if missing. */
 	readTextFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_text_file", { relPath })),

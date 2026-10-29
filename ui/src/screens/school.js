@@ -242,11 +242,12 @@ function restoreDisplay(field, value, confirmBtn, cancelBtn, container, school) 
 // ── Image saving ──────────────────────────────────────────────────────────────
 
 async function saveImageField(file, fileBaseName, field, school, container) {
-  const ext = file.name.split('.').pop().toLowerCase();
+  const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
   // savePhoto takes image types only (review 6a M1); the reference accepted any file.
   if (!IMAGE_EXTS.includes(ext)) {
     toast(
-      `Bestandstype .${ext} wordt niet ondersteund. Kies een ${IMAGE_EXTS_TEXT}-bestand.`,
+      `${ext ? `Bestandstype .${ext}` : 'Dit bestandstype'} wordt niet ondersteund. ` +
+        `Kies een ${IMAGE_EXTS_TEXT}-bestand.`,
       'error',
     );
     return;
