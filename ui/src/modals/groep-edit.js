@@ -14,7 +14,7 @@ import {
   confirmDialog,
 } from '../app.js';
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
-import { groupOverwrites } from '../domain/groups';
+import { groupOverwrites, withImportIds } from '../domain/groups';
 import { renderGroepen } from '../screens/groepen.js';
 
 export async function openGroupModal(id) {
@@ -357,8 +357,7 @@ export async function openGroupModal(id) {
           const byGroup = {};
           groupsInJaarlaag.forEach((g) => (byGroup[g.id] = []));
           el.querySelectorAll('tbody input[type="checkbox"]:checked').forEach((cb) => {
-            if (byGroup[cb.dataset.groupId])
-              byGroup[cb.dataset.groupId].push(Number(cb.dataset.studentId));
+            if (byGroup[cb.dataset.groupId]) byGroup[cb.dataset.groupId].push(cb.dataset.studentId);
           });
 
           const allGroups = await Store.getGroups(year);
@@ -394,7 +393,7 @@ export async function openGroupModal(id) {
             await Store.upsertGroup(updated, year);
           }
         } else {
-          const gid = Store.makeGroupId(name, year);
+          const gid = Store.makeGroupId();
           await Store.upsertGroup(
             {
               id: gid,
@@ -591,7 +590,6 @@ export async function openGroupCSVImport() {
 
           const parsed = Store.parseGroupName(naam, matchedVak);
           toImport.push({
-            id: Store.makeGroupId(naam, year),
             name: naam,
             jaarlaag: leerjaarRaw,
             subject: matchedVak,
@@ -621,8 +619,11 @@ export async function openGroupCSVImport() {
       el.querySelector('#f-csv-grp-import').addEventListener('click', async () => {
         if (!toImport || toImport.length === 0) return;
         // D34: an import replaces existing groups with the same name, including
-        // their students; show what changes and ask first.
-        const overwrites = groupOverwrites(await Store.getGroups(year, null), toImport);
+        // their students; show what changes and ask first. C10: matched by name,
+        // since new ids no longer follow from it.
+        const existing = await Store.getGroups(year, null);
+        toImport = withImportIds(existing, toImport);
+        const overwrites = groupOverwrites(existing, toImport);
         if (
           overwrites.length > 0 &&
           !(await confirmDialog(

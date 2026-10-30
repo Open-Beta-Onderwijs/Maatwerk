@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Vite plugin providing `virtual:maatwerk-fixtures`: a synthetic data folder
-// from tools/fixtures (fixed seed), inlined as a MockSeed for the MockApi.
+// from tools/fixtures (fixed seed, turned into format v2), inlined as a
+// MockSeed for the MockApi.
 // MAATWERK_FIXTURE selects the profile (`tiny` default, `school`).
 
 import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
@@ -10,6 +11,7 @@ import { join } from 'node:path';
 import type { Plugin } from 'vite';
 // Shared with the reference harness (plain JS, checked via allowJs).
 import { generate } from '../../tools/fixtures/generate.mjs';
+import { toV2 } from '../../tools/fixtures/to-v2.mjs';
 
 const ID = 'virtual:maatwerk-fixtures';
 const BINARY = /\.(png|jpe?g|gif|webp)$/i;
@@ -18,6 +20,7 @@ export function snapshotFixture(name: string) {
   const root = mkdtempSync(join(tmpdir(), 'maatwerk-fixture-'));
   try {
     generate(name, root);
+    toV2(root);
     const files: Record<string, { text: string } | { base64: string }> = {};
     const dirs: string[] = [];
     const walk = (rel: string) => {

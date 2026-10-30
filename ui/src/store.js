@@ -3,14 +3,17 @@
 /**
  * store.js — Central data access layer.
  *
- * Per-subject file layout:
+ * File layout, format v2 (docs/reference/data-files-v2.md):
  *
  *   data/
- *   ├── config.json                          { activeYear }
+ *   ├── config.json                          { schema_version: 2, activeYear }
+ *   ├── school.json                          School + _meta
+ *   ├── gebruikers/<userId>.json             User + _meta
  *   ├── observaties/
  *   │   └── <obsId>.json                     { id, naam, icon, jaarlagen[], subject }
+ *   ├── opdrachten/<id>/                     opdracht.json, main.typ, opdracht.typ, lib.typ, images/
  *   └── YYYY-YYYY/
- *       ├── students-YYYY-YYYY.json          [{ id, voornaam, … }]
+ *       ├── students-YYYY-YYYY.json          { students: [{ id, voornaam, … }] }
  *       ├── exams/
  *       │   └── <examId>.json                { id, subject, title, jaarlaag, … }
  *       ├── groups/
@@ -20,6 +23,8 @@
  *           │   └── <studentId>.json
  *
  * Subject field inside each JSON file is authoritative (not derived from path).
+ * Students and score files pass through domain/v2.ts on every read and write:
+ * in memory a year's students are a plain array and "N" is null, as before.
  */
 
 import { bestAttempt, compareHistory, resitsOf, resolveBestAttempts } from './domain/attempts';
@@ -45,6 +50,7 @@ import {
   opdrachtMatchesExam as opdrachtMatchesExamFor,
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
+import { decode, encode, studentId as asStudentId } from './domain/v2';
 
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
@@ -56,7 +62,7 @@ const Store = (() => {
 
   async function load(relPath) {
     if (cache[relPath] !== undefined) return cache[relPath];
-    const data = await window.maatwerk.readJson(relPath);
+    const data = decode(relPath, await window.maatwerk.readJson(relPath));
     cache[relPath] = data;
     return data;
   }
@@ -86,8 +92,9 @@ const Store = (() => {
       for (let attempt = 0; attempt < 5; attempt++) {
         const read = await window.maatwerk.readJsonVersioned(relPath);
         if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
-        const next = mutator(read.data ?? fallback(), read.data);
-        const result = await window.maatwerk.writeJson(relPath, next, {
+        const onDisk = decode(relPath, read.data);
+        const next = mutator(onDisk ?? fallback(), onDisk);
+        const result = await window.maatwerk.writeJson(relPath, encode(relPath, next), {
           cas: true,
           expectedHash: read.hash,
         });
@@ -168,9 +175,13 @@ const Store = (() => {
     return _activeUser?.isAdmin === true;
   }
 
-  // ── Users ──────────────────────────────────────────────────────────────────
+  // ── Users (gebruikers/<id>.json, ADR-0003 C16) ────────────────────────────
   async function loadUsers() {
-    return (await load('gebruikers.json')) ?? [];
+    if (cache['gebruikers'] === undefined) {
+      const all = await window.maatwerk.readAllJson('gebruikers');
+      cache['gebruikers'] = all.filter((u) => u && u.id);
+    }
+    return cache['gebruikers'];
   }
 
   // ── School ─────────────────────────────────────────────────────────────────
@@ -178,31 +189,42 @@ const Store = (() => {
     return await load('school.json');
   }
 
+  /** Forgets the cached school, so the next loadSchool reads the file. */
+  function invalidateSchool() {
+    invalidate('school.json');
+  }
+
   // Apply a change to the latest school.json on disk, so a change another
   // teacher made in the meantime is kept (ADR-0003 C6). `change` is either an
   // object of fields to set or a function that edits the school in place.
-  async function updateSchool(change) {
+  // With `baseRev` (the _meta.rev the form was loaded with) a school saved by
+  // someone else since is a conflict instead (C16), as for exams and groups.
+  async function updateSchool(change, baseRev) {
     const school = await update(
       'school.json',
-      (current) =>
-        typeof change === 'function' ? (change(current), current) : Object.assign(current, change),
+      (current, onDisk) => {
+        if (baseRev !== undefined && onDisk && (onDisk._meta?.rev ?? 0) !== (baseRev ?? 0)) {
+          throw conflictError(onDisk._meta);
+        }
+        if (typeof change === 'function') change(current);
+        else Object.assign(current, change);
+        return stampMeta(current, onDisk);
+      },
       () => ({}),
     );
     cache['school.json'] = school;
     return school;
   }
 
-  async function upsertUser(user) {
-    cache['gebruikers.json'] = await update(
-      'gebruikers.json',
-      (users) => {
-        const idx = users.findIndex((u) => u.id === user.id);
-        if (idx >= 0) users[idx] = user;
-        else users.push(user);
-        return users;
-      },
-      () => [],
-    );
+  // One file per user (C16): saving checks the rev the edit started from, so
+  // two admins editing the same user no longer overwrite each other silently.
+  async function upsertUser(user, baseRev = user._meta?.rev) {
+    const saved = await saveEntity(`gebruikers/${user.id}.json`, user, baseRev);
+    const users = await loadUsers();
+    const idx = users.findIndex((u) => u.id === saved.id);
+    if (idx >= 0) users[idx] = saved;
+    else users.push(saved);
+    return saved;
   }
 
   // ── Session (machine-local, not synced via OneDrive) ──────────────────────
@@ -385,7 +407,7 @@ const Store = (() => {
 
   function mergeStudent(list, student) {
     const flat = {
-      id: student.id,
+      id: asStudentId(student.id),
       voornaam: student.voornaam ?? '',
       tussenvoegsel: student.tussenvoegsel ?? '',
       achternaam: student.achternaam ?? student.name ?? '',
@@ -414,7 +436,7 @@ const Store = (() => {
   }
 
   async function deleteStudent(id, year) {
-    await updateStudents(year, (list) => list.filter((s) => s.id !== id));
+    await updateStudents(year, (list) => list.filter((s) => s.id !== asStudentId(id)));
   }
 
   // ── Groups (year-scoped, subject-filtered) ────────────────────────────────
@@ -426,6 +448,9 @@ const Store = (() => {
     const subj = group.subject ?? subjectFromGroupName(group.name) ?? _activeSubject;
     const { academic_year: _ay, ...clean } = group;
     const updated = { ...clean, subject: subj };
+    if (Array.isArray(updated.student_ids)) {
+      updated.student_ids = [...new Set(updated.student_ids.map(asStudentId))]; // C8
+    }
     const saved = await saveEntity(ypGroup(year, updated.id), updated, updated._meta?.rev, {
       force,
     });
@@ -480,7 +505,8 @@ const Store = (() => {
   }
 
   function getStudentGroup(studentId, year) {
-    return getGroupsSync(year).find((g) => g.student_ids.includes(studentId)) ?? null;
+    const id = asStudentId(studentId);
+    return getGroupsSync(year).find((g) => g.student_ids.includes(id)) ?? null;
   }
 
   // ── Exams (year-scoped, subject-filtered) ─────────────────────────────────
@@ -542,7 +568,7 @@ const Store = (() => {
   // ── Scores (year-scoped, subject-scoped) ──────────────────────────────────
   async function getStudentScores(studentId, year, subject = _activeSubject) {
     const file = ypScore(year, subject, studentId);
-    return (await load(file)) ?? { student_id: studentId, scores: {} };
+    return (await load(file)) ?? { student_id: asStudentId(studentId), scores: {} };
   }
 
   // Apply a change to the latest version of a student's score file on disk, so
@@ -556,7 +582,7 @@ const Store = (() => {
         mutator(rec);
         return rec;
       },
-      () => ({ student_id: studentId, scores: {} }),
+      () => ({ student_id: asStudentId(studentId), scores: {} }),
     );
     return cache[file];
   }
@@ -622,8 +648,9 @@ const Store = (() => {
   // RTTI calculations (calcResults, examResults, calcGrade): src/domain/grades.ts
 
   // ── Utilities ─────────────────────────────────────────────────────────────
-  function makeExamId(title, year, subject = _activeSubject) {
-    return makeExamIdFor(title, year, subject);
+  // New ids are opaque (C10, quirk B26): the title is only data.
+  function makeExamId() {
+    return makeExamIdFor();
   }
 
   // ── Observaties (subject-scoped, individual files) ────────────────────────
@@ -756,9 +783,13 @@ const Store = (() => {
 
   // ── Opdrachten ────────────────────────────────────────────────────────────
 
+  // One folder per opdracht (C14): opdrachten/<id>/opdracht.json with
+  // main.typ, opdracht.typ, lib.typ and images/ next to it.
+  const ypOpdracht = (id) => `opdrachten/${id}/opdracht.json`;
+
   async function loadOpdrachten() {
     if (cache['opdrachten'] !== undefined) return cache['opdrachten'];
-    const all = await window.maatwerk.readAllJson('opdrachten');
+    const all = await window.maatwerk.readOpdrachten();
     cache['opdrachten'] = all.filter((o) => o && o.id);
     return cache['opdrachten'];
   }
@@ -774,42 +805,30 @@ const Store = (() => {
   async function upsertOpdracht(opdracht) {
     const baseRev =
       opdracht._meta?.rev ?? getOpdrachtenSync().find((o) => o.id === opdracht.id)?._meta?.rev;
-    await saveEntity(`opdrachten/${opdracht.id}.json`, opdracht, baseRev);
+    const { typFile: _v1, ...clean } = opdracht; // v1 field; the text is always opdracht.typ
+    await saveEntity(ypOpdracht(opdracht.id), clean, baseRev);
     cache['opdrachten'] = undefined;
     await loadOpdrachten();
   }
 
-  // Copy an opdracht with its Typst file and images; image paths in the copy
-  // point to the copy's own images folder. Returns the new opdracht.
+  // Copy an opdracht: its folder (Typst files and images; the images are
+  // relative to the folder, so no paths change) and a fresh opdracht.json.
+  // Returns the new opdracht.
   async function copyOpdracht(id) {
     const original = getOpdrachtenSync().find((o) => o.id === id);
     if (!original) throw new Error('Opdracht niet gevonden.');
     const newId = `opdracht_${Date.now()}`;
-    const typFile = `${newId}.typ`;
-    const content = original.typFile
-      ? await window.maatwerk.readTextFile(`opdrachten/${original.typFile}`)
-      : null;
-    if (content == null) await window.maatwerk.createAssignmentTypFile(typFile);
-    else
-      await window.maatwerk.writeTextFile(
-        `opdrachten/${typFile}`,
-        content.split(`images/${id}/`).join(`images/${newId}/`),
-      );
-    await window.maatwerk.copyOpdrachtImages(id, newId);
+    await window.maatwerk.copyOpdrachtFolder(id, newId);
     const { _meta, ...rest } = JSON.parse(JSON.stringify(original));
-    const copy = { ...rest, id: newId, naam: `${original.naam} (kopie)`, typFile };
+    const copy = { ...rest, id: newId, naam: `${original.naam} (kopie)` };
     await upsertOpdracht(copy);
     return copy;
   }
 
   async function deleteOpdracht(id) {
-    const opdracht = getOpdrachtenSync().find((o) => o.id === id);
     cache['opdrachten'] = undefined;
-    await window.maatwerk.deleteFile(`opdrachten/${id}.json`);
-    if (opdracht?.typFile) {
-      await window.maatwerk.deleteFile(`opdrachten/${opdracht.typFile}`);
-    }
-    await window.maatwerk.deleteOpdrachtImages(id);
+    await window.maatwerk.deleteFile(ypOpdracht(id));
+    await window.maatwerk.deleteOpdrachtFolder(id);
     await loadOpdrachten();
   }
 
@@ -901,9 +920,9 @@ const Store = (() => {
     ['group', new RegExp(`^${YEAR}/groups/([^/]+)\\.json$`)],
     ['students', new RegExp(`^${YEAR}/students-\\d{4}-\\d{4}\\.json$`)],
     ['observatie', /^observaties\/([^/]+)\.json$/],
-    ['opdracht', /^opdrachten\/([^/]+)\.json$/],
-    ['opdrachtTyp', /^opdrachten\/([^/]+)\.typ$/],
-    ['gebruikers', /^gebruikers\.json$/],
+    ['opdracht', /^opdrachten\/([^/]+)\/opdracht\.json$/],
+    ['opdrachtTyp', /^opdrachten\/([^/]+)\/[^/]+\.typ$/],
+    ['gebruikers', /^gebruikers\/([^/]+)\.json$/],
     ['school', /^school\.json$/],
     ['presence', /^users\/([^/]+)\.json$/],
   ];
@@ -944,7 +963,8 @@ const Store = (() => {
     const ev = { type, kind, relPath, meta, year: null, subject: null, id: null };
     ev.before = null;
     ev.after = null;
-    const readFresh = async () => (kind === 'deleted' ? null : window.maatwerk.readJson(relPath));
+    const readFresh = async () =>
+      kind === 'deleted' ? null : decode(relPath, await window.maatwerk.readJson(relPath));
 
     // Serialised with own writes to the same file, so a refresh can never put an
     // older version in the cache than one this app just wrote.
@@ -1011,11 +1031,25 @@ const Store = (() => {
           break;
         }
         case 'opdrachtTyp':
+          ev.id = match[1];
+          break;
         case 'presence':
           ev.id = match[1];
           ev.after = await readFresh();
           break;
-        case 'gebruikers':
+        case 'gebruikers': {
+          ev.id = match[1];
+          ev.after = await readFresh();
+          ev.before = (cache['gebruikers'] ?? []).find((u) => u.id === ev.id) ?? null;
+          const users = cache['gebruikers'];
+          if (users) {
+            const i = users.findIndex((u) => u.id === ev.id);
+            if (i >= 0 && ev.after) users[i] = ev.after;
+            else if (i >= 0) users.splice(i, 1);
+            else if (ev.after) users.push(ev.after);
+          }
+          break;
+        }
         case 'school':
           if (cache[relPath] === undefined) break;
           ev.before = cache[relPath];
@@ -1041,6 +1075,7 @@ const Store = (() => {
   // ── Public API ────────────────────────────────────────────────────────────
   return {
     applyExternalChange,
+    invalidateSchool,
     preload,
     initSubject,
     loadYear,

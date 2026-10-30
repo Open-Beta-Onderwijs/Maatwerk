@@ -70,6 +70,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_years,
             commands::ensure_year,
             commands::read_all_json,
+            commands::read_opdrachten,
             commands::delete_file,
             commands::ensure_dir,
             commands::get_data_dir,

@@ -23,6 +23,8 @@ export const commands = {
 	ensureYear: (year: string) => typedError<string, CommandError>(__TAURI_INVOKE("ensure_year", { year })),
 	/**  Every parsable `*.json` directly in the folder. */
 	readAllJson: (dirRelPath: string) => typedError<Value[], CommandError>(__TAURI_INVOKE("read_all_json", { dirRelPath })),
+	/**  Every `opdrachten/<id>/opdracht.json` (C14). */
+	readOpdrachten: () => typedError<Value[], CommandError>(__TAURI_INVOKE("read_opdrachten")),
 	/**  Deletes the file; a missing file is fine. */
 	deleteFile: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_file", { relPath })),
 	ensureDir: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("ensure_dir", { relPath })),

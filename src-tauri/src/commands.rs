@@ -115,6 +115,16 @@ pub async fn read_all_json(state: State<'_, Shared>, dir_rel_path: String) -> Re
     .await
 }
 
+/// Every `opdrachten/<id>/opdracht.json` (C14).
+#[tauri::command]
+#[specta::specta]
+pub async fn read_opdrachten(state: State<'_, Shared>) -> Res<Vec<Value>> {
+    blocking(state, move |c| {
+        Ok(maatwerk_core::opdracht_images::read_all(c.storage()?)?)
+    })
+    .await
+}
+
 /// Deletes the file; a missing file is fine.
 #[tauri::command]
 #[specta::specta]

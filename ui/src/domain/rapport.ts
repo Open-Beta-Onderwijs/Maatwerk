@@ -208,7 +208,7 @@ export function sanitizeTypstMarkup(text: string): string {
   return text;
 }
 
-/** One RTTI explanation and advice file (templates/RTTI explanations and advices/). */
+/** One RTTI explanation and advice file (`templates/rtti/`, C11). */
 export interface AdviesData {
   uitleg: Record<string, string>;
   leeradvies: Record<string, Record<'laag' | 'midden' | 'hoog', string>>;
@@ -265,11 +265,12 @@ export function buildLeeradviesRows(
   return rows;
 }
 
-export const RTTI_EXPL_DIR = 'templates/RTTI explanations and advices';
+/** The v1 folder `templates/RTTI explanations and advices/` became this (ADR-0003 C11). */
+export const RTTI_EXPL_DIR = 'templates/rtti';
 
 /** Path of an explanation/advice file; the editor uses fileKey `wisa`..`wisd` for wiskunde 4-6. */
 export function rttiExplFilePath(fileKey: string | undefined, jaar: string | number | undefined) {
-  return `${RTTI_EXPL_DIR}/rtti_expl_adv_${fileKey}_${jaar}.json`;
+  return `${RTTI_EXPL_DIR}/${fileKey}_${jaar}.json`;
 }
 
 /**

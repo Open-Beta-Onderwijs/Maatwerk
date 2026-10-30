@@ -186,6 +186,24 @@ pub fn store(
     })
 }
 
+/// Every `opdrachten/<id>/opdracht.json` that parses and is not `null` (`readAllJson('opdrachten')`
+/// for the C14 layout). Folders without one, or with an unparsable one, are skipped.
+pub fn read_all(storage: &Storage) -> Result<Vec<serde_json::Value>> {
+    let mut out = Vec::new();
+    for id in storage.list_dir(&RelPath::parse("opdrachten")?, true)? {
+        if check_opdracht_id(&id).is_err() {
+            continue;
+        }
+        let rel = folder(&id)?.join("opdracht.json")?;
+        if let Ok(Some(v)) = storage.read_json(&rel)
+            && !v.is_null()
+        {
+            out.push(v);
+        }
+    }
+    Ok(out)
+}
+
 /// Copies an opdracht folder (`opdracht:copyImages` grown to C14): its `.typ` files and images,
 /// not `opdracht.json` (the caller writes the copy's own). No paths need rewriting: images are
 /// relative to the folder. Other folders inside are skipped.
@@ -429,6 +447,14 @@ mod tests {
         );
         assert!(root.join("opdrachten/op_2/main.typ").is_file());
         assert!(!root.join("opdrachten/op_2/opdracht.json").exists());
+        let all = read_all(&s).unwrap();
+        assert_eq!(
+            all,
+            [serde_json::json!({"id": "op_1"})].map(|mut v| {
+                crate::integrity::stamp(&mut v);
+                v
+            })
+        );
         assert_eq!(delete_all(&s, "op_1").unwrap(), None);
         assert!(list(&s, "op_1").unwrap().is_empty());
         assert!(!root.join("opdrachten/op_1").exists());

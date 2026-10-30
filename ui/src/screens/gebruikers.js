@@ -256,7 +256,8 @@ function openUserModal(user) {
         actief: user?.actief ?? true,
       };
 
-      await Store.upsertUser(saved);
+      // C16: saved over the version this form was opened with.
+      await Store.upsertUser(saved, user?._meta?.rev);
       closeModal();
       toast(isNew ? `${voornaam} toegevoegd.` : `${voornaam} opgeslagen.`, 'success');
       await renderUserList();

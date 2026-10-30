@@ -9,6 +9,12 @@
 // Dropped on purpose: listScoreFiles, typstVersion, compileTypst (no call
 // site) and renderAssignmentPdf (only reachable through a dead editor proxy
 // branch).
+//
+// Data format v2 (Step 7a, docs/reference/data-files-v2.md): the opdracht
+// methods work on folders `opdrachten/<id>/` (C14), so createAssignmentTypFile,
+// copyOpdrachtImages and deleteOpdrachtImages became createOpdrachtFolder,
+// copyOpdrachtFolder and deleteOpdrachtFolder, and the Typst methods take an
+// opdracht id instead of a `.typ` file name.
 
 /** Any JSON value as stored in the data folder. */
 export type Json = unknown;
@@ -45,7 +51,8 @@ export type { DataFolderStatus } from './bindings';
 
 export interface BatchJob {
   key: string;
-  typFile: string;
+  /** The opdracht folder `opdrachten/<id>/`. */
+  opdrachtId: string;
   label?: string;
   header?: {
     title: string;
@@ -64,7 +71,7 @@ export interface BatchOptions {
 }
 
 export interface OpdrachtImage {
-  /** Relative to `data/opdrachten`, e.g. `images/<id>/<name>.png`. */
+  /** Relative to the opdracht folder, e.g. `images/<name>.png`. */
   file: string;
   name: string;
   /** PNG data URL, or null when the image cannot be decoded (SVG). */
@@ -72,6 +79,10 @@ export interface OpdrachtImage {
 }
 
 export type Unsubscribe = () => void;
+
+/** The migration offered on the startup screen (C1). */
+export type { MigrationResult, DataCheck, DataIssue, StampIssue } from './bindings';
+import type { MigrationResult, DataCheck, StampIssue } from './bindings';
 
 import type { PrintName } from '../domain/print';
 
@@ -94,6 +105,8 @@ export interface MaatwerkApi {
   ensureYear(year: string): Promise<string>;
   /** Parsed contents of every `*.json` directly in the folder; unparsable files are skipped. */
   readAllJson(dirRelPath: string): Promise<Json[]>;
+  /** Every `opdrachten/<id>/opdracht.json` (C14). */
+  readOpdrachten(): Promise<Json[]>;
   deleteFile(relPath: string): Promise<FsResult>;
   ensureDir(relPath: string): Promise<void>;
   /** Absolute data folder; the editor only uses it as a "ready" flag. */
@@ -101,8 +114,19 @@ export interface MaatwerkApi {
 
   // ── Text files (opdracht .typ) ────────────────────────────────────────────
   readTextFile(relPath: string): Promise<string | null>;
-  writeTextFile(relPath: string, content: string): Promise<{ ok: true }>;
-  createAssignmentTypFile(typFile: string): Promise<{ ok: true }>;
+  /** The text and its hash for a later checked write (C17); null when missing. */
+  readTextFileVersioned(relPath: string): Promise<{ text: string; hash: string } | null>;
+  /**
+   * Writes `opdrachten/<id>/<name>.typ`. With `expectedHash` the file must
+   * still have that hash, else `{ ok: false, reason: 'conflict' }` (C17).
+   */
+  writeTextFile(
+    relPath: string,
+    content: string,
+    expectedHash?: string | null,
+  ): Promise<{ ok: true; hash: string } | { ok: false; reason: 'conflict' }>;
+  /** `main.typ`, `lib.typ` and `opdracht.typ` for a new opdracht; existing files stay. */
+  createOpdrachtFolder(opdrachtId: string): Promise<{ ok: true }>;
 
   // ── Opdracht images ───────────────────────────────────────────────────────
   listOpdrachtImages(opdrachtId: string): Promise<OpdrachtImage[]>;
@@ -122,8 +146,9 @@ export interface MaatwerkApi {
   ): Promise<ImageResult>;
   /** Clipboard image as base64 PNG, or null. */
   readClipboardImage(): Promise<string | null>;
-  copyOpdrachtImages(fromId: string, toId: string): Promise<{ ok: true }>;
-  deleteOpdrachtImages(opdrachtId: string): Promise<{ ok: true }>;
+  /** Copies the Typst files and images of an opdracht folder (not `opdracht.json`). */
+  copyOpdrachtFolder(fromId: string, toId: string): Promise<{ ok: true }>;
+  deleteOpdrachtFolder(opdrachtId: string): Promise<{ ok: true }>;
 
   // ── Presence, session, photos ─────────────────────────────────────────────
   updatePresence(userId: string | null, state?: Record<string, unknown>): Promise<void>;
@@ -141,7 +166,7 @@ export interface MaatwerkApi {
     examInfo: Record<string, unknown>,
   ): Promise<RenderResult<{ pdfPath: string }>>;
   renderAssignmentSvg(
-    typFile: string,
+    opdrachtId: string,
     title: string,
     previewContent?: string,
   ): Promise<RenderResult<{ pages: string[] }>>;
@@ -169,9 +194,10 @@ export interface MaatwerkApi {
    */
   pdfUrl(pdfPath: string): string;
   /**
-   * "Afdrukken": copies a render output into `rapporten/` under a descriptive
-   * name and opens the copy with the OS (ADR-0002 section 9, C15). Resolves to
-   * the copy's data-relative path; rejects when it cannot be written.
+   * "Afdrukken": copies a render output into `rapporten/` next to the data
+   * folder under a descriptive name and opens the copy with the OS (ADR-0002
+   * section 9, C15, C18). Resolves to the copy's path relative to that shared
+   * folder; rejects when it cannot be written.
    */
   printPdf(pdfPath: string, name: PrintName): Promise<string>;
   /** The school year whose folder the watcher polls (ADR-0003 C7); null: config.json. */
@@ -180,9 +206,20 @@ export interface MaatwerkApi {
   dataFolderStatus(): Promise<DataFolderStatus>;
   /** "Opnieuw proberen" on the startup error screen: restarts the app. */
   restartApp(): Promise<void>;
+  /** v1 -> v2 after a backup, only while the folder needs it (startup screen). */
+  migrateDataFolder(): Promise<MigrationResult>;
+  /** `validate-data` on the open folder (admin, "Gegevenscontrole"). */
+  validateDataFolder(): Promise<DataCheck>;
+  /** JSON files read with a missing or wrong stamp since start (C19). */
+  stampIssues(): Promise<StampIssue[]>;
+  /** "Accepteren": re-stamps the file as it is. */
+  acceptStamp(relPath: string): Promise<void>;
 }
 
-/** The 28 ported reference methods, for contract tests and the parity table. */
+/**
+ * The 28 ported reference methods, for contract tests and the parity table.
+ * Three were renamed for the opdracht folders (C14, see the top of the file).
+ */
 export const PORTED_METHODS = [
   'readJson',
   'readJsonVersioned',
@@ -195,14 +232,14 @@ export const PORTED_METHODS = [
   'getDataDir',
   'readTextFile',
   'writeTextFile',
-  'createAssignmentTypFile',
+  'createOpdrachtFolder',
   'listOpdrachtImages',
   'saveOpdrachtImage',
   'pickImageFile',
   'importOpdrachtImage',
   'readClipboardImage',
-  'copyOpdrachtImages',
-  'deleteOpdrachtImages',
+  'copyOpdrachtFolder',
+  'deleteOpdrachtFolder',
   'updatePresence',
   'readLocalSession',
   'writeLocalSession',

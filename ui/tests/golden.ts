@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 // Same codec the harness wrote the goldens with.
 import { capture, decode, encode } from '../../tests/reference-harness/golden.mjs';
+import { filesToV2 } from '../../tools/fixtures/to-v2.mjs';
 
 export { decode, encode };
 
@@ -49,4 +50,15 @@ export function inputOf<T = Record<string, unknown>>(c: GoldenCase): T {
 /** Runs fn like the harness did (thrown errors become {$throws}) and encodes the result. */
 export async function run(fn: () => unknown): Promise<unknown> {
   return encode(await capture(fn));
+}
+
+/**
+ * A file as the v1 reference wrote it (a golden output), in format v2: what
+ * the Step 7a migration makes of it (string student ids, "N" for null, the
+ * students wrapper, trailing newline; no stamp, the MockApi does not stamp).
+ */
+export function v2File(relPath: string, v1Text: string | null): string | null {
+  if (v1Text === null) return null;
+  const out = filesToV2({ [relPath]: v1Text }) as Map<string, string>;
+  return String(out.get(relPath) ?? v1Text);
 }

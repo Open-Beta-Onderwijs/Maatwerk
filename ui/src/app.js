@@ -9,6 +9,7 @@
 // ── Screen imports ────────────────────────────────────────────────────────────
 import { renderStartup } from './screens/startup.js';
 import { asFolderError, renderStartupError } from './screens/startup-error';
+import { renderMigration } from './screens/migration';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
 import { renderToetsen, renderToetsenList } from './screens/toetsen.js';
@@ -17,6 +18,7 @@ import { renderOpdrachten } from './screens/opdrachten.js';
 import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
+import { needsAttention, renderGegevens } from './screens/gegevens';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
@@ -87,6 +89,8 @@ function renderScreen(name) {
       return renderGebruikers();
     case 'school':
       return renderSchool();
+    case 'gegevens':
+      return renderGegevens(document.getElementById('screen-gegevens'), window.maatwerk);
   }
 }
 
@@ -943,10 +947,31 @@ export async function showUserBadge(user, subject) {
   await initFilterBar(user, subject);
   applyRoleVisibility(user);
   Presence.start(user.id);
+  if (user.isAdmin) void checkDataInBackground();
+}
+
+// validate-data at start (Step 7a, C19): the admin hears about files changed
+// outside Maatwerk and broken data without having to look. Never blocks.
+async function checkDataInBackground() {
+  try {
+    const check = await window.maatwerk.validateDataFolder();
+    if (!needsAttention(check)) return;
+    const changed = check.issues.filter((i) => i.kind === 'stamp').length;
+    const errors = check.issues.filter((i) => i.severity === 'error').length;
+    const parts = [
+      changed
+        ? `${changed} ${changed === 1 ? 'bestand' : 'bestanden'} buiten Maatwerk gewijzigd`
+        : '',
+      errors ? `${errors} ${errors === 1 ? 'fout' : 'fouten'}` : '',
+    ].filter(Boolean);
+    persistentError(`Gegevenscontrole: ${parts.join(', ')}. Zie het tabblad Gegevenscontrole.`);
+  } catch (e) {
+    console.warn('[gegevens]', e);
+  }
 }
 
 function applyRoleVisibility(user) {
-  const adminOnly = ['gebruikers', 'school'];
+  const adminOnly = ['gebruikers', 'school', 'gegevens'];
   const teacherOnly = ['toetsen', 'observaties'];
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     const screen = btn.dataset.screen;
@@ -1119,6 +1144,11 @@ async function init() {
     if (!status.error) await Store.preload();
   } catch (e) {
     status = { dataDir: status?.dataDir ?? '', error: asFolderError(e) };
+  }
+  if (status.error?.code === 'needs_migration') {
+    // A v1 folder: offer the one-time conversion (ADR-0003 C1).
+    renderMigration(container, status.dataDir, window.maatwerk);
+    return;
   }
   if (status.error) {
     console.error('[startup]', status.error.code, status.error.message);

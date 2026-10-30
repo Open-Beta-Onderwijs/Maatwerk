@@ -175,14 +175,14 @@ export function renderStudentList() {
   container
     .querySelectorAll('[data-action="profile"]')
     .forEach((b) =>
-      b.addEventListener('click', () => openProfielModal(Number(b.dataset.id), null, _peers)),
+      b.addEventListener('click', () => openProfielModal(b.dataset.id, null, _peers)),
     );
   container
     .querySelectorAll('[data-action="edit-student"]')
-    .forEach((b) => b.addEventListener('click', () => openStudentModal(Number(b.dataset.id))));
+    .forEach((b) => b.addEventListener('click', () => openStudentModal(b.dataset.id)));
   container
     .querySelectorAll('[data-action="del-student"]')
-    .forEach((b) => b.addEventListener('click', () => deleteStudent(Number(b.dataset.id))));
+    .forEach((b) => b.addEventListener('click', () => deleteStudent(b.dataset.id)));
 
   // Disable Verwijderen for students that cannot be deleted (non-blocking)
   for (const s of students) {

@@ -215,7 +215,7 @@ Scale: cost / benefit / risk = low, medium, high.
 ### C16. Per-record files for shared admin data
 
 - **Now:** `gebruikers.json` is one array without `_meta`; `school.json` has no `_meta`. The CAS
-  retry only protects the *other* records in the file: two admins editing the same user or school
+  retry only protects the _other_ records in the file: two admins editing the same user or school
   field overwrite each other silently.
 - **Change:** `gebruikers/<id>.json` with `_meta`, and `_meta` on `school.json`. The user and
   school forms get the same stale-edit check (`saveEntity` with `baseRev`) as students, groups and

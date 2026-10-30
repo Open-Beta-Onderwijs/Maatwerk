@@ -5,6 +5,7 @@
 // tests/golden/logic/ids.json.
 
 import type { Exam, Meta, Student } from './types';
+import { opaqueId } from './v2';
 
 /** School year of `now`: it turns over on 1 August, local time (BR 10). */
 export function currentSchoolYear(now: Date = new Date()): string {
@@ -39,21 +40,18 @@ export function sortStudents<T extends Partial<Student>>(list: T[]): T[] {
   return list;
 }
 
-/** Lower-case ASCII slug: other characters (accents too) collapse to '-'. */
-function slug(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+/**
+ * A new exam id: opaque, independent of the title (ADR-0003 C10). The v1
+ * scheme `<subject>-<slug(title)>-<year>` let two titles collide (quirk B26)
+ * and gave a re-created exam the old exam's scores. Existing ids are kept.
+ */
+export function makeExamId(): string {
+  return opaqueId('toets');
 }
 
-/** `<subject>-<slug(title)>-<year>`; equal titles collide (quirk B26). */
-export function makeExamId(title: string, year: string, subject: string | null | undefined) {
-  return `${subject}-${slug(title)}-${year.replace(/\//g, '-')}`;
-}
-
-export function makeGroupId(name: string, year: string): string {
-  return slug(name) + '-' + year.replace(/\//g, '-');
+/** A new group id, opaque like {@link makeExamId}. */
+export function makeGroupId(): string {
+  return opaqueId('groep');
 }
 
 /** Subject guessed from a group name ("3a nat" -> 'nat'), or null. */

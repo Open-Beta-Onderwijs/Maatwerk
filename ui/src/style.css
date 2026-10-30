@@ -3638,3 +3638,55 @@ td.grade-override-stale::after {
   color: var(--muted);
   word-break: break-word;
 }
+
+/* ── One-time conversion of a v1 folder (ADR-0003 C1) ────────────────────── */
+.startup-error.migration {
+  border-left-color: var(--primary);
+}
+.migration-confirm {
+  display: block;
+  margin: 0 0 16px;
+}
+.migration-status {
+  white-space: pre-line;
+}
+.migration-done p {
+  margin: 0 0 8px;
+  word-break: break-word;
+}
+.migration-warnings {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+/* ── Beheer > Gegevenscontrole (Step 7a, C19) ────────────────────────────── */
+.gegevens {
+  max-width: 1100px;
+}
+.gegevens-summary {
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.gegevens-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.gegevens-table th,
+.gegevens-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.gegevens-path {
+  font-family: monospace;
+  word-break: break-all;
+}
+.gegevens-error .gegevens-sev {
+  color: var(--danger);
+  font-weight: 600;
+}
+.gegevens-warning .gegevens-sev {
+  color: var(--muted);
+}

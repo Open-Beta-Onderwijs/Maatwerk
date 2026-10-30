@@ -2,15 +2,20 @@
 
 // In-memory backend for `npm run dev:mock`, Vitest and Playwright. Emulates the
 // reference main process (docs/reference/ipc-api.md) on a virtual data folder
-// seeded from tools/fixtures: CAS on the SHA-1 of the file bytes, own writes
-// are not echoed, external writes (test hooks below) emit `data:changed`.
-// Typst calls return canned output. Nothing is persisted: a reload starts over.
+// seeded from tools/fixtures (format v2, docs/reference/data-files-v2.md): CAS
+// on the SHA-1 of the file bytes, own writes are not echoed, external writes
+// (test hooks below) emit `data:changed`. Typst calls return canned output.
+// Integrity stamps (C19) are not computed. Nothing is persisted: a reload
+// starts over.
 
 import type {
   BatchJob,
   BatchOptions,
   DataChange,
+  DataCheck,
   DataFolderStatus,
+  MigrationResult,
+  StampIssue,
   FsResult,
   ImageResult,
   Json,
@@ -38,6 +43,8 @@ const MIME: Record<string, string> = {
   webp: 'image/webp',
 };
 const BASE_ASSIGNMENT = '#import "lib.typ": *\n\n// Nieuwe opdracht (mock-sjabloon)\n';
+const MAIN_TYP = '// maatwerk-main 1 (mock)\n#include "opdracht.typ"\n';
+const LIB_TYP = '// maatwerk-lib 1 (mock)\n';
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -116,6 +123,21 @@ export class MockApi implements MaatwerkApi {
   private pdfs = new Map<string, Uint8Array>();
   /** What `dataFolderStatus` reports; tests set an error to show the startup error screen. */
   folderStatus: DataFolderStatus = { dataDir: MOCK_DATA_DIR, error: null };
+  /** What `validateDataFolder` and `stampIssues` report; tests fill them. */
+  dataCheck: DataCheck = { filesChecked: 0, issues: [] };
+  stamps: StampIssue[] = [];
+  /** What `migrateDataFolder` returns; tests may replace it. */
+  migration: MigrationResult = {
+    fromVersion: 1,
+    toVersion: 2,
+    applied: true,
+    backup: 'C:\\Users\\docent\\AppData\\Local\\maatwerk\\backups\\maatwerk-backup-v1.zip',
+    written: 12,
+    moved: 1,
+    deleted: 3,
+    warnings: [],
+    validation: { filesChecked: 12, issues: [] },
+  };
   /** Calls made through the bridge, for tests (`[method, ...args]`). */
   readonly calls: [string, ...unknown[]][] = [];
 
@@ -127,9 +149,9 @@ export class MockApi implements MaatwerkApi {
       );
     }
     for (const dir of seed.dirs) this.mkdir(dir);
-    // seedInitialData() in main.js
+    // seed_initial_data() in maatwerk-core
     this.mkdir('fotos');
-    this.mkdir('opdrachten/images');
+    this.mkdir('opdrachten');
   }
 
   // ── Virtual file system ───────────────────────────────────────────────────
@@ -265,7 +287,7 @@ export class MockApi implements MaatwerkApi {
       // reference compares and writes in one synchronous handler).
       if (this.files.get(relPath) !== current) return { ok: false, reason: 'conflict' };
     }
-    const bytes = encoder.encode(JSON.stringify(data, null, 2));
+    const bytes = encoder.encode(JSON.stringify(data, null, 2) + '\n'); // C13
     this.putFile(relPath, bytes);
     return { ok: true, hash: await sha1(bytes) };
   }
@@ -303,6 +325,22 @@ export class MockApi implements MaatwerkApi {
     return out;
   }
 
+  async readOpdrachten(): Promise<Json[]> {
+    this.record('readOpdrachten', []);
+    const out: Json[] = [];
+    for (const id of this.list('opdrachten')) {
+      const text = this.readText(`opdrachten/${id}/opdracht.json`);
+      if (text === null) continue;
+      try {
+        const data = JSON.parse(text);
+        if (data !== null) out.push(data);
+      } catch {
+        // skipped, as readAllJson does
+      }
+    }
+    return out;
+  }
+
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
     this.files.delete(relPath);
@@ -326,16 +364,54 @@ export class MockApi implements MaatwerkApi {
     return this.readText(relPath);
   }
 
-  async writeTextFile(relPath: string, content: string): Promise<{ ok: true }> {
-    this.record('writeTextFile', [relPath, content]);
+  async readTextFileVersioned(relPath: string): Promise<{ text: string; hash: string } | null> {
+    this.record('readTextFileVersioned', [relPath]);
+    const bytes = this.files.get(relPath);
+    return bytes ? { text: decoder.decode(bytes), hash: await sha1(bytes) } : null;
+  }
+
+  async writeTextFile(
+    relPath: string,
+    content: string,
+    expectedHash?: string | null,
+  ): Promise<{ ok: true; hash: string } | { ok: false; reason: 'conflict' }> {
+    this.record('writeTextFile', [relPath, content, expectedHash]);
+    if (!/^opdrachten\/[\w-]+\/[^/]+\.typ$/i.test(relPath))
+      throw new Error(`invalid path ${JSON.stringify(relPath)}`);
+    if (expectedHash) {
+      const current = this.files.get(relPath);
+      if (!current || (await sha1(current)) !== expectedHash)
+        return { ok: false, reason: 'conflict' };
+    }
+    const bytes = encoder.encode(content);
+    this.putFile(relPath, bytes);
+    return { ok: true, hash: await sha1(bytes) };
+  }
+
+  /** A colleague's save of a text file arriving through OneDrive. */
+  externalWriteText(relPath: string, content: string): void {
+    const kind = this.files.has(relPath) ? 'changed' : 'added';
     this.putFile(relPath, encoder.encode(content));
+    this.emit([{ relPath, kind, meta: null }]);
+  }
+
+  async createOpdrachtFolder(opdrachtId: string): Promise<{ ok: true }> {
+    this.record('createOpdrachtFolder', [opdrachtId]);
+    checkOpdrachtId(opdrachtId);
+    this.fillOpdrachtFolder(opdrachtId);
     return { ok: true };
   }
 
-  async createAssignmentTypFile(typFile: string): Promise<{ ok: true }> {
-    this.record('createAssignmentTypFile', [typFile]);
-    this.putFile(`opdrachten/${typFile}`, encoder.encode(BASE_ASSIGNMENT));
-    return { ok: true };
+  private fillOpdrachtFolder(opdrachtId: string): void {
+    const files: [string, string][] = [
+      ['main.typ', MAIN_TYP],
+      ['lib.typ', LIB_TYP],
+      ['opdracht.typ', BASE_ASSIGNMENT],
+    ];
+    for (const [name, text] of files) {
+      const rel = `opdrachten/${opdrachtId}/${name}`;
+      if (!this.files.has(rel)) this.putFile(rel, encoder.encode(text));
+    }
   }
 
   // ── Opdracht images ───────────────────────────────────────────────────────
@@ -343,7 +419,7 @@ export class MockApi implements MaatwerkApi {
   async listOpdrachtImages(opdrachtId: string): Promise<OpdrachtImage[]> {
     this.record('listOpdrachtImages', [opdrachtId]);
     checkOpdrachtId(opdrachtId);
-    const dir = `opdrachten/images/${opdrachtId}`;
+    const dir = `opdrachten/${opdrachtId}/images`;
     return this.list(dir)
       .filter((f) => IMAGE_EXTS.includes(extOf(f)) && this.files.has(`${dir}/${f}`))
       .sort((a, b) => a.localeCompare(b, 'nl'))
@@ -352,7 +428,7 @@ export class MockApi implements MaatwerkApi {
         const bytes = this.files.get(`${dir}/${f}`)!;
         const thumb =
           ext === 'svg' ? null : `data:${MIME[ext] ?? 'image/jpeg'};base64,${toBase64(bytes)}`;
-        return { file: `images/${opdrachtId}/${f}`, name: stem(f), thumb };
+        return { file: `images/${f}`, name: stem(f), thumb };
       });
   }
 
@@ -369,14 +445,14 @@ export class MockApi implements MaatwerkApi {
     if (!IMAGE_EXTS.includes(ext))
       return { ok: false, error: `Bestandstype .${ext} wordt niet ondersteund.` };
     checkOpdrachtId(opdrachtId);
-    const dir = `opdrachten/images/${opdrachtId}`;
+    const dir = `opdrachten/${opdrachtId}/images`;
     this.mkdir(dir);
     const existing = this.list(dir).filter((f) => stem(f) === name);
     if (existing.length && !overwrite) return { ok: false, exists: true, name };
     for (const f of existing) this.files.delete(`${dir}/${f}`);
     const file = `${name}.${ext}`;
     this.putFile(`${dir}/${file}`, bytes);
-    return { ok: true, file: `images/${opdrachtId}/${file}`, name };
+    return { ok: true, file: `images/${file}`, name };
   }
 
   async saveOpdrachtImage(
@@ -410,25 +486,27 @@ export class MockApi implements MaatwerkApi {
     return null;
   }
 
-  async copyOpdrachtImages(fromId: string, toId: string): Promise<{ ok: true }> {
-    this.record('copyOpdrachtImages', [fromId, toId]);
+  async copyOpdrachtFolder(fromId: string, toId: string): Promise<{ ok: true }> {
+    this.record('copyOpdrachtFolder', [fromId, toId]);
     checkOpdrachtId(fromId);
     checkOpdrachtId(toId);
-    const from = `opdrachten/images/${fromId}`;
-    for (const f of this.list(from)) {
-      const bytes = this.files.get(`${from}/${f}`);
-      if (bytes) this.putFile(`opdrachten/images/${toId}/${f}`, bytes);
+    const from = `opdrachten/${fromId}/`;
+    for (const [path, bytes] of [...this.files]) {
+      if (!path.startsWith(from) || path === `${from}opdracht.json`) continue;
+      this.putFile(`opdrachten/${toId}/${path.slice(from.length)}`, bytes);
     }
+    // Like the app: whatever the source lacked comes from the templates.
+    this.fillOpdrachtFolder(toId);
     return { ok: true };
   }
 
-  async deleteOpdrachtImages(opdrachtId: string): Promise<{ ok: true }> {
-    this.record('deleteOpdrachtImages', [opdrachtId]);
+  async deleteOpdrachtFolder(opdrachtId: string): Promise<{ ok: true }> {
+    this.record('deleteOpdrachtFolder', [opdrachtId]);
     checkOpdrachtId(opdrachtId);
-    const dir = `opdrachten/images/${opdrachtId}`;
+    const dir = `opdrachten/${opdrachtId}`;
     for (const path of [...this.files.keys()])
       if (path.startsWith(`${dir}/`)) this.files.delete(path);
-    this.dirs.delete(dir);
+    for (const d of [...this.dirs]) if (d === dir || d.startsWith(`${dir}/`)) this.dirs.delete(d);
     return { ok: true };
   }
 
@@ -512,13 +590,12 @@ export class MockApi implements MaatwerkApi {
   }
 
   async renderAssignmentSvg(
-    typFile: string,
+    opdrachtId: string,
     title: string,
     previewContent?: string,
   ): Promise<RenderResult<{ pages: string[] }>> {
-    this.record('renderAssignmentSvg', [typFile, title, previewContent]);
-    if (baseName(typFile) !== typFile || typFile.includes('\\'))
-      return { success: false, error: `Ongeldige bestandsnaam: ${typFile}` };
+    this.record('renderAssignmentSvg', [opdrachtId, title, previewContent]);
+    if (!/^[\w-]+$/.test(opdrachtId)) return { success: false, error: 'Ongeldige opdracht.' };
     const lines = (previewContent ?? '').split('\n').length;
     const escape = (s: string) =>
       s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -526,7 +603,7 @@ export class MockApi implements MaatwerkApi {
       '<svg xmlns="http://www.w3.org/2000/svg" width="595pt" height="842pt" viewBox="0 0 595 842">' +
       '<rect width="595" height="842" fill="#fff"/>' +
       `<text x="72" y="96" font-size="20">${escape(title)} (mock)</text>` +
-      `<text x="72" y="130" font-size="12">${escape(typFile)}: ${lines} regels</text></svg>`;
+      `<text x="72" y="130" font-size="12">${escape(opdrachtId)}: ${lines} regels</text></svg>`;
     return { success: true, pages: [svg] };
   }
 
@@ -538,16 +615,16 @@ export class MockApi implements MaatwerkApi {
     if (!Array.isArray(jobs) || jobs.length === 0)
       return { success: false, error: 'Er is niets om te genereren.' };
     const outputName = opts.outputName ?? 'opdrachten.pdf';
-    for (const name of [...jobs.map((j) => j.typFile), outputName]) {
-      if (baseName(name) !== name || name.includes('\\'))
-        return { success: false, error: `Ongeldige bestandsnaam: ${name}` };
-    }
+    if (jobs.some((j) => !/^[\w-]+$/.test(String(j.opdrachtId))))
+      return { success: false, error: 'Ongeldige opdracht.' };
+    if (baseName(outputName) !== outputName || outputName.includes('\\'))
+      return { success: false, error: `Ongeldige bestandsnaam: ${outputName}` };
     const total = jobs.length;
     for (const cb of this.progressListeners) cb({ done: 0, total });
     const pages: string[][] = [];
     for (const [i, job] of jobs.entries()) {
       pages.push([
-        job.header?.title ?? job.label ?? job.typFile,
+        job.header?.title ?? job.label ?? job.opdrachtId,
         job.header?.student ?? '',
         job.mode === 'answers' ? 'Antwoorden' : 'Opdracht',
       ]);
@@ -584,6 +661,29 @@ export class MockApi implements MaatwerkApi {
 
   async restartApp(): Promise<void> {
     this.record('restartApp', []);
+  }
+
+  async migrateDataFolder(): Promise<MigrationResult> {
+    this.record('migrateDataFolder', []);
+    return structuredClone(this.migration);
+  }
+
+  async validateDataFolder(): Promise<DataCheck> {
+    this.record('validateDataFolder', []);
+    return structuredClone(this.dataCheck);
+  }
+
+  async stampIssues(): Promise<StampIssue[]> {
+    this.record('stampIssues', []);
+    return structuredClone(this.stamps);
+  }
+
+  async acceptStamp(relPath: string): Promise<void> {
+    this.record('acceptStamp', [relPath]);
+    this.stamps = this.stamps.filter((s) => s.path !== relPath);
+    this.dataCheck.issues = this.dataCheck.issues.filter(
+      (i) => !(i.kind === 'stamp' && i.path === relPath),
+    );
   }
 
   // ── Events ────────────────────────────────────────────────────────────────

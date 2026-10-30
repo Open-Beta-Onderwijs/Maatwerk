@@ -5,11 +5,12 @@ Last updated: 2026-10-30 (Step 7a in progress) Branch: `step/07-data-v2` Last ta
 ## Current step
 
 **Step 7a: data format v2 and migration, in progress.** User decisions this session (2026-10-30):
-C10 = opaque ids for *new* exams/groups only, existing ids kept; C9 = `"N"` instead of `null`,
+C10 = opaque ids for _new_ exams/groups only, existing ids kept; C9 = `"N"` instead of `null`,
 invalid input stays the typed string. Format spec: `docs/reference/data-files-v2.md`; ADR-0003
 has C16-C19.
 
 Done on the branch:
+
 1. ADR-0003 C16-C19 + C9/C10 shapes; `docs/reference/data-files-v2.md`.
 2. `maatwerk-core::integrity` (C19 stamp: SHA-256 of canonical JSON without `_meta.hash`).
 3. `maatwerk-core::migrate` (plan -> verified backup zip outside shared/OneDrive folder -> apply
@@ -111,20 +112,15 @@ Done on the branch:
 
 ## Next action (concrete, resumable)
 
-Remaining 7a sub-tasks, each one commit:
-4. `validate` module: schema/shape, placement (id vs path), cross-refs, strays (conflict copies),
-   integrity stamps, missing images; Dutch messages; tests on the v2 golden.
-5. CLI `maatwerk-cli validate-data`, `maatwerk-cli migrate --dry-run | --apply --backup-dir`;
-   CI step: generate `school` fixture, migrate, validate (0 errors).
-6. Flip storage to v2: SUPPORTED_SCHEMA_VERSIONS = [2], v1 -> `needs_migration`, stamp on
-   write, trailing newline, verify on read (issue list), v2 seed for an empty folder, watcher
-   patterns (`gebruikers/`, `opdrachten/<id>/`), C18 rapporten path, C17 text CAS, app
-   commands (migrate, validate, accept stamp), opdracht v2 project for compiles.
-7. UI on v2: Store paths/shapes (students wrapper, gebruikers per file, school rev, opdracht
-   folders, string ids, `"N"`, opaque ids, CSV group match by name), startup "Migreren",
-   admin "Gegevenscontrole", editor conflict UI; generator v2 mode for the mock.
-8. Runbook `docs/cutover-runbook.md`, manual-test (M-START-3 etc.), parity, review, merge, tag
-   `step-07a`.
+Remaining 7a sub-tasks, each one commit: 4. `validate` module: schema/shape, placement (id vs path), cross-refs, strays (conflict copies),
+integrity stamps, missing images; Dutch messages; tests on the v2 golden. 5. CLI `maatwerk-cli validate-data`, `maatwerk-cli migrate --dry-run | --apply --backup-dir`;
+CI step: generate `school` fixture, migrate, validate (0 errors). 6. Flip storage to v2: SUPPORTED_SCHEMA_VERSIONS = [2], v1 -> `needs_migration`, stamp on
+write, trailing newline, verify on read (issue list), v2 seed for an empty folder, watcher
+patterns (`gebruikers/`, `opdrachten/<id>/`), C18 rapporten path, C17 text CAS, app
+commands (migrate, validate, accept stamp), opdracht v2 project for compiles. 7. UI on v2: Store paths/shapes (students wrapper, gebruikers per file, school rev, opdracht
+folders, string ids, `"N"`, opaque ids, CSV group match by name), startup "Migreren",
+admin "Gegevenscontrole", editor conflict UI; generator v2 mode for the mock. 8. Runbook `docs/cutover-runbook.md`, manual-test (M-START-3 etc.), parity, review, merge, tag
+`step-07a`.
 
 ## Open questions for the user
 
