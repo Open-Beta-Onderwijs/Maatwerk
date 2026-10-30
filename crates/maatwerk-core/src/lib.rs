@@ -6,6 +6,7 @@
 
 pub mod assets;
 pub mod error;
+pub mod integrity;
 pub mod jsonfmt;
 pub mod opdracht_images;
 pub mod outputs;
