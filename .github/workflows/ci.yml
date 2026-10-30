@@ -80,7 +80,7 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
       # A real compiled rapport (written by the typst_rapport tests) in pdf.js under the CSP.
-      - run: npx playwright test --project chromium real-pdf
+      - run: npx playwright test --project=chromium real-pdf
         working-directory: ui
         env:
           MAATWERK_REAL_PDF: '1'
