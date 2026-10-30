@@ -166,18 +166,49 @@ pub async fn read_text_file(state: State<'_, Shared>, rel_path: String) -> Res<O
     .await
 }
 
-/// Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8).
+/// A text file and the SHA-1 of its bytes, the CAS token for [`write_text_file`] (C17).
+#[derive(Serialize, Type)]
+pub struct VersionedText {
+    pub text: String,
+    pub hash: String,
+}
+
+/// UTF-8 text with its hash; `null` if missing.
+#[tauri::command]
+#[specta::specta]
+pub async fn read_text_file_versioned(
+    state: State<'_, Shared>,
+    rel_path: String,
+) -> Res<Option<VersionedText>> {
+    blocking(state, move |c| {
+        let bytes = c.storage()?.read_bytes(&rel(&rel_path)?)?;
+        Ok(bytes.map(|b| VersionedText {
+            hash: maatwerk_core::storage::hash_hex(&b),
+            text: String::from_utf8_lossy(&b).into_owned(),
+        }))
+    })
+    .await
+}
+
+/// Atomic text write, only `opdrachten/<id>/<name>.typ` (backlog n8, C14). With
+/// `expectedHash` the file must still have that hash, else error `conflict` (C17); without it
+/// the write is blind. Returns the new hash.
 #[tauri::command]
 #[specta::specta]
 pub async fn write_text_file(
     state: State<'_, Shared>,
     rel_path: String,
     content: String,
-) -> Res<()> {
+    expected_hash: Option<String>,
+) -> Res<String> {
     blocking(state, move |c| {
         let rel = rel(&rel_path)?;
         check_opdracht_typ_path(&rel)?;
-        Ok(c.storage()?.write_text(&rel, &content)?)
+        let expect = match &expected_hash {
+            Some(h) => Expect::Hash(h),
+            None => Expect::Any,
+        };
+        Ok(c.storage()?.write_text(&rel, &content, expect)?)
     })
     .await
 }

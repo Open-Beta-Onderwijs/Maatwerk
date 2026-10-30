@@ -8,6 +8,7 @@ use std::time::{Duration, UNIX_EPOCH};
 use serde_json::json;
 
 use super::*;
+use crate::integrity::StampState;
 
 fn rel(s: &str) -> RelPath {
     RelPath::parse(s).unwrap()
@@ -91,16 +92,22 @@ fn s09_versioned_read_corrupt_is_an_error() {
 }
 
 #[test]
-fn s10_write_json_is_js_stringify_without_newline_and_returns_its_hash() {
+fn s10_write_json_is_js_stringify_with_stamp_and_newline_and_returns_its_hash() {
     let (_t, s) = setup();
     let value = json!({"b": [1, 2.5], "a": {"x": null}});
     let hash = s.write_json(&rel("a/b.json"), &value, Expect::Any).unwrap();
-    let text = "{\n  \"b\": [\n    1,\n    2.5\n  ],\n  \"a\": {\n    \"x\": null\n  }\n}";
+    // C19 stamp as the last key, C13 trailing newline.
+    let mut stamped = value.clone();
+    crate::integrity::stamp(&mut stamped);
+    let stamp = stamped["_meta"]["hash"].as_str().unwrap();
+    let text = format!(
+        "{{\n  \"b\": [\n    1,\n    2.5\n  ],\n  \"a\": {{\n    \"x\": null\n  }},\n  \"_meta\": {{\n    \"hash\": \"{stamp}\"\n  }}\n}}\n"
+    );
     assert_eq!(disk(&s, "a/b.json"), text.as_bytes());
     assert_eq!(hash, hash_hex(text.as_bytes()));
     s.write_json(&rel("n.json"), &Value::Null, Expect::Any)
         .unwrap();
-    assert_eq!(disk(&s, "n.json"), b"null");
+    assert_eq!(disk(&s, "n.json"), b"null\n");
 }
 
 #[test]
@@ -116,14 +123,14 @@ fn s11_cas_writes_on_matching_hash_and_conflicts_otherwise() {
         .write_json(&rel("c.json"), &json!(3), Expect::Hash(&h1))
         .unwrap_err();
     assert_eq!(err.code(), "conflict");
-    assert_eq!(disk(&s, "c.json"), b"2");
+    assert_eq!(disk(&s, "c.json"), b"2\n");
     // The temp file written before the check is removed on a conflict.
     let names: Vec<_> = walk(s.data_dir().root())
         .iter()
         .map(|p| s.data_dir().rel_of(p).unwrap())
         .collect();
     assert_eq!(names, vec!["c.json"]);
-    assert_eq!(h2, hash_hex(b"2"));
+    assert_eq!(h2, hash_hex(b"2\n"));
 }
 
 #[test]
@@ -135,7 +142,7 @@ fn s12_expect_missing_requires_absence() {
         .write_json(&rel("m.json"), &json!(2), Expect::Missing)
         .unwrap_err();
     assert_eq!(err.code(), "conflict");
-    assert_eq!(disk(&s, "m.json"), b"1");
+    assert_eq!(disk(&s, "m.json"), b"1\n");
 }
 
 #[test]
@@ -180,7 +187,8 @@ fn s18_own_writes_and_deletes_are_noted() {
     s.set_observer(notes.clone());
     s.write_json(&rel("a.json"), &json!([1]), Expect::Any)
         .unwrap();
-    s.write_text(&rel("opdrachten/x.typ"), "= Hi").unwrap();
+    s.write_text(&rel("opdrachten/x.typ"), "= Hi", Expect::Any)
+        .unwrap();
     s.delete(&rel("gone.json")).unwrap();
     s.save_photo(&rel("fotos/p.png"), "AAEC").unwrap();
     let _ = s.write_json(&rel("a.json"), &json!(2), Expect::Missing); // conflict: not noted
@@ -188,7 +196,7 @@ fn s18_own_writes_and_deletes_are_noted() {
         *notes.0.lock().unwrap(),
         vec![
             "will a.json",
-            "write a.json [\n  1\n]",
+            "write a.json [\n  1\n]\n",
             "will opdrachten/x.typ",
             "write opdrachten/x.typ = Hi",
             "will gone.json",
@@ -516,7 +524,7 @@ fn s38_updates_from_two_handles_lose_nothing() {
             });
         }
     });
-    assert_eq!(a.read_json(&file).unwrap(), Some(json!({"n": 120})));
+    assert_eq!(a.read_json(&file).unwrap().unwrap()["n"], 120);
 }
 
 #[test]
@@ -648,14 +656,55 @@ fn read_all_json_skips_folders_nulls_and_garbage() {
 }
 
 #[test]
-fn text_files_round_trip() {
+fn text_files_round_trip_with_cas() {
     let (_t, s) = setup();
-    assert_eq!(s.read_text(&rel("opdrachten/a.typ")).unwrap(), None);
-    s.write_text(&rel("opdrachten/a.typ"), "= Opgave 1\n")
+    let typ = rel("opdrachten/a/opdracht.typ");
+    assert_eq!(s.read_text(&typ).unwrap(), None);
+    let h1 = s
+        .write_text(
+            &typ,
+            "= Opgave 1
+",
+            Expect::Missing,
+        )
         .unwrap();
     assert_eq!(
-        s.read_text(&rel("opdrachten/a.typ")).unwrap().as_deref(),
-        Some("= Opgave 1\n")
+        s.read_text(&typ).unwrap().as_deref(),
+        Some(
+            "= Opgave 1
+"
+        )
+    );
+    assert_eq!(
+        h1,
+        hash_hex(
+            b"= Opgave 1
+"
+        )
+    );
+    // C17: a colleague's write in between makes the editor's next write a conflict.
+    s.write_text(
+        &typ,
+        "= Collega
+",
+        Expect::Hash(&h1),
+    )
+    .unwrap();
+    let err = s
+        .write_text(
+            &typ,
+            "= Mijn
+",
+            Expect::Hash(&h1),
+        )
+        .unwrap_err();
+    assert_eq!(err.code(), "conflict");
+    assert_eq!(
+        s.read_text(&typ).unwrap().as_deref(),
+        Some(
+            "= Collega
+"
+        )
     );
 }
 
@@ -694,21 +743,72 @@ fn photos_as_data_urls() {
 }
 
 #[test]
-fn seed_creates_admin_once_and_folders() {
+fn seed_creates_a_v2_folder_with_the_admin_once() {
     let (_t, s) = setup();
     s.seed_initial_data().unwrap();
-    let users = s.read_json(&rel("gebruikers.json")).unwrap().unwrap();
-    assert_eq!(users[0]["id"], json!("admin"));
-    assert_eq!(users[0]["vakken"], json!(["nat", "bio", "schk", "wi"]));
+    let admin = s.read_json(&rel("gebruikers/admin.json")).unwrap().unwrap();
+    assert_eq!(admin["id"], json!("admin"));
+    assert_eq!(admin["vakken"], json!(["nat", "bio", "schk", "wi"]));
+    assert_eq!(admin["_meta"]["rev"], json!(1));
+    let config = s.read_json(&rel("config.json")).unwrap().unwrap();
+    assert_eq!(config["schema_version"], json!(2));
     assert!(s.data_dir().root().join("fotos").is_dir());
-    assert!(s.data_dir().root().join("opdrachten/images").is_dir());
-    s.write_json(&rel("gebruikers.json"), &json!([{"id": "x"}]), Expect::Any)
+    assert!(s.data_dir().root().join("opdrachten").is_dir());
+    assert!(s.stamp_issues().is_empty());
+    // Another user but no admin file: nothing is added.
+    s.delete(&rel("gebruikers/admin.json")).unwrap();
+    s.write_json(&rel("gebruikers/x.json"), &json!({"id": "x"}), Expect::Any)
         .unwrap();
     s.seed_initial_data().unwrap();
+    assert_eq!(s.read_json(&rel("gebruikers/admin.json")).unwrap(), None);
+    // An existing config.json is left alone.
+    s.write_json(
+        &rel("config.json"),
+        &json!({"schema_version": 2, "activeYear": "2025-2026"}),
+        Expect::Any,
+    )
+    .unwrap();
+    s.seed_initial_data().unwrap();
+    let config = s.read_json(&rel("config.json")).unwrap().unwrap();
+    assert_eq!(config["activeYear"], json!("2025-2026"));
+}
+
+#[test]
+fn c19_stamps_are_checked_on_read_and_can_be_accepted() {
+    let (_t, s) = setup();
+    s.write_json(&rel("observaties/o.json"), &json!({"id": "o"}), Expect::Any)
+        .unwrap();
+    s.read_json(&rel("observaties/o.json")).unwrap();
+    assert!(s.stamp_issues().is_empty());
+    // A hand edit, and a file made outside Maatwerk.
+    let path = s.data_dir().root().join("observaties/o.json");
+    let text = fs::read_to_string(&path)
+        .unwrap()
+        .replace("\"o\"", "\"o2\"");
+    fs::write(&path, text).unwrap();
+    fs::write(
+        s.data_dir().root().join("observaties/p.json"),
+        "{\"id\":\"p\"}",
+    )
+    .unwrap();
+    let all = s.read_all_json(&rel("observaties")).unwrap();
+    assert_eq!(all.len(), 2, "a bad stamp never blocks reading");
     assert_eq!(
-        s.read_json(&rel("gebruikers.json")).unwrap(),
-        Some(json!([{"id": "x"}]))
+        s.stamp_issues(),
+        vec![
+            ("observaties/o.json".to_owned(), StampState::Mismatch),
+            ("observaties/p.json".to_owned(), StampState::Missing),
+        ]
     );
+    s.accept_stamp(&rel("observaties/o.json")).unwrap();
+    s.accept_stamp(&rel("observaties/gone.json")).unwrap();
+    assert_eq!(
+        s.stamp_issues(),
+        vec![("observaties/p.json".to_owned(), StampState::Missing)]
+    );
+    let o = s.read_json(&rel("observaties/o.json")).unwrap().unwrap();
+    assert_eq!(o["id"], json!("o2"), "accepted as it is");
+    assert!(s.stamp_issues().len() == 1);
 }
 
 #[test]
@@ -717,14 +817,31 @@ fn schema_version_c1() {
     let locks = tmp.path().join("locks");
     let data = tmp.path().join("d");
     let open = || Storage::open_with_lock_dir(&data, &locks);
-    open().unwrap(); // no config.json
+    open().unwrap(); // a new, empty folder
+    let needs = |what: &str| {
+        assert_eq!(
+            open().err().map(|e| e.code()),
+            Some("needs_migration"),
+            "{what}"
+        )
+    };
+    fs::write(data.join("gebruikers.json"), "[]").unwrap();
+    needs("v1 files without config.json");
     fs::write(data.join("config.json"), "{\"activeYear\": \"2025-2026\"}").unwrap();
-    open().unwrap(); // reference format, no version
+    needs("reference format, no version");
     fs::write(data.join("config.json"), "{\"schema_version\": 1}").unwrap();
+    needs("version 1");
+    fs::write(data.join("config.json"), "{\"schema_version\": 2}").unwrap();
     open().unwrap();
     fs::write(data.join("config.json"), "{\"half").unwrap();
     open().unwrap(); // unreadable (still syncing?) does not block
-    for v in ["2", "99", "\"1\"", "1.5"] {
+    fs::remove_file(data.join("config.json")).unwrap();
+    fs::remove_file(data.join("gebruikers.json")).unwrap();
+    fs::create_dir_all(data.join("2025-2026")).unwrap();
+    needs("a year folder without config.json");
+    fs::create_dir_all(data.join("gebruikers")).unwrap();
+    open().unwrap(); // v2 whose config.json has not synced yet
+    for v in ["3", "99", "\"1\"", "1.5"] {
         fs::write(
             data.join("config.json"),
             format!("{{\"schema_version\": {v}}}"),
@@ -767,16 +884,23 @@ fn iso_utc_matches_to_iso_string() {
 
 #[test]
 fn n8_text_and_photo_writes_are_limited_to_their_folders() {
-    for ok in ["opdrachten/opdracht_1.typ", "opdrachten/A.TYP"] {
+    for ok in [
+        "opdrachten/opdracht_1/opdracht.typ",
+        "opdrachten/op-1/A.TYP",
+        "opdrachten/op_1/lib.typ",
+    ] {
         assert!(check_opdracht_typ_path(&rel(ok)).is_ok(), "{ok}");
     }
     for bad in [
         "config.json",
-        "opdrachten/opdracht_1.json",
+        "opdrachten/opdracht_1.typ",
+        "opdrachten/opdracht_1/opdracht.json",
+        "opdrachten/opdracht_1/images/a.typ",
         "opdrachten/images/a.typ",
         "2025-2026/exams/t1.typ",
         "opdrachten",
         "opdrachten/lib.typ",
+        "opdrachten/a.b/x.typ",
     ] {
         assert!(check_opdracht_typ_path(&rel(bad)).is_err(), "{bad}");
     }

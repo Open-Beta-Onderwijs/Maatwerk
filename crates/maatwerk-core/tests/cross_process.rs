@@ -46,6 +46,13 @@ fn worker() {
 #[test]
 fn three_processes_lose_no_update() {
     let tmp = tempfile::tempdir().unwrap();
+    // A v2 folder (C1); the year folder the workers create would otherwise look like v1.
+    std::fs::create_dir_all(tmp.path().join("data")).unwrap();
+    std::fs::write(
+        tmp.path().join("data/config.json"),
+        r#"{"schema_version": 2}"#,
+    )
+    .unwrap();
     let exe = std::env::current_exe().unwrap();
     let children: Vec<_> = (0..2)
         .map(|_| {
@@ -63,5 +70,5 @@ fn three_processes_lose_no_update() {
     let storage =
         Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks")).unwrap();
     let value = storage.read_json(&RelPath::parse("2025-2026/scores/nat/1.json").unwrap());
-    assert_eq!(value.unwrap(), Some(json!({"n": 3 * ROUNDS})));
+    assert_eq!(value.unwrap().unwrap()["n"], json!(3 * ROUNDS));
 }

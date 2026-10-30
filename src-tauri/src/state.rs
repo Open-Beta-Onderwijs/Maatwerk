@@ -96,6 +96,11 @@ impl Core {
         self.storage.as_deref().map_err(Clone::clone)
     }
 
+    /// The data folder as configured (also when it could not be opened).
+    pub fn data_dir(&self) -> &std::path::Path {
+        &self.data_dir
+    }
+
     /// The data folder (the opened root when it opened) and why it could not be opened.
     pub fn data_folder_status(&self) -> DataFolderStatus {
         match &self.storage {

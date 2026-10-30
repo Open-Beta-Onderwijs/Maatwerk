@@ -40,8 +40,14 @@ export const commands = {
 	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
 	/**  UTF-8 text; `null` if missing. */
 	readTextFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_text_file", { relPath })),
-	/**  Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8). */
-	writeTextFile: (relPath: string, content: string) => typedError<null, CommandError>(__TAURI_INVOKE("write_text_file", { relPath, content })),
+	/**  UTF-8 text with its hash; `null` if missing. */
+	readTextFileVersioned: (relPath: string) => typedError<VersionedText | null, CommandError>(__TAURI_INVOKE("read_text_file_versioned", { relPath })),
+	/**
+	 *  Atomic text write, only `opdrachten/<id>/<name>.typ` (backlog n8, C14). With
+	 *  `expectedHash` the file must still have that hash, else error `conflict` (C17); without it
+	 *  the write is blind. Returns the new hash.
+	 */
+	writeTextFile: (relPath: string, content: string, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("write_text_file", { relPath, content, expectedHash })),
 	/**  Writes `users/<userId>.json`; `null` user = logged out. Write failures are only logged. */
 	updatePresence: (userId: string | null, presence: Value | null) => typedError<null, CommandError>(__TAURI_INVOKE("update_presence", { userId, presence })),
 	/**  The machine-local session file; `null` if missing or unreadable. */
@@ -56,8 +62,11 @@ export const commands = {
 	 *  `activeYear`. Not a reference method.
 	 */
 	setWatchYear: (year: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("set_watch_year", { year })),
-	/**  Writes the base template to `opdrachten/<typFile>` (a bare `.typ` name). */
-	createAssignmentTypFile: (typFile: string) => typedError<null, CommandError>(__TAURI_INVOKE("create_assignment_typ_file", { typFile })),
+	/**
+	 *  Fills `opdrachten/<id>/` with `main.typ`, `lib.typ` and `opdracht.typ` from the base
+	 *  template (`createAssignmentTypFile` for C14); existing files are kept.
+	 */
+	createOpdrachtFolder: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("create_opdracht_folder", { opdrachtId })),
 	listOpdrachtImages: (opdrachtId: string) => typedError<ImageInfo[], CommandError>(__TAURI_INVOKE("list_opdracht_images", { opdrachtId })),
 	/**  Saves a pasted image (base64) under a cleaned name. */
 	saveOpdrachtImage: (opdrachtId: string, name: string, ext: string, base64: string, overwrite: boolean) => typedError<ImageStored, CommandError>(__TAURI_INVOKE("save_opdracht_image", { opdrachtId, name, ext, base64, overwrite })),
@@ -70,9 +79,22 @@ export const commands = {
 	importOpdrachtImage: (opdrachtId: string, token: string, name: string, overwrite: boolean) => typedError<ImageStored, CommandError>(__TAURI_INVOKE("import_opdracht_image", { opdrachtId, token, name, overwrite })),
 	/**  The clipboard image as base64 PNG, or `null`. */
 	readClipboardImage: () => typedError<string | null, CommandError>(__TAURI_INVOKE("read_clipboard_image")),
-	copyOpdrachtImages: (fromId: string, toId: string) => typedError<null, CommandError>(__TAURI_INVOKE("copy_opdracht_images", { fromId, toId })),
-	/**  Deletes the images; a folder OneDrive keeps locked is retried in the background. */
-	deleteOpdrachtImages: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_images", { opdrachtId })),
+	/**  Copies an opdracht folder (Typst files and images, not `opdracht.json`). */
+	copyOpdrachtFolder: (fromId: string, toId: string) => typedError<null, CommandError>(__TAURI_INVOKE("copy_opdracht_folder", { fromId, toId })),
+	/**  Deletes an opdracht folder; a folder OneDrive keeps locked is retried in the background. */
+	deleteOpdrachtFolder: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_folder", { opdrachtId })),
+	/**
+	 *  Migrates the data folder to v2 after zipping it to the local backup folder, then checks it.
+	 *  Only while the folder could not be opened because it needs the migration; the UI restarts
+	 *  the app afterwards.
+	 */
+	migrateDataFolder: () => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder")),
+	/**  `validate-data` on the open data folder (admin screen). */
+	validateDataFolder: () => typedError<DataCheck, CommandError>(__TAURI_INVOKE("validate_data_folder")),
+	/**  Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd"). */
+	stampIssues: () => typedError<StampIssue[], CommandError>(__TAURI_INVOKE("stamp_issues")),
+	/**  "Accepteren": re-stamps the file as it is now. */
+	acceptStamp: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("accept_stamp", { relPath })),
 	/**
 	 *  All students of one toets in one PDF. `examId` is unused, as in the reference. The UI passes
 	 *  the payload through `normaliseForTypst` first.
@@ -82,7 +104,7 @@ export const commands = {
 	 *  The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
 	 *  with the placeholder header and the cursor marker, one SVG per page.
 	 */
-	renderAssignmentSvg: (typFile: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { typFile, title, previewContent })),
+	renderAssignmentSvg: (opdrachtId: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { opdrachtId, title, previewContent })),
 	/**  Compiles every job and merges them in job order; reports `assignment:progress`. */
 	renderAssignmentBatch: (jobs: BatchJobArg[], opts: BatchOptionsArg | null) => typedError<RenderedBatch, CommandError>(__TAURI_INVOKE("render_assignment_batch", { jobs, opts })),
 	/**
@@ -115,7 +137,8 @@ export type AssignmentProgress = {
 /**  One `renderAssignmentBatch` job, as `modals/opdrachten-genereren.js` builds it. */
 export type BatchJobArg = {
 	key: string,
-	typFile: string,
+	/**  The opdracht folder `opdrachten/<id>/` (C14). */
+	opdrachtId: string,
 	label: string | null,
 	/**  `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing. */
 	header: Value | null,
@@ -151,11 +174,26 @@ export type DataChangeKind = "added" | "changed" | "deleted";
 /**  External changes in the data folder, one batch per event. */
 export type DataChanged = DataChange[];
 
+export type DataCheck = {
+	filesChecked: number,
+	issues: DataIssue[],
+};
+
 /**  What the UI checks first at start (review 4b m5): an unusable folder gets its own screen. */
 export type DataFolderStatus = {
 	dataDir: string,
 	/**  `null` when the folder opened; else e.g. `unsupported_schema` or `io`. */
 	error: CommandError | null,
+};
+
+export type DataIssue = {
+	/**  `error` or `warning`. */
+	severity: string,
+	/**  `version`, `corrupt`, `stamp`, `shape`, `placement`, `reference`, `stray`. */
+	kind: string,
+	path: string,
+	/**  Dutch. */
+	message: string,
 };
 
 /**
@@ -177,7 +215,7 @@ export type ErrorDetails = {
 
 /**  One image of an opdracht. */
 export type ImageInfo = {
-	/**  Relative to `opdrachten/`: `images/<id>/<name>.<ext>`. */
+	/**  Relative to the opdracht folder: `images/<name>.<ext>`. */
 	file: string,
 	name: string,
 	/**  PNG data URL, 48 px high; `null` for SVG and files that do not decode. */
@@ -190,6 +228,21 @@ export type ImageStored = { status: "saved"; file: string; name: string } |
 { status: "exists"; name: string } | 
 /**  Not saved; `message` is Dutch text for the teacher. */
 { status: "rejected"; message: string };
+
+export type MigrationResult = {
+	fromVersion: number,
+	toVersion: number,
+	applied: boolean,
+	/**  The backup zip. */
+	backup: string | null,
+	written: number,
+	moved: number,
+	deleted: number,
+	/**  Dutch, for the admin. */
+	warnings: string[],
+	/**  The check right after the migration. */
+	validation: DataCheck | null,
+};
 
 /**  A file chosen in the dialog: a token for the import, the cleaned name and the extension. */
 export type PickedImage = {
@@ -232,11 +285,24 @@ export type RenderedSvg = {
 	warnings: string[],
 };
 
+/**  A JSON file read with a missing or wrong stamp since start (C19). */
+export type StampIssue = {
+	path: string,
+	/**  `missing` or `mismatch`. */
+	state: string,
+};
+
 export type Value = null | boolean | number | string | Value[] | { [key in string]: Value };
 
 /**  A JSON file and the SHA-1 of its bytes, the CAS token for the next write. */
 export type VersionedJson = {
 	data: Value,
+	hash: string,
+};
+
+/**  A text file and the SHA-1 of its bytes, the CAS token for [`write_text_file`] (C17). */
+export type VersionedText = {
+	text: string,
 	hash: string,
 };
 

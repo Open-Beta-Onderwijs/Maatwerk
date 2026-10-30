@@ -4,6 +4,7 @@
 //! errors; they hold no business logic.
 
 mod commands;
+mod data;
 mod error;
 mod opdrachten;
 mod render;
@@ -75,6 +76,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::data_folder_status,
             commands::restart_app,
             commands::read_text_file,
+            commands::read_text_file_versioned,
             commands::write_text_file,
             commands::update_presence,
             commands::read_local_session,
@@ -82,14 +84,18 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::read_photo_as_data_url,
             commands::save_photo,
             commands::set_watch_year,
-            opdrachten::create_assignment_typ_file,
+            opdrachten::create_opdracht_folder,
             opdrachten::list_opdracht_images,
             opdrachten::save_opdracht_image,
             opdrachten::pick_image_file,
             opdrachten::import_opdracht_image,
             opdrachten::read_clipboard_image,
-            opdrachten::copy_opdracht_images,
-            opdrachten::delete_opdracht_images,
+            opdrachten::copy_opdracht_folder,
+            opdrachten::delete_opdracht_folder,
+            data::migrate_data_folder,
+            data::validate_data_folder,
+            data::stamp_issues,
+            data::accept_stamp,
             render::render_rapport_pdf,
             render::render_assignment_svg,
             render::render_assignment_batch,
