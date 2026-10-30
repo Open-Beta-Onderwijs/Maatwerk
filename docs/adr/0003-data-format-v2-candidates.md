@@ -1,7 +1,8 @@
 # ADR-0003: Data format v2 candidates
 
 Status: **decided** (user, 2026-10-25): **all candidates are accepted**, plus two new ones (C14,
-C15). C6 and C11 are done during the port (user); the user left the timing of the rest to the
+C15). C16-C19 added after the Step 6 manual test (user, 2026-10-30). The concrete v2 format is in
+[`docs/reference/data-files-v2.md`](../reference/data-files-v2.md). C6 and C11 are done during the port (user); the user left the timing of the rest to the
 implementer, recorded in "Decision and timing" below. Step 7 writes the migration, backup and
 validation for everything that changes files on disk.
 
@@ -27,6 +28,10 @@ changes in the port do not change the files on disk unless stated.
 | C13 | Trailing newline in JSON             | 7                                     | Every file changes once; do it with the migration's rewrite                                                                                       |
 | C14 | Opdracht project folders             | 5 (abstraction), 7 (disk), 8 (editor) | See ADR-0002 section 5a                                                                                                                           |
 | C15 | `rapporten/` folder for printed PDFs | port (6a)                             | A new folder, not a change to existing files; see ADR-0002 section 9                                                                              |
+| C16 | Per-record admin files               | 7a                                    | User, after the Step 6 manual test (collision fix)                                                                                                |
+| C17 | CAS for `opdracht.typ`               | 7a                                    | User, after the Step 6 manual test (silent overwrite)                                                                                             |
+| C18 | `rapporten/` next to `data/`         | 7a                                    | User, manual test `M-TOE-6`; the migration moves existing copies                                                                                  |
+| C19 | Integrity stamp `_meta.hash`         | 7a                                    | User, decision 12 (no encryption); the migration stamps every file                                                                                |
 
 Consequence for parity: from Step 4 on, the new app's behaviour differs from the reference in
 these points on purpose. The parity matrix (`docs/parity.md`) marks each such row with its ADR-0003
@@ -204,3 +209,55 @@ Scale: cost / benefit / risk = low, medium, high.
 - **Benefit:** colleagues can find printed reports; nothing is overwritten.
 - **Risk:** low; the folder grows (cleanup policy in the backlog) and holds student data like the
   rest of the folder.
+
+## Candidates added after the Step 6 manual test (user, 2026-10-30)
+
+### C16. Per-record files for shared admin data
+
+- **Now:** `gebruikers.json` is one array without `_meta`; `school.json` has no `_meta`. The CAS
+  retry only protects the *other* records in the file: two admins editing the same user or school
+  field overwrite each other silently.
+- **Change:** `gebruikers/<id>.json` with `_meta`, and `_meta` on `school.json`. The user and
+  school forms get the same stale-edit check (`saveEntity` with `baseRev`) as students, groups and
+  exams ("gewijzigd door ... wordt opnieuw geladen").
+- **Risk:** low; one more folder for the watcher and the Store.
+
+### C17. Opdracht text with CAS
+
+- **Now:** the editor writes the `.typ` blind every 600 ms; two teachers on one opdracht overwrite
+  each other, and an open editor never sees the other's change.
+- **Change:** the editor writes `opdracht.typ` with the hash it loaded. On a conflict the
+  teacher's text stays in the editor with "Intussen gewijzigd door een collega" and the choices
+  "Hun versie laden" / "Mijn versie bewaren als kopie". `.typ` files carry no `_meta`, so the
+  colleague is not named. The edit lease follows in Step 8.
+- **Risk:** low; no format change.
+
+### C18. `rapporten/` next to the data folder
+
+- **Now (C15):** printed copies go to `data/rapporten/<schooljaar>/`.
+- **Change:** `<parent of data>/rapporten/<schooljaar>/`; the migration moves existing copies
+  (a name clash gets ` (2)`). The setup docs say to keep the exe, `data\` and `rapporten\`
+  together in one shared folder.
+
+### C19. Integrity stamp instead of encryption (decision 12)
+
+- **Change:** every JSON file Maatwerk writes carries `_meta.hash` = SHA-256 of its canonical JSON
+  without `_meta.hash` (definition in `data-files-v2.md`). Stamped in one place
+  (`maatwerk-core::storage`), checked on every read and by `validate-data`. A mismatch never
+  blocks: it is logged and listed for the admin ("Buiten Maatwerk gewijzigd", "Accepteren";
+  "Herstellen uit snapshot" follows with 7b). Placement checks list misplaced files, OneDrive
+  conflict copies and unknown files as strays.
+- **Not:** tamper-proof (anyone can re-stamp), and not for `.typ` files or images.
+- **Risk:** low; the canonical form is only ever computed by the core, on parsed values, so JS
+  number formatting cannot cause false alarms.
+
+## Decisions on the shape of C9 and C10 (user, 2026-10-30)
+
+- **C9:** `null` ("N", niet gemaakt) becomes the string `"N"`. Numbers stay numbers. Invalid
+  typed input stays the typed string (any string other than `"N"`); it is not moved to a separate
+  map. Grades and reports do not change (`calcResults` already reads `"N"`).
+- **C10:** new exams and groups get opaque IDs (`toets-<id>`, `groep-<id>`). Existing IDs are
+  **not** rewritten: they were only ever generated at creation, so they are already stable; a
+  rewrite would touch every score file for no functional gain. This fixes B26 (collisions) and a
+  re-created exam with an old title picking up the old exam's scores. The CSV group import, which
+  relied on recomputing the ID, now matches existing groups by name within the year.
