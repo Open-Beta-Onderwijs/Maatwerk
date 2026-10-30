@@ -3,7 +3,8 @@
 // pdf.js shows a real compiled rapport (embedded fonts, colour emoji as Type3
 // glyphs) under the strict CSP without errors (backlog 3a m8). The PDF comes
 // from `cargo test -p maatwerk-core --test typst_rapport`; without it the test
-// is skipped locally and fails in CI (which runs it after the cargo tests).
+// is skipped, except in the CI step after the cargo tests, which sets
+// MAATWERK_REAL_PDF=1 and fails when the PDF is missing.
 // It runs on the mock build, whose CSP shares every directive with the app's
 // except connect-src (ui/vite/csp.ts): the PDF comes from a blob: URL, not the
 // maatwerk-out scheme. That path is manual check M-TOE-5.
@@ -17,8 +18,9 @@ const PDF = fileURLToPath(new URL('../../target/tmp/e2e/rapport-valid.pdf', impo
 
 test('a real rapport renders in the PDF viewer without CSP errors', async ({ page }) => {
   const missing = `no ${PDF}: run cargo test -p maatwerk-core --test typst_rapport`;
-  // Locally optional; in CI the PDF must be there (review 6 m3).
-  if (process.env.CI) expect(existsSync(PDF), missing).toBe(true);
+  // Required only where the PDF must exist (review 6 m3). Not plain CI: the
+  // general e2e step runs before the cargo tests that write the PDF.
+  if (process.env.MAATWERK_REAL_PDF) expect(existsSync(PDF), missing).toBe(true);
   test.skip(!existsSync(PDF), missing);
   const errors = watchErrors(page);
   await login(page);

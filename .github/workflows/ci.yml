@@ -82,6 +82,8 @@ jobs:
       # A real compiled rapport (written by the typst_rapport tests) in pdf.js under the CSP.
       - run: npx playwright test --project chromium real-pdf
         working-directory: ui
+        env:
+          MAATWERK_REAL_PDF: '1'
       - name: Portable exe
         run: npm run build:exe
       # Only upload an exe whose shipped npm dependencies pass the allowlist (review 3a M3).
