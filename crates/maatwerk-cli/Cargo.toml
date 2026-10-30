@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 maatwerk-core.workspace = true
+serde = { workspace = true }
+serde_json.workspace = true
 # Same pinned version as maatwerk-core (`sys.inputs` values).
 typst = "=0.14.2"
 

@@ -3221,6 +3221,8 @@ name = "maatwerk-cli"
 version = "0.2.0"
 dependencies = [
  "maatwerk-core",
+ "serde",
+ "serde_json",
  "tempfile",
  "typst",
 ]

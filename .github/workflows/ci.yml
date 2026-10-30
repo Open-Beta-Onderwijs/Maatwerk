@@ -79,6 +79,13 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      # The v1 -> v2 migration on the large synthetic fixture must validate without errors.
+      - name: Migrate and validate the school fixture
+        shell: bash
+        run: |
+          node tools/fixtures/generate.mjs school "$RUNNER_TEMP/mig/shared/data"
+          cargo run -q -p maatwerk-cli -- migrate "$RUNNER_TEMP/mig/shared/data" --apply --backup-dir "$RUNNER_TEMP/mig/backups"
+          cargo run -q -p maatwerk-cli -- validate-data "$RUNNER_TEMP/mig/shared/data" > /dev/null
       # A real compiled rapport (written by the typst_rapport tests) in pdf.js under the CSP.
       - run: npx playwright test --project=chromium real-pdf
         working-directory: ui
