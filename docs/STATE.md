@@ -1,20 +1,22 @@
 # State
 
-Last updated: 2026-10-30 (Step 6 follow-up merged, PR #2) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-30 (Step 7a in progress) Branch: `step/07-data-v2` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 7a, not started.** The Step 6 follow-up is merged into `main` (PR #2, version 0.2.0, CI
-green): manual-test fixes M-GRP-1 (quirk U21) and M-OPD-6 (quirk U20 update),
-`docs/reviews/manual-test-step-06.md`, full `THIRD_PARTY_NOTICES.txt` (`npm run notices`,
-cargo-about 0.9.3, CI check after `cargo fetch`), "Over Maatwerk" (`ui/src/screens/about.ts`,
-version + `git describe` build via Vite `define`), README "Licence and source", PLAN Step 7 as
-7a/7b/7c with decisions 12-14 recorded (no encryption -> integrity stamp C19; sectievoorzitter
-rights; copyright line). CI fixes on the way: the real-PDF e2e test only requires its PDF in the
-step after `cargo test` (`MAATWERK_REAL_PDF=1`), and that step uses `--project=chromium`.
+**Step 7a: data format v2 and migration, in progress.** User decisions this session (2026-10-30):
+C10 = opaque ids for *new* exams/groups only, existing ids kept; C9 = `"N"` instead of `null`,
+invalid input stays the typed string. Format spec: `docs/reference/data-files-v2.md`; ADR-0003
+has C16-C19.
 
-Known: the local visual test `modal-scores` already fails on `main`; look at it in 7c, which
-touches the score modal.
+Done on the branch:
+1. ADR-0003 C16-C19 + C9/C10 shapes; `docs/reference/data-files-v2.md`.
+2. `maatwerk-core::integrity` (C19 stamp: SHA-256 of canonical JSON without `_meta.hash`).
+3. `maatwerk-core::migrate` (plan -> verified backup zip outside shared/OneDrive folder -> apply
+   -> `schema_version: 2` last; resumable; blocks on unmigrated legacy data / corrupt JSON).
+   Golden fixture `crates/maatwerk-core/tests/fixtures/migrate/{v1,v2}`
+   (`MAATWERK_UPDATE_GOLDEN=1` regenerates v2). Error codes `needs_migration`,
+   `migration_blocked`. zip 9.1.3 added (cargo deny ok; **run `npm run notices` before merge**).
 
 ## Step 6b summary
 
@@ -105,14 +107,24 @@ touches the score modal.
 
 ## In progress
 
-- Nothing.
+- Step 7a sub-task 4: `maatwerk-core::validate` (validate-data).
 
 ## Next action (concrete, resumable)
 
-1. Start Step 7a on a new branch `step/07-data-v2` (PLAN Step 7, "7a"). First sub-task: record
-   C16-C19 in `docs/adr/0003-data-format-v2-candidates.md` (decisions from PLAN section 9,
-   items 12-14), then migration tests from synthetic v1 fixtures before any migration code.
-2. Step 7 is L: tag `step-07a` at the end of 7a (safe checkpoint), then 7b, then 7c.
+Remaining 7a sub-tasks, each one commit:
+4. `validate` module: schema/shape, placement (id vs path), cross-refs, strays (conflict copies),
+   integrity stamps, missing images; Dutch messages; tests on the v2 golden.
+5. CLI `maatwerk-cli validate-data`, `maatwerk-cli migrate --dry-run | --apply --backup-dir`;
+   CI step: generate `school` fixture, migrate, validate (0 errors).
+6. Flip storage to v2: SUPPORTED_SCHEMA_VERSIONS = [2], v1 -> `needs_migration`, stamp on
+   write, trailing newline, verify on read (issue list), v2 seed for an empty folder, watcher
+   patterns (`gebruikers/`, `opdrachten/<id>/`), C18 rapporten path, C17 text CAS, app
+   commands (migrate, validate, accept stamp), opdracht v2 project for compiles.
+7. UI on v2: Store paths/shapes (students wrapper, gebruikers per file, school rev, opdracht
+   folders, string ids, `"N"`, opaque ids, CSV group match by name), startup "Migreren",
+   admin "Gegevenscontrole", editor conflict UI; generator v2 mode for the mock.
+8. Runbook `docs/cutover-runbook.md`, manual-test (M-START-3 etc.), parity, review, merge, tag
+   `step-07a`.
 
 ## Open questions for the user
 
