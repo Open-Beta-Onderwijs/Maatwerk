@@ -16,6 +16,7 @@ pub mod pdf_merge;
 pub mod presence;
 pub mod storage;
 pub mod typst_svc;
+pub mod validate;
 pub mod watcher;
 
 pub use error::{Error, Result};

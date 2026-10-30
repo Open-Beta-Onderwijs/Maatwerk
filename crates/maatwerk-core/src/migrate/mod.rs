@@ -22,6 +22,7 @@ use serde_json::Value;
 use time::OffsetDateTime;
 
 pub use backup::{BACKUP_PREFIX, check_backup_dir};
+pub(crate) use plan::walk_all;
 
 use crate::error::{Error, Result};
 use crate::storage::atomic::write_atomic;
