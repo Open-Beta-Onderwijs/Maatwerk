@@ -197,10 +197,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   `ui/e2e/csp.spec.ts`).
 - **n3:** `LICENSE` is the SPDX reflowed AGPL-3.0 text; replace with the verbatim gnu.org text when
   gnu.org is reachable.
-- **n5:** `src-tauri/tauri.conf.json` `version` duplicates the Cargo workspace version; drop it
-  (Tauri falls back to the Cargo version) or check it in CI. Note (2026-10-30): the workspace is
-  still `0.1.0` while the release tag is `v0.2.0-parity`; "Over Maatwerk" shows both. Settle with
-  PLAN section 9, decision 9 (versioning).
+- ~~**n5:** `tauri.conf.json` `version` duplicates the Cargo workspace version~~ Done 2026-10-30:
+  the field is gone (Tauri takes the Cargo version), version bumped to 0.2.0 to match the
+  `v0.2.0-parity` tag. The versioning policy itself is still PLAN section 9, decision 9.
 - **n6:** SPDX check skips toml/yml; decide whether config files need headers and whether to add a
   copyright line convention.
 - **n9:** CI hygiene: pin actions by SHA (Dependabot), avoid double runs on push + PR, avoid

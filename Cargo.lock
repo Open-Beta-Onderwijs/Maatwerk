@@ -3193,7 +3193,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "maatwerk-core",
  "rfd",
@@ -3216,7 +3216,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "maatwerk-core",
  "tempfile",
@@ -3225,7 +3225,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.23.1",
  "image",
