@@ -194,3 +194,39 @@ test('6a M1: an unsupported logo type is refused with a message', async ({ page 
   const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
   expect(calls).not.toContain('savePhoto');
 });
+
+test('M-GRP-1: a deleted group disappears from the admin list', async ({ page }) => {
+  await page.goto('/');
+  const group = await readMockJson<Record<string, unknown>>(
+    page,
+    `${YEAR}/groups/3a-nat-${YEAR}.json`,
+  );
+  const id = `leeg-nat-${YEAR}`;
+  await seedFiles(page, {
+    [`${YEAR}/groups/${id}.json`]: { ...group, id, name: 'Lege groep', student_ids: [] },
+  });
+  await login(page, 'nat', 'admin');
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  const del = page.locator(`[data-action="del-group"][data-id="${id}"]`);
+  await del.click();
+  await page.getByRole('button', { name: 'Verwijderen', exact: true }).click();
+  await expect(page.locator('.toast')).toContainText('Groep verwijderd');
+  await expect(del).toHaveCount(0);
+});
+
+test('U20: a file dropped on the editor is ignored', async ({ page }) => {
+  await login(page);
+  const frame = await openFirstOpdrachtInEditor(page);
+  const content = frame.locator('.cm-content');
+  const before = await content.textContent();
+  const editor = page.frames().find((f) => f.url().includes('editor.html'))!;
+  const dataTransfer = await editor.evaluateHandle(() => {
+    const dt = new DataTransfer();
+    dt.items.add(new File(['GEDROPT'], 'figuur.png', { type: 'image/png' }));
+    return dt;
+  });
+  await content.dispatchEvent('dragover', { dataTransfer });
+  await content.dispatchEvent('drop', { dataTransfer });
+  await page.waitForTimeout(300); // CodeMirror reads a dropped file asynchronously
+  expect(await content.textContent()).toBe(before);
+});

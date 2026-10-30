@@ -5,7 +5,9 @@
 // awaited and app.js is imported dynamically.
 import { installBridge } from './bridge';
 import { watchStyleData } from './legacy/style-data';
+import { blockFileDrops } from './utils/no-file-drop';
 
+blockFileDrops();
 watchStyleData();
 await installBridge();
 await import('./legacy/globals');

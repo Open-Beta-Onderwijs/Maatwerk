@@ -2,8 +2,10 @@
 
 import * as pdfjsLib from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { blockFileDrops } from './utils/no-file-drop';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+blockFileDrops();
 
 const INITIAL_SCALE = 1.25;
 const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];

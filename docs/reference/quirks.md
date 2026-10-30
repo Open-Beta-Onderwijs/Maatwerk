@@ -933,3 +933,17 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   drops away from the webview, so a dropped file does nothing. Not a supported way to add images
   in either app ("Figuur toevoegen" and paste are). Manual check `M-OPD-6`: dropping a file does
   nothing, and dragging **selected text** inside the editor still moves it.
+- **Changed after the Step 6 manual test (`M-OPD-6` failed):** on Windows, Tauri's window-level
+  drop handler also swallowed in-page drags, so selected text could not be moved in the editor.
+  `dragDropEnabled` is now `false`; `ui/src/utils/no-file-drop.ts` ignores file drags in the
+  capture phase in all three pages (without it, CodeMirror inserts a dropped file's bytes as
+  text). Test: quirks.spec "U20: a file dropped on the editor is ignored". Text drag needs the
+  real webview: manual check `M-OPD-6`.
+
+### U21. A deleted group stays in the admin's group list
+
+- Where: `renderer/store.js:484-490` (reference) `deleteGroup` removes the group from the cache
+  of its subject only. The admin's Groepen screen reads the `<year>/groups/__all__` cache, so the
+  deleted group stays on screen until a restart (the file is gone).
+- Found in the Step 6 manual test (`M-GRP-1`). Display only, no data change: fixed (both caches,
+  as `upsertGroup` already does). Test: quirks.spec "M-GRP-1".

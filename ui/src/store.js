@@ -451,8 +451,14 @@ const Store = (() => {
     const group = getGroupsSync(year).find((g) => g.id === id);
     if (!group) return;
     await window.maatwerk.deleteFile(ypGroup(year, id));
-    const key = `${year}/groups/${group.subject ?? _activeSubject}`;
-    cache[key] = (cache[key] ?? []).filter((g) => g.id !== id);
+    // The admin's list is the `__all__` cache; the reference only filtered the
+    // subject cache, so the deleted group stayed on screen (quirk U21).
+    for (const key of [
+      `${year}/groups/${group.subject ?? _activeSubject}`,
+      `${year}/groups/__all__`,
+    ]) {
+      if (cache[key]) cache[key] = cache[key].filter((g) => g.id !== id);
+    }
   }
 
   function getGroupsByJaarlaag(year, jaarlaag) {
