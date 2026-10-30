@@ -84,7 +84,8 @@ fn write_string(out: &mut String, s: &str) {
     out.push('"');
 }
 
-fn js_number(n: &Number) -> String {
+/// ECMAScript `String(n)` of a JSON number.
+pub(crate) fn js_number(n: &Number) -> String {
     if let Some(i) = n.as_i64() {
         return i.to_string();
     }

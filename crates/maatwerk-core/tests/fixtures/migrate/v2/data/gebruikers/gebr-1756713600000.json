@@ -1,0 +1,26 @@
+{
+  "id": "gebr-1756713600000",
+  "voornaam": "Docent",
+  "tussenvoegsel": "de",
+  "achternaam": "Proef",
+  "afkorting": "DPR2",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "vakken": [
+    "nat",
+    "wi"
+  ],
+  "kleur": "#aa3300",
+  "foto": "fotos/gebr-1756713600000.png",
+  "isAdmin": false,
+  "actief": false,
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "3be447e71e16bccc3f1d5cae873c90493b71a9b77b9765904875e8a2d7a3bd8e"
+  }
+}

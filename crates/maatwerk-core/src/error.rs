@@ -38,6 +38,15 @@ pub enum Error {
     #[error("unsupported schema_version {found} in config.json")]
     UnsupportedSchema { found: String },
 
+    /// The folder is still in the v1 format and must be migrated first (ADR-0003 C1).
+    #[error("data folder needs migration from schema_version {found}")]
+    NeedsMigration { found: u64 },
+
+    /// The migration found something it must not guess about (unmigrated legacy data, a corrupt
+    /// file); `message` lists it in Dutch for the admin. Nothing was changed.
+    #[error("migration blocked: {message}")]
+    MigrationBlocked { message: String },
+
     /// Invalid argument that is not a path (e.g. bad base64, bad year name).
     #[error("invalid argument: {message}")]
     InvalidArgument { message: String },
@@ -61,6 +70,8 @@ impl Error {
             Error::Conflict { .. } => "conflict",
             Error::Locked { .. } => "locked",
             Error::UnsupportedSchema { .. } => "unsupported_schema",
+            Error::NeedsMigration { .. } => "needs_migration",
+            Error::MigrationBlocked { .. } => "migration_blocked",
             Error::InvalidArgument { .. } => "invalid_argument",
             Error::Io { .. } => "io",
         }

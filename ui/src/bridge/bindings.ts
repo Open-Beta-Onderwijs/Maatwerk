@@ -163,7 +163,7 @@ export type DataFolderStatus = {
  *  the diagnostics as text), plus `internal` for failures of the shell itself (a crashed blocking
  *  task).
  */
-export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "invalid_argument" | "io" | "typst" | "internal";
+export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "needs_migration" | "migration_blocked" | "invalid_argument" | "io" | "typst" | "internal";
 
 /**  Structured context; only the fields that apply are set. */
 export type ErrorDetails = {
@@ -171,7 +171,7 @@ export type ErrorDetails = {
 	path?: string | null,
 	/**  `conflict`: the colleague who wrote the file, from `_meta.updatedBy`, when known. */
 	updatedBy?: string | null,
-	/**  `unsupported_schema`: the `schema_version` found. */
+	/**  `unsupported_schema`, `needs_migration`: the `schema_version` found. */
 	found?: string | null,
 };
 

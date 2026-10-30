@@ -8,6 +8,7 @@ pub mod assets;
 pub mod error;
 pub mod integrity;
 pub mod jsonfmt;
+pub mod migrate;
 pub mod opdracht_images;
 pub mod outputs;
 pub mod paths;

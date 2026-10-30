@@ -1,0 +1,24 @@
+{
+  "id": "3a-nat-2025-2026",
+  "name": "3a nat",
+  "jaarlaag": "3",
+  "subject": "nat",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "docenten": [
+    "gebr-1756713600000"
+  ],
+  "student_ids": [
+    1001,
+    "1002",
+    1002
+  ],
+  "_meta": {
+    "rev": 4,
+    "createdBy": "admin",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "admin",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "naam": "Synthetisch College",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "logo": "fotos/school-logo.png",
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "3a385aaee83590956e7a74b1a9460cbe1aa45ae9bf8b2c765d5858b1cef5f54b"
+  }
+}

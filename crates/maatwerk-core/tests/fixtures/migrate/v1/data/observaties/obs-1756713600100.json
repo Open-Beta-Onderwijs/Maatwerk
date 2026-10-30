@@ -1,0 +1,23 @@
+{
+  "id": "obs-1756713600100",
+  "naam": "Eenheden vergeten",
+  "icon": "📏",
+  "uitleg": "Let op eenheden.",
+  "leeradvies": "Schrijf altijd de eenheid op.",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "subjects": [
+    "nat"
+  ],
+  "jaarlagen": [
+    "3"
+  ],
+  "_meta": {
+    "rev": 2,
+    "createdBy": "admin",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "admin",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  }
+}

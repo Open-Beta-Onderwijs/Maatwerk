@@ -1,0 +1,16 @@
+{
+  "id": "obs-1756713600101",
+  "naam": "Rekenfout",
+  "icon": "🧮",
+  "uitleg": "",
+  "leeradvies": "",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "subjects": [
+    "wisb"
+  ],
+  "jaarlagen": [
+    "4"
+  ]
+}

@@ -5,7 +5,7 @@
 //!
 //! All methods block; callers on an async runtime use `spawn_blocking`.
 
-mod atomic;
+pub(crate) mod atomic;
 mod commit;
 mod entity;
 
