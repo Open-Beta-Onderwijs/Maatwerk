@@ -277,6 +277,9 @@ Paths in this section are relative to `_reference/renderer/`.
   first (from `exam.subcategory`), then the old `wi_<jaar>` key, then the defaults
   (`ui/src/domain/rapport.ts` `rttiExplFileCandidates`, `ui/src/services/rapport.ts`). The folder and
   key merge on disk stays for Step 7 (ADR-0003 C11). Tests: `ui/tests/domain/rapport.test.ts` ("B9").
+- **Step 7a (C11):** the files moved to `templates/rtti/<key>_<jaar>.json`; the migration copies a
+  `wi_<4..6>` file to every missing `wisa`..`wisd` file of that jaar. `validate-data` warns about
+  wiskunde exams of jaarlaag 4-6 without a subcategory (they find no advice).
 
 ### B10. Rapport leaves out students with only `N`s or only an override
 
@@ -373,6 +376,9 @@ Paths in this section are relative to `_reference/renderer/`.
   appended. `group.student_ids.includes(s.id)` (`screens/scores.js:379`, `store.js:1337`) also fails
   when the types are mixed. Leading zeros are lost.
 - **Why it matters:** This silently corrupts the roster. The port needs a single id type.
+- **Step 7a (C8):** student ids are strings everywhere; the migration merges entries that only
+  differed in the id's type. Imports and the student form keep the v1 acceptance rule
+  (`Number(input)`, 0 and non-numbers rejected) and store its text, so a re-import matches.
 
 ### B22. CSV parsing does not strip the BOM, assumes UTF-8 and has no `""` escape
 
@@ -416,6 +422,8 @@ Paths in this section are relative to `_reference/renderer/`.
   whose generated id already exists either conflicts or overwrites, depending on whether the revs
   match.
 - **Why it matters:** The resit gets unexpected "Cijfer onder" cards, and its metadata is wrong.
+- **Step 7a (C10):** a resit gets an opaque id, so it can no longer collide with an existing
+  exam. It still copies the parent's fields (the coupling and cards).
 
 ### B26. Exam ids collide on the same title
 
@@ -424,6 +432,8 @@ Paths in this section are relative to `_reference/renderer/`.
   with an existing id goes down the merge path (`i >= 0`) with `baseRev` undefined, which gives a
   conflict error, or it overwrites when it is not cached.
 - **Why it matters:** The id scheme is not unique, and creating such an exam fails confusingly.
+- **Fixed in Step 7a (C10):** new exams and groups get opaque ids (`toets-…`, `groep-…`); existing
+  ids are kept. The CSV group import matches existing groups by name instead.
 
 ### B27. `volgnummer` overflows above 99 exams per jaarlaag
 

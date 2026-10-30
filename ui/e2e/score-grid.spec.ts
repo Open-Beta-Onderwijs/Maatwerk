@@ -91,7 +91,8 @@ test.describe('entering scores', () => {
     await openGrid(page, EXAMS.empty);
     const id = await studentIdOf(page, 0);
     await typeInto(page, 0, E.q1, 'n');
-    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: null });
+    // Stored as "N" since format v2 (C9; the reference stored null).
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 'N' });
     await expect(cell(page, 0, E.q1)).toHaveText('N');
   });
 
@@ -103,7 +104,7 @@ test.describe('entering scores', () => {
     await select(page, 0, E.q2);
     await page.keyboard.type('4');
     await page.keyboard.press('NumpadDecimal');
-    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: null, q2: null });
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 'N', q2: 'N' });
   });
 
   test('G14 invalid input is kept, red, and reported', async ({ page }) => {
