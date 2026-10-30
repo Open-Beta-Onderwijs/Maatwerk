@@ -1,19 +1,20 @@
 # State
 
-Last updated: 2026-10-30 (after the Step 6 manual test) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-30 (Step 6 follow-up merged, PR #2) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-Between Step 6 and Step 7, branch `fix/manual-test-6` (local, not pushed or merged; gate green
-locally). Done on it: manual-test fixes M-GRP-1 (quirk U21) and M-OPD-6 (quirk U20 update),
+**Step 7a, not started.** The Step 6 follow-up is merged into `main` (PR #2, version 0.2.0, CI
+green): manual-test fixes M-GRP-1 (quirk U21) and M-OPD-6 (quirk U20 update),
 `docs/reviews/manual-test-step-06.md`, full `THIRD_PARTY_NOTICES.txt` (`npm run notices`,
 cargo-about 0.9.3, CI check after `cargo fetch`), "Over Maatwerk" (`ui/src/screens/about.ts`,
 version + `git describe` build via Vite `define`), README "Licence and source", PLAN Step 7 as
 7a/7b/7c with decisions 12-14 recorded (no encryption -> integrity stamp C19; sectievoorzitter
-rights; copyright line).
+rights; copyright line). CI fixes on the way: the real-PDF e2e test only requires its PDF in the
+step after `cargo test` (`MAATWERK_REAL_PDF=1`), and that step uses `--project=chromium`.
 
-Known: the local visual test `modal-scores` already fails on `main` (not caused by this branch);
-look at it in 7c, which touches the score modal.
+Known: the local visual test `modal-scores` already fails on `main`; look at it in 7c, which
+touches the score modal.
 
 ## Step 6b summary
 
@@ -108,16 +109,15 @@ look at it in 7c, which touches the score modal.
 
 ## Next action (concrete, resumable)
 
-1. With the user's OK: push `fix/manual-test-6`, wait for CI (first run of the notices check on
-   Linux), merge into `main` with a merge commit.
-2. Step 7a on `step/07-data-v2`: first record C16-C19 in ADR-0003, then migration tests from
-   synthetic v1 fixtures (PLAN Step 7a).
+1. Start Step 7a on a new branch `step/07-data-v2` (PLAN Step 7, "7a"). First sub-task: record
+   C16-C19 in `docs/adr/0003-data-format-v2-candidates.md` (decisions from PLAN section 9,
+   items 12-14), then migration tests from synthetic v1 fixtures before any migration code.
+2. Step 7 is L: tag `step-07a` at the end of 7a (safe checkpoint), then 7b, then 7c.
 
 ## Open questions for the user
 
-- Push and merge `fix/manual-test-6` (asked 2026-10-30).
-- Other section 9 items: versioning (workspace `0.1.0` vs tag `v0.2.0-parity`, backlog Step 0
-  n5), domain logic location (Step 10), macOS.
+- None blocking. Section 9 items still open: versioning policy (9), domain logic location
+  (Step 10), macOS.
 
 ## How to resume
 
