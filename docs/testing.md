@@ -18,7 +18,7 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 | `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 37 views; baseline is machine-specific, not committed                                                                |
 | `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)                                                                 |
 | `npm run bindings`                                      | no                                        | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005); run it from PowerShell (Git Bash's `link` shadows MSVC's) |
-| `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data in `data/` (refuses a non-empty folder), then the real app on it                                                            |
+| `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data (format v1) in `data/` (refuses a non-empty folder), then the real app on it: it first offers the v2 conversion (M-MIG-1)   |
 
 ### UI tests (Step 3a)
 

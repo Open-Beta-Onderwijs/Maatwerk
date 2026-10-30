@@ -17,6 +17,8 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
    `D:\maatwerk-test\` (it uses `data\` next to the exe), or set `MAATWERK_DATA_DIR`:
    `$env:MAATWERK_DATA_DIR = 'D:\maatwerk-test\data'; .\maatwerk.exe` (PowerShell).
 3. Keep the old app closed while testing on the same copy (old and new never share a folder).
+4. From Step 7a the app works on format v2: on a copy of the old app's folder it first shows the
+   conversion screen (M-MIG-1). Convert the copy, then test the rest on it.
 
 ## Start (M-START)
 
@@ -25,8 +27,8 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-START-2** The startup screen shows the subjects; after picking one, the teachers of that
       subject and the admin badge (with photos). Picking a teacher opens Leerlingen with the
       last-used year.
-- [ ] **M-START-3** Unusable data folder: point `MAATWERK_DATA_DIR` at a copy and add
-      `"schema_version": 99` to its `config.json` (a v1 folder has no such field yet). Expect the screen "Maatwerk kan de gegevensmap
+- [ ] **M-START-3** Unusable data folder: on a converted copy (M-MIG-1) change `"schema_version": 2`
+      in `config.json` to `99`. Expect the screen "Maatwerk kan de gegevensmap
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
@@ -83,7 +85,7 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       (logo, watermark, emoji medals, leeradvies text). Edit the RTTI uitleg/leeradvies texts
       ("Kopiëren naar…", "Opslaan"); unsaved changes ask "Blijven bewerken"/"Toch sluiten".
 - [ ] **M-TOE-6** "Afdrukken" in the rapport viewer: a copy appears in
-      `data\rapporten\<schooljaar>\` named `<YYYY-MM-DD HHmm> Rapport <vak> <groep> <toets>.pdf`
+      `rapporten\<schooljaar>\` **next to** `data\` (C18) named `<YYYY-MM-DD HHmm> Rapport <vak> <groep> <toets>.pdf`
       and opens in the default PDF app. A second print in the same minute gets ` (2)`.
 - [ ] **M-TOE-7** "Opdrachten genereren": cut-offs, "Alles aan"/"Alles uit", "Antwoordsleutel",
       "Genereren" shows progress and then the merged PDF; "Afdrukken" copies and opens it
@@ -96,9 +98,10 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 
 ## Opdrachten and the editor (M-OPD)
 
-- [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the opdracht and its `.typ` file
-      (`opdrachten\<id>.typ`, from the base template). "Kopiëren" copies text and images
-      ("Opdracht gekopieerd als …"); delete removes its images folder.
+- [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the folder `opdrachten\<id>\` with
+      `opdracht.json`, `opdracht.typ` (base template), `main.typ` and `lib.typ` (C14). "Kopiëren"
+      copies the folder, images included ("Opdracht gekopieerd als …"); delete removes the folder.
+      `typst compile main.typ` (plain Typst CLI 0.14) in an opdracht folder makes a PDF.
 - [ ] **M-OPD-2** Opening an opdracht shows the editor with the preview. Typing updates the
       preview; toolbar buttons insert their markup; Ctrl+scroll zooms the preview. A Typst
       error shows the message with line and column.
@@ -139,6 +142,29 @@ through OneDrive or a network share.
       door … wordt opnieuw geladen" or "Niet opgeslagen: dit is intussen … gewijzigd", never a
       silent overwrite.
 - [ ] **M-SYNC-4** Switching the year in one app: changes in that year from the other app arrive.
+- [ ] **M-SYNC-5** Both open the same opdracht in the editor; A types and waits for "Opgeslagen",
+      then B types: B sees "Intussen gewijzigd door een collega" and A's text is not overwritten.
+      "Hun versie laden" shows A's text; "Mijn versie bewaren als kopie" makes "<naam> (kopie)"
+      with B's text (C17).
+- [ ] **M-SYNC-6** Two admins edit the same user (Gebruikers) or the same school field: the second
+      save is refused with "intussen … gewijzigd" (C16).
+
+## Data format v2 (M-MIG)
+
+- [ ] **M-MIG-1** Start the exe on a copy of the old app's folder: "Deze gegevensmap moet eenmalig
+      worden omgezet". "Omzetten" stays grey until the box is ticked. After converting: the
+      summary with the backup path (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`) and
+      the check; "Maatwerk starten" opens the app with all students, exams, scores, opdrachten and
+      RTTI texts as in the old app (spot-check a few grades and one rapport against the old app's
+      PDF).
+- [ ] **M-MIG-2** The backup zip opens in Explorer and holds the whole old `data\` folder.
+- [ ] **M-MIG-3** `maatwerk-cli migrate <copy>\data --dry-run` lists what would change and changes
+      nothing; `--apply --backup-dir <folder inside OneDrive>` is refused.
+- [ ] **M-MIG-4** Admin tab "Gegevenscontrole" lists the check. Edit a group file by hand
+      (Notepad): after "Opnieuw controleren" it shows "Buiten Maatwerk gewijzigd"; "Accepteren"
+      removes the line. At the next admin login a notice says so before you look.
+- [ ] **M-MIG-5** Put a copy of a group file next to it as `<naam> (1).json`: the check lists it as
+      "OneDrive-conflictkopie".
 
 ## Shutdown (M-END)
 

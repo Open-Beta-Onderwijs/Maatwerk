@@ -9,7 +9,7 @@ C10 = opaque ids for _new_ exams/groups only, existing ids kept; C9 = `"N"` inst
 invalid input stays the typed string. Format spec: `docs/reference/data-files-v2.md`; ADR-0003
 has C16-C19.
 
-Done on the branch:
+Done on the branch (`step/07-data-v2`, one commit each):
 
 1. ADR-0003 C16-C19 + C9/C10 shapes; `docs/reference/data-files-v2.md`.
 2. `maatwerk-core::integrity` (C19 stamp: SHA-256 of canonical JSON without `_meta.hash`).
@@ -17,7 +17,22 @@ Done on the branch:
    -> `schema_version: 2` last; resumable; blocks on unmigrated legacy data / corrupt JSON).
    Golden fixture `crates/maatwerk-core/tests/fixtures/migrate/{v1,v2}`
    (`MAATWERK_UPDATE_GOLDEN=1` regenerates v2). Error codes `needs_migration`,
-   `migration_blocked`. zip 9.1.3 added (cargo deny ok; **run `npm run notices` before merge**).
+   `migration_blocked`. zip 9.1.3 + sha2 0.11 (cargo deny ok, notices regenerated).
+4. `maatwerk-core::validate` (validate-data: version, corrupt, stamps, placement, conflict
+   copies/strays, references, images, opdracht folders; Dutch messages).
+5. CLI `validate-data`, `migrate --dry-run | --apply --backup-dir`; CI migrates the generated
+   `school` fixture and validates it.
+6. Storage/app on v2: v1 -> `needs_migration`; stamp on write, check on read (`stamp_issues`,
+   `accept_stamp`); trailing newline; v2 seed; opdracht folders (`TypstProject::opdracht`,
+   create/copy/delete folder, `read_opdrachten`); text CAS (C17); `rapporten/` next to `data/`
+   (C18); commands `migrate_data_folder`, `validate_data_folder`.
+7. UI on v2: `domain/v2.ts` codec at the Store boundary (in memory still `null` = N and a plain
+   student array, so grades/reports unchanged); users per file + school rev check (C16); opaque
+   ids (C10) with CSV group match by name; editor conflict bar (C17); migration screen at start;
+   admin tab Gegevenscontrole + check at admin login. `tools/fixtures/to-v2.mjs` converts the
+   mock fixture and the golden scenarios. All golden differences were format-only.
+8. e2e updated (94 pass); `docs/cutover-runbook.md`; manual tests M-MIG-1..5, M-SYNC-5/6,
+   M-START-3, M-TOE-6, M-OPD-1 updated; quirks B9/B21/B25/B26; parity rows.
 
 ## Step 6b summary
 
@@ -108,19 +123,14 @@ Done on the branch:
 
 ## In progress
 
-- Step 7a sub-task 4: `maatwerk-core::validate` (validate-data).
+- Step 7a gate and review (`docs/reviews/step-07a.md`), then tag `step-07a` on the branch (as
+  6a: the step branch merges into `main` at the end of Step 7).
 
 ## Next action (concrete, resumable)
 
-Remaining 7a sub-tasks, each one commit: 4. `validate` module: schema/shape, placement (id vs path), cross-refs, strays (conflict copies),
-integrity stamps, missing images; Dutch messages; tests on the v2 golden. 5. CLI `maatwerk-cli validate-data`, `maatwerk-cli migrate --dry-run | --apply --backup-dir`;
-CI step: generate `school` fixture, migrate, validate (0 errors). 6. Flip storage to v2: SUPPORTED_SCHEMA_VERSIONS = [2], v1 -> `needs_migration`, stamp on
-write, trailing newline, verify on read (issue list), v2 seed for an empty folder, watcher
-patterns (`gebruikers/`, `opdrachten/<id>/`), C18 rapporten path, C17 text CAS, app
-commands (migrate, validate, accept stamp), opdracht v2 project for compiles. 7. UI on v2: Store paths/shapes (students wrapper, gebruikers per file, school rev, opdracht
-folders, string ids, `"N"`, opaque ids, CSV group match by name), startup "Migreren",
-admin "Gegevenscontrole", editor conflict UI; generator v2 mode for the mock. 8. Runbook `docs/cutover-runbook.md`, manual-test (M-START-3 etc.), parity, review, merge, tag
-`step-07a`.
+1. Full gate (CLAUDE.md commands + `npm run test:e2e`), reviewer subagent for 7a (Appendix C),
+   fix blockers/majors, tag `step-07a`, stop and report.
+2. Then 7b (accounts, roles, snapshots) when the user says so.
 
 ## Open questions for the user
 
