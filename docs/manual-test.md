@@ -25,8 +25,8 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-START-2** The startup screen shows the subjects; after picking one, the teachers of that
       subject and the admin badge (with photos). Picking a teacher opens Leerlingen with the
       last-used year.
-- [ ] **M-START-3** Unusable data folder: point `MAATWERK_DATA_DIR` at a copy whose
-      `config.json` has `"schema_version": 99`. Expect the screen "Maatwerk kan de gegevensmap
+- [ ] **M-START-3** Unusable data folder: point `MAATWERK_DATA_DIR` at a copy and add
+      `"schema_version": 99` to its `config.json` (a v1 folder has no such field yet). Expect the screen "Maatwerk kan de gegevensmap
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
