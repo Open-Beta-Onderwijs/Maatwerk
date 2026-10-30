@@ -25,7 +25,9 @@ pub fn check_backup_dir(root: &Path, dir: &Path) -> Result<PathBuf> {
     let dir = canonical_lenient(dir)?;
     let root = canonical(root)?;
     let mut forbidden = vec![(root.clone(), "de gegevensmap")];
-    if let Some(parent) = root.parent() {
+    // The shared folder, unless the data folder sits directly in a drive root (`C:\data`):
+    // then the whole drive would be forbidden (review 7a m5).
+    if let Some(parent) = root.parent().filter(|p| p.parent().is_some()) {
         forbidden.push((parent.to_path_buf(), "de gedeelde map"));
     }
     for var in ONEDRIVE_VARS {

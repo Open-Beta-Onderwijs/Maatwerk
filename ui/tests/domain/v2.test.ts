@@ -34,6 +34,10 @@ describe('v2 codec at the Store boundary (C8, C9)', () => {
     expect(decode(STUDENTS, disk)).toEqual([{ id: '1', achternaam: 'A' }]);
     expect(decode(STUDENTS, { students: [{ id: 2 }] })).toEqual([{ id: '2' }]);
     expect(decode(STUDENTS, null)).toBeNull();
+    // Review 7a M1: a v1 bare array is read; any other shape is refused, never an empty list.
+    expect(decode(STUDENTS, [{ id: 4 }])).toEqual([{ id: '4' }]);
+    expect(() => decode(STUDENTS, { leerlingen: [] })).toThrow('geen lijst met leerlingen');
+    expect(() => decode(STUDENTS, 'x')).toThrow('geen lijst met leerlingen');
     expect(encode(STUDENTS, [{ id: 3, achternaam: 'B' }])).toEqual({
       students: [{ id: '3', achternaam: 'B' }],
     });

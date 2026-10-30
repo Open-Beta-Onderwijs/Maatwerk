@@ -207,6 +207,22 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **n2:** keep the two licence allowlists (`deny.toml`, `tools/check-npm-licenses.mjs`) in sync;
   consider generating one from the other.
 
+## From Step 7a (review `docs/reviews/step-07a.md`)
+
+- **m2:** `stamp_issues`/`stampIssues` are not shown in the UI yet; use them for "Herstellen uit
+  snapshot" in 7b or drop them.
+- **m6:** CI check that `tools/fixtures/to-v2.mjs` and `maatwerk-cli migrate` give the same tree
+  for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).
+- **n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
+  remove after the cutover.
+- **n3:** the data-files-v2 text on merging duplicate students vs. the Rust merge details.
+- **n4:** the conflict-copy check can label a misplaced file as a conflict copy.
+- **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones
+  each file; measure in 7c.
+- **n6:** the user active toggle changes the cached user before saving; a conflict leaves the
+  wrong state on screen.
+- **n8:** saving the students file drops top-level keys other than `students`.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the

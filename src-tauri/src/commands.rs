@@ -201,8 +201,8 @@ pub async fn read_text_file_versioned(
 }
 
 /// Atomic text write, only `opdrachten/<id>/<name>.typ` (backlog n8, C14). With
-/// `expectedHash` the file must still have that hash, else error `conflict` (C17); without it
-/// the write is blind. Returns the new hash.
+/// `expectedHash` the file must still have that hash (`""`: must not exist), else error
+/// `conflict` (C17); without it the write is blind. Returns the new hash.
 #[tauri::command]
 #[specta::specta]
 pub async fn write_text_file(
@@ -215,6 +215,8 @@ pub async fn write_text_file(
         let rel = rel(&rel_path)?;
         check_opdracht_typ_path(&rel)?;
         let expect = match &expected_hash {
+            // "" = the editor loaded no file: it must still not exist (review 7a m1).
+            Some(h) if h.is_empty() => Expect::Missing,
             Some(h) => Expect::Hash(h),
             None => Expect::Any,
         };

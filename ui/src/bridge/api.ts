@@ -118,7 +118,8 @@ export interface MaatwerkApi {
   readTextFileVersioned(relPath: string): Promise<{ text: string; hash: string } | null>;
   /**
    * Writes `opdrachten/<id>/<name>.typ`. With `expectedHash` the file must
-   * still have that hash, else `{ ok: false, reason: 'conflict' }` (C17).
+   * still have that hash (`''`: must not exist), else `{ ok: false, reason:
+   * 'conflict' }` (C17).
    */
   writeTextFile(
     relPath: string,

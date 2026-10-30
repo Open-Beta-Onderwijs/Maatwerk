@@ -278,9 +278,12 @@ pub fn print_copy(
             .open(&path);
         match created {
             Ok(mut f) => {
-                f.write_all(pdf)
-                    .and_then(|()| f.sync_all())
-                    .map_err(|e| Error::io(rel.as_str(), e))?;
+                if let Err(e) = f.write_all(pdf).and_then(|()| f.sync_all()) {
+                    // No truncated PDF under its final name in the synced folder (review 7a m3).
+                    drop(f);
+                    let _ = fs::remove_file(&path);
+                    return Err(Error::io(rel.as_str(), e));
+                }
                 return Ok(rel);
             }
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists && n < 1000 => continue,

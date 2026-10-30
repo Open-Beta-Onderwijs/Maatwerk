@@ -45,7 +45,15 @@ function mapScores(rec: Obj, f: (v: unknown) => unknown): void {
 export function decode(relPath: string, data: unknown): unknown {
   if (data === null || data === undefined) return data;
   if (STUDENTS_PATH.test(relPath)) {
-    const list = isObj(data) && Array.isArray(data.students) ? data.students : [];
+    // A bare array is the v1 shape (a file a colleague's old app wrote, or one not yet
+    // synced): read it as the list. Anything else is refused, never read as an empty list:
+    // the next save would replace the whole year with one student (review 7a M1).
+    const list = Array.isArray(data)
+      ? data
+      : isObj(data) && Array.isArray(data.students)
+        ? data.students
+        : null;
+    if (!list) throw new Error(`Bestand ${relPath} heeft geen lijst met leerlingen.`);
     return list.map((s) => (isObj(s) && 'id' in s ? { ...s, id: studentId(s.id) } : s));
   }
   if (SCORE_PATH.test(relPath) && isObj(data)) {

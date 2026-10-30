@@ -96,8 +96,14 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
       go.remove();
       box.append(done);
     } catch (e) {
-      // Nothing was changed when the migration refused (migration_blocked).
-      status.textContent = `Niet omgezet: ${asFolderError(e).message}`;
+      // A refusal (migration_blocked) changed nothing; a failure later on leaves a partly
+      // converted folder that a next attempt finishes (the backup was made first).
+      const err = asFolderError(e);
+      status.textContent =
+        err.code === 'migration_blocked'
+          ? `Niet omgezet, er is niets veranderd:\n${err.message}`
+          : `Omzetten mislukt: ${err.message}\nDe back-up is gemaakt. Probeer het opnieuw: ` +
+            'het omzetten gaat verder waar het stopte.';
       check.disabled = false;
       go.disabled = !check.checked;
     }

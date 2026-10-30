@@ -380,7 +380,9 @@ const Store = (() => {
   async function setActiveYear(year) {
     cache['config.json'] = await update(
       'config.json',
-      (cfg) => Object.assign(cfg, { activeYear: year }),
+      // A missing config.json (still syncing) must not come back without schema_version
+      // (review 7a m4): every PC would then offer the migration.
+      (cfg) => Object.assign(cfg, { activeYear: year, schema_version: cfg.schema_version ?? 2 }),
       () => ({}),
     );
   }

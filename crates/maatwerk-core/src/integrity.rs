@@ -100,6 +100,25 @@ pub fn stamp(value: &mut Value) {
     }
 }
 
+/// The file text Maatwerk writes for `value` (`JSON.stringify(x, null, 2)` plus a newline, C13)
+/// with a stamp that matches that text when it is read back. The JS number format can change a
+/// value (`2.0` and `1e2` are written as `2` and `100`), so the stamp is taken from the value as
+/// written (review 7a M2). Returns the value as written and the text.
+pub fn stamped_text(value: &Value) -> (Value, String) {
+    let mut v = value.clone();
+    stamp(&mut v);
+    let mut text = crate::jsonfmt::to_js_json(&v);
+    if let Ok(mut back) = serde_json::from_str::<Value>(&text)
+        && check(&back) != StampState::Ok
+    {
+        stamp(&mut back);
+        text = crate::jsonfmt::to_js_json(&back);
+        v = back;
+    }
+    text.push('\n');
+    (v, text)
+}
+
 /// Checks the stamp of `value`.
 pub fn check(value: &Value) -> StampState {
     let Value::Object(map) = value else {
@@ -171,6 +190,19 @@ mod tests {
         let mut arr = json!([1]);
         stamp(&mut arr);
         assert_eq!(arr, json!([1]), "arrays cannot carry a stamp");
+    }
+
+    #[test]
+    fn m2_the_stamp_describes_numbers_as_written() {
+        // `2.0` is written as `2` and `1e2` as `100` (JS number format).
+        let v: Value = serde_json::from_str(r#"{"a": 2.0, "b": 1e2, "c": [0.5]}"#).unwrap();
+        let (written, text) = stamped_text(&v);
+        let back: Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(check(&back), StampState::Ok, "{text}");
+        assert_eq!(back, written);
+        assert!(text.ends_with("}\n"));
+        // Writing the read-back value again gives the same bytes.
+        assert_eq!(stamped_text(&back).1, text);
     }
 
     #[test]

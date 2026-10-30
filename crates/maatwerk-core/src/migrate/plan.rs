@@ -15,7 +15,7 @@ use super::Op;
 use crate::assets;
 use crate::error::{Error, Result};
 use crate::integrity;
-use crate::jsonfmt::{js_number, to_js_json};
+use crate::jsonfmt::js_number;
 use crate::paths::is_year_name;
 use crate::storage::iso_utc;
 
@@ -162,10 +162,8 @@ impl Planner<'_> {
 
     /// Plans writing `value` stamped (C19), formatted with a trailing newline (C13); skipped when
     /// the file already holds exactly that.
-    fn write_json(&mut self, rel: &str, mut value: Value) {
-        integrity::stamp(&mut value);
-        let mut text = to_js_json(&value);
-        text.push('\n');
+    fn write_json(&mut self, rel: &str, value: Value) {
+        let (_, text) = integrity::stamped_text(&value);
         self.write_bytes(rel, text.into_bytes());
     }
 

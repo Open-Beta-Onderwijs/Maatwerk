@@ -31,13 +31,15 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
    `"online": false`, or its `heartbeatAt` is more than a few minutes old.
 2. Wait until OneDrive shows the folder as synced (green tick) on the admin's PC.
 3. **Backup and migrate**, one of:
-   - In the new app: start `maatwerk.exe` from the shared folder. It shows "Deze gegevensmap moet
+   - In the new app: put the new `maatwerk.exe` in the shared folder next to `data\` (step 4.1)
+     and start it there; only the admin starts it before the migration. It shows "Deze gegevensmap moet
      eenmalig worden omgezet". Tick the box, click **Omzetten**. The backup goes to
      `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`; the screen shows the path and the
      check. Click **Maatwerk starten**.
    - Or with the CLI: `maatwerk-cli migrate <shared>\data --apply --backup-dir <local folder>`.
      The backup folder must be outside OneDrive and outside the shared folder (the tool refuses
-     otherwise).
+     otherwise). It cannot recognise a SharePoint library synced by OneDrive: choose a plain
+     local folder such as `C:\Maatwerk-backups`.
 4. **Copy the backup zip** to a second place (a USB stick or the school network drive). Note its
    name in the log below.
 5. Open **Gegevenscontrole** (admin tab). No errors expected; warnings are listed for later.

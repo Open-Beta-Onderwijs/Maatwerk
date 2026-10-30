@@ -46,8 +46,8 @@ export const commands = {
 	readTextFileVersioned: (relPath: string) => typedError<VersionedText | null, CommandError>(__TAURI_INVOKE("read_text_file_versioned", { relPath })),
 	/**
 	 *  Atomic text write, only `opdrachten/<id>/<name>.typ` (backlog n8, C14). With
-	 *  `expectedHash` the file must still have that hash, else error `conflict` (C17); without it
-	 *  the write is blind. Returns the new hash.
+	 *  `expectedHash` the file must still have that hash (`""`: must not exist), else error
+	 *  `conflict` (C17); without it the write is blind. Returns the new hash.
 	 */
 	writeTextFile: (relPath: string, content: string, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("write_text_file", { relPath, content, expectedHash })),
 	/**  Writes `users/<userId>.json`; `null` user = logged out. Write failures are only logged. */

@@ -718,7 +718,7 @@ async function loadTheirs() {
     changes: { from: 0, to: view.state.doc.length, insert: read?.text ?? '' },
   });
   replacingDoc = false;
-  baseHash = read?.hash ?? null;
+  baseHash = read?.hash ?? '';
   lastSaveFailed = false;
   showConflict(false);
   setStatus('Versie van je collega geladen');
@@ -828,7 +828,8 @@ async function init() {
       postToParent('maatwerk-get-data-dir'),
     ]);
     content = read?.text ?? null;
-    baseHash = read?.hash ?? null;
+    // No file yet: the first save must not overwrite one a colleague made meanwhile ('').
+    baseHash = read?.hash ?? '';
   } catch (err) {
     // No editor view is created, so nothing can overwrite the file.
     setStatus('Fout bij laden', err.message);
@@ -1314,7 +1315,7 @@ function insertSelecting(v, snippet, placeholder) {
 }
 
 // ── Figures / images ──────────────────────────────────────────────────────────
-// Images live in data/opdrachten/images/<opdracht id>/ (see main.js). The figure
+// Images live in the opdracht's folder, opdrachten/<id>/images/ (C14). The figure
 // popup offers the opdracht's existing images, a file from disk and the
 // clipboard; Ctrl+V of an image in the editor works too. A new image is first
 // given a name, then a #figure referring to it is inserted at the cursor.

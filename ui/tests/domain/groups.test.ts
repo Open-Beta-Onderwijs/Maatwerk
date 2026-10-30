@@ -48,7 +48,7 @@ describe('withImportIds (C10)', () => {
   it('keeps the id of an existing group with the same name, new names get an opaque id', () => {
     const existing = [group(), group({ id: 'groep-x-aaaaaa', name: '4b wisb' })];
     const out = withImportIds(existing, [
-      { name: ' 3A NAT ' },
+      { name: ' 3A-Nat ' },
       { name: '5c bio' },
       { name: '5C bio' },
       { name: '4b wisb' },

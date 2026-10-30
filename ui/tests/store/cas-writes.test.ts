@@ -116,7 +116,12 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
     await api.writeJson('config.json', { activeYear: '2024-2025', other: 1 });
     writes.mockClear();
     await Store.setActiveYear!(YEAR);
-    expect(await disk(api, 'config.json')).toEqual({ activeYear: YEAR, other: 1 });
+    // Review 7a m4: schema_version is (re)set too.
+    expect(await disk(api, 'config.json')).toEqual({
+      activeYear: YEAR,
+      other: 1,
+      schema_version: 2,
+    });
     expect((await Store.getConfig!()).activeYear).toBe(YEAR);
     expect(writes.mock.calls.every((c) => c[2]?.cas === true)).toBe(true);
   });

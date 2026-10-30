@@ -103,11 +103,15 @@ fn backup_dir(app: &AppHandle) -> Res<PathBuf> {
 pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Res<MigrationResult> {
     let backups = backup_dir(&app)?;
     blocking(state, move |c| {
-        if c.storage().is_ok() {
-            return Err(maatwerk_core::Error::InvalidArgument {
-                message: "De gegevensmap is al omgezet.".into(),
+        // Only a folder that could not be opened because it is v1 (review 7a m5).
+        match c.storage() {
+            Err(e) if e.code == crate::error::ErrorCode::NeedsMigration => {}
+            _ => {
+                return Err(maatwerk_core::Error::InvalidArgument {
+                    message: "Deze gegevensmap hoeft niet omgezet te worden.".into(),
+                }
+                .into());
             }
-            .into());
         }
         let data_dir = c.data_dir().to_path_buf();
         let report = migrate::migrate(&data_dir, Some(&backups), local_now())?;

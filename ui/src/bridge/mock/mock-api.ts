@@ -378,7 +378,9 @@ export class MockApi implements MaatwerkApi {
     this.record('writeTextFile', [relPath, content, expectedHash]);
     if (!/^opdrachten\/[\w-]+\/[^/]+\.typ$/i.test(relPath))
       throw new Error(`invalid path ${JSON.stringify(relPath)}`);
-    if (expectedHash) {
+    if (expectedHash === '') {
+      if (this.files.has(relPath)) return { ok: false, reason: 'conflict' };
+    } else if (expectedHash) {
       const current = this.files.get(relPath);
       if (!current || (await sha1(current)) !== expectedHash)
         return { ok: false, reason: 'conflict' };

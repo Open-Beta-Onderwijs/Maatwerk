@@ -372,10 +372,7 @@ impl Storage {
     /// `_meta.hash` (C19). The check and the rename run under the commit lock, so no write from
     /// this PC can land in between (S37).
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
-        let mut value = value.clone();
-        integrity::stamp(&mut value);
-        let mut text = to_js_json(&value);
-        text.push('\n');
+        let (value, text) = integrity::stamped_text(value);
         self.commit_bytes(rel, text.as_bytes(), expect, true)?;
         self.note_stamp(rel.as_str(), &value);
         Ok(hash_hex(text.as_bytes()))

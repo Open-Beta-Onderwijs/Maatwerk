@@ -70,11 +70,15 @@ export function groupOverwrites(existing: Group[], incoming: Group[]): GroupOver
   return result;
 }
 
-/** Group names compare trimmed and case-insensitively. */
+/**
+ * Group names compare as the v1 id did (`makeGroupId`'s slug): case, spaces and punctuation
+ * do not matter, so "3a nat" matches "3A-Nat" as before (review 7a m7).
+ */
 const nameKey = (name: unknown) =>
   String(name ?? '')
-    .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
 /**
  * Ids for imported groups (C10): an existing group with the same name in the

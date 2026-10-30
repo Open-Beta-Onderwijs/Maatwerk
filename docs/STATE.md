@@ -123,14 +123,14 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-- Step 7a gate and review (`docs/reviews/step-07a.md`), then tag `step-07a` on the branch (as
-  6a: the step branch merges into `main` at the end of Step 7).
+- Nothing. Step 7a done and tagged `step-07a` on `step/07-data-v2` (not merged: the step branch
+  merges into `main` at the end of Step 7, as with 6a). Review `docs/reviews/step-07a.md`: no
+  blockers; M1-M3 and m1, m3-m5, m7, n2, n7 fixed; rest in `docs/backlog.md`.
 
 ## Next action (concrete, resumable)
 
-1. Full gate (CLAUDE.md commands + `npm run test:e2e`), reviewer subagent for 7a (Appendix C),
-   fix blockers/majors, tag `step-07a`, stop and report.
-2. Then 7b (accounts, roles, snapshots) when the user says so.
+1. Wait for the user. Then 7b (accounts, roles, snapshots) on the same branch.
+2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5 on a copy of real data.
 
 ## Open questions for the user
 
