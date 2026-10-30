@@ -20,6 +20,7 @@ import { renderSchool } from './screens/school.js';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
+import { showAbout } from './screens/about';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -922,6 +923,8 @@ async function initFilterBar(user, subject) {
 }
 
 // ── User badge (topbar) ───────────────────────────────────────────────────────
+document.getElementById('btn-about').addEventListener('click', showAbout);
+
 const userBadgeBtn = document.getElementById('user-badge-btn');
 
 export async function showUserBadge(user, subject) {

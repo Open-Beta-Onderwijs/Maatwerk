@@ -344,8 +344,8 @@ The user now tests on a **copy** of real data and reports differences. Fix them 
 Only change what the user approved from ADR-0003. **The user approved all candidates** (2026-10-25); the migration covers C1, C2, C3 (delete `.lock`), C5, C8, C9, C10, C11 (folder rename), C12, C13 and C14 (opdracht project folders), per the timing table in ADR-0003. C9 and C10 are high risk: migration tests first, and stop and ask if the goldens show unexpected changes.
 
 Extended after the Step 6 manual test (user, 2026-10-30): new candidates C16-C19 below, accounts and
-snapshots (7b) and perceived speed (7c). Items marked **(decide)** wait for the user's answer
-(section 9, decisions 12-14); record the answers in ADR-0003 or a new ADR before building them.
+snapshots (7b) and perceived speed (7c). Decisions 12-14 (section 9) were answered on 2026-10-30;
+record C16-C19 in ADR-0003 at the start of 7a.
 
 **7a: data format v2 and migration**
 
@@ -356,14 +356,19 @@ snapshots (7b) and perceived speed (7c). Items marked **(decide)** wait for the 
 - **C16 per-record files for shared admin data (collision fix):** `gebruikers.json` (one array, no `_meta`) becomes `gebruikers/<id>.json` with `_meta`; `school.json` gets `_meta`. The user and school forms get the same stale-edit check as students/groups/exams ("gewijzigd door ... wordt opnieuw geladen"). Today two admins editing the *same* user or school field overwrite each other silently (the CAS retry only protects the other records in the file).
 - **C17 opdracht text with CAS:** the editor writes `opdracht.typ` with the hash it loaded (today a blind write: two teachers editing one opdracht silently overwrite each other, and an open editor never sees the other's change). On conflict: keep the teacher's text and show "Intussen gewijzigd door ..." with "Hun versie laden" / "Mijn versie bewaren als kopie". The edit lease (presence "bewerkt deze opdracht", read-only for others) follows in Step 8 with the new editor.
 - **C18 `rapporten/` next to the data folder** (user, manual test `M-TOE-6`): printed copies go to `<parent of data>/rapporten/<schooljaar>/` instead of `data/rapporten/`. The migration moves existing copies. If the data folder itself is the root of the shared folder, `rapporten/` is not shared; the setup docs say to keep the exe, `data\` and `rapporten\` together in one shared folder.
-- **C19 encryption at rest (decide, decision 12):** only if the user chooses it. It must be part of the v2 format, otherwise it costs a second migration.
+- **C19 integrity stamp instead of encryption (decision 12):** detects accidental changes made outside Maatwerk (OneDrive quirks, a hand edit, a file dropped in the wrong folder), also while no app is running. Not tamper-proof (anyone can re-stamp), and not meant to be.
+  - Every JSON file Maatwerk writes carries `_meta.hash`: SHA-256 over the file's canonical JSON with `_meta.hash` left out. Stamped in `maatwerk-core::storage` on every write (one place; the UI never computes it). **Inside** the file, not a sidecar `.sha256`: one atomic write, so OneDrive can never deliver a file and its hash out of step (a sidecar gives false alarms while syncing and doubles the file count).
+  - Placement checks for misplaced files: the id/year in a file matches its path (`groups/<id>.json`, `<year>/...`); OneDrive conflict copies (`naam-PCNAAM.json`, `naam (1).json`) and unknown files are listed as strays.
+  - Checked on every read (cheap) and by `validate-data` at start. A mismatch never blocks work: it is logged and the admin sees "Buiten Maatwerk gewijzigd" with the file, "Accepteren" (re-stamp) or "Herstellen uit snapshot" (7b).
+  - Not for `.typ` files and images: editing an opdracht folder with an external Typst editor is a wanted use (Step 9).
+  - The migration stamps every file (it rewrites them all for C5/C13 anyway).
 - `docs/cutover-runbook.md`: backup, announce, everyone closes the old app, one admin runs migration, distribute the new exe, move the old exe away, rollback plan (restore backup).
 
 **7b: accounts, roles, snapshots** (additive: an absent field means "no PIN yet", "no role")
 
 - **PIN login:** each teacher sets a PIN (5-8 digits) at the first login and can change it. Stored per user as an Argon2id hash with salt (`argon2` crate, MIT/Apache) in `gebruikers/<id>.json`. Wrong PIN: a growing delay per attempt (local). Only the admin can reset a teacher's PIN; the teacher then sets a new one at the next login.
 - **Admin PIN and recovery:** the admin has a PIN too, plus 10 single-use recovery codes shown **once** at setup ("Afdrukken" / "Opslaan als"), stored only as hashes. Last resort, documented in the runbook: `maatwerk-cli admin reset-pin` on the data folder. Anyone with write access to the folder can edit the files anyway; the PIN guards the shared PC, not the files.
-- **Sectievoorzitter (decide, decision 13):** a role per vak, assigned by the admin to a teacher of that vak (e.g. `school.json` `secties: { nat: { voorzitter: <userId> } }`), not a separate user record. The login screen shows a separate "Sectievoorzitter <vak>" badge; it asks the PIN of the assigned teacher, and `_meta.updatedBy` records that teacher. Rights: move students between the groups of that vak. All other admin rights (users, school, settings) stay with the admin.
+- **Sectievoorzitter (decision 13):** a role per vak, assigned by the admin to a teacher of that vak (e.g. `school.json` `secties: { nat: { voorzitter: <userId> } }`), not a separate user record. The login screen shows a separate "Sectievoorzitter <vak>" badge; it asks the PIN of the assigned teacher, and `_meta.updatedBy` records that teacher. Rights, for the groups of that vak only: change the group composition (students in/out) and the assigned teachers. Everything else stays admin-only: student data, other group data (name, jaarlaag, schoolsoort; creating and deleting groups), users, school, settings. Regular teachers keep no group editing at all (as today).
 - **Admin settings tab "Instellingen"** (`instellingen.json` with `_meta`): snapshot interval and retention; room for later settings.
 - **Snapshots:** at start, if the newest snapshot is older than the interval, one app writes `data/snapshots/<YYYY-MM-DD HHmm>.zip` in a background thread (never delays the start). A CAS claim on `snapshots/state.json` stops two colleagues who start together from both zipping. Contents: all JSON and `.typ` files and opdracht images; not `rapporten/`, `snapshots/`; photos after measuring a real copy. Retention e.g. 7 daily, 4 weekly, 12 monthly. Restoring is a documented manual step in the runbook first (hard to undo), an admin button later. A snapshot inside OneDrive does not protect against the whole folder being deleted: the runbook also points at OneDrive's version history.
 - Photos: check that user photos show the same everywhere (login badge, topbar, Gebruikers, group cards; user, manual test `M-ADM-1`).
@@ -484,9 +489,9 @@ Order: biggest risk first, always with tests around the code you touch.
 9. **Versioning and update policy** for a portable exe on OneDrive.
 10. **AI integration style** (Step 9 ADR lists the questions).
 11. **Cutover date.** Decided: after Step 8; the exact date is the user's call.
-12. **Encryption of the JSON files** (Step 7a, C19; asked 2026-10-30). A key inside the exe of a public AGPL repo is public, so this is obfuscation, not protection.
-13. **Sectievoorzitter rights** (Step 7b; asked 2026-10-30): may regular teachers still change group membership, or only the sectievoorzitter and the admin?
-14. **"Over Maatwerk" content** (copyright line, contact; asked 2026-10-30).
+12. **Encryption of the JSON files.** Decided 2026-10-30: no encryption (a key in the exe of a public AGPL repo is public). Instead an integrity stamp inside each JSON file to detect accidental outside changes (Step 7a, C19).
+13. **Sectievoorzitter rights.** Decided 2026-10-30: group composition and assigned teachers of the groups of their vak; everything else on students and groups stays admin-only; regular teachers cannot edit groups (Step 7b).
+14. **"Over Maatwerk" content.** Decided 2026-10-30: "Copyright © 2026 Open Beta Onderwijs - Matthias Kortleven", no contact address. Built before Step 7 (`ui/src/screens/about.ts`).
 
 **Top risks:** sync/storage subtleties (data loss), Typst output drift, `lopdf` merge edge cases, WebView2 absence on school PCs, WebKit differences on macOS, scope creep during "while we are here" refactors (log them in `docs/backlog.md`, do them in Step 10).
 

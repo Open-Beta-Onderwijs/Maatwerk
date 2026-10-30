@@ -2,6 +2,7 @@
 
 import { escHtml, navigateTo, showUserBadge } from '../app.js';
 import { scoreSavesDone } from './scores.js';
+import { showAbout } from './about';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Startup — two-step subject + user picker
@@ -72,6 +73,7 @@ export async function renderStartup() {
         <aside class="startup-sidebar">
           <p class="startup-sidebar-hint">Vak</p>
           ${subjectButtons}
+          <button class="startup-about-link" data-action="about">Over Maatwerk</button>
         </aside>
         <main class="startup-main">
           ${mainContent}
@@ -100,6 +102,7 @@ export async function renderStartup() {
   }
 
   function attachListeners() {
+    container.querySelector('[data-action="about"]').addEventListener('click', showAbout);
     container.querySelectorAll('[data-subject]').forEach((btn) => {
       btn.addEventListener('click', () => {
         selectedSubject = btn.dataset.subject;

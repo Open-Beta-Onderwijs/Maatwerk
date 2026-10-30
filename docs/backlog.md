@@ -189,16 +189,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From the Step 0 review (`docs/reviews/step-00.md`)
 
-- **m6 (Step 6):** ~~full third-party notices for the bundled crates~~ done 2026-10-30
-  (`THIRD_PARTY_NOTICES.txt`, `npm run notices`, CI check, shipped next to the exe). Still open: the
-  "Over Maatwerk" screen with the licence notice, a source link and the notices, before the exe is
-  distributed (AGPL sections 5(d) and 6; PLAN section 9, decision 14).
+- ~~**m6 (Step 6):** full third-party notices and an "Over Maatwerk" screen~~ Done 2026-10-30:
+  `THIRD_PARTY_NOTICES.txt` (`npm run notices`, CI check, shipped next to the exe) and "Over
+  Maatwerk" (licence notice, source link, version and build, licence texts; startup screen and
+  top-bar title).
 - ~~**n1 (Step 3):** CSP~~: done in Step 3a (classes + CSSOM style data, `ui/vite/csp.ts`,
   `ui/e2e/csp.spec.ts`).
 - **n3:** `LICENSE` is the SPDX reflowed AGPL-3.0 text; replace with the verbatim gnu.org text when
   gnu.org is reachable.
 - **n5:** `src-tauri/tauri.conf.json` `version` duplicates the Cargo workspace version; drop it
-  (Tauri falls back to the Cargo version) or check it in CI.
+  (Tauri falls back to the Cargo version) or check it in CI. Note (2026-10-30): the workspace is
+  still `0.1.0` while the release tag is `v0.2.0-parity`; "Over Maatwerk" shows both. Settle with
+  PLAN section 9, decision 9 (versioning).
 - **n6:** SPDX check skips toml/yml; decide whether config files need headers and whether to add a
   copyright line convention.
 - **n9:** CI hygiene: pin actions by SHA (Dependabot), avoid double runs on push + PR, avoid

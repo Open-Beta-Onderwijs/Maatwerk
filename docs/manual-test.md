@@ -41,6 +41,12 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       that day has a "cannot start" line.
 
 - [ ] **M-START-5** Start without internet (Wi-Fi off): everything below still works (no CDN).
+- [ ] **M-START-6** "Over Maatwerk" (startup screen, bottom left; after login: the title "Maatwerk"
+      in the top bar) shows the version, a build such as `v0.2.0-parity-…`, the copyright line, the
+      AGPL notice and the source link. "Licentietekst" and "Licenties van derden" show the texts.
+      `LICENSE` and `THIRD_PARTY_NOTICES.txt` come with the CI artifact.
+- [ ] **M-START-7** The release exe's windows ignore a dropped file (no navigation), and selected
+      text in the editor can be dragged to another place (`M-OPD-6`).
 
 ## Leerlingen (M-LEER)
 
