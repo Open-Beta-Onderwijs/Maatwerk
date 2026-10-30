@@ -9,6 +9,8 @@ publish.workspace = true
 
 [dependencies]
 base64 = "0.23.1"
+# Opdracht image thumbnails and clipboard PNGs; the same version and formats Typst already uses.
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 # PDF merge for batches (ADR-0002 5a). No default features: no chrono clock, no rayon.
 lopdf = { version = "0.46.0", default-features = false }
 notify = "8.2.1"
@@ -25,6 +27,8 @@ typst = "=0.14.2"
 typst-kit = { version = "=0.14.2", default-features = false, features = ["fonts", "embed-fonts"] }
 typst-pdf = "=0.14.2"
 typst-svg = "=0.14.2"
+# NFD for image and output file names (`cleanImageName`).
+unicode-normalization = "0.1.26"
 
 [lints]
 workspace = true

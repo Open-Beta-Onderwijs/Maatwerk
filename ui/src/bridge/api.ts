@@ -13,6 +13,9 @@
 /** Any JSON value as stored in the data folder. */
 export type Json = unknown;
 
+export type { PrintName } from '../domain/print';
+import type { DataFolderStatus } from './bindings';
+
 /** `{ ok, reason }` results of the fs write/delete methods. */
 export type FsResult = { ok: true; hash?: string } | { ok: false; reason: string };
 
@@ -32,6 +35,13 @@ export interface DataChange {
   /** The file's `_meta` for non-array JSON, else null. */
   meta: Record<string, unknown> | null;
 }
+
+/**
+ * The data folder as opened at start (generated from Rust). `error` is set
+ * when it cannot be used (e.g. `unsupported_schema`, `io`); the app then shows
+ * the startup error screen instead of running on empty data (review 4b m5).
+ */
+export type { DataFolderStatus } from './bindings';
 
 export interface BatchJob {
   key: string;
@@ -62,6 +72,8 @@ export interface OpdrachtImage {
 }
 
 export type Unsubscribe = () => void;
+
+import type { PrintName } from '../domain/print';
 
 export interface MaatwerkApi {
   // ── JSON storage ──────────────────────────────────────────────────────────
@@ -121,6 +133,8 @@ export interface MaatwerkApi {
   savePhoto(relPath: string, base64Data: string): Promise<void>;
 
   // ── Typst ─────────────────────────────────────────────────────────────────
+  // `pdfPath` in the results is an output ID in the app (not a file path):
+  // pass it to pdfUrl, openPath or printPdf.
   renderRapportPdf(
     examId: string,
     students: unknown[],
@@ -137,8 +151,11 @@ export interface MaatwerkApi {
   ): Promise<RenderResult<{ pdfPath: string; pages: number }>>;
 
   // ── Shell ─────────────────────────────────────────────────────────────────
-  /** Opens a file with the OS; `''` on success, else an error text (callers ignore it). */
-  openPath(absPath: string): Promise<string>;
+  /**
+   * Opens a render output (`pdfPath`) or a data-relative file with the OS;
+   * `''` on success, else an error text. Absolute paths are refused.
+   */
+  openPath(target: string): Promise<string>;
 
   // ── Events ────────────────────────────────────────────────────────────────
   onDataChanged(cb: (changes: DataChange[]) => void): Unsubscribe;
@@ -151,6 +168,18 @@ export interface MaatwerkApi {
    * cannot load.
    */
   pdfUrl(pdfPath: string): string;
+  /**
+   * "Afdrukken": copies a render output into `rapporten/` under a descriptive
+   * name and opens the copy with the OS (ADR-0002 section 9, C15). Resolves to
+   * the copy's data-relative path; rejects when it cannot be written.
+   */
+  printPdf(pdfPath: string, name: PrintName): Promise<string>;
+  /** The school year whose folder the watcher polls (ADR-0003 C7); null: config.json. */
+  setWatchYear(year: string | null): Promise<void>;
+  /** Checked before anything else at start (not a reference method). */
+  dataFolderStatus(): Promise<DataFolderStatus>;
+  /** "Opnieuw proberen" on the startup error screen: restarts the app. */
+  restartApp(): Promise<void>;
 }
 
 /** The 28 ported reference methods, for contract tests and the parity table. */

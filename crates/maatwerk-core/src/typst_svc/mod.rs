@@ -26,6 +26,6 @@ pub use opdracht::{
     INPUTS_KEY, Mode, Observatie, OpdrachtHeader, OpdrachtInputs, opdracht_world,
     render_assignment_pdf, render_assignment_svg_pages,
 };
-pub use project::TypstProject;
+pub use project::{TypstProject, create_v1_opdracht_file, v1_opdracht_id};
 pub use rapport::{RapportData, rapport_world, render_rapport_pdf};
 pub use world::MaatwerkWorld;

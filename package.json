@@ -12,6 +12,7 @@
     "build:exe": "tauri build --no-bundle",
     "build:ui": "npm run build -w ui",
     "bindings": "node tools/bindings.mjs",
+    "notices": "node tools/notices/generate.mjs",
     "data:dev": "node tools/fixtures/generate.mjs school data",
     "lint": "npm run lint -w ui && prettier --check .",
     "format": "prettier --write .",

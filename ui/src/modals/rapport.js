@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { toast, showModal, closeModal, escHtml } from '../app.js';
+import { printName } from '../domain/print';
 import { defaultTabData, rttiExplFilePath } from '../domain/rapport';
 import { compileRapport } from '../services/rapport';
 
@@ -20,8 +21,17 @@ async function showRapportPdf(content, exam, year) {
   content.innerHTML = '<div class="rapport-spinner">Rapport wordt gegenereerd…</div>';
 
   let result;
+  let groupNames = [];
+  // The group names of the students in the rapport, for the printed file name.
+  const api = {
+    readJson: (relPath) => window.maatwerk.readJson(relPath),
+    renderRapportPdf: (examId, students, examInfo) => {
+      groupNames = students.map((s) => s?.group);
+      return window.maatwerk.renderRapportPdf(examId, students, examInfo);
+    },
+  };
   try {
-    result = await compileRapport(exam, year, { Store, api: window.maatwerk });
+    result = await compileRapport(exam, year, { Store, api });
   } catch (err) {
     result = { success: false, error: String(err?.message ?? err) };
   }
@@ -34,22 +44,32 @@ async function showRapportPdf(content, exam, year) {
   // The user may have navigated away / closed the modal while compiling
   if (!content.isConnected) return;
 
-  // The bridge turns the output path into a URL the viewer iframe can load
+  // The bridge turns the output ID into a URL the viewer iframe can load
   // (the reference used 'file:///' + path, which a webview cannot load).
   const pdfUrl = window.maatwerk.pdfUrl(result.pdfPath);
-  const absPath = result.pdfPath;
+  const outputId = result.pdfPath;
   const viewerSrc = `pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}`;
   content.innerHTML = `<iframe class="rapport-pdf-frame" src="${viewerSrc}"></iframe>`;
 
-  // Let the embedded PDF viewer's "Afdrukken" button open the file in the
-  // system viewer via postMessage (window.print() doesn't work in Electron iframes).
+  // The embedded PDF viewer's "Afdrukken" button (postMessage): a named copy in
+  // rapporten/<schooljaar>/, opened in the system viewer (ADR-0002 section 9).
+  const name = printName('Rapport', year, exam, groupNames);
   if (_printListener) window.removeEventListener('message', _printListener);
   _printListener = (e) => {
-    if (e.data?.type === 'print-pdf') window.maatwerk.openPath(absPath);
+    if (e.data?.type === 'print-pdf') printOutput(outputId, name);
   };
   window.addEventListener('message', _printListener);
 
   toast('Rapport gegenereerd.', 'success');
+}
+
+/** Saves a named copy of a render output in rapporten/ and opens it; toasts a failure. */
+export async function printOutput(outputId, name) {
+  try {
+    await window.maatwerk.printPdf(outputId, name);
+  } catch (err) {
+    toast(`Afdrukken mislukt: ${err?.message ?? err}`, 'error');
+  }
 }
 
 /** Opens the rapport for one exam in a modal overlay (used from the Toetsen screen). */

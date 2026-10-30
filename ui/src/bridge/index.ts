@@ -15,12 +15,15 @@ export async function installBridge(): Promise<MaatwerkApi> {
     const mock = createMockFromFixtures();
     // Test hooks: Playwright reaches the mock as window.__maatwerkMock and can
     // replace fixture files before the app starts (window.__maatwerkMockFiles,
-    // relPath -> JSON value). Data only: the strict CSP forbids eval.
+    // relPath -> JSON value) and the data folder status
+    // (window.__maatwerkMockFolderStatus). Data only: the strict CSP forbids eval.
     const hooks = window as unknown as {
       __maatwerkMock: unknown;
       __maatwerkMockFiles?: Record<string, unknown>;
+      __maatwerkMockFolderStatus?: typeof mock.folderStatus;
     };
     hooks.__maatwerkMock = mock;
+    if (hooks.__maatwerkMockFolderStatus) mock.folderStatus = hooks.__maatwerkMockFolderStatus;
     for (const [relPath, data] of Object.entries(hooks.__maatwerkMockFiles ?? {})) {
       await mock.writeJson(relPath, data);
     }

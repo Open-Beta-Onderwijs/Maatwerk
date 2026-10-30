@@ -10,6 +10,8 @@ import {
   showReloadNotice,
   changedByName,
 } from '../app.js';
+import { printName } from '../domain/print';
+import { printOutput } from './rapport.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODAL: Opdrachten genereren (opened from an exam card on the Toetsen screen)
@@ -402,10 +404,16 @@ async function generate(el, state, year, kind) {
     return;
   }
 
-  // The output file name is reused for every run; pdfUrl() returns a fresh URL.
+  // Every run gets a new output ID, so pdfUrl() returns a fresh URL.
   const pdfUrl = window.maatwerk.pdfUrl(res.pdfPath);
   content.innerHTML = `<iframe class="rapport-pdf-frame" src="pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}"></iframe>`;
   state.printPath = res.pdfPath;
+  state.printName = printName(
+    kind === 'key' ? 'Antwoordsleutel' : 'Opdrachten',
+    year,
+    state.exam,
+    includedStudents(state).map(({ group }) => group?.name),
+  );
   toast(`${what} gegenereerd (${res.pages} pagina's).`, 'success');
 }
 
@@ -490,10 +498,11 @@ function initModal(el, state, year) {
     }
   });
 
-  // The PDF viewer's "Afdrukken" button opens the file in the system viewer
-  // (window.print() doesn't work in Electron iframes).
+  // The PDF viewer's "Afdrukken" button: a named copy in rapporten/<schooljaar>/,
+  // opened in the system viewer (ADR-0002 section 9).
   const onMessage = (e) => {
-    if (e.data?.type === 'print-pdf' && state.printPath) window.maatwerk.openPath(state.printPath);
+    if (e.data?.type === 'print-pdf' && state.printPath)
+      printOutput(state.printPath, state.printName);
   };
   window.addEventListener('message', onMessage);
   onModalCleanup(() => window.removeEventListener('message', onMessage));

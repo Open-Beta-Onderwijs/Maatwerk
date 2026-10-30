@@ -6,19 +6,19 @@
 //! result shapes.
 
 use maatwerk_core::paths::{RelPath, display_path};
-use maatwerk_core::storage::Expect;
+use maatwerk_core::storage::{Expect, check_opdracht_typ_path, check_photo_path};
 use serde::Serialize;
 use serde_json::Value;
 use specta::Type;
 use tauri::State;
 
 use crate::error::CommandError;
-use crate::state::{Core, Shared};
+use crate::state::{Core, DataFolderStatus, Shared};
 
-type Res<T> = Result<T, CommandError>;
+pub(crate) type Res<T> = Result<T, CommandError>;
 
 /// Runs `f` with the core on a blocking thread (all file work blocks).
-async fn blocking<T: Send + 'static>(
+pub(crate) async fn blocking<T: Send + 'static>(
     state: State<'_, Shared>,
     f: impl FnOnce(&Core) -> Res<T> + Send + 'static,
 ) -> Res<T> {
@@ -28,7 +28,7 @@ async fn blocking<T: Send + 'static>(
         .map_err(|e| CommandError::internal(format!("blocking task failed: {e}")))?
 }
 
-fn rel(raw: &str) -> Res<RelPath> {
+pub(crate) fn rel(raw: &str) -> Res<RelPath> {
     Ok(RelPath::parse(raw)?)
 }
 
@@ -139,6 +139,23 @@ pub async fn get_data_dir(state: State<'_, Shared>) -> Res<String> {
     blocking(state, |c| Ok(display_path(c.storage()?.data_dir().root()))).await
 }
 
+/// The data folder and why it could not be opened, if so. Not a reference method: the UI calls
+/// it before anything else to show a startup error screen (review 4b m5).
+#[tauri::command]
+#[specta::specta]
+pub async fn data_folder_status(state: State<'_, Shared>) -> Res<DataFolderStatus> {
+    blocking(state, |c| Ok(c.data_folder_status())).await
+}
+
+/// Restarts the app: "Opnieuw proberen" on the startup error screen opens the folder again.
+/// Goes through the normal exit (presence offline, watcher stopped; review 6 m1).
+#[tauri::command]
+#[specta::specta]
+pub fn restart_app(app: tauri::AppHandle) {
+    tracing::info!("restart requested from the startup error screen");
+    app.request_restart();
+}
+
 /// UTF-8 text; `null` if missing.
 #[tauri::command]
 #[specta::specta]
@@ -149,7 +166,7 @@ pub async fn read_text_file(state: State<'_, Shared>, rel_path: String) -> Res<O
     .await
 }
 
-/// Atomic text write without a check (opdracht `.typ` files).
+/// Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8).
 #[tauri::command]
 #[specta::specta]
 pub async fn write_text_file(
@@ -158,7 +175,21 @@ pub async fn write_text_file(
     content: String,
 ) -> Res<()> {
     blocking(state, move |c| {
-        Ok(c.storage()?.write_text(&rel(&rel_path)?, &content)?)
+        let rel = rel(&rel_path)?;
+        check_opdracht_typ_path(&rel)?;
+        Ok(c.storage()?.write_text(&rel, &content)?)
+    })
+    .await
+}
+
+/// The school year whose folder the watcher polls (ADR-0003 C7); `null`: `config.json`
+/// `activeYear`. Not a reference method.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_watch_year(state: State<'_, Shared>, year: Option<String>) -> Res<()> {
+    blocking(state, move |c| {
+        c.set_watch_year(year);
+        Ok(())
     })
     .await
 }
@@ -204,6 +235,7 @@ pub async fn read_photo_as_data_url(
     .await
 }
 
+/// Only `fotos/<name>` (backlog n8).
 #[tauri::command]
 #[specta::specta]
 pub async fn save_photo(
@@ -212,7 +244,9 @@ pub async fn save_photo(
     base64_data: String,
 ) -> Res<()> {
     blocking(state, move |c| {
-        Ok(c.storage()?.save_photo(&rel(&rel_path)?, &base64_data)?)
+        let rel = rel(&rel_path)?;
+        check_photo_path(&rel)?;
+        Ok(c.storage()?.save_photo(&rel, &base64_data)?)
     })
     .await
 }

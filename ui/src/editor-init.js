@@ -41,6 +41,9 @@ import {
 import { Tag, tags } from '@lezer/highlight';
 import { applyStyleData } from './legacy/style-data';
 import editorCmCss from './editor-cm.css?inline';
+import { blockFileDrops } from './utils/no-file-drop';
+
+blockFileDrops();
 
 // editor.html has no style="" (strict CSP): initial hidden states are data-display.
 applyStyleData(document);

@@ -7,6 +7,8 @@
 pub mod assets;
 pub mod error;
 pub mod jsonfmt;
+pub mod opdracht_images;
+pub mod outputs;
 pub mod paths;
 pub mod pdf_merge;
 pub mod presence;
