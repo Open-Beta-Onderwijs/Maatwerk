@@ -1,12 +1,15 @@
 # State
 
-Last updated: 2026-10-29 (Step 6 done) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-30 (after the Step 6 manual test) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-Step 6 (Tauri wiring, parity, portable build) is **done**: merged into `main`, tagged `step-06`
-and `v0.2.0-parity`. Waiting for the user: manual tests on a copy of real data
-(`docs/manual-test.md`), then Step 7 when the user says go.
+Between Step 6 and Step 7, branch `fix/manual-test-6` (not merged yet). The user ran the manual
+test (`docs/reviews/manual-test-step-06.md`): two failures, both fixed (M-GRP-1 quirk U21,
+M-OPD-6 quirk U20 update). Full third-party notices: `THIRD_PARTY_NOTICES.txt`
+(`npm run notices`, cargo-about 0.9.3, CI check). PLAN Step 7 extended to 7a/7b/7c with the
+user's ideas (C16-C19, PIN, sectievoorzitter, snapshots, speed); remarks from the test are in
+PLAN and the backlog.
 
 ## Step 6b summary
 
@@ -101,16 +104,14 @@ and `v0.2.0-parity`. Waiting for the user: manual tests on a copy of real data
 
 ## Next action (concrete, resumable)
 
-1. The user tests the exe on a copy of real data with `docs/manual-test.md` and reports
-   differences; fix them in a follow-up branch before Step 7 (PLAN Step 6, last paragraph).
-2. When the user says go: Step 7 (data format v2, migration, cutover runbook).
+1. Wait for the user's answers: PLAN section 9 decisions 12 (encryption), 13 (sectievoorzitter
+   rights), 14 ("Over Maatwerk" content). Then build the "Over Maatwerk" screen on
+   `fix/manual-test-6`, run the gate, merge into `main`.
+2. Record the answers in ADR-0003 (C16-C19) and start Step 7a on `step/07-data-v2`.
 
 ## Open questions for the user
 
-- None blocking. Decided 2026-10-28: quick-xml ignore accepted (Typst upgrade in the backlog,
-  Step 10); remote `github.com/Open-Beta-Onderwijs/Maatwerk` exists, `main` and tags pushed.
-  Emoji: bundled Noto Color Emoji (PLAN section 9 decision 2, quirk T2).
-
+- PLAN section 9, decisions 12-14 (asked 2026-10-30).
 - Other section 9 items: domain logic location (Step 10), versioning, macOS.
 
 ## How to resume

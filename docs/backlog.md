@@ -2,6 +2,22 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From the Step 6 manual test (`docs/reviews/manual-test-step-06.md`, 2026-10-30)
+
+- ~~**M-GRP-1** a deleted group stayed in the admin list until a restart~~ Fixed
+  (`fix/manual-test-6`, quirk U21).
+- ~~**M-OPD-6** selected text could not be dragged in the editor~~ Fixed (`dragDropEnabled`
+  off + `no-file-drop.ts`, quirk U20); re-check by hand in the next exe.
+- **M-START-3** could not be run: a v1 folder has no `schema_version` (the checklist now says to
+  add it). Re-run after Step 7a writes `schema_version`.
+- **M-LEER-3, M-GRP-3** CSV import screens: show a 5-row example CSV of the expected format
+  (PLAN Step 10).
+- **M-TOE-6** printed copies next to the data folder, not inside it (PLAN Step 7a, C18).
+- **M-ADM-1** user photos show inconsistently across the app (PLAN Step 7b).
+- **M-SYNC-1..4** not run (needs two machines): required before the cutover (PLAN Step 8,
+  cutover readiness).
+- Opdracht images inside the opdracht's own folder: already ADR-0003 C14 (PLAN Step 7a).
+
 ## From Step 6b
 
 - **Review 6 m6:** `Core::open` (schema check, seeding, image-folder walk, output cleanup) runs in
@@ -173,9 +189,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From the Step 0 review (`docs/reviews/step-00.md`)
 
-- **m6 (Step 6):** full third-party notices for the ~300 bundled crates (e.g. `cargo about`) and an
-  "Over Maatwerk" screen with licence text and a source link, before the exe is distributed (AGPL
-  section 13 / GPL section 6).
+- **m6 (Step 6):** ~~full third-party notices for the bundled crates~~ done 2026-10-30
+  (`THIRD_PARTY_NOTICES.txt`, `npm run notices`, CI check, shipped next to the exe). Still open: the
+  "Over Maatwerk" screen with the licence notice, a source link and the notices, before the exe is
+  distributed (AGPL sections 5(d) and 6; PLAN section 9, decision 14).
 - ~~**n1 (Step 3):** CSP~~: done in Step 3a (classes + CSSOM style data, `ui/vite/csp.ts`,
   `ui/e2e/csp.spec.ts`).
 - **n3:** `LICENSE` is the SPDX reflowed AGPL-3.0 text; replace with the verbatim gnu.org text when
