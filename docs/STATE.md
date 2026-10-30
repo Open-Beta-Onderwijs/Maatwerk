@@ -4,12 +4,16 @@ Last updated: 2026-10-30 (after the Step 6 manual test) Branch: `main` Last tags
 
 ## Current step
 
-Between Step 6 and Step 7, branch `fix/manual-test-6` (not merged yet). The user ran the manual
-test (`docs/reviews/manual-test-step-06.md`): two failures, both fixed (M-GRP-1 quirk U21,
-M-OPD-6 quirk U20 update). Full third-party notices: `THIRD_PARTY_NOTICES.txt`
-(`npm run notices`, cargo-about 0.9.3, CI check). PLAN Step 7 extended to 7a/7b/7c with the
-user's ideas (C16-C19, PIN, sectievoorzitter, snapshots, speed); remarks from the test are in
-PLAN and the backlog.
+Between Step 6 and Step 7, branch `fix/manual-test-6` (local, not pushed or merged; gate green
+locally). Done on it: manual-test fixes M-GRP-1 (quirk U21) and M-OPD-6 (quirk U20 update),
+`docs/reviews/manual-test-step-06.md`, full `THIRD_PARTY_NOTICES.txt` (`npm run notices`,
+cargo-about 0.9.3, CI check after `cargo fetch`), "Over Maatwerk" (`ui/src/screens/about.ts`,
+version + `git describe` build via Vite `define`), README "Licence and source", PLAN Step 7 as
+7a/7b/7c with decisions 12-14 recorded (no encryption -> integrity stamp C19; sectievoorzitter
+rights; copyright line).
+
+Known: the local visual test `modal-scores` already fails on `main` (not caused by this branch);
+look at it in 7c, which touches the score modal.
 
 ## Step 6b summary
 
@@ -104,15 +108,16 @@ PLAN and the backlog.
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user's answers: PLAN section 9 decisions 12 (encryption), 13 (sectievoorzitter
-   rights), 14 ("Over Maatwerk" content). Then build the "Over Maatwerk" screen on
-   `fix/manual-test-6`, run the gate, merge into `main`.
-2. Record the answers in ADR-0003 (C16-C19) and start Step 7a on `step/07-data-v2`.
+1. With the user's OK: push `fix/manual-test-6`, wait for CI (first run of the notices check on
+   Linux), merge into `main` with a merge commit.
+2. Step 7a on `step/07-data-v2`: first record C16-C19 in ADR-0003, then migration tests from
+   synthetic v1 fixtures (PLAN Step 7a).
 
 ## Open questions for the user
 
-- PLAN section 9, decisions 12-14 (asked 2026-10-30).
-- Other section 9 items: domain logic location (Step 10), versioning, macOS.
+- Push and merge `fix/manual-test-6` (asked 2026-10-30).
+- Other section 9 items: versioning (workspace `0.1.0` vs tag `v0.2.0-parity`, backlog Step 0
+  n5), domain logic location (Step 10), macOS.
 
 ## How to resume
 
@@ -125,4 +130,4 @@ build:ui`, then the gate commands in `CLAUDE.md`, plus `npm run test:e2e` (needs
 install chromium` in `ui/`). Rapport parity: `cargo test -p maatwerk-core --test typst_rapport` / `--test typst_opdracht`
 (machine-independent, no system fonts; failing pages are written to
 `target/tmp/golden/<case>/`). Goldens: `npm run golden:check` (needs `_reference/` at `0e30a70` and
-the Typst packages in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 is installed.
+the Typst packages in `%LOCALAPPDATA%\typst\packages`). `cargo-deny` 0.20.2 and cargo-about 0.9.3 (`--features cli`) are installed.
