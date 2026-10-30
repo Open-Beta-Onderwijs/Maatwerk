@@ -41,6 +41,11 @@ jobs:
       - run: npm ci
       - name: npm licence allowlist
         run: npm run licenses
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about@0.9.3
+      - name: Third-party notices up to date
+        run: npm run notices -- --check
 
   windows:
     name: Build and test (Windows)
@@ -83,5 +88,8 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: maatwerk-windows-x64
-          path: target/release/maatwerk.exe
+          path: |
+            target/release/maatwerk.exe
+            LICENSE
+            THIRD_PARTY_NOTICES.txt
           if-no-files-found: error

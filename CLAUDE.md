@@ -18,6 +18,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 npm run lint; npm run typecheck; npm test
 npm run licenses                         # npm licence allowlist (shipped deps only)
+npm run notices                          # regenerate THIRD_PARTY_NOTICES.txt (needs cargo-about 0.9)
 cargo deny check licenses bans sources advisories
 bash tools/check-spdx.sh                 # SPDX headers on tracked sources
 npm run dev                              # tauri dev (Vite on :1420)
