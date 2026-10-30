@@ -44,6 +44,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-about@0.9.3
+      # The generator runs cargo-about offline: fetch every crate source first.
+      - run: cargo fetch --locked
       - name: Third-party notices up to date
         run: npm run notices -- --check
 
