@@ -208,6 +208,7 @@ function resetScoreModal() {
 
 export async function openScoreModal(examId, year, deps) {
   const endOpen = perfSpan('modal:scores');
+  const generationAtOpen = Store.generation();
   resetScoreModal();
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
   if (!exam) return;
@@ -375,7 +376,10 @@ export async function openScoreModal(examId, year, deps) {
       void afterPaint().then(endOpen);
     },
     'modal-scores',
-    deps?.renderToetsenList,
+    // The exam list shows statistics: redraw it only when something was saved.
+    () => {
+      if (Store.generation() !== generationAtOpen) deps?.renderToetsenList?.();
+    },
   );
 }
 

@@ -68,8 +68,12 @@ export function navigateTo(name) {
   _screenRefreshPending = false;
   if (screens[name]) {
     const end = perfSpan(`tab:${name}`);
-    // Render content (may be async; screen shows immediately).
-    void Promise.resolve(renderScreen(name)).finally(() => afterPaint().then(end));
+    if (needsRender(name)) {
+      // Render content (may be async; screen shows immediately).
+      void Promise.resolve(renderScreen(name)).finally(() => afterPaint().then(end));
+    } else {
+      void afterPaint().then(end);
+    }
     screens[name].classList.add('active');
     window.scrollTo(0, 0);
     const targetRow = document.getElementById(`filter-row-${name}`);
@@ -77,7 +81,40 @@ export function navigateTo(name) {
   }
 }
 
+// ── Kept screens (Step 7c) ────────────────────────────────────────────────────
+// A list screen keeps its DOM between visits and is rendered again only when
+// what it shows may have changed: cached data (Store.generation: own writes and
+// colleagues' changes), the filter bar, or who is logged in. The other screens
+// (forms, checks, the startup screen) render on every visit, as before.
+const KEPT_SCREENS = new Set([
+  'leerlingen',
+  'groepen',
+  'toetsen',
+  'observaties',
+  'opdrachten',
+  'gebruikers',
+]);
+const _renderedAs = {}; // screen -> view key of its last render
+let _filterGeneration = 0;
+
+function viewKey() {
+  const user = Store.getActiveUser();
+  return JSON.stringify([
+    Store.generation(),
+    _filterGeneration,
+    user?.id ?? null,
+    Store.getActiveRole(),
+    Store.getActiveSubject(),
+  ]);
+}
+
+function needsRender(name) {
+  return !KEPT_SCREENS.has(name) || _renderedAs[name] !== viewKey();
+}
+
 function renderScreen(name) {
+  // Taken before rendering: a change while an async render runs renders again next visit.
+  _renderedAs[name] = viewKey();
   switch (name) {
     case 'startup':
       return renderStartup();
@@ -920,6 +957,7 @@ function persistFilters() {
 }
 
 function rerenderActive() {
+  _filterGeneration++;
   const active = document.querySelector('.screen.active');
   if (active && active.id !== 'screen-startup') {
     renderScreen(active.id.replace('screen-', ''));
@@ -1128,6 +1166,7 @@ async function runScreenRefresh() {
   const pageScroller = document.scrollingElement;
   const pageY = pageScroller.scrollTop;
   const screenY = screens[name].scrollTop;
+  _renderedAs[name] = viewKey();
   await cfg.render();
   pageScroller.scrollTop = pageY;
   screens[name].scrollTop = screenY;

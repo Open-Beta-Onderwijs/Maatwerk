@@ -55,7 +55,31 @@ import { decode, encode, studentId as asStudentId } from './domain/v2';
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
   // Exam/group/obs entries keyed as: `${year}/exams/${subject}`, `obs/${subject}`, etc.
-  const cache = {};
+  //
+  // `generation` counts changes to cached data (Step 7c): screens keep their DOM
+  // while it is unchanged. Replacing or dropping a cached entry counts; filling an
+  // empty one from disk does not (the data did not change). In-place edits of
+  // cached arrays happen only next to a write or an external change, which count
+  // through changed().
+  let generation = 0;
+  const changed = () => {
+    generation++;
+  };
+  const cache = new Proxy(
+    {},
+    {
+      set(target, key, value) {
+        if (target[key] !== undefined && target[key] !== value) changed();
+        target[key] = value;
+        return true;
+      },
+      deleteProperty(target, key) {
+        if (target[key] !== undefined) changed();
+        delete target[key];
+        return true;
+      },
+    },
+  );
   let _years = null;
   let _activeSubject = null;
   let _activeUser = null;
@@ -100,7 +124,10 @@ const Store = (() => {
           cas: true,
           expectedHash: read.hash,
         });
-        if (result?.ok) return next;
+        if (result?.ok) {
+          changed();
+          return next;
+        }
         if (result?.reason !== 'conflict') {
           throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
         }
@@ -125,6 +152,7 @@ const Store = (() => {
       expectedHash: hash ?? null,
     });
     if (result?.ok) {
+      changed();
       invalidate(relPath);
       return result.hash;
     }
@@ -247,6 +275,7 @@ const Store = (() => {
     if (idx >= 0) users[idx] = user;
     else users.push(user);
     if (_activeUser?.id === user.id) _activeUser = user;
+    changed();
   }
 
   // One file per user (C16): saving checks the rev the edit started from, so
@@ -523,6 +552,7 @@ const Store = (() => {
     const group = getGroupsSync(year).find((g) => g.id === id);
     if (!group) return;
     await window.maatwerk.deleteFile(ypGroup(year, id));
+    changed();
     // The admin's list is the `__all__` cache; the reference only filtered the
     // subject cache, so the deleted group stayed on screen (quirk U21).
     for (const key of [
@@ -608,6 +638,7 @@ const Store = (() => {
     if (!exam) return;
     if (examHasResits(id, year)) throw new Error('has_resits');
     await window.maatwerk.deleteFile(ypExam(year, id));
+    changed();
     const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
     cache[key] = (cache[key] ?? []).filter((e) => e.id !== id);
   }
@@ -723,6 +754,7 @@ const Store = (() => {
 
   async function deleteObservation(id, subject = _activeSubject) {
     await window.maatwerk.deleteFile(ypObs(id));
+    changed();
     invalidateObsCache();
     await loadObservaties(subject);
   }
@@ -866,6 +898,7 @@ const Store = (() => {
     if (!original) throw new Error('Opdracht niet gevonden.');
     const newId = `opdracht_${Date.now()}`;
     await window.maatwerk.copyOpdrachtFolder(id, newId);
+    changed();
     const { _meta, ...rest } = JSON.parse(JSON.stringify(original));
     const copy = { ...rest, id: newId, naam: `${original.naam} (kopie)` };
     await upsertOpdracht(copy);
@@ -875,7 +908,9 @@ const Store = (() => {
   async function deleteOpdracht(id) {
     cache['opdrachten'] = undefined;
     await window.maatwerk.deleteFile(ypOpdracht(id));
+    changed();
     await window.maatwerk.deleteOpdrachtFolder(id);
+    changed();
     await loadOpdrachten();
   }
 
@@ -1106,6 +1141,8 @@ const Store = (() => {
       }
     });
 
+    // Presence and opdracht text are not shown by the cached screens.
+    if (!['presence', 'opdrachtTyp', 'other'].includes(type)) changed();
     ev.inScope = changeIsInScope(ev);
     return ev;
   }
@@ -1122,6 +1159,8 @@ const Store = (() => {
   // ── Public API ────────────────────────────────────────────────────────────
   return {
     applyExternalChange,
+    /** Grows whenever cached data changes (own writes, external changes). */
+    generation: () => generation,
     invalidateSchool,
     preload,
     initSubject,
