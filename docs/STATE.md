@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-30 (Step 7a in progress) Branch: `step/07-data-v2` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-31 (Step 7b in progress) Branch: `step/07-data-v2` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
@@ -123,14 +123,23 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-- Nothing. Step 7a done and tagged `step-07a` on `step/07-data-v2` (not merged: the step branch
-  merges into `main` at the end of Step 7, as with 6a). Review `docs/reviews/step-07a.md`: no
-  blockers; M1-M3 and m1, m3-m5, m7, n2, n7 fixed; rest in `docs/backlog.md`.
+**Step 7b (accounts, roles, snapshots)** on `step/07-data-v2`, started 2026-10-31. Done (one
+commit each): core `auth` (Argon2id `pinHash`, admin `recoveryCodeHashes`, throttle, session);
+core `snapshots` (settings in `instellingen.json`, CAS claim on `snapshots/state.json`,
+retention, single-file restore); CLI `admin reset-pin`; app commands + bridge (Tauri + mock),
+background snapshot at start.
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Then 7b (accounts, roles, snapshots) on the same branch.
-2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5 on a copy of real data.
+1. UI: PIN dialogs on the login screen (first PIN, login, admin "Pincode vergeten"), recovery
+   codes modal (Afdrukken / Opslaan als), account modal on the top-bar badge (PIN wijzigen,
+   herstelcodes, uitloggen -> `logout`), admin "Pincode resetten" in Gebruikers; user form keeps
+   `pinHash`/`recoveryCodeHashes` (spread the loaded record).
+2. Sectievoorzitter: `school.json` `secties`, assignment in Gebruikers, login badge, rights in
+   groep-edit / groep-leerlingen.
+3. Admin tab Instellingen (`instellingen.json`), Gegevenscontrole "Herstellen uit snapshot".
+4. Photos everywhere (M-ADM-1). e2e login helper (PIN), docs (runbook, data-files-v2, manual
+   tests, parity, ADR-0003 note), gate, review `docs/reviews/step-07b.md`, tag `step-07b`.
 
 ## Open questions for the user
 
