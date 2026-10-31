@@ -123,26 +123,33 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-**Step 7b (accounts, roles, snapshots)** on `step/07-data-v2`, started 2026-10-31. Done (one
-commit each): core `auth` (Argon2id `pinHash`, admin `recoveryCodeHashes`, throttle, session);
-core `snapshots` (settings in `instellingen.json`, CAS claim on `snapshots/state.json`,
-retention, single-file restore); CLI `admin reset-pin`; app commands + bridge (Tauri + mock),
-background snapshot at start.
+**Step 7b (accounts, roles, snapshots)** on `step/07-data-v2`, started 2026-10-31. All features
+done and committed (ADR-0006):
+
+- core `auth` (Argon2id `pinHash`, admin `recoveryCodeHashes`, throttle, login session in Rust),
+  core `snapshots` (`instellingen.json`, CAS claim on `snapshots/state.json`, retention,
+  single-file restore), CLI `admin reset-pin`, app commands + bridge (Tauri + mock), background
+  snapshot at start.
+- UI: PIN dialogs (`screens/pin.ts`, texts in `domain/accounts.ts`), account modal on the
+  top-bar badge, Gebruikers (photos, "Pincode resetten", sectievoorzitters), sectievoorzitter
+  badge and group rights, tab Instellingen, Gegevenscontrole "Herstellen uit snapshot", badge
+  photos everywhere (`utils/badges.js`).
+- Tests: Rust `auth::tests` (13), `snapshots::tests` (8), validate, CLI; Vitest; e2e
+  `accounts.spec.ts` (8), all 102 e2e pass. Local visual baselines updated (badge photo,
+  Gebruikers).
+- Docs: data-files-v2, runbook sections 6-7, manual tests M-PIN/M-VZ/M-SNAP, parity, ADR-0006.
 
 ## Next action (concrete, resumable)
 
-1. UI: PIN dialogs on the login screen (first PIN, login, admin "Pincode vergeten"), recovery
-   codes modal (Afdrukken / Opslaan als), account modal on the top-bar badge (PIN wijzigen,
-   herstelcodes, uitloggen -> `logout`), admin "Pincode resetten" in Gebruikers; user form keeps
-   `pinHash`/`recoveryCodeHashes` (spread the loaded record).
-2. Sectievoorzitter: `school.json` `secties`, assignment in Gebruikers, login badge, rights in
-   groep-edit / groep-leerlingen.
-3. Admin tab Instellingen (`instellingen.json`), Gegevenscontrole "Herstellen uit snapshot".
-4. Photos everywhere (M-ADM-1). e2e login helper (PIN), docs (runbook, data-files-v2, manual
-   tests, parity, ADR-0003 note), gate, review `docs/reviews/step-07b.md`, tag `step-07b`.
+1. Gate (CLAUDE.md commands + `npm run test:e2e`), reviewer subagent -> `docs/reviews/step-07b.md`,
+   fix blockers/majors, tag `step-07b`, stop and report.
+2. Then Step 7c (perceived speed) on the same branch, when the user says so.
+3. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5 and M-PIN/M-VZ/M-SNAP on a
+   copy of real data (M-SNAP-4 measures whether photos go into snapshots).
 
 ## Open questions for the user
 
+- Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
 

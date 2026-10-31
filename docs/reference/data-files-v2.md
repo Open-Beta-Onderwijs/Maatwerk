@@ -13,7 +13,9 @@ migration (`maatwerk-core::migrate`, `maatwerk-cli migrate`) turns a v1 folder i
 ├── rapporten/<YYYY-YYYY>/*.pdf                printed copies (C18; was data/rapporten/)
 └── data/
     ├── config.json                            { schema_version: 2, activeYear?, _meta }
-    ├── school.json                            School + _meta (C16)
+    ├── school.json                            School + _meta (C16), secties? (7b)
+    ├── instellingen.json                      admin settings + _meta (Step 7b)
+    ├── snapshots/<YYYY-MM-DD HHmm>.zip        snapshots (Step 7b); state.json: claim
     ├── gebruikers/<userId>.json               User + _meta (C16; was gebruikers.json)
     ├── users/<userId>.json                    Presence + _meta
     ├── fotos/                                 unchanged
@@ -101,6 +103,29 @@ random base-36 characters). Existing ids are kept. Every id used in a file name 
 `schk`, `wi` (jaar 1-3) or `wisa`..`wisd` (jaar 4-6). A v1 `wi_<4..6>` file (never written by the
 editor, only read by the reference rapport) is copied to each `wisa`..`wisd` file of that jaar
 that does not exist yet, then dropped.
+
+## Accounts, roles and snapshots (Step 7b)
+
+Additive: an absent field means "no PIN yet", "no role", "default settings"; no
+`schema_version` change.
+
+- **`gebruikers/<id>.json`**: `pinHash` (string, PHC `$argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>`)
+  when the user has a PIN; the admin also has `recoveryCodeHashes` (array of the same, one per
+  unused recovery code). Written only by `maatwerk-core::auth` (first PIN, change, reset, recovery,
+  `maatwerk-cli admin reset-pin`), with a normal `_meta` (rev + 1). Other writers keep both fields.
+  Codes are `ABCD-EFGH` (alphabet `23456789ABCDEFGHJKMNPQRSTUVWXYZ`), hashed in that form.
+- **`school.json`**: `secties: { <vak>: { voorzitter: <userId> } }`, the sectievoorzitter per vak
+  (decision 13). `validate-data` warns about an unknown user id.
+- **`instellingen.json`** (entity file, `_meta`): `snapshots: { intervalHours (1-744, default 24),
+daily (0-366, 7), weekly (0-520, 4), monthly (0-1200, 12) }`. Unusable values count as the
+  default.
+- **`snapshots/`**: zips named `YYYY-MM-DD HHmm.zip` (local time; ` (2)` on a clash), holding
+  every `*.json` and `*.typ` and `opdrachten/<id>/images/*` under their data-relative paths;
+  not `fotos/`, `rapporten/`, `snapshots/`, temp files. `state.json`:
+  `{ last, lastAtMs, lastBy, claim?: { by, atMs } }` (stamped). A claim younger than 30 minutes
+  means another app is zipping. Retention: the newest snapshot, plus the newest per day, ISO week
+  and month for the last `daily`/`weekly`/`monthly` of each that have one. Ignored by the watcher
+  and by `validate-data`.
 
 ## Strays and placement (C19)
 

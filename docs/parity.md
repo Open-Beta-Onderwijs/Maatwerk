@@ -176,3 +176,21 @@ found were format-only: student ids as strings (C8), `"N"` instead of `null` (C9
 | `validate_data_folder`         | `validateDataFolder` (Gegevenscontrole) | `validate::tests`                                        |
 | `stamp_issues`, `accept_stamp` | `stampIssues`, `acceptStamp`            | `storage::tests::c19_stamps_*`                           |
 | CLI `validate-data`, `migrate` | —                                       | `maatwerk-cli` arg tests, CI step                        |
+
+## Accounts, roles, snapshots (Step 7b, ADR-0006)
+
+New in the app, not in the reference. One deliberate change of reference behaviour: clicking the
+top-bar badge opens an account modal ("Uitloggen" is one click further) instead of logging out at
+once.
+
+| Command / behaviour                                         | Bridge method / UI                                         | Tests                                                                       |
+| ----------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `verify_pin`, `set_first_pin`, `change_pin`, `logout`       | login screen PIN dialogs, account modal (`screens/pin.ts`) | `auth::tests`, `mock-api.test.ts`, `accounts.spec.ts`; manual `M-PIN-1/2/5` |
+| `recover_with_code`, `renew_recovery_codes`, `save_text_as` | "Pincode vergeten?", herstelcodes modal                    | `auth::tests`, `accounts.spec.ts`; manual `M-PIN-3/4`                       |
+| `reset_pin` (admin, session checked in Rust)                | Gebruikers "Pincode resetten"                              | `auth::tests`, `accounts.spec.ts`; manual `M-PIN-6`                         |
+| CLI `admin reset-pin`                                       | —                                                          | `maatwerk-cli/tests/admin.rs`; manual `M-PIN-7`                             |
+| Sectievoorzitter (`school.json` `secties`)                  | Gebruikers, login badge, `groep-edit.js`                   | `accounts.spec.ts`, `validate::tests`; manual `M-VZ-1/2`                    |
+| `instellingen.json`                                         | admin tab Instellingen (`screens/instellingen.ts`)         | `snapshots::tests`, `instellingen.test.ts`, `accounts.spec.ts`              |
+| Snapshot at start (claim, zip, retention)                   | `Core::start_snapshot`; `list_snapshots`                   | `snapshots::tests`; manual `M-SNAP-1/2`                                     |
+| `snapshot_for_file`, `restore_from_snapshot` (admin)        | Gegevenscontrole "Herstellen uit snapshot"                 | `snapshots::tests`, `accounts.spec.ts`; manual `M-SNAP-3`                   |
+| Same badge photo on login screen, top bar, Gebruikers       | `utils/badges.js`                                          | visual (local); manual `M-ADM-1`                                            |

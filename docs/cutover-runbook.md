@@ -52,7 +52,12 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
 2. **Move the old exe away** from the shared folder (to a local `old\` folder of the admin) and
    remove desktop shortcuts to it, so nobody starts it out of habit. The old app does not read
    `schema_version`: on a v2 folder it would write v1 data again.
-3. Tell the teachers they can start the new Maatwerk.
+3. Tell the teachers they can start the new Maatwerk. **The admin logs in first**: Maatwerk asks
+   for a new PIN (5-8 digits) and then shows ten recovery codes **once**. Print them or save them
+   ("Afdrukken" / "Opslaan als") and keep them outside the shared folder (e.g. in the school
+   safe). Each teacher chooses a PIN at their first login.
+4. Optional: assign the sectievoorzitters (Gebruikers > Sectievoorzitters) and check the snapshot
+   settings (Instellingen; default: one per day, keep 7 daily, 4 weekly, 12 monthly).
 
 ## 5. Rollback (only if the new app cannot be used)
 
@@ -62,6 +67,45 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
 3. Unzip the backup; its `data\` folder becomes the shared `data\`. Put the old exe back.
 4. Tell the teachers to use the old app again. Report what went wrong to the developer. Work done
    in the new app since the switch must be re-entered (or copied over by the developer).
+
+## 6. PINs (after the switch)
+
+- **A teacher forgot the PIN:** the admin opens Gebruikers and clicks "Pincode resetten" on that
+  teacher. The teacher chooses a new PIN at the next login.
+- **The admin forgot the PIN:** on the login screen, the admin badge, "Pincode vergeten?", one of
+  the recovery codes and a new PIN. Each code works once; "Nieuwe herstelcodes" (click the badge
+  at the top right) replaces all of them.
+- **Pincode beheerder kwijt (PIN and codes lost):** on a PC with the shared folder, with nobody
+  logged in as admin:
+
+  ```powershell
+  maatwerk-cli admin reset-pin <shared>\data
+  ```
+
+  The admin chooses a new PIN at the next login and gets new recovery codes. Note it in the log.
+
+The PIN guards the shared PC, not the files: anyone who can write to the shared folder can change
+the files anyway.
+
+## 7. Snapshots and restoring
+
+Maatwerk keeps zips of all data (JSON, `.typ` files and opdracht images; not the photos and not
+`rapporten\`) in `data\snapshots\`, named `<YYYY-MM-DD HHmm>.zip`. The first app that starts after
+the interval (Instellingen) writes one in the background.
+
+- **One file changed by accident** (Gegevenscontrole shows "Buiten Maatwerk gewijzigd"):
+  "Herstellen uit snapshot" puts back the newest intact copy (the dialog names its date). Changes
+  to that file made after that snapshot are lost.
+- **The whole folder** (hard to undo, so a manual step for now):
+  1. Everyone closes Maatwerk.
+  2. Copy the snapshot zip you want out of `data\snapshots\` to a local folder.
+  3. Rename the shared `data\` folder to `data-kapot-<date>` (keep it).
+  4. Create a new `data\` folder and unzip the snapshot into it. Copy `snapshots\` and `fotos\`
+     back from `data-kapot-<date>` (the zip has neither).
+  5. Start Maatwerk as admin and run Gegevenscontrole.
+- **The shared folder itself is gone or damaged** (the snapshots go with it): use OneDrive's
+  version history or recycle bin for the folder (OneDrive website, "Vorige versies herstellen"),
+  or the migration backup from step 3.4.
 
 ## Log
 

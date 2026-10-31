@@ -25,8 +25,8 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-START-1** The window is titled "Maatwerk", 1280x800, no menu bar, Maatwerk icon in the
       taskbar. It cannot be made smaller than 900x600.
 - [ ] **M-START-2** The startup screen shows the subjects; after picking one, the teachers of that
-      subject and the admin badge (with photos). Picking a teacher opens Leerlingen with the
-      last-used year.
+      subject and the admin badge (with photos). Picking a teacher asks the PIN (M-PIN) and then
+      opens Leerlingen with the last-used year.
 - [ ] **M-START-3** Unusable data folder: on a converted copy (M-MIG-1) change `"schema_version": 2`
       in `config.json` to `99`. Expect the screen "Maatwerk kan de gegevensmap
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
@@ -122,10 +122,51 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 ## Gebruikers and School (admin) (M-ADM)
 
 - [ ] **M-ADM-1** "+ Gebruiker toevoegen" with a JPG/PNG photo, edit, "Gebruiker
-      deactiveren"/"activeren"; the startup screen follows.
+      deactiveren"/"activeren"; the startup screen follows. The photo shows the same on the login
+      badge, the top-bar badge and the Gebruikers card (Step 7b; group cards list names only).
+      Editing a user who has a PIN keeps the PIN (log in as that user afterwards).
 - [ ] **M-ADM-2** School: edit naam/ondertitel/motto, schoolsoort buttons, logo (PNG/JPG/SVG)
       and watermark (SVG). A `.bmp` logo gets "Bestandstype .bmp wordt niet ondersteund". The
       rapport (M-TOE-5) shows the new logo and watermark.
+
+## Accounts, roles, snapshots (Step 7b: M-PIN, M-VZ, M-SNAP)
+
+- [ ] **M-PIN-1** First login of a teacher: "Welkom, …", choose a PIN. `1234` and two different
+      PINs are refused with a Dutch message. After that the next login asks the PIN.
+- [ ] **M-PIN-2** Wrong PIN twice: "Onjuiste pincode. Probeer het over 2 seconden opnieuw.", the
+      button is grey meanwhile; the waits grow (4, 8, … s, at most a minute). Another teacher can
+      log in at once. A restart clears the waits.
+- [ ] **M-PIN-3** The admin's first login shows ten recovery codes. "Verder" stays grey until "Ik
+      heb de codes bewaard" is ticked. "Afdrukken" prints only the codes; "Opslaan als…" writes
+      a `.txt`. `gebruikersdmin.json` holds `pinHash` and `recoveryCodeHashes` (`$argon2id$…`),
+      never the PIN or a code.
+- [ ] **M-PIN-4** Admin: "Pincode vergeten?" with a code (dash and case do not matter) and a new
+      PIN logs in. The same code a second time: "Onjuiste herstelcode." Badge (top right) >
+      "Nieuwe herstelcodes" asks the PIN and shows ten new codes; the old ones no longer work.
+- [ ] **M-PIN-5** Badge (top right) > "Pincode wijzigen" (current PIN, new twice); "Uitloggen"
+      goes back to the login screen.
+- [ ] **M-PIN-6** Admin > Gebruikers > "Pincode resetten" on a teacher: that teacher chooses a new
+      PIN at the next login; the card says "Nog geen pincode". On a second PC the teacher's open
+      login dialog still accepts the old PIN only until the reset has synced.
+- [ ] **M-PIN-7** Lost everything: `maatwerk-cli admin reset-pin <copy>\data`; the admin chooses
+      a new PIN and gets new codes.
+- [ ] **M-VZ-1** Admin > Gebruikers > Sectievoorzitters: pick a nat teacher. On the login screen
+      (vak Natuurkunde) a square "Sectievoorzitter" badge appears after the teachers; other vakken
+      show none. It asks that teacher's PIN; the top-bar badge is square.
+- [ ] **M-VZ-2** As sectievoorzitter, Groepen shows a pen on the nat groups only: name, jaarlaag,
+      schoolsoort and vak are grey; students in/out and Docent(en) can change; no delete, no new
+      group. The saved group's `_meta.updatedBy` is the teacher. Logged in through the teacher's
+      own badge: no pen.
+- [ ] **M-SNAP-1** Start the app on a test copy: within a minute `data\snapshots\<datum tijd>.zip`
+      appears (the log says `snapshot: Written`); a second start the same day writes none.
+      Instellingen lists it. Two PCs starting together write one zip.
+- [ ] **M-SNAP-2** Instellingen: interval 1 hour, daily 2, weekly 0, monthly 0, "Opslaan"; with
+      older zips copied in (rename them to older dates), the next due start keeps the newest two
+      days only.
+- [ ] **M-SNAP-3** Edit a user file by hand, Gegevenscontrole > "Herstellen uit snapshot": the
+      dialog names the snapshot date; afterwards the file is as in the zip and the line is gone.
+- [ ] **M-SNAP-4** Measure on the real copy: zip size and time (log line), and the size of
+      `fotos\`, to decide whether photos go into snapshots (PLAN Step 7b).
 
 ## Two teachers at once (M-SYNC)
 
