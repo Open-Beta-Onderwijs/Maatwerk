@@ -218,3 +218,38 @@ fn image_refs_are_found_in_typst_text() {
     let typ = r#"#image("images/a.png", width: 1cm) #image( "images/b c.svg") #image("https://x/y.png") #let image(x) = x"#;
     assert_eq!(image_refs(typ), ["images/a.png", "images/b c.svg"]);
 }
+
+#[test]
+fn step_7b_files_and_sectie_references_are_checked() {
+    let (_tmp, data) = copy();
+    let stamp = |v: serde_json::Value| {
+        let mut v = v;
+        crate::integrity::stamp(&mut v);
+        format!("{}\n", serde_json::to_string_pretty(&v).unwrap())
+    };
+    fs::write(
+        data.join("instellingen.json"),
+        stamp(serde_json::json!({ "snapshots": { "intervalHours": 24 }, "_meta": { "rev": 1 } })),
+    )
+    .unwrap();
+    fs::create_dir_all(data.join("snapshots")).unwrap();
+    fs::write(data.join("snapshots/2026-10-31 0815.zip"), "zip").unwrap();
+    let school_path = data.join("school.json");
+    let mut school: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&school_path).unwrap()).unwrap();
+    school["secties"] = serde_json::json!({ "nat": { "voorzitter": "gebr-weg" } });
+    fs::write(&school_path, stamp(school)).unwrap();
+
+    let report = validate(&data).unwrap();
+    assert!(
+        issues_for(&report, "instellingen.json").is_empty(),
+        "{report:#?}"
+    );
+    assert!(issues_for(&report, "snapshots/2026-10-31 0815.zip").is_empty());
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        "school.json",
+        "Sectievoorzitter nat: gebruiker gebr-weg bestaat niet"
+    ));
+}

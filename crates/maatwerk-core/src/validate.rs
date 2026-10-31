@@ -112,7 +112,7 @@ enum Place<'a> {
 fn place(rel: &str) -> Place<'_> {
     let parts: Vec<&str> = rel.split('/').collect();
     match parts.as_slice() {
-        ["config.json"] | ["school.json"] => Place::Json(None),
+        ["config.json"] | ["school.json"] | ["instellingen.json"] => Place::Json(None),
         ["fotos", ..] | ["snapshots", ..] => Place::Ignored,
         ["gebruikers", f] | ["observaties", f] => named("id", f),
         ["users", f] => named("userId", f),
@@ -348,6 +348,17 @@ fn check_references(
             for key in ["logo", "watermerk"] {
                 if let Some(f) = absent_file(key) {
                     out.missing(rel, format!("{key} {f} ontbreekt"));
+                }
+            }
+            // Step 7b: `secties: { <vak>: { voorzitter: <userId> } }`.
+            let secties = value.get("secties").and_then(Value::as_object);
+            for (vak, sectie) in secties.into_iter().flatten() {
+                let voorzitter = sectie.get("voorzitter").and_then(Value::as_str);
+                if let Some(u) = voorzitter.filter(|u| !users.contains(*u)) {
+                    out.missing(
+                        rel,
+                        format!("Sectievoorzitter {vak}: gebruiker {u} bestaat niet"),
+                    );
                 }
             }
         } else if let Some(id) = rel

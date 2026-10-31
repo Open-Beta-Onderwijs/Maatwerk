@@ -207,6 +207,7 @@ fn s31_relevance() {
         "templates/a.typ",
         "temp/a.json",
         "rapporten/a.json",
+        "snapshots/state.json",
         "opdrachten/_preview_x.typ",
         "_preview_x.json",
         "a.txt",
