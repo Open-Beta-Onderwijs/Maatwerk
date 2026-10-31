@@ -4,11 +4,11 @@
 // when what they show may have changed (Store.generation, filters, login).
 
 import { expect, test, type Page } from '@playwright/test';
-import { YEAR, login, readMockJson, watchErrors, withMock } from './helpers';
+import { YEAR, login, readMockJson, seedFiles, watchErrors, withMock } from './helpers';
 import { screen } from './views';
 
 interface StudentsFile {
-  students: { id: string; voornaam: string }[];
+  students: { id: string; voornaam: string; achternaam: string }[];
 }
 
 const STUDENTS = `${YEAR}/students-${YEAR}.json`;
@@ -53,4 +53,51 @@ test('a screen keeps its DOM until its data or the filters change', async ({ pag
   await screen(page, 'leerlingen');
   await expect(marked(page)).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+// More students than the first batch of cards (60): the rest arrive in idle time.
+async function seedManyStudents(page: Page): Promise<StudentsFile> {
+  await page.goto('/');
+  const file = await readMockJson<StudentsFile>(page, STUDENTS);
+  const base = file.students[0]!;
+  const extra = Array.from({ length: 150 }, (_, i) => ({
+    ...base,
+    id: String(990000 + i),
+    voornaam: 'Extra',
+    achternaam: `Leerling ${String(i).padStart(3, '0')}`,
+  }));
+  const many = { ...file, students: [...extra, ...file.students] };
+  await seedFiles(page, { [STUDENTS]: many });
+  return many;
+}
+
+test('a long student list renders completely and every card works', async ({ page }) => {
+  const errors = watchErrors(page);
+  const many = await seedManyStudents(page);
+  await login(page);
+  await screen(page, 'leerlingen');
+  const cards = page.locator('#student-list .card');
+  await expect(cards).toHaveCount(many.students.length);
+  await cards.last().locator('[data-action="profile"]').click();
+  await expect(page.locator('#modal-overlay')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('admin: Verwijderen is blocked for students with scores, also in late cards', async ({
+  page,
+}) => {
+  const many = await seedManyStudents(page);
+  // A fixture student with scores sits after the 150 extra students.
+  const withScores = await withMock(
+    page,
+    (m, ids) => ids.find((id) => m.peek(`2025-2026/scores/nat/${id}.json`) !== null) ?? '',
+    many.students.slice(150).map((s) => s.id),
+  );
+  expect(withScores).not.toBe('');
+  await login(page, 'nat', 'admin');
+  await screen(page, 'leerlingen');
+  await expect(page.locator('#student-list .card')).toHaveCount(many.students.length);
+  const del = page.locator(`[data-action="del-student"][data-id="${withScores}"]`);
+  await expect(del).toBeDisabled();
+  await expect(del).toHaveAttribute('title', /scores ingevoerd/);
 });
