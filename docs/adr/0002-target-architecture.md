@@ -298,6 +298,12 @@ These record what was built; none changes a decided behaviour.
   its SVG render, but not stopped. Options: accept this (a runaway compile only delays the
   preview of that one editor), or a watchdog that abandons a session thread after a time limit
   and opens a fresh one. Decided in Step 8b.
+- **No cursor marker in the live session (review 8a M1).** The old preview inserted
+  `<__maatwerk_cursor>` into the buffer and compiled again without it when that failed. The live
+  session compiles the buffer exactly as typed (preview inputs with `cursor: false`), so every
+  diagnostic position matches the CodeMirror document and no marker error can hide a good
+  preview. Source <-> preview sync moves to `typst-ide` jumps on `EditorSession::document()`
+  (PLAN Step 8b). `render_assignment_svg` keeps the marker for the editor until 8b switches.
 
 ## Consequences
 

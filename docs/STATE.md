@@ -5,7 +5,8 @@ Last updated: 2026-10-31 (Step 8a) Branch: `step/08-editor` Last tags: `step-07`
 
 ## Current step
 
-**Step 8a** (live compile service) on `step/08-editor`.
+**Step 8a done**, tagged `step-08a` on `step/08-editor` (not merged: the step branch merges into
+`main` at the end of Step 8). Next: Step 8b when the user says so.
 
 ## Step 8a so far
 
@@ -17,10 +18,14 @@ Last updated: 2026-10-31 (Step 8a) Branch: `step/08-editor` Last tags: `step-07`
    `compile_ms`, `render_ms`); last good document kept; `resend_all`. `LiveEditor`: worker
    thread, debounce (`DEFAULT_DEBOUNCE` 150 ms, generation 0 at once), latest generation wins
    (stale result dropped before the SVG render), panics reported as an error update, drop stops
-   the thread. `Location.range_utf16` for CodeMirror. Tests: 13 in `editor::tests`, parity test
+   the thread. `Location.range_utf16` for CodeMirror. Tests: 15 in `editor::tests`, parity test
    `editor_session_patches_equal_the_one_shot_render`.
 2. `examples/editor_latency.rs`, `docs/perf.md` section, parity section, ADR-0002 section 12
    (cancellation deviation: open question).
+3. Review `docs/reviews/step-08a.md`: 0 blockers; M1 (cursor marker) decided in ADR-0002
+   section 12 (no marker in the live session; 8b uses typst-ide jumps); m1 (sink panic), m3
+   (`refresh` / `reload_disk_files`), m4, m5, m6 partly, n1 fixed; m2, m6 rest, n2-n8 in
+   `docs/backlog.md` "From Step 8a".
 
 ## Step 7a result
 
@@ -142,7 +147,7 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-Step 8a: perf numbers, gate, review (see Next action).
+Nothing.
 
 ## Step 7c result
 
@@ -189,12 +194,12 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Finish 8a: perf numbers in `docs/perf.md`, gate, reviewer subagent ->
-   `docs/reviews/step-08a.md`, fix blockers/majors, tag `step-08a`, stop and report.
-2. Then Step 8b (editor UI on `LiveEditor`: Tauri commands + events, CodeMirror lint, typst-ide).
-3. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
-   M-PERF-1/2 on a copy of real data (M-SNAP-4 measures whether photos go into snapshots;
-   M-PERF-1 checks the 100 ms budget on the real copy).
+1. Wait for the user. Then Step 8b on `step/08-editor`: Tauri commands + event for
+   `LiveEditor` (open/update/refresh/close per editor, `spawn`ed thread, sink emits events), the
+   editor UI on it (CodeMirror lint from `range_utf16`, only changed pages), typst-ide
+   (verify what 0.14.2 offers), vraag extraction, Playwright test; backlog items n4, n7, n8.
+2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
+   M-PERF-1/2 on a copy of real data, and M-SYNC-1..4 on two machines.
 
 ## Open questions for the user
 

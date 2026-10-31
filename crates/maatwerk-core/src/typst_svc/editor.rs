@@ -114,6 +114,13 @@ impl EditorSession {
         self.shown.clear();
     }
 
+    /// The next compile reads every disk file again, also one the fingerprint (modification
+    /// time and length) would miss, e.g. an image the app just overwrote with one of the same
+    /// size (review 8a m3).
+    pub fn reload_disk_files(&mut self) {
+        self.world.forget_disk_files();
+    }
+
     /// The last good document (for jumps between source and preview, Step 8b).
     pub fn document(&self) -> Option<&PagedDocument> {
         self.document.as_ref()
@@ -220,6 +227,7 @@ struct State {
     /// Pending buffer changes, one per file, the latest text wins.
     edits: Vec<(RelPath, String)>,
     resend: bool,
+    reload: bool,
     /// The compile waits until `debounce` after this (not for generation 0).
     last_update: Instant,
     closed: bool,
@@ -244,6 +252,7 @@ impl LiveEditor {
                 done: None,
                 edits: Vec::new(),
                 resend: false,
+                reload: false,
                 last_update: Instant::now(),
                 closed: false,
             }),
@@ -278,9 +287,10 @@ impl LiveEditor {
         self.bump(|state| state.resend = true)
     }
 
-    /// Compiles again, e.g. after an image was added (disk files are checked at each compile).
+    /// Compiles again with every disk file read again, e.g. after an image was added or
+    /// overwritten (otherwise disk files are only checked by fingerprint at each compile).
     pub fn refresh(&self) -> u64 {
-        self.bump(|_| {})
+        self.bump(|state| state.reload = true)
     }
 
     fn bump(&self, change: impl FnOnce(&mut State)) -> u64 {
@@ -295,8 +305,10 @@ impl LiveEditor {
     /// Stops the thread and waits for the compile in progress.
     pub fn close(mut self) {
         self.stop();
-        if let Some(worker) = self.worker.take() {
-            let _ = worker.join();
+        if let Some(worker) = self.worker.take()
+            && worker.join().is_err()
+        {
+            tracing::error!("the editor thread ended with a panic");
         }
     }
 
@@ -319,7 +331,7 @@ fn run(
     mut sink: impl FnMut(EditorUpdate),
 ) {
     loop {
-        let (generation, edits, resend) = {
+        let (generation, edits, resend, reload) = {
             let mut state = shared.lock();
             // Wait for work, then for `debounce` after the last update.
             loop {
@@ -349,6 +361,7 @@ fn run(
                 state.generation,
                 std::mem::take(&mut state.edits),
                 std::mem::take(&mut state.resend),
+                std::mem::take(&mut state.reload),
             )
         };
         for (path, text) in edits {
@@ -356,6 +369,9 @@ fn run(
         }
         if resend {
             session.resend_all();
+        }
+        if reload {
+            session.reload_disk_files();
         }
         let stale = || shared.lock().generation != generation;
         let update = panic::catch_unwind(AssertUnwindSafe(|| session.compile(generation, &stale)))
@@ -369,8 +385,12 @@ fn run(
             return;
         }
         drop(state);
-        if let Some(update) = update {
-            sink(update);
+        // A panicking sink must not end the thread: later updates would never be compiled
+        // (review 8a m1).
+        if let Some(update) = update
+            && panic::catch_unwind(AssertUnwindSafe(|| sink(update))).is_err()
+        {
+            tracing::error!("the editor update sink panicked");
         }
     }
 }
@@ -514,6 +534,42 @@ mod tests {
     }
 
     #[test]
+    fn a_resend_overtaken_by_a_newer_update_still_sends_every_page() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut s = session(tmp.path(), &pages("A", "B", "C"));
+        compile(&mut s, 0);
+        s.resend_all();
+        assert_eq!(s.compile(1, &|| true), None);
+        assert_eq!(indices(&compile(&mut s, 2)), vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn reload_reads_a_disk_file_the_fingerprint_misses() {
+        let tmp = tempfile::tempdir().unwrap();
+        let deel = tmp.path().join("deel.typ");
+        std::fs::write(&deel, "Deel een").unwrap();
+        let mut s = session(
+            tmp.path(),
+            "#set page(width: 6cm, height: 4cm)
+#include \"deel.typ\"
+",
+        );
+        compile(&mut s, 0);
+        // Same length, modification time put back: the fingerprint sees no change.
+        let mtime = std::fs::metadata(&deel).unwrap().modified().unwrap();
+        std::fs::write(&deel, "Deel twe").unwrap();
+        std::fs::File::options()
+            .write(true)
+            .open(&deel)
+            .unwrap()
+            .set_modified(mtime)
+            .unwrap();
+        assert!(compile(&mut s, 1).pages.is_empty());
+        s.reload_disk_files();
+        assert_eq!(indices(&compile(&mut s, 2)), vec![0]);
+    }
+
+    #[test]
     fn files_on_disk_are_checked_before_each_compile() {
         let tmp = tempfile::tempdir().unwrap();
         let mut s = session(
@@ -591,7 +647,9 @@ mod tests {
 
     #[test]
     fn live_updates_within_the_debounce_give_one_compile_of_the_latest_text() {
-        let (_tmp, editor, rx) = live(&pages("A", "B", "C"), Duration::from_millis(300));
+        // A long debounce, so the five updates fall inside it even on a busy machine (review
+        // 8a m5).
+        let (_tmp, editor, rx) = live(&pages("A", "B", "C"), Duration::from_secs(2));
         let first = rx.recv_timeout(WAIT).unwrap();
         assert_eq!((first.generation, first.pages.len()), (0, 3));
 
@@ -603,12 +661,36 @@ mod tests {
         let update = rx.recv_timeout(WAIT).unwrap();
         assert_eq!((update.generation, indices(&update)), (5, vec![2]));
         assert!(
-            rx.recv_timeout(Duration::from_millis(600)).is_err(),
+            rx.recv_timeout(Duration::from_millis(300)).is_err(),
             "one compile"
         );
 
         assert_eq!(editor.resend_all(), 6);
         assert_eq!(rx.recv_timeout(WAIT).unwrap().pages.len(), 3);
+        editor.close();
+    }
+
+    #[test]
+    fn a_panicking_sink_does_not_stop_the_thread() {
+        let tmp = tempfile::tempdir().unwrap();
+        let s = session(tmp.path(), &pages("A", "B", "C"));
+        let (tx, rx) = mpsc::channel();
+        let mut calls = 0;
+        let editor = LiveEditor::start(s, Duration::ZERO, move |u: EditorUpdate| {
+            calls += 1;
+            assert!(calls > 1, "the first update panics");
+            let _ = tx.send(u);
+        });
+        // Whichever compile reaches the sink first panics; a later update still arrives.
+        let mut received = None;
+        for n in 0..20 {
+            editor.update(main_typ(), pages("A", "B", &format!("D {n}")));
+            if let Ok(update) = rx.recv_timeout(Duration::from_secs(1)) {
+                received = Some(update);
+                break;
+            }
+        }
+        assert!(received.is_some_and(|u| u.ok));
         editor.close();
     }
 

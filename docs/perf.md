@@ -169,9 +169,10 @@ it grow during a long editing session?
 Setup: `cargo run --release -p maatwerk-core --example editor_latency -- <typ file> <edits>` on
 the tiny fixture's opdrachten (`crates/maatwerk-core/tests/fixtures`) with the preview inputs
 (placeholder header, cursor marker). Every edit types one more character into the second
-paragraph (page 1) and compiles; the one-shot row renders the same edits with a fresh World and
-every page, as `render_assignment_svg` does per compile today. Peak working set polled from
-PowerShell every 50 ms; it covers the whole run, one-shot part included. Windows 11, 16 logical
+paragraph (page 1) and compiles; the one-shot column renders the **first 50** of those edits
+with a fresh World and every page, as `render_assignment_svg` does per compile today. Peak
+working set polled from PowerShell every 50 ms; it covers the whole run, one-shot part included,
+and runs differ by tens of MiB, so it shows the absence of growth, not a precise footprint. Windows 11, 16 logical
 CPUs, system fonts on, 2026-10-31. Times in ms (median / p90 / max).
 
 | Opdracht            | Edits | Cold (layout + SVG) | Layout     | SVG of changed pages | Session total | Pages sent | One-shot total | Peak working set |
@@ -185,8 +186,12 @@ Findings:
 
 - Incremental layout is ~4 ms; the SVG of the one changed page is most of the cost. Sending only
   changed pages halves the time against a full render and keeps the IPC payload to one page.
-- Memory does not grow with the number of edits (2000 edits peak no higher than 200): the World
-  holds only the files Typst asked for, and comemo is evicted after every compile.
+- Memory does not grow with the number of edits (the 2000-edit runs peak no higher than the
+  200-edit runs): the World holds only the files Typst asked for (unit test
+  `a_long_session_holds_no_more_files`), and comemo is evicted after every compile.
+- comemo's cache is process-wide and `evict(10)` counts compiles of any kind, so a batch running
+  next to the editor ages the editor's entries out; the editor may then fall back to near-cold
+  compiles (~60 ms layout) until the batch ends (review 8a m2, backlog).
 - **Budgets** (this machine, release build, 3-4 page opdracht): an edit compile (layout + SVG of
   the changed pages) **< 50 ms p90**; the opening compile **< 200 ms**; peak memory flat over
   2000 edits. With `DEFAULT_DEBOUNCE` (150 ms) the preview follows ~170 ms after the last key

@@ -215,6 +215,12 @@ impl MaatwerkWorld {
         });
     }
 
+    /// Drops every file read from disk, so the next compile reads it again.
+    pub(crate) fn forget_disk_files(&mut self) {
+        self.slots_mut()
+            .retain(|_, slot| matches!(slot.origin, Origin::Fixed));
+    }
+
     /// The number of files the World holds (tests: a long session must not grow).
     #[cfg(test)]
     pub(crate) fn cached_files(&mut self) -> usize {

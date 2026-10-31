@@ -261,6 +261,24 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   frame after the click, which closes the menu. Replace the retry with the scroll-first click of
   `openExamMenu` in `ui/e2e/perceived-speed.spec.ts`.
 
+## From Step 8a (review `docs/reviews/step-08a.md`)
+
+- **m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
+  editor's cache out. Option: evict by the editor's own compile count only, or evict less
+  often while a session is open. Measure first (Step 8b, in the app).
+- **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
+- **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
+  never got (set `document` only after the render succeeded).
+- **n3:** `close()` waits for a blocking sink and deadlocks when called from the sink; Step 8b's
+  sink (Tauri event emit) must not block or call `close`.
+- **n4 (Step 8b):** `set_file` can shadow `__maatwerk/` files; add `unset_file` (back to the disk
+  version) for "Herstel standaardversie" on `main.typ`/`lib.typ`.
+- **n5:** one moved mount drops the disk files of every mount (performance only).
+- **n6:** check staleness between pages of the SVG render too.
+- **n7 (Step 8b):** after failed compiles `document()` spans may point into newer source text;
+  jumps must check the source generation.
+- **n8 (Step 8b):** `range_utf16` counts after a stripped BOM; strip the BOM in the editor too.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the
