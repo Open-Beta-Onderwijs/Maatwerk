@@ -2,11 +2,12 @@
 
 //! The Typst service (ADR-0002 section 5): a sandboxed `World` per compile, embedded templates,
 //! packages and fonts, structured diagnostics.
-//! Rapport (5a); opdracht projects, SVG pages, batch and merge (5b).
+//! Rapport (5a); opdracht projects, SVG pages, batch and merge (5b); live editor session (8a).
 
 mod batch;
 mod compile;
 mod diagnostics;
+mod editor;
 mod fonts;
 mod opdracht;
 mod project;
@@ -21,6 +22,7 @@ pub use compile::{
     CompileError, Compiled, compile_document, compile_pdf, compile_svg_pages, local_now,
 };
 pub use diagnostics::{Diagnostic, Location, Severity, TraceFrame, to_text};
+pub use editor::{DEFAULT_DEBOUNCE, EditorSession, EditorUpdate, LiveEditor, PageUpdate};
 pub use fonts::FontStore;
 pub use opdracht::{
     INPUTS_KEY, Mode, Observatie, OpdrachtHeader, OpdrachtInputs, opdracht_world,

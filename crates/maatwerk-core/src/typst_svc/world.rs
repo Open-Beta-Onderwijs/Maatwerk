@@ -8,10 +8,15 @@
 //! - **packages**: only the embedded ones (`assets`); nothing is downloaded.
 //!
 //! Anything else does not exist for Typst. Nothing is written to disk.
+//!
+//! A World is usually built per compile. The editor (Step 8a) keeps one alive across compiles:
+//! [`MaatwerkWorld::set_file`] replaces an in-memory file (incremental reparse), and
+//! [`MaatwerkWorld::reset`] re-checks the files read from disk before the next compile.
 
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
 
 use time::{OffsetDateTime, UtcOffset};
 use typst::diag::{FileError, FileResult, PackageError};
@@ -100,8 +105,35 @@ pub struct MaatwerkWorld {
     files: HashMap<String, Bytes>,
     mounts: Vec<(Mount, Option<PathBuf>)>,
     now: OffsetDateTime,
-    bytes: Mutex<HashMap<FileId, FileResult<Bytes>>>,
-    sources: Mutex<HashMap<FileId, FileResult<Source>>>,
+    slots: Mutex<HashMap<FileId, FileSlot>>,
+}
+
+/// A file Typst asked for: its bytes, its parsed source once asked for, and where it came from.
+struct FileSlot {
+    origin: Origin,
+    bytes: FileResult<Bytes>,
+    source: Option<FileResult<Source>>,
+}
+
+/// Where a file's bytes came from, for [`MaatwerkWorld::reset`].
+enum Origin {
+    /// In memory or an embedded package: changes only through [`MaatwerkWorld::set_file`].
+    Fixed,
+    /// A mounted file; changed on disk when the fingerprint differs.
+    Disk(PathBuf, Fingerprint),
+    /// Not found or unreadable on disk: looked up again after a reset.
+    Missing,
+}
+
+/// Modification time and length: enough to notice a file replaced on disk without reading it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Fingerprint(Option<SystemTime>, u64);
+
+impl Fingerprint {
+    fn of(path: &Path) -> Option<Fingerprint> {
+        let meta = std::fs::metadata(path).ok()?;
+        Some(Fingerprint(meta.modified().ok(), meta.len()))
+    }
 }
 
 impl MaatwerkWorld {
@@ -113,7 +145,7 @@ impl MaatwerkWorld {
         let files = spec
             .files
             .into_iter()
-            .map(|(path, data)| (split_virtual(&path).join("/"), data))
+            .map(|(path, data)| (virtual_key(&path), data))
             .collect();
         // Canonicalised once; a missing folder simply has no files.
         let mounts = spec
@@ -131,14 +163,66 @@ impl MaatwerkWorld {
             files,
             mounts,
             now: spec.now,
-            bytes: Mutex::new(HashMap::new()),
-            sources: Mutex::new(HashMap::new()),
+            slots: Mutex::new(HashMap::new()),
         }
     }
 
     /// The clock behind `datetime.today()` and the PDF creation date.
     pub fn now(&self) -> OffsetDateTime {
         self.now
+    }
+
+    pub(crate) fn set_now(&mut self, now: OffsetDateTime) {
+        self.now = now;
+    }
+
+    /// Serves `path` (rooted virtual path) from memory from now on, shadowing a mount. A source
+    /// Typst already parsed is updated in place: `Source::replace` reparses incrementally and
+    /// keeps the spans of the unchanged parts.
+    pub(crate) fn set_file(&mut self, path: &str, data: Bytes) {
+        let key = virtual_key(path);
+        let id = FileId::new(None, VirtualPath::new(format!("/{key}")));
+        if let Some(slot) = self.slots_mut().get_mut(&id) {
+            slot.source = match (slot.source.take(), decode_utf8(&data)) {
+                (Some(Ok(mut source)), Ok(text)) => {
+                    source.replace(text);
+                    Some(Ok(source))
+                }
+                _ => None,
+            };
+            slot.origin = Origin::Fixed;
+            slot.bytes = Ok(data.clone());
+        }
+        self.files.insert(key, data);
+    }
+
+    /// Before the next compile of a long-lived World: mount folders are resolved again (a folder
+    /// created since, such as a first image folder, becomes visible), files that changed on disk
+    /// and files that were missing are read again on their next use. Unchanged files keep their
+    /// bytes and sources, so Typst's caches stay valid for them.
+    pub(crate) fn reset(&mut self) {
+        let mut moved = false;
+        for (mount, real) in &mut self.mounts {
+            let resolved = mount.resolve();
+            moved |= resolved != *real;
+            *real = resolved;
+        }
+        self.slots_mut().retain(|_, slot| match &slot.origin {
+            Origin::Fixed => true,
+            Origin::Missing => false,
+            Origin::Disk(..) if moved => false,
+            Origin::Disk(path, print) => Fingerprint::of(path) == Some(*print),
+        });
+    }
+
+    /// The number of files the World holds (tests: a long session must not grow).
+    #[cfg(test)]
+    pub(crate) fn cached_files(&mut self) -> usize {
+        self.slots_mut().len()
+    }
+
+    fn slots_mut(&mut self) -> &mut HashMap<FileId, FileSlot> {
+        self.slots.get_mut().unwrap_or_else(|e| e.into_inner())
     }
 
     /// How a file is named in diagnostics: package files as `@preview/x:1.0.0/src/a.typ`,
@@ -154,15 +238,30 @@ impl MaatwerkWorld {
         }
     }
 
-    fn load(&self, id: FileId) -> FileResult<Bytes> {
+    fn load(&self, id: FileId) -> FileSlot {
+        let (origin, bytes) = match self.read(id) {
+            Ok((data, Some((path, print)))) => (Origin::Disk(path, print), Ok(data)),
+            Ok((data, None)) => (Origin::Fixed, Ok(data)),
+            Err(e) if id.package().is_some() => (Origin::Fixed, Err(e)),
+            Err(e) => (Origin::Missing, Err(e)),
+        };
+        FileSlot {
+            origin,
+            bytes,
+            source: None,
+        }
+    }
+
+    /// The bytes of `id` and, for a file on disk, its real path and fingerprint.
+    fn read(&self, id: FileId) -> FileResult<(Bytes, Option<(PathBuf, Fingerprint)>)> {
         let parts = vpath_parts(id.vpath()).ok_or(FileError::AccessDenied)?;
         // The virtual path with `/`, never a machine path (T14).
         let shown = || PathBuf::from(format!("/{}", parts.join("/")));
         if let Some(spec) = id.package() {
-            return load_package(spec, &parts, shown());
+            return load_package(spec, &parts, shown()).map(|data| (data, None));
         }
         if let Some(data) = self.files.get(&parts.join("/")) {
-            return Ok(data.clone());
+            return Ok((data.clone(), None));
         }
         for (mount, real) in &self.mounts {
             let n = mount.prefix.len();
@@ -174,14 +273,21 @@ impl MaatwerkWorld {
             let Some(root) = real else {
                 return Err(FileError::NotFound(shown()));
             };
-            return load_mounted(root, &rest, &shown());
+            return load_mounted(root, &rest, &shown())
+                .map(|(data, real, print)| (data, Some((real, print))));
         }
         Err(FileError::NotFound(shown()))
     }
 }
 
-/// Reads `<root>/<rest>` if it really lies inside `root` (`root` is canonical).
-fn load_mounted(root: &Path, rest: &[String], shown: &Path) -> FileResult<Bytes> {
+/// Reads `<root>/<rest>` if it really lies inside `root` (`root` is canonical). Also returns the
+/// real path and its fingerprint, taken before the read (a write during the read then shows as
+/// a change at the next reset).
+fn load_mounted(
+    root: &Path,
+    rest: &[String],
+    shown: &Path,
+) -> FileResult<(Bytes, PathBuf, Fingerprint)> {
     let rel = RelPath::parse(&rest.join("/")).map_err(|_| FileError::AccessDenied)?;
     let mut path = root.to_path_buf();
     path.extend(rel.as_str().split('/'));
@@ -194,9 +300,9 @@ fn load_mounted(root: &Path, rest: &[String], shown: &Path) -> FileResult<Bytes>
     if real.is_dir() {
         return Err(FileError::IsDirectory);
     }
-    std::fs::read(&real)
-        .map(Bytes::new)
-        .map_err(|e| FileError::from_io(e, shown))
+    let print = Fingerprint::of(&real).ok_or_else(|| FileError::NotFound(shown.into()))?;
+    let data = std::fs::read(&real).map_err(|e| FileError::from_io(e, shown))?;
+    Ok((Bytes::new(data), real, print))
 }
 
 fn load_package(spec: &PackageSpec, parts: &[String], shown: PathBuf) -> FileResult<Bytes> {
@@ -230,6 +336,11 @@ fn vpath_parts(vpath: &VirtualPath) -> Option<Vec<String>> {
         .collect()
 }
 
+/// The key of an in-memory file: the normal components of its virtual path joined by `/`.
+fn virtual_key(path: &str) -> String {
+    split_virtual(path).join("/")
+}
+
 fn split_virtual(path: &str) -> Vec<String> {
     path.split('/')
         .filter(|s| !s.is_empty())
@@ -257,19 +368,24 @@ impl World for MaatwerkWorld {
     }
 
     fn source(&self, id: FileId) -> FileResult<Source> {
-        let mut sources = self.sources.lock().unwrap_or_else(|e| e.into_inner());
-        sources
-            .entry(id)
-            .or_insert_with(|| {
-                let data = self.file(id)?;
-                Ok(Source::new(id, decode_utf8(&data)?.to_owned()))
+        let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+        let slot = slots.entry(id).or_insert_with(|| self.load(id));
+        let bytes = &slot.bytes;
+        slot.source
+            .get_or_insert_with(|| {
+                let data = bytes.as_ref().map_err(Clone::clone)?;
+                Ok(Source::new(id, decode_utf8(data)?.to_owned()))
             })
             .clone()
     }
 
     fn file(&self, id: FileId) -> FileResult<Bytes> {
-        let mut bytes = self.bytes.lock().unwrap_or_else(|e| e.into_inner());
-        bytes.entry(id).or_insert_with(|| self.load(id)).clone()
+        let mut slots = self.slots.lock().unwrap_or_else(|e| e.into_inner());
+        slots
+            .entry(id)
+            .or_insert_with(|| self.load(id))
+            .bytes
+            .clone()
     }
 
     fn font(&self, index: usize) -> Option<Font> {
