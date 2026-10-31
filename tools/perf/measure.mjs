@@ -9,10 +9,12 @@
 //
 //   node tools/perf/measure.mjs --data <dir> [--exe target/release/maatwerk.exe]
 //     [--subject nat] [--user <id> | --admin 1] [--pin 12345] [--runs 5] [--exams 4]
-//     [--tabs leerlingen,groepen,...] [--cpu 4] [--json out.json]
+//     [--tabs leerlingen,groepen,...] [--cpu 4] [--menu-ms 300] [--json out.json]
 //
 // --cpu N slows the webview's CPU N times (CDP throttling), a stand-in for a
-// school laptop. The admin has no score modal: use --exams 0.
+// school laptop. --menu-ms is the pause between opening an exam menu and
+// choosing "Scores invoeren" (a person moving the mouse; the grids are prebuilt
+// meanwhile). The admin has no score modal: use --exams 0.
 // The login PIN is chosen at the first login if the user has none yet.
 
 import { spawn } from 'node:child_process';
@@ -28,6 +30,7 @@ const pin = args.pin ?? '12345';
 const runs = Number(args.runs ?? 5);
 const examCount = Number(args.exams ?? 4);
 const port = Number(args.port ?? 9333);
+const menuMs = Number(args['menu-ms'] ?? 300);
 const TABS = (args.tabs ?? 'leerlingen,groepen,toetsen,observaties,opdrachten').split(',');
 
 function parseArgs(list) {
@@ -124,7 +127,15 @@ async function switchTab(page, tab) {
 }
 
 async function openScores(page, { id, kind }) {
-  await page.locator(`[data-action="exam-menu"][data-id="${id}"][data-kind="${kind}"]`).click();
+  const btn = page.locator(`[data-action="exam-menu"][data-id="${id}"][data-kind="${kind}"]`);
+  // Scroll first: the scroll event of Playwright's own scroll-into-view would
+  // close the menu right after it opens.
+  await btn.scrollIntoViewIfNeeded();
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
+  await btn.click();
+  await page.waitForTimeout(menuMs);
   const before = await countOf(page, 'mw:modal:scores');
   await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
   await waitForSpan(page, 'mw:modal:scores', before);

@@ -27,3 +27,10 @@ describe('perf spans', () => {
     for (const n of ['t:sync', 't:async', 't:throw', 't:reject']) expect(spans(n)).toHaveLength(1);
   });
 });
+
+describe('afterPaint', () => {
+  it('resolves (with or without requestAnimationFrame)', async () => {
+    const { afterPaint } = await import('./perf');
+    await expect(afterPaint()).resolves.toBeUndefined();
+  });
+});

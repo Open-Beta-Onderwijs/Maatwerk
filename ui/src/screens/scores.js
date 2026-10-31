@@ -213,12 +213,14 @@ function resetScoreModal({ keepGrids = false } = {}) {
 
 // ── Prebuild (Step 7c) ───────────────────────────────────────────────────────
 // While an exam's menu is open, its grids are built off-screen, so "Scores
-// invoeren" only has to move them into the modal. Colleagues hear nothing
+// invoeren" only has to move them into the modal. Only the first group is
+// built ahead (the others wait for the modal, then idle time), so the modal's
+// first frame lays out one grid, as without a prebuild. Colleagues hear nothing
 // (presence) until the modal really opens. A prebuild is used only when no
 // cached data changed since it started (Store.generation); otherwise, or when
 // it is not used within PREBUILD_TTL_MS, it is thrown away.
 const PREBUILD_TTL_MS = 15_000;
-let prebuilt = null; // { examId, year, host, grids, generation, token, first, done, timer }
+let prebuilt = null; // { examId, year, host, grids, generation, token, first, done, release, timer }
 let scoreModalOpen = false;
 
 function discardPrebuilt() {
@@ -226,6 +228,7 @@ function discardPrebuilt() {
   clearTimeout(prebuilt.timer);
   prebuilt.host.remove();
   if (prebuilt.token === buildToken) destroyGridInstances();
+  prebuilt.release(); // the held build sees the new token and stops
   prebuilt = null;
 }
 
@@ -243,7 +246,9 @@ export function prebuildScoreModal(examId, year) {
   const generation = Store.generation();
   let firstBuilt;
   const first = new Promise((resolve) => (firstBuilt = resolve));
-  const done = loadScoreGrid(String(exam.jaarlaag), examId, grids, year, firstBuilt).finally(
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+  const done = loadScoreGrid(String(exam.jaarlaag), examId, grids, year, firstBuilt, held).finally(
     firstBuilt,
   );
   void done.catch(() => {}); // reported when the modal awaits it; unused, it is dropped
@@ -256,6 +261,7 @@ export function prebuildScoreModal(examId, year) {
     token: buildToken, // loadScoreGrid took its token synchronously
     first,
     done,
+    release,
     timer: setTimeout(discardPrebuilt, PREBUILD_TTL_MS),
   };
 }
@@ -275,6 +281,7 @@ function takePrebuilt(examId, year) {
   }
   clearTimeout(pre.timer);
   prebuilt = null;
+  pre.release();
   return pre;
 }
 
@@ -585,10 +592,11 @@ async function reloadScoreModal(examId, year, deps) {
 /**
  * Builds one grid per group. The first group is built at once; each further
  * group waits for idle time, so the modal paints its first rows within budget
- * (Step 7c). `onFirst` runs when the first grid is in the DOM; the promise
- * resolves when every grid is (or the build was replaced).
+ * (Step 7c). `onFirst` runs when the first grid is in the DOM; the further
+ * groups also wait for `held` (the prebuild holds them until the modal opens).
+ * The promise resolves when every grid is in the DOM (or the build was replaced).
  */
-export async function loadScoreGrid(jaarlaag, examId, container, year, onFirst) {
+export async function loadScoreGrid(jaarlaag, examId, container, year, onFirst, held) {
   destroyGridInstances();
   const token = buildToken;
   // Saves queued from a previous modal must land before the files are read (review 3b m7).
@@ -622,6 +630,7 @@ export async function loadScoreGrid(jaarlaag, examId, container, year, onFirst) 
     const groupStudents = groupStudentsOf(group, allStudents);
     if (groupStudents.length === 0) continue;
     if (built > 0) {
+      if (built === 1) await held;
       await nextIdle();
       if (token !== buildToken) return;
     }

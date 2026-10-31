@@ -51,6 +51,7 @@ import {
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
+import { timed } from './utils/perf';
 
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
@@ -806,12 +807,14 @@ const Store = (() => {
     const dir = `${year}/scores/${subject}`;
     let read = scoreDirReads.get(dir);
     if (!read) {
-      read = window.maatwerk.readJsonDir(dir).then((files) => {
-        for (const { name, data } of files) {
-          const rel = `${dir}/${name}`;
-          if (cache[rel] === undefined) cache[rel] = decode(rel, data);
-        }
-      });
+      read = timed('store:readDir', () => window.maatwerk.readJsonDir(dir)).then((files) =>
+        timed('store:decodeDir', () => {
+          for (const { name, data } of files) {
+            const rel = `${dir}/${name}`;
+            if (cache[rel] === undefined) cache[rel] = decode(rel, data);
+          }
+        }),
+      );
       scoreDirReads.set(dir, read);
       void read.finally(() => scoreDirReads.delete(dir)).catch(() => {});
     }

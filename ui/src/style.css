@@ -263,6 +263,12 @@ body::after {
   padding: 7px 14px;
   box-shadow: var(--shadow);
 }
+/* Long student lists (Step 7c): cards out of view skip style, layout and paint;
+   `auto` keeps a card's last real height once it has been shown. */
+#student-list > .card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
+}
 .card-main {
   display: flex;
   flex-direction: column;

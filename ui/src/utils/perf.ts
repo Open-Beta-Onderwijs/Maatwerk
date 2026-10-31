@@ -35,7 +35,12 @@ export function timed<T>(name: string, fn: () => T): T {
   return result;
 }
 
+// Typed here: the Store (and so this file) is also checked without the DOM lib.
+const host = globalThis as { requestAnimationFrame?: (cb: () => void) => number };
+const nextFrame = (cb: () => void) =>
+  host.requestAnimationFrame ? host.requestAnimationFrame(cb) : setTimeout(cb, 16);
+
 /** Resolves after the browser has painted the current DOM (next frame, then a task). */
 export function afterPaint(): Promise<void> {
-  return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+  return new Promise((resolve) => nextFrame(() => setTimeout(resolve, 0)));
 }
