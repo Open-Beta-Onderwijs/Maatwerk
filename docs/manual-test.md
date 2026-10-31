@@ -167,13 +167,14 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       dialog names the snapshot date; afterwards the file is as in the zip and the line is gone.
 - [ ] **M-SNAP-4** Measure on the real copy: zip size and time (log line), and the size of
       `fotos\`, to decide whether photos go into snapshots (PLAN Step 7b).
-- [ ] **M-PERF-1** Speed on the real copy (Step 7c, budget < 100 ms): in a dev checkout, run
-      `node tools/perf/measure.mjs --data <copy>\data --subject <vak>` (and with `--admin 1
-    --tabs leerlingen,groepen,gebruikers --exams 0`), with `--user <id> --pin <PIN>` of a
-      teacher on the copy (without `--user` it takes the first teacher; one without a PIN gets
-      `12345` on the copy). It logs in through the UI and prints the times; add them to
-      `docs/perf.md` without names. By hand: switching tabs back and forth shows the list at once; "Scores
-      invoeren" shows the first group at once, the others follow within a second.
+- [ ] **M-PERF-1** Speed on the real copy (Step 7c, budget < 100 ms). In a dev checkout run
+      `node tools/perf/measure.mjs --data <copy>\data --subject <vak> --user <id> --pin <PIN>`
+      with a teacher of the copy (without `--user` it takes the first teacher; one without a PIN
+      gets `12345` on the copy), and once more as the admin with
+      `--admin 1 --tabs leerlingen,groepen,gebruikers --exams 0`. It logs in through the UI and
+      prints the times: add them to `docs/perf.md` without names. By hand: switching tabs back
+      and forth shows the list at once; "Scores invoeren" shows the first group at once, the
+      others follow within a second.
 - [ ] **M-PERF-2** After a colleague's change (second PC) to a student, group or score, the
       changed tab shows it when you come back to it; a filter change on one tab applies on the
       others too.
