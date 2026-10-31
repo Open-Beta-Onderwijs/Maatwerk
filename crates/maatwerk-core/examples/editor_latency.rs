@@ -91,7 +91,10 @@ fn main() {
         .expect("compiles");
         one_shot.push(start.elapsed().as_secs_f64() * 1000.0);
     }
-    println!("one-shot (fresh World, all pages), {} edits:", one_shot.len());
+    println!(
+        "one-shot (fresh World, all pages), {} edits:",
+        one_shot.len()
+    );
     report("  total ms ", &mut one_shot);
 }
 
