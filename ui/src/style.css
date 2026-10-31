@@ -1721,6 +1721,14 @@ body::after {
 }
 
 /* ── Score grid ───────────────────────────────────────────────────────────── */
+/* Grids built ahead while the exam menu is open (Step 7c): laid out, not seen. */
+.sc-prebuild {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  visibility: hidden;
+  pointer-events: none;
+}
 .score-group-section {
   margin-bottom: 28px;
 }

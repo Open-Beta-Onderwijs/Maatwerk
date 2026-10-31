@@ -199,8 +199,8 @@ export function destroyGridInstances() {
 // Everything the score modal set up: the grids, the undo history and its
 // buttons, and the Ctrl+Z / Ctrl+Y listener. loadScoreGrid only replaces the
 // grids, so the listener and buttons stay wired (U1).
-function resetScoreModal() {
-  destroyGridInstances();
+function resetScoreModal({ keepGrids = false } = {}) {
+  if (!keepGrids) destroyGridInstances();
   scoreHistory = [];
   redoHistory = [];
   undoBtnEl = null;
@@ -211,12 +211,83 @@ function resetScoreModal() {
   }
 }
 
+// ── Prebuild (Step 7c) ───────────────────────────────────────────────────────
+// While an exam's menu is open, its grids are built off-screen, so "Scores
+// invoeren" only has to move them into the modal. Colleagues hear nothing
+// (presence) until the modal really opens. A prebuild is used only when no
+// cached data changed since it started (Store.generation); otherwise, or when
+// it is not used within PREBUILD_TTL_MS, it is thrown away.
+const PREBUILD_TTL_MS = 15_000;
+let prebuilt = null; // { examId, year, host, grids, generation, token, first, done, timer }
+let scoreModalOpen = false;
+
+function discardPrebuilt() {
+  if (!prebuilt) return;
+  clearTimeout(prebuilt.timer);
+  prebuilt.host.remove();
+  if (prebuilt.token === buildToken) destroyGridInstances();
+  prebuilt = null;
+}
+
+export function prebuildScoreModal(examId, year) {
+  if (scoreModalOpen) return; // its grids are the live ones
+  discardPrebuilt();
+  const exam = Store.getExamsSync(year).find((e) => e.id === examId);
+  if (!exam) return;
+  const host = document.createElement('div');
+  host.className = 'sc-prebuild';
+  host.setAttribute('aria-hidden', 'true');
+  const grids = document.createElement('div');
+  host.appendChild(grids);
+  document.body.appendChild(host);
+  const generation = Store.generation();
+  let firstBuilt;
+  const first = new Promise((resolve) => (firstBuilt = resolve));
+  const done = loadScoreGrid(String(exam.jaarlaag), examId, grids, year, firstBuilt).finally(
+    firstBuilt,
+  );
+  void done.catch(() => {}); // reported when the modal awaits it; unused, it is dropped
+  prebuilt = {
+    examId,
+    year,
+    host,
+    grids,
+    generation,
+    token: buildToken, // loadScoreGrid took its token synchronously
+    first,
+    done,
+    timer: setTimeout(discardPrebuilt, PREBUILD_TTL_MS),
+  };
+}
+
+// The prebuild for this exam if it is still current, else null (and it is gone).
+function takePrebuilt(examId, year) {
+  const pre = prebuilt;
+  const current =
+    pre &&
+    pre.examId === examId &&
+    pre.year === year &&
+    pre.token === buildToken &&
+    pre.generation === Store.generation();
+  if (!current) {
+    discardPrebuilt();
+    return null;
+  }
+  clearTimeout(pre.timer);
+  prebuilt = null;
+  return pre;
+}
+
 export async function openScoreModal(examId, year, deps) {
   const endOpen = perfSpan('modal:scores');
   const generationAtOpen = Store.generation();
-  resetScoreModal();
+  const pre = takePrebuilt(examId, year);
+  resetScoreModal({ keepGrids: Boolean(pre) });
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
-  if (!exam) return;
+  if (!exam) {
+    if (pre) destroyGridInstances();
+    return;
+  }
 
   showModal(
     `
@@ -306,6 +377,9 @@ export async function openScoreModal(examId, year, deps) {
         });
       });
 
+      scoreModalOpen = true;
+      onModalCleanup(() => (scoreModalOpen = false));
+
       // ── Presence: tell colleagues we're here, show who else is ─────────────
       Presence.setScoreModal({ year, subject: Store.getActiveSubject(), examId });
       onModalCleanup(() => Presence.setScoreModal(null));
@@ -371,16 +445,25 @@ export async function openScoreModal(examId, year, deps) {
         });
       }
 
-      await loadScoreGrid(
-        String(exam.jaarlaag),
-        examId,
-        el.querySelector('#sc-grid-container'),
-        year,
-        () => {
-          renderPresence(el, examId, year);
-          void afterPaint().then(endOpen);
-        },
-      );
+      const shown = () => {
+        renderPresence(el, examId, year);
+        void afterPaint().then(endOpen);
+      };
+      if (pre) {
+        // Later groups of the prebuild keep arriving in `grids`, now in the modal.
+        el.querySelector('#sc-grid-container').appendChild(pre.grids);
+        pre.host.remove();
+        void pre.first.then(shown);
+        await pre.done;
+      } else {
+        await loadScoreGrid(
+          String(exam.jaarlaag),
+          examId,
+          el.querySelector('#sc-grid-container'),
+          year,
+          shown,
+        );
+      }
       // All grids built: colleagues' cursors in the later ones too.
       renderPresence(el, examId, year);
       void afterPaint().then(endOpen); // no grid at all (no groups)

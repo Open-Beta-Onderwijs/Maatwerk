@@ -11,7 +11,7 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { openScoreModal } from './scores.js';
+import { openScoreModal, prebuildScoreModal } from './scores.js';
 import * as Presence from '../presence.js';
 import { perfSpan } from '../utils/perf';
 import { openRapportModal, openRttiUitlegModal } from '../modals/rapport.js';
@@ -584,6 +584,8 @@ async function toggleExamMenu(btn, year) {
     return;
   }
   closeExamMenu();
+  // Most menus lead to "Scores invoeren": build its grids now, out of sight (Step 7c).
+  if (btn.dataset.kind !== 'summary') prebuildScoreModal(btn.dataset.id, year);
 
   const endMenu = perfSpan('menu:exam');
   const items = await buildMenuItems(btn.dataset.id, btn.dataset.kind, year);

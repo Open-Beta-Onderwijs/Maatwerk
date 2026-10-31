@@ -142,3 +142,66 @@ test('score modal: later groups are built after the first and get colleague chan
   await expect(cell(page, 0, 2, g1)).toHaveText('3');
   expect(errors).toEqual([]);
 });
+
+// Playwright scrolls the button into view before it clicks, and the browser
+// delivers that scroll event a frame later, which closes a menu that just
+// opened (exam menus close on scroll). Scroll first, let the event pass, click.
+async function openExamMenu(page: Page, examId: string): Promise<void> {
+  const btn = page.locator(`[data-action="exam-menu"][data-id="${examId}"]`);
+  await btn.scrollIntoViewIfNeeded();
+  await page.evaluate(
+    () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))),
+  );
+  await btn.click();
+  await expect(page.locator('.sc-prebuild .score-grid-table').first()).toBeAttached();
+}
+
+// Score-modal presence written so far (updatePresence calls with a scoreModal).
+const scoreModalPresence = (page: Page) =>
+  withMock(
+    page,
+    (m) =>
+      m.calls.filter(
+        ([name, , state]) =>
+          name === 'updatePresence' && (state as { scoreModal?: unknown })?.scoreModal,
+      ).length,
+  );
+
+test('the exam menu prebuilds the grids without telling colleagues', async ({ page }) => {
+  const errors = watchErrors(page);
+  await login(page);
+  await screen(page, 'toetsen');
+  await openExamMenu(page, EXAMS.empty);
+  expect(await scoreModalPresence(page)).toBe(0);
+
+  await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
+  await expect(gridTable(page)).toBeVisible();
+  await expect(page.locator('.sc-prebuild')).toHaveCount(0);
+  await expect.poll(() => scoreModalPresence(page)).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
+
+test('a change while the exam menu is open is in the score modal', async ({ page }) => {
+  await login(page);
+  await screen(page, 'toetsen');
+  await openExamMenu(page, EXAMS.empty);
+  const id = await page
+    .locator('.sc-prebuild .score-grid-table')
+    .first()
+    .locator('tbody tr')
+    .first()
+    .locator('td')
+    .first()
+    .textContent();
+  await withMock(
+    page,
+    (m, { f, exam }) =>
+      m.externalWrite(f, {
+        student_id: Number(f.match(/(\d+)\.json$/)![1]),
+        scores: { [exam]: { q1: 4 } },
+      }),
+    { f: `${YEAR}/scores/nat/${id}.json`, exam: EXAMS.empty },
+  );
+  await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
+  await expect(cell(page, 0, 2)).toHaveText('4');
+});
