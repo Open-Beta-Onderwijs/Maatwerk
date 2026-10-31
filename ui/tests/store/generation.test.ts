@@ -78,3 +78,20 @@ describe('Store.generation', () => {
     expect(Store.generation!()).toBeGreaterThan(g);
   });
 });
+
+describe('Store.examResults (memoised)', () => {
+  it('reuses a result until the record or the exam is replaced', async () => {
+    const exam = (Store.getExamsSync!(YEAR) as { id: string }[]).find((e) => e.id === E1)!;
+    const rec = await Store.getStudentScores!('1', YEAR);
+    const first = Store.examResults!(rec, exam);
+    expect(first?.grade).not.toBeNull();
+    expect(Store.examResults!(rec, exam)).toBe(first);
+    // A copy with another n-term (as the score modal makes) is computed anew.
+    expect(Store.examResults!(rec, { ...exam, n_term: 3 })).not.toEqual(first);
+    // A saved score replaces the cached record: a new result.
+    await Store.setScore!('1', E1, 'q1', 2, YEAR);
+    const next = Store.examResults!(await Store.getStudentScores!('1', YEAR), exam);
+    expect(next).not.toBe(first);
+    expect(next?.scored).toBe(2);
+  });
+});

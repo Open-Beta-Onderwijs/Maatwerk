@@ -725,6 +725,22 @@ const Store = (() => {
 
   // RTTI calculations (calcResults, examResults, calcGrade): src/domain/grades.ts
 
+  // examResults per (score record, exam), for the statistics on the list screens
+  // (Step 7c). A cached record or exam that changes is replaced, never edited in
+  // place, so its identity is its revision; n_term and the question list are
+  // checked anyway (the score modal adjusts a copy's n_term). Results are read-only.
+  const resultsMemo = new WeakMap();
+  function examResultsMemo(rec, exam) {
+    if (!rec || typeof rec !== 'object' || !exam) return examResults(rec, exam);
+    let perExam = resultsMemo.get(rec);
+    if (!perExam) resultsMemo.set(rec, (perExam = new WeakMap()));
+    const hit = perExam.get(exam);
+    if (hit && hit.nTerm === exam.n_term && hit.questions === exam.questions) return hit.value;
+    const value = examResults(rec, exam);
+    perExam.set(exam, { nTerm: exam.n_term, questions: exam.questions, value });
+    return value;
+  }
+
   // ── Utilities ─────────────────────────────────────────────────────────────
   // New ids are opaque (C10, quirk B26): the title is only data.
   function makeExamId() {
@@ -1224,7 +1240,7 @@ const Store = (() => {
     setScore,
     getStudentHistory,
     calcResults,
-    examResults,
+    examResults: examResultsMemo,
     calcGrade,
     setGradeOverride,
     makeExamId,

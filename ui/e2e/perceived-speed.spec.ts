@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Step 7c: list screens keep their DOM between visits and render again only
-// when what they show may have changed (Store.generation, filters, login).
+// Step 7c (perceived speed): list screens keep their DOM between visits and
+// render again only when what they show may have changed (Store.generation,
+// filters, login); long lists and score modals build in stages.
 
 import { expect, test, type Page } from '@playwright/test';
 import { YEAR, login, readMockJson, seedFiles, watchErrors, withMock } from './helpers';
 import { screen } from './views';
+import { EXAMS, cell, gridTable, openGrid, studentIdOf } from './grid-driver';
 
 interface StudentsFile {
   students: { id: string; voornaam: string; achternaam: string }[];
@@ -100,4 +102,43 @@ test('admin: Verwijderen is blocked for students with scores, also in late cards
   const del = page.locator(`[data-action="del-student"][data-id="${withScores}"]`);
   await expect(del).toBeDisabled();
   await expect(del).toHaveAttribute('title', /scores ingevoerd/);
+});
+
+test('score modal: later groups are built after the first and get colleague changes', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  // A second group with the same students, sorted after the first.
+  await page.goto('/');
+  const group = await withMock(
+    page,
+    async (m, dir) => (await m.readAllJson(dir))[0],
+    `${YEAR}/groups`,
+  );
+  const { _meta, ...rest } = group as { id: string; name: string; _meta?: unknown };
+  void _meta;
+  await seedFiles(page, {
+    [`${YEAR}/groups/kopie.json`]: { ...rest, id: 'kopie', name: `${rest.name} zz` },
+  });
+  await openGrid(page, EXAMS.empty);
+  const headings = page.locator('#modal-box .score-group-section .group-heading');
+  await expect(headings.filter({ hasText: `${rest.name} zz` })).toHaveCount(1);
+  const names = await headings.allTextContents();
+  const g0 = names.indexOf(rest.name);
+  const g1 = names.indexOf(`${rest.name} zz`);
+  await expect(gridTable(page, g1)).toBeVisible();
+
+  const id = await studentIdOf(page, 0, g0);
+  await withMock(
+    page,
+    (m, { f, exam }) =>
+      m.externalWrite(f, {
+        student_id: Number(f.match(/(\d+)\.json$/)![1]),
+        scores: { [exam]: { q1: 3 } },
+      }),
+    { f: `${YEAR}/scores/nat/${id}.json`, exam: EXAMS.empty },
+  );
+  await expect(cell(page, 0, 2, g0)).toHaveText('3');
+  await expect(cell(page, 0, 2, g1)).toHaveText('3');
+  expect(errors).toEqual([]);
 });

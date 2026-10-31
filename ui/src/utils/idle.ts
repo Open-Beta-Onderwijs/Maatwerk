@@ -58,3 +58,8 @@ export function inIdleSlices<T>(items: T[], run: (slice: T[]) => void, batch = 2
     done,
   };
 }
+
+/** Resolves in the next idle period (for async loops that yield between steps). */
+export function nextIdle(): Promise<void> {
+  return new Promise((resolve) => requestIdle(() => resolve()));
+}

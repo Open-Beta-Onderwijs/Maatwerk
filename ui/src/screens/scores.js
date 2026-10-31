@@ -17,6 +17,7 @@ import {
 import * as Presence from '../presence.js';
 import { createScoreGrid } from '../components/score-grid/score-grid';
 import { afterPaint, perfSpan, timed } from '../utils/perf';
+import { nextIdle } from '../utils/idle';
 import {
   computeRowStatus as rowStatusOf,
   normalizeScore,
@@ -76,6 +77,9 @@ const REMOTE_FLASH_COLOR = '#f5a623';
 let remoteFlashColor = REMOTE_FLASH_COLOR;
 // One per group grid: (cursors) => draws colleagues' positions in that grid.
 let cursorUpdaters = [];
+// Grows on every (re)build and teardown: a group grid still waiting for idle
+// time checks it and gives up when its build was replaced (Step 7c).
+let buildToken = 0;
 
 // Saves run one after the other, in the order they were made: a value typed
 // while an earlier save is still in flight is queued, never dropped (U2).
@@ -180,6 +184,7 @@ async function redoLast() {
 }
 
 export function destroyGridInstances() {
+  buildToken++;
   gridInstances.forEach((g) => g.destroy());
   gridInstances = [];
   unsavedCells.clear();
@@ -371,9 +376,14 @@ export async function openScoreModal(examId, year, deps) {
         examId,
         el.querySelector('#sc-grid-container'),
         year,
+        () => {
+          renderPresence(el, examId, year);
+          void afterPaint().then(endOpen);
+        },
       );
+      // All grids built: colleagues' cursors in the later ones too.
       renderPresence(el, examId, year);
-      void afterPaint().then(endOpen);
+      void afterPaint().then(endOpen); // no grid at all (no groups)
     },
     'modal-scores',
     // The exam list shows statistics: redraw it only when something was saved.
@@ -489,10 +499,18 @@ async function reloadScoreModal(examId, year, deps) {
   if (Store.getExamsSync(year).some((e) => e.id === examId)) openScoreModal(examId, year, deps);
 }
 
-export async function loadScoreGrid(jaarlaag, examId, container, year) {
+/**
+ * Builds one grid per group. The first group is built at once; each further
+ * group waits for idle time, so the modal paints its first rows within budget
+ * (Step 7c). `onFirst` runs when the first grid is in the DOM; the promise
+ * resolves when every grid is (or the build was replaced).
+ */
+export async function loadScoreGrid(jaarlaag, examId, container, year, onFirst) {
   destroyGridInstances();
+  const token = buildToken;
   // Saves queued from a previous modal must land before the files are read (review 3b m7).
   await saveChain;
+  if (token !== buildToken) return;
   if (!container) container = document.getElementById('score-grid-container');
   if (!examId) {
     container.innerHTML = '<p class="hint">Selecteer een toets.</p>';
@@ -515,10 +533,15 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
 
   container.innerHTML = '';
 
+  let built = 0;
   for (let gi = 0; gi < groups.length; gi++) {
     const group = groups[gi];
     const groupStudents = groupStudentsOf(group, allStudents);
     if (groupStudents.length === 0) continue;
+    if (built > 0) {
+      await nextIdle();
+      if (token !== buildToken) return;
+    }
 
     const section = document.createElement('div');
     section.className = 'score-group-section';
@@ -534,9 +557,12 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       .filter(Boolean)
       .sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
 
+    // Read right before building: a colleague's change that arrived while this
+    // group waited is in the Store cache by now.
     const scoreRecs = await timed('scores:read', () =>
       Promise.all(groupStudents.map((s) => Store.getStudentScores(s.id, year))),
     );
+    if (token !== buildToken) return;
     const endCompute = perfSpan('scores:compute');
 
     for (let si = 0; si < groupStudents.length; si++) {
@@ -599,6 +625,7 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       section.style.maxWidth = `${tableWidth + 2}px`;
       section.style.marginInline = 'auto';
     }
+    if (built++ === 0) onFirst?.();
   }
 }
 
