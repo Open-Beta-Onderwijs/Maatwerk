@@ -147,6 +147,13 @@ Budget (< 100 ms): met at 1x everywhere. At 4x every median is within budget; th
 Groepen 154), where the first folder reads and statistics run. Still to measure: the user's
 real copy (`docs/manual-test.md` M-PERF-1).
 
+After the review fixes (three more runs at 4x, same build): medians stable (modal:scores 50-53,
+tabs 11-64, admin Leerlingen 51-64); the first-visit p90s move between runs (admin Leerlingen
+252-320, admin Groepen 130-290, Toetsen 63-113); long tasks 1.0-3.2 s in total per run, the
+longest 123-184 ms; admin delete checks 0.6-0.8 s (one run right after a build: 4.2 s, not
+repeated). The teacher's run reads the score folder once instead of twice (review M3). Single
+first-visit samples at 4x vary by a factor of two: compare medians.
+
 Read the modal numbers with care (review 7c m1): after the change `modal:scores` ends when the
 **first** group is painted (the others follow in idle time), and the script pauses 300 ms in the
 exam menu (`--menu-ms`), so the prebuild runs before the span starts. "209 -> 48 ms" is what a
