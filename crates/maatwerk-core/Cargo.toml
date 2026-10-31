@@ -8,6 +8,9 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+# PIN and recovery code hashes (Step 7b). `getrandom`: salts and codes from the OS RNG.
+argon2 = "0.5.3"
+password-hash = { version = "0.5.0", features = ["getrandom"] }
 base64 = "0.23.1"
 # Opdracht image thumbnails and clipboard PNGs; the same version and formats Typst already uses.
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
