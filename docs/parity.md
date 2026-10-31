@@ -209,3 +209,17 @@ saved (the reference always redrew it; the list looked the same).
 | Memoised `Store.examResults`                             | `store.js`                                | Vitest `generation.test.ts` "examResults"; grade goldens unchanged                                         |
 | Score modal: first group at once, rest in idle; prebuild | `screens/scores.js`, `toetsen.js` menu    | `perceived-speed.spec.ts` (later groups, prebuild, presence); all `score-grid.spec.ts` run on the prebuild |
 | Timing spans and the measurement script                  | `utils/perf.ts`, `tools/perf/measure.mjs` | Vitest `utils/perf.test.ts`; manual `M-PERF-1`                                                             |
+
+## Live editor compile service (Step 8a)
+
+New in the core; the editor UI moves onto it in Step 8b (until then the editor still calls
+`render_assignment_svg` per compile, row 30). The SVG pages are the same as the one-shot render.
+
+| Behaviour                                                          | Where                                    | Tests                                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| Same SVG pages as path C; patched pages equal a fresh render       | `typst_svc::EditorSession`               | `typst_opdracht.rs` `editor_session_patches_equal_the_one_shot_render`          |
+| Only changed pages sent (hash per page); fewer pages trim          | `EditorSession::compile`                 | `editor::tests::the_first_compile_*`, `fewer_pages_shrink_the_preview`          |
+| Last good preview kept on errors; diagnostics with UTF-16 ranges   | `EditorSession`, `diagnostics::Location` | `editor::tests::errors_keep_the_last_good_preview_*`, `resend_all_*`            |
+| Buffer only in memory; disk files (images) re-checked per compile  | `MaatwerkWorld::set_file`, `reset`       | `editor::tests::the_buffer_is_never_written_*`, `files_on_disk_*`, `a_folder_*` |
+| Debounce; latest generation wins, stale compiles dropped           | `typst_svc::LiveEditor`                  | `editor::tests::live_*`, `a_stale_compile_changes_nothing`                      |
+| Long sessions do not grow (files held; comemo evicted per compile) | `compile_document`, `MaatwerkWorld`      | `editor::tests::a_long_session_holds_no_more_files`; `docs/perf.md`             |

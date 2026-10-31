@@ -285,6 +285,20 @@ These record what was built; none changes a decided behaviour.
 - **Dependency:** `rfd` (MIT) for the start error message box and `wry` (pinned to Tauri's) for
   the WebView2 pre-check; both were already in the tree.
 
+### 12. Live editor service (Step 8a)
+
+- **Long-lived World (section 5):** the editor keeps one `MaatwerkWorld` per open opdracht
+  (`typst_svc::EditorSession`) instead of one per compile, so the buffer is reparsed incrementally
+  and comemo reuses unchanged work. Files read from disk are re-checked by modification time and
+  length before every compile; the buffer itself is never written. `typst_svc::LiveEditor` runs a
+  session on its own thread (not the async runtime) with a debounce; the latest generation wins.
+- **Limits (section 5): deviation, open for the user.** Typst 0.14 has no way to cancel a compile
+  (it bounds `while` loops at 10,000 iterations and the call depth at 80, but a long `for` loop or
+  a huge document still runs to the end). A compile overtaken by a newer edit is dropped before
+  its SVG render, but not stopped. Options: accept this (a runaway compile only delays the
+  preview of that one editor), or a watchdog that abandons a session thread after a time limit
+  and opens a fresh one. Decided in Step 8b.
+
 ## Consequences
 
 - Step 2 characterises the reference against these seams (bridge contract per method, storage

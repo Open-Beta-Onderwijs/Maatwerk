@@ -160,3 +160,38 @@ exam menu (`--menu-ms`), so the prebuild runs before the span starts. "209 -> 48
 teacher waits for the first rows, not the cost of all grids; `menu:exam` (median 2-3 ms at 4x)
 covers the menu itself. The Toetsen p90 at 4x is 113 ms against 101 before: its first visit now
 also waits for the score folder read.
+
+## Live editor compile (Step 8a)
+
+Question: is a long-lived `EditorSession` fast enough to compile on (almost) every key, and does
+it grow during a long editing session?
+
+Setup: `cargo run --release -p maatwerk-core --example editor_latency -- <typ file> <edits>` on
+the tiny fixture's opdrachten (`crates/maatwerk-core/tests/fixtures`) with the preview inputs
+(placeholder header, cursor marker). Every edit types one more character into the second
+paragraph (page 1) and compiles; the one-shot row renders the same edits with a fresh World and
+every page, as `render_assignment_svg` does per compile today. Peak working set polled from
+PowerShell every 50 ms; it covers the whole run, one-shot part included. Windows 11, 16 logical
+CPUs, system fonts on, 2026-10-31. Times in ms (median / p90 / max).
+
+| Opdracht            | Edits | Cold (layout + SVG) | Layout     | SVG of changed pages | Session total | Pages sent | One-shot total | Peak working set |
+| ------------------- | ----- | ------------------- | ---------- | -------------------- | ------------- | ---------- | -------------- | ---------------- |
+| `…203.typ`, 3 pages | 200   | 65 + 28             | 4 / 5 / 6  | 14 / 16 / 21         | 20 / 22 / 29  | 1 / 1 / 2  | 40 / 44 / 73   | ~80 MiB          |
+| `…203.typ`, 3 pages | 2000  | 60 + 24             | 5 / 6 / 9  | 14 / 16 / 29         | 20 / 23 / 45  | 1 / 1 / 2  | 33 / 37 / 57   | ~57 MiB          |
+| `…204.typ`, 4 pages | 200   | 54 + 39             | 4 / 5 / 7  | 14 / 16 / 21         | 19 / 22 / 43  | 1 / 1 / 2  | 62 / 69 / 150  | ~55 MiB          |
+| `…204.typ`, 4 pages | 2000  | 55 + 40             | 4 / 6 / 30 | 11 / 14 / 27         | 17 / 21 / 52  | 1 / 1 / 2  | 37 / 43 / 50   | ~61 MiB          |
+
+Findings:
+
+- Incremental layout is ~4 ms; the SVG of the one changed page is most of the cost. Sending only
+  changed pages halves the time against a full render and keeps the IPC payload to one page.
+- Memory does not grow with the number of edits (2000 edits peak no higher than 200): the World
+  holds only the files Typst asked for, and comemo is evicted after every compile.
+- **Budgets** (this machine, release build, 3-4 page opdracht): an edit compile (layout + SVG of
+  the changed pages) **< 50 ms p90**; the opening compile **< 200 ms**; peak memory flat over
+  2000 edits. With `DEFAULT_DEBOUNCE` (150 ms) the preview follows ~170 ms after the last key
+  (the old editor: 600 ms autosave delay, then a Typst CLI process per compile). Step 8b measures
+  the end-to-end latency in the app, IPC and DOM included.
+
+Not measured yet: opdrachten with large photos (the SVG embeds images as data URIs, so a changed
+page with a photo costs its base64 again), and school laptops.

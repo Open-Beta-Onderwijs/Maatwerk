@@ -1,11 +1,26 @@
 # State
 
-Last updated: 2026-10-31 (Step 7 done) Branch: `main` Last tags: `step-07`, `step-07c`, `step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-31 (Step 8a) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
+`step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 7 done** (7a, 7b, 7c), `step/07-data-v2` merged into `main`, tagged `step-07`. Next:
-Step 8 when the user says so.
+**Step 8a** (live compile service) on `step/08-editor`.
+
+## Step 8a so far
+
+1. `typst_svc::EditorSession` (commit 4376cc4): one long-lived `MaatwerkWorld` per open
+   opdracht; `set_file` (buffer in memory, incremental reparse via `Source::replace`), `reset`
+   before each compile (mount folders re-resolved, disk files re-checked by mtime + length,
+   missing files looked up again); `compile(generation, stale)` returns `EditorUpdate`
+   (`ok`, diagnostics, `preview_generation`, `page_count`, only changed `pages` as SVG + hash,
+   `compile_ms`, `render_ms`); last good document kept; `resend_all`. `LiveEditor`: worker
+   thread, debounce (`DEFAULT_DEBOUNCE` 150 ms, generation 0 at once), latest generation wins
+   (stale result dropped before the SVG render), panics reported as an error update, drop stops
+   the thread. `Location.range_utf16` for CodeMirror. Tests: 13 in `editor::tests`, parity test
+   `editor_session_patches_equal_the_one_shot_render`.
+2. `examples/editor_latency.rs`, `docs/perf.md` section, parity section, ADR-0002 section 12
+   (cancellation deviation: open question).
 
 ## Step 7a result
 
@@ -127,7 +142,7 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-Nothing.
+Step 8a: perf numbers, gate, review (see Next action).
 
 ## Step 7c result
 
@@ -174,13 +189,17 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Then Step 8 (new editor and assignment pipeline) on `step/08-…`.
-2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
+1. Finish 8a: perf numbers in `docs/perf.md`, gate, reviewer subagent ->
+   `docs/reviews/step-08a.md`, fix blockers/majors, tag `step-08a`, stop and report.
+2. Then Step 8b (editor UI on `LiveEditor`: Tauri commands + events, CodeMirror lint, typst-ide).
+3. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
    M-PERF-1/2 on a copy of real data (M-SNAP-4 measures whether photos go into snapshots;
    M-PERF-1 checks the 100 ms budget on the real copy).
 
 ## Open questions for the user
 
+- Step 8: Typst 0.14 cannot cancel a compile (ADR-0002 section 12). Accept, or a watchdog that
+  abandons a stuck session thread? Needed by Step 8b.
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
