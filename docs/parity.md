@@ -194,3 +194,18 @@ once.
 | Snapshot at start (claim, zip, retention)                   | `Core::start_snapshot`; `list_snapshots`                   | `snapshots::tests`; manual `M-SNAP-1/2`                                     |
 | `snapshot_for_file`, `restore_from_snapshot` (admin)        | Gegevenscontrole "Herstellen uit snapshot"                 | `snapshots::tests`, `accounts.spec.ts`; manual `M-SNAP-3`                   |
 | Same badge photo on login screen, top bar, Gebruikers       | `utils/badges.js`                                          | visual (local); manual `M-ADM-1`                                            |
+
+## Perceived speed (Step 7c, `docs/perf.md`)
+
+Same output as before; what changes is when the UI renders and reads. One deliberate change of
+reference behaviour: closing the score modal no longer redraws the exam list when nothing was
+saved (the reference always redrew it; the list looked the same).
+
+| Change                                                   | Where                                     | Tests                                                                                                      |
+| -------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Kept list screens (`Store.generation`, view key)         | `app.js` `navigateTo`, `store.js`         | `perceived-speed.spec.ts` "keeps its DOM"; Vitest `tests/store/generation.test.ts`; manual `M-PERF-2`      |
+| Long Leerlingen list in stages, admin-only delete checks | `screens/leerlingen.js`, `utils/idle.ts`  | `perceived-speed.spec.ts` "long student list", "admin: Verwijderen"; Vitest `utils/idle.test.ts`           |
+| `read_json_dir` (new): one call per score folder         | `readJsonDir`, `Store.preloadScores`      | Rust `storage::tests::read_all_json_named_*`; Vitest `generation.test.ts` "preloadScores"                  |
+| Memoised `Store.examResults`                             | `store.js`                                | Vitest `generation.test.ts` "examResults"; grade goldens unchanged                                         |
+| Score modal: first group at once, rest in idle; prebuild | `screens/scores.js`, `toetsen.js` menu    | `perceived-speed.spec.ts` (later groups, prebuild, presence); all `score-grid.spec.ts` run on the prebuild |
+| Timing spans and the measurement script                  | `utils/perf.ts`, `tools/perf/measure.mjs` | Vitest `utils/perf.test.ts`; manual `M-PERF-1`                                                             |

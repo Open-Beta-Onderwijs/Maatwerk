@@ -236,6 +236,21 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only at
   the next login.
 
+## From Step 7c (perceived speed)
+
+- **Read vs. colleague change, file not cached yet** (older than 7c, also with single reads):
+  a score file read in flight when the watcher reports a colleague's change to that file is not
+  refreshed (the event is skipped because nothing is cached yet), so the read's older content
+  stays until the next login. Window: one read. Option: count external changes per path while
+  a read is in flight and read again.
+- **First tab visit after login at 4x CPU** is above 100 ms (Toetsen 113, admin Leerlingen 217,
+  admin Groepen 154 p90; `docs/perf.md`): the first folder reads and statistics. If the real
+  copy (M-PERF-1) shows it at 1x too: start `preloadScores` for the active year in idle time
+  right after login.
+- **e2e `examMenuItem` retries** because Playwright's scroll-into-view delivers a `scroll` event a
+  frame after the click, which closes the menu. Replace the retry with the scroll-first click of
+  `openExamMenu` in `ui/e2e/perceived-speed.spec.ts`.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the

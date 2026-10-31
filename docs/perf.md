@@ -87,3 +87,61 @@ Findings:
 - The score modal spends little in JS (`scores:dom` x 4 groups); the rest is style, layout
   and paint of four full grids in one frame, plus a forced layout per grid.
 - Closing the score modal re-renders the Toetsen list (and its statistics) every time.
+
+### What changed (Step 7c)
+
+1. **Kept screens.** Leerlingen, Groepen, Toetsen, Observaties, Opdrachten and Gebruikers keep
+   their DOM between visits. `navigateTo` renders again only when the view key changed:
+   `Store.generation()` (grows on own writes, deletes and colleagues' data changes; not on
+   reads, not on presence), the filter bar, the user, role and vak. Closing the score modal
+   redraws the exam list only when something was saved.
+2. **Long lists.** Leerlingen renders the first 60 cards at once and the rest in idle slices
+   (`ui/src/utils/idle.ts`), with one delegated click handler. The delete checks run only for
+   the admin (teachers have no delete button) and apply through a map instead of one
+   `querySelector` per student. Cards use `content-visibility: auto`, so showing the screen
+   does not lay out cards out of view. No full virtualisation: not needed at these numbers.
+3. **One read per score folder.** New command `read_json_dir` (`Storage::read_all_json_named`):
+   `Store.preloadScores` reads a year's `scores/<vak>/` in one call instead of one call per
+   student; newer cached records are kept, absent files are cached as absent, and a single
+   read waits for a folder read in flight. Used before the statistics of Toetsen and Groepen
+   and before the admin's delete checks (8 calls instead of 4800).
+4. **Memoised grades.** `Store.examResults` is memoised per (score record, exam) identity: a
+   changed record or exam is a new object in the cache.
+5. **Score modal.** The first group grid is built at once, each further group in idle time; a
+   waiting group reads its records right before it is built. When an exam menu opens, the
+   first group is prebuilt off-screen (`.sc-prebuild`); "Scores invoeren" moves it into the
+   modal. No presence is written before the modal opens; a prebuild is used only if
+   `Store.generation()` did not change since it started and is dropped after 15 s.
+
+Decisions from the measurements:
+
+- No disk cache in `%LOCALAPPDATA%`: the disk was never the cost. The cost was one IPC call per
+  file (seconds at 4x for 600-4800 calls), solved with one call per folder.
+- The first prebuild version built all groups ahead. At 4x that made the modal slower (126 ms
+  median instead of 65 ms): moving four finished grids into the modal lays out all four in its
+  first frame. Only the first group is prebuilt now.
+
+### After (same machine and data, 2026-10-31)
+
+Teacher (nat), 600 students:
+
+| Span            | 1x median | 1x p90 | 4x median | 4x p90 | 4x before (median / p90) |
+| --------------- | --------- | ------ | --------- | ------ | ------------------------ |
+| tab:leerlingen  | 15        | 21     | 39        | 96     | 153 / 1176               |
+| tab:groepen     | 5         | 16     | 19        | 69     | 44 / 90                  |
+| tab:toetsen     | 6         | 25     | 14        | 113    | 61 / 101                 |
+| tab:observaties | 6         | 9      | 11        | 39     | 13 / 40                  |
+| tab:opdrachten  | 5         | 22     | 17        | 79     | 44 / 97                  |
+| modal:scores    | 10        | 14     | 48        | 70     | 209 / 367                |
+
+Long tasks at 4x: 12, 0.9 s in total, the longest 120 ms (before: 65, 7.7 s, 905 ms). At 1x:
+none. The teacher's delete checks (1.9 s at 4x before) are gone; the exam statistics run once
+per visit instead of after every score-modal close (26 times in the run before, 1 now).
+
+Admin at 4x: tab:leerlingen 55 / 217 (before 345 / 1339), leerlingen:checks 575 (before 2192),
+tab:groepen 42 / 154 (before 144 / 196), tab:gebruikers 14 / 62.
+
+Budget (< 100 ms): met at 1x everywhere. At 4x every median is within budget; the p90s above
+100 ms are the **first** visit of a tab after login (Toetsen 113, admin Leerlingen 217, admin
+Groepen 154), where the first folder reads and statistics run. Still to measure: the user's
+real copy (`docs/manual-test.md` M-PERF-1).
