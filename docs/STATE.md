@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-10-31 (Step 7b in progress) Branch: `step/07-data-v2` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-31 (Step 7c in progress) Branch: `step/07-data-v2` Last tags: `step-06`, `v0.2.0-parity`
 
 ## Current step
 
@@ -122,6 +122,18 @@ Done on the branch (`step/07-data-v2`, one commit each):
   product edge case in the backlog.
 
 ## In progress
+
+**Step 7c: perceived speed** on `step/07-data-v2`. Measure: `docs/perf.md` "Perceived speed"
+(`tools/perf/measure.mjs`, release exe on the migrated `school` fixture, `--cpu 4`). Done:
+
+1. `mw:*` spans (`ui/src/utils/perf.ts`) + harness + baseline (commit 269a203).
+2. Kept list screens: `Store.generation()` + view key in `navigateTo` (f215f74).
+3. Leerlingen: 60 cards at once, rest via `utils/idle.ts`; delete checks admin-only (46388e6).
+
+Next: score modal (first group sync, rest idle; prebuild on exam-menu open without presence),
+memoise `examResults` per (record, exam), re-measure, perf.md, review `docs/reviews/step-07c.md`.
+
+## Step 7b result
 
 - Nothing. **Step 7b done** and tagged `step-07b` on `step/07-data-v2` (not merged: the step branch
   merges into `main` at the end of Step 7). Review `docs/reviews/step-07b.md`: 0 blockers; M1
