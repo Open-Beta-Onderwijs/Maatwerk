@@ -3768,3 +3768,11 @@ td.grade-override-stale::after {
   align-items: center;
   margin-bottom: 8px;
 }
+.voorzitter-row select {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--surface);
+}
