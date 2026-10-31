@@ -646,6 +646,9 @@ const Store = (() => {
   // ── Scores (year-scoped, subject-scoped) ──────────────────────────────────
   async function getStudentScores(studentId, year, subject = _activeSubject) {
     const file = ypScore(year, subject, studentId);
+    // A folder read in flight brings this file too (or tells it is absent).
+    const folderRead = scoreDirReads.get(`${year}/scores/${subject}`);
+    if (folderRead && cache[file] === undefined) await folderRead.catch(() => {});
     return (await load(file)) ?? { student_id: asStudentId(studentId), scores: {} };
   }
 
@@ -788,9 +791,35 @@ const Store = (() => {
     });
   }
 
-  async function preloadScores(year, subject = _activeSubject) {
-    const students = getStudentsSync(year);
-    await Promise.all(students.map((s) => getStudentScores(s.id, year, subject)));
+  // Every score file of a year and subject in one call (Step 7c): the list
+  // screens' statistics need them all, and one IPC call per student kept the
+  // main thread busy for seconds. Entries already cached are kept (they may be
+  // newer than this read); `ids` without a file are cached as "no file", as a
+  // single read would. Each call reads the folder again (one call is cheap), so
+  // a file a colleague added since is never missed.
+  const scoreDirReads = new Map(); // dir -> in-flight read
+  async function preloadScores(
+    year,
+    subject = _activeSubject,
+    ids = getStudentsSync(year).map((s) => s.id),
+  ) {
+    const dir = `${year}/scores/${subject}`;
+    let read = scoreDirReads.get(dir);
+    if (!read) {
+      read = window.maatwerk.readJsonDir(dir).then((files) => {
+        for (const { name, data } of files) {
+          const rel = `${dir}/${name}`;
+          if (cache[rel] === undefined) cache[rel] = decode(rel, data);
+        }
+      });
+      scoreDirReads.set(dir, read);
+      void read.finally(() => scoreDirReads.delete(dir)).catch(() => {});
+    }
+    await read;
+    for (const id of ids) {
+      const rel = ypScore(year, subject, id);
+      if (cache[rel] === undefined) cache[rel] = null;
+    }
   }
 
   // migrate() of the reference (legacy layouts -> per-year -> per-subject) is

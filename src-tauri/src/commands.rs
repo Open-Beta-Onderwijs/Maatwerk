@@ -115,6 +115,28 @@ pub async fn read_all_json(state: State<'_, Shared>, dir_rel_path: String) -> Re
     .await
 }
 
+/// A JSON file of a folder with its name (`readJsonDir`).
+#[derive(Serialize, Type)]
+pub struct NamedJson {
+    pub name: String,
+    pub data: Value,
+}
+
+/// `readAllJson` with the file names: one call for a folder of records the UI would
+/// otherwise read one by one (score files, Step 7c).
+#[tauri::command]
+#[specta::specta]
+pub async fn read_json_dir(state: State<'_, Shared>, dir_rel_path: String) -> Res<Vec<NamedJson>> {
+    blocking(state, move |c| {
+        let files = c.storage()?.read_all_json_named(&rel(&dir_rel_path)?)?;
+        Ok(files
+            .into_iter()
+            .map(|(name, data)| NamedJson { name, data })
+            .collect())
+    })
+    .await
+}
+
 /// Every `opdrachten/<id>/opdracht.json` (C14).
 #[tauri::command]
 #[specta::specta]

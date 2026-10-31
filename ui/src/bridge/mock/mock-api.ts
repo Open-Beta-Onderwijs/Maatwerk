@@ -330,14 +330,23 @@ export class MockApi implements MaatwerkApi {
 
   async readAllJson(dirRelPath: string): Promise<Json[]> {
     this.record('readAllJson', [dirRelPath]);
-    const out: Json[] = [];
+    return this.jsonFilesIn(dirRelPath).map((f) => f.data);
+  }
+
+  async readJsonDir(dirRelPath: string): Promise<{ name: string; data: Json }[]> {
+    this.record('readJsonDir', [dirRelPath]);
+    return this.jsonFilesIn(dirRelPath);
+  }
+
+  private jsonFilesIn(dirRelPath: string): { name: string; data: Json }[] {
+    const out: { name: string; data: Json }[] = [];
     for (const name of this.list(dirRelPath)) {
       if (!name.endsWith('.json')) continue;
       const text = this.readText(`${dirRelPath}/${name}`);
       if (text === null) continue; // a directory
       try {
         const data = JSON.parse(text);
-        if (data !== null) out.push(data);
+        if (data !== null) out.push({ name, data });
       } catch {
         // skipped silently, as the reference does
       }

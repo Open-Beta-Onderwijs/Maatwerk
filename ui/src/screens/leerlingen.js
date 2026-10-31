@@ -12,6 +12,7 @@ import {
 import { openProfielModal } from '../modals/profiel.js';
 import { inIdleSlices } from '../utils/idle';
 import { perfSpan } from '../utils/perf';
+import { SUBJECT_DISPLAY } from '../domain/rapport';
 import { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals/leerling-edit.js';
 
 // Re-export modals so existing consumers keep working
@@ -227,7 +228,13 @@ export function renderStudentList() {
   if (!isAdmin) return;
   // Disable Verwijderen for students that cannot be deleted (non-blocking)
   const endChecks = perfSpan('leerlingen:checks');
+  // One folder read per year and vak instead of one read per student and file.
+  const ids = students.map((s) => s.id);
+  const preloads = Store.listYearsSync().flatMap((y) =>
+    Object.keys(SUBJECT_DISPLAY).map((v) => Store.preloadScores(y, v, ids).catch(() => {})),
+  );
   const checks = students.map(async (s) => {
+    await Promise.all(preloads);
     const id = String(s.id);
     if (await Store.studentHasAnyScores(s.id)) {
       deleteBlocks.set(

@@ -23,6 +23,11 @@ export const commands = {
 	ensureYear: (year: string) => typedError<string, CommandError>(__TAURI_INVOKE("ensure_year", { year })),
 	/**  Every parsable `*.json` directly in the folder. */
 	readAllJson: (dirRelPath: string) => typedError<Value[], CommandError>(__TAURI_INVOKE("read_all_json", { dirRelPath })),
+	/**
+	 *  `readAllJson` with the file names: one call for a folder of records the UI would
+	 *  otherwise read one by one (score files, Step 7c).
+	 */
+	readJsonDir: (dirRelPath: string) => typedError<NamedJson[], CommandError>(__TAURI_INVOKE("read_json_dir", { dirRelPath })),
 	/**  Every `opdrachten/<id>/opdracht.json` (C14). */
 	readOpdrachten: () => typedError<Value[], CommandError>(__TAURI_INVOKE("read_opdrachten")),
 	/**  Deletes the file; a missing file is fine. */
@@ -269,6 +274,12 @@ export type MigrationResult = {
 	warnings: string[],
 	/**  The check right after the migration. */
 	validation: DataCheck | null,
+};
+
+/**  A JSON file of a folder with its name (`readJsonDir`). */
+export type NamedJson = {
+	name: string,
+	data: Value,
 };
 
 /**  A file chosen in the dialog: a token for the import, the cleaned name and the extension. */

@@ -61,8 +61,9 @@ export function renderToetsen() {
 
   document.getElementById('btn-add-exam').onclick = () => openExamModal(null);
   document.getElementById('btn-toetsen-rtti-uitleg').onclick = () => openRttiUitlegModal();
+  // Started first: the statistics wait for this one folder read (Step 7c).
+  void Store.preloadScores(SEL.toetsenYear.getValue() || cfg.activeYear).catch(() => {});
   renderToetsenList();
-  Store.preloadScores(SEL.toetsenYear.getValue() || cfg.activeYear);
 }
 
 export async function computeExamStats(year, exam) {

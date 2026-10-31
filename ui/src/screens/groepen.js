@@ -273,6 +273,9 @@ async function calcGroupGradeStats(group, year) {
 
 async function fillGroupGradeStats(groups, year, container) {
   const end = perfSpan('groepen:stats');
+  // One folder read per vak instead of one read per student (Step 7c).
+  const subjects = [...new Set(groups.map((g) => g.subject).filter(Boolean))];
+  await Promise.all(subjects.map((s) => Store.preloadScores(year, s).catch(() => {})));
   for (const g of groups) {
     const stats = await calcGroupGradeStats(g, year);
     if (!stats) continue;

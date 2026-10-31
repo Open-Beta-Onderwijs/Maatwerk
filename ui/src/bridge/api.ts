@@ -107,6 +107,8 @@ export interface MaatwerkApi {
   ensureYear(year: string): Promise<string>;
   /** Parsed contents of every `*.json` directly in the folder; unparsable files are skipped. */
   readAllJson(dirRelPath: string): Promise<Json[]>;
+  /** readAllJson with each file's name: one call for a folder of records (Step 7c). */
+  readJsonDir(dirRelPath: string): Promise<{ name: string; data: Json }[]>;
   /** Every `opdrachten/<id>/opdracht.json` (C14). */
   readOpdrachten(): Promise<Json[]>;
   deleteFile(relPath: string): Promise<FsResult>;

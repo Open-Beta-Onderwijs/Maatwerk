@@ -276,6 +276,16 @@ impl Storage {
     /// (`fs:readAllJson`). Unparsable files, folders and links are skipped; a missing folder
     /// gives an empty list.
     pub fn read_all_json(&self, dir: &RelPath) -> Result<Vec<Value>> {
+        Ok(self
+            .read_all_json_named(dir)?
+            .into_iter()
+            .map(|(_, v)| v)
+            .collect())
+    }
+
+    /// [`Self::read_all_json`] with each file's name: one call for a folder of records the UI
+    /// would otherwise read one by one (score files, Step 7c).
+    pub fn read_all_json_named(&self, dir: &RelPath) -> Result<Vec<(String, Value)>> {
         let path = self.dir.resolve(dir)?;
         let entries = match fs::read_dir(&path) {
             Ok(entries) => entries,
@@ -304,7 +314,7 @@ impl Storage {
                 Ok(Value::Null) | Err(_) => {}
                 Ok(v) => {
                     self.note_stamp(&format!("{}/{name}", dir.as_str()), &v);
-                    out.push(v);
+                    out.push((name.to_owned(), v));
                 }
             }
         }

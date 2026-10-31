@@ -166,6 +166,7 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     listYears: () => orElse(c.listYears(), [] as string[]),
     ensureYear: (year) => orThrow(c.ensureYear(year)),
     readAllJson: (dir) => orThrow(c.readAllJson(dir)) as Promise<Json[]>,
+    readJsonDir: (dir) => orThrow(c.readJsonDir(dir)) as Promise<{ name: string; data: Json }[]>,
     readOpdrachten: () => orThrow(c.readOpdrachten()) as Promise<Json[]>,
 
     async deleteFile(relPath) {

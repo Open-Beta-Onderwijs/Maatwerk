@@ -14,6 +14,7 @@ import {
   readTree,
   student,
 } from '../../../tests/reference-harness/scenario.mjs';
+import type { MockApi } from '../../src/bridge/mock/mock-api';
 import { openStore, type LegacyStore } from '../store-session';
 
 const E1 = 'nat-gen-1-2025-2026';
@@ -37,8 +38,9 @@ function scenario(): Record<string, string> {
 }
 
 let Store: LegacyStore;
+let api: MockApi;
 beforeEach(async () => {
-  ({ Store } = await openStore({ files: scenario(), subject: 'nat' }));
+  ({ Store, api } = await openStore({ files: scenario(), subject: 'nat' }));
 });
 
 describe('Store.generation', () => {
@@ -93,5 +95,32 @@ describe('Store.examResults (memoised)', () => {
     const next = Store.examResults!(await Store.getStudentScores!('1', YEAR), exam);
     expect(next).not.toBe(first);
     expect(next?.scored).toBe(2);
+  });
+});
+
+describe('Store.preloadScores (one folder read)', () => {
+  const reads = () => api.calls.filter(([m]) => m === 'readJson' || m === 'readJsonDir');
+
+  it('reads the folder once; later score reads need no call', async () => {
+    api.calls.length = 0;
+    await Promise.all([Store.preloadScores!(YEAR), Store.getStudentScores!('1', YEAR)]);
+    expect(reads()).toEqual([['readJsonDir', `${YEAR}/scores/nat`]]);
+    // Student 2 has no file: known after the folder read, no single read.
+    expect((await Store.getStudentScores!('2', YEAR)).scores).toEqual({});
+    expect((await Store.getStudentScores!('1', YEAR)).scores[E1]).toEqual({ q1: 1 });
+    expect(reads()).toHaveLength(1);
+  });
+
+  it('keeps a cached record that is newer than the folder read', async () => {
+    await Store.setScore!('1', E1, 'q1', 2, YEAR);
+    const rel = `${YEAR}/scores/nat/1.json`;
+    // The folder still holds the old file (a read that started before the write).
+    const old = api.peek(rel)!.replace('"q1": 2', '"q1": 1');
+    expect(old).not.toBe(api.peek(rel));
+    const original = api.readJsonDir.bind(api);
+    api.readJsonDir = async (dir: string) =>
+      (await original(dir)).map((f) => (f.name === '1.json' ? { ...f, data: JSON.parse(old) } : f));
+    await Store.preloadScores!(YEAR);
+    expect((await Store.getStudentScores!('1', YEAR)).scores[E1]).toEqual({ q1: 2 });
   });
 });

@@ -473,8 +473,8 @@ function initSelects() {
     onChange: async (v) => {
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
+      void Store.preloadScores(v).catch(() => {}); // before the statistics (Step 7c)
       renderToetsenList();
-      Store.preloadScores(v);
     },
   });
 }

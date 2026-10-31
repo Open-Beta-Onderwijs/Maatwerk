@@ -656,6 +656,21 @@ fn read_all_json_skips_folders_nulls_and_garbage() {
 }
 
 #[test]
+fn read_all_json_named_gives_the_same_files_with_their_names() {
+    let (_t, s) = setup();
+    put(&s, "scores/nat/1.json", b"{\"student_id\": \"1\"}");
+    put(&s, "scores/nat/2.json", b"{oops");
+    put(&s, "scores/nat/3.json", b"null");
+    let got = s.read_all_json_named(&rel("scores/nat")).unwrap();
+    assert_eq!(got, vec![("1.json".to_owned(), json!({"student_id": "1"}))]);
+    assert!(
+        s.read_all_json_named(&rel("scores/bio"))
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
 fn text_files_round_trip_with_cas() {
     let (_t, s) = setup();
     let typ = rel("opdrachten/a/opdracht.typ");
