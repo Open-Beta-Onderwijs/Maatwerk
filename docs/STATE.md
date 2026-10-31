@@ -1,13 +1,17 @@
 # State
 
-Last updated: 2026-10-31 (Step 7c in progress) Branch: `step/07-data-v2` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-31 (Step 7c in review) Branch: `step/07-data-v2` Last tags: `step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 7a: data format v2 and migration, in progress.** User decisions this session (2026-10-30):
-C10 = opaque ids for _new_ exams/groups only, existing ids kept; C9 = `"N"` instead of `null`,
-invalid input stays the typed string. Format spec: `docs/reference/data-files-v2.md`; ADR-0003
-has C16-C19.
+**Step 7c: perceived speed, in review** on `step/07-data-v2` (after 7c, Step 7 merges into
+`main` as `step-07`). Results and method: `docs/perf.md` "Perceived speed".
+
+## Step 7a result
+
+User decisions (2026-10-30): C10 = opaque ids for _new_ exams/groups only, existing ids kept;
+C9 = `"N"` instead of `null`, invalid input stays the typed string. Format spec:
+`docs/reference/data-files-v2.md`; ADR-0003 has C16-C19.
 
 Done on the branch (`step/07-data-v2`, one commit each):
 
@@ -123,15 +127,25 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-**Step 7c: perceived speed** on `step/07-data-v2`. Measure: `docs/perf.md` "Perceived speed"
-(`tools/perf/measure.mjs`, release exe on the migrated `school` fixture, `--cpu 4`). Done:
+**Step 7c** (commits 269a203..HEAD on `step/07-data-v2`), gate green (108 e2e, 306 Vitest):
 
-1. `mw:*` spans (`ui/src/utils/perf.ts`) + harness + baseline (commit 269a203).
-2. Kept list screens: `Store.generation()` + view key in `navigateTo` (f215f74).
-3. Leerlingen: 60 cards at once, rest via `utils/idle.ts`; delete checks admin-only (46388e6).
+1. `mw:*` spans (`ui/src/utils/perf.ts`), `tools/perf/measure.mjs` (release exe over the WebView2
+   DevTools port, `--cpu 4`, `--admin 1`), baseline and results in `docs/perf.md`.
+2. Kept list screens: `Store.generation()` + view key in `navigateTo`; score-modal close redraws
+   the exam list only after a save.
+3. Leerlingen: 60 cards at once, rest via `utils/idle.ts`, delegated clicks, delete checks
+   admin-only, `content-visibility: auto` on cards.
+4. `read_json_dir` command: `Store.preloadScores` reads a score folder in one call.
+5. Memoised `Store.examResults`.
+6. Score modal: first group at once, rest in idle; prebuild of the first group when the exam
+   menu opens (no presence before the modal opens).
+7. Docs: parity "Perceived speed", manual `M-PERF-1/2`, backlog "From Step 7c".
 
-Next: score modal (first group sync, rest idle; prebuild on exam-menu open without presence),
-memoise `examResults` per (record, exam), re-measure, perf.md, review `docs/reviews/step-07c.md`.
+Result (4x CPU, school fixture): modal 209 -> 48 ms median, tabs within budget at the median,
+first visit after login still above 100 ms p90 (backlog). 1x: everything < 25 ms.
+
+Review: `docs/reviews/step-07c.md` (fresh-context subagent), then fix blockers/majors, gate,
+tag `step-07c`, merge `step/07-data-v2` into `main` (merge commit), tag `step-07`, stop.
 
 ## Step 7b result
 
@@ -155,9 +169,9 @@ memoise `examResults` per (record, exam), re-measure, perf.md, review `docs/revi
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Then Step 7c (perceived speed) on the same branch, when the user says so.
-2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5 and M-PIN/M-VZ/M-SNAP on a
-   copy of real data (M-SNAP-4 measures whether photos go into snapshots).
+1. Finish Step 7c: triage `docs/reviews/step-07c.md`, gate, tag, merge Step 7 into `main`, stop.
+2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
+   M-PERF-1/2 on a copy of real data (M-SNAP-4 measures whether photos go into snapshots).
 
 ## Open questions for the user
 
@@ -166,6 +180,11 @@ memoise `examResults` per (record, exam), re-measure, perf.md, review `docs/revi
   (Step 10), macOS.
 
 ## How to resume
+
+Perf measurement: `node tools/fixtures/generate.mjs school <dir>/shared/data`,
+`target/debug/maatwerk-cli.exe migrate --apply --backup-dir <dir>/backups <dir>/shared/data`,
+`npm run build:exe`, then `node tools/perf/measure.mjs --data <dir>/shared/data --cpu 4`.
+Commit messages: from Git Bash (`git commit -F - <<'EOF'`); PowerShell `Out-File` adds a BOM.
 
 After the folder move, release builds also needed `cargo clean --release -p maatwerk-core -p
 maatwerk-app -p maatwerk-cli` (stale build-script path). PowerShell for npm/cargo (Git Bash's
