@@ -26,6 +26,7 @@ import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
+import { afterPaint, perfSpan } from './utils/perf';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -66,7 +67,9 @@ export function navigateTo(name) {
 
   _screenRefreshPending = false;
   if (screens[name]) {
-    renderScreen(name); // render content (may be async; screen shows immediately)
+    const end = perfSpan(`tab:${name}`);
+    // Render content (may be async; screen shows immediately).
+    void Promise.resolve(renderScreen(name)).finally(() => afterPaint().then(end));
     screens[name].classList.add('active');
     window.scrollTo(0, 0);
     const targetRow = document.getElementById(`filter-row-${name}`);

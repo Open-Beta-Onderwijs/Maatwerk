@@ -12,6 +12,7 @@ import {
   getAdminSubjectFilter,
 } from '../app.js';
 import { gradeStatHtml } from '../utils/grades.js';
+import { perfSpan } from '../utils/perf';
 import { openGroupStudentsModal } from './leerlingen.js';
 
 // ── Modal imports (used directly in this screen file) ───────────────────────
@@ -271,10 +272,12 @@ async function calcGroupGradeStats(group, year) {
 }
 
 async function fillGroupGradeStats(groups, year, container) {
+  const end = perfSpan('groepen:stats');
   for (const g of groups) {
     const stats = await calcGroupGradeStats(g, year);
     if (!stats) continue;
     const el = container.querySelector('[data-grade-stats="' + g.id + '"]');
     if (el) el.innerHTML = gradeStatHtml(stats);
   }
+  end();
 }

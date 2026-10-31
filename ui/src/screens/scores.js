@@ -16,6 +16,7 @@ import {
 } from '../app.js';
 import * as Presence from '../presence.js';
 import { createScoreGrid } from '../components/score-grid/score-grid';
+import { afterPaint, perfSpan, timed } from '../utils/perf';
 import {
   computeRowStatus as rowStatusOf,
   normalizeScore,
@@ -206,6 +207,7 @@ function resetScoreModal() {
 }
 
 export async function openScoreModal(examId, year, deps) {
+  const endOpen = perfSpan('modal:scores');
   resetScoreModal();
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
   if (!exam) return;
@@ -370,6 +372,7 @@ export async function openScoreModal(examId, year, deps) {
         year,
       );
       renderPresence(el, examId, year);
+      void afterPaint().then(endOpen);
     },
     'modal-scores',
     deps?.renderToetsenList,
@@ -527,9 +530,10 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       .filter(Boolean)
       .sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
 
-    const scoreRecs = await Promise.all(
-      groupStudents.map((s) => Store.getStudentScores(s.id, year)),
+    const scoreRecs = await timed('scores:read', () =>
+      Promise.all(groupStudents.map((s) => Store.getStudentScores(s.id, year))),
     );
+    const endCompute = perfSpan('scores:compute');
 
     for (let si = 0; si < groupStudents.length; si++) {
       const s = groupStudents[si];
@@ -571,14 +575,17 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
     });
     recomputeSummaryRow(gridData, avgIdx, stdIdx, activeExam, O);
     activeGridData.push(gridData);
+    endCompute();
 
-    const grid = createGroupGrid(
-      section.querySelector('.score-grid-host'),
-      activeExam,
-      groupStudents,
-      gridData,
-      year,
-      activeObs,
+    const grid = timed('scores:dom', () =>
+      createGroupGrid(
+        section.querySelector('.score-grid-host'),
+        activeExam,
+        groupStudents,
+        gridData,
+        year,
+        activeObs,
+      ),
     );
     gridInstances.push(grid);
 

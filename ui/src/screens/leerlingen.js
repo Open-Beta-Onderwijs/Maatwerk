@@ -10,6 +10,7 @@ import {
   getEigenOnly,
 } from '../app.js';
 import { openProfielModal } from '../modals/profiel.js';
+import { perfSpan } from '../utils/perf';
 import { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals/leerling-edit.js';
 
 // Re-export modals so existing consumers keep working
@@ -133,6 +134,7 @@ export function renderStudentList() {
     return;
   }
 
+  const endDom = perfSpan('leerlingen:dom');
   let html = '';
   let lastJl = null;
   let lastSk = null;
@@ -183,14 +185,17 @@ export function renderStudentList() {
   container
     .querySelectorAll('[data-action="del-student"]')
     .forEach((b) => b.addEventListener('click', () => deleteStudent(b.dataset.id)));
+  endDom();
 
   // Disable Verwijderen for students that cannot be deleted (non-blocking)
+  const endChecks = perfSpan('leerlingen:checks');
+  const checks = [];
   for (const s of students) {
     const checkHasScores = Store.isAdminActive()
       ? Store.studentHasAnyScores(s.id)
       : Store.studentHasScores(s.id, year);
 
-    checkHasScores.then((hasScores) => {
+    const check = checkHasScores.then((hasScores) => {
       const btn = container.querySelector(
         `[data-action="del-student"][data-id="${CSS.escape(String(s.id))}"]`,
       );
@@ -211,5 +216,7 @@ export function renderStudentList() {
         }
       }
     });
+    checks.push(check);
   }
+  void Promise.allSettled(checks).then(endChecks);
 }

@@ -13,6 +13,7 @@ import {
 } from '../app.js';
 import { openScoreModal } from './scores.js';
 import * as Presence from '../presence.js';
+import { perfSpan } from '../utils/perf';
 import { openRapportModal, openRttiUitlegModal } from '../modals/rapport.js';
 import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren.js';
 
@@ -409,27 +410,30 @@ export async function renderToetsenList() {
   }
 
   // Per-attempt stats and summary (best-grade) stats
+  const endStats = perfSpan('toetsen:stats');
+  const fills = [];
   for (const e of originals) {
     const resits = resitsByParent[e.id] ?? [];
     const hasResits = resits.length > 0;
 
     if (!hasResits) {
       const statsEl = container.querySelector(`.exam-stats[data-examid="${CSS.escape(e.id)}"]`);
-      if (statsEl) computeExamStats(year, e).then((st) => applyStats(statsEl, st));
+      if (statsEl) fills.push(computeExamStats(year, e).then((st) => applyStats(statsEl, st)));
     } else {
       // Summary card stats (best grades)
       const summaryStatsEl = container.querySelector(
         `.exam-stats[data-examid="${CSS.escape(e.id)}"][data-best-stats]`,
       );
       if (summaryStatsEl)
-        computeBestGradeStats(e.id, year).then((st) => applyStats(summaryStatsEl, st));
+        fills.push(computeBestGradeStats(e.id, year).then((st) => applyStats(summaryStatsEl, st)));
       // Attempt 1 (original) stats
       const allAttempts = [e, ...resits];
       for (const attempt of allAttempts) {
         const statsEl = container.querySelector(
           `.exam-attempt-card .exam-stats[data-examid="${CSS.escape(attempt.id)}"]`,
         );
-        if (statsEl) computeExamStats(year, attempt).then((st) => applyStats(statsEl, st));
+        if (statsEl)
+          fills.push(computeExamStats(year, attempt).then((st) => applyStats(statsEl, st)));
       }
     }
   }
@@ -453,16 +457,18 @@ export async function renderToetsenList() {
     const resits = resitsByParent[e.id] ?? [];
     if (resits.length === 0) {
       const warnEl = container.querySelector(`.exam-warning[data-examid="${CSS.escape(e.id)}"]`);
-      if (warnEl) computeExamWarnings(year, e).then((p) => applyWarning(warnEl, p));
+      if (warnEl) fills.push(computeExamWarnings(year, e).then((p) => applyWarning(warnEl, p)));
     } else {
       for (const attempt of [e, ...resits]) {
         const warnEl = container.querySelector(
           `.exam-attempt-card .exam-warning[data-examid="${CSS.escape(attempt.id)}"]`,
         );
-        if (warnEl) computeExamWarnings(year, attempt).then((p) => applyWarning(warnEl, p));
+        if (warnEl)
+          fills.push(computeExamWarnings(year, attempt).then((p) => applyWarning(warnEl, p)));
       }
     }
   }
+  void Promise.allSettled(fills).then(endStats);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -578,7 +584,9 @@ async function toggleExamMenu(btn, year) {
   }
   closeExamMenu();
 
+  const endMenu = perfSpan('menu:exam');
   const items = await buildMenuItems(btn.dataset.id, btn.dataset.kind, year);
+  endMenu();
   if (!btn.isConnected) return;
   closeExamMenu(); // another menu may have opened while awaiting
 
