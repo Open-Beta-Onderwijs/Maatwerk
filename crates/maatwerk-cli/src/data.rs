@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! `validate-data` and `migrate` (PLAN Step 7a, `docs/reference/data-files-v2.md`).
+//! `validate-data` and `migrate` (PLAN Step 7a, `docs/reference/data-files-v2.md`), and
+//! `admin reset-pin` (Step 7b).
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+use maatwerk_core::auth;
 use maatwerk_core::migrate::{self, Action, MigrationReport};
+use maatwerk_core::storage::Storage;
 use maatwerk_core::typst_svc::local_now;
 use maatwerk_core::validate::{self, Severity, ValidationReport};
 
@@ -148,6 +151,42 @@ fn to_json<T: serde::Serialize>(value: &T) -> String {
     serde_json::to_string_pretty(value).expect("serialisable")
 }
 
+/// `admin reset-pin <data-folder>`: the last resort when the admin lost both the PIN and the
+/// recovery codes (docs/cutover-runbook.md).
+#[derive(Debug, PartialEq)]
+pub struct ResetPinArgs {
+    data: PathBuf,
+}
+
+impl ResetPinArgs {
+    pub fn parse(args: &[&str]) -> Result<ResetPinArgs, String> {
+        match args {
+            [path] if !path.starts_with('-') => Ok(ResetPinArgs { data: path.into() }),
+            [] => Err("missing <data-folder>".into()),
+            _ => Err("admin reset-pin takes only <data-folder>".into()),
+        }
+    }
+
+    pub fn run(self) -> ExitCode {
+        let result = Storage::open(&self.data)
+            .and_then(|storage| auth::reset_admin_pins(&storage, std::time::SystemTime::now()));
+        match result {
+            Ok(ids) if ids.is_empty() => {
+                eprintln!("Geen beheerder gevonden in {}.", self.data.display());
+                ExitCode::FAILURE
+            }
+            Ok(ids) => {
+                println!(
+                    "Pincode en herstelcodes gewist voor: {}. De beheerder stelt bij de volgende                      aanmelding een nieuwe pincode in.",
+                    ids.join(", ")
+                );
+                ExitCode::SUCCESS
+            }
+            Err(e) => fail(&e),
+        }
+    }
+}
+
 fn print_migration(report: &MigrationReport, verbose: bool) {
     if report.from_version == report.to_version {
         println!(
@@ -227,6 +266,19 @@ mod tests {
         );
         assert!(ValidateArgs::parse(&[]).is_err());
         assert!(ValidateArgs::parse(&["a", "b"]).is_err());
+    }
+
+    #[test]
+    fn parses_reset_pin_arguments() {
+        assert_eq!(
+            ResetPinArgs::parse(&["data"]).unwrap(),
+            ResetPinArgs {
+                data: "data".into()
+            }
+        );
+        assert!(ResetPinArgs::parse(&[]).is_err());
+        assert!(ResetPinArgs::parse(&["data", "x"]).is_err());
+        assert!(ResetPinArgs::parse(&["--all"]).is_err());
     }
 
     #[test]
