@@ -63,7 +63,7 @@ export function renderToetsen() {
   document.getElementById('btn-toetsen-rtti-uitleg').onclick = () => openRttiUitlegModal();
   // Started first: the statistics wait for this one folder read (Step 7c).
   void Store.preloadScores(SEL.toetsenYear.getValue() || cfg.activeYear).catch(() => {});
-  renderToetsenList();
+  return renderToetsenList(); // the tab span ends when the list is in (review 7c n4)
 }
 
 export async function computeExamStats(year, exam) {

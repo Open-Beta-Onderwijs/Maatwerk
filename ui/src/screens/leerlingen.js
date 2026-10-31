@@ -71,7 +71,12 @@ export function renderLeerlingen() {
   renderStudentList();
 }
 
-export function renderStudentList() {
+/**
+ * Renders the filtered list. `staged`: the first cards now, the rest in idle
+ * time; a background refresh passes false, so the whole list is there when
+ * app.js restores the scroll position (review 7c M1).
+ */
+export function renderStudentList({ staged = true } = {}) {
   _listJob?.cancel(); // cards of an earlier render still waiting for idle time
   const year = leerlingenState.year;
   const query = leerlingenState.search.trim().toLowerCase();
@@ -219,11 +224,14 @@ export function renderStudentList() {
 
   // The first cards at once, the rest in idle time (a long list paints within budget).
   container.innerHTML = '';
-  appendParts(parts.slice(0, FIRST_CARDS));
+  const first = staged ? FIRST_CARDS : parts.length;
+  appendParts(parts.slice(0, first));
   endDom();
-  const endRest = perfSpan('leerlingen:rest');
-  _listJob = inIdleSlices(parts.slice(FIRST_CARDS), appendParts, 50);
-  void _listJob.done.then(endRest);
+  if (first < parts.length) {
+    const endRest = perfSpan('leerlingen:rest');
+    _listJob = inIdleSlices(parts.slice(first), appendParts, 50);
+    void _listJob.done.then(endRest);
+  }
 
   if (!isAdmin) return;
   // Disable Verwijderen for students that cannot be deleted (non-blocking)

@@ -247,6 +247,16 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   admin Groepen 154 p90; `docs/perf.md`): the first folder reads and statistics. If the real
   copy (M-PERF-1) shows it at 1x too: start `preloadScores` for the active year in idle time
   right after login.
+- **Review 7c m4 (rest):** `loadInstellingen` and `invalidateSchool` (School screen) drop a cached
+  entry on every visit, which counts as a change, so the kept screens render once more for nothing.
+  Load Instellingen without invalidating (the versioned read gives the rev).
+- **Review 7c m5 (rest):** e2e for a colleague's change to a group still waiting for idle time
+  (stub `requestIdleCallback`), closing the score modal while groups are pending, and the 15 s
+  prebuild TTL.
+- **Review 7c n2:** closing the score modal after a save redraws the exam list without updating
+  the kept-screen key, so the next Toetsen visit renders once more.
+- **Review 7c n5:** `contain-intrinsic-size: auto 40px` on student cards is an estimate; measure a
+  real card (cards not shown yet count as 40 px for the scrollbar).
 - **e2e `examMenuItem` retries** because Playwright's scroll-into-view delivers a `scroll` event a
   frame after the click, which closes the menu. Replace the retry with the scroll-first click of
   `openExamMenu` in `ui/e2e/perceived-speed.spec.ts`.

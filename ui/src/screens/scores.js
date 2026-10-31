@@ -220,7 +220,10 @@ function resetScoreModal({ keepGrids = false } = {}) {
 // cached data changed since it started (Store.generation); otherwise, or when
 // it is not used within PREBUILD_TTL_MS, it is thrown away.
 const PREBUILD_TTL_MS = 15_000;
-let prebuilt = null; // { examId, year, host, grids, generation, token, first, done, release, timer }
+let prebuilt = null; // { examId, year, login, host, grids, generation, token, first, done, release, timer }
+
+// Who the grids were built for: a logout and login within the TTL must not reuse them (review 7c n1).
+const loginKey = () => `${Store.getActiveUser()?.id}|${Store.getActiveSubject()}`;
 let scoreModalOpen = false;
 
 function discardPrebuilt() {
@@ -255,6 +258,7 @@ export function prebuildScoreModal(examId, year) {
   prebuilt = {
     examId,
     year,
+    login: loginKey(),
     host,
     grids,
     generation,
@@ -273,6 +277,7 @@ function takePrebuilt(examId, year) {
     pre &&
     pre.examId === examId &&
     pre.year === year &&
+    pre.login === loginKey() &&
     pre.token === buildToken &&
     pre.generation === Store.generation();
   if (!current) {

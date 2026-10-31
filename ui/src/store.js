@@ -796,15 +796,18 @@ const Store = (() => {
   // screens' statistics need them all, and one IPC call per student kept the
   // main thread busy for seconds. Entries already cached are kept (they may be
   // newer than this read); `ids` without a file are cached as "no file", as a
-  // single read would. Each call reads the folder again (one call is cheap), so
-  // a file a colleague added since is never missed.
+  // single read would.
   const scoreDirReads = new Map(); // dir -> in-flight read
   async function preloadScores(
     year,
     subject = _activeSubject,
     ids = getStudentsSync(year).map((s) => s.id),
   ) {
+    if (!subject) return; // admin without a vak filter: no score folder (review 7c n6)
     const dir = `${year}/scores/${subject}`;
+    // Everything cached already (a repeat render): nothing to read (review 7c M3).
+    // Absent files are cached as such and refreshed by the watcher like the others.
+    if (ids.every((id) => cache[ypScore(year, subject, id)] !== undefined)) return;
     let read = scoreDirReads.get(dir);
     if (!read) {
       read = timed('store:readDir', () => window.maatwerk.readJsonDir(dir)).then((files) =>
@@ -1017,7 +1020,8 @@ const Store = (() => {
     const subject = exam.subject ?? _activeSubject;
     await Promise.all([
       loadYear(year, subject),
-      preloadScores(year, subject),
+      // A failed folder read falls back to single reads below (review 7c m2).
+      preloadScores(year, subject).catch(() => {}),
       getObservaties(subject),
       loadOpdrachten(),
     ]);
@@ -1070,11 +1074,15 @@ const Store = (() => {
       before = before ?? arr[i];
       if (item && targetKeys.includes(key)) arr[i] = item;
       else arr.splice(i, 1);
+      changed();
     }
     if (item) {
       for (const key of targetKeys) {
         const arr = cache[key];
-        if (Array.isArray(arr) && !arr.some((x) => x.id === id)) arr.push(item);
+        if (Array.isArray(arr) && !arr.some((x) => x.id === id)) {
+          arr.push(item);
+          changed();
+        }
       }
     }
     return before;
@@ -1148,6 +1156,7 @@ const Store = (() => {
           ev.after = await readFresh();
           invalidateObsCache();
           if (_activeSubject) await loadObservaties(_activeSubject);
+          changed(); // a render between the drop and the reload saw no observaties (review 7c m4)
           break;
         }
         case 'opdracht': {
@@ -1157,6 +1166,7 @@ const Store = (() => {
           if (cache['opdrachten'] !== undefined) {
             cache['opdrachten'] = undefined;
             await loadOpdrachten();
+            changed(); // as for observaties (review 7c m4)
           }
           break;
         }
@@ -1177,6 +1187,7 @@ const Store = (() => {
             if (i >= 0 && ev.after) users[i] = ev.after;
             else if (i >= 0) users.splice(i, 1);
             else if (ev.after) users.push(ev.after);
+            changed();
           }
           break;
         }
@@ -1189,8 +1200,8 @@ const Store = (() => {
       }
     });
 
-    // Presence and opdracht text are not shown by the cached screens.
-    if (!['presence', 'opdrachtTyp', 'other'].includes(type)) changed();
+    // `generation` grew above only where cached data changed (review 7c M2): a
+    // colleague's save in another vak or of an unread file keeps the kept screens.
     ev.inScope = changeIsInScope(ev);
     return ev;
   }

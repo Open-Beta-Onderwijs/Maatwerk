@@ -6,6 +6,10 @@
 // builds: one mark per span, no logging.
 
 const PREFIX = 'mw:';
+// The buffer is cleared every so often, so a school day of spans does not pile up
+// (review 7c n3). tools/perf reads well below this.
+const KEEP = 5000;
+let recorded = 0;
 
 /** Starts a span; the returned function ends it (later calls do nothing). */
 export function perfSpan(name: string): () => void {
@@ -14,6 +18,7 @@ export function perfSpan(name: string): () => void {
   return () => {
     if (done) return;
     done = true;
+    if (++recorded % KEEP === 0) performance.clearMeasures();
     performance.measure(PREFIX + name, { start, end: performance.now() });
   };
 }

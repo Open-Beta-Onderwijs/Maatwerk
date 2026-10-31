@@ -671,6 +671,17 @@ fn read_all_json_named_gives_the_same_files_with_their_names() {
 }
 
 #[test]
+fn read_all_json_named_decodes_invalid_utf8_like_read_json() {
+    let (_t, s) = setup();
+    put(&s, "scores/nat/7.json", b"{\"naam\": \"Jos\xE9\"}");
+    let single = s.read_json(&rel("scores/nat/7.json")).unwrap().unwrap();
+    let named = s.read_all_json_named(&rel("scores/nat")).unwrap();
+    assert_eq!(named, vec![("7.json".to_owned(), single)]);
+    // readAllJson keeps skipping it (reference behaviour).
+    assert!(s.read_all_json(&rel("scores/nat")).unwrap().is_empty());
+}
+
+#[test]
 fn text_files_round_trip_with_cas() {
     let (_t, s) = setup();
     let typ = rel("opdrachten/a/opdracht.typ");

@@ -124,3 +124,26 @@ describe('Store.preloadScores (one folder read)', () => {
     expect((await Store.getStudentScores!('1', YEAR)).scores[E1]).toEqual({ q1: 2 });
   });
 });
+
+describe('review 7c', () => {
+  it('M2: a colleague change to a file that is not cached leaves generation alone', async () => {
+    const g = Store.generation!();
+    // Another vak's score file: never read here.
+    await Store.applyExternalChange!({ relPath: `${YEAR}/scores/bio/1.json`, kind: 'modified' });
+    await Store.applyExternalChange!({ relPath: `${YEAR}/exams/bio-x.json`, kind: 'added' });
+    expect(Store.generation!()).toBe(g);
+  });
+
+  it('M3: a second preload with everything cached makes no call', async () => {
+    await Store.preloadScores!(YEAR);
+    api.calls.length = 0;
+    await Store.preloadScores!(YEAR);
+    expect(api.calls.filter(([m]) => m === 'readJsonDir')).toEqual([]);
+  });
+
+  it('n6: no folder read without a vak (admin)', async () => {
+    api.calls.length = 0;
+    await Store.preloadScores!(YEAR, null);
+    expect(api.calls.filter(([m]) => m === 'readJsonDir')).toEqual([]);
+  });
+});

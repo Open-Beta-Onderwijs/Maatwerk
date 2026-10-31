@@ -41,7 +41,8 @@ a real copy (500+ students).
 
 - The UI records spans as `performance.measure` entries named `mw:*` (`ui/src/utils/perf.ts`):
   `tab:<screen>` from the nav click to the first paint after the render, `modal:scores` from
-  "Scores invoeren" to the first paint with all grids, `scores:read|compute|dom` per group grid,
+  "Scores invoeren" to the first paint with the grids (all grids in the baseline; the first
+  group grid since the staged build, see below), `scores:read|compute|dom` per group grid,
   `menu:exam`, and the background fills after a render (`leerlingen:checks`, `groepen:stats`,
   `toetsen:stats`). They show in the DevTools Performance panel too.
 - `node tools/perf/measure.mjs --data <dir>` starts the release exe on that folder with the
@@ -145,3 +146,10 @@ Budget (< 100 ms): met at 1x everywhere. At 4x every median is within budget; th
 100 ms are the **first** visit of a tab after login (Toetsen 113, admin Leerlingen 217, admin
 Groepen 154), where the first folder reads and statistics run. Still to measure: the user's
 real copy (`docs/manual-test.md` M-PERF-1).
+
+Read the modal numbers with care (review 7c m1): after the change `modal:scores` ends when the
+**first** group is painted (the others follow in idle time), and the script pauses 300 ms in the
+exam menu (`--menu-ms`), so the prebuild runs before the span starts. "209 -> 48 ms" is what a
+teacher waits for the first rows, not the cost of all grids; `menu:exam` (median 2-3 ms at 4x)
+covers the menu itself. The Toetsen p90 at 4x is 113 ms against 101 before: its first visit now
+also waits for the score folder read.

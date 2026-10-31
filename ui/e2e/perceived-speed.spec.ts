@@ -173,10 +173,16 @@ test('the exam menu prebuilds the grids without telling colleagues', async ({ pa
   await screen(page, 'toetsen');
   await openExamMenu(page, EXAMS.empty);
   expect(await scoreModalPresence(page)).toBe(0);
+  // Mark the prebuilt grid: the modal must show this very table (review 7c m5).
+  await page
+    .locator('.sc-prebuild .score-grid-table')
+    .first()
+    .evaluate((t) => t.setAttribute('data-pre', '1'));
 
   await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
   await expect(gridTable(page)).toBeVisible();
   await expect(page.locator('.sc-prebuild')).toHaveCount(0);
+  await expect(gridTable(page)).toHaveAttribute('data-pre', '1');
   await expect.poll(() => scoreModalPresence(page)).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });
@@ -204,4 +210,26 @@ test('a change while the exam menu is open is in the score modal', async ({ page
   );
   await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
   await expect(cell(page, 0, 2)).toHaveText('4');
+});
+
+test('review 7c M1: a background refresh of a long list keeps the scroll position', async ({
+  page,
+}) => {
+  const many = await seedManyStudents(page);
+  await login(page);
+  await screen(page, 'leerlingen');
+  await expect(page.locator('#student-list .card')).toHaveCount(many.students.length);
+  const scroller = () => page.evaluate(() => document.scrollingElement!.scrollTop);
+  await page.evaluate(() => document.scrollingElement!.scrollTo(0, 3000));
+  const before = await scroller();
+  expect(before).toBeGreaterThan(2000);
+
+  const renamed = structuredClone(many);
+  renamed.students[0]!.voornaam = 'Hernoemd';
+  await withMock(page, (m, [p, d]) => m.externalWrite(p as string, d as never), [
+    STUDENTS,
+    renamed,
+  ]);
+  await expect(page.locator('#student-list')).toContainText('Hernoemd');
+  expect(await scroller()).toBe(before);
 });

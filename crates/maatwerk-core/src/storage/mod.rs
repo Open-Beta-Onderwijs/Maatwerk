@@ -277,15 +277,20 @@ impl Storage {
     /// gives an empty list.
     pub fn read_all_json(&self, dir: &RelPath) -> Result<Vec<Value>> {
         Ok(self
-            .read_all_json_named(dir)?
+            .json_files(dir, false)?
             .into_iter()
             .map(|(_, v)| v)
             .collect())
     }
 
-    /// [`Self::read_all_json`] with each file's name: one call for a folder of records the UI
-    /// would otherwise read one by one (score files, Step 7c).
+    /// The files [`Self::read_json`] would give one by one, with their names: one call for a
+    /// folder of records (score files, Step 7c). Unlike [`Self::read_all_json`], invalid UTF-8
+    /// is decoded with replacement characters, as `read_json` does (review 7c m3).
     pub fn read_all_json_named(&self, dir: &RelPath) -> Result<Vec<(String, Value)>> {
+        self.json_files(dir, true)
+    }
+
+    fn json_files(&self, dir: &RelPath, lossy: bool) -> Result<Vec<(String, Value)>> {
         let path = self.dir.resolve(dir)?;
         let entries = match fs::read_dir(&path) {
             Ok(entries) => entries,
@@ -307,10 +312,15 @@ impl Storage {
             let Ok(bytes) = fs::read(entry.path()) else {
                 continue;
             };
-            let Ok(text) = std::str::from_utf8(&bytes) else {
-                continue;
+            let text = if lossy {
+                String::from_utf8_lossy(&bytes)
+            } else {
+                match std::str::from_utf8(&bytes) {
+                    Ok(t) => t.into(),
+                    Err(_) => continue,
+                }
             };
-            match serde_json::from_str::<Value>(text) {
+            match serde_json::from_str::<Value>(&text) {
                 Ok(Value::Null) | Err(_) => {}
                 Ok(v) => {
                     self.note_stamp(&format!("{}/{name}", dir.as_str()), &v);

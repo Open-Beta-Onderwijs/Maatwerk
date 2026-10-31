@@ -56,7 +56,7 @@ export function renderGroepen() {
     btnImport.onclick = () => openGroupCSVImport();
     btnImportAssignment.onclick = () => openGroupAssignmentCSVImport();
   }
-  renderGroepenForYear(SEL.groupsYear.getValue());
+  return renderGroepenForYear(SEL.groupsYear.getValue()); // the tab span ends when the list is in (review 7c n4)
 }
 
 const SUBCATEGORY_TO_FILTER = {

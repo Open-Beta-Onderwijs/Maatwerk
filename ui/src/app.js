@@ -1116,7 +1116,7 @@ const SCREEN_REFRESH = {
   leerlingen: {
     types: ['students', 'group'],
     year: () => leerlingenState.year,
-    render: () => renderStudentList(),
+    render: () => renderStudentList({ staged: false }),
   },
   groepen: {
     types: ['group', 'students', 'exam', 'scores'],
