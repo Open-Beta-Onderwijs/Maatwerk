@@ -17,16 +17,18 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
    `D:\maatwerk-test\` (it uses `data\` next to the exe), or set `MAATWERK_DATA_DIR`:
    `$env:MAATWERK_DATA_DIR = 'D:\maatwerk-test\data'; .\maatwerk.exe` (PowerShell).
 3. Keep the old app closed while testing on the same copy (old and new never share a folder).
+4. From Step 7a the app works on format v2: on a copy of the old app's folder it first shows the
+   conversion screen (M-MIG-1). Convert the copy, then test the rest on it.
 
 ## Start (M-START)
 
 - [ ] **M-START-1** The window is titled "Maatwerk", 1280x800, no menu bar, Maatwerk icon in the
       taskbar. It cannot be made smaller than 900x600.
 - [ ] **M-START-2** The startup screen shows the subjects; after picking one, the teachers of that
-      subject and the admin badge (with photos). Picking a teacher opens Leerlingen with the
-      last-used year.
-- [ ] **M-START-3** Unusable data folder: point `MAATWERK_DATA_DIR` at a copy and add
-      `"schema_version": 99` to its `config.json` (a v1 folder has no such field yet). Expect the screen "Maatwerk kan de gegevensmap
+      subject and the admin badge (with photos). Picking a teacher asks the PIN (M-PIN) and then
+      opens Leerlingen with the last-used year.
+- [ ] **M-START-3** Unusable data folder: on a converted copy (M-MIG-1) change `"schema_version": 2`
+      in `config.json` to `99`. Expect the screen "Maatwerk kan de gegevensmap
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
@@ -83,7 +85,7 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       (logo, watermark, emoji medals, leeradvies text). Edit the RTTI uitleg/leeradvies texts
       ("Kopiëren naar…", "Opslaan"); unsaved changes ask "Blijven bewerken"/"Toch sluiten".
 - [ ] **M-TOE-6** "Afdrukken" in the rapport viewer: a copy appears in
-      `data\rapporten\<schooljaar>\` named `<YYYY-MM-DD HHmm> Rapport <vak> <groep> <toets>.pdf`
+      `rapporten\<schooljaar>\` **next to** `data\` (C18) named `<YYYY-MM-DD HHmm> Rapport <vak> <groep> <toets>.pdf`
       and opens in the default PDF app. A second print in the same minute gets ` (2)`.
 - [ ] **M-TOE-7** "Opdrachten genereren": cut-offs, "Alles aan"/"Alles uit", "Antwoordsleutel",
       "Genereren" shows progress and then the merged PDF; "Afdrukken" copies and opens it
@@ -96,9 +98,10 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 
 ## Opdrachten and the editor (M-OPD)
 
-- [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the opdracht and its `.typ` file
-      (`opdrachten\<id>.typ`, from the base template). "Kopiëren" copies text and images
-      ("Opdracht gekopieerd als …"); delete removes its images folder.
+- [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the folder `opdrachten\<id>\` with
+      `opdracht.json`, `opdracht.typ` (base template), `main.typ` and `lib.typ` (C14). "Kopiëren"
+      copies the folder, images included ("Opdracht gekopieerd als …"); delete removes the folder.
+      `typst compile main.typ` (plain Typst CLI 0.14) in an opdracht folder makes a PDF.
 - [ ] **M-OPD-2** Opening an opdracht shows the editor with the preview. Typing updates the
       preview; toolbar buttons insert their markup; Ctrl+scroll zooms the preview. A Typst
       error shows the message with line and column.
@@ -119,10 +122,62 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 ## Gebruikers and School (admin) (M-ADM)
 
 - [ ] **M-ADM-1** "+ Gebruiker toevoegen" with a JPG/PNG photo, edit, "Gebruiker
-      deactiveren"/"activeren"; the startup screen follows.
+      deactiveren"/"activeren"; the startup screen follows. The photo shows the same on the login
+      badge, the top-bar badge and the Gebruikers card (Step 7b; group cards list names only).
+      Editing a user who has a PIN keeps the PIN (log in as that user afterwards).
 - [ ] **M-ADM-2** School: edit naam/ondertitel/motto, schoolsoort buttons, logo (PNG/JPG/SVG)
       and watermark (SVG). A `.bmp` logo gets "Bestandstype .bmp wordt niet ondersteund". The
       rapport (M-TOE-5) shows the new logo and watermark.
+
+## Accounts, roles, snapshots (Step 7b: M-PIN, M-VZ, M-SNAP)
+
+- [ ] **M-PIN-1** First login of a teacher: "Welkom, …", choose a PIN. `1234` and two different
+      PINs are refused with a Dutch message. After that the next login asks the PIN.
+- [ ] **M-PIN-2** Wrong PIN twice: "Onjuiste pincode. Probeer het over 2 seconden opnieuw.", the
+      button is grey meanwhile; the waits grow (4, 8, … s, at most a minute). Another teacher can
+      log in at once. A restart clears the waits.
+- [ ] **M-PIN-3** The admin's first login shows ten recovery codes. "Verder" stays grey until "Ik
+      heb de codes bewaard" is ticked. "Afdrukken" prints only the codes; "Opslaan als…" writes
+      a `.txt`. `gebruikersdmin.json` holds `pinHash` and `recoveryCodeHashes` (`$argon2id$…`),
+      never the PIN or a code.
+- [ ] **M-PIN-4** Admin: "Pincode vergeten?" with a code (dash and case do not matter) and a new
+      PIN logs in. The same code a second time: "Onjuiste herstelcode." Badge (top right) >
+      "Nieuwe herstelcodes" asks the PIN and shows ten new codes; the old ones no longer work.
+- [ ] **M-PIN-5** Badge (top right) > "Pincode wijzigen" (current PIN, new twice); "Uitloggen"
+      goes back to the login screen.
+- [ ] **M-PIN-6** Admin > Gebruikers > "Pincode resetten" on a teacher: that teacher chooses a new
+      PIN at the next login; the card says "Nog geen pincode". On a second PC the teacher's open
+      login dialog still accepts the old PIN only until the reset has synced.
+- [ ] **M-PIN-7** Lost everything: `maatwerk-cli admin reset-pin <copy>\data`; the admin chooses
+      a new PIN and gets new codes.
+- [ ] **M-VZ-1** Admin > Gebruikers > Sectievoorzitters: pick a nat teacher. On the login screen
+      (vak Natuurkunde) a square "Sectievoorzitter" badge appears after the teachers; other vakken
+      show none. It asks that teacher's PIN; the top-bar badge is square.
+- [ ] **M-VZ-2** As sectievoorzitter, Groepen shows a pen on the nat groups only: name, jaarlaag,
+      schoolsoort and vak are grey; students in/out and Docent(en) can change; no delete, no new
+      group. The saved group's `_meta.updatedBy` is the teacher. Logged in through the teacher's
+      own badge: no pen.
+- [ ] **M-SNAP-1** Start the app on a test copy: within a minute `data\snapshots\<datum tijd>.zip`
+      appears (the log says `snapshot: Written`); a second start the same day writes none.
+      Instellingen lists it. Two PCs starting together write one zip.
+- [ ] **M-SNAP-2** Instellingen: interval 1 hour, daily 2, weekly 0, monthly 0, "Opslaan"; with
+      older zips copied in (rename them to older dates), the next due start keeps the newest two
+      days only.
+- [ ] **M-SNAP-3** Edit a user file by hand, Gegevenscontrole > "Herstellen uit snapshot": the
+      dialog names the snapshot date; afterwards the file is as in the zip and the line is gone.
+- [ ] **M-SNAP-4** Measure on the real copy: zip size and time (log line), and the size of
+      `fotos\`, to decide whether photos go into snapshots (PLAN Step 7b).
+- [ ] **M-PERF-1** Speed on the real copy (Step 7c, budget < 100 ms). In a dev checkout run
+      `node tools/perf/measure.mjs --data <copy>\data --subject <vak> --user <id> --pin <PIN>`
+      with a teacher of the copy (without `--user` it takes the first teacher; one without a PIN
+      gets `12345` on the copy), and once more as the admin with
+      `--admin 1 --tabs leerlingen,groepen,gebruikers --exams 0`. It logs in through the UI and
+      prints the times: add them to `docs/perf.md` without names. By hand: switching tabs back
+      and forth shows the list at once; "Scores invoeren" shows the first group at once, the
+      others follow within a second.
+- [ ] **M-PERF-2** After a colleague's change (second PC) to a student, group or score, the
+      changed tab shows it when you come back to it; a filter change on one tab applies on the
+      others too.
 
 ## Two teachers at once (M-SYNC)
 
@@ -139,6 +194,29 @@ through OneDrive or a network share.
       door … wordt opnieuw geladen" or "Niet opgeslagen: dit is intussen … gewijzigd", never a
       silent overwrite.
 - [ ] **M-SYNC-4** Switching the year in one app: changes in that year from the other app arrive.
+- [ ] **M-SYNC-5** Both open the same opdracht in the editor; A types and waits for "Opgeslagen",
+      then B types: B sees "Intussen gewijzigd door een collega" and A's text is not overwritten.
+      "Hun versie laden" shows A's text; "Mijn versie bewaren als kopie" makes "<naam> (kopie)"
+      with B's text (C17).
+- [ ] **M-SYNC-6** Two admins edit the same user (Gebruikers) or the same school field: the second
+      save is refused with "intussen … gewijzigd" (C16).
+
+## Data format v2 (M-MIG)
+
+- [ ] **M-MIG-1** Start the exe on a copy of the old app's folder: "Deze gegevensmap moet eenmalig
+      worden omgezet". "Omzetten" stays grey until the box is ticked. After converting: the
+      summary with the backup path (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`) and
+      the check; "Maatwerk starten" opens the app with all students, exams, scores, opdrachten and
+      RTTI texts as in the old app (spot-check a few grades and one rapport against the old app's
+      PDF).
+- [ ] **M-MIG-2** The backup zip opens in Explorer and holds the whole old `data\` folder.
+- [ ] **M-MIG-3** `maatwerk-cli migrate <copy>\data --dry-run` lists what would change and changes
+      nothing; `--apply --backup-dir <folder inside OneDrive>` is refused.
+- [ ] **M-MIG-4** Admin tab "Gegevenscontrole" lists the check. Edit a group file by hand
+      (Notepad): after "Opnieuw controleren" it shows "Buiten Maatwerk gewijzigd"; "Accepteren"
+      removes the line. At the next admin login a notice says so before you look.
+- [ ] **M-MIG-5** Put a copy of a group file next to it as `<naam> (1).json`: the check lists it as
+      "OneDrive-conflictkopie".
 
 ## Shutdown (M-END)
 

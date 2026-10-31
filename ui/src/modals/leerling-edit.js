@@ -13,6 +13,7 @@ import {
 } from '../app.js';
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
 import { studentsFromCsvRows } from '../domain/csv';
+import { normalStudentId } from '../domain/v2';
 import {
   leerlingenState,
   renderLeerlingen,
@@ -155,7 +156,8 @@ export function openStudentModal(id) {
       });
 
       el.querySelector('#f-s-save').addEventListener('click', async () => {
-        const sid = Number(el.querySelector('#f-sid').value);
+        // C8: a string; which numbers are accepted is unchanged.
+        const sid = normalStudentId(el.querySelector('#f-sid').value);
         const achternaam = el.querySelector('#f-sachter').value.trim();
         if (!sid || !achternaam) {
           toast('Vul leerlingnummer en achternaam in.', 'error');

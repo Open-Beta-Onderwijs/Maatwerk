@@ -5,6 +5,7 @@
 // tests/golden/logic/csv.json.
 
 import type { Student } from './types';
+import { normalStudentId } from './v2';
 
 export interface ParsedCsv {
   headers: string[];
@@ -79,15 +80,16 @@ export function decodeCsv(bytes: Uint8Array): string {
 
 /**
  * Students from the rows of a student CSV (column names in Title case or lower
- * case). Rows without a number or achternaam are dropped. Ids are numbers, as
- * in the reference (quirk B21; ADR-0003 C8 converts them in Step 7).
+ * case). Rows without a number or achternaam are dropped. Ids are strings
+ * (ADR-0003 C8), so a re-import matches existing students (quirk B21); which
+ * ids are accepted is unchanged (`normalStudentId`).
  */
 export function studentsFromCsvRows(rows: Record<string, string>[]): Student[] {
   return rows
     .map((r) => {
       const ssRaw = (r['Schoolsoort'] ?? r['schoolsoort'] ?? '').trim();
       return {
-        id: Number(r['Leerlingnummer'] ?? r['leerlingnummer']),
+        id: normalStudentId(r['Leerlingnummer'] ?? r['leerlingnummer']),
         voornaam: r['Voornaam'] ?? r['voornaam'] ?? '',
         tussenvoegsel: r['Tussenvoegsel'] ?? r['tussenvoegsel'] ?? '',
         achternaam: r['Achternaam'] ?? r['achternaam'] ?? '',

@@ -3,7 +3,9 @@
 //! Tauri shell. Command handlers parse arguments, call `maatwerk_core` and map
 //! errors; they hold no business logic.
 
+mod auth;
 mod commands;
+mod data;
 mod error;
 mod opdrachten;
 mod render;
@@ -69,12 +71,15 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_years,
             commands::ensure_year,
             commands::read_all_json,
+            commands::read_json_dir,
+            commands::read_opdrachten,
             commands::delete_file,
             commands::ensure_dir,
             commands::get_data_dir,
             commands::data_folder_status,
             commands::restart_app,
             commands::read_text_file,
+            commands::read_text_file_versioned,
             commands::write_text_file,
             commands::update_presence,
             commands::read_local_session,
@@ -82,14 +87,29 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::read_photo_as_data_url,
             commands::save_photo,
             commands::set_watch_year,
-            opdrachten::create_assignment_typ_file,
+            opdrachten::create_opdracht_folder,
             opdrachten::list_opdracht_images,
             opdrachten::save_opdracht_image,
             opdrachten::pick_image_file,
             opdrachten::import_opdracht_image,
             opdrachten::read_clipboard_image,
-            opdrachten::copy_opdracht_images,
-            opdrachten::delete_opdracht_images,
+            opdrachten::copy_opdracht_folder,
+            opdrachten::delete_opdracht_folder,
+            data::migrate_data_folder,
+            data::validate_data_folder,
+            data::stamp_issues,
+            data::accept_stamp,
+            auth::verify_pin,
+            auth::set_first_pin,
+            auth::change_pin,
+            auth::reset_pin,
+            auth::recover_with_code,
+            auth::renew_recovery_codes,
+            auth::logout,
+            auth::save_text_as,
+            auth::list_snapshots,
+            auth::snapshot_for_file,
+            auth::restore_from_snapshot,
             render::render_rapport_pdf,
             render::render_assignment_svg,
             render::render_assignment_batch,
@@ -203,7 +223,9 @@ pub fn run() {
                         tracing::warn!("emitting data:changed failed: {e}");
                     }
                 });
-            app.manage::<state::Shared>(Arc::new(core));
+            let core = Arc::new(core);
+            core.start_snapshot();
+            app.manage::<state::Shared>(core);
             Ok(())
         })
         .build(context);

@@ -22,7 +22,6 @@ export async function openEditor(opdracht) {
 
   const params = new URLSearchParams({
     id: opdracht.id,
-    typFile: opdracht.typFile,
     naam: opdracht.naam,
     badgeInitials,
     badgeColor,
@@ -35,7 +34,7 @@ export async function openEditor(opdracht) {
   if (_messageHandler) {
     window.removeEventListener('message', _messageHandler);
   }
-  _messageHandler = (evt) => handleEditorMessage(evt, frame);
+  _messageHandler = (evt) => handleEditorMessage(evt, frame, opdracht);
   window.addEventListener('message', _messageHandler);
 }
 
@@ -50,7 +49,7 @@ function closeEditor() {
   }
 }
 
-function handleEditorMessage(evt, frame) {
+function handleEditorMessage(evt, frame, opdracht) {
   // Only accept messages from our editor frame
   if (evt.source !== frame.contentWindow) return;
 
@@ -77,11 +76,27 @@ function handleEditorMessage(evt, frame) {
     case 'maatwerk-read-text':
       answer(() => window.maatwerk.readTextFile(rest.path));
       break;
+    case 'maatwerk-read-text-versioned':
+      answer(() => window.maatwerk.readTextFileVersioned(rest.path));
+      break;
     case 'maatwerk-write-text':
-      answer(() => window.maatwerk.writeTextFile(rest.path, rest.content));
+      answer(() => window.maatwerk.writeTextFile(rest.path, rest.content, rest.expectedHash));
+      break;
+    case 'maatwerk-save-copy':
+      // C17 "Mijn versie bewaren als kopie": copy the opdracht, then put the
+      // editor text in the copy.
+      answer(async () => {
+        const copy = await Store.copyOpdracht(opdracht.id);
+        const written = await window.maatwerk.writeTextFile(
+          `opdrachten/${copy.id}/opdracht.typ`,
+          rest.content,
+        );
+        if (!written.ok) throw new Error('kopie niet opgeslagen');
+        return { id: copy.id, naam: copy.naam };
+      });
       break;
     case 'maatwerk-render-assignment-svg':
-      answer(() => window.maatwerk.renderAssignmentSvg(rest.typFile, rest.title, rest.content));
+      answer(() => window.maatwerk.renderAssignmentSvg(rest.opdrachtId, rest.title, rest.content));
       break;
     case 'maatwerk-list-images':
       answer(() => window.maatwerk.listOpdrachtImages(rest.opdrachtId));

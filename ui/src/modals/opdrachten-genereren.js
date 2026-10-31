@@ -322,7 +322,7 @@ function studentJobs(state) {
   return includedStudents(state).flatMap(({ student, group, items }) =>
     items.map(({ opdracht, obs }) => ({
       key: String(student.id),
-      typFile: opdracht.typFile,
+      opdrachtId: opdracht.id,
       label: opdracht.naam,
       mode: 'student',
       header: {
@@ -345,7 +345,7 @@ function answerKeyJobs(state) {
     .sort((a, b) => (a.naam ?? '').localeCompare(b.naam ?? '', 'nl'))
     .map((o) => ({
       key: o.id,
-      typFile: o.typFile,
+      opdrachtId: o.id,
       label: o.naam,
       mode: 'answers',
       header: { title: o.naam },
@@ -355,7 +355,7 @@ function answerKeyJobs(state) {
 async function generate(el, state, year, kind) {
   if (state.busy) return;
   const jobs = kind === 'key' ? answerKeyJobs(state) : studentJobs(state);
-  const missing = jobs.filter((j) => !j.typFile);
+  const missing = jobs.filter((j) => !j.opdrachtId);
   if (missing.length) {
     toast(`Opdracht "${missing[0].label}" heeft geen Typst-bestand.`, 'error');
     return;

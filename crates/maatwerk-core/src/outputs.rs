@@ -5,15 +5,15 @@
 //! copies one into `rapporten/<schooljaar>/` in the data folder under a descriptive name (C15).
 
 use std::fs;
-use std::io;
+use std::io::{self, Write as _};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 use time::OffsetDateTime;
 
-use crate::paths::{RelPath, is_year_name};
-use crate::storage::{Expect, Storage};
+use crate::paths::{DataDir, RelPath, is_year_name};
+use crate::storage::Storage;
 use crate::{Error, Result};
 
 /// Longest output name and name part, in characters.
@@ -121,9 +121,21 @@ fn clear_stale(base: &Path, own: &Path) {
     }
 }
 
+/// The folder that holds the data folder: printed copies go to its `rapporten/` (C18).
+pub fn shared_dir(storage: &Storage) -> Result<DataDir> {
+    let parent = storage
+        .data_dir()
+        .root()
+        .parent()
+        .ok_or_else(|| Error::InvalidArgument {
+            message: "De gegevensmap heeft geen bovenliggende map voor rapporten/.".into(),
+        })?;
+    DataDir::open(parent)
+}
+
 /// What `open_path` may open with the OS (review 6a M1): an output ID, or a printed copy
-/// `rapporten/<schooljaar>/<name>.pdf` that exists. Nothing else in the shared folder, which
-/// could hold files that run when opened.
+/// `rapporten/<schooljaar>/<name>.pdf` next to the data folder (C18) that exists. Nothing else
+/// in the shared folder, which could hold files that run when opened.
 pub fn openable_path(storage: &Storage, outputs: &OutputStore, target: &str) -> Result<PathBuf> {
     if let Ok(path) = outputs.path(target) {
         return Ok(path);
@@ -138,7 +150,7 @@ pub fn openable_path(storage: &Storage, outputs: &OutputStore, target: &str) -> 
             reason: "only render outputs and printed PDFs can be opened",
         });
     }
-    let path = storage.data_dir().resolve(&rel)?;
+    let path = shared_dir(storage)?.resolve(&rel)?;
     if path.is_file() {
         Ok(path)
     } else {
@@ -216,8 +228,9 @@ pub fn clean_name_part(part: &str) -> String {
     cut.trim_end_matches([' ', '.']).to_owned()
 }
 
-/// Copies an output into `rapporten/<schooljaar>/` and returns the copy's data-relative path. A
-/// name already taken gets ` (2)`, ` (3)`, ... Written atomically; the watcher ignores the folder.
+/// Copies an output into `rapporten/<schooljaar>/` next to the data folder (C18) and returns the
+/// copy's path relative to that shared folder. A name already taken gets ` (2)`, ` (3)`, ...
+/// Never overwrites; outside the data folder, so the watcher does not see it.
 pub fn print_copy(
     storage: &Storage,
     pdf: &[u8],
@@ -247,18 +260,34 @@ pub fn print_copy(
     // (review 6a m2); ` (n).pdf` comes on top.
     let stem: String = stem.chars().take(MAX_STEM).collect();
     let stem = stem.trim_end_matches([' ', '.']).to_owned();
+    let shared = shared_dir(storage)?;
     let dir = RelPath::parse(&format!("rapporten/{}", name.schooljaar))?;
-    storage.ensure_dir(&dir)?;
+    let dir_path = shared.resolve(&dir)?;
+    fs::create_dir_all(&dir_path).map_err(|e| Error::io(dir.as_str(), e))?;
     for n in 1u32.. {
         let file = match n {
             1 => format!("{stem}.pdf"),
             n => format!("{stem} ({n}).pdf"),
         };
         let rel = dir.join(&file)?;
-        match storage.write_bytes(&rel, pdf, Expect::Missing) {
-            Ok(()) => return Ok(rel),
-            Err(Error::Conflict { .. }) if n < 1000 => continue,
-            Err(e) => return Err(e),
+        let path = shared.resolve(&rel)?;
+        // `create_new` is the exclusive "must not exist yet" check.
+        let created = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&path);
+        match created {
+            Ok(mut f) => {
+                if let Err(e) = f.write_all(pdf).and_then(|()| f.sync_all()) {
+                    // No truncated PDF under its final name in the synced folder (review 7a m3).
+                    drop(f);
+                    let _ = fs::remove_file(&path);
+                    return Err(Error::io(rel.as_str(), e));
+                }
+                return Ok(rel);
+            }
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists && n < 1000 => continue,
+            Err(e) => return Err(Error::io(rel.as_str(), e)),
         }
     }
     unreachable!("the loop returns")
@@ -363,7 +392,12 @@ mod tests {
             second.as_str(),
             "rapporten/2025-2026/2026-10-25 1432 Rapport nat 3a Voorbeeldtoets 1 (2).pdf"
         );
-        assert_eq!(storage.read_bytes(&first).unwrap().unwrap(), b"%PDF-1");
+        // C18: next to the data folder, not in it.
+        assert_eq!(
+            fs::read(tmp.path().join(first.as_str())).unwrap(),
+            b"%PDF-1"
+        );
+        assert!(!tmp.path().join("data/rapporten").exists());
 
         let no_group = PrintName {
             groep: " ".into(),
@@ -417,16 +451,18 @@ mod tests {
         let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH).unwrap();
         assert!(openable_path(&storage, &outputs, rel.as_str()).is_ok());
         for (file, bytes) in [
-            ("fotos/x.bat", &b"echo"[..]),
+            ("data/fotos/x.bat", &b"echo"[..]),
             ("rapporten/2025-2026/x.lnk", b""),
+            ("data/rapporten/2025-2026/old.pdf", b"%PDF"),
         ] {
-            let rel = RelPath::parse(file).unwrap();
-            storage.write_bytes(&rel, bytes, Expect::Any).unwrap();
+            fs::create_dir_all(tmp.path().join(file).parent().unwrap()).unwrap();
+            fs::write(tmp.path().join(file), bytes).unwrap();
         }
         for bad in [
             "fotos/x.bat",
             "rapporten/2025-2026/x.lnk",
             "rapporten/2025-2026/missing.pdf",
+            "rapporten/2025-2026/old.pdf",
             "rapporten/x/a.pdf",
             "rapporten",
             "gebruikers.json",

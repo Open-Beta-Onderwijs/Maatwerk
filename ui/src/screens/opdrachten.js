@@ -358,10 +358,10 @@ async function openOpdrachtenModal(existingId) {
         }
 
         const id = existing?.id ?? `opdracht_${Date.now()}`;
-        const typFile = existing?.typFile ?? `${id}.typ`;
 
+        // C14: a new opdracht gets its folder (main.typ, lib.typ, opdracht.typ).
         if (!existing) {
-          await window.maatwerk.createAssignmentTypFile(typFile);
+          await window.maatwerk.createOpdrachtFolder(id);
         }
 
         await Store.upsertOpdracht({
@@ -372,7 +372,6 @@ async function openOpdrachtenModal(existingId) {
           vakken,
           jaarlagen,
           observaties,
-          typFile,
         });
         closeModal();
         toast(`Opdracht ${isEdit ? 'bijgewerkt' : 'toegevoegd'}.`, 'success');

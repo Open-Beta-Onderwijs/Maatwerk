@@ -99,7 +99,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 4 | Rust core: paths, storage, watcher | L (4a, 4b) | done (`step-04`) |
 | 5 | Typst service (parity with the old output) | L (5a, 5b) | done (`step-05`) |
 | 6 | Tauri wiring + parity + portable build | L (6a, 6b) | done (`step-06`, `v0.2.0-parity`) |
-| 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | todo |
+| 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | done (`step-07a`, `step-07b`, `step-07c`, `step-07`) |
 | 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | todo |
 | 9 | AI-ready seams (design + CLI, no AI) | S | todo |
 | 10 | Hardening, refactor, maintainability | L | todo |

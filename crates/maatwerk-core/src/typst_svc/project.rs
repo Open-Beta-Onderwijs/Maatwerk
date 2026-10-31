@@ -14,7 +14,7 @@ use super::fonts::FontStore;
 use super::world::{MaatwerkWorld, Mount, WorldSpec};
 use crate::assets;
 use crate::paths::{DataDir, RelPath};
-use crate::storage::Storage;
+use crate::storage::{Expect, Storage};
 use crate::{Error, Result};
 
 /// A root folder (real or virtual), its entry file and the `sys.inputs` for one compile.
@@ -101,12 +101,38 @@ impl TypstProject {
     }
 }
 
-/// Writes the base template to `opdrachten/<typ_file>`, replacing what is there
-/// (`app:createAssignmentTypFile`). Unlike the reference, `typ_file` must be a bare `.typ` name.
-pub fn create_v1_opdracht_file(storage: &Storage, typ_file: &str) -> Result<()> {
-    v1_opdracht_id(typ_file)?;
-    let rel = RelPath::parse(&format!("opdrachten/{typ_file}"))?;
-    storage.write_text(&rel, assets::BASE_ASSIGNMENT_TYP)
+impl TypstProject {
+    /// The opdracht folder `opdrachten/<id>/` (C14) with `main.typ` as the entry. Only files in
+    /// that folder are readable.
+    pub fn opdracht(data_dir: &DataDir, id: &str) -> Result<TypstProject> {
+        crate::opdracht_images::check_opdracht_id(id)?;
+        let root = data_dir.root().join("opdrachten").join(id);
+        Ok(TypstProject {
+            main: "/main.typ".to_owned(),
+            files: Vec::new(),
+            mounts: vec![Mount::dir("/", root).within(data_dir.root())],
+            inputs: None,
+        })
+    }
+}
+
+/// The files of a new opdracht folder (`app:createAssignmentTypFile`, C14): the bundled
+/// `main.typ` and `lib.typ` and `opdracht.typ` from `base_assignment.typ`. Files that are
+/// already there are kept.
+pub fn create_opdracht_folder(storage: &Storage, id: &str) -> Result<()> {
+    crate::opdracht_images::check_opdracht_id(id)?;
+    for (name, text) in [
+        ("main.typ", assets::OPDRACHT_MAIN_TYP),
+        ("lib.typ", assets::LIB_TYP),
+        ("opdracht.typ", assets::BASE_ASSIGNMENT_TYP),
+    ] {
+        let rel = RelPath::parse(&format!("opdrachten/{id}/{name}"))?;
+        match storage.write_text(&rel, text, Expect::Missing) {
+            Ok(_) | Err(Error::Conflict { .. }) => {}
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(())
 }
 
 /// `opdracht_<n>.typ` -> `opdracht_<n>`. The reference accepted any bare basename
@@ -150,19 +176,25 @@ mod tests {
     }
 
     #[test]
-    fn create_writes_the_base_template_and_checks_the_name() {
+    fn create_fills_a_new_folder_keeps_existing_files_and_checks_the_id() {
         let tmp = tempfile::tempdir().unwrap();
         let storage =
             Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
                 .unwrap();
-        create_v1_opdracht_file(&storage, "opdracht_1.typ").unwrap();
-        let rel = RelPath::parse("opdrachten/opdracht_1.typ").unwrap();
-        assert_eq!(
-            storage.read_text(&rel).unwrap().unwrap(),
-            assets::BASE_ASSIGNMENT_TYP
-        );
-        for bad in ["../x.typ", "images/x.typ", "x.json"] {
-            assert!(create_v1_opdracht_file(&storage, bad).is_err(), "{bad}");
+        let typ = RelPath::parse("opdrachten/opdracht_1/opdracht.typ").unwrap();
+        storage
+            .write_text(&typ, "// mine", crate::storage::Expect::Any)
+            .unwrap();
+        create_opdracht_folder(&storage, "opdracht_1").unwrap();
+        let read = |name: &str| {
+            let rel = RelPath::parse(&format!("opdrachten/opdracht_1/{name}")).unwrap();
+            storage.read_text(&rel).unwrap().unwrap()
+        };
+        assert_eq!(read("opdracht.typ"), "// mine");
+        assert_eq!(read("main.typ"), assets::OPDRACHT_MAIN_TYP);
+        assert_eq!(read("lib.typ"), assets::LIB_TYP);
+        for bad in ["../x", "a/b", "", "x.typ"] {
+            assert!(create_opdracht_folder(&storage, bad).is_err(), "{bad}");
         }
     }
 }

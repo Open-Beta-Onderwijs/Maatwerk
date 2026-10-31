@@ -121,7 +121,7 @@ export async function openResitModal(parentId, year) {
         const fullTitle = `${parent.title} — ${description}`;
         const resitExam = {
           ...parent,
-          id: Store.makeExamId(fullTitle, year),
+          id: Store.makeExamId(),
           title: fullTitle,
           description,
           attempt: nextAttempt,

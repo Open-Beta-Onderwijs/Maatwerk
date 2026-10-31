@@ -10,6 +10,9 @@ import {
   getEigenOnly,
 } from '../app.js';
 import { openProfielModal } from '../modals/profiel.js';
+import { inIdleSlices } from '../utils/idle';
+import { perfSpan } from '../utils/perf';
+import { SUBJECT_DISPLAY } from '../domain/rapport';
 import { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals/leerling-edit.js';
 
 // Re-export modals so existing consumers keep working
@@ -22,6 +25,10 @@ export { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export const leerlingenState = { year: null, search: '' };
+
+// Cards rendered at once; the rest follow in idle time (Step 7c).
+const FIRST_CARDS = 60;
+let _listJob = null;
 
 export const JAARLAGEN = ['1', '2', '3', '4', '5', '6'];
 export const SCHOOLSOORTEN = [
@@ -64,7 +71,13 @@ export function renderLeerlingen() {
   renderStudentList();
 }
 
-export function renderStudentList() {
+/**
+ * Renders the filtered list. `staged`: the first cards now, the rest in idle
+ * time; a background refresh passes false, so the whole list is there when
+ * app.js restores the scroll position (review 7c M1).
+ */
+export function renderStudentList({ staged = true } = {}) {
+  _listJob?.cancel(); // cards of an earlier render still waiting for idle time
   const year = leerlingenState.year;
   const query = leerlingenState.search.trim().toLowerCase();
   const container = document.getElementById('student-list');
@@ -133,11 +146,14 @@ export function renderStudentList() {
     return;
   }
 
-  let html = '';
+  const endDom = perfSpan('leerlingen:dom');
+  const isAdmin = Store.isAdminActive();
+  // One HTML part per student (with the headings that start before it).
+  const parts = [];
   let lastJl = null;
   let lastSk = null;
-
   for (const s of students) {
+    let html = '';
     const stamklas = s.stamklas || '—';
     const jl = Store.jaarlaagFromStamklas(stamklas) || '—';
     if (jl !== lastJl) {
@@ -153,13 +169,13 @@ export function renderStudentList() {
       <div class="card">
         <div class="card-main">
           <div class="student-card-row">
-            <button class="student-name-btn" data-action="profile" data-id="${s.id}" ${Store.isAdminActive() ? 'disabled' : ''}>${escHtml(Store.fullName(s))}</button>
+            <button class="student-name-btn" data-action="profile" data-id="${s.id}" ${isAdmin ? 'disabled' : ''}>${escHtml(Store.fullName(s))}</button>
             <span class="card-sep">·</span>
             <span class="student-id-inline">${s.id}${s._geslacht ? ' · ' + escHtml(s._geslacht) : ''}</span>
           </div>
         </div>
         ${
-          Store.isAdminActive()
+          isAdmin
             ? `
         <div class="card-actions">
           <button class="btn-sm btn-sm-icon" data-action="edit-student" data-id="${s.id}" title="Leerling bewerken">${ICONS.pen}</button>
@@ -168,48 +184,76 @@ export function renderStudentList() {
             : ''
         }
       </div>`;
+    parts.push(html);
   }
-  container.innerHTML = html;
 
+  // One listener for all cards, also those added later (Step 7c).
   const _peers = students; // capture current filtered+sorted list for nav
-  container
-    .querySelectorAll('[data-action="profile"]')
-    .forEach((b) =>
-      b.addEventListener('click', () => openProfielModal(Number(b.dataset.id), null, _peers)),
-    );
-  container
-    .querySelectorAll('[data-action="edit-student"]')
-    .forEach((b) => b.addEventListener('click', () => openStudentModal(Number(b.dataset.id))));
-  container
-    .querySelectorAll('[data-action="del-student"]')
-    .forEach((b) => b.addEventListener('click', () => deleteStudent(Number(b.dataset.id))));
+  container.onclick = (e) => {
+    const b = e.target.closest('button[data-action]');
+    if (!b || b.disabled || !container.contains(b)) return;
+    if (b.dataset.action === 'profile') openProfielModal(b.dataset.id, null, _peers);
+    else if (b.dataset.action === 'edit-student') openStudentModal(b.dataset.id);
+    else if (b.dataset.action === 'del-student') deleteStudent(b.dataset.id);
+  };
 
-  // Disable Verwijderen for students that cannot be deleted (non-blocking)
-  for (const s of students) {
-    const checkHasScores = Store.isAdminActive()
-      ? Store.studentHasAnyScores(s.id)
-      : Store.studentHasScores(s.id, year);
+  // Why Verwijderen is disabled, per student id (admin only: teachers have no
+  // delete button). Filled by the checks below, applied to the buttons as they appear.
+  const deleteBlocks = new Map();
+  const deleteButtons = new Map();
+  const applyBlock = (id) => {
+    const btn = deleteButtons.get(id);
+    const reason = deleteBlocks.get(id);
+    if (!btn || !reason) return;
+    btn.disabled = true;
+    btn.title = reason;
+  };
+  const appendParts = (slice) => {
+    const last = container.lastElementChild;
+    container.insertAdjacentHTML('beforeend', slice.join(''));
+    if (!isAdmin) return;
+    for (let el = last ? last.nextElementSibling : container.firstElementChild; el;) {
+      const btn = el.querySelector('[data-action="del-student"]');
+      if (btn) {
+        deleteButtons.set(btn.dataset.id, btn);
+        applyBlock(btn.dataset.id);
+      }
+      el = el.nextElementSibling;
+    }
+  };
 
-    checkHasScores.then((hasScores) => {
-      const btn = container.querySelector(
-        `[data-action="del-student"][data-id="${CSS.escape(String(s.id))}"]`,
-      );
-      if (!btn) return;
-      if (hasScores) {
-        btn.disabled = true;
-        btn.title =
-          'Er zijn scores ingevoerd voor deze leerling, de leerling kan dus niet worden verwijderd.';
-        return;
-      }
-      if (Store.isAdminActive()) {
-        // Also block if the student is in any group in any loaded year
-        const allGroups = Store.getGroupsSync(year);
-        const inGroup = allGroups.some((g) => (g.student_ids ?? []).includes(s.id));
-        if (inGroup) {
-          btn.disabled = true;
-          btn.title = 'Deze leerling zit in een groep en kan dus niet worden verwijderd.';
-        }
-      }
-    });
+  // The first cards at once, the rest in idle time (a long list paints within budget).
+  container.innerHTML = '';
+  const first = staged ? FIRST_CARDS : parts.length;
+  appendParts(parts.slice(0, first));
+  endDom();
+  if (first < parts.length) {
+    const endRest = perfSpan('leerlingen:rest');
+    _listJob = inIdleSlices(parts.slice(first), appendParts, 50);
+    void _listJob.done.then(endRest);
   }
+
+  if (!isAdmin) return;
+  // Disable Verwijderen for students that cannot be deleted (non-blocking)
+  const endChecks = perfSpan('leerlingen:checks');
+  // One folder read per year and vak instead of one read per student and file.
+  const ids = students.map((s) => s.id);
+  const preloads = Store.listYearsSync().flatMap((y) =>
+    Object.keys(SUBJECT_DISPLAY).map((v) => Store.preloadScores(y, v, ids).catch(() => {})),
+  );
+  const checks = students.map(async (s) => {
+    await Promise.all(preloads);
+    const id = String(s.id);
+    if (await Store.studentHasAnyScores(s.id)) {
+      deleteBlocks.set(
+        id,
+        'Er zijn scores ingevoerd voor deze leerling, de leerling kan dus niet worden verwijderd.',
+      );
+    } else if (Store.getGroupsSync(year).some((g) => (g.student_ids ?? []).includes(s.id))) {
+      // Also block if the student is in any group in any loaded year
+      deleteBlocks.set(id, 'Deze leerling zit in een groep en kan dus niet worden verwijderd.');
+    }
+    applyBlock(id);
+  });
+  void Promise.allSettled(checks).then(endChecks);
 }

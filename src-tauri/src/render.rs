@@ -62,7 +62,8 @@ pub struct RenderedSvg {
 #[serde(rename_all = "camelCase")]
 pub struct BatchJobArg {
     pub key: String,
-    pub typ_file: String,
+    /// The opdracht folder `opdrachten/<id>/` (C14).
+    pub opdracht_id: String,
     pub label: Option<String>,
     /// `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing.
     pub header: Option<Value>,
@@ -109,12 +110,12 @@ fn invalid_file_name(name: &str) -> CommandError {
     })
 }
 
-/// A v1 opdracht project for a bare `.typ` name, else the reference's error text.
-fn opdracht_project(core: &Core, typ_file: &str) -> Res<TypstProject> {
-    TypstProject::opdracht_v1(core.storage()?.data_dir(), typ_file).map_err(|e| match e {
-        maatwerk_core::Error::InvalidPath { .. } => invalid_file_name(typ_file),
-        e => e.into(),
-    })
+/// The opdracht folder `opdrachten/<id>/` as a project (C14).
+fn opdracht_project(core: &Core, opdracht_id: &str) -> Res<TypstProject> {
+    Ok(TypstProject::opdracht(
+        core.storage()?.data_dir(),
+        opdracht_id,
+    )?)
 }
 
 /// All students of one toets in one PDF. `examId` is unused, as in the reference. The UI passes
@@ -151,12 +152,12 @@ pub async fn render_rapport_pdf(
 #[specta::specta]
 pub async fn render_assignment_svg(
     state: State<'_, Shared>,
-    typ_file: String,
+    opdracht_id: String,
     title: String,
     preview_content: Option<String>,
 ) -> Res<RenderedSvg> {
     blocking(state, move |c| {
-        let project = opdracht_project(c, &typ_file)?.with_file(
+        let project = opdracht_project(c, &opdracht_id)?.with_file(
             &RelPath::parse("opdracht.typ")?,
             preview_content.unwrap_or_default(),
         );
@@ -197,8 +198,8 @@ pub async fn render_assignment_batch(
         for job in &jobs {
             batch.push(BatchJob {
                 key: job.key.clone(),
-                label: job.label.clone().unwrap_or_else(|| job.typ_file.clone()),
-                project: opdracht_project(c, &job.typ_file)?,
+                label: job.label.clone().unwrap_or_else(|| job.opdracht_id.clone()),
+                project: opdracht_project(c, &job.opdracht_id)?,
                 inputs: OpdrachtInputs {
                     mode: match job.mode.as_deref() {
                         Some("answers") => Mode::Answers,

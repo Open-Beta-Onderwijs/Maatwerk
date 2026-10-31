@@ -131,7 +131,8 @@ describe('T26: a non-numeric score does not break the rapport', () => {
 });
 
 describe('B9: bovenbouw wiskunde reads the advice file the editor writes', () => {
-  const file = (key: string) => `templates/RTTI explanations and advices/rtti_expl_adv_${key}.json`;
+  // C11: `templates/rtti/<key>_<jaar>.json` (was `.../rtti_expl_adv_<key>_<jaar>.json`).
+  const file = (key: string) => `templates/rtti/${key}.json`;
   const advies = (tag: string) => ({
     ...defaultTabData(),
     uitleg: { R: tag, T1: '', T2: '', I: '' },
@@ -223,7 +224,7 @@ describe('C8: rapport group lookup compares ids as strings', () => {
     } as Exam;
     const { studentData } = buildRapportData({
       exam,
-      students: [{ id: 7, voornaam: 'A', achternaam: 'B', stamklas: '3a' }],
+      students: [{ id: 7 as unknown as string, voornaam: 'A', achternaam: 'B', stamklas: '3a' }], // v1 number
       groups: [{ id: 'g', name: '3a nat', student_ids: ['7'] }],
       recordOf: () => ({ scores: { e: { q1: 1 } } }),
       observaties: [],

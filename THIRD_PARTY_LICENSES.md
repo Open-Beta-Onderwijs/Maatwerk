@@ -16,6 +16,9 @@ date, and ships it next to the exe; "Over Maatwerk" in the app shows it.
 | tauri, tauri-build                               | Apache-2.0 OR MIT     |
 | serde, serde_json                                | MIT OR Apache-2.0     |
 | sha1                                             | MIT OR Apache-2.0     |
+| sha2 (integrity stamp)                           | MIT OR Apache-2.0     |
+| zip (migration backup, snapshots)                | MIT                   |
+| argon2, password-hash (PIN hashes)               | MIT OR Apache-2.0     |
 | thiserror                                        | MIT OR Apache-2.0     |
 | base64                                           | MIT OR Apache-2.0     |
 | ryu                                              | Apache-2.0 OR BSL-1.0 |

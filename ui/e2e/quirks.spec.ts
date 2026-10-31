@@ -27,11 +27,9 @@ async function openFirstOpdrachtInEditor(page: Page) {
 
 test('U7: the login screen shows teacher names as text', async ({ page }) => {
   await page.goto('/');
-  const users = await readMockJson<Record<string, unknown>[]>(page, 'gebruikers.json');
-  const nasty = users.map((u) =>
-    u.id === TEACHER ? { ...u, voornaam: NASTY, afkorting: '<i>', foto: null } : u,
-  );
-  await seedFiles(page, { 'gebruikers.json': nasty });
+  const file = `gebruikers/${TEACHER}.json`; // one file per user (C16)
+  const user = await readMockJson<Record<string, unknown>>(page, file);
+  await seedFiles(page, { [file]: { ...user, voornaam: NASTY, afkorting: '<i>', foto: null } });
   await page.goto('/');
   await page.locator('.subject-card[data-subject="nat"]').click();
   const badge = page.locator(`.user-badge[data-user-id="${TEACHER}"]`);
@@ -41,7 +39,7 @@ test('U7: the login screen shows teacher names as text', async ({ page }) => {
 });
 
 test('U6: the RTTI uitleg modal keeps teacher text as typed', async ({ page }) => {
-  const file = 'templates/RTTI explanations and advices/rtti_expl_adv_nat_3.json';
+  const file = 'templates/rtti/nat_3.json'; // C11
   await page.goto('/');
   const template = await readMockJson<{ uitleg: Record<string, string> }>(page, file);
   await seedFiles(page, { [file]: { ...template, uitleg: { ...template.uitleg, R: NASTY } } });
@@ -67,7 +65,8 @@ test('U9: closing the editor right after typing keeps the edit', async ({ page }
   await login(page);
   const frame = await openFirstOpdrachtInEditor(page);
   const src = await page.locator('#editor-frame').getAttribute('src');
-  const file = `opdrachten/${new URLSearchParams(src!.split('?')[1]).get('typFile')}`;
+  const id = new URLSearchParams(src!.split('?')[1]).get('id');
+  const file = `opdrachten/${id}/opdracht.typ`; // C14
   await frame.locator('.cm-content').click();
   await page.keyboard.press('Control+End');
   await page.keyboard.type('\n// laatste regel');
@@ -78,7 +77,7 @@ test('U9: closing the editor right after typing keeps the edit', async ({ page }
 
 test('D25: the editor reports a failed load instead of waiting forever', async ({ page }) => {
   await login(page);
-  await withMock(page, (m) => m.fail('readTextFile', 'opdrachten/'));
+  await withMock(page, (m) => m.fail('readTextFileVersioned', 'opdrachten/'));
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
   await page.locator('[data-action="open-editor"]').first().click();
   const status = page.frameLocator('#editor-frame').locator('#editor-status');
@@ -109,11 +108,10 @@ test('U9: after a failed save the editor can still be closed, after confirming',
 
 test('U7: the user dialog keeps the colour attribute intact', async ({ page }) => {
   await page.goto('/');
-  const users = await readMockJson<Record<string, unknown>[]>(page, 'gebruikers.json');
+  const file = `gebruikers/${TEACHER}.json`;
+  const user = await readMockJson<Record<string, unknown>>(page, file);
   const kleur = '#123456" data-x="1';
-  await seedFiles(page, {
-    'gebruikers.json': users.map((u) => (u.id === TEACHER ? { ...u, kleur } : u)),
-  });
+  await seedFiles(page, { [file]: { ...user, kleur } });
   await login(page, 'nat', 'admin');
   await page.locator('.nav-btn[data-screen="gebruikers"]').click();
   await page.locator(`[data-action="edit-user"][data-id="${TEACHER}"]`).click();
@@ -131,8 +129,17 @@ test('D25: a failed image call in the editor is reported, not swallowed', async 
 test('D34: a group CSV import asks before overwriting an existing group', async ({ page }) => {
   await login(page, 'nat', 'admin');
   const file = `${YEAR}/groups/3a-nat-${YEAR}.json`;
-  const added = `${YEAR}/groups/nieuwe-groep-${YEAR}.json`;
-  const before = await readMockJson<{ student_ids: number[] }>(page, file);
+  // New groups get an opaque id (C10): look the new one up by name.
+  const added = () =>
+    withMock(
+      page,
+      async (m, dir) => {
+        const all = (await m.readAllJson(dir)) as { name?: string }[];
+        return all.find((g) => g.name === 'nieuwe groep') ?? null;
+      },
+      `${YEAR}/groups`,
+    );
+  const before = await readMockJson<{ student_ids: string[] }>(page, file);
   expect(before.student_ids.length).toBeGreaterThan(0);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   await page.locator('#btn-import-groups').click();
@@ -152,17 +159,17 @@ test('D34: a group CSV import asks before overwriting an existing group', async 
   await expect(dialog.locator('tr.diff-removed')).toHaveCount(before.student_ids.length);
   await expect(dialog).not.toContainText('nieuwe groep');
   await dialog.getByRole('button', { name: 'Annuleren' }).click();
-  expect((await readMockJson<{ student_ids: number[] }>(page, file)).student_ids).toEqual(
+  expect((await readMockJson<{ student_ids: string[] }>(page, file)).student_ids).toEqual(
     before.student_ids,
   );
-  expect(await readMockJson(page, added)).toBeNull();
+  expect(await added()).toBeNull();
 
   await page.locator('#f-csv-grp-import').click();
   await dialog.getByRole('button', { name: 'Overschrijven' }).click();
   await expect
-    .poll(async () => (await readMockJson<{ student_ids: number[] }>(page, file)).student_ids)
+    .poll(async () => (await readMockJson<{ student_ids: string[] }>(page, file)).student_ids)
     .toEqual([]);
-  expect(await readMockJson(page, added)).not.toBeNull();
+  expect(await added()).not.toBeNull();
 });
 
 test('4b m5: an unusable data folder shows the startup error screen', async ({ page }) => {
@@ -182,6 +189,62 @@ test('4b m5: an unusable data folder shows the startup error screen', async ({ p
   const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
   expect(calls).toContain('restartApp');
   expect(calls).not.toContain('listYears');
+});
+
+test('C1: a v1 folder offers the one-time conversion, after a confirmation', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __maatwerkMockFolderStatus: unknown }).__maatwerkMockFolderStatus = {
+      dataDir: 'D:/OneDrive/Maatwerk/data',
+      error: { code: 'needs_migration', message: 'needs migration', details: { found: '1' } },
+    };
+  });
+  await page.goto('/');
+  const region = page.getByRole('region', { name: 'Gegevensmap omzetten' });
+  await expect(region).toContainText('eenmalig worden omgezet');
+  await expect(region).toContainText('D:/OneDrive/Maatwerk/data');
+  const go = page.getByRole('button', { name: 'Omzetten' });
+  await expect(go).toBeDisabled();
+  await page.locator('#migration-confirm').check();
+  await go.click();
+  await expect(region).toContainText('Gegevensmap omgezet van versie 1 naar 2.');
+  await expect(region).toContainText('Back-up:');
+  await page.getByRole('button', { name: 'Maatwerk starten' }).click();
+  const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
+  expect(calls).toEqual(expect.arrayContaining(['migrateDataFolder', 'restartApp']));
+  expect(calls).not.toContain('listYears');
+});
+
+test('C17: a colleague saved the opdracht meanwhile: keep my text, choose what happens', async ({
+  page,
+}) => {
+  await login(page);
+  const frame = await openFirstOpdrachtInEditor(page);
+  const src = await page.locator('#editor-frame').getAttribute('src');
+  const id = new URLSearchParams(src!.split('?')[1]).get('id');
+  const file = `opdrachten/${id}/opdracht.typ`;
+  await withMock(page, (m, f) => m.externalWriteText(f, '// versie van de collega\n'), file);
+  await frame.locator('.cm-content').click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n// mijn regel');
+  const bar = frame.locator('#conflict-bar');
+  await expect(bar).toBeVisible();
+  await expect(bar).toContainText('Intussen gewijzigd door een collega');
+  // Nothing of mine overwrote theirs, and my text is still in the editor.
+  expect(await withMock(page, (m, f) => m.peek(f), file)).toBe('// versie van de collega\n');
+  await expect(frame.locator('.cm-content')).toContainText('// mijn regel');
+
+  await frame.getByRole('button', { name: 'Mijn versie bewaren als kopie' }).click();
+  await expect(bar).toBeHidden();
+  await expect(frame.locator('.cm-content')).toContainText('versie van de collega');
+  await expect(frame.locator('#editor-status')).toContainText('(kopie)');
+  const copies = await withMock(page, async (m) => {
+    const all = (await m.readOpdrachten()) as { id: string; naam: string }[];
+    return all.filter((o) => o.naam.endsWith('(kopie)')).map((o) => o.id);
+  });
+  expect(copies).toHaveLength(1);
+  expect(
+    await withMock(page, (m, f) => m.peek(f), `opdrachten/${copies[0]}/opdracht.typ`),
+  ).toContain('// mijn regel');
 });
 
 test('6a M1: an unsupported logo type is refused with a message', async ({ page }) => {

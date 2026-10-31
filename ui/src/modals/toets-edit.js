@@ -256,7 +256,7 @@ export async function openExamModal(existingId, afterSave = null) {
           }
 
           const exam = {
-            id: Store.makeExamId(title, toetsYear),
+            id: Store.makeExamId(),
             title,
             jaarlaag,
             subcategory,

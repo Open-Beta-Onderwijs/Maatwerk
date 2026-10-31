@@ -7,6 +7,8 @@ import type { MockApi } from '../src/bridge/mock/mock-api';
 
 export const TEACHER = 'gebr-1756713600001'; // Docent van Natuur, nat + schk
 export const YEAR = '2025-2026';
+/** The PIN the tests choose at a user's first login (Step 7b). */
+export const PIN = '12345';
 
 /** Collects console errors and page errors of the page and its frames. */
 export function watchErrors(page: Page): string[] {
@@ -43,12 +45,44 @@ export function readMockJson<T = unknown>(page: Page, relPath: string): Promise<
   return withMock(page, (m, p) => JSON.parse(m.peek(p) ?? 'null'), relPath) as Promise<T>;
 }
 
+/**
+ * The PIN step after a badge click: chooses `pin` at the first login (and
+ * confirms the admin's recovery codes) or types it at a later one.
+ */
+export async function enterPin(page: Page, pin = PIN): Promise<void> {
+  const first = page.locator('#pin-new');
+  const again = page.locator('#pin-input');
+  await expect(first.or(again)).toBeVisible();
+  if (await first.isVisible()) {
+    await first.fill(pin);
+    await page.locator('#pin-repeat').fill(pin);
+    await page.locator('#pin-ok').click();
+    const codes = page.locator('#codes-kept');
+    // The badge in the top bar appears once the login is complete.
+    await expect(codes.or(page.locator('#user-badge-btn:not(.hidden)'))).toBeVisible();
+    if (await codes.isVisible()) {
+      await codes.check();
+      await page.locator('#codes-done').click();
+    }
+  } else {
+    await again.fill(pin);
+    await page.locator('#pin-ok').click();
+  }
+}
+
 /** Opens the app and logs in (default: the nat teacher). */
 export async function login(page: Page, subject = 'nat', userId = TEACHER): Promise<void> {
   await page.goto('/');
   await page.locator(`.subject-card[data-subject="${subject}"]`).click();
   await page.locator(`.user-badge[data-user-id="${userId}"]`).click();
+  await enterPin(page);
   await expect(page.locator('#topbar')).toBeVisible();
+}
+
+/** "Uitloggen" in the account modal behind the top-bar badge. */
+export async function logout(page: Page): Promise<void> {
+  await page.locator('#user-badge-btn').click();
+  await page.locator('#acc-logout').click();
 }
 
 /**

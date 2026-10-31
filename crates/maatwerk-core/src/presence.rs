@@ -123,10 +123,13 @@ mod tests {
         (data, locks, storage)
     }
 
+    /// The file without its integrity stamp (C19).
     fn read(storage: &Storage, user: &str) -> Option<Value> {
-        storage
+        let mut v = storage
             .read_json(&RelPath::parse(&format!("users/{user}.json")).unwrap())
-            .unwrap()
+            .unwrap()?;
+        v.as_object_mut()?.shift_remove("_meta");
+        Some(v)
     }
 
     fn state(user: &str) -> Value {

@@ -24,17 +24,14 @@ const expectCase = async (id: string, fn: (input: never) => unknown) => {
 };
 
 describe('ids golden', () => {
-  it('makeExamId (the Store passes the active subject, nat)', () =>
-    expectCase('makeExamId', ({ titles, years }: { titles: string[]; years: string[] }) =>
-      titles.flatMap((t) =>
-        years.flatMap((y) => [makeExamId(t, y, 'nat'), makeExamId(t, y, 'wi')]),
-      ),
-    ));
-
-  it('makeGroupId', () =>
-    expectCase('makeGroupId', ({ names, years }: { names: string[]; years: string[] }) =>
-      names.flatMap((n) => years.map((y) => makeGroupId(n, y))),
-    ));
+  // The golden cases makeExamId/makeGroupId pin the v1 slug ids; new ids are
+  // opaque since Step 7a (ADR-0003 C10, quirk B26), so they no longer apply.
+  it('makeExamId and makeGroupId give opaque, distinct ids (C10)', () => {
+    const exams = new Set(Array.from({ length: 200 }, () => makeExamId()));
+    expect(exams.size).toBe(200);
+    for (const id of exams) expect(id).toMatch(/^toets-[a-z0-9]+-[a-z0-9]{6}$/);
+    expect(makeGroupId()).toMatch(/^groep-[a-z0-9]+-[a-z0-9]{6}$/);
+  });
 
   it('currentSchoolYear', () =>
     expectCase('currentSchoolYear', ({ clocks }: { clocks: string[] }) =>

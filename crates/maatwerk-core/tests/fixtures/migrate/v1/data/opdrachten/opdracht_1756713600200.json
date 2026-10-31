@@ -1,0 +1,25 @@
+{
+  "id": "opdracht_1756713600200",
+  "naam": "Eenheden oefenen",
+  "beschrijving": "",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "vakken": [
+    "nat"
+  ],
+  "jaarlagen": [
+    "3"
+  ],
+  "observaties": [
+    "obs-1756713600100"
+  ],
+  "typFile": "opdracht_1756713600200.typ",
+  "_meta": {
+    "rev": 3,
+    "createdBy": "gebr-1756713600000",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600000",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  }
+}

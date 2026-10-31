@@ -22,8 +22,15 @@ pub(crate) const FLUSH: Duration = Duration::from_millis(100);
 pub(crate) const PARSE_RETRY: Duration = Duration::from_millis(1000);
 
 /// Top-level folders that never hold shared app data (`sync.js` `IGNORED_DIRS`), plus the
-/// port's `rapporten/` output folder (ADR-0002 section 4).
-pub const IGNORED_DIRS: [&str; 5] = ["fotos", "bak", "templates", "temp", "rapporten"];
+/// port's `rapporten/` output folder (ADR-0002 section 4) and `snapshots/` (Step 7b).
+pub const IGNORED_DIRS: [&str; 6] = [
+    "fotos",
+    "bak",
+    "templates",
+    "temp",
+    "rapporten",
+    "snapshots",
+];
 
 /// Whether a change to `rel` (posix, relative to the data folder) is reported (S31).
 pub fn is_relevant(rel: &str) -> bool {

@@ -32,6 +32,21 @@ const slimAssignments = (res: Assignments) => ({
   cijferStudents: res.cijferStudents,
 });
 
+type Slim = ReturnType<typeof slimAssignments>;
+const idLists = (m: Record<string, unknown[]>) =>
+  Object.fromEntries(Object.entries(m).map(([k, ids]) => [k, ids.map(String)]));
+
+/** C8: the goldens hold the reference's numeric student ids; v2 has strings. */
+const v2Ids = (out: unknown): unknown => {
+  const o = out as Slim;
+  return {
+    ...o,
+    students: o.students.map((s) => ({ ...s, studentId: String(s.studentId) })),
+    obsStudents: idLists(o.obsStudents as Record<string, unknown[]>),
+    cijferStudents: idLists(o.cijferStudents as Record<string, unknown[]>),
+  };
+};
+
 describe('opdrachten golden (domain)', () => {
   it('opdrachtMatchesExam-matrix (the Store passes the active subject, nat)', () => {
     const rows = goldenCase(golden, 'opdrachtMatchesExam-matrix').output as [
@@ -76,7 +91,7 @@ describe('opdrachten golden (Store)', () => {
     const coupling = Store.getOpdrachtCoupling!(exam);
     const cards = Store.getOpdrachtCijferCards!(exam);
     const res = await Store.getOpdrachtAssignments!(exam, YEAR, coupling, cards);
-    expect(await run(() => slimAssignments(res))).toEqual(c.output);
+    expect(await run(() => slimAssignments(res))).toEqual(v2Ids(c.output));
   });
 
   it('getOpdrachtAssignments-exact-boundary', async () => {
@@ -84,14 +99,14 @@ describe('opdrachten golden (Store)', () => {
     const { exam: examId, cards } = inputOf<{ exam: string; cards: CijferCard[] }>(c);
     const exam = await examById(examId);
     const res = await Store.getOpdrachtAssignments!(exam, YEAR, {}, cards);
-    expect(await run(() => slimAssignments(res))).toEqual(c.output);
+    expect(await run(() => slimAssignments(res))).toEqual(v2Ids(c.output));
   });
 
   it('getOpdrachtAssignments-no-cards', async () => {
     const c = goldenCase(golden, 'getOpdrachtAssignments-no-cards');
     const exam = await examById(inputOf<{ exam: string }>(c).exam);
     const res = await Store.getOpdrachtAssignments!(exam, YEAR, Store.getOpdrachtCoupling!(exam));
-    expect(await run(() => slimAssignments(res))).toEqual(c.output);
+    expect(await run(() => slimAssignments(res))).toEqual(v2Ids(c.output));
   });
 });
 
@@ -101,7 +116,7 @@ describe('C8: student ids compare as strings', () => {
     const exam = { id: 'e', questions: [], obs_ids: ['o1'], jaarlaag: '3' } as Exam;
     const res = assignOpdrachten({
       exam,
-      students: [{ id: 123, achternaam: 'A' }],
+      students: [{ id: 123 as unknown as string, achternaam: 'A' }], // a v1 number
       recordOf: () => ({ observations: { e: ['o1'] } }),
       observaties: [{ id: 'o1' }],
       opdrachten: [{ id: 'op' }],

@@ -1,0 +1,56 @@
+{
+  "uitleg": {
+    "R": "R wi4",
+    "T1": "",
+    "T2": "",
+    "I": ""
+  },
+  "leeradvies": {
+    "R": {
+      "laag": "R laag wi4",
+      "midden": "",
+      "hoog": ""
+    },
+    "T1": {
+      "laag": "T1 laag wi4",
+      "midden": "",
+      "hoog": ""
+    },
+    "T2": {
+      "laag": "T2 laag wi4",
+      "midden": "",
+      "hoog": ""
+    },
+    "I": {
+      "laag": "I laag wi4",
+      "midden": "",
+      "hoog": ""
+    }
+  },
+  "grenswaarden": {
+    "R": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T1": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T2": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "I": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    }
+  },
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "9876e4e3d2861977859dfb4941928f25230f8b365c2e43552394a6513720676b"
+  }
+}

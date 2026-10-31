@@ -293,7 +293,9 @@ const wrapIndent = ViewPlugin.fromClass(
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(window.location.search);
-const typFile = params.get('typFile') ?? '';
+// The opdracht folder (C14); the editor edits its opdracht.typ.
+const opdrachtId = params.get('id') ?? '';
+const typPath = `opdrachten/${opdrachtId}/opdracht.typ`;
 const naam = params.get('naam') ?? 'Opdracht';
 
 document.getElementById('editor-title-naam').textContent = naam;
@@ -613,7 +615,7 @@ function scrollToCursorMarker() {
 
 function compileSvg(content) {
   return postToParent('maatwerk-render-assignment-svg', {
-    typFile,
+    opdrachtId,
     title: naam,
     content,
   }).catch((err) => ({ success: false, error: err.message }));
@@ -622,7 +624,7 @@ function compileSvg(content) {
 // Compile the current editor text (with cursor marker) and show the result.
 // Only one compile runs at a time; requests during a compile coalesce into one rerun.
 async function renderPreview() {
-  if (!view || !typFile) return;
+  if (!view || !opdrachtId) return;
   if (rendering) {
     renderPending = true;
     return;
@@ -661,15 +663,41 @@ async function renderPreview() {
 
 let saving = Promise.resolve(true); // the last write, so a close can wait for it
 let lastSaveFailed = false;
+// C17: the hash of the version this editor last loaded or saved. A write only
+// lands if the file still has it; otherwise a colleague saved in between.
+let baseHash = null;
+let inConflict = false;
+let replacingDoc = false; // "Hun versie laden" sets the text without saving it
+
+const conflictBar = document.getElementById('conflict-bar');
+
+function showConflict(on) {
+  inConflict = on;
+  conflictBar.style.display = on ? '' : 'none';
+}
 
 /** Writes the editor text; resolves to true when saved. */
 function saveNow() {
   const content = view.state.doc.toString();
-  const relPath = `opdrachten/${typFile}`;
   saving = saving.then(async () => {
+    if (inConflict) {
+      setStatus('Niet opgeslagen: kies hierboven wat er moet gebeuren');
+      return false;
+    }
     try {
-      const writeResult = await postToParent('maatwerk-write-text', { path: relPath, content });
+      const writeResult = await postToParent('maatwerk-write-text', {
+        path: typPath,
+        content,
+        expectedHash: baseHash,
+      });
+      if (writeResult?.reason === 'conflict') {
+        showConflict(true);
+        setStatus('Niet opgeslagen');
+        lastSaveFailed = true;
+        return false;
+      }
       if (!writeResult?.ok) throw new Error('niet opgeslagen');
+      baseHash = writeResult.hash;
       setStatus('Opgeslagen');
       lastSaveFailed = false;
       return true;
@@ -682,8 +710,39 @@ function saveNow() {
   return saving;
 }
 
+/** Replaces the editor text with the version on disk (the colleague's). */
+async function loadTheirs() {
+  const read = await postToParent('maatwerk-read-text-versioned', { path: typPath });
+  replacingDoc = true;
+  view.dispatch({
+    changes: { from: 0, to: view.state.doc.length, insert: read?.text ?? '' },
+  });
+  replacingDoc = false;
+  baseHash = read?.hash ?? '';
+  lastSaveFailed = false;
+  showConflict(false);
+  setStatus('Versie van je collega geladen');
+  await renderPreview();
+}
+
+document.getElementById('btn-conflict-theirs').addEventListener('click', () => {
+  loadTheirs().catch((err) => setStatus('Fout bij laden', err.message));
+});
+
+// "Mijn versie bewaren als kopie": a copy of the opdracht with this text; the
+// editor then shows the colleague's version of the original.
+document.getElementById('btn-conflict-copy').addEventListener('click', async () => {
+  try {
+    const copy = await postToParent('maatwerk-save-copy', { content: view.state.doc.toString() });
+    await loadTheirs();
+    setStatus(`Jouw versie staat in "${copy?.naam ?? 'de kopie'}"`);
+  } catch (err) {
+    setStatus('Fout bij kopiëren', err.message);
+  }
+});
+
 async function doSaveAndCompile() {
-  if (!view || !dataDir || !typFile) return;
+  if (!view || !dataDir || !opdrachtId) return;
   if (!(await saveNow())) return;
   await renderPreview();
 }
@@ -707,7 +766,7 @@ async function flushSave() {
   clearTimeout(saveTimer);
   saveTimer = null;
   // A failed save is retried too, so a close after a passing hiccup saves.
-  if ((pending || (await saving) === false || lastSaveFailed) && view && dataDir && typFile) {
+  if ((pending || (await saving) === false || lastSaveFailed) && view && dataDir && opdrachtId) {
     return saveNow();
   }
   return saving;
@@ -738,6 +797,7 @@ function scheduleCursorRender() {
 }
 
 const changeListener = EditorView.updateListener.of((update) => {
+  if (update.docChanged && replacingDoc) return;
   if (update.docChanged) {
     setStatus('Niet opgeslagen…');
     scheduleCompile();
@@ -762,10 +822,14 @@ function editorRoot() {
 async function init() {
   let content, dir;
   try {
-    [content, dir] = await Promise.all([
-      postToParent('maatwerk-read-text', { path: `opdrachten/${typFile}` }),
+    let read;
+    [read, dir] = await Promise.all([
+      postToParent('maatwerk-read-text-versioned', { path: typPath }),
       postToParent('maatwerk-get-data-dir'),
     ]);
+    content = read?.text ?? null;
+    // No file yet: the first save must not overwrite one a colleague made meanwhile ('').
+    baseHash = read?.hash ?? '';
   } catch (err) {
     // No editor view is created, so nothing can overwrite the file.
     setStatus('Fout bij laden', err.message);
@@ -1251,12 +1315,12 @@ function insertSelecting(v, snippet, placeholder) {
 }
 
 // ── Figures / images ──────────────────────────────────────────────────────────
-// Images live in data/opdrachten/images/<opdracht id>/ (see main.js). The figure
+// Images live in the opdracht's folder, opdrachten/<id>/images/ (C14). The figure
 // popup offers the opdracht's existing images, a file from disk and the
 // clipboard; Ctrl+V of an image in the editor works too. A new image is first
 // given a name, then a #figure referring to it is inserted at the cursor.
+// Image paths are relative to the opdracht folder: images/<name>.<ext> (C14).
 
-const opdrachtId = params.get('id') ?? '';
 const IMAGE_MIME_EXT = {
   'image/png': 'png',
   'image/jpeg': 'jpg',

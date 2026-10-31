@@ -5,11 +5,11 @@
 //!
 //! All methods block; callers on an async runtime use `spawn_blocking`.
 
-mod atomic;
+pub(crate) mod atomic;
 mod commit;
 mod entity;
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -23,6 +23,7 @@ pub use commit::default_lock_dir;
 pub use entity::{iso_utc, stamp_meta};
 
 use crate::error::{Error, Result};
+use crate::integrity::{self, StampState};
 use crate::jsonfmt::to_js_json;
 use crate::paths::{DataDir, RelPath, is_year_name};
 
@@ -30,8 +31,17 @@ use crate::paths::{DataDir, RelPath, is_year_name};
 pub const SUBJECTS: [&str; 4] = ["nat", "bio", "schk", "wi"];
 
 /// `schema_version` values in `config.json` this build reads and writes (ADR-0003 C1). A folder
-/// without the field is version 1 (the reference format).
-pub const SUPPORTED_SCHEMA_VERSIONS: &[u64] = &[1];
+/// without the field is version 1 (the reference format) and must be migrated first.
+pub const SUPPORTED_SCHEMA_VERSIONS: &[u64] = &[crate::migrate::CURRENT_VERSION];
+
+/// Entries that only exist in a v1 folder; with one of these and no `config.json` the folder is
+/// v1 (the reference only wrote `config.json` when the year was switched).
+const V1_MARKERS: [&str; 4] = [
+    "gebruikers.json",
+    "school.json",
+    "observaties",
+    "opdrachten",
+];
 
 /// SHA-1 hex of the bytes (`hashContent`, S07). The CAS token; it is never stored.
 pub fn hash_hex(bytes: &[u8]) -> String {
@@ -41,19 +51,20 @@ pub fn hash_hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-/// `opdrachten/<name>.typ`: the only text files the UI writes (`fs:writeTextFile`; backlog n8).
-/// Keeps an unchecked text write away from the JSON files, which need CAS.
+/// `opdrachten/<id>/<name>.typ`: the only text files the UI writes (`fs:writeTextFile`; backlog
+/// n8; C14 opdracht folders). Keeps text writes away from the JSON files.
 pub fn check_opdracht_typ_path(rel: &RelPath) -> Result<()> {
     let ok = rel
         .as_str()
         .strip_prefix("opdrachten/")
-        .is_some_and(|name| {
-            // `lib.typ` belongs to the app (review 6a n4).
-            !name.contains('/')
-                && !name.eq_ignore_ascii_case("lib.typ")
+        .and_then(|rest| rest.split_once('/'))
+        .is_some_and(|(id, name)| {
+            crate::opdracht_images::check_opdracht_id(id).is_ok()
+                && id != "images" // the v1 image folder
+                && !name.contains('/')
                 && rel.extension().as_deref() == Some("typ")
         });
-    require(ok, rel, "expected opdrachten/<name>.typ")
+    require(ok, rel, "expected opdrachten/<id>/<name>.typ")
 }
 
 /// `fotos/<name>.<image ext>`: where the UI saves photos and logos (`fs:savePhoto`; backlog n8).
@@ -120,6 +131,8 @@ pub struct Storage {
     observer: Option<Arc<dyn WriteObserver>>,
     /// Per-file queues for [`Storage::update`] (S25).
     update_locks: Mutex<HashMap<RelPath, Arc<Mutex<()>>>>,
+    /// JSON files read with a missing or wrong `_meta.hash` (C19), until written again.
+    stamps: Mutex<BTreeMap<String, StampState>>,
 }
 
 impl Storage {
@@ -137,6 +150,7 @@ impl Storage {
             commit,
             observer: None,
             update_locks: Mutex::new(HashMap::new()),
+            stamps: Mutex::new(BTreeMap::new()),
         };
         storage.check_schema()?;
         Ok(storage)
@@ -155,25 +169,68 @@ impl Storage {
         self.commit.timeout = timeout;
     }
 
-    /// C1: an explicit `schema_version` must be one this build knows. A missing or unreadable
-    /// `config.json` does not block (an unreadable one may still be syncing).
+    /// C1: the folder must be v2. A v1 folder (no `schema_version`, or no `config.json` but v1
+    /// files) needs the migration; a newer version is refused. An unreadable `config.json` does
+    /// not block (it may still be syncing); a folder with nothing of v1 in it is new.
     pub fn check_schema(&self) -> Result<()> {
         let rel = RelPath::parse("config.json")?;
-        let Ok(Some(config)) = self.read_json(&rel) else {
-            return Ok(());
+        let config = match self.read_json(&rel) {
+            Ok(Some(config)) => config,
+            Ok(None) => {
+                let root = self.dir.root();
+                let v1 = V1_MARKERS.iter().any(|m| root.join(m).exists())
+                    || !self.list_years().is_empty();
+                // `gebruikers/` is v2: its `config.json` has not synced yet.
+                return if v1 && !root.join("gebruikers").is_dir() {
+                    Err(Error::NeedsMigration { found: 1 })
+                } else {
+                    Ok(())
+                };
+            }
+            Err(_) => return Ok(()),
         };
         match config.get("schema_version") {
-            None | Some(Value::Null) => Ok(()),
-            Some(Value::Number(n))
-                if n.as_u64()
-                    .is_some_and(|v| SUPPORTED_SCHEMA_VERSIONS.contains(&v)) =>
-            {
-                Ok(())
-            }
+            None | Some(Value::Null) => Err(Error::NeedsMigration { found: 1 }),
+            Some(Value::Number(n)) => match n.as_u64() {
+                Some(v) if SUPPORTED_SCHEMA_VERSIONS.contains(&v) => Ok(()),
+                Some(v @ 0..=1) => Err(Error::NeedsMigration { found: v.max(1) }),
+                _ => Err(Error::UnsupportedSchema {
+                    found: n.to_string(),
+                }),
+            },
             Some(other) => Err(Error::UnsupportedSchema {
                 found: other.to_string(),
             }),
         }
+    }
+
+    /// C19: remembers a JSON file whose stamp is missing or wrong (logged once), forgets it when
+    /// the stamp is good.
+    fn note_stamp(&self, rel: &str, value: &Value) {
+        let state = integrity::check(value);
+        let mut stamps = self.stamps.lock().unwrap_or_else(|p| p.into_inner());
+        if state == StampState::Ok {
+            stamps.remove(rel);
+        } else if stamps.insert(rel.to_owned(), state) != Some(state) {
+            tracing::warn!(path = rel, ?state, "changed outside Maatwerk");
+        }
+    }
+
+    /// JSON files read with a missing or wrong stamp since start (C19), sorted by path.
+    pub fn stamp_issues(&self) -> Vec<(String, StampState)> {
+        let stamps = self.stamps.lock().unwrap_or_else(|p| p.into_inner());
+        stamps.iter().map(|(k, v)| (k.clone(), *v)).collect()
+    }
+
+    /// "Accepteren": re-stamps the file as it is now (C19). A missing file is fine.
+    pub fn accept_stamp(&self, rel: &RelPath) -> Result<()> {
+        let Some(current) = self.read_json_versioned(rel)? else {
+            let mut stamps = self.stamps.lock().unwrap_or_else(|p| p.into_inner());
+            stamps.remove(rel.as_str());
+            return Ok(());
+        };
+        self.write_json(rel, &current.data, Expect::Hash(&current.hash))?;
+        Ok(())
     }
 
     // ── Reads ────────────────────────────────────────────────────────────────
@@ -200,6 +257,7 @@ impl Storage {
             return Ok(None);
         };
         let data = parse_json(rel, &bytes)?;
+        self.note_stamp(rel.as_str(), &data);
         Ok(Some(Versioned {
             data,
             hash: hash_hex(&bytes),
@@ -218,6 +276,21 @@ impl Storage {
     /// (`fs:readAllJson`). Unparsable files, folders and links are skipped; a missing folder
     /// gives an empty list.
     pub fn read_all_json(&self, dir: &RelPath) -> Result<Vec<Value>> {
+        Ok(self
+            .json_files(dir, false)?
+            .into_iter()
+            .map(|(_, v)| v)
+            .collect())
+    }
+
+    /// The files [`Self::read_json`] would give one by one, with their names: one call for a
+    /// folder of records (score files, Step 7c). Unlike [`Self::read_all_json`], invalid UTF-8
+    /// is decoded with replacement characters, as `read_json` does (review 7c m3).
+    pub fn read_all_json_named(&self, dir: &RelPath) -> Result<Vec<(String, Value)>> {
+        self.json_files(dir, true)
+    }
+
+    fn json_files(&self, dir: &RelPath, lossy: bool) -> Result<Vec<(String, Value)>> {
         let path = self.dir.resolve(dir)?;
         let entries = match fs::read_dir(&path) {
             Ok(entries) => entries,
@@ -239,12 +312,20 @@ impl Storage {
             let Ok(bytes) = fs::read(entry.path()) else {
                 continue;
             };
-            let Ok(text) = std::str::from_utf8(&bytes) else {
-                continue;
+            let text = if lossy {
+                String::from_utf8_lossy(&bytes)
+            } else {
+                match std::str::from_utf8(&bytes) {
+                    Ok(t) => t.into(),
+                    Err(_) => continue,
+                }
             };
-            match serde_json::from_str::<Value>(text) {
+            match serde_json::from_str::<Value>(&text) {
                 Ok(Value::Null) | Err(_) => {}
-                Ok(v) => out.push(v),
+                Ok(v) => {
+                    self.note_stamp(&format!("{}/{name}", dir.as_str()), &v);
+                    out.push((name.to_owned(), v));
+                }
             }
         }
         Ok(out)
@@ -306,18 +387,22 @@ impl Storage {
 
     // ── Writes ───────────────────────────────────────────────────────────────
 
-    /// Writes `JSON.stringify(value, null, 2)` atomically if the file matches `expect`; returns
-    /// the hash of what was written (S10-S12). The check and the rename run under the commit
-    /// lock, so no write from this PC can land in between (S37).
+    /// Writes `JSON.stringify(value, null, 2)` plus a newline (C13) atomically if the file
+    /// matches `expect`; returns the hash of what was written (S10-S12). An object gets a fresh
+    /// `_meta.hash` (C19). The check and the rename run under the commit lock, so no write from
+    /// this PC can land in between (S37).
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
-        let text = to_js_json(value);
+        let (value, text) = integrity::stamped_text(value);
         self.commit_bytes(rel, text.as_bytes(), expect, true)?;
+        self.note_stamp(rel.as_str(), &value);
         Ok(hash_hex(text.as_bytes()))
     }
 
-    /// Atomic text write without a check (`fs:writeTextFile`; opdracht `.typ` files).
-    pub fn write_text(&self, rel: &RelPath, content: &str) -> Result<()> {
-        self.commit_bytes(rel, content.as_bytes(), Expect::Any, true)
+    /// Atomic text write if the file matches `expect` (opdracht `.typ` files; C17 passes the
+    /// hash the editor loaded). Returns the hash of what was written.
+    pub fn write_text(&self, rel: &RelPath, content: &str, expect: Expect<'_>) -> Result<String> {
+        self.commit_bytes(rel, content.as_bytes(), expect, true)?;
+        Ok(hash_hex(content.as_bytes()))
     }
 
     /// Writes bytes atomically if the file matches `expect` (opdracht images, printed PDFs).
@@ -427,12 +512,31 @@ impl Storage {
         self.dir.resolve(&year_rel)
     }
 
-    /// First-run setup (`seedInitialData`, `main.js:965-1003`): the admin account if
-    /// `gebruikers.json` is missing, and the `fotos/` and `opdrachten/images/` folders. `lib.typ`
-    /// is not copied any more (ADR-0002 section 5a: it lives in each opdracht folder).
+    /// First-run setup (`seedInitialData`, `main.js:965-1003`) in the v2 format: `config.json`
+    /// with `schema_version` and the admin account if there are no users yet, plus the `fotos/`
+    /// and `opdrachten/` folders. `lib.typ` lives in each opdracht folder (C14).
     pub fn seed_initial_data(&self) -> Result<()> {
-        let users = RelPath::parse("gebruikers.json")?;
-        let admin = serde_json::json!([{
+        let config = RelPath::parse("config.json")?;
+        let version = serde_json::json!({ "schema_version": crate::migrate::CURRENT_VERSION });
+        match self.write_json(&config, &version, Expect::Missing) {
+            Ok(_) | Err(Error::Conflict { .. }) => {}
+            Err(e) => return Err(e),
+        }
+        let has_users = self
+            .list_dir(&RelPath::parse("gebruikers")?, false)?
+            .iter()
+            .any(|f| f.ends_with(".json"));
+        if !has_users {
+            self.seed_admin()?;
+        }
+        self.ensure_dir(&RelPath::parse("fotos")?)?;
+        self.ensure_dir(&RelPath::parse("opdrachten")?)?;
+        Ok(())
+    }
+
+    fn seed_admin(&self) -> Result<()> {
+        let users = RelPath::parse("gebruikers/admin.json")?;
+        let admin = serde_json::json!({
             "id": "admin",
             "voornaam": "Administrator",
             "tussenvoegsel": "",
@@ -443,14 +547,15 @@ impl Storage {
             "foto": null,
             "isAdmin": true,
             "actief": true
-        }]);
+        });
+        let Value::Object(admin) = admin else {
+            unreachable!()
+        };
+        let admin = stamp_meta(admin, None, None, std::time::SystemTime::now());
         match self.write_json(&users, &admin, Expect::Missing) {
-            Ok(_) | Err(Error::Conflict { .. }) => {} // already there (maybe from another PC)
-            Err(e) => return Err(e),
+            Ok(_) | Err(Error::Conflict { .. }) => Ok(()), // already there (maybe another PC)
+            Err(e) => Err(e),
         }
-        self.ensure_dir(&RelPath::parse("fotos")?)?;
-        self.ensure_dir(&RelPath::parse("opdrachten/images")?)?;
-        Ok(())
     }
 }
 
