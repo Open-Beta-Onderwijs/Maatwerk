@@ -722,7 +722,10 @@ export class MockApi implements MaatwerkApi {
     const next = structuredClone(onDisk);
     change(next);
     const saved = stampMeta(next, onDisk as { _meta?: never }, this.authSession ?? userId);
-    this.putFile(`gebruikers/${userId}.json`, encoder.encode(JSON.stringify(saved, null, 2) + '\n'));
+    this.putFile(
+      `gebruikers/${userId}.json`,
+      encoder.encode(JSON.stringify(saved, null, 2) + '\n'),
+    );
     return saved as unknown as Value;
   }
 

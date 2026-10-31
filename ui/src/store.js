@@ -59,6 +59,8 @@ const Store = (() => {
   let _years = null;
   let _activeSubject = null;
   let _activeUser = null;
+  // Step 7b: `{ voorzitter: <vak> }` when logged in through the sectievoorzitter badge.
+  let _activeRole = null;
 
   async function load(relPath) {
     if (cache[relPath] !== undefined) return cache[relPath];
@@ -165,8 +167,20 @@ const Store = (() => {
   }
 
   // ── Active user ────────────────────────────────────────────────────────────
-  function setActiveUser(user) {
+  function setActiveUser(user, role = null) {
     _activeUser = user;
+    _activeRole = user ? role : null;
+  }
+  function getActiveRole() {
+    return _activeRole;
+  }
+  /** Sectievoorzitter of `vak` in this session (Step 7b, decision 13). */
+  function isVoorzitterActive(vak) {
+    return Boolean(vak) && _activeRole?.voorzitter === vak;
+  }
+  /** The teacher assigned as sectievoorzitter of `vak` in school.json, or null. */
+  function voorzitterOf(vak) {
+    return getSchoolSync().secties?.[vak]?.voorzitter ?? null;
   }
   function getActiveUser() {
     return _activeUser;
@@ -216,6 +230,17 @@ const Store = (() => {
     return school;
   }
 
+  // A user record written by the backend (PIN commands, Step 7b): own writes
+  // are not echoed by the watcher, so the cache is updated here.
+  function cacheUser(user) {
+    const users = cache['gebruikers'];
+    if (!users || !user?.id) return;
+    const idx = users.findIndex((u) => u.id === user.id);
+    if (idx >= 0) users[idx] = user;
+    else users.push(user);
+    if (_activeUser?.id === user.id) _activeUser = user;
+  }
+
   // One file per user (C16): saving checks the rev the edit started from, so
   // two admins editing the same user no longer overwrite each other silently.
   async function upsertUser(user, baseRev = user._meta?.rev) {
@@ -224,6 +249,18 @@ const Store = (() => {
     const idx = users.findIndex((u) => u.id === saved.id);
     if (idx >= 0) users[idx] = saved;
     else users.push(saved);
+    return saved;
+  }
+
+  // ── Instellingen (instellingen.json, Step 7b; admin) ────────────────────
+  async function loadInstellingen() {
+    invalidate('instellingen.json');
+    return await load('instellingen.json');
+  }
+
+  async function saveInstellingen(data, baseRev) {
+    const saved = await saveEntity('instellingen.json', data, baseRev);
+    cache['instellingen.json'] = saved;
     return saved;
   }
 
@@ -1092,11 +1129,17 @@ const Store = (() => {
     setActiveSubject,
     getActiveUser,
     setActiveUser,
+    getActiveRole,
+    isVoorzitterActive,
+    voorzitterOf,
     isAdminActive,
     loadUsers,
     upsertUser,
+    cacheUser,
     loadSchool,
     updateSchool,
+    loadInstellingen,
+    saveInstellingen,
     getSchoolSync,
     saveLastSession,
     loadLastSession,

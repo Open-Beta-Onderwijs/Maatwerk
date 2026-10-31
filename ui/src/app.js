@@ -19,6 +19,9 @@ import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
+import { openAccountModal } from './screens/pin';
+import { renderInstellingen } from './screens/instellingen';
+import { clearBadgePhoto, loadBadgePhoto } from './utils/badges.js';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
@@ -90,7 +93,18 @@ function renderScreen(name) {
     case 'school':
       return renderSchool();
     case 'gegevens':
-      return renderGegevens(document.getElementById('screen-gegevens'), window.maatwerk);
+      return renderGegevens(
+        document.getElementById('screen-gegevens'),
+        window.maatwerk,
+        confirmDialog,
+      );
+    case 'instellingen':
+      return renderInstellingen(
+        document.getElementById('screen-instellingen'),
+        window.maatwerk,
+        Store,
+        toast,
+      );
   }
 }
 
@@ -932,13 +946,16 @@ document.getElementById('btn-about').addEventListener('click', showAbout);
 const userBadgeBtn = document.getElementById('user-badge-btn');
 
 export async function showUserBadge(user, subject) {
-  const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
+  const role = Store.getActiveRole();
+  const shape = user.isAdmin || role ? 'badge-square' : 'badge-circle';
   userBadgeBtn.className = `user-badge-mini ${shape}`;
   userBadgeBtn.style.setProperty('--badge-color', user.kleur ?? '#888');
+  clearBadgePhoto(userBadgeBtn);
   userBadgeBtn.textContent = user.afkorting || user.voornaam[0] || '?';
   userBadgeBtn.dataset.len = userBadgeBtn.textContent.length;
-  userBadgeBtn.title = `${user.voornaam} — klik om uit te loggen`;
+  userBadgeBtn.title = `${user.voornaam}${role ? ` (${roleLabel(role)})` : ''} — account en uitloggen`;
   userBadgeBtn.classList.remove('hidden');
+  void loadBadgePhoto(userBadgeBtn, user.foto);
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
@@ -971,7 +988,7 @@ async function checkDataInBackground() {
 }
 
 function applyRoleVisibility(user) {
-  const adminOnly = ['gebruikers', 'school', 'gegevens'];
+  const adminOnly = ['gebruikers', 'school', 'gegevens', 'instellingen'];
   const teacherOnly = ['toetsen', 'observaties'];
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     const screen = btn.dataset.screen;
@@ -983,14 +1000,34 @@ function applyRoleVisibility(user) {
   });
 }
 
+function roleLabel(role) {
+  return role?.voorzitter
+    ? `Sectievoorzitter ${Store.SUBJECT_DISPLAY[role.voorzitter] ?? role.voorzitter}`
+    : '';
+}
+
+// Step 7b: the badge opens the account modal (PIN wijzigen, uitloggen).
 userBadgeBtn.addEventListener('click', () => {
+  const user = Store.getActiveUser();
+  if (!user) return;
+  openAccountModal(
+    user,
+    roleLabel(Store.getActiveRole()),
+    window.maatwerk,
+    (saved) => Store.cacheUser(saved),
+    logOut,
+  );
+});
+
+function logOut() {
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
+  clearBadgePhoto(userBadgeBtn);
   _adminSubjectFilter = null;
   _activeUserId = null;
   _obsFilter = null;
   navigateTo('startup');
-});
+}
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
 async function applyWatermerk() {

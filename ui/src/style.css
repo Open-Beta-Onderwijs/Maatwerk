@@ -3690,3 +3690,81 @@ td.grade-override-stale::after {
 .gegevens-warning .gegevens-sev {
   color: var(--muted);
 }
+
+/* ── PIN login and account (Step 7b) ─────────────────────────────────────── */
+#modal-box.modal-narrow {
+  width: 420px;
+}
+.pin-input {
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  width: 12em;
+}
+.pin-code-input {
+  font-family: monospace;
+  font-size: 18px;
+  text-transform: uppercase;
+  width: 12em;
+}
+.pin-role {
+  color: var(--muted);
+  margin-top: -8px;
+}
+.pin-error {
+  color: var(--danger);
+  min-height: 1.4em;
+  margin: 4px 0;
+}
+.recovery-codes {
+  columns: 2;
+  font-size: 16px;
+  margin: 12px 0 16px;
+}
+.recovery-codes code {
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+.checkbox-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+.badge-voorzitter-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+#print-sheet {
+  display: none;
+}
+@media print {
+  body.printing-sheet > *:not(#print-sheet) {
+    display: none !important;
+  }
+  body.printing-sheet #print-sheet {
+    display: block;
+    font-size: 14pt;
+    white-space: pre-wrap;
+  }
+}
+.instellingen {
+  max-width: 640px;
+}
+.snapshot-list {
+  columns: 3;
+  font-family: monospace;
+  font-size: 13px;
+}
+.voorzitter-list {
+  max-width: 520px;
+}
+.voorzitter-row {
+  align-items: center;
+  margin-bottom: 8px;
+}

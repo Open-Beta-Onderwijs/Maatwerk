@@ -3,9 +3,11 @@
 import { escHtml, navigateTo, showUserBadge } from '../app.js';
 import { scoreSavesDone } from './scores.js';
 import { showAbout } from './about';
+import { pinLogin } from './pin';
+import { loadBadgePhoto } from '../utils/badges.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SCREEN: Startup — two-step subject + user picker
+// SCREEN: Startup — two-step subject + user picker, then the PIN (Step 7b)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const SUBJECT_EMOJI = { nat: '⚡', bio: '🌱', schk: '⚗️', wi: '📐' };
@@ -13,7 +15,11 @@ const SUBJECT_EMOJI = { nat: '⚡', bio: '🌱', schk: '⚗️', wi: '📐' };
 export async function renderStartup() {
   const container = document.getElementById('screen-startup');
 
-  const [users, session] = await Promise.all([Store.loadUsers(), Store.loadLastSession()]);
+  const [users, session] = await Promise.all([
+    Store.loadUsers(),
+    Store.loadLastSession(),
+    Store.loadSchool(),
+  ]);
 
   let selectedSubject = session?.lastSubject ?? null;
 
@@ -25,6 +31,31 @@ export async function renderStartup() {
   }
 
   const adminUser = users.find((u) => u.isAdmin && u.actief) ?? null;
+
+  // Sectievoorzitter of the subject (decision 13): an active teacher of that vak.
+  function voorzitterFor(subject) {
+    const id = Store.voorzitterOf(subject);
+    return getUsersForSubject(subject).find((u) => u.id === id) ?? null;
+  }
+
+  function voorzitterLabel(subject) {
+    return `Sectievoorzitter ${Store.SUBJECT_DISPLAY[subject] ?? subject}`;
+  }
+
+  // The teacher's initials in a square badge; `data-voorzitter-id` (not
+  // data-user-id) keeps the teacher's own badge the only one with their id.
+  function renderVoorzitterBadge(user, subject) {
+    const initials = user.afkorting || (user.voornaam[0] ?? '') + (user.achternaam[0] ?? '');
+    const fotoAttr = user.foto ? ` data-foto="${escHtml(user.foto)}"` : '';
+    return `
+      <button class="user-badge badge-square badge-voorzitter" data-voorzitter-id="${escHtml(user.id)}"
+              data-badge-color="${escHtml(user.kleur ?? '#888')}"${fotoAttr}
+              title="${escHtml(voorzitterLabel(subject))}">
+        <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
+        <span class="badge-name">${escHtml(user.voornaam)}</span>
+        <span class="badge-voorzitter-label">Sectievoorzitter</span>
+      </button>`;
+  }
 
   function renderBadge(user) {
     const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
@@ -55,6 +86,10 @@ export async function renderStartup() {
     if (selectedSubject) {
       const subjectUsers = getUsersForSubject(selectedSubject);
       const userBadges = subjectUsers.map(renderBadge).join('');
+      const voorzitter = voorzitterFor(selectedSubject);
+      const voorzitterBadge = voorzitter
+        ? `<div class="badge-separator"></div>${renderVoorzitterBadge(voorzitter, selectedSubject)}`
+        : '';
       const adminBadge = adminUser
         ? `<div class="badge-separator"></div>${renderBadge(adminUser)}`
         : '';
@@ -62,6 +97,7 @@ export async function renderStartup() {
         <p class="startup-main-hint">Kies een gebruiker</p>
         <div class="user-badge-grid">
           ${userBadges}
+          ${voorzitterBadge}
           ${adminBadge}
         </div>`;
     } else {
@@ -86,19 +122,25 @@ export async function renderStartup() {
   async function loadBadgePhotos() {
     const badges = container.querySelectorAll('[data-foto]');
     await Promise.all(
-      Array.from(badges).map(async (btn) => {
-        const dataUrl = await window.maatwerk.readPhotoAsDataUrl(btn.dataset.foto);
-        if (dataUrl) {
-          const initialsEl = btn.querySelector('.badge-initials');
-          if (initialsEl) {
-            initialsEl.style.backgroundImage = `url(${dataUrl})`;
-            initialsEl.style.backgroundSize = 'cover';
-            initialsEl.style.backgroundPosition = 'center';
-            initialsEl.textContent = '';
-          }
-        }
-      }),
+      Array.from(badges).map((btn) =>
+        loadBadgePhoto(btn.querySelector('.badge-initials'), btn.dataset.foto),
+      ),
     );
+  }
+
+  // The PIN first (Step 7b); then the session starts as before.
+  async function logIn(user, role) {
+    const label = role ? voorzitterLabel(role.voorzitter) : '';
+    const fresh = await pinLogin(user, window.maatwerk, label);
+    if (!fresh) return;
+    Store.cacheUser(fresh);
+    // Score saves still queued belong to the previous user (review 3b M1).
+    await scoreSavesDone();
+    Store.setActiveUser(fresh, role);
+    await Store.initSubject(selectedSubject);
+    await Store.saveLastSession(selectedSubject, fresh.id);
+    await showUserBadge(fresh, selectedSubject);
+    navigateTo('leerlingen');
   }
 
   function attachListeners() {
@@ -112,17 +154,15 @@ export async function renderStartup() {
     });
 
     container.querySelectorAll('[data-user-id]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const userId = btn.dataset.userId;
-        const user = users.find((u) => u.id === userId);
-        if (!user) return;
-        // Score saves still queued belong to the previous user (review 3b M1).
-        await scoreSavesDone();
-        Store.setActiveUser(user);
-        await Store.initSubject(selectedSubject);
-        await Store.saveLastSession(selectedSubject, userId);
-        await showUserBadge(user, selectedSubject);
-        navigateTo('leerlingen');
+      btn.addEventListener('click', () => {
+        const user = users.find((u) => u.id === btn.dataset.userId);
+        if (user) void logIn(user, null);
+      });
+    });
+    container.querySelectorAll('[data-voorzitter-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const user = users.find((u) => u.id === btn.dataset.voorzitterId);
+        if (user) void logIn(user, { voorzitter: selectedSubject });
       });
     });
   }

@@ -158,7 +158,12 @@ export async function renderGroepenForYear(year) {
           <button class="btn-sm btn-sm-icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Groep bewerken">${ICONS.pen}</button>
           <button class="btn-sm btn-danger btn-sm-icon" data-action="del-group" data-id="${escHtml(g.id)}"${g.student_ids.length > 0 ? ' disabled title="Deze groep heeft leerlingen en kan dus niet worden verwijderd."' : ' title="Groep verwijderen"'}>${ICONS.trash}</button>
         </div>`
-            : ''
+            : Store.isVoorzitterActive(g.subject)
+              ? `
+        <div class="card-actions">
+          <button class="btn-sm btn-sm-icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Leerlingen en docenten van de groep (sectievoorzitter)">${ICONS.pen}</button>
+        </div>`
+              : ''
         }
       </div>`;
   }

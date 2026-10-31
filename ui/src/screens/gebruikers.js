@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { showModal, closeModal, toast, escHtml, getAdminSubjectFilter } from '../app.js';
+import {
+  showModal,
+  closeModal,
+  toast,
+  escHtml,
+  getAdminSubjectFilter,
+  confirmDialog,
+} from '../app.js';
 import { ICONS } from '../utils/icons.js';
+import { loadBadgePhotosIn } from '../utils/badges.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// SCREEN: Gebruikers — admin-only user management
+// SCREEN: Gebruikers — admin-only user management, PIN reset and
+// sectievoorzitters (Step 7b)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const SUBJECTS = ['bio', 'nat', 'schk', 'wi'];
@@ -20,9 +29,14 @@ export async function renderGebruikers() {
         <button class="btn-primary" id="btn-add-user">+ Gebruiker toevoegen</button>
       </div>
     </div>
-    <div id="user-list" class="card-list"></div>`;
+    <div id="user-list" class="card-list"></div>
+    <h3 class="list-section-header">Sectievoorzitters</h3>
+    <p class="hint">De sectievoorzitter van een vak wijzigt de leerlingen en docenten van de groepen
+       van dat vak, en logt daarvoor in met de eigen pincode via de aparte badge "Sectievoorzitter".</p>
+    <div id="voorzitter-list" class="voorzitter-list"></div>`;
 
   await renderUserList();
+  await renderVoorzitters();
 
   container.querySelector('#btn-add-user').addEventListener('click', () => openUserModal(null));
 }
@@ -47,19 +61,21 @@ async function renderUserList() {
     return `
       <div class="card gebruiker-card">
         <div class="gebruiker-card-left">
-          <div class="user-badge ${shape} u-no-pointer" data-badge-color="${escHtml(user.kleur ?? '#888')}">
+          <div class="user-badge ${shape} u-no-pointer" data-badge-color="${escHtml(user.kleur ?? '#888')}"${user.foto ? ` data-foto="${escHtml(user.foto)}"` : ''}>
             <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
           </div>
         </div>
         <div class="gebruiker-card-body">
           <div class="gebruiker-card-name">${escHtml(name)}</div>
           <div class="gebruiker-card-vakken">${escHtml(vakkenLabels)}</div>
+          ${user.pinHash ? '' : '<div class="gebruiker-card-vakken muted">Nog geen pincode (stelt die in bij de volgende aanmelding)</div>'}
         </div>
         <div class="card-actions">
           ${
             !user.isAdmin
               ? `
             <button class="btn-sm btn-sm-icon" data-action="edit-user" data-id="${escHtml(user.id)}" title="Gebruiker bewerken">${ICONS.pen}</button>
+            ${user.pinHash ? `<button class="btn-sm" data-action="reset-pin" data-id="${escHtml(user.id)}" title="De gebruiker kiest bij de volgende aanmelding een nieuwe pincode">Pincode resetten</button>` : ''}
             <button class="btn-sm btn-danger btn-sm-icon" data-action="toggle-user" data-id="${escHtml(user.id)}"
                     title="${user.actief ? 'Gebruiker deactiveren' : 'Gebruiker activeren'}">
               ${user.actief ? ICONS.ban : ICONS.check}
@@ -86,6 +102,27 @@ async function renderUserList() {
   }
 
   container.innerHTML = html;
+  void loadBadgePhotosIn(container);
+
+  container.querySelectorAll('[data-action="reset-pin"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const users = await Store.loadUsers();
+      const user = users.find((u) => u.id === btn.dataset.id);
+      if (!user) return;
+      const ok = await confirmDialog(
+        `${user.voornaam} kiest bij de volgende aanmelding een nieuwe pincode.`,
+        { title: 'Pincode resetten', okLabel: 'Resetten', danger: true },
+      );
+      if (!ok) return;
+      try {
+        Store.cacheUser(await window.maatwerk.resetPin(user.id));
+        toast(`Pincode van ${user.voornaam} gereset.`, 'success');
+      } catch (e) {
+        toast(e instanceof Error ? e.message : String(e), 'error');
+      }
+      await renderUserList();
+    });
+  });
 
   container.querySelectorAll('[data-action="edit-user"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -107,6 +144,55 @@ async function renderUserList() {
         'success',
       );
       await renderUserList();
+      await renderVoorzitters();
+    });
+  });
+}
+
+// ── Sectievoorzitters (school.json `secties`, decision 13) ──────────────────
+async function renderVoorzitters() {
+  const container = document.getElementById('voorzitter-list');
+  if (!container) return;
+  const [users, school] = await Promise.all([Store.loadUsers(), Store.loadSchool()]);
+  const secties = school?.secties ?? {};
+  container.innerHTML = SUBJECTS.map((vak) => {
+    const teachers = users.filter((u) => u.actief && !u.isAdmin && (u.vakken ?? []).includes(vak));
+    const current = secties[vak]?.voorzitter ?? '';
+    const options = [
+      `<option value="">Geen</option>`,
+      ...teachers.map((u) => {
+        const name = [u.voornaam, u.tussenvoegsel, u.achternaam].filter(Boolean).join(' ');
+        return `<option value="${escHtml(u.id)}"${u.id === current ? ' selected' : ''}>${escHtml(name)}</option>`;
+      }),
+    ];
+    // A voorzitter who no longer teaches the vak (or left) stays visible until changed.
+    if (current && !teachers.some((u) => u.id === current)) {
+      options.push(
+        `<option value="${escHtml(current)}" selected>(niet meer actief voor dit vak)</option>`,
+      );
+    }
+    return `
+      <div class="form-row voorzitter-row">
+        <label class="u-flex-1" for="vz-${vak}">${escHtml(SUBJECT_LABEL[vak])}</label>
+        <select id="vz-${vak}" class="u-flex-2" data-vak="${vak}">${options.join('')}</select>
+      </div>`;
+  }).join('');
+  container.querySelectorAll('select[data-vak]').forEach((select) => {
+    select.addEventListener('change', async () => {
+      const vak = select.dataset.vak;
+      const voorzitter = select.value || null;
+      try {
+        await Store.updateSchool((s) => {
+          const next = { ...(s.secties ?? {}) };
+          if (voorzitter) next[vak] = { ...(next[vak] ?? {}), voorzitter };
+          else delete next[vak];
+          s.secties = next;
+        });
+        toast(`Sectievoorzitter ${SUBJECT_LABEL[vak]} opgeslagen.`, 'success');
+      } catch (e) {
+        toast(e instanceof Error ? e.message : String(e), 'error');
+        await renderVoorzitters();
+      }
     });
   });
 }
@@ -240,7 +326,10 @@ function openUserModal(user) {
         }
       }
 
+      // Fields this form does not show (pinHash, recoveryCodeHashes, Step 7b)
+      // are kept from the record the form was opened with.
       const saved = {
+        ...(user ?? {}),
         id: user?.id ?? `gebr-${Date.now()}`,
         voornaam,
         tussenvoegsel: content.querySelector('#f-utussen').value.trim(),

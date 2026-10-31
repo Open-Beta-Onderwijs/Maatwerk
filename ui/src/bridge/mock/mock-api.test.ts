@@ -184,3 +184,49 @@ describe('MockApi', () => {
     expect(new TextDecoder().decode(bytes.slice(0, 8))).toBe('%PDF-1.4');
   });
 });
+
+describe('MockApi accounts (Step 7b, rules of maatwerk-core::auth)', () => {
+  const TEACHER = 'gebr-1756713600001';
+
+  it('sets a first PIN once and logs in', async () => {
+    expect((await api.verifyPin(TEACHER, '12345')).outcome).toBe('noPin');
+    await expect(api.setFirstPin(TEACHER, '1234')).rejects.toThrow('5 tot 8 cijfers');
+    const set = await api.setFirstPin(TEACHER, '12345');
+    expect(set.recoveryCodes).toBeNull();
+    expect(api.loggedIn).toBe(TEACHER);
+    await expect(api.setFirstPin(TEACHER, '54321')).rejects.toThrow('al een pincode');
+    await api.logout();
+    expect((await api.verifyPin(TEACHER, '12345')).outcome).toBe('ok');
+  });
+
+  it('delays after the second wrong PIN', async () => {
+    await api.setFirstPin(TEACHER, '12345');
+    expect(await api.verifyPin(TEACHER, '00000')).toMatchObject({
+      outcome: 'wrong',
+      retryAfterMs: 0,
+    });
+    expect(await api.verifyPin(TEACHER, '00000')).toMatchObject({
+      outcome: 'wrong',
+      retryAfterMs: 2000,
+    });
+    expect((await api.verifyPin(TEACHER, '12345')).outcome).toBe('wait');
+  });
+
+  it('lets only the logged-in admin reset a PIN', async () => {
+    await api.setFirstPin(TEACHER, '12345');
+    await expect(api.resetPin(TEACHER)).rejects.toThrow('beheerder');
+    const admin = await api.setFirstPin('admin', '99999');
+    expect(admin.recoveryCodes).toHaveLength(10);
+    const user = (await api.resetPin(TEACHER)) as { pinHash?: string };
+    expect(user.pinHash).toBeUndefined();
+    expect((await api.verifyPin(TEACHER, '12345')).outcome).toBe('noPin');
+  });
+
+  it('uses a recovery code once', async () => {
+    const { recoveryCodes } = await api.setFirstPin('admin', '99999');
+    const code = recoveryCodes![0]!;
+    await api.logout();
+    expect((await api.recoverWithCode('admin', code, '11111')).outcome).toBe('ok');
+    expect((await api.recoverWithCode('admin', code, '22222')).outcome).toBe('wrong');
+  });
+});

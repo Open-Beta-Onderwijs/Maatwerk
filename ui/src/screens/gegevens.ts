@@ -2,12 +2,22 @@
 
 // Beheer > Gegevenscontrole (Step 7a): the result of `validate-data` on the
 // shared folder (ADR-0003 C19, docs/reference/data-files-v2.md). Files changed
-// outside Maatwerk can be accepted as they are ("Accepteren"); restoring from a
-// snapshot follows with Step 7b.
+// outside Maatwerk can be accepted as they are ("Accepteren") or restored from
+// the newest snapshot that holds an intact copy (Step 7b).
 
 import type { DataCheck, DataIssue, MaatwerkApi } from '../bridge/api';
+import { snapshotLabel } from './instellingen';
 
-type Api = Pick<MaatwerkApi, 'validateDataFolder' | 'acceptStamp'>;
+type Api = Pick<
+  MaatwerkApi,
+  'validateDataFolder' | 'acceptStamp' | 'snapshotForFile' | 'restoreFromSnapshot'
+>;
+
+/** Asks the admin; resolves true for the confirm button (app.js confirmDialog). */
+export type Confirm = (
+  message: string,
+  opts: { title: string; okLabel: string; danger?: boolean; cancelLabel?: string | null },
+) => Promise<boolean>;
 
 const KIND_LABEL: Record<string, string> = {
   version: 'Versie',
@@ -42,7 +52,11 @@ export function needsAttention(check: DataCheck): boolean {
   return check.issues.some((i) => i.severity === 'error' || i.kind === 'stamp');
 }
 
-function issueTable(check: DataCheck, onAccept: (path: string) => void): HTMLElement {
+function issueTable(
+  check: DataCheck,
+  onAccept: (path: string) => void,
+  onRestore: (path: string) => void,
+): HTMLElement {
   const table = el('table', 'gegevens-table');
   const head = el('tr');
   for (const h of ['', 'Soort', 'Bestand', 'Melding', '']) head.append(el('th', '', h));
@@ -66,7 +80,14 @@ function issueTable(check: DataCheck, onAccept: (path: string) => void): HTMLEle
         btn.disabled = true;
         onAccept(issue.path);
       });
-      action.append(btn);
+      const restore = el(
+        'button',
+        'btn-secondary btn-sm',
+        'Herstellen uit snapshot',
+      ) as HTMLButtonElement;
+      restore.title = 'De laatste goede versie uit een snapshot terugzetten';
+      restore.addEventListener('click', () => onRestore(issue.path));
+      action.append(btn, ' ', restore);
     }
     tr.append(action);
     body.append(tr);
@@ -76,7 +97,11 @@ function issueTable(check: DataCheck, onAccept: (path: string) => void): HTMLEle
 }
 
 /** Renders the screen into `container` and runs the check. */
-export async function renderGegevens(container: HTMLElement, api: Api): Promise<void> {
+export async function renderGegevens(
+  container: HTMLElement,
+  api: Api,
+  confirm: Confirm,
+): Promise<void> {
   const box = el('div', 'gegevens');
   const intro = el(
     'p',
@@ -103,13 +128,17 @@ export async function renderGegevens(container: HTMLElement, api: Api): Promise<
       result.replaceChildren(summary);
       if (data.issues.length) {
         result.append(
-          issueTable(data, async (path) => {
-            try {
-              await api.acceptStamp(path);
-            } finally {
-              await check();
-            }
-          }),
+          issueTable(
+            data,
+            async (path) => {
+              try {
+                await api.acceptStamp(path);
+              } finally {
+                await check();
+              }
+            },
+            (path) => void restore(path),
+          ),
         );
       }
     } catch (e) {
@@ -119,6 +148,30 @@ export async function renderGegevens(container: HTMLElement, api: Api): Promise<
     } finally {
       run.disabled = false;
     }
+  };
+  const restore = async (path: string) => {
+    try {
+      const snapshot = await api.snapshotForFile(path);
+      if (!snapshot) {
+        await confirm(`Geen snapshot heeft een goede kopie van ${path}.`, {
+          title: 'Herstellen uit snapshot',
+          okLabel: 'OK',
+          cancelLabel: null,
+        });
+        return;
+      }
+      const ok = await confirm(
+        `${path} wordt teruggezet naar de versie uit de snapshot van ${snapshotLabel(snapshot)}. ` +
+          'Wijzigingen van daarna in dit bestand gaan verloren.',
+        { title: 'Herstellen uit snapshot', okLabel: 'Herstellen', danger: true },
+      );
+      if (!ok) return;
+      await api.restoreFromSnapshot(path, snapshot);
+    } catch (e) {
+      result.prepend(el('p', 'pin-error', `Herstellen mislukt: ${(e as Error)?.message ?? e}`));
+      return;
+    }
+    await check();
   };
   run.addEventListener('click', () => void check());
   await check();

@@ -39,6 +39,11 @@ export async function openGroupModal(id) {
 
   const hasStudents = group.student_ids.length > 0;
   const isEdit = !!id;
+  // Step 7b, decision 13: the sectievoorzitter changes only the composition
+  // and the teachers of the groups of their vak; the other fields stay locked.
+  const voorzitter = isEdit && !Store.isAdminActive() && Store.isVoorzitterActive(group.subject);
+  if (!Store.isAdminActive() && !voorzitter) return;
+  const locked = hasStudents || voorzitter;
 
   const JAARLAGEN = ['1', '2', '3', '4', '5', '6'];
   const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
@@ -48,9 +53,9 @@ export async function openGroupModal(id) {
     { code: 'schk', label: 'Scheikunde' },
     { code: 'wi', label: 'Wiskunde' },
   ];
-  const jlDisabled = isEdit && hasStudents;
-  const ssDisabled = isEdit && hasStudents;
-  const vakDisabled = isEdit && hasStudents;
+  const jlDisabled = isEdit && locked;
+  const ssDisabled = isEdit && locked;
+  const vakDisabled = isEdit && locked;
 
   const jaarlaagHtml = JAARLAGEN.map((jl) => {
     const sel = String(group.jaarlaag) === jl;
@@ -149,7 +154,7 @@ export async function openGroupModal(id) {
     <div class="u-gap-20 u-items-start form-row">
       <div class="u-flex-1 u-min-w-0 form-group">
         <label>Naam (bijv. 6nat4 of 2anat)</label>
-        <input id="f-gname" type="text" value="${escHtml(group.name)}" ${hasStudents ? 'disabled' : ''} />
+        <input id="f-gname" type="text" value="${escHtml(group.name)}" ${locked ? 'disabled' : ''} />
       </div>
       <div class="u-flex-1 u-min-w-0 form-group">
         <label>Schoolsoort</label>
@@ -203,7 +208,13 @@ export async function openGroupModal(id) {
     </div>`
         : ''
     }
-    ${hasStudents ? '<span class="u-d-block u-mt-8 form-hint muted">Naam, leerjaar, schoolsoort en vak kunnen niet worden gewijzigd zolang er leerlingen in de groep zitten.</span>' : ''}
+    ${
+      voorzitter
+        ? '<span class="u-d-block u-mt-8 form-hint muted">Als sectievoorzitter wijzig je de leerlingen en docenten van de groep. Naam, leerjaar, schoolsoort en vak wijzigt de beheerder.</span>'
+        : hasStudents
+          ? '<span class="u-d-block u-mt-8 form-hint muted">Naam, leerjaar, schoolsoort en vak kunnen niet worden gewijzigd zolang er leerlingen in de groep zitten.</span>'
+          : ''
+    }
     ${isEdit ? `<div class="u-mt-16 form-group">${studentsSection}</div>` : ''}
     <div class="u-mt-16 form-actions">
       <button class="btn-primary" id="f-g-save">Opslaan</button>
@@ -313,7 +324,7 @@ export async function openGroupModal(id) {
       }
 
       el.querySelector('#f-g-save').addEventListener('click', async () => {
-        const name = hasStudents ? group.name : el.querySelector('#f-gname').value.trim();
+        const name = locked ? group.name : el.querySelector('#f-gname').value.trim();
         if (!name) {
           toast('Vul een naam in.', 'error');
           return;
@@ -366,7 +377,7 @@ export async function openGroupModal(id) {
             if (!existing) continue;
             const newIds = byGroup[g.id] ?? [];
             const isTarget = g.id === id;
-            const nameChanged = isTarget && !hasStudents && name !== existing.name;
+            const nameChanged = isTarget && !locked && name !== existing.name;
             const idsChanged =
               [...existing.student_ids].sort((a, b) => a - b).join(',') !==
               [...newIds].sort((a, b) => a - b).join(',');
@@ -374,13 +385,13 @@ export async function openGroupModal(id) {
               isTarget &&
               (JSON.stringify(existing.schoolsoort ?? []) !== JSON.stringify(schoolsoort) ||
                 JSON.stringify(existing.docenten ?? []) !== JSON.stringify(docenten) ||
-                (!hasStudents && String(existing.jaarlaag) !== jaarlaag));
+                (!locked && String(existing.jaarlaag) !== jaarlaag));
             if (!idsChanged && !nameChanged && !fieldsChanged) continue;
 
             let updated = { ...existing, student_ids: newIds };
             if (isTarget) {
               updated = { ...updated, schoolsoort, docenten };
-              if (!hasStudents) {
+              if (!locked) {
                 updated = {
                   ...updated,
                   name,
