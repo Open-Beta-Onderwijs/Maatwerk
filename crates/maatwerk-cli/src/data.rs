@@ -176,10 +176,8 @@ impl ResetPinArgs {
                 ExitCode::FAILURE
             }
             Ok(ids) => {
-                println!(
-                    "Pincode en herstelcodes gewist voor: {}. De beheerder stelt bij de volgende                      aanmelding een nieuwe pincode in.",
-                    ids.join(", ")
-                );
+                println!("Pincode en herstelcodes gewist voor: {}.", ids.join(", "));
+                println!("De beheerder stelt bij de volgende aanmelding een nieuwe pincode in.");
                 ExitCode::SUCCESS
             }
             Err(e) => fail(&e),

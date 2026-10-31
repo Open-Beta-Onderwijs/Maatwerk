@@ -11,7 +11,7 @@
  * initials stay. Read fresh each time: an admin may replace the photo under
  * the same name.
  */
-export async function loadBadgePhoto(el, relPath) {
+export async function loadBadgePhoto(el, relPath, stillWanted = () => true) {
   if (!el || !relPath) return;
   let dataUrl = null;
   try {
@@ -19,7 +19,7 @@ export async function loadBadgePhoto(el, relPath) {
   } catch (e) {
     console.warn('[badges]', e);
   }
-  if (!dataUrl || !el.isConnected) return;
+  if (!dataUrl || !el.isConnected || !stillWanted()) return;
   el.style.backgroundImage = `url(${dataUrl})`;
   el.style.backgroundSize = 'cover';
   el.style.backgroundPosition = 'center';

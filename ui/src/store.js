@@ -230,6 +230,14 @@ const Store = (() => {
     return school;
   }
 
+  // A file written by the backend outside the Store ("Herstellen uit snapshot",
+  // Step 7b): the next read takes it from disk. Year data (exams, groups,
+  // scores) is cached per year and subject and reloads at the next login.
+  function forgetFile(relPath) {
+    if (relPath.startsWith('gebruikers/')) delete cache['gebruikers'];
+    else invalidate(relPath);
+  }
+
   // A user record written by the backend (PIN commands, Step 7b): own writes
   // are not echoed by the watcher, so the cache is updated here.
   function cacheUser(user) {
@@ -1136,6 +1144,7 @@ const Store = (() => {
     loadUsers,
     upsertUser,
     cacheUser,
+    forgetFile,
     loadSchool,
     updateSchool,
     loadInstellingen,

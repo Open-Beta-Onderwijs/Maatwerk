@@ -108,7 +108,7 @@ export async function renderInstellingen(
       'p',
       'hint',
       'Een snapshot is een zip van alle gegevens (zonder foto’s en rapporten) in de map ' +
-        'snapshots naast de gegevens. Hij beschermt tegen per ongeluk gewiste of overschreven ' +
+        'snapshots in de gegevensmap. Hij beschermt tegen per ongeluk gewiste of overschreven ' +
         'gegevens, niet tegen het verdwijnen van de hele gedeelde map: gebruik daarvoor ook de ' +
         'versiegeschiedenis van OneDrive.',
     ),

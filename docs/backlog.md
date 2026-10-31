@@ -223,6 +223,19 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   wrong state on screen.
 - **n8:** saving the students file drops top-level keys other than `students`.
 
+## From Step 7b (review `docs/reviews/step-07b.md`)
+
+- m1: two PCs that start in the same minute can both write a snapshot (the claim in
+  `snapshots/state.json` is per OneDrive replica). Option: after claiming, wait 20-60 s on the
+  background thread, re-read the state and give up if another PC claimed later.
+- m6: test for losing the snapshot claim to a concurrent writer (needs a hook between read and
+  CAS in `Storage`).
+- n4: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
+  admin takes effect at the next login.
+- n5: the Rust login session survives a webview reload (dev only; release builds have no reload).
+- After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only at
+  the next login.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the

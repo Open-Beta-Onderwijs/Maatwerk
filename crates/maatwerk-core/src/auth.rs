@@ -216,38 +216,30 @@ impl Auth {
         *self.session.lock().unwrap_or_else(|p| p.into_inner()) = Some(user_id.to_owned());
     }
 
-    /// `Some(wait)` while `key` must still wait after wrong attempts.
-    fn must_wait(&self, key: &str, now: Instant) -> Option<Duration> {
-        let failures = self.failures.lock().unwrap_or_else(|p| p.into_inner());
-        let f = failures.get(key)?;
-        let until = f.last? + delay_after(f.count);
-        (until > now).then(|| until - now)
-    }
-
-    fn record(&self, key: &str, ok: bool, now: Instant) -> Duration {
+    /// Checks `secret` against what `check` finds, with the per-key delay. The lock is held
+    /// throughout, so parallel attempts cannot skip the wait (review 7b m2); checks of other
+    /// users wait for one Argon2 verification at most.
+    fn throttled(&self, key: &str, now: Instant, check: impl FnOnce() -> bool) -> Check {
         let mut failures = self.failures.lock().unwrap_or_else(|p| p.into_inner());
-        if ok {
+        if let Some(f) = failures.get(key)
+            && let Some(last) = f.last
+        {
+            let until = last + delay_after(f.count);
+            if until > now {
+                return Check::Wait {
+                    retry_after: until - now,
+                };
+            }
+        }
+        if check() {
             failures.remove(key);
-            return Duration::ZERO;
+            return Check::Ok;
         }
         let f = failures.entry(key.to_owned()).or_default();
         f.count += 1;
         f.last = Some(now);
-        delay_after(f.count)
-    }
-
-    /// Checks `secret` against what `check` finds, with the per-key delay.
-    fn throttled(&self, key: &str, now: Instant, check: impl FnOnce() -> bool) -> Check {
-        if let Some(retry_after) = self.must_wait(key, now) {
-            return Check::Wait { retry_after };
-        }
-        if check() {
-            self.record(key, true, now);
-            Check::Ok
-        } else {
-            Check::Wrong {
-                retry_after: self.record(key, false, now),
-            }
+        Check::Wrong {
+            retry_after: delay_after(f.count),
         }
     }
 
@@ -343,8 +335,8 @@ impl Auth {
         Ok((Check::Ok, Some(written)))
     }
 
-    /// The logged-in admin, re-read from disk.
-    fn require_admin(&self, storage: &Storage) -> Result<String> {
+    /// The logged-in admin (active, re-read from disk), or an error for anyone else.
+    pub fn require_admin(&self, storage: &Storage) -> Result<String> {
         let id = self.session().ok_or_else(|| invalid("Niet ingelogd."))?;
         let user = read_user(storage, &id)?;
         if is_admin(&user) && is_active(&user) {
@@ -381,6 +373,9 @@ impl Auth {
         let user = read_user(storage, user_id)?;
         if !is_admin(&user) {
             return Err(invalid("Alleen de beheerder heeft herstelcodes."));
+        }
+        if !is_active(&user) {
+            return Err(invalid("Deze gebruiker is gedeactiveerd."));
         }
         let hashes: Vec<String> = user
             .get(RECOVERY_FIELD)

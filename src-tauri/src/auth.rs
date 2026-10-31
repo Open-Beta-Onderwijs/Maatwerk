@@ -16,7 +16,7 @@ use tauri_plugin_dialog::DialogExt;
 
 use crate::commands::{Res, blocking, rel};
 use crate::error::CommandError;
-use crate::state::{Core, Shared};
+use crate::state::Shared;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -240,28 +240,15 @@ pub async fn restore_from_snapshot(
     snapshot: String,
 ) -> Res<()> {
     blocking(state, move |c| {
-        require_admin(c)?;
+        let storage = c.storage()?;
+        let admin = c.auth.require_admin(storage)?;
         Ok(snapshots::restore_file(
-            c.storage()?,
+            storage,
             &snapshot,
             &rel(&rel_path)?,
+            Some(&admin),
+            SystemTime::now(),
         )?)
     })
     .await
-}
-
-fn require_admin(c: &Core) -> Res<()> {
-    let storage = c.storage()?;
-    let admin = c.auth.session().and_then(|id| {
-        let user = storage
-            .read_json(&maatwerk_core::auth::user_path(&id).ok()?)
-            .ok()??;
-        (user.get("isAdmin") == Some(&Value::Bool(true))).then_some(())
-    });
-    admin.ok_or_else(|| {
-        maatwerk_core::Error::InvalidArgument {
-            message: "Alleen de beheerder mag dit.".into(),
-        }
-        .into()
-    })
 }

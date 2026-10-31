@@ -338,3 +338,31 @@ fn user_ids_must_be_plain_file_ids() {
         assert!(user_path(bad).is_err(), "{bad}");
     }
 }
+
+#[test]
+fn a_deactivated_admin_cannot_use_a_recovery_code() {
+    let (_t, s) = setup();
+    let auth = Auth::new();
+    let codes = auth
+        .set_first_pin(&s, "admin", "99999", SystemTime::now())
+        .unwrap()
+        .recovery_codes
+        .unwrap();
+    auth.logout();
+    let mut u = user(&s, "admin");
+    u["actief"] = json!(false);
+    s.write_json(&user_path("admin").unwrap(), &u, Expect::Any)
+        .unwrap();
+    assert!(
+        auth.recover(
+            &s,
+            "admin",
+            &codes[0],
+            "11111",
+            Instant::now(),
+            SystemTime::now()
+        )
+        .is_err()
+    );
+    assert!(auth.require_admin(&s).is_err());
+}

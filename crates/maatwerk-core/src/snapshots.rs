@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use serde_json::{Value, json};
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time};
@@ -22,7 +22,7 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 use crate::error::{Error, Result};
 use crate::integrity::{self, StampState};
 use crate::paths::{RelPath, display_path};
-use crate::storage::{Expect, Storage};
+use crate::storage::{Expect, Storage, stamp_meta};
 
 pub const DIR: &str = "snapshots";
 pub const STATE_FILE: &str = "snapshots/state.json";
@@ -88,15 +88,27 @@ pub struct Snapshot {
     pub time: PrimitiveDateTime,
 }
 
-/// `2026-10-31 0815.zip` and `2026-10-31 0815 (2).zip`; anything else is not a snapshot.
+/// `2026-10-31 0815.zip`, `2026-10-31 0815 (2).zip` and OneDrive's conflict copy
+/// `2026-10-31 0815-PCNAAM.zip` (so retention removes it); anything else is not a snapshot.
+/// Only ASCII letters, digits, `-`, `_`, spaces and the brackets of ` (n)`: a name that passes
+/// is a plain file name (review 7b M1).
 fn parse_name(name: &str) -> Option<PrimitiveDateTime> {
     let stem = name.strip_suffix(".zip")?;
     let b = stem.as_bytes();
-    if b.len() < 15 || b[4] != b'-' || b[7] != b'-' || b[10] != b' ' {
+    if !stem.is_ascii() || b.len() < 15 || b[4] != b'-' || b[7] != b'-' || b[10] != b' ' {
         return None;
     }
     let rest = &stem[15..];
-    if !(rest.is_empty() || (rest.starts_with(" (") && rest.ends_with(')'))) {
+    let clash = rest
+        .strip_prefix(" (")
+        .and_then(|r| r.strip_suffix(')'))
+        .is_some_and(|n| !n.is_empty() && n.bytes().all(|c| c.is_ascii_digit()));
+    let conflict = rest.strip_prefix('-').is_some_and(|r| {
+        !r.is_empty()
+            && r.bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'-' || c == b'_')
+    });
+    if !(rest.is_empty() || clash || conflict) {
         return None;
     }
     let n = |r: std::ops::Range<usize>| stem.get(r)?.parse::<u16>().ok();
@@ -241,7 +253,13 @@ fn ms(t: OffsetDateTime) -> i64 {
 pub fn run_if_due(storage: &Storage, now: OffsetDateTime, who: &str) -> Result<Outcome> {
     let settings = Settings::read(storage);
     let interval = time::Duration::hours(i64::from(settings.interval_hours));
-    let newest = list(storage)?.first().map(|s| s.time);
+    // A snapshot dated more than a day ahead (a PC with a wrong clock) does not count, or it
+    // would block snapshots everywhere until then (review 7b m5).
+    let ahead = time::Duration::days(1);
+    let newest = list(storage)?
+        .into_iter()
+        .map(|s| s.time)
+        .find(|t| *t - local(now) < ahead);
     if newest.is_some_and(|t| local(now) - t < interval) {
         return Ok(Outcome::NotDue);
     }
@@ -253,7 +271,10 @@ pub fn run_if_due(storage: &Storage, now: OffsetDateTime, who: &str) -> Result<O
     let state = read.as_ref().map_or(json!({}), |r| r.data.clone());
     let now_ms = ms(now);
     let field = |k: &str| state.get(k).and_then(Value::as_i64);
-    if field("lastAtMs").is_some_and(|t| now_ms - t < interval.whole_milliseconds() as i64) {
+    let ahead_ms = ahead.whole_milliseconds() as i64;
+    if field("lastAtMs")
+        .is_some_and(|t| now_ms - t < interval.whole_milliseconds() as i64 && t - now_ms < ahead_ms)
+    {
         return Ok(Outcome::NotDue);
     }
     let claimed = state
@@ -429,9 +450,22 @@ pub fn find_intact_copy(storage: &Storage, rel: &RelPath) -> Result<Option<Snaps
     Ok(None)
 }
 
-/// "Herstellen uit snapshot": writes the snapshot's copy of the JSON file `rel` back (stamped
-/// again on write).
-pub fn restore_file(storage: &Storage, snapshot: &str, rel: &RelPath) -> Result<()> {
+/// Fields of a user file that are never taken from a snapshot: a restore must not bring back
+/// used recovery codes or an old PIN (review 7b M2).
+const KEPT_USER_FIELDS: [&str; 2] = [crate::auth::PIN_FIELD, crate::auth::RECOVERY_FIELD];
+
+/// "Herstellen uit snapshot": writes the snapshot's copy of the JSON file `rel` back, as a
+/// compare-and-swap update that only goes ahead while the file on disk still has a missing or
+/// wrong stamp (a save through Maatwerk since the check is kept: error `conflict`). An entity
+/// file gets a fresh `_meta` (rev = disk + 1, `updatedBy` = `user_id`), so edits started from
+/// the old version are conflicts; user files keep their PIN fields from disk.
+pub fn restore_file(
+    storage: &Storage,
+    snapshot: &str,
+    rel: &RelPath,
+    user_id: Option<&str>,
+    at: SystemTime,
+) -> Result<()> {
     if rel.extension().as_deref() != Some("json") || rel.as_str().starts_with("snapshots/") {
         return Err(Error::InvalidPath {
             path: rel.to_string(),
@@ -441,7 +475,42 @@ pub fn restore_file(storage: &Storage, snapshot: &str, rel: &RelPath) -> Result<
     let value = read_entry(storage, snapshot, rel)?.ok_or_else(|| Error::NotFound {
         path: rel.to_string(),
     })?;
-    storage.write_json(rel, &value, Expect::Any)?;
+    let is_user = rel.as_str().starts_with("gebruikers/");
+    storage.update(
+        rel,
+        || Value::Null,
+        |_current, on_disk| {
+            if let Some(disk) = on_disk
+                && integrity::check(disk) == StampState::Ok
+            {
+                return Err(Error::Conflict {
+                    path: rel.to_string(),
+                    updated_by: disk
+                        .get("_meta")
+                        .and_then(|m| m.get("updatedBy"))
+                        .and_then(Value::as_str)
+                        .map(str::to_owned),
+                });
+            }
+            let Value::Object(mut obj) = value.clone() else {
+                return Ok(value.clone());
+            };
+            if is_user {
+                for key in KEPT_USER_FIELDS {
+                    match on_disk.and_then(|d| d.get(key)) {
+                        Some(v) => obj.insert(key.into(), v.clone()),
+                        None => obj.remove(key),
+                    };
+                }
+            }
+            let entity = obj.get("_meta").and_then(|m| m.get("rev")).is_some();
+            Ok(if entity {
+                stamp_meta(obj, on_disk, user_id, at)
+            } else {
+                Value::Object(obj)
+            })
+        },
+    )?;
     Ok(())
 }
 

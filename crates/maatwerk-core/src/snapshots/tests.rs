@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use std::fs;
+use std::time::SystemTime;
 
 use serde_json::json;
 use time::macros::datetime;
@@ -45,7 +46,18 @@ fn names_parse_and_others_are_not_snapshots() {
         ))
     );
     assert!(parse_name("2026-10-31 0815 (2).zip").is_some());
+    assert!(
+        parse_name("2026-10-31 0815-PC-LOKAAL12.zip").is_some(),
+        "OneDrive copy"
+    );
     for bad in [
+        // Review 7b M1: no path parts, no panic on non-ASCII.
+        "2026-10-31 0815 (/../../x).zip",
+        r"2026-10-31 0815 (..\x).zip",
+        "2026-10-31 081é.zip",
+        "2026-10-31 0815é.zip",
+        "2026-10-31 0815 ().zip",
+        "2026-10-31 0815-a/b.zip",
         "2026-10-31 0815.zip.partial",
         "2026-13-31 0815.zip",
         "2026-10-31 2515.zip",
@@ -262,13 +274,119 @@ fn a_file_is_restored_from_the_newest_intact_copy() {
 
     let found = find_intact_copy(&s, &g).unwrap().unwrap();
     assert_eq!(found.name, "2026-10-30 0800.zip");
-    restore_file(&s, &found.name, &g).unwrap();
+    restore_file(&s, &found.name, &g, Some("admin"), SystemTime::now()).unwrap();
     let back = s.read_json(&g).unwrap().unwrap();
     assert_eq!(back["voornaam"], "Eerste");
     assert_eq!(integrity::check(&back), StampState::Ok);
 
     assert_eq!(find_intact_copy(&s, &rel("school.json")).unwrap(), None);
-    assert!(restore_file(&s, &found.name, &rel("school.json")).is_err());
-    assert!(restore_file(&s, "x.zip", &g).is_err());
-    assert!(restore_file(&s, &found.name, &rel("opdrachten/o1/opdracht.typ")).is_err());
+    assert!(
+        restore_file(
+            &s,
+            &found.name,
+            &rel("school.json"),
+            None,
+            SystemTime::now()
+        )
+        .is_err()
+    );
+    assert!(restore_file(&s, "x.zip", &g, None, SystemTime::now()).is_err());
+    assert!(
+        restore_file(
+            &s,
+            &found.name,
+            &rel("opdrachten/o1/opdracht.typ"),
+            None,
+            SystemTime::now()
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn a_restore_bumps_the_rev_names_the_admin_and_keeps_pin_fields() {
+    let (_t, s) = setup();
+    let g = rel("gebruikers/admin.json");
+    s.write_json(
+        &g,
+        &json!({ "id": "admin", "voornaam": "Oud", "recoveryCodeHashes": ["a", "b"],
+                 "_meta": { "rev": 3, "updatedBy": "admin" } }),
+        Expect::Any,
+    )
+    .unwrap();
+    run_if_due(&s, datetime!(2026-10-30 08:00 UTC), "PC-1").unwrap();
+    // Codes used and a hand edit since.
+    put(
+        &s,
+        "gebruikers/admin.json",
+        br#"{"id":"admin","voornaam":"Hand","pinHash":"p","recoveryCodeHashes":["b"],"_meta":{"rev":5}}"#,
+    );
+    restore_file(
+        &s,
+        "2026-10-30 0800.zip",
+        &g,
+        Some("beheer"),
+        SystemTime::now(),
+    )
+    .unwrap();
+    let back = s.read_json(&g).unwrap().unwrap();
+    assert_eq!(back["voornaam"], "Oud");
+    assert_eq!(back["_meta"]["rev"], 6, "on-disk rev + 1");
+    assert_eq!(back["_meta"]["updatedBy"], "beheer");
+    assert_eq!(
+        back["recoveryCodeHashes"],
+        json!(["b"]),
+        "used codes stay used"
+    );
+    assert_eq!(back["pinHash"], "p");
+    assert_eq!(integrity::check(&back), StampState::Ok);
+}
+
+#[test]
+fn a_file_saved_through_maatwerk_since_the_check_is_not_restored() {
+    let (_t, s) = setup();
+    let g = rel("school.json");
+    s.write_json(&g, &json!({ "naam": "Oud" }), Expect::Any)
+        .unwrap();
+    run_if_due(&s, datetime!(2026-10-30 08:00 UTC), "PC-1").unwrap();
+    // A colleague saved it properly (good stamp): the restore must not throw that away.
+    s.write_json(&g, &json!({ "naam": "Nieuw" }), Expect::Any)
+        .unwrap();
+    let err = restore_file(
+        &s,
+        "2026-10-30 0800.zip",
+        &g,
+        Some("admin"),
+        SystemTime::now(),
+    )
+    .unwrap_err();
+    assert_eq!(err.code(), "conflict");
+    assert_eq!(s.read_json(&g).unwrap().unwrap()["naam"], "Nieuw");
+}
+
+#[test]
+fn a_snapshot_dated_far_ahead_does_not_block_new_ones() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    put(&s, "snapshots/2027-06-01 0800.zip", b"wrong clock");
+    assert!(matches!(
+        run_if_due(&s, datetime!(2026-10-31 08:15 UTC), "PC-1").unwrap(),
+        Outcome::Written { .. }
+    ));
+}
+
+#[test]
+fn a_onedrive_conflict_copy_of_a_snapshot_is_pruned() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    put(&s, "snapshots/2026-10-01 0800.zip", b"a");
+    put(&s, "snapshots/2026-10-01 0800-PC2.zip", b"b");
+    s.write_json(
+        &rel(SETTINGS_FILE),
+        &json!({ "snapshots": { "daily": 2, "weekly": 0, "monthly": 0 } }),
+        Expect::Any,
+    )
+    .unwrap();
+    run_if_due(&s, datetime!(2026-10-31 08:15 UTC), "PC-1").unwrap();
+    assert_eq!(names(&s), ["2026-10-31 0815.zip", "2026-10-01 0800.zip"]);
 }

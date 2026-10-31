@@ -97,6 +97,11 @@ function renderScreen(name) {
         document.getElementById('screen-gegevens'),
         window.maatwerk,
         confirmDialog,
+        (path) => {
+          // Own writes are not echoed by the watcher (review 7b M2).
+          Store.forgetFile(path);
+          toast('Hersteld uit de snapshot.', 'success');
+        },
       );
     case 'instellingen':
       return renderInstellingen(
@@ -187,19 +192,28 @@ overlay.addEventListener('click', (e) => {
 // click next to it then asks for confirmation while isDirty() is true. Annuleren
 // and closing after saving (closeModal()) are not guarded.
 let _closeGuard = null;
+let _closeGuardText = null;
 
-export function guardModalClose(isDirty) {
+/** `text`: optional `{ message, title, okLabel }` instead of the unsaved-changes question. */
+export function guardModalClose(isDirty, text = null) {
   _closeGuard = isDirty;
+  _closeGuardText = text;
 }
 
 async function requestCloseModal() {
   if (document.querySelector('.app-dialog-backdrop')) return;
   if (_closeGuard?.()) {
     const session = _modalSession;
-    const ok = await confirmDialog(
-      'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
-      { title: 'Onopgeslagen wijzigingen', okLabel: 'Sluiten zonder opslaan', danger: true },
-    );
+    const text = _closeGuardText ?? {
+      message: 'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
+      title: 'Onopgeslagen wijzigingen',
+      okLabel: 'Sluiten zonder opslaan',
+    };
+    const ok = await confirmDialog(text.message, {
+      title: text.title,
+      okLabel: text.okLabel,
+      danger: true,
+    });
     if (!ok || session !== _modalSession) return;
   }
   closeModal();
@@ -955,7 +969,9 @@ export async function showUserBadge(user, subject) {
   userBadgeBtn.dataset.len = userBadgeBtn.textContent.length;
   userBadgeBtn.title = `${user.voornaam}${role ? ` (${roleLabel(role)})` : ''} — account en uitloggen`;
   userBadgeBtn.classList.remove('hidden');
-  void loadBadgePhoto(userBadgeBtn, user.foto);
+  // Only while this user is still the one shown (a slow read must not paint over the next).
+  const shownId = (userBadgeBtn.dataset.userId = user.id);
+  void loadBadgePhoto(userBadgeBtn, user.foto, () => userBadgeBtn.dataset.userId === shownId);
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
@@ -1023,6 +1039,7 @@ function logOut() {
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
   clearBadgePhoto(userBadgeBtn);
+  delete userBadgeBtn.dataset.userId;
   _adminSubjectFilter = null;
   _activeUserId = null;
   _obsFilter = null;

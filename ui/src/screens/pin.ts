@@ -6,7 +6,13 @@
 // herstelcodes, uitloggen). PINs are checked in Rust (maatwerk-core::auth); the
 // UI only shows the outcome. The PIN guards the shared PC, not the files.
 
-import { closeModal, escHtml, showModal as showModalJs, toast } from '../app.js';
+import {
+  closeModal,
+  escHtml,
+  guardModalClose as guardModalCloseJs,
+  showModal as showModalJs,
+  toast,
+} from '../app.js';
 import type { MaatwerkApi, PinCheck } from '../bridge/api';
 import {
   fullUserName,
@@ -22,6 +28,10 @@ const showModal = showModalJs as (
   onShow?: (content: HTMLElement) => void,
   wide?: boolean | string,
   onClose?: () => void,
+) => void;
+const guardModalClose = guardModalCloseJs as (
+  isDirty: () => boolean,
+  text?: { message: string; title: string; okLabel: string } | null,
 ) => void;
 
 type Api = Pick<
@@ -248,6 +258,12 @@ export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Pro
         const done = content.querySelector('#codes-done') as HTMLButtonElement;
         const kept = content.querySelector('#codes-kept') as HTMLInputElement;
         kept.addEventListener('change', () => (done.disabled = !kept.checked));
+        // The codes are shown only once (review 7b m4).
+        guardModalClose(() => !kept.checked, {
+          message: 'De herstelcodes worden maar één keer getoond. Toch sluiten?',
+          title: 'Herstelcodes bewaard?',
+          okLabel: 'Sluiten',
+        });
         content.querySelector('#codes-print')!.addEventListener('click', () => printText(text));
         content.querySelector('#codes-save')!.addEventListener('click', async () => {
           try {
@@ -297,10 +313,13 @@ export async function pinLogin<U extends PinUser>(
       try {
         check = await setFirstPinDialog(user, api, roleLabel);
       } catch (e) {
-        // Set on another PC meanwhile: log in with that PIN instead.
         toast(e instanceof Error ? e.message : String(e), 'error');
-        hasPin = true;
-        continue;
+        // Set on another PC meanwhile: log in with that PIN instead. Other errors end here.
+        if (String((e as Error)?.message).includes('al een pincode')) {
+          hasPin = true;
+          continue;
+        }
+        return null;
       }
       if (!check) return null;
       const fresh = (check.user ?? user) as U;

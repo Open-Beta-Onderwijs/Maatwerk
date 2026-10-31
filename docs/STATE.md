@@ -123,8 +123,10 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-**Step 7b (accounts, roles, snapshots)** on `step/07-data-v2`, started 2026-10-31. All features
-done and committed (ADR-0006):
+- Nothing. **Step 7b done** and tagged `step-07b` on `step/07-data-v2` (not merged: the step branch
+  merges into `main` at the end of Step 7). Review `docs/reviews/step-07b.md`: 0 blockers; M1
+  (snapshot names), M2 (restore as CAS with fresh `_meta`), m2-m5, m6 (tests), n1-n3, n6, n7 fixed;
+  m1 partly, n4, n5 in `docs/backlog.md`. Gate green (102 e2e). What 7b contains (ADR-0006):
 
 - core `auth` (Argon2id `pinHash`, admin `recoveryCodeHashes`, throttle, login session in Rust),
   core `snapshots` (`instellingen.json`, CAS claim on `snapshots/state.json`, retention,
@@ -141,10 +143,8 @@ done and committed (ADR-0006):
 
 ## Next action (concrete, resumable)
 
-1. Gate (CLAUDE.md commands + `npm run test:e2e`), reviewer subagent -> `docs/reviews/step-07b.md`,
-   fix blockers/majors, tag `step-07b`, stop and report.
-2. Then Step 7c (perceived speed) on the same branch, when the user says so.
-3. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5 and M-PIN/M-VZ/M-SNAP on a
+1. Wait for the user. Then Step 7c (perceived speed) on the same branch, when the user says so.
+2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5 and M-PIN/M-VZ/M-SNAP on a
    copy of real data (M-SNAP-4 measures whether photos go into snapshots).
 
 ## Open questions for the user

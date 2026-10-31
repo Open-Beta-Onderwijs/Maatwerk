@@ -66,7 +66,14 @@ uitloggen) instead of logging out on the first click. Badge photos load through 
 - A teacher without a PIN can be "claimed" by whoever logs in first on that badge; this matches
   the plan ("sets a PIN at the first login") and is visible to the admin ("Nog geen pincode").
 - Anyone with write access to the folder can remove a `pinHash`, which is no worse than today:
-  the files themselves were never protected.
+  the files themselves were never protected. Anyone who can read the folder can also read the
+  hashes: a 5-digit PIN (10^5 candidates) can be brute-forced offline in about an hour on one core.
+  The PIN stops a colleague at a shared PC, not someone with the files.
+- The snapshot claim is compare-and-swap on the local replica: two PCs that start in the same
+  minute can both write a zip before OneDrive syncs `state.json`. Retention thins them out, and
+  OneDrive conflict copies of a zip (`... 0815-PCNAAM.zip`) count as snapshots so they are pruned.
+- "Herstellen uit snapshot" only overwrites a file whose stamp is still bad, with a fresh `_meta`
+  (rev + 1, the admin as `updatedBy`); a user file keeps its PIN and recovery code hashes.
 - Snapshots inside OneDrive do not survive deleting the whole folder; the runbook points at
   OneDrive's version history.
 - Logout is one click more than before.

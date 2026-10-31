@@ -101,6 +101,7 @@ export async function renderGegevens(
   container: HTMLElement,
   api: Api,
   confirm: Confirm,
+  onRestored: (path: string) => void = () => {},
 ): Promise<void> {
   const box = el('div', 'gegevens');
   const intro = el(
@@ -167,8 +168,19 @@ export async function renderGegevens(
       );
       if (!ok) return;
       await api.restoreFromSnapshot(path, snapshot);
+      onRestored(path);
     } catch (e) {
-      result.prepend(el('p', 'pin-error', `Herstellen mislukt: ${(e as Error)?.message ?? e}`));
+      const conflict = (e as { code?: string }).code === 'conflict';
+      result.prepend(
+        el(
+          'p',
+          'pin-error',
+          conflict
+            ? `${path} is intussen via Maatwerk opgeslagen en is niet teruggezet.`
+            : `Herstellen mislukt: ${(e as Error)?.message ?? e}`,
+        ),
+      );
+      if (conflict) await check();
       return;
     }
     await check();
