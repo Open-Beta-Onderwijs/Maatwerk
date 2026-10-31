@@ -1,11 +1,11 @@
 # State
 
-Last updated: 2026-10-31 (Step 7c in review) Branch: `step/07-data-v2` Last tags: `step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
+Last updated: 2026-10-31 (Step 7 done) Branch: `main` Last tags: `step-07`, `step-07c`, `step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 7c: perceived speed, in review** on `step/07-data-v2` (after 7c, Step 7 merges into
-`main` as `step-07`). Results and method: `docs/perf.md` "Perceived speed".
+**Step 7 done** (7a, 7b, 7c), `step/07-data-v2` merged into `main`, tagged `step-07`. Next:
+Step 8 when the user says so.
 
 ## Step 7a result
 
@@ -127,7 +127,11 @@ Done on the branch (`step/07-data-v2`, one commit each):
 
 ## In progress
 
-**Step 7c** (commits 269a203..HEAD on `step/07-data-v2`), gate green (108 e2e, 306 Vitest):
+Nothing.
+
+## Step 7c result
+
+Commits 269a203..88b299f, gate green (109 e2e, 309 Vitest, cargo, deny, licences, SPDX):
 
 1. `mw:*` spans (`ui/src/utils/perf.ts`), `tools/perf/measure.mjs` (release exe over the WebView2
    DevTools port, `--cpu 4`, `--admin 1`), baseline and results in `docs/perf.md`.
@@ -144,8 +148,9 @@ Done on the branch (`step/07-data-v2`, one commit each):
 Result (4x CPU, school fixture): modal 209 -> 48 ms median, tabs within budget at the median,
 first visit after login still above 100 ms p90 (backlog). 1x: everything < 25 ms.
 
-Review: `docs/reviews/step-07c.md` (fresh-context subagent), then fix blockers/majors, gate,
-tag `step-07c`, merge `step/07-data-v2` into `main` (merge commit), tag `step-07`, stop.
+Review `docs/reviews/step-07c.md`: 0 blockers; M1 (scroll on refresh), M2 (generation on every
+colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest, n2, n5 in
+`docs/backlog.md` "From Step 7c".
 
 ## Step 7b result
 
@@ -169,9 +174,10 @@ tag `step-07c`, merge `step/07-data-v2` into `main` (merge commit), tag `step-07
 
 ## Next action (concrete, resumable)
 
-1. Finish Step 7c: triage `docs/reviews/step-07c.md`, gate, tag, merge Step 7 into `main`, stop.
+1. Wait for the user. Then Step 8 (new editor and assignment pipeline) on `step/08-…`.
 2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
-   M-PERF-1/2 on a copy of real data (M-SNAP-4 measures whether photos go into snapshots).
+   M-PERF-1/2 on a copy of real data (M-SNAP-4 measures whether photos go into snapshots;
+   M-PERF-1 checks the 100 ms budget on the real copy).
 
 ## Open questions for the user
 
