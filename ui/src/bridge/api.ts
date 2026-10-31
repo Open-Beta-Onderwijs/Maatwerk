@@ -82,7 +82,9 @@ export type Unsubscribe = () => void;
 
 /** The migration offered on the startup screen (C1). */
 export type { MigrationResult, DataCheck, DataIssue, StampIssue } from './bindings';
-import type { MigrationResult, DataCheck, StampIssue } from './bindings';
+import type { MigrationResult, DataCheck, StampIssue, PinCheck } from './bindings';
+/** Result of the PIN methods (Step 7b). */
+export type { PinCheck, PinOutcome } from './bindings';
 
 import type { PrintName } from '../domain/print';
 
@@ -215,6 +217,31 @@ export interface MaatwerkApi {
   stampIssues(): Promise<StampIssue[]>;
   /** "Accepteren": re-stamps the file as it is. */
   acceptStamp(relPath: string): Promise<void>;
+
+  // ── Accounts and snapshots (Step 7b) ──────────────────────────────────────
+  // PINs are checked in Rust; the backend remembers who logged in, so the
+  // admin-only methods do not trust the UI. Rejections carry a Dutch message.
+  /** Login; `noPin`: the user sets a PIN first (`setFirstPin`). */
+  verifyPin(userId: string, pin: string): Promise<PinCheck>;
+  /** First login or after a reset; the admin also gets `recoveryCodes` (show once). */
+  setFirstPin(userId: string, pin: string): Promise<PinCheck>;
+  /** The logged-in user's own PIN. */
+  changePin(currentPin: string, newPin: string): Promise<PinCheck>;
+  /** Admin only: the teacher sets a new PIN at the next login. Resolves to the user as written. */
+  resetPin(userId: string): Promise<Json>;
+  /** "Pincode vergeten" (admin): a recovery code (used up) and a new PIN. */
+  recoverWithCode(userId: string, code: string, newPin: string): Promise<PinCheck>;
+  /** Admin, with the PIN: ten new recovery codes replace the old ones. */
+  renewRecoveryCodes(pin: string): Promise<PinCheck>;
+  logout(): Promise<void>;
+  /** "Opslaan als" dialog for a text file; the path, or null when cancelled. */
+  saveTextAs(defaultName: string, content: string): Promise<string | null>;
+  /** `snapshots/*.zip`, newest first. */
+  listSnapshots(): Promise<string[]>;
+  /** The newest snapshot with an intact copy of the JSON file, or null. */
+  snapshotForFile(relPath: string): Promise<string | null>;
+  /** Admin only: "Herstellen uit snapshot". */
+  restoreFromSnapshot(relPath: string, snapshot: string): Promise<void>;
 }
 
 /**

@@ -97,6 +97,31 @@ export const commands = {
 	stampIssues: () => typedError<StampIssue[], CommandError>(__TAURI_INVOKE("stamp_issues")),
 	/**  "Accepteren": re-stamps the file as it is now. */
 	acceptStamp: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("accept_stamp", { relPath })),
+	/**  Login with a PIN; on success the user is logged in on this PC. */
+	verifyPin: (userId: string, pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("verify_pin", { userId, pin })),
+	/**  First login (or after a reset): sets the PIN of a user without one and logs them in. */
+	setFirstPin: (userId: string, pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("set_first_pin", { userId, pin })),
+	/**  The logged-in user changes their PIN. */
+	changePin: (currentPin: string, newPin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("change_pin", { currentPin, newPin })),
+	/**  Admin only: removes a teacher's PIN. Returns the user record as written. */
+	resetPin: (userId: string) => typedError<Value, CommandError>(__TAURI_INVOKE("reset_pin", { userId })),
+	/**  "Pincode vergeten": the admin logs in with a recovery code and sets a new PIN. */
+	recoverWithCode: (userId: string, code: string, newPin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("recover_with_code", { userId, code, newPin })),
+	/**  Admin only, with the PIN: ten new recovery codes replace the old ones. */
+	renewRecoveryCodes: (pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("renew_recovery_codes", { pin })),
+	/**  Back to the login screen. */
+	logout: () => typedError<null, CommandError>(__TAURI_INVOKE("logout")),
+	/**
+	 *  "Opslaan als" for the recovery codes: a save dialog, then the text as a UTF-8 file. Returns
+	 *  the path, `null` when cancelled.
+	 */
+	saveTextAs: (defaultName: string, content: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("save_text_as", { defaultName, content })),
+	/**  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`). */
+	listSnapshots: () => typedError<string[], CommandError>(__TAURI_INVOKE("list_snapshots")),
+	/**  The newest snapshot with an intact copy of the JSON file; `null` if none has one. */
+	snapshotForFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("snapshot_for_file", { relPath })),
+	/**  "Herstellen uit snapshot": writes that snapshot's copy of the JSON file back. Admin only. */
+	restoreFromSnapshot: (relPath: string, snapshot: string) => typedError<null, CommandError>(__TAURI_INVOKE("restore_from_snapshot", { relPath, snapshot })),
 	/**
 	 *  All students of one toets in one PDF. `examId` is unused, as in the reference. The UI passes
 	 *  the payload through `normaliseForTypst` first.
@@ -252,6 +277,24 @@ export type PickedImage = {
 	name: string,
 	ext: string,
 };
+
+/**  Result of every PIN command. */
+export type PinCheck = {
+	outcome: PinOutcome,
+	retryAfterMs: number,
+	/**  The user record as written, when the command changed it. */
+	user: Value | null,
+	/**  New recovery codes, shown once (the admin's first PIN, or renewed codes). */
+	recoveryCodes: string[] | null,
+};
+
+export type PinOutcome = "ok" | 
+/**  Wrong PIN or code; `retryAfterMs` says when the next try is allowed. */
+"wrong" | 
+/**  Too soon after a wrong try: not checked. */
+"wait" | 
+/**  The user has no PIN yet and sets one first. */
+"noPin";
 
 /**
  *  What a printed copy is called (ADR-0002 section 9): `rapporten/<schooljaar>/<YYYY-MM-DD HHmm>

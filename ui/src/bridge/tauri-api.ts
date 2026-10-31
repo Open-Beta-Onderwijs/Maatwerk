@@ -296,6 +296,21 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     async acceptStamp(relPath) {
       await orThrow(c.acceptStamp(relPath));
     },
+    verifyPin: (userId, pin) => orThrow(c.verifyPin(userId, pin)),
+    setFirstPin: (userId, pin) => orThrow(c.setFirstPin(userId, pin)),
+    changePin: (currentPin, newPin) => orThrow(c.changePin(currentPin, newPin)),
+    resetPin: (userId) => orThrow(c.resetPin(userId)),
+    recoverWithCode: (userId, code, newPin) => orThrow(c.recoverWithCode(userId, code, newPin)),
+    renewRecoveryCodes: (pin) => orThrow(c.renewRecoveryCodes(pin)),
+    async logout() {
+      await orThrow(c.logout());
+    },
+    saveTextAs: (defaultName, content) => orThrow(c.saveTextAs(defaultName, content)),
+    listSnapshots: () => orThrow(c.listSnapshots()),
+    snapshotForFile: (relPath) => orThrow(c.snapshotForFile(relPath)),
+    async restoreFromSnapshot(relPath, snapshot) {
+      await orThrow(c.restoreFromSnapshot(relPath, snapshot));
+    },
 
     // ── Events ──────────────────────────────────────────────────────────────
     onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),

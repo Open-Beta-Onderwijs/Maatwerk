@@ -5,8 +5,9 @@
 // seeded from tools/fixtures (format v2, docs/reference/data-files-v2.md): CAS
 // on the SHA-1 of the file bytes, own writes are not echoed, external writes
 // (test hooks below) emit `data:changed`. Typst calls return canned output.
-// Integrity stamps (C19) are not computed. Nothing is persisted: a reload
-// starts over.
+// Integrity stamps (C19) are not computed. PINs (Step 7b) are stored as
+// `mock$<pin>`, not hashed: the rules (5-8 digits, delays, session, admin
+// checks) match maatwerk-core::auth. Nothing is persisted: a reload starts over.
 
 import type {
   BatchJob,
@@ -15,6 +16,7 @@ import type {
   DataCheck,
   DataFolderStatus,
   MigrationResult,
+  PinCheck,
   StampIssue,
   FsResult,
   ImageResult,
@@ -25,7 +27,9 @@ import type {
   RenderResult,
   Unsubscribe,
 } from '../api';
+import type { Value } from '../bindings';
 import { cannedPdf } from './pdf';
+import { stampMeta } from '../../domain/ids';
 
 /** A snapshot of a data folder: file contents (text or base64) and folders. */
 export interface MockSeed {
@@ -108,6 +112,17 @@ function cleanImageName(name: string): string {
     .slice(0, 60);
 }
 
+/** maatwerk-core::auth::delay_after, in ms. */
+export function pinDelayMs(failures: number): number {
+  return failures < 2 ? 0 : Math.min(2 ** Math.min(failures - 1, 6), 60) * 1000;
+}
+
+function checkPinFormat(pin: string): void {
+  if (!/^\d{5,8}$/.test(pin)) throw new Error('Een pincode heeft 5 tot 8 cijfers.');
+}
+
+type UserRecord = Record<string, unknown> & { id: string };
+
 function checkOpdrachtId(id: string): void {
   if (!/^[\w-]+$/.test(String(id ?? ''))) throw new Error('Ongeldige opdracht.');
 }
@@ -138,6 +153,11 @@ export class MockApi implements MaatwerkApi {
     warnings: [],
     validation: { filesChecked: 12, issues: [] },
   };
+  /** Logged-in user and wrong attempts (maatwerk-core::auth::Auth). */
+  private authSession: string | null = null;
+  private pinFailures = new Map<string, { count: number; last: number }>();
+  /** Snapshot names (newest first) and the files each holds; tests fill them. */
+  snapshots: { name: string; files: Record<string, Json> }[] = [];
   /** Calls made through the bridge, for tests (`[method, ...args]`). */
   readonly calls: [string, ...unknown[]][] = [];
 
@@ -682,6 +702,186 @@ export class MockApi implements MaatwerkApi {
 
   async acceptStamp(relPath: string): Promise<void> {
     this.record('acceptStamp', [relPath]);
+    this.stamps = this.stamps.filter((s) => s.path !== relPath);
+    this.dataCheck.issues = this.dataCheck.issues.filter(
+      (i) => !(i.kind === 'stamp' && i.path === relPath),
+    );
+  }
+
+  // ── Accounts and snapshots (Step 7b) ──────────────────────────────────────
+
+  private readUser(userId: string): UserRecord {
+    if (!/^[A-Za-z0-9_-]+$/.test(userId)) throw new Error(`invalid path ${userId}`);
+    const text = this.readText(`gebruikers/${userId}.json`);
+    if (text === null) throw new Error(`not found: gebruikers/${userId}.json`);
+    return JSON.parse(text) as UserRecord;
+  }
+
+  private writeUser(userId: string, change: (u: UserRecord) => void): Value {
+    const onDisk = this.readUser(userId);
+    const next = structuredClone(onDisk);
+    change(next);
+    const saved = stampMeta(next, onDisk as { _meta?: never }, this.authSession ?? userId);
+    this.putFile(`gebruikers/${userId}.json`, encoder.encode(JSON.stringify(saved, null, 2) + '\n'));
+    return saved as unknown as Value;
+  }
+
+  private throttled(key: string, ok: () => boolean): PinCheck {
+    const now = Date.now();
+    const f = this.pinFailures.get(key);
+    const result = (outcome: PinCheck['outcome'], retryAfterMs = 0): PinCheck => ({
+      outcome,
+      retryAfterMs,
+      user: null,
+      recoveryCodes: null,
+    });
+    if (f && f.last + pinDelayMs(f.count) > now) {
+      return result('wait', f.last + pinDelayMs(f.count) - now);
+    }
+    if (ok()) {
+      this.pinFailures.delete(key);
+      return result('ok');
+    }
+    const count = (f?.count ?? 0) + 1;
+    this.pinFailures.set(key, { count, last: now });
+    return result('wrong', pinDelayMs(count));
+  }
+
+  private requireAdmin(): string {
+    const id = this.authSession;
+    if (!id) throw new Error('Niet ingelogd.');
+    const user = this.readUser(id);
+    if (user.isAdmin !== true || user.actief === false) {
+      throw new Error('Alleen de beheerder mag dit.');
+    }
+    return id;
+  }
+
+  private static newCodes(): string[] {
+    const alphabet = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+    const half = () =>
+      Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join(
+        '',
+      );
+    return Array.from({ length: 10 }, () => `${half()}-${half()}`);
+  }
+
+  private static canonicalCode(code: string): string {
+    const n = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return n.length === 8 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
+  }
+
+  async verifyPin(userId: string, pin: string): Promise<PinCheck> {
+    this.record('verifyPin', [userId]);
+    const user = this.readUser(userId);
+    if (user.actief === false) throw new Error('Deze gebruiker is gedeactiveerd.');
+    if (typeof user.pinHash !== 'string' || !user.pinHash) {
+      return { outcome: 'noPin', retryAfterMs: 0, user: null, recoveryCodes: null };
+    }
+    const check = this.throttled(`pin:${userId}`, () => user.pinHash === `mock$${pin}`);
+    if (check.outcome === 'ok') this.authSession = userId;
+    return check;
+  }
+
+  async setFirstPin(userId: string, pin: string): Promise<PinCheck> {
+    this.record('setFirstPin', [userId]);
+    checkPinFormat(pin);
+    const user = this.readUser(userId);
+    if (user.actief === false) throw new Error('Deze gebruiker is gedeactiveerd.');
+    if (user.pinHash) {
+      throw new Error('Er is intussen al een pincode ingesteld. Log in met die pincode.');
+    }
+    const codes = user.isAdmin === true ? MockApi.newCodes() : null;
+    const saved = this.writeUser(userId, (u) => {
+      u.pinHash = `mock$${pin}`;
+      if (codes) u.recoveryCodeHashes = codes.map((c) => `mock$${c}`);
+    });
+    this.authSession = userId;
+    return { outcome: 'ok', retryAfterMs: 0, user: saved, recoveryCodes: codes };
+  }
+
+  async changePin(currentPin: string, newPin: string): Promise<PinCheck> {
+    this.record('changePin', []);
+    checkPinFormat(newPin);
+    const id = this.authSession;
+    if (!id) throw new Error('Niet ingelogd.');
+    const check = await this.verifyPin(id, currentPin);
+    if (check.outcome !== 'ok') return check;
+    const saved = this.writeUser(id, (u) => {
+      u.pinHash = `mock$${newPin}`;
+    });
+    return { ...check, user: saved };
+  }
+
+  async resetPin(userId: string): Promise<Json> {
+    this.record('resetPin', [userId]);
+    const admin = this.requireAdmin();
+    if (admin === userId) throw new Error('Wijzig je eigen pincode via je profiel.');
+    return this.writeUser(userId, (u) => {
+      delete u.pinHash;
+    });
+  }
+
+  async recoverWithCode(userId: string, code: string, newPin: string): Promise<PinCheck> {
+    this.record('recoverWithCode', [userId]);
+    checkPinFormat(newPin);
+    const user = this.readUser(userId);
+    if (user.isAdmin !== true) throw new Error('Alleen de beheerder heeft herstelcodes.');
+    const hashes = Array.isArray(user.recoveryCodeHashes) ? user.recoveryCodeHashes : [];
+    const used = `mock$${MockApi.canonicalCode(code)}`;
+    const check = this.throttled(`recover:${userId}`, () => hashes.includes(used));
+    if (check.outcome !== 'ok') return check;
+    const saved = this.writeUser(userId, (u) => {
+      u.recoveryCodeHashes = hashes.filter((h) => h !== used);
+      u.pinHash = `mock$${newPin}`;
+    });
+    this.authSession = userId;
+    return { ...check, user: saved };
+  }
+
+  async renewRecoveryCodes(pin: string): Promise<PinCheck> {
+    this.record('renewRecoveryCodes', []);
+    const admin = this.requireAdmin();
+    const check = await this.verifyPin(admin, pin);
+    if (check.outcome !== 'ok') return check;
+    const codes = MockApi.newCodes();
+    const saved = this.writeUser(admin, (u) => {
+      u.recoveryCodeHashes = codes.map((c) => `mock$${c}`);
+    });
+    return { ...check, user: saved, recoveryCodes: codes };
+  }
+
+  async logout(): Promise<void> {
+    this.record('logout', []);
+    this.authSession = null;
+  }
+
+  /** The user logged in through the PIN methods (tests). */
+  get loggedIn(): string | null {
+    return this.authSession;
+  }
+
+  async saveTextAs(defaultName: string, content: string): Promise<string | null> {
+    this.record('saveTextAs', [defaultName, content]);
+    return `C:\\Users\\docent\\Documents\\${defaultName}`;
+  }
+
+  async listSnapshots(): Promise<string[]> {
+    this.record('listSnapshots', []);
+    return this.snapshots.map((s) => s.name);
+  }
+
+  async snapshotForFile(relPath: string): Promise<string | null> {
+    this.record('snapshotForFile', [relPath]);
+    return this.snapshots.find((s) => relPath in s.files)?.name ?? null;
+  }
+
+  async restoreFromSnapshot(relPath: string, snapshot: string): Promise<void> {
+    this.record('restoreFromSnapshot', [relPath, snapshot]);
+    this.requireAdmin();
+    const copy = this.snapshots.find((s) => s.name === snapshot)?.files[relPath];
+    if (copy === undefined) throw new Error(`not found: ${relPath}`);
+    this.putFile(relPath, encoder.encode(JSON.stringify(copy, null, 2) + '\n'));
     this.stamps = this.stamps.filter((s) => s.path !== relPath);
     this.dataCheck.issues = this.dataCheck.issues.filter(
       (i) => !(i.kind === 'stamp' && i.path === relPath),

@@ -3,6 +3,7 @@
 //! Tauri shell. Command handlers parse arguments, call `maatwerk_core` and map
 //! errors; they hold no business logic.
 
+mod auth;
 mod commands;
 mod data;
 mod error;
@@ -97,6 +98,17 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             data::validate_data_folder,
             data::stamp_issues,
             data::accept_stamp,
+            auth::verify_pin,
+            auth::set_first_pin,
+            auth::change_pin,
+            auth::reset_pin,
+            auth::recover_with_code,
+            auth::renew_recovery_codes,
+            auth::logout,
+            auth::save_text_as,
+            auth::list_snapshots,
+            auth::snapshot_for_file,
+            auth::restore_from_snapshot,
             render::render_rapport_pdf,
             render::render_assignment_svg,
             render::render_assignment_batch,
@@ -210,7 +222,9 @@ pub fn run() {
                         tracing::warn!("emitting data:changed failed: {e}");
                     }
                 });
-            app.manage::<state::Shared>(Arc::new(core));
+            let core = Arc::new(core);
+            core.start_snapshot();
+            app.manage::<state::Shared>(core);
             Ok(())
         })
         .build(context);

@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
+use maatwerk_core::auth::Auth;
 use maatwerk_core::opdracht_images;
 use maatwerk_core::outputs::OutputStore;
 use maatwerk_core::paths::{DATA_DIR_ENV, data_dir_location, display_path};
@@ -28,6 +29,8 @@ pub struct Core {
     storage: Result<Arc<Storage>, CommandError>,
     pub presence: Presence,
     pub session: LocalSession,
+    /// Who logged in with a PIN on this PC, and the delays after wrong PINs (Step 7b).
+    pub auth: Auth,
     watcher: Mutex<Option<Watcher>>,
     /// `Err` when the cache folder cannot be created; only the render commands need it.
     outputs: Result<OutputStore, CommandError>,
@@ -86,6 +89,7 @@ impl Core {
             storage,
             presence: Presence::new(),
             session: LocalSession::new(session_file),
+            auth: Auth::new(),
             watcher: Mutex::new(watcher),
             outputs,
             picked: Picked::default(),
@@ -140,6 +144,29 @@ impl Core {
     pub fn mark_offline(&self) {
         if let Ok(storage) = self.storage() {
             self.presence.close(storage);
+        }
+    }
+
+    /// At start, on a background thread so it never delays the start: writes a snapshot when
+    /// the newest one is older than the interval in `instellingen.json` (Step 7b).
+    pub fn start_snapshot(self: &Arc<Core>) {
+        let core = Arc::clone(self);
+        let spawned = std::thread::Builder::new()
+            .name("snapshot".into())
+            .spawn(move || {
+                let Ok(storage) = core.storage() else { return };
+                let who = std::env::var("COMPUTERNAME").unwrap_or_else(|_| "onbekend".into());
+                match maatwerk_core::snapshots::run_if_due(
+                    storage,
+                    maatwerk_core::typst_svc::local_now(),
+                    &who,
+                ) {
+                    Ok(outcome) => tracing::info!("snapshot: {outcome:?}"),
+                    Err(e) => tracing::warn!("snapshot failed: {e}"),
+                }
+            });
+        if let Err(e) = spawned {
+            tracing::warn!("cannot start the snapshot thread: {e}");
         }
     }
 
