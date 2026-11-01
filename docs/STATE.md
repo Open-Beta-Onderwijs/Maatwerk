@@ -19,7 +19,7 @@ Last updated: 2026-11-01 (Step 8b) Branch: `step/08-editor` Last tags: `step-07`
    while the document matches the source (n7).
 3. Core vragen: `lib.typ` v2 (adds `punten` to the `<__maatwerk_vraag>` metadata, output
    unchanged; migrate golden regenerated), `vragen(document)` -> `{opgave, label, punten,
-   antwoord}` + total + checks, in every ok `EditorUpdate`. Project file status + silent update of
+antwoord}` + total + checks, in every ok `EditorUpdate`. Project file status + silent update of
    unmodified old `lib.typ`/`main.typ`, restore bundled version.
 4. Tauri: `editor` commands (open/update/refresh/resend/close/ide queries/project files), event
    `editor:update`, timeout from `instellingen.json`; bridge + mock session.
@@ -29,6 +29,8 @@ Last updated: 2026-11-01 (Step 8b) Branch: `step/08-editor` Last tags: `step-07`
 6. Instellingen: compile time limit field.
 7. Playwright editor spec (mock session); docs (parity, perf incl. m2, manual tests, ADR); gate;
    review `docs/reviews/step-08b.md`.
+
+Done: 1 (b98ac1d), 2 (14f8e16), 3 (56050ed). Next: 4.
 
 ## Step 8a so far
 

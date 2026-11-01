@@ -20,6 +20,7 @@ import {
   commands,
   events,
   type CommandError,
+  type EditorUpdateEvent,
   type ErrorCode,
   type ImageStored,
   type Value,
@@ -37,6 +38,7 @@ export interface Backend {
   commands: Commands;
   listenDataChanged(cb: (changes: DataChange[]) => void): Promise<() => void>;
   listenAssignmentProgress(cb: (progress: Progress) => void): Promise<() => void>;
+  listenEditorUpdate(cb: (update: EditorUpdateEvent) => void): Promise<() => void>;
   /** URL of a render output for the viewer iframe. */
   outputUrl(outputId: string): string;
 }
@@ -46,6 +48,7 @@ const tauriBackend: Backend = {
   // `meta` is whatever the file's `_meta` holds; the UI only reads objects from it.
   listenDataChanged: (cb) => events.dataChanged.listen((e) => cb(e.payload as DataChange[])),
   listenAssignmentProgress: (cb) => events.assignmentProgress.listen((e) => cb(e.payload)),
+  listenEditorUpdate: (cb) => events.editorUpdate.listen((e) => cb(e.payload)),
   // `http://maatwerk-out.localhost/<id>` on Windows, `maatwerk-out://localhost/<id>` elsewhere.
   outputUrl: (outputId) => convertFileSrc(outputId, OUTPUT_SCHEME),
 };
@@ -312,6 +315,29 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     async restoreFromSnapshot(relPath, snapshot) {
       await orThrow(c.restoreFromSnapshot(relPath, snapshot));
     },
+
+    // ── Live editor ─────────────────────────────────────────────────────────
+    editorOpen: (opdrachtId, title) => orThrow(c.editorOpen(opdrachtId, title)),
+    editorUpdate: (session, path, text) => orThrow(c.editorUpdate(session, path, text)),
+    editorUnset: (session, path) => orThrow(c.editorUnset(session, path)),
+    editorRefresh: (session) => orThrow(c.editorRefresh(session)),
+    editorResend: (session) => orThrow(c.editorResend(session)),
+    editorClose: (session) => c.editorClose(session),
+    editorComplete: (session, path, text, offset, explicit) =>
+      orThrow(c.editorComplete(session, path, text, offset, explicit)),
+    editorHover: (session, path, text, offset) =>
+      orThrow(c.editorHover(session, path, text, offset)),
+    editorDefinition: (session, path, text, offset) =>
+      orThrow(c.editorDefinition(session, path, text, offset)),
+    editorJumpFromClick: (session, page, x, y) =>
+      orThrow(c.editorJumpFromClick(session, page, x, y)),
+    editorJumpFromCursor: (session, path, offset) =>
+      orThrow(c.editorJumpFromCursor(session, path, offset)),
+    onEditorUpdate: (cb) => subscribe((f) => backend.listenEditorUpdate(f), cb, 'editor'),
+    projectFilesStatus: (opdrachtId) => orThrow(c.projectFilesStatus(opdrachtId)),
+    restoreProjectFile: (opdrachtId, file, expectedHash) =>
+      orThrow(c.restoreProjectFile(opdrachtId, file, expectedHash)),
+    bundledProjectFile: (file) => orThrow(c.bundledProjectFile(file)),
 
     // ── Events ──────────────────────────────────────────────────────────────
     onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),

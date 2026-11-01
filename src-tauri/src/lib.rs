@@ -6,6 +6,7 @@
 mod auth;
 mod commands;
 mod data;
+mod editor;
 mod error;
 mod opdrachten;
 mod render;
@@ -115,8 +116,26 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             render::render_assignment_batch,
             render::open_path,
             render::print_pdf,
+            editor::editor_open,
+            editor::editor_update,
+            editor::editor_unset,
+            editor::editor_refresh,
+            editor::editor_resend,
+            editor::editor_close,
+            editor::editor_complete,
+            editor::editor_hover,
+            editor::editor_definition,
+            editor::editor_jump_from_click,
+            editor::editor_jump_from_cursor,
+            editor::project_files_status,
+            editor::restore_project_file,
+            editor::bundled_project_file,
         ])
-        .events(collect_events![DataChanged, render::AssignmentProgress])
+        .events(collect_events![
+            DataChanged,
+            render::AssignmentProgress,
+            editor::EditorUpdateEvent
+        ])
         // `serde_json::Value` numbers are i64/u64/f64 in Rust but plain JS numbers on the wire
         // (they came from the UI as such). No command takes or returns another 64-bit integer.
         .dangerously_cast_bigints_to_number()
@@ -226,6 +245,7 @@ pub fn run() {
             let core = Arc::new(core);
             core.start_snapshot();
             app.manage::<state::Shared>(core);
+            app.manage(editor::Editors::default());
             Ok(())
         })
         .build(context);
@@ -255,7 +275,12 @@ pub fn run() {
                 ..
             } if label == "main" => core.mark_offline(),
             // `before-quit`.
-            tauri::RunEvent::Exit => core.shutdown(),
+            tauri::RunEvent::Exit => {
+                if let Some(editors) = handle.try_state::<editor::Editors>() {
+                    editors.close_all();
+                }
+                core.shutdown();
+            }
             _ => {}
         }
     });

@@ -27,7 +27,18 @@ import type {
   RenderResult,
   Unsubscribe,
 } from '../api';
-import type { Value } from '../bindings';
+import type {
+  EditorClickJump,
+  EditorCompletions,
+  EditorCursorJump,
+  EditorHover,
+  EditorOpened,
+  EditorRange,
+  EditorUpdateEvent,
+  ProjectFileInfo,
+  Value,
+} from '../bindings';
+import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
 
@@ -47,8 +58,13 @@ const MIME: Record<string, string> = {
   webp: 'image/webp',
 };
 const BASE_ASSIGNMENT = '#import "lib.typ": *\n\n// Nieuwe opdracht (mock-sjabloon)\n';
-const MAIN_TYP = '// maatwerk-main 1 (mock)\n#include "opdracht.typ"\n';
-const LIB_TYP = '// maatwerk-lib 1 (mock)\n';
+export const MAIN_TYP = '// maatwerk-main 1 (mock)\n#include "opdracht.typ"\n';
+export const LIB_TYP = '// maatwerk-lib 2 (mock)\n';
+/** The mock's bundled versions; a copy with an older version line counts as outdated. */
+const BUNDLED: Record<string, { text: string; marker: string; version: number }> = {
+  'main.typ': { text: MAIN_TYP, marker: '// maatwerk-main ', version: 1 },
+  'lib.typ': { text: LIB_TYP, marker: '// maatwerk-lib ', version: 2 },
+};
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -160,6 +176,8 @@ export class MockApi implements MaatwerkApi {
   snapshots: { name: string; files: Record<string, Json> }[] = [];
   /** Calls made through the bridge, for tests (`[method, ...args]`). */
   readonly calls: [string, ...unknown[]][] = [];
+  /** The live editor sessions (Step 8b); tests read `editor.updates`. */
+  readonly editor = new MockEditor();
 
   constructor(seed: MockSeed = { files: {}, dirs: [] }) {
     for (const [rel, content] of Object.entries(seed.files)) {
@@ -898,6 +916,140 @@ export class MockApi implements MaatwerkApi {
     this.dataCheck.issues = this.dataCheck.issues.filter(
       (i) => !(i.kind === 'stamp' && i.path === relPath),
     );
+  }
+
+  // ── Live editor ───────────────────────────────────────────────────────────
+
+  async editorOpen(opdrachtId: string, title: string): Promise<EditorOpened> {
+    this.record('editorOpen', [opdrachtId, title]);
+    checkOpdrachtId(opdrachtId);
+    const files = await this.projectFilesStatus(opdrachtId);
+    const session = this.editor.open((path) => this.readText(`opdrachten/${opdrachtId}/${path}`));
+    return { session, files, timeoutSeconds: this.editor.timeoutSeconds };
+  }
+
+  async editorUpdate(session: number, path: string, text: string): Promise<number> {
+    this.record('editorUpdate', [session, path, text.length]);
+    return this.editor.update(session, path, text);
+  }
+
+  async editorUnset(session: number, path: string): Promise<number> {
+    this.record('editorUnset', [session, path]);
+    return this.editor.unset(session, path);
+  }
+
+  async editorRefresh(session: number): Promise<number> {
+    this.record('editorRefresh', [session]);
+    return this.editor.refresh(session);
+  }
+
+  async editorResend(session: number): Promise<number> {
+    this.record('editorResend', [session]);
+    return this.editor.resend(session);
+  }
+
+  async editorClose(session: number): Promise<void> {
+    this.record('editorClose', [session]);
+    this.editor.close(session);
+  }
+
+  async editorComplete(
+    session: number,
+    _path: string,
+    text: string,
+    offset: number,
+    explicit: boolean,
+  ): Promise<EditorCompletions | null> {
+    return this.editor.complete(session, text, offset, explicit);
+  }
+
+  async editorHover(
+    session: number,
+    _path: string,
+    text: string,
+    offset: number,
+  ): Promise<EditorHover | null> {
+    return this.editor.hover(session, text, offset);
+  }
+
+  async editorDefinition(
+    session: number,
+    _path: string,
+    text: string,
+    offset: number,
+  ): Promise<EditorRange | null> {
+    return this.editor.definition(session, text, offset);
+  }
+
+  async editorJumpFromClick(
+    session: number,
+    page: number,
+    x: number,
+    y: number,
+  ): Promise<EditorClickJump | null> {
+    this.record('editorJumpFromClick', [session, page, x, y]);
+    return this.editor.jumpFromClick(session, page, x, y);
+  }
+
+  async editorJumpFromCursor(
+    session: number,
+    _path: string,
+    offset: number,
+  ): Promise<EditorCursorJump | null> {
+    return this.editor.jumpFromCursor(session, offset);
+  }
+
+  onEditorUpdate(cb: (update: EditorUpdateEvent) => void): Unsubscribe {
+    return this.editor.onUpdate(cb);
+  }
+
+  async projectFilesStatus(opdrachtId: string): Promise<ProjectFileInfo[]> {
+    checkOpdrachtId(opdrachtId);
+    const out: ProjectFileInfo[] = [];
+    for (const [file, bundled] of Object.entries(BUNDLED)) {
+      const bytes = this.files.get(`opdrachten/${opdrachtId}/${file}`);
+      const base = { file, bundledVersion: bundled.version };
+      if (!bytes) {
+        out.push({ ...base, state: 'missing', version: null, hash: null });
+        continue;
+      }
+      const text = decoder.decode(bytes);
+      const line = text.split('\n').find((l) => l.startsWith(bundled.marker));
+      const version = line ? parseInt(line.slice(bundled.marker.length), 10) : null;
+      const state =
+        text === bundled.text
+          ? 'current'
+          : version !== null && version < bundled.version
+            ? 'outdated'
+            : 'modified';
+      out.push({ ...base, state, version, hash: await sha1(bytes) });
+    }
+    return out;
+  }
+
+  async restoreProjectFile(
+    opdrachtId: string,
+    file: string,
+    expectedHash: string | null,
+  ): Promise<string> {
+    this.record('restoreProjectFile', [opdrachtId, file, expectedHash]);
+    checkOpdrachtId(opdrachtId);
+    const bundled = BUNDLED[file];
+    if (!bundled) throw new Error(`not a bundled project file: ${file}`);
+    const rel = `opdrachten/${opdrachtId}/${file}`;
+    const current = this.files.get(rel);
+    const ok =
+      expectedHash === null ? !current : !!current && (await sha1(current)) === expectedHash;
+    if (!ok) throw new Error(`conflict on ${rel}`);
+    const bytes = encoder.encode(bundled.text);
+    this.putFile(rel, bytes);
+    return sha1(bytes);
+  }
+
+  async bundledProjectFile(file: string): Promise<string> {
+    const bundled = BUNDLED[file];
+    if (!bundled) throw new Error(`not a bundled project file: ${file}`);
+    return bundled.text;
   }
 
   // ── Events ────────────────────────────────────────────────────────────────
