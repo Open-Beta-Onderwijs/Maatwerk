@@ -30,7 +30,8 @@ antwoord}` + total + checks, in every ok `EditorUpdate`. Project file status + s
 7. Playwright editor spec (mock session); docs (parity, perf incl. m2, manual tests, ADR); gate;
    review `docs/reviews/step-08b.md`.
 
-Done: 1 (b98ac1d), 2 (14f8e16), 3 (56050ed). Next: 4.
+Done: 1 (b98ac1d), 2 (14f8e16), 3 (56050ed), 4 (08fa0c4), 5 (c980642), 6 (c77fff1). Next: 7
+(real-app check over the DevTools port, perf/m2, docs, gate, review).
 
 ## Step 8a so far
 
