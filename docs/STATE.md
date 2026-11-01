@@ -1,12 +1,34 @@
 # State
 
-Last updated: 2026-10-31 (Step 8a) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
+Last updated: 2026-11-01 (Step 8b) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
 `step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 8a done**, tagged `step-08a` on `step/08-editor` (not merged: the step branch merges into
-`main` at the end of Step 8). Next: Step 8b when the user says so.
+**Step 8b in progress** on `step/08-editor` (8a tagged `step-08a`; the step branch merges into
+`main` at the end of Step 8).
+
+## Step 8b plan (sub-tasks, one commit each)
+
+1. Core `LiveEditor` v2: compile thread behind a coordinator, **watchdog** (time limit; abandoned
+   thread, fresh session from a factory + the buffer overlay, Dutch error update), queries on the
+   session (`LiveEditor::query`), `unset_file` (n4), `__maatwerk/` not editable;
+   `instellingen.json` `editor.compileTimeoutSeconds` (`EditorSettings`), data-files-v2 doc.
+2. Core IDE: `typst-ide` 0.14.2 (Apache-2.0): `IdeWorld` for `MaatwerkWorld`; session methods
+   complete / tooltip / definition / jump from click / jump from cursor, UTF-16 offsets, only
+   while the document matches the source (n7).
+3. Core vragen: `lib.typ` v2 (adds `punten` to the `<__maatwerk_vraag>` metadata, output
+   unchanged; migrate golden regenerated), `vragen(document)` -> `{opgave, label, punten,
+   antwoord}` + total + checks, in every ok `EditorUpdate`. Project file status + silent update of
+   unmodified old `lib.typ`/`main.typ`, restore bundled version.
+4. Tauri: `editor` commands (open/update/refresh/resend/close/ide queries/project files), event
+   `editor:update`, timeout from `instellingen.json`; bridge + mock session.
+5. UI editor on the session: file tabs (opdracht/main/lib, banner, Herstel standaardversie,
+   Bekijk verschillen), `@codemirror/lint`, autocomplete, hover, Ctrl+click definition, preview
+   click -> source, cursor -> preview, page patches, vragen panel; BOM strip (n8).
+6. Instellingen: compile time limit field.
+7. Playwright editor spec (mock session); docs (parity, perf incl. m2, manual tests, ADR); gate;
+   review `docs/reviews/step-08b.md`.
 
 ## Step 8a so far
 

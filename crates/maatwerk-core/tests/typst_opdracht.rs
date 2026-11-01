@@ -308,7 +308,7 @@ fn editor_session_patches_equal_the_one_shot_render() {
     // A word more in the last vraag changes the last page(s) only.
     let edited = source.replace("veel tekst.]", "veel tekst en nog een zin.]");
     assert_ne!(edited, source);
-    session.set_file(&opdracht, edited.clone());
+    session.set_file(&opdracht, edited.clone()).unwrap();
     let second = session.compile(1, &|| false).unwrap();
     assert!(second.ok, "{:?}", second.diagnostics);
     assert!(!second.pages.is_empty());

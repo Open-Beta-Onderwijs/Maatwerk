@@ -117,8 +117,9 @@ Additive: an absent field means "no PIN yet", "no role", "default settings"; no
 - **`school.json`**: `secties: { <vak>: { voorzitter: <userId> } }`, the sectievoorzitter per vak
   (decision 13). `validate-data` warns about an unknown user id.
 - **`instellingen.json`** (entity file, `_meta`): `snapshots: { intervalHours (1-744, default 24),
-daily (0-366, 7), weekly (0-520, 4), monthly (0-1200, 12) }`. Unusable values count as the
-  default.
+daily (0-366, 7), weekly (0-520, 4), monthly (0-1200, 12) }` and (Step 8b, additive)
+  `editor: { compileTimeoutSeconds (whole seconds 2-300, default 30) }`, the editor's compile
+  time limit (ADR-0002 section 12). Unusable values count as the default.
 - **`snapshots/`**: zips named `YYYY-MM-DD HHmm.zip` (local time; ` (2)` on a clash), holding
   every `*.json` and `*.typ` and `opdrachten/<id>/images/*` under their data-relative paths;
   not `fotos/`, `rapporten/`, `snapshots/`, temp files. `state.json`:

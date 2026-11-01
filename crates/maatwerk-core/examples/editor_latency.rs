@@ -46,7 +46,7 @@ fn main() {
         &inputs,
         local_now(),
     ));
-    session.set_file(&opdracht, source.clone());
+    session.set_file(&opdracht, source.clone()).unwrap();
     let start = Instant::now();
     let first = session.compile(0, &|| false).expect("not stale");
     assert!(first.ok, "{:?}", first.diagnostics);
@@ -64,7 +64,7 @@ fn main() {
     };
     let (mut layout, mut svg, mut total, mut sent) = (vec![], vec![], vec![], vec![]);
     for n in 1..=edits {
-        session.set_file(&opdracht, text(n));
+        session.set_file(&opdracht, text(n)).unwrap();
         let start = Instant::now();
         let update = session.compile(n as u64, &|| false).expect("not stale");
         total.push(start.elapsed().as_secs_f64() * 1000.0);

@@ -103,6 +103,8 @@ pub struct MaatwerkWorld {
     fonts: Arc<FontStore>,
     main: FileId,
     files: HashMap<String, Bytes>,
+    /// Editor buffers ([`MaatwerkWorld::set_file`]); they shadow `files` and the mounts.
+    overlay: HashMap<String, Bytes>,
     mounts: Vec<(Mount, Option<PathBuf>)>,
     now: OffsetDateTime,
     slots: Mutex<HashMap<FileId, FileSlot>>,
@@ -161,6 +163,7 @@ impl MaatwerkWorld {
             fonts,
             main: FileId::new(None, VirtualPath::new(&spec.main)),
             files,
+            overlay: HashMap::new(),
             mounts,
             now: spec.now,
             slots: Mutex::new(HashMap::new()),
@@ -178,9 +181,12 @@ impl MaatwerkWorld {
 
     /// Serves `path` (rooted virtual path) from memory from now on, shadowing a mount. A source
     /// Typst already parsed is updated in place: `Source::replace` reparses incrementally and
-    /// keeps the spans of the unchanged parts.
-    pub(crate) fn set_file(&mut self, path: &str, data: Bytes) {
+    /// keeps the spans of the unchanged parts. Returns whether the text changed.
+    pub(crate) fn set_file(&mut self, path: &str, data: Bytes) -> bool {
         let key = virtual_key(path);
+        if self.overlay.get(&key) == Some(&data) {
+            return false;
+        }
         let id = FileId::new(None, VirtualPath::new(format!("/{key}")));
         if let Some(slot) = self.slots_mut().get_mut(&id) {
             slot.source = match (slot.source.take(), decode_utf8(&data)) {
@@ -193,7 +199,20 @@ impl MaatwerkWorld {
             slot.origin = Origin::Fixed;
             slot.bytes = Ok(data.clone());
         }
-        self.files.insert(key, data);
+        self.overlay.insert(key, data);
+        true
+    }
+
+    /// Serves `path` from its own source again (the embedded file or the disk), dropping the
+    /// buffer [`MaatwerkWorld::set_file`] put there. Returns whether there was one.
+    pub(crate) fn unset_file(&mut self, path: &str) -> bool {
+        let key = virtual_key(path);
+        if self.overlay.remove(&key).is_none() {
+            return false;
+        }
+        let id = FileId::new(None, VirtualPath::new(format!("/{key}")));
+        self.slots_mut().remove(&id);
+        true
     }
 
     /// Before the next compile of a long-lived World: mount folders are resolved again (a folder
@@ -266,7 +285,8 @@ impl MaatwerkWorld {
         if let Some(spec) = id.package() {
             return load_package(spec, &parts, shown()).map(|data| (data, None));
         }
-        if let Some(data) = self.files.get(&parts.join("/")) {
+        let key = parts.join("/");
+        if let Some(data) = self.overlay.get(&key).or_else(|| self.files.get(&key)) {
             return Ok((data.clone(), None));
         }
         for (mount, real) in &self.mounts {
