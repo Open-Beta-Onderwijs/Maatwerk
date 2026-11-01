@@ -26,7 +26,7 @@ date, and ships it next to the exe; "Over Maatwerk" in the app shows it.
 | tracing                                          | MIT                   |
 | tracing-subscriber                               | MIT                   |
 | specta, specta-typescript, tauri-specta          | MIT                   |
-| typst, typst-pdf, typst-svg, typst-kit (0.14.2)  | Apache-2.0            |
+| typst, typst-pdf, -svg, -kit, -ide (0.14.2)      | Apache-2.0            |
 | time                                             | MIT OR Apache-2.0     |
 | lopdf (PDF merge)                                | MIT                   |
 | image (thumbnails, clipboard PNG)                | MIT OR Apache-2.0     |

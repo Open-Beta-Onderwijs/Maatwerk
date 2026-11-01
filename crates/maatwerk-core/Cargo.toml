@@ -28,6 +28,8 @@ tracing = { version = "0.1.44", default-features = false, features = ["std"] }
 # Typst 0.14.2 to match the reference CLI (PLAN section 1). No `packages` feature on typst-kit:
 # packages are embedded, never downloaded (ADR-0002 5a).
 typst = "=0.14.2"
+# Editor help: autocomplete, hover, definitions, source <-> preview jumps (Step 8b).
+typst-ide = "=0.14.2"
 typst-kit = { version = "=0.14.2", default-features = false, features = ["fonts", "embed-fonts"] }
 typst-pdf = "=0.14.2"
 typst-svg = "=0.14.2"

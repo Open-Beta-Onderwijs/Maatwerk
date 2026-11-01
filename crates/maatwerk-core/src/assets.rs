@@ -126,6 +126,19 @@ pub(crate) fn has_package(namespace: &str, name: &str, version: &str) -> bool {
         .any(|(path, _)| path.starts_with(&prefix))
 }
 
+/// The embedded packages as `(namespace, name, version)`, sorted.
+pub(crate) fn packages() -> Vec<(&'static str, &'static str, &'static str)> {
+    let mut out: Vec<_> = PACKAGE_FILES
+        .iter()
+        .filter_map(|(path, _)| {
+            let mut parts = path.splitn(4, '/');
+            Some((parts.next()?, parts.next()?, parts.next()?))
+        })
+        .collect();
+    out.dedup();
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

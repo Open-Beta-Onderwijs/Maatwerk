@@ -15,11 +15,12 @@
 
 use std::collections::HashMap;
 use std::path::{Component, Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::SystemTime;
 
 use time::{OffsetDateTime, UtcOffset};
 use typst::diag::{FileError, FileResult, PackageError};
+use typst::ecow::EcoString;
 use typst::foundations::{Bytes, Datetime, Dict};
 use typst::syntax::package::PackageSpec;
 use typst::syntax::{FileId, Source, VirtualPath};
@@ -427,6 +428,84 @@ impl World for MaatwerkWorld {
             }
         };
         Datetime::from_ymd(now.year(), now.month().into(), now.day())
+    }
+}
+
+/// Editor help (`typst-ide`, Step 8b): the embedded packages and the project's files for
+/// completions.
+impl typst_ide::IdeWorld for MaatwerkWorld {
+    fn upcast(&self) -> &dyn World {
+        self
+    }
+
+    fn packages(&self) -> &[(PackageSpec, Option<EcoString>)] {
+        static PACKAGES: OnceLock<Vec<(PackageSpec, Option<EcoString>)>> = OnceLock::new();
+        PACKAGES.get_or_init(|| {
+            assets::packages()
+                .into_iter()
+                .filter_map(|(ns, name, version)| {
+                    let spec = format!("@{ns}/{name}:{version}").parse().ok()?;
+                    Some((spec, None))
+                })
+                .collect()
+        })
+    }
+
+    fn files(&self) -> Vec<FileId> {
+        let mut keys: Vec<String> = self
+            .overlay
+            .keys()
+            .chain(self.files.keys())
+            .cloned()
+            .collect();
+        for (mount, real) in &self.mounts {
+            if let (None, Some(root)) = (&mount.file, real) {
+                let prefix = mount.prefix.join("/");
+                list_files(root, &prefix, 0, &mut keys);
+            }
+        }
+        keys.sort();
+        keys.dedup();
+        keys.into_iter()
+            .filter(|k| k.split('/').next() != Some(INTERNAL_DIR))
+            .map(|k| FileId::new(None, VirtualPath::new(format!("/{k}"))))
+            .collect()
+    }
+}
+
+/// Files under `dir` as virtual keys below `prefix`, a few levels deep and capped: only for
+/// path completions. Symbolic links and hidden entries are skipped.
+fn list_files(dir: &Path, prefix: &str, depth: usize, out: &mut Vec<String>) {
+    const MAX_DEPTH: usize = 3;
+    const MAX_FILES: usize = 500;
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        if out.len() >= MAX_FILES {
+            return;
+        }
+        let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+            continue;
+        };
+        let Ok(kind) = entry.file_type() else {
+            continue;
+        };
+        if name.starts_with('.') || kind.is_symlink() {
+            continue;
+        }
+        let key = if prefix.is_empty() {
+            name
+        } else {
+            format!("{prefix}/{name}")
+        };
+        if kind.is_dir() {
+            if depth < MAX_DEPTH {
+                list_files(&entry.path(), &key, depth + 1, out);
+            }
+        } else {
+            out.push(key);
+        }
     }
 }
 
