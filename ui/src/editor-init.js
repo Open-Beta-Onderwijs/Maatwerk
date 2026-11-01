@@ -663,6 +663,12 @@ function applyUpdate(u) {
     }
     applyZoom();
   }
+  // No good compile yet (the opdracht had an error when it was opened).
+  if (u.previewGeneration === null) {
+    document.getElementById('pdf-placeholder').textContent = u.ok
+      ? 'Bezig met renderen…'
+      : 'Nog geen voorbeeld: de opdracht bevat een fout (zie "Fout bij renderen" bovenaan).';
+  }
   previewGeneration = u.previewGeneration;
   // Positions refer to the text of this generation: newer edits are on their way.
   if (u.generation >= lastSent) {

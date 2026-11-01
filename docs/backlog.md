@@ -265,7 +265,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 - **m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
   editor's cache out. Option: evict by the editor's own compile count only, or evict less
-  often while a session is open. Measure first (Step 8b, in the app).
+  often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
+  a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
 - **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
 - **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
   never got (set `document` only after the render succeeded).

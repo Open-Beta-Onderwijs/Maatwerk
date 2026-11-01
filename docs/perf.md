@@ -200,3 +200,32 @@ Findings:
 
 Not measured yet: opdrachten with large photos (the SVG embeds images as data URIs, so a changed
 page with a photo costs its base64 again), and school laptops.
+
+## Live editor in the app (Step 8b)
+
+`node tools/perf/editor.mjs --data <dir>\shared\data --edits 300` on the release exe (2026-11-01,
+`school` fixture migrated to v2, first opdracht of `nat`, this dev machine, CPU unthrottled). The
+script works on a copy of the folder (the editor autosaves), types into `render_uitleg` (rendered
+content) and times each keystroke until the `editor:update` with that generation arrives in the
+editor iframe.
+
+| Measure                                  | Median | p90    | Max    |
+| ---------------------------------------- | ------ | ------ | ------ |
+| Keystroke -> preview patched (300 edits) | 182 ms | 185 ms | 202 ms |
+| `compileMs` (layout, incremental)        | 1 ms   | 2 ms   | 2 ms   |
+| `renderMs` (changed pages to SVG)        | 0 ms   | 1 ms   | 1 ms   |
+| Editor opened -> first preview           | 432 ms |        |        |
+
+The latency is almost all the 150 ms debounce (`DEFAULT_DEBOUNCE`) plus the IPC hops (Rust ->
+main window -> editor iframe). A burst of 20 keystrokes gave one compile of the last text.
+**Memory** (working set of `maatwerk.exe`, Typst runs in it): 56 MiB at the start, 59-60 MiB
+after 50-300 edits, no growth trend. The webview processes are not included.
+
+Checks the script also makes against the real Typst path (all passed): a syntax error is reported
+and underlined and the preview stays; `typst-ide` autocomplete offers `table`; a click in the
+preview moves the cursor (the header text leads into `lib.typ`).
+
+**m2 (comemo shared with batch compiles):** not seen in this measurement: a single editor session
+compiles in 1-2 ms after every edit. A batch run while the editor is open would evict the
+editor's cache once (the next edit then costs about one full compile, ~300-400 ms here). Kept in
+the backlog; measure again with a large opdracht if teachers notice it.

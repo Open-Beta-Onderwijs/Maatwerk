@@ -109,6 +109,6 @@ the interval (Instellingen) writes one in the background.
 
 ## Log
 
-| Date | Who | Backup zip (name and second place) | Check result | Notes |
-| ---- | --- | ---------------------------------- | ------------ | ----- |
-|      |     |                                    |              |       |
+| Date       | Who                         | Backup zip (name and second place) | Check result                                     | Notes                                                                                                                                                                    |
+| ---------- | --------------------------- | ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-01 | Claude (rehearsal, Step 8b) | `school` fixture copy, local only  | validate-data: only the fixture's known warnings | Steps 1.1, 3.3, 3.5 with the CLI; second apply is a no-op; rollback (5.3): the unzipped backup equals the original byte for byte (5094 files). Not yet: real data (user) |

@@ -99,10 +99,14 @@ function stats(values) {
   return { n: v.length, median: q(0.5), p90: q(0.9), max: v[v.length - 1] };
 }
 
+// The editor autosaves: work on a copy, so every run starts from the same opdracht.
+const runDir = fs.mkdtempSync(path.join(path.dirname(dataDir), 'editor-run-'));
+fs.cpSync(dataDir, path.join(runDir, 'data'), { recursive: true });
+
 const child = spawn(exe, [], {
   env: {
     ...process.env,
-    MAATWERK_DATA_DIR: dataDir,
+    MAATWERK_DATA_DIR: path.join(runDir, 'data'),
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${port}`,
   },
   stdio: 'ignore',
@@ -165,8 +169,11 @@ try {
   }
 
   const content = frameEl.locator('.cm-content');
-  await content.click();
-  await page.keyboard.press('Control+End');
+  // Type inside the rendered content (render_uitleg), not at the end of the module, whose
+  // top-level text main.typ never shows.
+  await content.locator('.cm-line', { hasText: 'render_uitleg' }).first().click();
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
   const memory = [{ edits: 0, mib: workingSetMiB(child.pid) }];
 
   // Single edits: keystroke -> update.
@@ -202,10 +209,7 @@ try {
   await page.keyboard.type('\n#opgave[');
   let u = await nextUpdate(t);
   check('syntax error reported', !u.ok && u.errors.length > 0, u.errors[0]);
-  check(
-    'preview kept on error',
-    (await frameEl.locator('.svg-page').count()) === pagesBefore,
-  );
+  check('preview kept on error', (await frameEl.locator('.svg-page').count()) === pagesBefore);
   await frameEl.locator('.cm-lintRange-error').first().waitFor({ timeout: 5000 });
   check('lint underline shown', true);
   t = await now();
@@ -222,6 +226,11 @@ try {
     .catch(() => false);
   check('autocomplete offers table', completed);
   await page.keyboard.press('Escape');
+  // `#tab` alone does not compile; jumps need a document of the current text (review 8a n7).
+  t = await now();
+  for (let i = 0; i < 5; i++) await page.keyboard.press('Backspace');
+  u = await nextUpdate(t);
+  check('compiles again after removing #tab', u.ok, u.errors[0]);
 
   // Preview -> source: a click on the first page's text moves the cursor there
   // (another line, or the tab of the file the text comes from, e.g. main.typ).
@@ -259,4 +268,6 @@ try {
   if (checks.some((c) => !c.ok)) process.exitCode = 1;
 } finally {
   child.kill();
+  await sleep(1000);
+  fs.rmSync(runDir, { recursive: true, force: true, maxRetries: 5 });
 }
