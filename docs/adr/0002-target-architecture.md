@@ -292,12 +292,15 @@ These record what was built; none changes a decided behaviour.
   and comemo reuses unchanged work. Files read from disk are re-checked by modification time and
   length before every compile; the buffer itself is never written. `typst_svc::LiveEditor` runs a
   session on its own thread (not the async runtime) with a debounce; the latest generation wins.
-- **Limits (section 5): deviation, open for the user.** Typst 0.14 has no way to cancel a compile
-  (it bounds `while` loops at 10,000 iterations and the call depth at 80, but a long `for` loop or
-  a huge document still runs to the end). A compile overtaken by a newer edit is dropped before
-  its SVG render, but not stopped. Options: accept this (a runaway compile only delays the
-  preview of that one editor), or a watchdog that abandons a session thread after a time limit
-  and opens a fresh one. Decided in Step 8b.
+- **Limits (section 5): watchdog instead of cancellation (user, 2026-11-01).** Typst 0.14 has no
+  way to cancel a compile (it bounds `while` loops at 10,000 iterations and the call depth at 80,
+  but a long `for` loop or a huge document still runs to the end). A compile overtaken by a newer
+  edit is dropped before its SVG render, but not stopped. Step 8b adds a watchdog to
+  `LiveEditor`: a compile that runs longer than the time limit is abandoned (its thread is left
+  to finish and its result dropped), the editor gets an error update with a Dutch message, and a
+  fresh session on a new thread takes the next update. The time limit is an **admin setting** in
+  the Instellingen tab, stored in `instellingen.json` (additive field, an unusable value counts
+  as the default, as the snapshot settings).
 - **No cursor marker in the live session (review 8a M1).** The old preview inserted
   `<__maatwerk_cursor>` into the buffer and compiled again without it when that failed. The live
   session compiles the buffer exactly as typed (preview inputs with `cursor: false`), so every
