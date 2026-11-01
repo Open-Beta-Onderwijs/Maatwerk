@@ -199,14 +199,13 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
    editor UI on it (CodeMirror lint from `range_utf16`, only changed pages), typst-ide
    (verify what 0.14.2 offers), vraag extraction, Playwright test; backlog items n4, n7, n8.
    Watchdog on `LiveEditor` with the time limit as an admin setting (Instellingen tab,
-   `instellingen.json`; user decision 2026-11-01, ADR-0002 section 12).
+   `instellingen.json` `editor.compileTimeoutSeconds`, default 30, range 2-300; user decision
+   2026-11-01, ADR-0002 section 12). Also document it in `docs/reference/data-files-v2.md`.
 2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
    M-PERF-1/2 on a copy of real data, and M-SYNC-1..4 on two machines.
 
 ## Open questions for the user
 
-- Step 8b: the compile time limit's default and range. Proposed: 10 s, range 2-120 s, field
-  `editor.compileTimeoutSeconds` in `instellingen.json`.
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.

@@ -299,8 +299,9 @@ These record what was built; none changes a decided behaviour.
   `LiveEditor`: a compile that runs longer than the time limit is abandoned (its thread is left
   to finish and its result dropped), the editor gets an error update with a Dutch message, and a
   fresh session on a new thread takes the next update. The time limit is an **admin setting** in
-  the Instellingen tab, stored in `instellingen.json` (additive field, an unusable value counts
-  as the default, as the snapshot settings).
+  the Instellingen tab, stored in `instellingen.json` as `editor.compileTimeoutSeconds`
+  (default 30, range 2-300; additive field, an unusable value counts as the default, as the
+  snapshot settings; user, 2026-11-01).
 - **No cursor marker in the live session (review 8a M1).** The old preview inserted
   `<__maatwerk_cursor>` into the buffer and compiled again without it when that failed. The live
   session compiles the buffer exactly as typed (preview inputs with `cursor: false`), so every
