@@ -20,7 +20,17 @@
 export type Json = unknown;
 
 export type { PrintName } from '../domain/print';
-import type { DataFolderStatus } from './bindings';
+import type {
+  DataFolderStatus,
+  EditorClickJump,
+  EditorCompletions,
+  EditorCursorJump,
+  EditorHover,
+  EditorOpened,
+  EditorRange,
+  EditorUpdateEvent,
+  ProjectFileInfo,
+} from './bindings';
 
 /** `{ ok, reason }` results of the fs write/delete methods. */
 export type FsResult = { ok: true; hash?: string } | { ok: false; reason: string };
@@ -48,6 +58,24 @@ export interface DataChange {
  * the startup error screen instead of running on empty data (review 4b m5).
  */
 export type { DataFolderStatus } from './bindings';
+
+/** Live editor types (generated from Rust, Step 8b). */
+export type {
+  EditorClickJump,
+  EditorCompletion,
+  EditorCompletions,
+  EditorCursorJump,
+  EditorDiagnostic,
+  EditorHover,
+  EditorOpened,
+  EditorPage,
+  EditorPoint,
+  EditorRange,
+  EditorUpdateEvent,
+  EditorVraag,
+  EditorVragen,
+  ProjectFileInfo,
+} from './bindings';
 
 export interface BatchJob {
   key: string;
@@ -244,6 +272,63 @@ export interface MaatwerkApi {
   snapshotForFile(relPath: string): Promise<string | null>;
   /** Admin only: "Herstellen uit snapshot". */
   restoreFromSnapshot(relPath: string, snapshot: string): Promise<void>;
+
+  // ── Live editor (Step 8b, ADR-0002 section 12) ────────────────────────────
+  // One session per open opdracht; compile results arrive through
+  // onEditorUpdate (only changed pages). Offsets are UTF-16, as CodeMirror
+  // counts them; preview points are pt from a page's top left. Errors reject.
+  /** Opens a session (closing any other); its first compile starts at once. */
+  editorOpen(opdrachtId: string, title: string): Promise<EditorOpened>;
+  /** New text for `path` (e.g. `opdracht.typ`); resolves to its generation. */
+  editorUpdate(session: number, path: string, text: string): Promise<number>;
+  /** Drops the buffer of `path`: the file on disk counts again. */
+  editorUnset(session: number, path: string): Promise<number>;
+  /** Compiles again, reading every disk file again (after an image was saved). */
+  editorRefresh(session: number): Promise<number>;
+  /** Compiles again and sends every page. */
+  editorResend(session: number): Promise<number>;
+  editorClose(session: number): Promise<void>;
+  editorComplete(
+    session: number,
+    path: string,
+    text: string,
+    offset: number,
+    explicit: boolean,
+  ): Promise<EditorCompletions | null>;
+  editorHover(
+    session: number,
+    path: string,
+    text: string,
+    offset: number,
+  ): Promise<EditorHover | null>;
+  editorDefinition(
+    session: number,
+    path: string,
+    text: string,
+    offset: number,
+  ): Promise<EditorRange | null>;
+  editorJumpFromClick(
+    session: number,
+    page: number,
+    x: number,
+    y: number,
+  ): Promise<EditorClickJump | null>;
+  editorJumpFromCursor(
+    session: number,
+    path: string,
+    offset: number,
+  ): Promise<EditorCursorJump | null>;
+  onEditorUpdate(cb: (update: EditorUpdateEvent) => void): Unsubscribe;
+  /** `main.typ` and `lib.typ` of the opdracht; unchanged old copies are updated silently. */
+  projectFilesStatus(opdrachtId: string): Promise<ProjectFileInfo[]>;
+  /** "Herstel standaardversie"; `expectedHash` null: the file must be missing. New hash. */
+  restoreProjectFile(
+    opdrachtId: string,
+    file: string,
+    expectedHash: string | null,
+  ): Promise<string>;
+  /** The bundled text of `main.typ` or `lib.typ` ("Bekijk verschillen"). */
+  bundledProjectFile(file: string): Promise<string>;
 }
 
 /**

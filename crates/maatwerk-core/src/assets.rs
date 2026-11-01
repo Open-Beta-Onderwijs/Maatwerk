@@ -42,7 +42,10 @@ impl ProjectFile {
     /// (never change one) when the bundled file changes; a test checks the last row.
     fn releases(self) -> &'static [(u32, &'static str)] {
         match self {
-            ProjectFile::Lib => &[(1, "e340d281c7d275c2df798a12adf916adf3634b57")],
+            ProjectFile::Lib => &[
+                (1, "e340d281c7d275c2df798a12adf916adf3634b57"),
+                (2, "47a3c6689cf3fdab4636f91758240084ab002d96"),
+            ],
             ProjectFile::Main => &[(1, "7b59d765923398c424fe61cc3fa0b3d76f967548")],
         }
     }
@@ -126,6 +129,19 @@ pub(crate) fn has_package(namespace: &str, name: &str, version: &str) -> bool {
         .any(|(path, _)| path.starts_with(&prefix))
 }
 
+/// The embedded packages as `(namespace, name, version)`, sorted.
+pub(crate) fn packages() -> Vec<(&'static str, &'static str, &'static str)> {
+    let mut out: Vec<_> = PACKAGE_FILES
+        .iter()
+        .filter_map(|(path, _)| {
+            let mut parts = path.splitn(4, '/');
+            Some((parts.next()?, parts.next()?, parts.next()?))
+        })
+        .collect();
+    out.dedup();
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -172,11 +188,13 @@ mod tests {
     fn a_changed_copy_is_not_a_released_version() {
         let lib = ProjectFile::Lib;
         let crlf = format!("\u{feff}{}", LIB_TYP.replace('\n', "\r\n"));
-        assert_eq!(lib.released_version(&crlf), Some(1));
+        assert_eq!(lib.released_version(&crlf), Some(2));
+        let v1 = include_str!("../tests/fixtures/project-files/lib-v1.typ");
+        assert_eq!(lib.released_version(v1), Some(1));
         let changed = LIB_TYP.replace("size: 10.5pt", "size: 11pt");
         assert_ne!(changed, LIB_TYP);
         assert_eq!(lib.released_version(&changed), None);
-        assert_eq!(lib.version_line(&changed), Some(1));
+        assert_eq!(lib.version_line(&changed), Some(2));
         assert_eq!(lib.version_line("#import \"x\""), None);
         assert_eq!(ProjectFile::Main.released_version(LIB_TYP), None);
     }

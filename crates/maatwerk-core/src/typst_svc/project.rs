@@ -153,6 +153,127 @@ pub fn v1_opdracht_id(typ_file: &str) -> Result<&str> {
     Ok(&typ_file[..typ_file.len() - 4])
 }
 
+/// What the editor knows about an opdracht's own copy of a bundled file (ADR-0002 5a).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectFileStatus {
+    /// `lib.typ` or `main.typ`.
+    pub file: &'static str,
+    pub state: ProjectFileState,
+    /// The version line of the copy, if any.
+    pub version: Option<u32>,
+    pub bundled_version: u32,
+    /// Hash of the copy as it is now (after a silent update), for a later restore (C17).
+    pub hash: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ProjectFileState {
+    /// The current bundled version, unchanged.
+    Current,
+    /// An unchanged older version that was just replaced by the current one.
+    Updated,
+    /// Changed by the teacher; no newer bundled version than the one it started from.
+    Modified,
+    /// Changed by the teacher, and a newer bundled version exists ("Bekijk verschillen").
+    Outdated,
+    /// Not there: the opdracht does not compile until it is restored.
+    Missing,
+}
+
+const PROJECT_FILES: [(&str, assets::ProjectFile); 2] = [
+    ("main.typ", assets::ProjectFile::Main),
+    ("lib.typ", assets::ProjectFile::Lib),
+];
+
+/// The state of `main.typ` and `lib.typ` in `opdrachten/<id>/`. An unchanged copy of an older
+/// released version is replaced by the current one here, silently (ADR-0002 5a); a changed copy
+/// is never touched. A colleague writing the folder at the same moment wins (C17).
+pub fn check_project_files(storage: &Storage, id: &str) -> Result<Vec<ProjectFileStatus>> {
+    crate::opdracht_images::check_opdracht_id(id)?;
+    let mut out = Vec::new();
+    for (name, file) in PROJECT_FILES {
+        let rel = RelPath::parse(&format!("opdrachten/{id}/{name}"))?;
+        out.push(project_file_status(storage, &rel, name, file)?);
+    }
+    Ok(out)
+}
+
+/// The state of one bundled file. When a colleague writes it between the read and the silent
+/// update, the file is judged again as it is now (review 8b m3); a second lost race leaves an
+/// unchanged old copy for the next time and reports it as outdated.
+fn project_file_status(
+    storage: &Storage,
+    rel: &RelPath,
+    name: &'static str,
+    file: assets::ProjectFile,
+) -> Result<ProjectFileStatus> {
+    let bundled_version = file.current_version();
+    let status = |state, version, hash| ProjectFileStatus {
+        file: name,
+        state,
+        version,
+        bundled_version,
+        hash,
+    };
+    for attempt in 0..2 {
+        let Some(bytes) = storage.read_bytes(rel)? else {
+            return Ok(status(ProjectFileState::Missing, None, None));
+        };
+        let hash = crate::storage::hash_hex(&bytes);
+        let text = String::from_utf8_lossy(&bytes);
+        let version = file.version_line(&text);
+        return Ok(match file.released_version(&text) {
+            Some(v) if v == bundled_version => {
+                status(ProjectFileState::Current, version, Some(hash))
+            }
+            Some(_) if attempt == 0 => {
+                match storage.write_text(rel, file.bundled(), Expect::Hash(&hash)) {
+                    Ok(new) => status(ProjectFileState::Updated, Some(bundled_version), Some(new)),
+                    Err(Error::Conflict { .. }) => continue,
+                    Err(e) => return Err(e),
+                }
+            }
+            Some(_) => status(ProjectFileState::Outdated, version, Some(hash)),
+            None if version.is_some_and(|v| v < bundled_version) => {
+                status(ProjectFileState::Outdated, version, Some(hash))
+            }
+            None => status(ProjectFileState::Modified, version, Some(hash)),
+        });
+    }
+    unreachable!("the second attempt always returns")
+}
+
+/// "Herstel standaardversie": writes the bundled `main.typ` or `lib.typ` into
+/// `opdrachten/<id>/` if the file still has `expected_hash` (`None`: it must be missing).
+/// Returns the new hash.
+pub fn restore_project_file(
+    storage: &Storage,
+    id: &str,
+    name: &str,
+    expected_hash: Option<&str>,
+) -> Result<String> {
+    crate::opdracht_images::check_opdracht_id(id)?;
+    let (name, file) = PROJECT_FILES
+        .into_iter()
+        .find(|(n, _)| *n == name)
+        .ok_or_else(|| Error::InvalidArgument {
+            message: format!("not a bundled project file: {name}"),
+        })?;
+    let rel = RelPath::parse(&format!("opdrachten/{id}/{name}"))?;
+    let expect = expected_hash.map_or(Expect::Missing, Expect::Hash);
+    storage.write_text(&rel, file.bundled(), expect)
+}
+
+/// The bundled text of `main.typ` or `lib.typ` (for "Bekijk verschillen").
+pub fn bundled_project_file(name: &str) -> Option<&'static str> {
+    PROJECT_FILES
+        .into_iter()
+        .find(|(n, _)| *n == name)
+        .map(|(_, f)| f.bundled())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -196,5 +317,77 @@ mod tests {
         for bad in ["../x", "a/b", "", "x.typ"] {
             assert!(create_opdracht_folder(&storage, bad).is_err(), "{bad}");
         }
+    }
+
+    #[test]
+    fn project_files_old_unchanged_copies_update_silently_changed_ones_never() {
+        let tmp = tempfile::tempdir().unwrap();
+        let storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        create_opdracht_folder(&storage, "opdracht_1").unwrap();
+        let rel = |name: &str| RelPath::parse(&format!("opdrachten/opdracht_1/{name}")).unwrap();
+        let lib_v1 = include_str!("../../tests/fixtures/project-files/lib-v1.typ");
+
+        let states = |storage: &Storage| {
+            check_project_files(storage, "opdracht_1")
+                .unwrap()
+                .into_iter()
+                .map(|s| (s.file, s.state))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            states(&storage),
+            [
+                ("main.typ", ProjectFileState::Current),
+                ("lib.typ", ProjectFileState::Current)
+            ]
+        );
+
+        // An unchanged v1 copy (CRLF, as OneDrive or an editor may leave it) is updated.
+        storage
+            .write_text(&rel("lib.typ"), &lib_v1.replace('\n', "\r\n"), Expect::Any)
+            .unwrap();
+        let status = check_project_files(&storage, "opdracht_1").unwrap();
+        assert_eq!(status[1].state, ProjectFileState::Updated);
+        assert_eq!(status[1].version, Some(2));
+        assert_eq!(
+            storage.read_text(&rel("lib.typ")).unwrap().unwrap(),
+            assets::LIB_TYP
+        );
+        assert_eq!(states(&storage)[1].1, ProjectFileState::Current);
+
+        // A changed v1 copy is outdated and kept; a changed current copy is modified.
+        let changed_v1 = lib_v1.replace("size: 10.5pt", "size: 11pt");
+        storage
+            .write_text(&rel("lib.typ"), &changed_v1, Expect::Any)
+            .unwrap();
+        assert_eq!(states(&storage)[1].1, ProjectFileState::Outdated);
+        assert_eq!(
+            storage.read_text(&rel("lib.typ")).unwrap().unwrap(),
+            changed_v1
+        );
+        storage
+            .write_text(&rel("main.typ"), "// mijn main", Expect::Any)
+            .unwrap();
+        assert_eq!(states(&storage)[0].1, ProjectFileState::Modified);
+
+        // Restore needs the hash the editor saw; a missing file needs `None`.
+        let status = check_project_files(&storage, "opdracht_1").unwrap();
+        assert!(matches!(
+            restore_project_file(&storage, "opdracht_1", "lib.typ", Some("stale")),
+            Err(Error::Conflict { .. })
+        ));
+        restore_project_file(&storage, "opdracht_1", "lib.typ", status[1].hash.as_deref()).unwrap();
+        assert_eq!(states(&storage)[1].1, ProjectFileState::Current);
+        std::fs::remove_file(tmp.path().join("data/opdrachten/opdracht_1/main.typ")).unwrap();
+        assert_eq!(states(&storage)[0].1, ProjectFileState::Missing);
+        restore_project_file(&storage, "opdracht_1", "main.typ", None).unwrap();
+        assert_eq!(states(&storage)[0].1, ProjectFileState::Current);
+
+        assert!(restore_project_file(&storage, "opdracht_1", "opdracht.typ", None).is_err());
+        assert!(check_project_files(&storage, "../x").is_err());
+        assert_eq!(bundled_project_file("lib.typ"), Some(assets::LIB_TYP));
+        assert_eq!(bundled_project_file("opdracht.typ"), None);
     }
 }

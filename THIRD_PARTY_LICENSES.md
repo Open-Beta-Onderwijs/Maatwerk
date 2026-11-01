@@ -26,7 +26,7 @@ date, and ships it next to the exe; "Over Maatwerk" in the app shows it.
 | tracing                                          | MIT                   |
 | tracing-subscriber                               | MIT                   |
 | specta, specta-typescript, tauri-specta          | MIT                   |
-| typst, typst-pdf, typst-svg, typst-kit (0.14.2)  | Apache-2.0            |
+| typst, typst-pdf, -svg, -kit, -ide (0.14.2)      | Apache-2.0            |
 | time                                             | MIT OR Apache-2.0     |
 | lopdf (PDF merge)                                | MIT                   |
 | image (thumbnails, clipboard PNG)                | MIT OR Apache-2.0     |
@@ -47,6 +47,7 @@ Transitive crates: run `cargo deny list` for the full inventory.
 | ------------------------------------------------------------- | ----------------- |
 | @tauri-apps/api                                               | Apache-2.0 OR MIT |
 | @codemirror/state, view, commands, language; @lezer/highlight | MIT               |
+| @codemirror/autocomplete, lint (editor help, Step 8b)         | MIT               |
 | chart.js                                                      | MIT               |
 | chartjs-plugin-annotation                                     | MIT               |
 | pdfjs-dist                                                    | Apache-2.0        |

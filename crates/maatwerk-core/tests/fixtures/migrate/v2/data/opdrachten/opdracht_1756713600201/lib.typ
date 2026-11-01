@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// maatwerk-lib 1
+// maatwerk-lib 2
 // lib.typ — shared helpers for opdracht templates.
 // Embedded in Maatwerk; each opdracht folder gets its own copy (ADR-0002 5a). Maatwerk updates
 // an unmodified copy when a new version ships and never overwrites a copy you changed.
@@ -209,7 +209,8 @@
   _vraag_id.step()
   context {
     let id = _vraag_id.get().first()
-    let v = (opgave: _opgave_nr(), nr: _vraag_ctr.get().first(), antwoord: antwoord)
+    // Maatwerk reads these markers for the editor's vragen list (punten since maatwerk-lib 2).
+    let v = (opgave: _opgave_nr(), nr: _vraag_ctr.get().first(), antwoord: antwoord, punten: punten)
     [#metadata(v) <__maatwerk_vraag>]
     block(
       above: 0.65em,

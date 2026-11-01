@@ -151,12 +151,48 @@ export const commands = {
 	 *  says where the copy was saved.
 	 */
 	printPdf: (pdfPath: string, name: PrintNameArg) => typedError<string, CommandError>(__TAURI_INVOKE("print_pdf", { pdfPath, name })),
+	/**
+	 *  Opens a live session on `opdrachten/<opdrachtId>/` with the placeholder header (the editor
+	 *  preview); its first compile (generation 0, the files on disk) starts at once. Closes any
+	 *  other session.
+	 */
+	editorOpen: (opdrachtId: string, title: string) => typedError<EditorOpened, CommandError>(__TAURI_INVOKE("editor_open", { opdrachtId, title })),
+	/**  New buffer text for `path` (e.g. `opdracht.typ`); returns its generation. */
+	editorUpdate: (session: number, path: string, text: string) => typedError<number, CommandError>(__TAURI_INVOKE("editor_update", { session, path, text })),
+	/**  Drops the buffer of `path`: the file on disk counts again. */
+	editorUnset: (session: number, path: string) => typedError<number, CommandError>(__TAURI_INVOKE("editor_unset", { session, path })),
+	/**  Compiles again with every disk file read again (after an image was saved). */
+	editorRefresh: (session: number) => typedError<number, CommandError>(__TAURI_INVOKE("editor_refresh", { session })),
+	/**  Compiles again and sends every page (the preview was lost). */
+	editorResend: (session: number) => typedError<number, CommandError>(__TAURI_INVOKE("editor_resend", { session })),
+	/**  Ends the session. Unknown sessions are fine (already closed). */
+	editorClose: (session: number) => __TAURI_INVOKE<void>("editor_close", { session }),
+	/**  Autocomplete at `offset` (UTF-16) in `path`, with the editor's current `text`. */
+	editorComplete: (session: number, path: string, text: string, offset: number, explicit: boolean) => typedError<EditorCompletions | null, CommandError>(__TAURI_INVOKE("editor_complete", { session, path, text, offset, explicit })),
+	/**  Hover text for the item at `offset` in `path`. */
+	editorHover: (session: number, path: string, text: string, offset: number) => typedError<EditorHover | null, CommandError>(__TAURI_INVOKE("editor_hover", { session, path, text, offset })),
+	/**  Where the item at `offset` in `path` is defined (project files only). */
+	editorDefinition: (session: number, path: string, text: string, offset: number) => typedError<EditorRange | null, CommandError>(__TAURI_INVOKE("editor_definition", { session, path, text, offset })),
+	/**  The source behind a click at (`x`, `y`) pt on preview page `page` (0-based). */
+	editorJumpFromClick: (session: number, page: number, x: number | null, y: number | null) => typedError<EditorClickJump | null, CommandError>(__TAURI_INVOKE("editor_jump_from_click", { session, page, x, y })),
+	/**  The preview positions of `offset` in `path` (the cursor), for the last compiled text. */
+	editorJumpFromCursor: (session: number, path: string, offset: number) => typedError<EditorCursorJump | null, CommandError>(__TAURI_INVOKE("editor_jump_from_cursor", { session, path, offset })),
+	/**  `main.typ` and `lib.typ` of the opdracht; unchanged old copies are updated silently. */
+	projectFilesStatus: (opdrachtId: string) => typedError<ProjectFileInfo[], CommandError>(__TAURI_INVOKE("project_files_status", { opdrachtId })),
+	/**
+	 *  "Herstel standaardversie": the bundled `main.typ`/`lib.typ`, if the file still has
+	 *  `expectedHash` (`null`: it must be missing). Returns the new hash.
+	 */
+	restoreProjectFile: (opdrachtId: string, file: string, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("restore_project_file", { opdrachtId, file, expectedHash })),
+	/**  The bundled text of `main.typ` or `lib.typ` ("Bekijk verschillen"). */
+	bundledProjectFile: (file: string) => typedError<string, CommandError>(__TAURI_INVOKE("bundled_project_file", { file })),
 };
 
 /** Events */
 export const events = {
 	assignmentProgress: makeEvent<AssignmentProgress, AssignmentProgress>("assignment:progress"),
 	dataChanged: makeEvent<DataChanged, DataChanged>("data:changed"),
+	editorUpdate: makeEvent<EditorUpdateEvent, EditorUpdateEvent>("editor:update"),
 };
 
 /* Types */
@@ -226,6 +262,121 @@ export type DataIssue = {
 	path: string,
 	/**  Dutch. */
 	message: string,
+};
+
+/**  Where a click in the preview leads: a source position, or another preview point. */
+export type EditorClickJump = {
+	/**  The preview generation the answer belongs to. */
+	generation: number,
+	file: string | null,
+	offset: number | null,
+	point: EditorPoint | null,
+};
+
+export type EditorCompletion = {
+	kind: string,
+	label: string,
+	/**  Snippet syntax with `${name}` placeholders; the label when `null`. */
+	apply: string | null,
+	detail: string | null,
+};
+
+export type EditorCompletions = {
+	/**  Where the completed text starts (UTF-16); it runs to the cursor. */
+	from: number,
+	items: EditorCompletion[],
+};
+
+export type EditorCursorJump = {
+	generation: number,
+	points: EditorPoint[],
+};
+
+export type EditorDiagnostic = {
+	/**  `error` or `warning`. */
+	severity: string,
+	message: string,
+	hints: string[],
+	location: EditorLocation | null,
+};
+
+export type EditorHover = {
+	/**  `text` or `code` (Typst). */
+	kind: string,
+	text: string,
+};
+
+/**  A place in a project file: 1-based line and column, and the UTF-16 range CodeMirror uses. */
+export type EditorLocation = {
+	file: string,
+	line: number,
+	column: number,
+	from: number,
+	to: number,
+};
+
+export type EditorOpened = {
+	session: number,
+	/**  `main.typ` and `lib.typ` after the silent update of unchanged old copies. */
+	files: ProjectFileInfo[],
+	/**  The compile time limit in seconds (admin setting). */
+	timeoutSeconds: number,
+};
+
+export type EditorPage = {
+	index: number,
+	hash: string,
+	svg: string,
+};
+
+export type EditorPoint = {
+	/**  0-based page. */
+	page: number,
+	/**  Points from the top left of the page. */
+	x: number | null,
+	y: number | null,
+};
+
+export type EditorRange = {
+	file: string,
+	from: number,
+	to: number,
+};
+
+/**  One compile result for the session `session` (`editor:update`). */
+export type EditorUpdateEvent = {
+	session: number,
+	/**  The generation this compile saw. */
+	generation: number,
+	ok: boolean,
+	/**  Errors first, then warnings. */
+	diagnostics: EditorDiagnostic[],
+	/**  The generation of the preview now shown; `null` before the first good compile. */
+	previewGeneration: number | null,
+	/**  Pages in that preview; the client drops pages at and after this index. */
+	pageCount: number,
+	/**  Only the pages that changed. */
+	pages: EditorPage[],
+	/**  On a successful compile only. */
+	vragen: EditorVragen | null,
+	compileMs: number,
+	renderMs: number,
+};
+
+export type EditorVraag = {
+	opgave: number,
+	label: string,
+	punten: number | null,
+	antwoord: string | null,
+	page: number,
+	y: number | null,
+};
+
+export type EditorVragen = {
+	items: EditorVraag[],
+	totalPunten: number | null,
+	/**  Dutch messages ("De opdracht heeft geen vragen."). */
+	checks: string[],
 };
 
 /**
@@ -317,6 +468,20 @@ export type PrintNameArg = {
 	vak: string,
 	groep: string,
 	toets: string,
+};
+
+/**  `main.typ` or `lib.typ` of the opdracht (ADR-0002 5a). */
+export type ProjectFileInfo = {
+	file: string,
+	/**
+	 *  `current`, `updated` (an unchanged older version, just replaced), `modified`,
+	 *  `outdated` (changed, and a newer bundled version exists) or `missing`.
+	 */
+	state: string,
+	version: number | null,
+	bundledVersion: number,
+	/**  For `restore_project_file` (`null` when missing). */
+	hash: string | null,
 };
 
 /**  A merged batch in the output folder. */

@@ -3288,6 +3288,7 @@ dependencies = [
  "tiny-skia",
  "tracing",
  "typst",
+ "typst-ide",
  "typst-kit",
  "typst-pdf",
  "typst-render",
@@ -3954,6 +3955,12 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
+name = "pathdiff"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 
 [[package]]
 name = "pdf-writer"
@@ -6427,6 +6434,22 @@ dependencies = [
  "typst-syntax",
  "typst-timing",
  "typst-utils",
+]
+
+[[package]]
+name = "typst-ide"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9411a123dff40c264101af99e043ef292b4b8bc638aa05b328359b859dabaf2a"
+dependencies = [
+ "comemo",
+ "ecow",
+ "pathdiff",
+ "rustc-hash",
+ "serde",
+ "typst",
+ "typst-eval",
+ "unscanny",
 ]
 
 [[package]]

@@ -261,6 +261,35 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   frame after the click, which closes the menu. Replace the retry with the scroll-first click of
   `openExamMenu` in `ui/e2e/perceived-speed.spec.ts`.
 
+## From Step 8a (review `docs/reviews/step-08a.md`)
+
+- **m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
+  editor's cache out. Option: evict by the editor's own compile count only, or evict less
+  often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
+  a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
+- **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
+- **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
+  never got (set `document` only after the render succeeded).
+- **n3:** `close()` called from the sink would join its own thread. The app's sink only emits an
+  event (never blocks, never closes); keep it that way (documented on `LiveEditor`).
+- **n5:** one moved mount drops the disk files of every mount (performance only).
+- **n6:** check staleness between pages of the SVG render too.
+
+## From Step 8b (review `docs/reviews/step-08b.md`)
+
+- **m5:** help queries whose caller gave up (2 s) still run later on the compile thread and count
+  against the next compile's time limit; pass a cancel flag.
+- **m6:** the editor iframe uses `window.confirm` (close with unsaved changes since 3a, "Herstel
+  standaardversie" since 8b); move both to the app's own dialog (Step 10).
+- **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
+  een opgave" only before the first opgave.
+- **n4:** the bundled `main.typ` still has the cursor-marker code; remove it with `maatwerk-main 2`
+  and drop the marker from `render_assignment_svg` (no caller left in the editor).
+- **n6:** while two abandoned compiles still run, the editor waits silently; say so.
+- **n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.
+- **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do
+  nothing (by design, review 8a n7); consider mapping through the last good source.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the

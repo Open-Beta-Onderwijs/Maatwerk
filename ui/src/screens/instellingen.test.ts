@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
-import { SNAPSHOT_DEFAULTS, settingProblem, snapshotLabel, snapshotSettings } from './instellingen';
+import {
+  SNAPSHOT_DEFAULTS,
+  compileTimeoutSeconds,
+  settingProblem,
+  snapshotLabel,
+  snapshotSettings,
+} from './instellingen';
 
 describe('Instellingen (Step 7b)', () => {
   it('reads the snapshot settings like maatwerk-core, with defaults', () => {
@@ -21,6 +27,18 @@ describe('Instellingen (Step 7b)', () => {
     expect(settingProblem('daily', '0')).toBeNull();
     expect(settingProblem('daily', '1,5')).not.toBeNull();
     expect(settingProblem('monthly', '')).not.toBeNull();
+  });
+
+  it('reads the compile time limit like EditorSettings (Step 8b)', () => {
+    expect(compileTimeoutSeconds(null)).toBe(30);
+    expect(compileTimeoutSeconds({ editor: { compileTimeoutSeconds: 5 } })).toBe(5);
+    for (const bad of [1, 301, 2.5, '10', null]) {
+      expect(compileTimeoutSeconds({ editor: { compileTimeoutSeconds: bad } })).toBe(30);
+    }
+    expect(settingProblem('compileTimeoutSeconds', '300')).toBeNull();
+    expect(settingProblem('compileTimeoutSeconds', '1')).toBe(
+      'Vul een heel getal van 2 tot en met 300 in.',
+    );
   });
 
   it('shows snapshot names as Dutch dates', () => {

@@ -47,6 +47,7 @@ function fakeBackend(reply: (command: string, args: unknown[]) => unknown) {
       progressListener = cb;
       return unlisten;
     },
+    listenEditorUpdate: async () => unlisten,
     outputUrl: (id) => `http://maatwerk-out.localhost/${id}`,
   };
   return {
@@ -209,6 +210,7 @@ describe('TauriApi', () => {
       commands,
       listenDataChanged: async () => () => {},
       listenAssignmentProgress: async () => () => {},
+      listenEditorUpdate: async () => () => {},
       outputUrl: (id) => id,
     });
     const heartbeat = api.updatePresence('jan', { online: true });

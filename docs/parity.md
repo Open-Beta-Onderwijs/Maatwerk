@@ -209,3 +209,39 @@ saved (the reference always redrew it; the list looked the same).
 | Memoised `Store.examResults`                             | `store.js`                                | Vitest `generation.test.ts` "examResults"; grade goldens unchanged                                         |
 | Score modal: first group at once, rest in idle; prebuild | `screens/scores.js`, `toetsen.js` menu    | `perceived-speed.spec.ts` (later groups, prebuild, presence); all `score-grid.spec.ts` run on the prebuild |
 | Timing spans and the measurement script                  | `utils/perf.ts`, `tools/perf/measure.mjs` | Vitest `utils/perf.test.ts`; manual `M-PERF-1`                                                             |
+
+## Live editor compile service (Step 8a)
+
+New in the core; the editor UI runs on it since Step 8b (below). The SVG pages are the same as the
+one-shot render. `render_assignment_svg` (row 30) stays in the bridge, but the editor no longer
+calls it.
+
+| Behaviour                                                          | Where                                    | Tests                                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| Same SVG pages as path C; patched pages equal a fresh render       | `typst_svc::EditorSession`               | `typst_opdracht.rs` `editor_session_patches_equal_the_one_shot_render`          |
+| Only changed pages sent (hash per page); fewer pages trim          | `EditorSession::compile`                 | `editor::tests::the_first_compile_*`, `fewer_pages_shrink_the_preview`          |
+| Last good preview kept on errors; diagnostics with UTF-16 ranges   | `EditorSession`, `diagnostics::Location` | `editor::tests::errors_keep_the_last_good_preview_*`, `resend_all_*`            |
+| Buffer only in memory; disk files (images) re-checked per compile  | `MaatwerkWorld::set_file`, `reset`       | `editor::tests::the_buffer_is_never_written_*`, `files_on_disk_*`, `a_folder_*` |
+| Debounce; latest generation wins, stale compiles dropped           | `typst_svc::LiveEditor`                  | `editor::tests::live_*`, `a_stale_compile_changes_nothing`                      |
+| Long sessions do not grow (files held; comemo evicted per compile) | `compile_document`, `MaatwerkWorld`      | `editor::tests::a_long_session_holds_no_more_files`; `docs/perf.md`             |
+
+## Live editor UI (Step 8b)
+
+The editor of the reference compiled a saved copy per keystroke pause through the Typst CLI and
+showed stderr; it found the cursor in the preview through an inserted marker. Now the editor runs
+on `LiveEditor` (ADR-0002 section 12).
+
+| Behaviour                                                                   | Where                                                   | Tests                                                                                               |
+| --------------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Edits go to the session at once; only changed pages are patched             | `editor-init.js`, `editor-live.ts patchPages`           | `editor.spec.ts` "only the changed pages"; `mock-editor.test.ts`                                    |
+| Errors: lint underline + gutter, status text, last good preview kept        | `editor-live.ts cmDiagnostics`, `@codemirror/lint`      | `editor.spec.ts`; Rust `editor::tests::errors_*`                                                    |
+| Watchdog: a compile over the admin time limit is abandoned, Dutch message   | `LiveEditor` coordinator, `EditorSettings`              | `editor::tests::the_watchdog_*`, `the_fresh_session_*`; `editor.spec.ts`, `accounts.spec.ts` (5 s)  |
+| Autocomplete, hover, Ctrl+click / F12 to the definition                     | `typst_svc::ide`, `editor-live.ts liveExtensions`       | `ide::tests::completes_*`, `hover_*`, `definition_*`; `editor.spec.ts`                              |
+| Preview follows the cursor; a click in the preview moves the cursor         | `ide::jump_from_cursor` / `jump_from_click` (no marker) | `ide::tests::click_and_cursor_jumps_*`; `editor.spec.ts`; `tools/perf/editor.mjs`; manual `M-OPD-8` |
+| Jumps only on a document of the current sources (review 8a n7)              | `EditorSession::current_document`                       | `editor::tests::the_current_document_is_only_*`                                                     |
+| Vragen list (label, punten, antwoord), total, checks                        | `typst_svc::vragen` (introspector), `lib.typ` v2        | `vragen::tests`; `editor.spec.ts` "vragen panel"                                                    |
+| Tabs `main.typ`/`lib.typ` with warning, Bekijk verschillen, Herstel         | `editor-init.js`, `project::check_project_files`        | `project::tests::project_files_*`; `textdiff.test.ts`; `editor.spec.ts` "lib.typ"; manual `M-OPD-9` |
+| Unchanged older `lib.typ`/`main.typ` updated silently when the editor opens | `check_project_files` (CAS)                             | `project::tests::project_files_*`                                                                   |
+| BOM stripped in the editor (positions match Typst's, review 8a n8)          | `editor-init.js stripBom`                               | `textdiff.test.ts` (BOM ignored); manual                                                            |
+| Image saved: the session reads disk files again                             | `editor_refresh`                                        | `editor::tests::reload_reads_a_disk_file_*`                                                         |
+| Compile time limit in Instellingen                                          | `screens/instellingen.ts`                               | `instellingen.test.ts`; `accounts.spec.ts` "compile time limit"                                     |

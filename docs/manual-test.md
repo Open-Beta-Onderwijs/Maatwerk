@@ -103,8 +103,10 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       copies the folder, images included ("Opdracht gekopieerd als …"); delete removes the folder.
       `typst compile main.typ` (plain Typst CLI 0.14) in an opdracht folder makes a PDF.
 - [ ] **M-OPD-2** Opening an opdracht shows the editor with the preview. Typing updates the
-      preview; toolbar buttons insert their markup; Ctrl+scroll zooms the preview. A Typst
-      error shows the message with line and column.
+      preview within a moment (only the changed pages redraw; the scroll position stays);
+      toolbar buttons insert their markup; Ctrl+scroll zooms the preview. A Typst error is
+      underlined in the text with a red mark in the gutter (hover shows the message), "Fout bij
+      renderen" shows it with file, line and column, and the preview keeps the last good version.
 - [ ] **M-OPD-3** Autosave: type, wait a second, close with "Maatwerk": reopening shows the edit.
       Close right after typing: the last edit is kept too.
 - [ ] **M-OPD-4** "Figuur toevoegen" -> "📂 Van schijf kiezen…": the Windows file dialog shows
@@ -118,6 +120,27 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-OPD-6** Drop an image file on the editor: nothing happens (the old app replaced the
       window with the file, quirk U20). Select text in the editor and drag it to another place:
       it moves.
+- [ ] **M-OPD-7** Editor help (Step 8b): typing `#tab` offers `table` (Enter inserts it with the
+      cursor between the brackets); Ctrl+Space anywhere offers completions; hovering `#figure`
+      shows its description; Ctrl+click (or F12) on a name defined with `#let` selects its
+      definition, also in `lib.typ` (e.g. on `vraag`).
+- [ ] **M-OPD-8** Preview sync: moving the cursor to a paragraph further down scrolls the preview
+      there and marks the line briefly; clicking text in the preview puts the cursor on it (text
+      from the header switches to `main.typ`). Works after an error is fixed; while there is an
+      error, a click does nothing.
+- [ ] **M-OPD-9** Tabs `main.typ` / `lib.typ`: the yellow warning shows; "Bekijk verschillen"
+      lists your changes against the standard version; "Herstel standaardversie" asks first,
+      replaces the text and the file, and Ctrl+Z brings your version back (saved again). An
+      opdracht folder with an unchanged `lib.typ` from an older Maatwerk is updated silently when
+      the editor opens; a changed older one shows "Er is een nieuwere versie van lib.typ".
+- [ ] **M-OPD-10** "Vragen: n · p" in the preview bar: the list shows every vraag as on the
+      answer key (1, 2a, 2b), its punten and answer, and the total; clicking a row scrolls the
+      preview to it. An opdracht without vragen, a vraag without punten or answer, or a vraag
+      outside an `#opgave` shows a warning in the list.
+- [ ] **M-OPD-11** Time limit: as admin set Instellingen > Editor to 2 seconds, open an opdracht
+      and add `#for i in range(50000000) { }`: after about 2 s the editor says "Het compileren
+      duurde langer dan 2 seconden …", the preview stays; remove the line: the preview updates
+      again. Set the limit back to 30.
 
 ## Gebruikers and School (admin) (M-ADM)
 

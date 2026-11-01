@@ -11,9 +11,9 @@ use std::path::Path;
 use maatwerk_core::assets;
 use maatwerk_core::paths::{DataDir, RelPath};
 use maatwerk_core::typst_svc::{
-    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, CompileError, Compiled, Mode,
-    OpdrachtHeader, OpdrachtInputs, TypstProject, compile_document, opdracht_world,
-    render_assignment_batch, render_assignment_svg_pages,
+    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, CompileError, Compiled,
+    EditorSession, Mode, OpdrachtHeader, OpdrachtInputs, TypstProject, compile_document,
+    opdracht_world, render_assignment_batch, render_assignment_svg_pages,
 };
 use serde_json::Value;
 use support::{assert_matches_golden, decode, fonts, frame_text, load_case};
@@ -269,6 +269,60 @@ fn svg_golden(id: &str) {
             );
         }
     }
+}
+
+/// Step 8a: an editor session on the many-pages preview gives the same SVG pages as the one-shot
+/// render (path C), and after an edit the client's pages patched with the changed ones equal a
+/// one-shot render of the new text.
+#[test]
+fn editor_session_patches_equal_the_one_shot_render() {
+    let case = load_case("svg-preview-many-pages");
+    let (_tmp, dir) = data_dir();
+    let (project, inputs) = golden_job(&case, &dir);
+    let opdracht = RelPath::parse("opdracht.typ").unwrap();
+    let source = renamed_marker(decode(&case["call"]["args"])[2].as_str().unwrap());
+    let one_shot = |text: &str| {
+        render_assignment_svg_pages(
+            fonts(),
+            project.clone().with_file(&opdracht, text),
+            &inputs,
+            fixed_now(),
+        )
+        .unwrap()
+        .output
+    };
+
+    let mut session = EditorSession::new(opdracht_world(
+        fonts(),
+        project.clone(),
+        &inputs,
+        fixed_now(),
+    ))
+    .with_clock(fixed_now);
+    let first = session.compile(0, &|| false).unwrap();
+    assert!(first.ok, "{:?}", first.diagnostics);
+    let mut client: Vec<String> = first.pages.into_iter().map(|p| p.svg).collect();
+    assert_eq!(client, one_shot(&source));
+    assert!(client.len() > 2);
+
+    // A word more in the last vraag changes the last page(s) only.
+    let edited = source.replace("veel tekst.]", "veel tekst en nog een zin.]");
+    assert_ne!(edited, source);
+    session.set_file(&opdracht, edited.clone()).unwrap();
+    let second = session.compile(1, &|| false).unwrap();
+    assert!(second.ok, "{:?}", second.diagnostics);
+    assert!(!second.pages.is_empty());
+    assert!(second.pages.iter().all(|p| p.index > 0), "page 1 unchanged");
+    client.truncate(second.page_count);
+    for page in second.pages {
+        if page.index < client.len() {
+            client[page.index] = page.svg;
+        } else {
+            assert_eq!(page.index, client.len());
+            client.push(page.svg);
+        }
+    }
+    assert_eq!(client, one_shot(&edited));
 }
 
 #[test]

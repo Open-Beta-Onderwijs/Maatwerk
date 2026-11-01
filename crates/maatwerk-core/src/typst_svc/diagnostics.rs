@@ -21,14 +21,16 @@ pub enum Severity {
 }
 
 /// Where a diagnostic or trace frame points. `line`/`column` are 1-based, the column counted in
-/// Unicode scalar values (not UTF-16 units, as JS/CodeMirror count); `range` is the UTF-8 byte
-/// range in the file's text after a leading BOM is stripped. The editor (Steps 5b/8) converts.
+/// Unicode scalar values; `range` is the UTF-8 byte range in the file's text after a leading BOM
+/// is stripped, `range_utf16` the same range in UTF-16 code units, as JS and CodeMirror count
+/// document positions (Step 8a).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Location {
     pub file: String,
     pub line: usize,
     pub column: usize,
     pub range: (usize, usize),
+    pub range_utf16: (usize, usize),
     /// The source line, for [`to_text`].
     #[serde(skip)]
     line_text: String,
@@ -158,11 +160,13 @@ fn locate(world: &MaatwerkWorld, span: Span) -> Option<Location> {
     let line_text = source.text()[line_range]
         .trim_end_matches(['\r', '\n'])
         .to_owned();
+    let utf16 = |byte: usize| lines.byte_to_utf16(byte);
     Some(Location {
         file: world.display_path(id),
         line: line + 1,
         column: lines.byte_to_column(range.start)? + 1,
         range: (range.start, range.end),
+        range_utf16: (utf16(range.start)?, utf16(range.end)?),
         line_text,
     })
 }
