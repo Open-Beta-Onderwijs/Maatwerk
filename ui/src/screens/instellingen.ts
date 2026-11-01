@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Beheer > Instellingen (Step 7b): `instellingen.json`, for now the snapshot
-// interval and how many snapshots are kept (maatwerk-core::snapshots). The app
-// that starts first after the interval writes `snapshots/<datum tijd>.zip` in
-// the background; restoring the whole folder is a manual step
-// (docs/cutover-runbook.md).
+// Beheer > Instellingen (Step 7b): `instellingen.json`: the snapshot interval
+// and how many snapshots are kept (maatwerk-core::snapshots), and since Step 8b
+// the editor's compile time limit (maatwerk-core::typst_svc::EditorSettings,
+// ADR-0002 section 12). The app that starts first after the interval writes
+// `snapshots/<datum tijd>.zip` in the background; restoring the whole folder is
+// a manual step (docs/cutover-runbook.md).
 
 import type { MaatwerkApi } from '../bridge/api';
 
@@ -45,9 +46,26 @@ export function snapshotSettings(instellingen: unknown): SnapshotSettings {
   return out;
 }
 
+/** EditorSettings: `editor.compileTimeoutSeconds`, whole seconds. */
+export const COMPILE_TIMEOUT_DEFAULT = 30;
+const COMPILE_TIMEOUT_LIMITS: [number, number] = [2, 300];
+
+/** The compile time limit in `instellingen.json`, or the default when missing or out of range. */
+export function compileTimeoutSeconds(instellingen: unknown): number {
+  const v = (instellingen as { editor?: Record<string, unknown> } | null)?.editor
+    ?.compileTimeoutSeconds;
+  const [min, max] = COMPILE_TIMEOUT_LIMITS;
+  return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max
+    ? v
+    : COMPILE_TIMEOUT_DEFAULT;
+}
+
 /** Dutch problem with a value typed in the form, or null. */
-export function settingProblem(key: keyof SnapshotSettings, raw: string): string | null {
-  const [min, max] = LIMITS[key];
+export function settingProblem(
+  key: keyof SnapshotSettings | 'compileTimeoutSeconds',
+  raw: string,
+): string | null {
+  const [min, max] = key === 'compileTimeoutSeconds' ? COMPILE_TIMEOUT_LIMITS : LIMITS[key];
   const n = Number(raw.trim());
   if (!/^\d+$/.test(raw.trim()) || n < min || n > max) {
     return `Vul een heel getal van ${min} tot en met ${max} in.`;
@@ -77,6 +95,8 @@ const FIELDS: { key: keyof SnapshotSettings; label: string; hint: string }[] = [
   { key: 'monthly', label: 'Bewaar maandelijkse snapshots (maanden)', hint: '' },
 ];
 
+const TIMEOUT_LABEL = 'Tijdslimiet voor het compileren in de editor (seconden)';
+
 function el(tag: string, className = '', content = ''): HTMLElement {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -96,6 +116,7 @@ export async function renderInstellingen(
     api.listSnapshots().catch(() => [] as string[]),
   ]);
   const current = snapshotSettings(instellingen);
+  const timeout = compileTimeoutSeconds(instellingen);
   const baseRev = (instellingen?._meta as { rev?: number } | undefined)?.rev;
 
   container.replaceChildren();
@@ -131,6 +152,30 @@ export async function renderInstellingen(
     if (f.hint) group.append(el('span', 'u-d-block form-hint muted', f.hint));
     box.append(group);
   }
+
+  box.append(el('h3', 'list-section-header', 'Editor'));
+  const timeoutGroup = el('div', 'form-group');
+  const timeoutLabel = el('label', '', TIMEOUT_LABEL) as HTMLLabelElement;
+  timeoutLabel.htmlFor = 'inst-compileTimeoutSeconds';
+  const timeoutInput = document.createElement('input');
+  timeoutInput.id = 'inst-compileTimeoutSeconds';
+  timeoutInput.type = 'number';
+  timeoutInput.min = String(COMPILE_TIMEOUT_LIMITS[0]);
+  timeoutInput.max = String(COMPILE_TIMEOUT_LIMITS[1]);
+  timeoutInput.value = String(timeout);
+  timeoutInput.className = 'u-w-110';
+  timeoutGroup.append(
+    timeoutLabel,
+    timeoutInput,
+    el(
+      'span',
+      'u-d-block form-hint muted',
+      'Een opdracht die langer nodig heeft, wordt in de editor afgebroken met een melding. ' +
+        `Standaard ${COMPILE_TIMEOUT_DEFAULT} seconden; geldt voor editors die daarna worden geopend.`,
+    ),
+  );
+  box.append(timeoutGroup);
+
   const save = el('button', 'btn-primary', 'Opslaan') as HTMLButtonElement;
   save.id = 'inst-save';
   const actions = el('div', 'form-actions');
@@ -159,10 +204,20 @@ export async function renderInstellingen(
       }
       next[f.key] = Number(input.value.trim());
     }
+    const timeoutProblem = settingProblem('compileTimeoutSeconds', timeoutInput.value);
+    if (timeoutProblem) {
+      toast(`${TIMEOUT_LABEL}: ${timeoutProblem}`, 'error');
+      timeoutInput.focus();
+      return;
+    }
+    const editor = {
+      ...((instellingen?.editor as Record<string, unknown> | undefined) ?? {}),
+      compileTimeoutSeconds: Number(timeoutInput.value.trim()),
+    };
     save.disabled = true;
     try {
       await store.saveInstellingen(
-        { ...(instellingen ?? {}), snapshots: { ...current, ...next } },
+        { ...(instellingen ?? {}), snapshots: { ...current, ...next }, editor },
         baseRev,
       );
       toast('Instellingen opgeslagen.', 'success');

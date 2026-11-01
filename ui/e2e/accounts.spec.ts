@@ -217,6 +217,36 @@ test('the admin sets the snapshot interval in Instellingen', async ({ page }) =>
   expect(saved._meta.rev).toBe(1);
 });
 
+test('the admin sets the editor compile time limit; the editor uses it', async ({ page }) => {
+  await page.goto('/');
+  await pickUser(page, 'admin');
+  await enterPin(page);
+  await page.locator('.nav-btn[data-screen="instellingen"]').click();
+  const input = page.locator('#inst-compileTimeoutSeconds');
+  await expect(input).toHaveValue('30');
+  await input.fill('1');
+  await page.locator('#inst-save').click();
+  await expect(page.locator('.toast').last()).toContainText('heel getal van 2 tot en met 300');
+  await input.fill('5');
+  await page.locator('#inst-save').click();
+  await expect(page.locator('.toast').last()).toHaveText('Instellingen opgeslagen.');
+  const saved = await readMockJson<{ editor: unknown; snapshots: unknown }>(
+    page,
+    'instellingen.json',
+  );
+  expect(saved.editor).toEqual({ compileTimeoutSeconds: 5 });
+  expect(saved.snapshots).toEqual({ intervalHours: 24, daily: 7, weekly: 4, monthly: 12 });
+
+  await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+  await page.locator('[data-action="open-editor"]').first().click();
+  const frame = page.frameLocator('#editor-frame');
+  await frame.locator('.cm-content').click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\n#traag');
+  await frame.locator('#btn-render-error').click();
+  await expect(frame.locator('#error-popover')).toContainText('langer dan 5 seconden');
+});
+
 test('a file changed outside Maatwerk is restored from a snapshot', async ({ page }) => {
   const file = `gebruikers/${TEACHER}.json`;
   await page.goto('/');

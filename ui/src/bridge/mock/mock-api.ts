@@ -924,6 +924,13 @@ export class MockApi implements MaatwerkApi {
     this.record('editorOpen', [opdrachtId, title]);
     checkOpdrachtId(opdrachtId);
     const files = await this.projectFilesStatus(opdrachtId);
+    // EditorSettings::read: whole seconds 2-300 in instellingen.json, else 30.
+    const instellingen = JSON.parse(this.readText('instellingen.json') ?? 'null') as {
+      editor?: { compileTimeoutSeconds?: unknown };
+    } | null;
+    const t = instellingen?.editor?.compileTimeoutSeconds;
+    this.editor.timeoutSeconds =
+      typeof t === 'number' && Number.isInteger(t) && t >= 2 && t <= 300 ? t : 30;
     const session = this.editor.open((path) => this.readText(`opdrachten/${opdrachtId}/${path}`));
     return { session, files, timeoutSeconds: this.editor.timeoutSeconds };
   }
