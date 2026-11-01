@@ -39,10 +39,12 @@ use crate::paths::RelPath;
 use crate::snapshots::SETTINGS_FILE;
 use crate::storage::Storage;
 
-/// How long [`LiveEditor`] waits after the last update before it compiles. The old editor
-/// saved and compiled 600 ms after the last key (`editor-init.js`, `scheduleCompile`); the
-/// in-memory compile is cheap enough to go much faster.
-pub const DEFAULT_DEBOUNCE: Duration = Duration::from_millis(150);
+/// How long [`LiveEditor`] waits after the last update before it compiles: not at all
+/// (user, 2026-11-01). The old editor compiled 600 ms after the last key; Step 8b measured 1-2 ms
+/// per incremental compile. Work stays bounded without a wait: updates that arrive during a
+/// compile are merged into the next one, and an overtaken compile is dropped before its pages
+/// are rendered. The editor UI delays showing new errors instead (`editor-init.js`).
+pub const DEFAULT_DEBOUNCE: Duration = Duration::ZERO;
 
 /// The compile time limit when `instellingen.json` sets none (user, 2026-11-01).
 pub const DEFAULT_COMPILE_TIMEOUT: Duration = Duration::from_secs(30);

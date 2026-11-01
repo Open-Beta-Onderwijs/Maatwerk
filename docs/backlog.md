@@ -290,6 +290,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do
   nothing (by design, review 8a n7); consider mapping through the last good source.
 
+- **CSP report on native editing:** typing over a multi-line selection makes Chrome insert a
+  styled span in the editor's contenteditable, which the CSP blocks and reports (seen in e2e;
+  CodeMirror rewrites that DOM, nothing visible). Check whether real typing triggers it.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the

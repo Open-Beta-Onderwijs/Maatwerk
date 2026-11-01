@@ -486,7 +486,7 @@ Order: biggest risk first, always with tests around the code you touch.
 6. **macOS signing** (Step 11).
 7. **Repo name and remote** (Step 0). Decided: `maatwerk`, public, AGPL-3.0-or-later. Remote created by the user (`github.com/Open-Beta-Onderwijs/Maatwerk`); first push after Step 5 (2026-10-28).
 8. **App identifier**: decided in Step 0: `nl.openbetaonderwijs.maatwerk` (was `nl.school.rtti-app`). Changing it moves the local app-config folder, which is fine because of the cutover.
-9. **Versioning and update policy** for a portable exe on OneDrive.
+9. **Versioning and update policy** for a portable exe on OneDrive. Versioning decided 2026-11-01: SemVer below 1.0 with release candidates: `0.3.0-rc.1` after Step 8, `0.3.0` at the cutover, `-rc.N` for fixes before it; 1.0 later (e.g. after Step 10). Git tags `vX.Y.Z[-rc.N]`. The update policy (how teachers get a new exe) is still open.
 10. **AI integration style** (Step 9 ADR lists the questions).
 11. **Cutover date.** Decided: after Step 8; the exact date is the user's call.
 12. **Encryption of the JSON files.** Decided 2026-10-30: no encryption (a key in the exe of a public AGPL repo is public). Instead an integrity stamp inside each JSON file to detect accidental outside changes (Step 7a, C19).

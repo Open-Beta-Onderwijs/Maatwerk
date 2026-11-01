@@ -167,6 +167,17 @@ try {
       await sleep(10);
     }
   }
+  /** The last update after `since` once none arrived for 300 ms (typing several keys). */
+  async function settledUpdate(since) {
+    await nextUpdate(since);
+    let count = -1;
+    for (;;) {
+      const after = (await updates()).filter((x) => x.t > since);
+      if (after.length === count) return after.at(-1);
+      count = after.length;
+      await sleep(300);
+    }
+  }
 
   const content = frameEl.locator('.cm-content');
   // Type inside the rendered content (render_uitleg), not at the end of the module, whose
@@ -207,14 +218,14 @@ try {
   const pagesBefore = await frameEl.locator('.svg-page').count();
   let t = await now();
   await page.keyboard.type('\n#opgave[');
-  let u = await nextUpdate(t);
+  let u = await settledUpdate(t);
   check('syntax error reported', !u.ok && u.errors.length > 0, u.errors[0]);
   check('preview kept on error', (await frameEl.locator('.svg-page').count()) === pagesBefore);
   await frameEl.locator('.cm-lintRange-error').first().waitFor({ timeout: 5000 });
   check('lint underline shown', true);
   t = await now();
   await page.keyboard.type('#vraag(punten: 3, antwoord: [Ja])[Klopt het?]]');
-  u = await nextUpdate(t);
+  u = await settledUpdate(t);
   check('fixed again', u.ok, `vragen ${JSON.stringify(u.vragen)}`);
 
   // Autocomplete from typst-ide.
@@ -229,7 +240,7 @@ try {
   // `#tab` alone does not compile; jumps need a document of the current text (review 8a n7).
   t = await now();
   for (let i = 0; i < 5; i++) await page.keyboard.press('Backspace');
-  u = await nextUpdate(t);
+  u = await settledUpdate(t);
   check('compiles again after removing #tab', u.ok, u.errors[0]);
 
   // Preview -> source: a click on the first page's text moves the cursor there

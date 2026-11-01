@@ -24,13 +24,12 @@ async function openEditor(page: Page): Promise<{ frame: FrameLocator; id: string
 /** Replaces the whole editor text by typing it (CodeMirror sees real input). */
 async function setText(page: Page, frame: FrameLocator, text: string): Promise<void> {
   await frame.locator('.cm-content').click();
+  // Delete through CodeMirror's keymap, then one input event (fast, no auto-closing
+  // brackets). Typing over a multi-line selection natively makes Chrome insert styled spans,
+  // which the strict CSP reports.
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Delete');
-  await frame.locator('.cm-content').evaluate((el, t) => {
-    // insertText keeps it one input event (fast, no auto-closing brackets).
-    (el as HTMLElement).focus();
-    document.execCommand('insertText', false, t);
-  }, text);
+  await page.keyboard.insertText(text);
 }
 
 test('the preview shows only the changed pages and keeps them on errors', async ({ page }) => {
@@ -40,7 +39,9 @@ test('the preview shows only the changed pages and keeps them on errors', async 
   await expect(frame.locator('.svg-page')).toHaveCount(2);
   const first = await frame.locator('.svg-page').first().getAttribute('data-hash');
 
-  await setText(page, frame, 'Eerste\n#pagebreak()\nTweede, anders');
+  // Type at the end (no compile of an emptied text in between).
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type(', anders');
   await expect(frame.locator('.svg-page').nth(1)).toContainText('Tweede, anders');
   expect(await frame.locator('.svg-page').first().getAttribute('data-hash')).toBe(first);
   const sent = await withMock(page, (m) => m.editor.updates.at(-1)!.pages.map((p) => p.index));
@@ -60,6 +61,17 @@ test('the preview shows only the changed pages and keeps them on errors', async 
   await expect(frame.locator('.cm-lintRange-error')).toHaveCount(0);
   await expect(frame.locator('#btn-render-error')).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('new errors show after a pause in typing, a fix clears them at once', async ({ page }) => {
+  const { frame } = await openEditor(page);
+  await setText(page, frame, 'Goed #fout');
+  // The failed compile is there at once, its error only ~500 ms later.
+  await expect.poll(() => withMock(page, (m) => m.editor.updates.at(-1)!.ok)).toBe(false);
+  await expect(frame.locator('.cm-lintRange-error')).toHaveCount(0);
+  await expect(frame.locator('.cm-lintRange-error')).toHaveText('fout');
+  await setText(page, frame, 'Goed');
+  await expect(frame.locator('.cm-lintRange-error')).toHaveCount(0, { timeout: 300 });
 });
 
 test('the vragen panel lists labels, points and checks', async ({ page }) => {
@@ -89,8 +101,8 @@ test('autocomplete, hover and Ctrl+click come from the session', async ({ page }
   await page.keyboard.press('Control+End');
   await page.keyboard.type('#tab');
   const option = frame.locator('.cm-tooltip-autocomplete li', { hasText: 'table' });
-  await expect(option).toBeVisible();
-  await page.keyboard.press('Enter');
+  // A click, not Enter: results arrive on every keystroke and Enter could race the list.
+  await option.click();
   await expect(frame.locator('.cm-content')).toContainText('#table()');
 
   await frame.locator('.cm-line', { hasText: '#table()' }).getByText('table').hover();

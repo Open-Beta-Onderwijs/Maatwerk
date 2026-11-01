@@ -11,7 +11,7 @@ function collect(editor: MockEditor): EditorUpdateEvent[] {
 }
 
 describe('mock live editor', () => {
-  it('compiles at once, then debounced; only changed pages are sent', async () => {
+  it('compiles at once, merges edits of one tick; only changed pages are sent', async () => {
     vi.useFakeTimers();
     const editor = new MockEditor();
     const seen = collect(editor);

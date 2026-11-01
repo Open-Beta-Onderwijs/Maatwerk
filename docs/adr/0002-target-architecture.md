@@ -308,6 +308,10 @@ These record what was built; none changes a decided behaviour.
   diagnostic position matches the CodeMirror document and no marker error can hide a good
   preview. Source <-> preview sync moves to `typst-ide` jumps on `EditorSession::document()`
   (PLAN Step 8b). `render_assignment_svg` keeps the marker for the editor until 8b switches.
+- **No compile debounce (user, 2026-11-01).** An incremental compile takes 1-2 ms, so
+  `DEFAULT_DEBOUNCE` is zero: the coordinator compiles as soon as the compile thread is free, and
+  edits that arrive meanwhile are merged into the next compile. The editor UI shows _new_ errors
+  only after 500 ms without typing (half-typed code does not flash red) and clears them at once.
 - **As built in Step 8b.** `LiveEditor` is a coordinator thread (debounce, watchdog) in front of
   a compile thread that owns the session; help queries (`typst-ide` 0.14.2: autocomplete, hover,
   definition, jumps) run on the compile thread between compiles and wait at most 2 s. At most two

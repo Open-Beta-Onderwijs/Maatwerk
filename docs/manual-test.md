@@ -107,6 +107,8 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       toolbar buttons insert their markup; Ctrl+scroll zooms the preview. A Typst error is
       underlined in the text with a red mark in the gutter (hover shows the message), "Fout bij
       renderen" shows it with file, line and column, and the preview keeps the last good version.
+      While typing, a new error appears only after a short pause (half a second); fixing it
+      removes the underline at once. Saving does not hide the error message.
 - [ ] **M-OPD-3** Autosave: type, wait a second, close with "Maatwerk": reopening shows the edit.
       Close right after typing: the last edit is kept too.
 - [ ] **M-OPD-4** "Figuur toevoegen" -> "📂 Van schijf kiezen…": the Windows file dialog shows

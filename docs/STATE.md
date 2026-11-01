@@ -8,6 +8,13 @@ Last updated: 2026-11-01 (Step 8 done) Branch: `step/08-editor` Last tags: `step
 **Step 8 done** (8a `step-08a`, 8b `step-08b`), merged into `main` and tagged `step-08`. Next:
 Step 9 when the user says so. Cutover readiness: see "Open questions" below.
 
+## After Step 8 (user decisions 2026-11-01)
+
+- Version `0.3.0-rc.1` (PLAN section 9 item 9: SemVer below 1.0 with release candidates, `0.3.0` at
+  the cutover). Branch `release/v0.3.0-rc.1` with a PR into `main` for Steps 7 and 8 (CI).
+- No compile debounce; new errors after 500 ms without typing; a save no longer hides a compile
+  error. Keystroke -> preview 61 ms median (`docs/perf.md`).
+
 ## Step 8b result
 
 Commits b98ac1d..HEAD on `step/08-editor`, gate green (291 cargo tests, 321 Vitest, 117 e2e,
@@ -228,8 +235,7 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 ## Open questions for the user
 
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
-- Release candidate tag for the cutover: needs the versioning policy (PLAN section 9 item 9),
-  e.g. `v0.3.0-rc.1`.
+- Tag `v0.3.0-rc.1` once the PR's CI is green and it is merged (not tagged yet).
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
 
