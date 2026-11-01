@@ -275,11 +275,12 @@ pub async fn editor_open(
         Ok((live, files, settings.compile_timeout))
     })
     .await?;
-    editors
-        .open
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .insert(session, Arc::new(live));
+    {
+        let mut open = editors.open.lock().unwrap_or_else(PoisonError::into_inner);
+        // Another editor_open that finished meanwhile loses: one session at a time (review 8b m7).
+        open.clear();
+        open.insert(session, Arc::new(live));
+    }
     Ok(EditorOpened {
         session,
         files: files.into_iter().map(project_file).collect(),

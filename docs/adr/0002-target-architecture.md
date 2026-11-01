@@ -311,7 +311,7 @@ These record what was built; none changes a decided behaviour.
 - **As built in Step 8b.** `LiveEditor` is a coordinator thread (debounce, watchdog) in front of
   a compile thread that owns the session; help queries (`typst-ide` 0.14.2: autocomplete, hover,
   definition, jumps) run on the compile thread between compiles and wait at most 2 s. At most two
-  abandoned compiles may still run; the next compile waits until one ends. The app keeps one
+  abandoned compiles may still run; the next compile waits until one ends. The fresh session starts cold (no comemo cache of its own), so a document near the limit may time out again (review 8b n5); it keeps the client's preview until it compiles. The app keeps one
   session at a time (`editor_open` closes the others; sessions close with the editor and on
   exit); results travel as the `editor:update` event and the iframe gets them through the parent.
   Jumps answer only for a document compiled from the current sources, tagged with its

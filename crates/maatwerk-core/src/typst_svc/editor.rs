@@ -198,6 +198,31 @@ impl EditorSession {
         Ok(())
     }
 
+    /// Runs `f`, which may put the editor's text for `path` into the session (a help query),
+    /// and puts the buffer back as it was afterwards. A query is not ordered with the updates:
+    /// left in place, an older text could reach the next compile (review 8b m1).
+    pub(crate) fn with_restored_buffer<R>(
+        &mut self,
+        path: &RelPath,
+        f: impl FnOnce(&mut EditorSession) -> R,
+    ) -> R {
+        let key = format!("/{}", path.as_str());
+        let (before, current) = (self.world.buffer(&key), self.current);
+        let out = f(self);
+        if self.world.buffer(&key) != before {
+            match before {
+                Some(bytes) => {
+                    self.world.set_file(&key, bytes);
+                }
+                None => {
+                    self.world.unset_file(&key);
+                }
+            }
+            self.current = current;
+        }
+        out
+    }
+
     /// Drops the buffer of `path`: the file is read from the project again (e.g. after
     /// "Herstel standaardversie" wrote the bundled `lib.typ`, review 8a n4).
     pub fn unset_file(&mut self, path: &RelPath) -> Result<()> {
@@ -211,6 +236,15 @@ impl EditorSession {
     /// The next update sends every page again (the client lost its preview, e.g. a reload).
     pub fn resend_all(&mut self) {
         self.shown.clear();
+    }
+
+    /// What the client shows (from earlier updates), for a fresh session that takes over after
+    /// a timeout: a failed compile then keeps that preview (review 8b M1). Page hashes do not
+    /// carry over between sessions, so the first good compile sends every page.
+    fn assume_client(&mut self, preview: &ClientPreview) {
+        self.preview_generation = preview.generation;
+        // 0 is no page's hash in practice; every page differs from it.
+        self.shown = vec![0; preview.page_count];
     }
 
     /// The next compile reads every disk file again, also one the fingerprint (modification
@@ -620,6 +654,20 @@ fn compile_jobs(mut session: EditorSession, jobs: &Receiver<Job>, latest: &Atomi
     }
 }
 
+/// The preview the client has, as the updates sent so far describe it.
+#[derive(Debug, Default)]
+struct ClientPreview {
+    generation: Option<u64>,
+    page_count: usize,
+}
+
+impl ClientPreview {
+    fn apply(&mut self, update: &EditorUpdate) {
+        self.generation = update.preview_generation;
+        self.page_count = update.page_count;
+    }
+}
+
 /// How a compile handed to the compile thread ended.
 enum Outcome {
     Done(Option<EditorUpdate>),
@@ -635,8 +683,8 @@ fn coordinate(
     options: LiveOptions,
     mut sink: impl FnMut(EditorUpdate),
 ) {
-    // What the client shows, for the error update after a timeout.
-    let mut preview: (Option<u64>, usize) = (None, 0);
+    // What the client shows: for the error update after a timeout and the fresh session.
+    let mut preview = ClientPreview::default();
     loop {
         let (generation, edits, resend, reload) = {
             let mut state = shared.lock();
@@ -703,8 +751,13 @@ fn coordinate(
                     "internal error in the Typst compiler".to_owned()
                 };
                 drop(rx);
-                restart(shared, factory);
-                Some(failed_update(generation, &message, preview.0, preview.1))
+                restart(shared, factory, &preview);
+                Some(failed_update(
+                    generation,
+                    &message,
+                    preview.generation,
+                    preview.page_count,
+                ))
             }
         };
         let mut state = shared.lock();
@@ -714,7 +767,7 @@ fn coordinate(
         }
         drop(state);
         if let Some(update) = update {
-            preview = (update.preview_generation, update.page_count);
+            preview.apply(&update);
             // A panicking sink must not end the thread: later updates would never be compiled
             // (review 8a m1).
             if panic::catch_unwind(AssertUnwindSafe(|| sink(update))).is_err() {
@@ -742,15 +795,17 @@ fn wait_for(shared: &Shared, rx: &Receiver<Option<EditorUpdate>>, timeout: Durat
     }
 }
 
-/// A fresh session with the current buffers on a new compile thread. The old thread's sender is
-/// dropped here, so it ends after its compile. If no session can be built, the old thread stays
-/// (the next compile waits for it again).
-fn restart(shared: &Shared, factory: &SessionFactory) {
+/// A fresh session with the current buffers and the client's preview on a new compile thread.
+/// The old thread's sender is dropped here, so it ends after its compile. If no session can be
+/// built, the old thread stays (the next compile waits for it again) and sends every page then,
+/// since its record of the client's pages includes the abandoned compile (review 8b m4).
+fn restart(shared: &Shared, factory: &SessionFactory, preview: &ClientPreview) {
     let session = factory().and_then(|mut session| {
         let buffers = shared.lock().buffers.clone();
         for (path, text) in buffers {
             session.set_file(&path, text)?;
         }
+        session.assume_client(preview);
         Ok(session)
     });
     match session {
@@ -762,7 +817,10 @@ fn restart(shared: &Shared, factory: &SessionFactory) {
             );
             *shared.jobs.lock().unwrap_or_else(|e| e.into_inner()) = jobs;
         }
-        Err(e) => tracing::error!("no fresh editor session after a timeout: {e}"),
+        Err(e) => {
+            tracing::error!("no fresh editor session after a timeout: {e}");
+            shared.lock().resend = true;
+        }
     }
 }
 
@@ -1273,6 +1331,41 @@ mod tests {
         assert_eq!(update.generation, fixed);
         assert!(update.ok, "{:?}", update.diagnostics);
         assert_eq!((update.page_count, update.pages.len()), (2, 2));
+        editor.close();
+    }
+
+    #[test]
+    fn after_a_timeout_an_error_keeps_the_preview_and_a_fix_sends_every_page() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (tx, rx) = mpsc::channel();
+        let options = LiveOptions {
+            debounce: Duration::ZERO,
+            timeout: Duration::from_millis(400),
+        };
+        let editor = LiveEditor::start(
+            factory(tmp.path(), &pages("A", "B", "C")),
+            options,
+            move |u| {
+                let _ = tx.send(u);
+            },
+        )
+        .unwrap();
+        assert_eq!(rx.recv_timeout(WAIT).unwrap().page_count, 3);
+        editor.update_ok(main_typ(), SLOW.to_owned());
+        assert!(!rx.recv_timeout(WAIT).unwrap().ok);
+
+        // The fresh session's first compile fails: the client keeps its three pages (review 8b M1).
+        editor.update_ok(main_typ(), "#(".to_owned());
+        let failed = rx.recv_timeout(WAIT).unwrap();
+        assert!(!failed.ok);
+        assert_eq!((failed.preview_generation, failed.page_count), (Some(0), 3));
+
+        // A fix: the fresh session sends every page (hashes do not carry over).
+        let fixed = editor.update_ok(main_typ(), pages("A", "B", "C2"));
+        let update = rx.recv_timeout(WAIT).unwrap();
+        assert_eq!(update.generation, fixed);
+        assert!(update.ok);
+        assert_eq!((update.page_count, indices(&update)), (3, vec![0, 1, 2]));
         editor.close();
     }
 

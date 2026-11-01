@@ -83,8 +83,41 @@ pub struct JumpAnswer<T> {
 }
 
 impl EditorSession {
-    /// Autocomplete at `offset` in `path`. `explicit`: the user asked (Ctrl+Space).
+    /// Autocomplete at `offset` in `path`. `explicit`: the user asked (Ctrl+Space). `text`: the
+    /// editor's text, used for this query only.
     pub fn complete(
+        &mut self,
+        path: &RelPath,
+        text: Option<String>,
+        offset: usize,
+        explicit: bool,
+    ) -> Result<Option<Completions>> {
+        self.with_restored_buffer(path, |s| s.complete_now(path, text, offset, explicit))
+    }
+
+    /// The hover text for the item at `offset` in `path`.
+    pub fn hover(
+        &mut self,
+        path: &RelPath,
+        text: Option<String>,
+        offset: usize,
+    ) -> Result<Option<HoverText>> {
+        self.with_restored_buffer(path, |s| s.hover_now(path, text, offset))
+    }
+
+    /// Where the item at `offset` in `path` is defined, if in a project file (not the standard
+    /// library, a package or an internal file).
+    pub fn definition(
+        &mut self,
+        path: &RelPath,
+        text: Option<String>,
+        offset: usize,
+    ) -> Result<Option<SourceRange>> {
+        self.with_restored_buffer(path, |s| s.definition_now(path, text, offset))
+    }
+
+    /// Autocomplete at `offset` in `path`. `explicit`: the user asked (Ctrl+Space).
+    fn complete_now(
         &mut self,
         path: &RelPath,
         text: Option<String>,
@@ -113,7 +146,7 @@ impl EditorSession {
     }
 
     /// The hover text for the item at `offset` in `path`.
-    pub fn hover(
+    fn hover_now(
         &mut self,
         path: &RelPath,
         text: Option<String>,
@@ -132,7 +165,7 @@ impl EditorSession {
 
     /// Where the item at `offset` in `path` is defined, if in a project file (not the standard
     /// library, a package or an internal file).
-    pub fn definition(
+    fn definition_now(
         &mut self,
         path: &RelPath,
         text: Option<String>,
@@ -328,6 +361,21 @@ mod tests {
             .unwrap()
             .unwrap();
         assert!(done.items.iter().any(|c| c.label == "table"));
+    }
+
+    #[test]
+    fn a_query_leaves_the_session_buffer_as_it_was() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut s = session(tmp.path(), "#set page(width: 6cm, height: 4cm)\nA");
+        assert!(s.compile(1, &|| false).unwrap().ok);
+        s.complete(&rel("main.typ"), Some("#(".into()), 2, true)
+            .unwrap();
+        // The query's text is gone again: the document stays current, the next compile works.
+        assert!(s.current_document().is_some());
+        assert!(s.compile(2, &|| false).unwrap().ok);
+        // Also for a file without a buffer.
+        s.hover(&rel("deel.typ"), Some("#tab".into()), 2).unwrap();
+        assert!(s.compile(3, &|| false).unwrap().ok);
     }
 
     #[test]

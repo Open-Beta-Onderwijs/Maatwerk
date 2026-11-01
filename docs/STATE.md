@@ -1,37 +1,38 @@
 # State
 
-Last updated: 2026-11-01 (Step 8b) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
+Last updated: 2026-11-01 (Step 8 done) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
 `step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 8b in progress** on `step/08-editor` (8a tagged `step-08a`; the step branch merges into
-`main` at the end of Step 8).
+**Step 8 done** (8a `step-08a`, 8b `step-08b`), merged into `main` and tagged `step-08`. Next:
+Step 9 when the user says so. Cutover readiness: see "Open questions" below.
 
-## Step 8b plan (sub-tasks, one commit each)
+## Step 8b result
 
-1. Core `LiveEditor` v2: compile thread behind a coordinator, **watchdog** (time limit; abandoned
-   thread, fresh session from a factory + the buffer overlay, Dutch error update), queries on the
-   session (`LiveEditor::query`), `unset_file` (n4), `__maatwerk/` not editable;
-   `instellingen.json` `editor.compileTimeoutSeconds` (`EditorSettings`), data-files-v2 doc.
-2. Core IDE: `typst-ide` 0.14.2 (Apache-2.0): `IdeWorld` for `MaatwerkWorld`; session methods
-   complete / tooltip / definition / jump from click / jump from cursor, UTF-16 offsets, only
-   while the document matches the source (n7).
-3. Core vragen: `lib.typ` v2 (adds `punten` to the `<__maatwerk_vraag>` metadata, output
-   unchanged; migrate golden regenerated), `vragen(document)` -> `{opgave, label, punten,
-antwoord}` + total + checks, in every ok `EditorUpdate`. Project file status + silent update of
-   unmodified old `lib.typ`/`main.typ`, restore bundled version.
-4. Tauri: `editor` commands (open/update/refresh/resend/close/ide queries/project files), event
-   `editor:update`, timeout from `instellingen.json`; bridge + mock session.
-5. UI editor on the session: file tabs (opdracht/main/lib, banner, Herstel standaardversie,
-   Bekijk verschillen), `@codemirror/lint`, autocomplete, hover, Ctrl+click definition, preview
-   click -> source, cursor -> preview, page patches, vragen panel; BOM strip (n8).
-6. Instellingen: compile time limit field.
-7. Playwright editor spec (mock session); docs (parity, perf incl. m2, manual tests, ADR); gate;
-   review `docs/reviews/step-08b.md`.
+Commits b98ac1d..HEAD on `step/08-editor`, gate green (291 cargo tests, 321 Vitest, 117 e2e,
+cargo deny, npm licences, SPDX):
 
-Done: 1 (b98ac1d), 2 (14f8e16), 3 (56050ed), 4 (08fa0c4), 5 (c980642), 6 (c77fff1). Next: 7
-(real-app check over the DevTools port, perf/m2, docs, gate, review).
+1. Core `LiveEditor`: coordinator + compile thread, **watchdog** (time limit from
+   `instellingen.json` `editor.compileTimeoutSeconds`, 2-300 s, default 30; at most two abandoned
+   compiles; the fresh session keeps the client's preview), `query`, `unset_file`,
+   `current_document` (n7), `__maatwerk/` not editable (n4).
+2. `typst-ide` 0.14.2: autocomplete, hover, definition, jumps from click/cursor (UTF-16), query
+   text never stays in the buffer.
+3. `lib.typ` v2 (`punten` in the vraag marker, output unchanged; migrate golden regenerated);
+   `typst_svc::vragen`; `check_project_files` (silent update of unchanged old copies, CAS) and
+   `restore_project_file`.
+4. App: `src-tauri/src/editor.rs` (14 commands, `editor:update` event, one session at a time).
+   Bridge + `MockEditor`.
+5. UI: editor on the session (lint, autocomplete, hover, Ctrl+click/F12, preview <-> source,
+   page patches, vragen panel, tabs `main.typ`/`lib.typ` with banner, Bekijk verschillen,
+   Herstel standaardversie, BOM strip n8). Deps `@codemirror/autocomplete`, `@codemirror/lint`.
+6. Instellingen: compile time limit.
+7. `ui/e2e/editor.spec.ts` (7) + Instellingen e2e; `tools/perf/editor.mjs` on the release exe
+   (182 ms keystroke -> preview median, compile 1-2 ms, memory flat over 300 edits;
+   `docs/perf.md`); runbook rehearsal on the `school` fixture (log in the runbook).
+8. Review `docs/reviews/step-08b.md`: 0 blockers; M1, m1-m4, m7, n2, n3, n5, n7 fixed; m5, m6,
+   n1, n4, n6, n8 in `docs/backlog.md` "From Step 8b"; n9 not changed (reason in the review).
 
 ## Step 8a so far
 
@@ -219,19 +220,16 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Then Step 8b on `step/08-editor`: Tauri commands + event for
-   `LiveEditor` (open/update/refresh/close per editor, `spawn`ed thread, sink emits events), the
-   editor UI on it (CodeMirror lint from `range_utf16`, only changed pages), typst-ide
-   (verify what 0.14.2 offers), vraag extraction, Playwright test; backlog items n4, n7, n8.
-   Watchdog on `LiveEditor` with the time limit as an admin setting (Instellingen tab,
-   `instellingen.json` `editor.compileTimeoutSeconds`, default 30, range 2-300; user decision
-   2026-11-01, ADR-0002 section 12). Also document it in `docs/reference/data-files-v2.md`.
-2. Before the cutover: the user runs `docs/manual-test.md` M-MIG-1..5, M-PIN/M-VZ/M-SNAP and
-   M-PERF-1/2 on a copy of real data, and M-SYNC-1..4 on two machines.
+1. Wait for the user. Step 9 (AI-ready seams) when asked.
+2. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
+   M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two machines, and the
+   runbook rehearsal on a copy of real data.
 
 ## Open questions for the user
 
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
+- Release candidate tag for the cutover: needs the versioning policy (PLAN section 9 item 9),
+  e.g. `v0.3.0-rc.1`.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
 

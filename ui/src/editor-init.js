@@ -621,6 +621,7 @@ svgViewer.addEventListener(
 
 let session = null;
 let lastSent = 0; // the newest generation handed to the session
+let editSeq = 0; // edits sent, also those whose generation is not known yet
 let previewGeneration = null;
 let lastUpdate = null;
 
@@ -631,6 +632,7 @@ function callEditor(method, ...args) {
 
 function sendText(file, text) {
   if (session === null) return;
+  editSeq += 1;
   callEditor('editorUpdate', session, file, text)
     .then((g) => (lastSent = Math.max(lastSent, g)))
     .catch((err) => setStatus('Fout bij renderen', err.message));
@@ -686,15 +688,24 @@ function applyUpdate(u) {
 // `<__maatwerk_cursor>` marker, ADR-0002 section 12).
 let cursorTimer = null;
 
+/**
+ * A jump answer fits the text on screen only when no edit went out since the
+ * question and the preview is of the newest text (review 8b m2).
+ */
+function jumpFits(j, seq) {
+  return !!j && seq === editSeq && j.generation === previewGeneration && j.generation >= lastSent;
+}
+
 async function syncPreviewToCursor() {
   if (session === null || !view) return;
+  const seq = editSeq;
   const j = await callEditor(
     'editorJumpFromCursor',
     session,
     current,
     view.state.selection.main.head,
   ).catch(() => null);
-  if (j && j.generation === previewGeneration && j.points.length) showPoint(svgViewer, j.points[0]);
+  if (jumpFits(j, seq) && j.points.length) showPoint(svgViewer, j.points[0]);
 }
 
 function scheduleCursorSync() {
@@ -707,10 +718,11 @@ svgViewer.addEventListener('click', async (e) => {
   if (e.target.closest('a')) e.preventDefault(); // links must not navigate the frame
   const point = clickPoint(e);
   if (!point || session === null) return;
+  const seq = editSeq;
   const j = await callEditor('editorJumpFromClick', session, point.page, point.x, point.y).catch(
     () => null,
   );
-  if (!j || j.generation !== previewGeneration) return;
+  if (!jumpFits(j, seq)) return;
   if (j.file !== null) reveal(j.file, j.offset);
   else if (j.point) showPoint(svgViewer, j.point, true);
 });

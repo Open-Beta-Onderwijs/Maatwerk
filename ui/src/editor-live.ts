@@ -256,7 +256,8 @@ export function showPoint(viewer: HTMLElement, point: EditorPoint, always = fals
 
 // ── Vragen ─────────────────────────────────────────────────────────────────
 
-const nl = (n: number | null) => String(n ?? 0).replace('.', ',');
+// Rounded to hundredths: sums of halves and tenths carry float noise (review 8b n2).
+const nl = (n: number | null) => String(Math.round((n ?? 0) * 100) / 100).replace('.', ',');
 
 /** The button text: "Vragen: 3 · 7 p", with a warning sign when there are checks. */
 export function vragenSummary(v: EditorVragen): string {

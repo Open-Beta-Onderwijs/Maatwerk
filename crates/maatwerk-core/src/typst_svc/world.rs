@@ -204,6 +204,11 @@ impl MaatwerkWorld {
         true
     }
 
+    /// The buffer [`MaatwerkWorld::set_file`] put at `path`, if any.
+    pub(crate) fn buffer(&self, path: &str) -> Option<Bytes> {
+        self.overlay.get(&virtual_key(path)).cloned()
+    }
+
     /// Serves `path` from its own source again (the embedded file or the disk), dropping the
     /// buffer [`MaatwerkWorld::set_file`] put there. Returns whether there was one.
     pub(crate) fn unset_file(&mut self, path: &str) -> bool {

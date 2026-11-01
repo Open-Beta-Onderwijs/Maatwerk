@@ -49,8 +49,3 @@ export function diffLines(before: string, after: string): DiffLine[] {
   while (j < b.length) out.push({ kind: 'added', text: b[j++]! });
   return out;
 }
-
-/** True when the two texts differ in more than line endings or a BOM. */
-export function textsDiffer(before: string, after: string): boolean {
-  return diffLines(before, after).some((l) => l.kind !== 'same');
-}

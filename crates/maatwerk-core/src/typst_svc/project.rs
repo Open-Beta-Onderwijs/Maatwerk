@@ -195,42 +195,54 @@ pub fn check_project_files(storage: &Storage, id: &str) -> Result<Vec<ProjectFil
     let mut out = Vec::new();
     for (name, file) in PROJECT_FILES {
         let rel = RelPath::parse(&format!("opdrachten/{id}/{name}"))?;
-        let bundled_version = file.current_version();
-        let status = |state, version, hash| ProjectFileStatus {
-            file: name,
-            state,
-            version,
-            bundled_version,
-            hash,
-        };
-        let Some(bytes) = storage.read_bytes(&rel)? else {
-            out.push(status(ProjectFileState::Missing, None, None));
-            continue;
+        out.push(project_file_status(storage, &rel, name, file)?);
+    }
+    Ok(out)
+}
+
+/// The state of one bundled file. When a colleague writes it between the read and the silent
+/// update, the file is judged again as it is now (review 8b m3); a second lost race leaves an
+/// unchanged old copy for the next time and reports it as outdated.
+fn project_file_status(
+    storage: &Storage,
+    rel: &RelPath,
+    name: &'static str,
+    file: assets::ProjectFile,
+) -> Result<ProjectFileStatus> {
+    let bundled_version = file.current_version();
+    let status = |state, version, hash| ProjectFileStatus {
+        file: name,
+        state,
+        version,
+        bundled_version,
+        hash,
+    };
+    for attempt in 0..2 {
+        let Some(bytes) = storage.read_bytes(rel)? else {
+            return Ok(status(ProjectFileState::Missing, None, None));
         };
         let hash = crate::storage::hash_hex(&bytes);
         let text = String::from_utf8_lossy(&bytes);
         let version = file.version_line(&text);
-        out.push(match file.released_version(&text) {
+        return Ok(match file.released_version(&text) {
             Some(v) if v == bundled_version => {
                 status(ProjectFileState::Current, version, Some(hash))
             }
-            Some(_) => match storage.write_text(&rel, file.bundled(), Expect::Hash(&hash)) {
-                Ok(new) => status(ProjectFileState::Updated, Some(bundled_version), Some(new)),
-                Err(Error::Conflict { .. }) => {
-                    let now = storage
-                        .read_bytes(&rel)?
-                        .map(|b| crate::storage::hash_hex(&b));
-                    status(ProjectFileState::Current, version, now)
+            Some(_) if attempt == 0 => {
+                match storage.write_text(rel, file.bundled(), Expect::Hash(&hash)) {
+                    Ok(new) => status(ProjectFileState::Updated, Some(bundled_version), Some(new)),
+                    Err(Error::Conflict { .. }) => continue,
+                    Err(e) => return Err(e),
                 }
-                Err(e) => return Err(e),
-            },
+            }
+            Some(_) => status(ProjectFileState::Outdated, version, Some(hash)),
             None if version.is_some_and(|v| v < bundled_version) => {
                 status(ProjectFileState::Outdated, version, Some(hash))
             }
             None => status(ProjectFileState::Modified, version, Some(hash)),
         });
     }
-    Ok(out)
+    unreachable!("the second attempt always returns")
 }
 
 /// "Herstel standaardversie": writes the bundled `main.typ` or `lib.typ` into

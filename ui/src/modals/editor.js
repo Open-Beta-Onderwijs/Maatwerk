@@ -30,6 +30,8 @@ const EDITOR_METHODS = new Set([
   'restoreProjectFile',
   'bundledProjectFile',
 ]);
+/** Of those, the ones whose first argument is the opdracht id. */
+const OPDRACHT_METHODS = new Set(['editorOpen', 'projectFilesStatus', 'restoreProjectFile']);
 
 export async function openEditor(opdracht) {
   const overlay = document.getElementById('editor-overlay');
@@ -156,9 +158,20 @@ function handleEditorMessage(evt, frame, opdracht) {
         replyError(new Error(`not allowed: ${rest.method}`));
         break;
       }
+      // The opdracht methods only for the opdracht this editor was opened on (review 8b n7).
+      if (OPDRACHT_METHODS.has(rest.method) && rest.args[0] !== opdracht.id) {
+        replyError(new Error(`not allowed: ${rest.method} for another opdracht`));
+        break;
+      }
       answer(async () => {
+        const handler = _messageHandler;
         const result = await window.maatwerk[rest.method](...rest.args);
-        if (rest.method === 'editorOpen') _session = result.session;
+        if (rest.method === 'editorOpen') {
+          // Closed (or reopened) while opening: this session has no editor (review 8b m7).
+          if (_messageHandler !== handler)
+            window.maatwerk.editorClose(result.session).catch(() => {});
+          else _session = result.session;
+        }
         return result;
       });
       break;
