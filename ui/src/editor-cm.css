@@ -82,3 +82,26 @@
 :host(#cm-container) .cm-underline {
   text-decoration: underline;
 }
+
+/* ── Editor help (Step 8b): hover text, completions, lint ─────────────────── */
+:host(#cm-container) .cm-typst-hover {
+  max-width: 480px;
+  max-height: 260px;
+  overflow: auto;
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+:host(#cm-container) .cm-typst-hover-text {
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+:host(#cm-container) .cm-tooltip {
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}

@@ -47,6 +47,7 @@ Transitive crates: run `cargo deny list` for the full inventory.
 | ------------------------------------------------------------- | ----------------- |
 | @tauri-apps/api                                               | Apache-2.0 OR MIT |
 | @codemirror/state, view, commands, language; @lezer/highlight | MIT               |
+| @codemirror/autocomplete, lint (editor help, Step 8b)         | MIT               |
 | chart.js                                                      | MIT               |
 | chartjs-plugin-annotation                                     | MIT               |
 | pdfjs-dist                                                    | Apache-2.0        |

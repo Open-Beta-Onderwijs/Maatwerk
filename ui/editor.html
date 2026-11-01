@@ -234,16 +234,58 @@
       <button id="btn-conflict-copy">Mijn versie bewaren als kopie</button>
     </div>
     <div id="editor-body">
-      <div id="cm-container"></div>
+      <div id="editor-left">
+        <div id="file-tabs" role="tablist" aria-label="Bestanden van de opdracht">
+          <button class="file-tab active" role="tab" data-file="opdracht.typ">opdracht.typ</button>
+          <button
+            class="file-tab"
+            role="tab"
+            data-file="main.typ"
+            title="Opmaak: pagina, kop, modi"
+          >
+            main.typ
+          </button>
+          <button class="file-tab" role="tab" data-file="lib.typ" title="Opmaak: blokken, vragen">
+            lib.typ
+          </button>
+        </div>
+        <div id="file-banner" role="note" data-display="none"></div>
+        <div id="cm-container"></div>
+      </div>
       <div id="pdf-panel">
         <div id="preview-bar">
           <button class="pv-btn" id="pv-zoom-out" title="Uitzoomen">−</button>
           <span id="pv-zoom-label">100%</span>
           <button class="pv-btn" id="pv-zoom-in" title="Inzoomen">+</button>
           <button class="pv-btn" id="pv-fit-width" title="Paginabreedte">Paginabreedte</button>
+          <span class="pv-spacer"></span>
+          <button
+            class="pv-btn"
+            id="pv-vragen"
+            title="Vragen, punten en controles"
+            aria-expanded="false"
+            aria-controls="vragen-panel"
+            data-display="none"
+          ></button>
         </div>
+        <div id="vragen-panel" data-display="none"></div>
         <div id="pdf-placeholder">Bezig met renderen…</div>
         <div id="svg-viewer" data-display="none"></div>
+      </div>
+    </div>
+    <div
+      id="diff-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="diff-title"
+      data-display="none"
+    >
+      <div id="diff-box">
+        <div id="diff-head">
+          <span id="diff-title">Verschillen</span>
+          <button id="btn-diff-close">Sluiten</button>
+        </div>
+        <div id="diff-body"></div>
       </div>
     </div>
     <!-- Context menu -->

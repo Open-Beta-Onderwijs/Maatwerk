@@ -5,10 +5,31 @@
  *
  * Opens editor.html in the #editor-frame iframe that covers the entire window.
  * All window.maatwerk calls are proxied from the iframe via postMessage, since the
- * iframe does not have direct access to the contextBridge API.
+ * iframe does not have direct access to the contextBridge API. The live editor
+ * (Step 8b) calls an allowlist of bridge methods through `maatwerk-editor`, and
+ * its compile results are forwarded to the iframe as `maatwerk-editor-update`.
  */
 
 let _messageHandler = null;
+let _unsubscribeUpdates = null;
+let _session = null;
+
+/** Live editor methods the iframe may call (ADR-0002 section 6: method allowlist). */
+const EDITOR_METHODS = new Set([
+  'editorOpen',
+  'editorUpdate',
+  'editorUnset',
+  'editorRefresh',
+  'editorResend',
+  'editorComplete',
+  'editorHover',
+  'editorDefinition',
+  'editorJumpFromClick',
+  'editorJumpFromCursor',
+  'projectFilesStatus',
+  'restoreProjectFile',
+  'bundledProjectFile',
+]);
 
 export async function openEditor(opdracht) {
   const overlay = document.getElementById('editor-overlay');
@@ -36,6 +57,10 @@ export async function openEditor(opdracht) {
   }
   _messageHandler = (evt) => handleEditorMessage(evt, frame, opdracht);
   window.addEventListener('message', _messageHandler);
+  _unsubscribeUpdates?.();
+  _unsubscribeUpdates = window.maatwerk.onEditorUpdate((update) => {
+    frame.contentWindow?.postMessage({ type: 'maatwerk-editor-update', update }, '*');
+  });
 }
 
 function closeEditor() {
@@ -46,6 +71,12 @@ function closeEditor() {
   if (_messageHandler) {
     window.removeEventListener('message', _messageHandler);
     _messageHandler = null;
+  }
+  _unsubscribeUpdates?.();
+  _unsubscribeUpdates = null;
+  if (_session !== null) {
+    window.maatwerk.editorClose(_session).catch(() => {});
+    _session = null;
   }
 }
 
@@ -95,9 +126,6 @@ function handleEditorMessage(evt, frame, opdracht) {
         return { id: copy.id, naam: copy.naam };
       });
       break;
-    case 'maatwerk-render-assignment-svg':
-      answer(() => window.maatwerk.renderAssignmentSvg(rest.opdrachtId, rest.title, rest.content));
-      break;
     case 'maatwerk-list-images':
       answer(() => window.maatwerk.listOpdrachtImages(rest.opdrachtId));
       break;
@@ -122,6 +150,17 @@ function handleEditorMessage(evt, frame, opdracht) {
       break;
     case 'maatwerk-clipboard-image':
       answer(() => window.maatwerk.readClipboardImage());
+      break;
+    case 'maatwerk-editor':
+      if (!EDITOR_METHODS.has(rest.method) || !Array.isArray(rest.args)) {
+        replyError(new Error(`not allowed: ${rest.method}`));
+        break;
+      }
+      answer(async () => {
+        const result = await window.maatwerk[rest.method](...rest.args);
+        if (rest.method === 'editorOpen') _session = result.session;
+        return result;
+      });
       break;
     case 'maatwerk-get-data-dir':
       answer(() => window.maatwerk.getDataDir());
