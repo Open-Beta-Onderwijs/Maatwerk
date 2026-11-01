@@ -269,15 +269,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
 - **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
   never got (set `document` only after the render succeeded).
-- **n3:** `close()` waits for a blocking sink and deadlocks when called from the sink; Step 8b's
-  sink (Tauri event emit) must not block or call `close`.
-- **n4 (Step 8b):** `set_file` can shadow `__maatwerk/` files; add `unset_file` (back to the disk
-  version) for "Herstel standaardversie" on `main.typ`/`lib.typ`.
+- **n3:** `close()` called from the sink would join its own thread. The app's sink only emits an
+  event (never blocks, never closes); keep it that way (documented on `LiveEditor`).
 - **n5:** one moved mount drops the disk files of every mount (performance only).
 - **n6:** check staleness between pages of the SVG render too.
-- **n7 (Step 8b):** after failed compiles `document()` spans may point into newer source text;
-  jumps must check the source generation.
-- **n8 (Step 8b):** `range_utf16` counts after a stripped BOM; strip the BOM in the editor too.
 
 ## Other
 

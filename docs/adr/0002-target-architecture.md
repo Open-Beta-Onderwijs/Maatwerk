@@ -308,6 +308,23 @@ These record what was built; none changes a decided behaviour.
   diagnostic position matches the CodeMirror document and no marker error can hide a good
   preview. Source <-> preview sync moves to `typst-ide` jumps on `EditorSession::document()`
   (PLAN Step 8b). `render_assignment_svg` keeps the marker for the editor until 8b switches.
+- **As built in Step 8b.** `LiveEditor` is a coordinator thread (debounce, watchdog) in front of
+  a compile thread that owns the session; help queries (`typst-ide` 0.14.2: autocomplete, hover,
+  definition, jumps) run on the compile thread between compiles and wait at most 2 s. At most two
+  abandoned compiles may still run; the next compile waits until one ends. The app keeps one
+  session at a time (`editor_open` closes the others; sessions close with the editor and on
+  exit); results travel as the `editor:update` event and the iframe gets them through the parent.
+  Jumps answer only for a document compiled from the current sources, tagged with its
+  generation. `render_assignment_svg` stays in the bridge (ported method, row 30 of the parity
+  table) but the editor no longer calls it.
+- **Vragen through the introspector (Step 8b).** `lib.typ` version 2 adds `punten` to the
+  `<__maatwerk_vraag>` marker (output unchanged); `typst_svc::vragen` reads `{opgave, label,
+punten, antwoord}` from the document. A changed copy of `lib.typ` version 1 still works: its
+  vragen have no punten and the editor says why.
+- **Bundled file updates (section 5a) happen when the editor opens** an opdracht
+  (`check_project_files`, CAS on the hash just read): an unchanged older release is replaced; a
+  changed copy is reported as `modified` or `outdated` and never touched. Batch compiles use the
+  copy as it is.
 
 ## Consequences
 
