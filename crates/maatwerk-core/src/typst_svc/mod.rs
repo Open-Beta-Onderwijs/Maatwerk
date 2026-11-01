@@ -14,6 +14,7 @@ mod ide;
 mod opdracht;
 mod project;
 mod rapport;
+mod vragen;
 mod world;
 
 pub use batch::{
@@ -36,6 +37,10 @@ pub use opdracht::{
     INPUTS_KEY, Mode, Observatie, OpdrachtHeader, OpdrachtInputs, opdracht_world,
     render_assignment_pdf, render_assignment_svg_pages,
 };
-pub use project::{TypstProject, create_opdracht_folder, v1_opdracht_id};
+pub use project::{
+    ProjectFileState, ProjectFileStatus, TypstProject, bundled_project_file, check_project_files,
+    create_opdracht_folder, restore_project_file, v1_opdracht_id,
+};
 pub use rapport::{RapportData, rapport_world, render_rapport_pdf};
+pub use vragen::{Vraag, Vragen, vragen};
 pub use world::MaatwerkWorld;

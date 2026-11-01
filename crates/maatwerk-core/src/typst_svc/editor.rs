@@ -32,6 +32,7 @@ use typst::utils::hash128;
 
 use super::compile::{Compiled, compile_document, local_now};
 use super::diagnostics::Diagnostic;
+use super::vragen::{Vragen, vragen};
 use super::world::{INTERNAL_DIR, MaatwerkWorld};
 use crate::error::{Error, Result};
 use crate::paths::RelPath;
@@ -121,7 +122,7 @@ pub struct PageUpdate {
 }
 
 /// The result of one compile.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct EditorUpdate {
     /// The generation this compile saw (the last update applied before it).
     pub generation: u64,
@@ -136,6 +137,8 @@ pub struct EditorUpdate {
     pub page_count: usize,
     /// Pages that changed since the last update, in index order.
     pub pages: Vec<PageUpdate>,
+    /// The vragen of the document, on a successful compile only.
+    pub vragen: Option<Vragen>,
     /// Layout time of this compile.
     pub compile_ms: u64,
     /// Time spent rendering the changed pages to SVG.
@@ -152,6 +155,8 @@ pub struct EditorSession {
     preview_generation: Option<u64>,
     /// Hashes of the pages the client has, in order.
     shown: Vec<u128>,
+    /// The vragen of `document`.
+    vragen: Option<Vragen>,
     /// Whether `document` was compiled from the sources as they are now: spans in it resolve
     /// to the right places only then (review 8a n7).
     current: bool,
@@ -167,6 +172,7 @@ impl EditorSession {
             document: None,
             preview_generation: None,
             shown: Vec::new(),
+            vragen: None,
             current: false,
         }
     }
@@ -244,6 +250,7 @@ impl EditorSession {
         }
         let (ok, diagnostics) = match result {
             Ok(Compiled { output, warnings }) => {
+                self.vragen = Some(vragen(&output));
                 self.document = Some(output);
                 self.preview_generation = Some(generation);
                 self.current = true;
@@ -263,6 +270,7 @@ impl EditorSession {
             preview_generation: self.preview_generation,
             page_count: self.shown.len(),
             pages,
+            vragen: if ok { self.vragen.clone() } else { None },
             compile_ms,
             render_ms: millis(start.elapsed()),
         })
@@ -315,6 +323,7 @@ fn failed_update(
         preview_generation,
         page_count,
         pages: Vec::new(),
+        vragen: None,
         compile_ms: 0,
         render_ms: 0,
     }
