@@ -1,0 +1,41 @@
+{
+  "schema": "maatwerk-assignment-check/1",
+  "ok": true,
+  "root": "C:/opdrachten/voorbeeld",
+  "entry": "main.typ",
+  "mode": "student",
+  "pageCount": 2,
+  "diagnostics": [],
+  "vragen": [
+    {
+      "opgave": 1,
+      "label": "1a",
+      "punten": 2.0,
+      "antwoord": "Antwoord op de eerste vraag.",
+      "page": 2
+    },
+    {
+      "opgave": 1,
+      "label": "1b",
+      "punten": null,
+      "antwoord": "Antwoord op de tweede vraag.",
+      "page": 2
+    },
+    {
+      "opgave": 1,
+      "label": "1c",
+      "punten": 1.0,
+      "antwoord": "Antwoord op de derde vraag.",
+      "page": 2
+    },
+    {
+      "opgave": 2,
+      "label": "2",
+      "punten": 1.0,
+      "antwoord": "Het antwoord.",
+      "page": 2
+    }
+  ],
+  "totalPunten": 4.0,
+  "checks": ["Vraag 1b heeft geen punten."]
+}

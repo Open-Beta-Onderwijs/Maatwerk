@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Headless entry point: `typst compile` (Step 5b), `validate-data` and `migrate` (Step 7a),
-//! `admin reset-pin` (Step 7b).
+//! `admin reset-pin` (Step 7b), `assignment check | render | export-lib` (Step 9).
 
+mod assignment;
 mod data;
 
 use std::path::{Path, PathBuf};
@@ -16,7 +17,13 @@ use typst::foundations::{Dict, IntoValue};
 const USAGE: &str = "\
 usage: maatwerk-cli typst compile <file.typ> [--out <file.pdf>] [--input <key>=<value>]...
                                   [--ignore-system-fonts]
+       maatwerk-cli validate-data <data-folder> [--json]
+       maatwerk-cli migrate <data-folder> (--dry-run | --apply --backup-dir <dir>) [--json] [-v]
        maatwerk-cli admin reset-pin <data-folder>
+       maatwerk-cli assignment check <opdracht> [--json] [--answers] [--ignore-system-fonts]
+       maatwerk-cli assignment render <opdracht> [--pdf <file.pdf>] [--answers | --no-answers]
+                                     [--ignore-system-fonts]
+       maatwerk-cli assignment export-lib <dir> [--overwrite]
        maatwerk-cli --version
 
 typst compile: compiles <file.typ> to PDF with Maatwerk's embedded packages and fonts. The
@@ -32,7 +39,20 @@ data folder, the shared folder and OneDrive, then migrates and validates. Nobody
 Maatwerk open on the folder meanwhile (docs/cutover-runbook.md).
 
 admin reset-pin: removes the admin's PIN and recovery codes; the next admin login sets a new PIN
-and gets new codes. Last resort when both are lost (docs/cutover-runbook.md).";
+and gets new codes. Last resort when both are lost (docs/cutover-runbook.md).
+
+assignment: works on one opdracht folder (main.typ, opdracht.typ, lib.typ, images/) and reads
+nothing outside it (docs/assignment-format.md). <opdracht> is the folder, or a .typ file in it
+(opdracht.typ means the main.typ next to it). No student data is used: the header is main.typ's
+placeholder.
+  check: compiles and lists errors and warnings with file:line:column, the page count, the vragen
+  with punten and answers, and the editor's checks. --json prints
+  docs/schemas/assignment-check.schema.json. Exit code 1 when it does not compile.
+  render: writes the PDF (default opdracht.pdf, or antwoorden.pdf with --answers, in the folder).
+  --no-answers leaves out the upside-down answers at the bottom.
+  export-lib: writes lib.typ, main.typ, a starting opdracht.typ, the embedded packages and fonts
+  into <dir> for an external editor such as tinymist (see LEESMIJ.txt there). Files that exist
+  with other content stop the export unless --overwrite.";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -51,6 +71,18 @@ fn main() -> ExitCode {
             Err(message) => usage_error(&message),
         },
         ["migrate", rest @ ..] => match data::MigrateArgs::parse(rest) {
+            Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["assignment", "check", rest @ ..] => match assignment::CheckArgs::parse(rest) {
+            Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["assignment", "render", rest @ ..] => match assignment::RenderArgs::parse(rest) {
+            Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["assignment", "export-lib", rest @ ..] => match assignment::ExportLibArgs::parse(rest) {
             Ok(args) => args.run(),
             Err(message) => usage_error(&message),
         },

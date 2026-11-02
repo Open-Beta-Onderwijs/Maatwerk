@@ -41,7 +41,7 @@ impl FontStore {
         let mut book = FontBook::new();
         let mut slots = Vec::new();
         let mut emoji = Vec::new();
-        for data in assets::FONTS {
+        for (_, data) in assets::FONTS {
             for font in Font::iter(Bytes::new(*data)) {
                 if font.info().family == EMOJI_FAMILY {
                     emoji.extend(font.info().coverage.iter().filter(|&c| c >= 0x80));
