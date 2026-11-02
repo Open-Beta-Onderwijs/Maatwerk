@@ -307,3 +307,62 @@ fn validate(root: &Value, schema: &Value, value: &Value, at: &str) {
         }
     }
 }
+
+/// Every example in `docs/assignment-examples/` (the AI context points at them) compiles without
+/// errors, warnings or checks, in both modes.
+#[test]
+fn the_documented_examples_check_clean() {
+    let examples = repo().join("docs/assignment-examples");
+    let mut seen = 0;
+    for entry in fs::read_dir(&examples).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_none_or(|e| e != "typ") {
+            continue;
+        }
+        seen += 1;
+        let tmp = opdracht(Some(&fs::read_to_string(&path).unwrap()));
+        let images = tmp.path().join("images");
+        fs::create_dir(&images).unwrap();
+        for img in fs::read_dir(examples.join("images")).unwrap() {
+            let img = img.unwrap().path();
+            fs::copy(&img, images.join(img.file_name().unwrap())).unwrap();
+        }
+        for options in [
+            RenderOptions::default(),
+            RenderOptions {
+                mode: Mode::Answers,
+                include_answers: true,
+            },
+        ] {
+            let report = check_dir(tmp.path(), options);
+            let name = path.file_name().unwrap().to_string_lossy();
+            assert!(report.ok, "{name}: {:#?}", report.diagnostics);
+            assert!(
+                report.diagnostics.is_empty(),
+                "{name}: {:#?}",
+                report.diagnostics
+            );
+            assert!(report.checks.is_empty(), "{name}: {:?}", report.checks);
+            assert!(!report.vragen.is_empty(), "{name}");
+        }
+    }
+    assert_eq!(seen, 5);
+}
+
+/// The complete example in `docs/ai-context/assignment-authoring.md` section 7 checks clean.
+#[test]
+fn the_ai_context_example_checks_clean() {
+    let doc = fs::read_to_string(repo().join("docs/ai-context/assignment-authoring.md")).unwrap();
+    let section = &doc[doc.find("## 7. A complete example").unwrap()..];
+    let start = section.find("```typst\n").unwrap() + "```typst\n".len();
+    let src = &section[start..start + section[start..].find("```").unwrap()];
+    let tmp = opdracht(Some(src));
+    let report = check_dir(tmp.path(), RenderOptions::default());
+    assert!(
+        report.ok && report.diagnostics.is_empty(),
+        "{:#?}",
+        report.diagnostics
+    );
+    assert!(report.checks.is_empty(), "{:?}", report.checks);
+    assert_eq!(report.total_punten, 4.5);
+}

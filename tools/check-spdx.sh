@@ -4,13 +4,14 @@
 # Exempt: vendored Typst packages (their own licences, THIRD_PARTY_LICENSES.md) and
 # base_assignment.typ, which becomes the start of a teacher's own opdracht file, and the
 # generated opdracht fixtures (teacher files, tools/fixtures/export-opdrachten.mjs), and the
-# migration fixtures (synthetic teacher files in a data folder).
+# migration fixtures (synthetic teacher files in a data folder), and the example opdrachten
+# (docs/assignment-examples, meant to be copied as teacher files).
 set -euo pipefail
 
 missing=0
 while IFS= read -r file; do
   case "$file" in
-    crates/maatwerk-core/assets/packages/* | crates/maatwerk-core/assets/templates/base_assignment.typ | crates/maatwerk-core/tests/fixtures/opdrachten/* | crates/maatwerk-core/tests/fixtures/migrate/*) continue ;;
+    crates/maatwerk-core/assets/packages/* | crates/maatwerk-core/assets/templates/base_assignment.typ | crates/maatwerk-core/tests/fixtures/opdrachten/* | crates/maatwerk-core/tests/fixtures/migrate/* | docs/assignment-examples/*) continue ;;
   esac
   if ! head -n 3 "$file" | grep -q 'SPDX-License-Identifier: AGPL-3.0-or-later'; then
     echo "missing SPDX header: $file"
