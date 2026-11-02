@@ -229,3 +229,18 @@ preview moves the cursor (the header text leads into `lib.typ`).
 compiles in 1-2 ms after every edit. A batch run while the editor is open would evict the
 editor's cache once (the next edit then costs about one full compile, ~300-400 ms here). Kept in
 the backlog; measure again with a large opdracht if teachers notice it.
+
+### Without the compile debounce (2026-11-01, `0.3.0-rc.1`)
+
+User decision: no compile delay; new errors are shown after 500 ms without typing (ADR-0002
+section 12). Same script, data and machine:
+
+| Measure                                  | Median | p90   | Max    |
+| ---------------------------------------- | ------ | ----- | ------ |
+| Keystroke -> preview patched (300 edits) | 61 ms  | 83 ms | 210 ms |
+| `compileMs`                              | 4 ms   | 5 ms  | 7 ms   |
+| `renderMs`                               | 1 ms   | 3 ms  | 5 ms   |
+| Editor opened -> first preview           | 280 ms |       |        |
+
+A burst of 20 keystrokes (15 ms apart) now gives 18 compiles instead of one, each of a newer text
+(generations only go up). Memory: 55 MiB at the start, 58-60 MiB from 50 to 300 edits, flat.

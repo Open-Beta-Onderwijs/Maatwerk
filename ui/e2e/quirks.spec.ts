@@ -208,6 +208,15 @@ test('C1: a v1 folder offers the one-time conversion, after a confirmation', asy
   await go.click();
   await expect(region).toContainText('Gegevensmap omgezet van versie 1 naar 2.');
   await expect(region).toContainText('Back-up:');
+  // The report itemises the migration warnings and every check issue (cutover dry run: the
+  // warnings were only counted before).
+  const report = page.getByRole('region', { name: 'Verslag van het omzetten' });
+  await expect(report).toContainText('Verslag (ook na het starten te lezen):');
+  await expect(report).toContainText('leerling 1002 stond er dubbel in');
+  await expect(report).toContainText('0 fouten, 2 waarschuwingen');
+  await expect(report.locator('tbody tr')).toHaveCount(2);
+  await expect(report).toContainText('toets-1 (1).json');
+  await expect(report).toContainText('verwijst naar groep 4H9');
   await page.getByRole('button', { name: 'Maatwerk starten' }).click();
   const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
   expect(calls).toEqual(expect.arrayContaining(['migrateDataFolder', 'restartApp']));

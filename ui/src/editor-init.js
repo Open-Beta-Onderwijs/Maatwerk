@@ -673,15 +673,35 @@ function applyUpdate(u) {
   }
   previewGeneration = u.previewGeneration;
   // Positions refer to the text of this generation: newer edits are on their way.
-  if (u.generation >= lastSent) {
-    lastUpdate = u;
-    applyDiagnostics();
-    const errors = u.diagnostics.filter((d) => d.severity === 'error');
-    if (errors.length) setStatus('Fout bij renderen', diagnosticsText(u.diagnostics));
-    else if (document.getElementById('btn-render-error')) setStatus('');
-  }
+  if (u.generation >= lastSent) showCompileResult(u);
   if (u.vragen) showVragen(u.vragen);
   if (u.ok && view?.hasFocus) syncPreviewToCursor();
+}
+
+// Compiles run without delay, so half-typed code (`#vraag(`) fails for a
+// moment: new errors are shown only after ERROR_DELAY_MS without typing, while
+// a good result clears them at once (user, 2026-11-01).
+const ERROR_DELAY_MS = 500;
+let errorTimer = null;
+let lastEditAt = 0;
+
+function showCompileResult(u) {
+  clearTimeout(errorTimer);
+  errorTimer = null;
+  const show = () => {
+    lastUpdate = u;
+    applyDiagnostics();
+    if (u.diagnostics.some((d) => d.severity === 'error')) {
+      setStatus('Fout bij renderen', diagnosticsText(u.diagnostics));
+    } else if (document.getElementById('btn-render-error')) {
+      setStatus('');
+    }
+  };
+  if (u.ok) {
+    show();
+    return;
+  }
+  errorTimer = setTimeout(show, Math.max(0, lastEditAt + ERROR_DELAY_MS - performance.now()));
 }
 
 // Cursor -> preview: the preview follows the cursor (replaces the old
@@ -789,7 +809,8 @@ function saveNow(file = current) {
       }
       if (!writeResult?.ok) throw new Error('niet opgeslagen');
       entry.baseHash = writeResult.hash;
-      setStatus('Opgeslagen');
+      // A compile error stays in view: saving does not fix it.
+      if (!document.getElementById('btn-render-error')) setStatus('Opgeslagen');
       lastSaveFailed = false;
       return true;
     } catch (err) {
@@ -877,6 +898,9 @@ async function closeAfterSave(type) {
 
 const changeListener = EditorView.updateListener.of((update) => {
   if (update.docChanged) {
+    lastEditAt = performance.now();
+    // An error shown later would be of older text; the next result decides.
+    clearTimeout(errorTimer);
     sendText(current, update.state.doc.toString());
     if (replacingDoc) return;
     setStatus('Niet opgeslagen…');

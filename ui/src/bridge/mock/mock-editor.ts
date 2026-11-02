@@ -11,7 +11,8 @@
 //   labelled and checked like maatwerk-core's vragen().
 // - Help: completions from a fixed word list, hover for those words,
 //   definitions of `#let` names; jumps map lines to y positions and back.
-// Debounce 50 ms; the latest generation wins, only changed pages are sent.
+// No debounce (edits in one tick are merged); the latest generation wins, only
+// changed pages are sent.
 
 import type {
   EditorClickJump,
@@ -26,7 +27,7 @@ import type {
   EditorVragen,
 } from '../bindings';
 
-const DEBOUNCE_MS = 50;
+const DEBOUNCE_MS = 0; // as maatwerk-core's DEFAULT_DEBOUNCE
 const LINE_Y0 = 72;
 const LINE_DY = 16;
 const WORDS = [

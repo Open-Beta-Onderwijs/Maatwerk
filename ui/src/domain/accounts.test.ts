@@ -15,11 +15,12 @@ const check = (outcome: PinOutcomeLike['outcome'], retryAfterMs = 0): PinOutcome
 });
 
 describe('PIN dialogs (Step 7b)', () => {
-  it('accepts 5 to 8 digits that match their repetition', () => {
+  it('accepts 4 to 8 digits that match their repetition', () => {
+    expect(newPinProblem('1234', '1234')).toBeNull();
     expect(newPinProblem('12345', '12345')).toBeNull();
     expect(newPinProblem('12345678', '12345678')).toBeNull();
-    for (const bad of ['1234', '123456789', '12a45', '']) {
-      expect(newPinProblem(bad, bad)).toBe('Een pincode heeft 5 tot 8 cijfers.');
+    for (const bad of ['123', '123456789', '12a45', '']) {
+      expect(newPinProblem(bad, bad)).toBe('Een pincode heeft 4 tot 8 cijfers.');
     }
     expect(newPinProblem('12345', '12346')).toBe('De twee pincodes zijn niet gelijk.');
   });

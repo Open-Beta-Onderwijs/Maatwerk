@@ -107,6 +107,8 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       toolbar buttons insert their markup; Ctrl+scroll zooms the preview. A Typst error is
       underlined in the text with a red mark in the gutter (hover shows the message), "Fout bij
       renderen" shows it with file, line and column, and the preview keeps the last good version.
+      While typing, a new error appears only after a short pause (half a second); fixing it
+      removes the underline at once. Saving does not hide the error message.
 - [ ] **M-OPD-3** Autosave: type, wait a second, close with "Maatwerk": reopening shows the edit.
       Close right after typing: the last edit is kept too.
 - [ ] **M-OPD-4** "Figuur toevoegen" -> "📂 Van schijf kiezen…": the Windows file dialog shows
@@ -228,8 +230,10 @@ through OneDrive or a network share.
 
 - [ ] **M-MIG-1** Start the exe on a copy of the old app's folder: "Deze gegevensmap moet eenmalig
       worden omgezet". "Omzetten" stays grey until the box is ticked. After converting: the
-      summary with the backup path (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`) and
-      the check; "Maatwerk starten" opens the app with all students, exams, scores, opdrachten and
+      report "Verslag van het omzetten" with the backup path
+      (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`), every migration warning and
+      every error/warning of the check (file and message, errors first), and the path of
+      `<backup> verslag.txt` next to the zip (the same report plus the list of changes); "Maatwerk starten" opens the app with all students, exams, scores, opdrachten and
       RTTI texts as in the old app (spot-check a few grades and one rapport against the old app's
       PDF).
 - [ ] **M-MIG-2** The backup zip opens in Explorer and holds the whole old `data\` folder.

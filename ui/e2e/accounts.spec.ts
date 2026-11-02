@@ -31,7 +31,7 @@ test('a teacher chooses a PIN at the first login and needs it the next time', as
   await page.locator('#pin-new').fill('123');
   await page.locator('#pin-repeat').fill('123');
   await page.locator('#pin-ok').click();
-  await expect(page.locator('.pin-error')).toHaveText('Een pincode heeft 5 tot 8 cijfers.');
+  await expect(page.locator('.pin-error')).toHaveText('Een pincode heeft 4 tot 8 cijfers.');
   await page.locator('#pin-new').fill(PIN);
   await page.locator('#pin-repeat').fill('54321');
   await page.locator('#pin-ok').click();

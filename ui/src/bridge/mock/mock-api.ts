@@ -6,7 +6,7 @@
 // on the SHA-1 of the file bytes, own writes are not echoed, external writes
 // (test hooks below) emit `data:changed`. Typst calls return canned output.
 // Integrity stamps (C19) are not computed. PINs (Step 7b) are stored as
-// `mock$<pin>`, not hashed: the rules (5-8 digits, delays, session, admin
+// `mock$<pin>`, not hashed: the rules (4-8 digits, delays, session, admin
 // checks) match maatwerk-core::auth. Nothing is persisted: a reload starts over.
 
 import type {
@@ -134,7 +134,7 @@ export function pinDelayMs(failures: number): number {
 }
 
 function checkPinFormat(pin: string): void {
-  if (!/^\d{5,8}$/.test(pin)) throw new Error('Een pincode heeft 5 tot 8 cijfers.');
+  if (!/^\d{4,8}$/.test(pin)) throw new Error('Een pincode heeft 4 tot 8 cijfers.');
 }
 
 type UserRecord = Record<string, unknown> & { id: string };
@@ -166,8 +166,26 @@ export class MockApi implements MaatwerkApi {
     written: 12,
     moved: 1,
     deleted: 3,
-    warnings: [],
-    validation: { filesChecked: 12, issues: [] },
+    warnings: ['Groep 4H1: leerling 1002 stond er dubbel in; de eerste is gehouden.'],
+    validation: {
+      filesChecked: 12,
+      issues: [
+        {
+          severity: 'warning',
+          kind: 'stray',
+          path: 'nat/2025-2026/scores/toets-1 (1).json',
+          message: 'Conflictkopie van OneDrive; Maatwerk gebruikt dit bestand niet.',
+        },
+        {
+          severity: 'warning',
+          kind: 'reference',
+          path: 'nat/2025-2026/toetsen.json',
+          message: 'Toets toets-2 verwijst naar groep 4H9, die niet bestaat.',
+        },
+      ],
+    },
+    reportFile:
+      'C:\\Users\\docent\\AppData\\Local\\maatwerk\\backups\\maatwerk-backup-v1 verslag.txt',
   };
   /** Logged-in user and wrong attempts (maatwerk-core::auth::Auth). */
   private authSession: string | null = null;

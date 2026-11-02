@@ -713,6 +713,20 @@ Paths in this section are relative to `_reference/renderer/`.
   opdracht's image folder are skipped by copy and left alone by delete (the reference threw on
   them when copying and removed them when deleting).
 
+### T31. Set rules in `setup_extra()` do not reach the opdracht
+
+- Where: `main.js:642-655` (generated wrapper) places `#setup_extra()` as content; `main.typ`
+  (`opdracht-main.typ`) keeps that. `base_assignment.typ` says "Extra aanpassingen bovenop setup
+  — voeg hier inhoud of stijlen toe".
+- Evidence (Step 9 review M1): a `#set` rule inside the content block that `setup_extra()`
+  returns ends with that block, so it does not apply to `render_uitleg()` or `render_opgaven()`.
+  Content in it is shown (between the header and the uitleg).
+- **Port: unchanged.** Making it a show rule (`#show: setup_extra` or similar) changes the
+  opdracht format and the output of existing opdrachten: needs the user (PLAN 2.6). The authoring
+  docs (`docs/ai-context/assignment-authoring.md`, `docs/assignment-format.md`) say to put rules
+  at the top of `render_uitleg()` / `render_opgaven()` instead. The template's comment is left
+  as it is (it is the start of every new teacher file); open question for the user.
+
 ## U. UI
 
 Read from code only; "probable" means the code path is clear but not confirmed in the running app.

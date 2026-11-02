@@ -34,6 +34,8 @@ pub struct MigrationResult {
     pub warnings: Vec<String>,
     /// The check right after the migration.
     pub validation: Option<DataCheck>,
+    /// The Dutch report next to the backup zip (`None` when it could not be written).
+    pub report_file: Option<String>,
 }
 
 #[derive(Debug, Serialize, Type)]
@@ -114,7 +116,8 @@ pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Re
             }
         }
         let data_dir = c.data_dir().to_path_buf();
-        let report = migrate::migrate(&data_dir, Some(&backups), local_now())?;
+        let now = local_now();
+        let report = migrate::migrate(&data_dir, Some(&backups), now)?;
         tracing::info!(
             "migrated {} from v{} (backup {:?}, {} changes)",
             display_path(&data_dir),
@@ -123,11 +126,21 @@ pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Re
             report.changes.len()
         );
         let count = |a: Action| report.changes.iter().filter(|c| c.action == a).count() as u32;
-        let validation = if report.applied {
-            Some(data_check(validate::validate(&data_dir)?))
+        let check = if report.applied {
+            Some(validate::validate(&data_dir)?)
         } else {
             None
         };
+        // The migration is done; a report that cannot be written is only logged.
+        let report_file =
+            match migrate::save_report(&report, check.as_ref(), &display_path(&data_dir), now) {
+                Ok(path) => path.map(|p| display_path(&p)),
+                Err(e) => {
+                    tracing::warn!("migration report not written: {e}");
+                    None
+                }
+            };
+        let validation = check.map(data_check);
         Ok(MigrationResult {
             from_version: report.from_version as u32,
             to_version: report.to_version as u32,
@@ -138,6 +151,7 @@ pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Re
             deleted: count(Action::Delete),
             warnings: report.warnings,
             validation,
+            report_file,
         })
     })
     .await

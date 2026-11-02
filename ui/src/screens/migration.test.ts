@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
-import { issueCounts, needsAttention } from './gegevens';
+import { issueCounts, needsAttention, sortedIssues } from './gegevens';
 import { migrationSummary } from './migration';
 
 describe('migration and data check texts', () => {
@@ -19,12 +19,24 @@ describe('migration and data check texts', () => {
         filesChecked: 10,
         issues: [{ severity: 'warning', kind: 'stray', path: 'x', message: 'm' }],
       },
+      reportFile: 'C:\\b\\maatwerk-backup-v1 verslag.txt',
     });
     expect(lines).toEqual([
       'Gegevensmap omgezet van versie 1 naar 2.',
       '10 bestanden bijgewerkt, 2 verplaatst, 3 verwijderd.',
       'Back-up: C:\\b\\maatwerk-backup-v1.zip',
-      'Controle: geen fouten, 1 waarschuwing.',
+      'Verslag (ook na het starten te lezen): C:\\b\\maatwerk-backup-v1 verslag.txt',
+      'Meldingen bij het omzetten: geen.',
+      'Controle na het omzetten: 10 bestanden gecontroleerd. 0 fouten, 1 waarschuwing',
+    ]);
+  });
+
+  it('lists errors before warnings', () => {
+    const i = (severity: string, path: string) => ({ severity, path });
+    expect(sortedIssues([i('warning', 'a'), i('error', 'b'), i('warning', 'c')])).toEqual([
+      i('error', 'b'),
+      i('warning', 'a'),
+      i('warning', 'c'),
     ]);
   });
 

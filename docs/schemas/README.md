@@ -21,6 +21,11 @@ with `file:line` sources, is [../reference/data-files.md](../reference/data-file
 | `scores.schema.json`        | `data/<year>/scores/<subject>/<studentId>.json`                     |
 | `session.schema.json`       | `<userData>/session.json` (machine-local, not in `data/`)           |
 
+`assignment-check.schema.json` is not a data file: it is the output of
+`maatwerk-cli assignment check --json` (Step 9, `docs/assignment-format.md`), checked against
+its generated sample `samples/assignment-check.sample.json` by
+`maatwerk-core` `assignment::tests::the_check_json_matches_its_schema_and_sample`.
+
 Notes:
 
 - Top-level objects allow unknown properties (the reference app spreads objects and keeps

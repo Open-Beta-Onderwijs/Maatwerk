@@ -25,7 +25,7 @@ export function fullUserName(u: PinUser): string {
 
 /** Dutch problem with a new PIN and its repetition, or null when fine. */
 export function newPinProblem(pin: string, repeat: string): string | null {
-  if (!/^\d{5,8}$/.test(pin)) return 'Een pincode heeft 5 tot 8 cijfers.';
+  if (!/^\d{4,8}$/.test(pin)) return 'Een pincode heeft 4 tot 8 cijfers.';
   if (pin !== repeat) return 'De twee pincodes zijn niet gelijk.';
   return null;
 }

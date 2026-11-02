@@ -111,7 +111,8 @@ impl MigrateArgs {
 
     /// Exit code 1 when the migration is blocked or the result does not validate.
     pub fn run(self) -> ExitCode {
-        let report = match migrate::migrate(&self.data, self.backup_dir.as_deref(), local_now()) {
+        let now = local_now();
+        let report = match migrate::migrate(&self.data, self.backup_dir.as_deref(), now) {
             Ok(report) => report,
             Err(e) => return fail(&e),
         };
@@ -123,16 +124,31 @@ impl MigrateArgs {
         } else {
             None
         };
+        let data_dir = maatwerk_core::paths::display_path(&self.data);
+        let report_file = match migrate::save_report(&report, validation.as_ref(), &data_dir, now) {
+            Ok(path) => path.map(|p| maatwerk_core::paths::display_path(&p)),
+            Err(e) => {
+                eprintln!("warning: migration report not written: {e}");
+                None
+            }
+        };
         if self.json {
             println!(
                 "{}",
-                serde_json::json!({ "migration": report, "validation": validation })
+                serde_json::json!({
+                    "migration": report,
+                    "validation": validation,
+                    "reportFile": report_file,
+                })
             );
         } else {
             print_migration(&report, self.verbose);
             if let Some(v) = &validation {
                 println!();
                 print_validation(v);
+            }
+            if let Some(f) = &report_file {
+                println!("\nVerslag: {f}");
             }
         }
         match validation {
