@@ -145,7 +145,7 @@ function setFirstPinDialog(user: PinUser, api: Api, roleLabel: string): Promise<
   const html = `
     <h3>Welkom, ${escHtml(user.voornaam)}</h3>
     ${roleLabel ? `<p class="pin-role">${escHtml(roleLabel)}</p>` : ''}
-    <p>Kies een pincode van 5 tot 8 cijfers. Daarmee log je voortaan in.</p>
+    <p>Kies een pincode van 4 tot 8 cijfers. Daarmee log je voortaan in.</p>
     ${pinInput('pin-new', 'Nieuwe pincode', true)}
     ${pinInput('pin-repeat', 'Herhaal de pincode')}
     <p class="pin-error" role="alert"></p>

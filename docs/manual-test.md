@@ -230,8 +230,10 @@ through OneDrive or a network share.
 
 - [ ] **M-MIG-1** Start the exe on a copy of the old app's folder: "Deze gegevensmap moet eenmalig
       worden omgezet". "Omzetten" stays grey until the box is ticked. After converting: the
-      summary with the backup path (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`) and
-      the check; "Maatwerk starten" opens the app with all students, exams, scores, opdrachten and
+      report "Verslag van het omzetten" with the backup path
+      (`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\backups\`), every migration warning and
+      every error/warning of the check (file and message, errors first), and the path of
+      `<backup> verslag.txt` next to the zip (the same report plus the list of changes); "Maatwerk starten" opens the app with all students, exams, scores, opdrachten and
       RTTI texts as in the old app (spot-check a few grades and one rapport against the old app's
       PDF).
 - [ ] **M-MIG-2** The backup zip opens in Explorer and holds the whole old `data\` folder.

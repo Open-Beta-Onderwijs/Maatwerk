@@ -52,19 +52,30 @@ export function needsAttention(check: DataCheck): boolean {
   return check.issues.some((i) => i.severity === 'error' || i.kind === 'stamp');
 }
 
-function issueTable(
+/** Errors before warnings, otherwise in the order of the check. */
+export function sortedIssues<T extends Pick<DataIssue, 'severity'>>(issues: T[]): T[] {
+  const rank = (i: T) => (i.severity === 'error' ? 0 : 1);
+  return [...issues].sort((a, b) => rank(a) - rank(b));
+}
+
+/**
+ * The issues as a table. Without `actions` it is read-only (the migration report); with them a
+ * changed file gets "Accepteren" and "Herstellen uit snapshot".
+ */
+export function issueTable(
   check: DataCheck,
-  onAccept: (path: string) => void,
-  onRestore: (path: string) => void,
+  actions?: { onAccept: (path: string) => void; onRestore: (path: string) => void },
 ): HTMLElement {
   const table = el('table', 'gegevens-table');
   const head = el('tr');
-  for (const h of ['', 'Soort', 'Bestand', 'Melding', '']) head.append(el('th', '', h));
+  for (const h of ['', 'Soort', 'Bestand', 'Melding', ...(actions ? [''] : [])]) {
+    head.append(el('th', '', h));
+  }
   const thead = el('thead');
   thead.append(head);
   table.append(thead);
   const body = el('tbody');
-  for (const issue of check.issues) {
+  for (const issue of sortedIssues(check.issues)) {
     const tr = el('tr', `gegevens-${issue.severity}`);
     tr.append(
       el('td', 'gegevens-sev', issue.severity === 'error' ? 'Fout' : 'Let op'),
@@ -72,6 +83,11 @@ function issueTable(
       el('td', 'gegevens-path', issue.path),
       el('td', '', issue.message),
     );
+    if (!actions) {
+      body.append(tr);
+      continue;
+    }
+    const { onAccept, onRestore } = actions;
     const action = el('td');
     if (issue.kind === 'stamp') {
       const btn = el('button', 'btn-secondary btn-sm', 'Accepteren') as HTMLButtonElement;
@@ -129,17 +145,16 @@ export async function renderGegevens(
       result.replaceChildren(summary);
       if (data.issues.length) {
         result.append(
-          issueTable(
-            data,
-            async (path) => {
+          issueTable(data, {
+            onAccept: async (path) => {
               try {
                 await api.acceptStamp(path);
               } finally {
                 await check();
               }
             },
-            (path) => void restore(path),
-          ),
+            onRestore: (path) => void restore(path),
+          }),
         );
       }
     } catch (e) {

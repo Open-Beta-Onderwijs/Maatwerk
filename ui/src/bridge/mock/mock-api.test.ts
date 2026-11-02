@@ -190,7 +190,7 @@ describe('MockApi accounts (Step 7b, rules of maatwerk-core::auth)', () => {
 
   it('sets a first PIN once and logs in', async () => {
     expect((await api.verifyPin(TEACHER, '12345')).outcome).toBe('noPin');
-    await expect(api.setFirstPin(TEACHER, '1234')).rejects.toThrow('5 tot 8 cijfers');
+    await expect(api.setFirstPin(TEACHER, '123')).rejects.toThrow('4 tot 8 cijfers');
     const set = await api.setFirstPin(TEACHER, '12345');
     expect(set.recoveryCodes).toBeNull();
     expect(api.loggedIn).toBe(TEACHER);

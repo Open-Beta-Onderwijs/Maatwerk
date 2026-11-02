@@ -3672,6 +3672,24 @@ td.grade-override-stale::after {
   margin: 0 0 16px;
   font-size: 13px;
 }
+.startup-error.migration-wide {
+  max-width: 900px;
+}
+.migration-heading {
+  margin: 16px 0 8px;
+}
+.migration-issues {
+  max-height: 40vh;
+  overflow: auto;
+  margin: 0 0 12px;
+}
+.migration-advice {
+  font-size: 13px;
+}
+.migration-advice-error {
+  color: var(--danger);
+  font-weight: 600;
+}
 
 /* ── Beheer > Gegevenscontrole (Step 7a, C19) ────────────────────────────── */
 .gegevens {

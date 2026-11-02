@@ -332,3 +332,59 @@ fn helper_rules() {
     assert!(plan::is_file_id("toets-lk3j2-a1b2c3"));
     assert!(!plan::is_file_id("../x"));
 }
+
+#[test]
+fn the_report_lists_every_warning_and_check_issue_next_to_the_backup() {
+    let r = rig();
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let check = crate::validate::ValidationReport {
+        schema_version: 2,
+        files_checked: 7,
+        issues: vec![
+            crate::validate::Issue {
+                severity: crate::validate::Severity::Warning,
+                kind: crate::validate::IssueKind::Stray,
+                path: "nat/x (1).json".into(),
+                message: "conflictkopie".into(),
+            },
+            crate::validate::Issue {
+                severity: crate::validate::Severity::Error,
+                kind: crate::validate::IssueKind::Corrupt,
+                path: "bio/y.json".into(),
+                message: "onleesbaar".into(),
+            },
+        ],
+    };
+    let path = save_report(&report, Some(&check), "D:/data", now())
+        .unwrap()
+        .unwrap();
+    let backup = PathBuf::from(report.backup.as_ref().unwrap());
+    assert_eq!(path.parent(), backup.parent());
+    assert!(
+        path.file_name()
+            .unwrap()
+            .to_string_lossy()
+            .ends_with(" verslag.txt")
+    );
+    let text = fs::read_to_string(&path).unwrap();
+    for w in &report.warnings {
+        assert!(text.contains(w.as_str()), "{w:?} in\n{text}");
+    }
+    assert!(
+        text.contains("7 bestanden gecontroleerd, 1 fout, 1 waarschuwing."),
+        "{text}"
+    );
+    // Errors first.
+    let err = text.find("[FOUT] bio/y.json: onleesbaar").unwrap();
+    let warn = text.find("[Let op] nat/x (1).json: conflictkopie").unwrap();
+    assert!(err < warn, "{text}");
+    assert!(text.contains("Map: D:/data"));
+}
+
+#[test]
+fn a_dry_run_has_no_report_file() {
+    let r = rig();
+    let report = migrate(&r.data, None, now()).unwrap();
+    assert_eq!(save_report(&report, None, "d", now()).unwrap(), None);
+    assert!(report_text(&report, None, "d", now()).contains("(niet uitgevoerd)"));
+}

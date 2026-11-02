@@ -40,8 +40,9 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
      The backup folder must be outside OneDrive and outside the shared folder (the tool refuses
      otherwise). It cannot recognise a SharePoint library synced by OneDrive: choose a plain
      local folder such as `C:\Maatwerk-backups`.
-4. **Copy the backup zip** to a second place (a USB stick or the school network drive). Note its
-   name in the log below.
+4. **Copy the backup zip** and its report `<backup> verslag.txt` (same folder: migration
+   warnings, the check and every change) to a second place (a USB stick or the school network
+   drive). Note its name in the log below.
 5. Open **Gegevenscontrole** (admin tab). No errors expected; warnings are listed for later.
 6. Wait until OneDrive has synced the migrated folder (many files change once: this is expected).
 
@@ -53,7 +54,7 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
    remove desktop shortcuts to it, so nobody starts it out of habit. The old app does not read
    `schema_version`: on a v2 folder it would write v1 data again.
 3. Tell the teachers they can start the new Maatwerk. **The admin logs in first**: Maatwerk asks
-   for a new PIN (5-8 digits) and then shows ten recovery codes **once**. Print them or save them
+   for a new PIN (4-8 digits) and then shows ten recovery codes **once**. Print them or save them
    ("Afdrukken" / "Opslaan als") and keep them outside the shared folder (e.g. in the school
    safe). Each teacher chooses a PIN at their first login.
 4. Optional: assign the sectievoorzitters (Gebruikers > Sectievoorzitters) and check the snapshot

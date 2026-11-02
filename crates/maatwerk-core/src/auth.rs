@@ -23,7 +23,7 @@ use crate::paths::RelPath;
 use crate::storage::{Storage, stamp_meta};
 
 /// PIN length in digits.
-pub const PIN_MIN: usize = 5;
+pub const PIN_MIN: usize = 4;
 pub const PIN_MAX: usize = 8;
 /// Recovery codes made at the admin's PIN setup.
 pub const RECOVERY_CODES: usize = 10;
@@ -42,12 +42,12 @@ fn invalid(message: &str) -> Error {
     }
 }
 
-/// 5-8 digits, nothing else.
+/// 4-8 digits, nothing else.
 pub fn check_pin_format(pin: &str) -> Result<()> {
     if (PIN_MIN..=PIN_MAX).contains(&pin.len()) && pin.bytes().all(|b| b.is_ascii_digit()) {
         Ok(())
     } else {
-        Err(invalid("Een pincode heeft 5 tot 8 cijfers."))
+        Err(invalid("Een pincode heeft 4 tot 8 cijfers."))
     }
 }
 

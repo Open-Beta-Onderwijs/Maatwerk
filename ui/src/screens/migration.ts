@@ -7,6 +7,7 @@
 // (docs/cutover-runbook.md).
 
 import type { MaatwerkApi, MigrationResult } from '../bridge/api';
+import { issueCounts, issueTable } from './gegevens';
 import { asFolderError } from './startup-error';
 
 type Api = Pick<MaatwerkApi, 'migrateDataFolder' | 'restartApp'>;
@@ -25,14 +26,52 @@ export function migrationSummary(r: MigrationResult): string[] {
     `${r.written} bestanden bijgewerkt, ${r.moved} verplaatst, ${r.deleted} verwijderd.`,
   ];
   if (r.backup) lines.push(`Back-up: ${r.backup}`);
-  const issues = r.validation?.issues ?? [];
-  const errors = issues.filter((i) => i.severity === 'error').length;
+  if (r.reportFile) lines.push(`Verslag (ook na het starten te lezen): ${r.reportFile}`);
+  const n = r.warnings.length;
   lines.push(
-    errors > 0
-      ? `Controle: ${errors} ${errors === 1 ? 'fout' : 'fouten'}, ${issues.length - errors} waarschuwingen. Bekijk ze bij Beheer > Gegevenscontrole.`
-      : `Controle: geen fouten, ${issues.length} ${issues.length === 1 ? 'waarschuwing' : 'waarschuwingen'}.`,
+    `Meldingen bij het omzetten: ${n === 0 ? 'geen' : n}.`,
+    r.validation
+      ? `Controle na het omzetten: ${r.validation.filesChecked} bestanden gecontroleerd. ` +
+          issueCounts(r.validation.issues)
+      : 'Controle na het omzetten: niet uitgevoerd.',
   );
   return lines;
+}
+
+/** The report shown after the migration: summary, migration warnings, check issues. */
+export function migrationReport(r: MigrationResult): HTMLElement {
+  const report = el('div', 'migration-done');
+  report.setAttribute('role', 'region');
+  report.setAttribute('aria-label', 'Verslag van het omzetten');
+  report.append(el('h3', 'migration-heading', 'Verslag van het omzetten'));
+  for (const line of migrationSummary(r)) report.append(el('p', '', line));
+  if (r.warnings.length) {
+    report.append(el('h4', 'migration-heading', 'Meldingen bij het omzetten'));
+    const list = el('ul', 'migration-warnings');
+    for (const w of r.warnings) list.append(el('li', '', w));
+    report.append(list);
+  }
+  const issues = r.validation?.issues ?? [];
+  if (r.validation && issues.length) {
+    report.append(el('h4', 'migration-heading', 'Controle na het omzetten'));
+    const wrap = el('div', 'migration-issues');
+    wrap.append(issueTable(r.validation));
+    report.append(wrap);
+    const errors = issues.some((i) => i.severity === 'error');
+    report.append(
+      el(
+        'p',
+        errors ? 'migration-advice migration-advice-error' : 'migration-advice',
+        errors
+          ? 'Er zijn fouten gevonden. Los ze op voordat collega’s verder werken: na het ' +
+              'starten staan ze ook bij Beheer > Gegevenscontrole. Lukt dat niet, zet dan de ' +
+              'back-up terug (zie het draaiboek).'
+          : 'Waarschuwingen houden het werken niet tegen. Na het starten staan ze ook bij ' +
+              'Beheer > Gegevenscontrole.',
+      ),
+    );
+  }
+  return report;
 }
 
 /** Replaces the startup screen's content with the conversion offer. */
@@ -77,14 +116,8 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
     status.textContent = 'Bezig met de back-up en het omzetten…';
     try {
       const result = await api.migrateDataFolder();
-      const done = el('div', 'migration-done');
-      for (const line of migrationSummary(result)) done.append(el('p', '', line));
-      if (result.warnings.length) {
-        done.append(el('p', '', 'Let op:'));
-        const list = el('ul', 'migration-warnings');
-        for (const w of result.warnings) list.append(el('li', '', w));
-        done.append(list);
-      }
+      const done = migrationReport(result);
+      box.classList.add('migration-wide');
       const start = el('button', 'btn-primary', 'Maatwerk starten') as HTMLButtonElement;
       start.addEventListener('click', () => {
         start.disabled = true;

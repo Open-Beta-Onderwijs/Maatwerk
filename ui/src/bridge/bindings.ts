@@ -425,6 +425,8 @@ export type MigrationResult = {
 	warnings: string[],
 	/**  The check right after the migration. */
 	validation: DataCheck | null,
+	/**  The Dutch report next to the backup zip (`None` when it could not be written). */
+	reportFile: string | null,
 };
 
 /**  A JSON file of a folder with its name (`readJsonDir`). */

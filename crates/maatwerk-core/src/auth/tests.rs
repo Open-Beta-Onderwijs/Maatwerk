@@ -26,11 +26,11 @@ fn user(s: &Storage, id: &str) -> Value {
 }
 
 #[test]
-fn pin_format_is_five_to_eight_digits() {
-    for ok in ["12345", "12345678", "00000"] {
+fn pin_format_is_four_to_eight_digits() {
+    for ok in ["1234", "12345", "12345678", "0000"] {
         assert!(check_pin_format(ok).is_ok(), "{ok}");
     }
-    for bad in ["1234", "123456789", "12a45", " 12345", "１２３４５", ""] {
+    for bad in ["123", "123456789", "12a45", " 12345", "１２３４", ""] {
         assert!(check_pin_format(bad).is_err(), "{bad}");
     }
 }
