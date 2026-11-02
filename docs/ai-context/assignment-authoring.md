@@ -27,7 +27,7 @@ an opdracht: the student header is filled in by the app when it prints.
 ```typst
 #import "lib.typ": *
 
-// Extra set/show rules on top of the standard layout. Usually empty.
+// Content shown between the header and the uitleg. Usually empty. (Not for set rules.)
 #let setup_extra() = []
 
 // The explanation: theory, examples, formulas, context.
@@ -104,8 +104,10 @@ Import them with exactly these versions. Any other package fails.
    `"images/<name>"`. No URLs, no paths outside the folder.
 9. **Fonts:** do not set fonts. Emoji work (Noto Color Emoji is embedded).
 10. **No new helpers in lib.typ.** Small local helpers go in `opdracht.typ` with `#let`.
-11. **`setup_extra()`** is for document-wide rules only (e.g.
-    `#set math.equation(numbering: "(1)")`); it must return content (`[]` when empty).
+11. **Set rules** (e.g. `#set math.equation(numbering: "(1)")`) go at the top of
+    `render_uitleg()` and of `render_opgaven()`: a rule applies only inside the block it is in.
+    A set rule in `setup_extra()` does nothing; `setup_extra()` only places content and must
+    return content (`[]` when empty).
 
 ## 5. Checks (what the editor shows, what `check` reports)
 
@@ -127,7 +129,8 @@ An opdracht is done when it compiles with **no errors, no warnings and no checks
 maatwerk-cli assignment check <opdracht folder> --json
 ```
 
-Exit code 0 when it compiles. JSON (schema `maatwerk-assignment-check/1`):
+Exit code 0 when it compiles. JSON, abridged (full schema `maatwerk-assignment-check/1` in
+`docs/schemas/assignment-check.schema.json`; `page` is `null` with `--answers`):
 
 ```json
 {
@@ -199,4 +202,4 @@ Repeat edit, check, fix until `ok` is true and `diagnostics` and `checks` are em
 
 More in `docs/assignment-examples/`: `02-figuur.typ` (image, caption, `@label`), `03-tabel.typ`
 (table figure, `#num`), `04-context-en-grid.typ` (context and belangrijk blocks, vragen in a
-grid), `05-wiskunde.typ` (math, `setup_extra` rule).
+grid), `05-wiskunde.typ` (math, a set rule).

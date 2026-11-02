@@ -48,9 +48,10 @@ itself while Maatwerk is closed, with `docs/ai-context/assignment-authoring.md` 
 `maatwerk-cli assignment check --json` as the feedback loop.
 
 - Pros: no code in the app, no keys, no provider choice; works today. Cons: only for technically
-  confident teachers; editing in the shared OneDrive folder bypasses the app's CAS and stamps
-  (the next save in the app sees a changed file: the editor's conflict bar and `validate-data`
-  "Buiten Maatwerk gewijzigd" apply); a copy-and-paste-back workflow is safer.
+  confident teachers; editing in the shared OneDrive folder bypasses the app's CAS. An outside
+  edit while the opdracht is open in the editor shows the editor's conflict bar at the next save;
+  with the editor closed nothing notices it (the integrity stamps cover the JSON files only, not
+  `.typ`). A copy-and-paste-back workflow is safer.
 
 **(C) B now, A later.** Document B for the few who want it; build A when there is demand and a
 decision on provider, cost and privacy. The seams of Step 9 serve both.
@@ -73,7 +74,8 @@ decision on provider, cost and privacy. The seams of Step 9 serve both.
    (e.g. 3). The teacher sees the remaining diagnostics if it does not converge.
 4. **Sandbox.** The model's output is only ever Typst source compiled in the sandboxed World
    (one folder, embedded packages only, no network, no file access outside the folder, compile
-   time limit of `instellingen.json`). Model output is never run as anything else.
+   time limit of `instellingen.json`; the headless `check`/`render` of Step 9 have no time limit
+   yet, so an in-app assistant must run them under the editor's watchdog or add one). Model output is never run as anything else.
 5. **Cost.** Per-request cost on the teacher's or school's key; show nothing that implies it is
    free. A monthly cap or a confirmation for long requests may be needed (option A).
 6. **Offline.** Maatwerk works fully without network; the assistant is the only part that needs

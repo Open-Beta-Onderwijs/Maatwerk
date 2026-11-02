@@ -15,7 +15,7 @@ use crate::storage::atomic::write_atomic;
 use crate::validate::{Severity, ValidationReport};
 
 /// The report file for a backup zip: `<backup name> verslag.txt` in the same folder.
-pub fn report_path(backup_zip: &Path) -> PathBuf {
+fn report_path(backup_zip: &Path) -> PathBuf {
     let stem = backup_zip
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())

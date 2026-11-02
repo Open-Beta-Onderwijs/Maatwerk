@@ -1,12 +1,13 @@
 // Voorbeeld 5: wiskunde. Formules als Typst-math, een antwoord met een formule, en een eigen
-// stijlregel in setup_extra (genummerde vergelijkingen).
+// stijlregel (genummerde vergelijkingen). Een set-regel werkt alleen in het blok waarin hij
+// staat: zet hem bovenaan render_uitleg() (en render_opgaven() als het daar ook moet).
 #import "lib.typ": *
 
-#let setup_extra() = [
-  #set math.equation(numbering: "(1)")
-]
+#let setup_extra() = []
 
 #let render_uitleg() = [
+  #set math.equation(numbering: "(1)")
+
   = Lineaire vergelijkingen
 
   Een lineaire vergelijking los je op door aan beide kanten hetzelfde te doen.

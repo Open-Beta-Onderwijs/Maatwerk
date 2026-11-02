@@ -31,7 +31,7 @@ export function migrationSummary(r: MigrationResult): string[] {
   lines.push(
     `Meldingen bij het omzetten: ${n === 0 ? 'geen' : n}.`,
     r.validation
-      ? `Controle na het omzetten: ${r.validation.filesChecked} bestanden gecontroleerd. ` +
+      ? `Controle na het omzetten: ${r.validation.filesChecked} ${r.validation.filesChecked === 1 ? 'bestand' : 'bestanden'} gecontroleerd. ` +
           issueCounts(r.validation.issues)
       : 'Controle na het omzetten: niet uitgevoerd.',
   );

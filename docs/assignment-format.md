@@ -57,7 +57,7 @@ numbers exist) and prints `antwoorden_lijst()`.
 ```typst
 #import "lib.typ": *
 
-#let setup_extra() = []          // extra set/show rules on top of setup
+#let setup_extra() = []          // content between the header and the uitleg (quirk T31)
 #let render_uitleg() = [ ... ]   // explanation: theory, examples, formulas
 #let render_opgaven() = [ ... ]  // exercises: #opgave[...] blocks with #vraag(...)[...]
 ```
@@ -74,23 +74,29 @@ the opgave number, plus a letter (`a`, `b`, ...) when the opgave has more than o
 
 ## 4. Headless tools (`maatwerk-cli assignment`)
 
-All three take an opdracht folder, or a `.typ` file whose folder is the project
-(`opdracht.typ` means the `main.typ` next to it). They run anywhere: on an opdracht folder in the
+All three take an opdracht folder, or a `.typ` file in one (`opdracht.typ` means the `main.typ`
+next to it). The folder must hold `main.typ` and `opdracht.typ` and must not be a data folder
+(`config.json`); any other folder is refused, so a stray `.typ` file can never make e.g. the
+data folder the sandbox. They run anywhere: on an opdracht folder in the
 data folder, a copy of one, or a folder made with `export-lib`. Nobody needs to be logged in and
 nothing is written to the data folder except the output you ask for.
 
 ```text
 maatwerk-cli assignment check <opdracht> [--json] [--answers] [--ignore-system-fonts]
-maatwerk-cli assignment render <opdracht> [--pdf <file.pdf>] [--answers | --no-answers] [--ignore-system-fonts]
+maatwerk-cli assignment render <opdracht> --pdf <file.pdf> [--answers | --no-answers] [--ignore-system-fonts]
 maatwerk-cli assignment export-lib <dir> [--overwrite]
 ```
 
 - **check** compiles and reports: errors and warnings with `file:line:column`, the page count,
   the vragen (label, punten, answer, page), total punten, and the editor's checks. Exit code 0 when
-  it compiles (warnings and checks do not fail it), 1 when not, 2 for wrong arguments. `--json`
+  it compiles (warnings and checks do not fail it), 1 when not, 2 for wrong arguments or an
+  opdracht that cannot be opened (then nothing is printed on stdout, also with `--json`). `--json`
   prints a `CheckReport` (below). `--answers` checks the answer key instead.
-- **render** writes the PDF; default `opdracht.pdf` (or `antwoorden.pdf` with `--answers`) in the
-  opdracht folder. `--no-answers` leaves out the upside-down answers.
+- **render** writes the PDF to `--pdf` (required, must end in `.pdf`; no default inside the
+  synced opdracht folder). `--answers` renders the answer key, `--no-answers` leaves out the
+  upside-down answers.
+- Neither has a compile time limit (the app's editor has one); stop a runaway compile with
+  Ctrl+C.
 - **export-lib** writes `lib.typ`, `main.typ`, a starting `opdracht.typ`, `packages/` (Typst's
   `--package-path` layout), `fonts/` and `LEESMIJ.txt` into `<dir>`. With those, the plain Typst
   CLI or tinymist (VS Code) compiles an opdracht the same way Maatwerk does:
@@ -115,7 +121,6 @@ For an `opdracht.typ` whose line 3 is `#let render_uitleg() = [#onbekend]`:
 {
   "schema": "maatwerk-assignment-check/1",
   "ok": false,
-  "root": "C:/opdrachten/voorbeeld",
   "entry": "main.typ",
   "mode": "student",
   "pageCount": null,

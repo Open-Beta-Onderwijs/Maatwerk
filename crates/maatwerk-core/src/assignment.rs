@@ -38,9 +38,10 @@ pub struct Assignment {
 }
 
 impl Assignment {
-    /// Opens `path`: an opdracht folder (entry `main.typ`), or a `.typ` file whose folder is the
-    /// root. `opdracht.typ` next to a `main.typ` means that `main.typ`, since `opdracht.typ` only
-    /// defines functions and lays out nothing on its own.
+    /// Opens `path`: an opdracht folder (entry `main.typ`), or a `.typ` file in one.
+    /// `opdracht.typ` means the `main.typ` next to it, since `opdracht.typ` only defines
+    /// functions and lays out nothing on its own. The folder must look like an opdracht folder
+    /// ([`is_opdracht_folder`]); it is the root of the sandbox.
     pub fn open(path: &Path) -> Result<Assignment> {
         let real = path
             .canonicalize()
@@ -59,7 +60,16 @@ impl Assignment {
                 .to_path_buf();
             (root, name)
         };
-        let name = if name == "opdracht.typ" && root.join(MAIN).is_file() {
+        // The folder is the sandbox: only an opdracht folder may be one, never e.g. the data
+        // folder that a stray .typ file happens to be in (review 9 M2).
+        if !is_opdracht_folder(&root) {
+            return Err(invalid(&format!(
+                "{} is geen opdrachtmap: daarin horen main.typ en opdracht.typ (en geen \
+                 config.json van een gegevensmap).",
+                display_path(&root)
+            )));
+        }
+        let name = if name == "opdracht.typ" {
             MAIN.to_owned()
         } else {
             name
@@ -100,6 +110,14 @@ impl Assignment {
     }
 }
 
+/// True for a folder with `main.typ` and `opdracht.typ` and without a data folder's
+/// `config.json`.
+pub fn is_opdracht_folder(dir: &Path) -> bool {
+    dir.join(MAIN).is_file()
+        && dir.join("opdracht.typ").is_file()
+        && !dir.join("config.json").exists()
+}
+
 fn invalid(message: &str) -> Error {
     Error::InvalidArgument {
         message: message.to_owned(),
@@ -131,7 +149,8 @@ pub struct CheckReport {
     pub schema: &'static str,
     /// True when the opdracht compiled (no errors; warnings and checks may remain).
     pub ok: bool,
-    pub root: String,
+    /// The compiled file, relative to the opdracht folder. The folder itself is not in the
+    /// report: its absolute path holds e.g. the Windows user name (review 9 m6).
     pub entry: String,
     pub mode: Mode,
     /// `None` when it did not compile.
@@ -187,11 +206,13 @@ pub struct CheckVraag {
     pub opgave: u64,
     /// "1", "2a", ... as on the answer key.
     pub label: String,
+    /// `None` when not given or not a finite number.
     pub punten: Option<f64>,
     /// The answer as plain text.
     pub antwoord: Option<String>,
-    /// 1-based page the vraag is on.
-    pub page: usize,
+    /// 1-based page the vraag is on; `None` in answers mode, where the opdracht is laid out
+    /// hidden and only the answer list shows.
+    pub page: Option<usize>,
 }
 
 fn location(l: &Location) -> CheckLocation {
@@ -232,7 +253,6 @@ pub fn check(
     let mut report = CheckReport {
         schema: CHECK_SCHEMA,
         ok: false,
-        root: display_path(&assignment.root),
         entry: assignment.entry().to_owned(),
         mode: options.mode,
         page_count: None,
@@ -244,6 +264,7 @@ pub fn check(
     match compile_document(&world) {
         Ok(Compiled { output, warnings }) => {
             let v = vragen(&output);
+            let answers = options.mode == Mode::Answers;
             report.ok = true;
             report.page_count = Some(output.pages.len());
             report.diagnostics = warnings.iter().map(diagnostic).collect();
@@ -253,12 +274,12 @@ pub fn check(
                 .map(|q| CheckVraag {
                     opgave: q.opgave,
                     label: q.label,
-                    punten: q.punten,
+                    punten: q.punten.filter(|p| p.is_finite()),
                     antwoord: q.antwoord,
-                    page: q.page + 1,
+                    page: (!answers).then_some(q.page + 1),
                 })
                 .collect();
-            report.total_punten = v.total_punten;
+            report.total_punten = report.vragen.iter().filter_map(|q| q.punten).sum();
             report.checks = v.checks;
         }
         Err(e) => report.diagnostics = e.diagnostics.iter().map(diagnostic).collect(),

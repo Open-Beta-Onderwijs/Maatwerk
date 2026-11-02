@@ -1,7 +1,6 @@
 {
   "schema": "maatwerk-assignment-check/1",
   "ok": true,
-  "root": "C:/opdrachten/voorbeeld",
   "entry": "main.typ",
   "mode": "student",
   "pageCount": 2,

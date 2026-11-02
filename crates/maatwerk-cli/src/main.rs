@@ -21,7 +21,7 @@ usage: maatwerk-cli typst compile <file.typ> [--out <file.pdf>] [--input <key>=<
        maatwerk-cli migrate <data-folder> (--dry-run | --apply --backup-dir <dir>) [--json] [-v]
        maatwerk-cli admin reset-pin <data-folder>
        maatwerk-cli assignment check <opdracht> [--json] [--answers] [--ignore-system-fonts]
-       maatwerk-cli assignment render <opdracht> [--pdf <file.pdf>] [--answers | --no-answers]
+       maatwerk-cli assignment render <opdracht> --pdf <file.pdf> [--answers | --no-answers]
                                      [--ignore-system-fonts]
        maatwerk-cli assignment export-lib <dir> [--overwrite]
        maatwerk-cli --version
@@ -43,13 +43,14 @@ and gets new codes. Last resort when both are lost (docs/cutover-runbook.md).
 
 assignment: works on one opdracht folder (main.typ, opdracht.typ, lib.typ, images/) and reads
 nothing outside it (docs/assignment-format.md). <opdracht> is the folder, or a .typ file in it
-(opdracht.typ means the main.typ next to it). No student data is used: the header is main.typ's
+(opdracht.typ means the main.typ next to it); any other folder is refused. No student data is used: the header is main.typ's
 placeholder.
   check: compiles and lists errors and warnings with file:line:column, the page count, the vragen
   with punten and answers, and the editor's checks. --json prints
-  docs/schemas/assignment-check.schema.json. Exit code 1 when it does not compile.
-  render: writes the PDF (default opdracht.pdf, or antwoorden.pdf with --answers, in the folder).
-  --no-answers leaves out the upside-down answers at the bottom.
+  docs/schemas/assignment-check.schema.json. Exit code 1 when it does not compile, 2 when the
+  opdracht cannot be opened.
+  render: writes the PDF to --pdf (--answers: the answer key). --no-answers leaves out the
+  upside-down answers at the bottom.
   export-lib: writes lib.typ, main.typ, a starting opdracht.typ, the embedded packages and fonts
   into <dir> for an external editor such as tinymist (see LEESMIJ.txt there). Files that exist
   with other content stop the export unless --overwrite.";

@@ -8,7 +8,6 @@
   "required": [
     "schema",
     "ok",
-    "root",
     "entry",
     "mode",
     "pageCount",
@@ -24,10 +23,6 @@
     "ok": {
       "type": "boolean",
       "description": "True when the opdracht compiled. Warnings and checks may remain."
-    },
-    "root": {
-      "type": "string",
-      "description": "The opdracht folder (the sandbox root), as an absolute path."
     },
     "entry": {
       "type": "string",
@@ -58,8 +53,7 @@
     },
     "totalPunten": {
       "type": "number",
-      "minimum": 0,
-      "description": "The sum of the punten that are given."
+      "description": "The sum of the punten that are given (finite numbers only)."
     },
     "checks": {
       "type": "array",
@@ -175,15 +169,16 @@
         },
         "punten": {
           "type": ["number", "null"],
-          "description": "null when not given, or when the folder's lib.typ is older than maatwerk-lib 2."
+          "description": "null when not given, not a finite number, or when the folder's lib.typ is older than maatwerk-lib 2."
         },
         "antwoord": {
           "type": ["string", "null"],
           "description": "The answer as plain text."
         },
         "page": {
-          "type": "integer",
-          "minimum": 1
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "1-based page the vraag is on; null in answers mode (the opdracht is laid out hidden there)."
         }
       }
     }

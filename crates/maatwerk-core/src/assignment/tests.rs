@@ -59,7 +59,10 @@ fn the_starting_opdracht_checks_clean() {
     assert_eq!(labels, ["1a", "1b", "1c", "2"]);
     assert_eq!(report.total_punten, 5.0);
     assert!(report.checks.is_empty(), "{:?}", report.checks);
-    assert!(report.vragen.iter().all(|v| v.page == 2), "1-based pages");
+    assert!(
+        report.vragen.iter().all(|v| v.page == Some(2)),
+        "1-based pages"
+    );
 }
 
 #[test]
@@ -69,11 +72,15 @@ fn opdracht_typ_means_the_main_typ_next_to_it() {
     assert_eq!(a.entry(), "main.typ");
     let alone = TempDir::new().unwrap();
     fs::write(alone.path().join("opdracht.typ"), "= Los").unwrap();
-    let a = Assignment::open(&alone.path().join("opdracht.typ")).unwrap();
+    assert!(
+        Assignment::open(&alone.path().join("opdracht.typ")).is_err(),
+        "no main.typ: not an opdracht folder"
+    );
+    let a = Assignment::open(&tmp.path().join("lib.typ")).unwrap();
     assert_eq!(
         a.entry(),
-        "opdracht.typ",
-        "no main.typ: compile the file itself"
+        "lib.typ",
+        "another file in the folder is compiled itself"
     );
     let empty = TempDir::new().unwrap();
     assert!(
@@ -122,6 +129,7 @@ fn nothing_outside_the_opdracht_folder_is_readable() {
     let dir = outer.path().join("opdracht");
     fs::create_dir(&dir).unwrap();
     fs::write(dir.join("main.typ"), r#"#read("../leerlingen.json")"#).unwrap();
+    fs::write(dir.join("opdracht.typ"), "").unwrap();
     let report = check_dir(&dir, RenderOptions::default());
     assert!(!report.ok);
     assert_eq!(report.errors(), 1, "{:?}", report.diagnostics);
@@ -159,6 +167,10 @@ fn render_writes_a_pdf_in_both_modes() {
         answers.vragen.len(),
         4,
         "still found in the hidden opdracht"
+    );
+    assert!(
+        answers.vragen.iter().all(|v| v.page.is_none()),
+        "no page in answers mode"
     );
 }
 
@@ -207,8 +219,7 @@ fn the_check_json_matches_its_schema_and_sample() {
         "#vraag(punten: 1, antwoord: [Antwoord op de tweede vraag.])",
         "#vraag(antwoord: [Antwoord op de tweede vraag.])",
     )));
-    let mut report = check_dir(tmp.path(), RenderOptions::default());
-    report.root = "C:/opdrachten/voorbeeld".into();
+    let report = check_dir(tmp.path(), RenderOptions::default());
     let mut json = serde_json::to_value(&report).unwrap();
     let docs = repo().join("docs/schemas");
     let schema: Value = serde_json::from_str(
@@ -365,4 +376,25 @@ fn the_ai_context_example_checks_clean() {
     );
     assert!(report.checks.is_empty(), "{:?}", report.checks);
     assert_eq!(report.total_punten, 4.5);
+}
+
+/// Review 9 M2: a .typ file elsewhere (e.g. in the data folder) must not make its folder the
+/// sandbox root, or `read()` could reach student data.
+#[test]
+fn only_an_opdracht_folder_can_be_the_sandbox() {
+    let data = TempDir::new().unwrap();
+    fs::write(data.path().join("leerlingen.json"), "[]").unwrap();
+    fs::write(
+        data.path().join("x.typ"),
+        r#"#panic(read("leerlingen.json"))"#,
+    )
+    .unwrap();
+    assert!(Assignment::open(&data.path().join("x.typ")).is_err());
+    assert!(Assignment::open(data.path()).is_err());
+
+    // Even with the opdracht files, a data folder root (config.json) is refused.
+    let tmp = opdracht(None);
+    fs::write(tmp.path().join("config.json"), "{}").unwrap();
+    let err = Assignment::open(tmp.path()).unwrap_err().to_string();
+    assert!(err.contains("geen opdrachtmap"), "{err}");
 }

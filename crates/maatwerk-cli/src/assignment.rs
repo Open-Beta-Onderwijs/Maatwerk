@@ -60,10 +60,11 @@ impl Common {
         }
     }
 
+    /// Exit code 2 when the opdracht cannot be opened, so 1 always means "does not compile".
     fn open(&self) -> Result<Assignment, ExitCode> {
         Assignment::open(&self.path).map_err(|e| {
             eprintln!("error ({}): {e}", e.code());
-            ExitCode::FAILURE
+            ExitCode::from(2)
         })
     }
 }
@@ -88,7 +89,8 @@ impl CheckArgs {
         Ok(CheckArgs { common, json })
     }
 
-    /// Exit code 1 when the opdracht does not compile (also with `--json`).
+    /// Exit code 1 when the opdracht does not compile (also with `--json`), 2 when it cannot be
+    /// opened or the arguments are wrong.
     pub fn run(self) -> ExitCode {
         let assignment = match self.common.open() {
             Ok(a) => a,
@@ -144,10 +146,10 @@ fn print_check(r: &CheckReport) {
         let punten = v
             .punten
             .map_or("-".to_owned(), |p| p.to_string().replace('.', ","));
+        let page = v.page.map_or(String::new(), |p| format!("p.{p}"));
         println!(
-            "  {:<4} {punten:>4}p  p.{}  {}",
+            "  {:<4} {punten:>4}p  {page:<4}  {}",
             v.label,
-            v.page,
             v.antwoord.as_deref().unwrap_or("(geen antwoord)")
         );
     }
@@ -156,11 +158,13 @@ fn print_check(r: &CheckReport) {
     }
 }
 
-/// `assignment render <path> --pdf <out.pdf> [--answers | --no-answers]`.
+/// `assignment render <path> --pdf <out.pdf> [--answers | --no-answers]`. `--pdf` is required
+/// and must end in `.pdf`: no default inside the (synced) opdracht folder, and no way to
+/// overwrite a source file by accident (review 9 m1).
 #[derive(Debug, PartialEq)]
 pub struct RenderArgs {
     common: Common,
-    out: Option<PathBuf>,
+    out: PathBuf,
 }
 
 impl RenderArgs {
@@ -174,6 +178,16 @@ impl RenderArgs {
                 other => return Err(format!("unknown option {other}")),
             }
         }
+        let out = out.ok_or("render needs --pdf <file.pdf>")?;
+        if !out
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("pdf"))
+        {
+            return Err(format!(
+                "--pdf must name a .pdf file, not {}",
+                out.display()
+            ));
+        }
         Ok(RenderArgs { common, out })
     }
 
@@ -182,14 +196,7 @@ impl RenderArgs {
             Ok(a) => a,
             Err(code) => return code,
         };
-        let out = self.out.clone().unwrap_or_else(|| {
-            let name = if self.common.options.mode == Mode::Answers {
-                "antwoorden.pdf"
-            } else {
-                "opdracht.pdf"
-            };
-            assignment.root().join(name)
-        });
+        let out = self.out;
         match assignment::render_pdf(
             &assignment,
             self.common.options,
@@ -201,7 +208,7 @@ impl RenderArgs {
                     eprint!("{}", to_text(&compiled.warnings));
                 }
                 if let Err(e) = std::fs::write(&out, compiled.output) {
-                    eprintln!("error: cannot write {}: {e}", out.display());
+                    eprintln!("error: cannot write {}: {e}", display_path(&out));
                     return ExitCode::FAILURE;
                 }
                 println!("{}", display_path(&out));
@@ -275,10 +282,12 @@ mod tests {
         assert!(CheckArgs::parse(&["op", "--answers", "--no-answers"]).is_err());
 
         let r = RenderArgs::parse(&["op/main.typ", "--pdf", "o.pdf", "--no-answers"]).unwrap();
-        assert_eq!(r.out, Some(PathBuf::from("o.pdf")));
+        assert_eq!(r.out, PathBuf::from("o.pdf"));
         assert!(!r.common.options.include_answers);
         assert!(RenderArgs::parse(&["op", "--pdf"]).is_err());
         assert!(RenderArgs::parse(&["op", "--json"]).is_err());
+        assert!(RenderArgs::parse(&["op"]).is_err(), "--pdf is required");
+        assert!(RenderArgs::parse(&["op", "--pdf", "opdracht.typ"]).is_err());
 
         let e = ExportLibArgs::parse(&["d", "--overwrite"]).unwrap();
         assert_eq!((e.dir, e.overwrite), (PathBuf::from("d"), true));
