@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-03 (Step 10 done, merged, tagged `step-10`) Branch: `main` Last tags:
+Last updated: 2026-11-03 (0.3.2 on `fix/manual-test-10`, PR open) Branch: `fix/manual-test-10` Last tags:
 `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
 only)
 
@@ -9,6 +9,20 @@ only)
 **Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the
 user: the open questions below and the manual checks before the cutover. Phase 2 per
 `ROADMAP.md` when the user says so.
+
+## After the Step 10 manual test (2026-11-03, `fix/manual-test-10`, PR into `main`)
+
+1. The user's results: `docs/reviews/manual-test-step-10.md`, all pass except **M-OPD-9**.
+2. **M-OPD-9 fixed:** the editor's questions ("Herstel standaardversie", "Toch sluiten?" after a
+   failed save) used `window.confirm`, which `tauri-plugin-dialog` makes async, so they never
+   stopped anything. They now use the app's `confirmDialog` through `maatwerk-confirm`; ESLint
+   forbids native `alert/confirm/prompt`; e2e tests emulate the async confirm. "Bekijk
+   verschillen" shows for every existing `main.typ`/`lib.typ` ("Geen verschillen" when equal).
+3. Remarks: new ROADMAP items F-05 (compile indicator), V-03 (smooth preview scroll), B-04
+   (photo re-check). The M-LEER-3/M-GRP-3/M-TOE-6/M-ADM-1 comments repeat Step 6 (F-02, C18 done
+   in 7a, photos in 7b): re-check M-TOE-6 and M-ADM-1 against the current checklist.
+4. Version **0.3.2**. Gate green (cargo fmt/clippy/test, lint, typecheck, Vitest, 123 e2e,
+   `cargo deny`, licences, SPDX, `npm audit`).
 
 ## Step 10 result
 
@@ -297,6 +311,8 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
+0. User: review and merge the 0.3.2 PR; re-check M-OPD-9 (and M-TOE-6, M-ADM-1 with the
+   current checklist wording) on the CI exe.
 1. User: the manual checks before the cutover: `docs/manual-test.md` M-OPD-2..11 in the real
    app, M-MIG-1..5, M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two
    machines, and the runbook rehearsal on a copy of real data. Run `maatwerk-cli validate-data`
@@ -319,8 +335,8 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 - **Perf at 4x (Step 10):** investigated 2026-11-03: the `step-07c` exe is as slow as `step-10`
   on battery, so likely the power state, not the code (`docs/perf.md`). User to decide after an
   optional re-run on mains power; then bump to `0.3.2` (user, 2026-11-03).
-- **Release version:** `0.3.2`, bumped after the perf decision (user, 2026-11-03). Pushing
-  `main` and the tags waits for that too.
+- **Release version:** `0.3.2` bumped on `fix/manual-test-10` (user, 2026-11-03). Tag `v0.3.2`
+  on the merge commit once the PR is merged; pushing the tag waits for the user.
 
 ## How to resume
 
