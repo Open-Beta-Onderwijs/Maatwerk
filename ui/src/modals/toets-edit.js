@@ -15,6 +15,7 @@ import {
   formSnapshot,
 } from '../app.js';
 import { SEC_ROMAN, SEC_ALPHA2, renderToetsen } from '../screens/toetsen.js';
+import { nextQuestionId } from '../domain/ids';
 
 export async function openExamModal(existingId, afterSave = null) {
   const cfg = await Store.getConfig();
@@ -671,7 +672,7 @@ export function showExamEditor(
           return;
         const last = exam.questions[exam.questions.length - 1];
         exam.questions.push({
-          id: `q${exam.questions.length + 1}`,
+          id: nextQuestionId(exam.questions),
           section: last?.section ?? 'I',
           number: (last?.number ?? 0) + 1,
           max_points: last?.max_points ?? 2,

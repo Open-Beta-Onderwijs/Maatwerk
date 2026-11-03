@@ -326,11 +326,18 @@ pub(crate) fn run_if_due_with(
             && c.get("atMs").and_then(Value::as_i64) == Some(now_ms)
     });
     if !ours {
-        let fresh = state.get("lastAtMs").and_then(Value::as_i64).is_some_and(|t| {
-            now_ms - t < interval.whole_milliseconds() as i64 && t - now_ms < ahead_ms
-        });
+        let fresh = state
+            .get("lastAtMs")
+            .and_then(Value::as_i64)
+            .is_some_and(|t| {
+                now_ms - t < interval.whole_milliseconds() as i64 && t - now_ms < ahead_ms
+            });
         tracing::info!("snapshot claim lost to another PC while settling");
-        return Ok(if fresh { Outcome::NotDue } else { Outcome::Busy });
+        return Ok(if fresh {
+            Outcome::NotDue
+        } else {
+            Outcome::Busy
+        });
     }
 
     let written = write_zip(storage, local(now));

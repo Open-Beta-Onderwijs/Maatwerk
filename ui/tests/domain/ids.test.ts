@@ -8,6 +8,7 @@ import {
   jaarlaagFromStamklas,
   makeExamId,
   makeGroupId,
+  nextQuestionId,
   parseGroupName,
   sortStudents,
   subjectFromGroupName,
@@ -88,5 +89,24 @@ describe('ids golden', () => {
       );
     }
     expect(out).toEqual(c.output);
+  });
+});
+
+describe('nextQuestionId (quirk B24)', () => {
+  const qs = (...ids: string[]) => ids.map((id) => ({ id }));
+
+  it('continues after the highest number', () => {
+    expect(nextQuestionId(qs('q1', 'q2', 'q3'))).toBe('q4');
+    expect(nextQuestionId([])).toBe('q1');
+  });
+
+  it('does not repeat an id after a deletion', () => {
+    // q1 deleted from q1..q3: the reference made q3 again.
+    expect(nextQuestionId(qs('q2', 'q3'))).toBe('q4');
+    expect(nextQuestionId(qs('q1', 'q3'))).toBe('q4');
+  });
+
+  it('skips ids of another shape and existing duplicates', () => {
+    expect(nextQuestionId(qs('q2', 'q2', 'extra', 'q10a'))).toBe('q3');
   });
 });

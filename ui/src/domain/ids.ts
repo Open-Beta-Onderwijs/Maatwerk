@@ -128,3 +128,20 @@ export function stampMeta<T extends object>(
   };
   return obj as T & { _meta: Meta };
 }
+
+/**
+ * The id for a question added to an exam: `q<n>` after the highest `q<n>` in
+ * use. The reference used `q${questions.length + 1}`, which repeats an id
+ * after a deletion (quirk B24), so two questions shared one score slot.
+ */
+export function nextQuestionId(questions: readonly { id: string }[]): string {
+  const ids = new Set(questions.map((q) => q.id));
+  let n = 0;
+  for (const id of ids) {
+    const m = /^q(\d+)$/.exec(id);
+    if (m) n = Math.max(n, Number(m[1]));
+  }
+  do n++;
+  while (ids.has(`q${n}`));
+  return `q${n}`;
+}

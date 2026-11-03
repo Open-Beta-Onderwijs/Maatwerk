@@ -443,6 +443,7 @@ fn check_exam(
             }
         }
     }
+    check_question_ids(rel, exam, out);
     let jaarlaag: u32 = exam
         .get("jaarlaag")
         .and_then(Value::as_str)
@@ -457,6 +458,30 @@ fn check_exam(
             IssueKind::Shape,
             rel,
             "Wiskunde bovenbouw zonder subcategorie: het rapport vindt geen leeradvies".into(),
+        );
+    }
+}
+
+/// Quirk B24: two questions with the same id share one score slot. Reported only; a repair
+/// would change saved exams and scores.
+fn check_question_ids(rel: &str, exam: &Value, out: &mut Found) {
+    let mut seen: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
+    let questions = exam.get("questions").and_then(Value::as_array);
+    for (i, q) in questions.into_iter().flatten().enumerate() {
+        if let Some(id) = q.get("id").and_then(Value::as_str) {
+            seen.entry(id).or_default().push(i + 1);
+        }
+    }
+    for (id, rows) in seen.into_iter().filter(|(_, rows)| rows.len() > 1) {
+        let rows: Vec<String> = rows.iter().map(ToString::to_string).collect();
+        out.error(
+            IssueKind::Shape,
+            rel,
+            format!(
+                "Vraag-id {id} komt {} keer voor (vraag {} in de lijst): de scores van deze                  vragen vallen samen. Niet zelf aanpassen; vraag de beheerder.",
+                rows.len(),
+                rows.join(", ")
+            ),
         );
     }
 }

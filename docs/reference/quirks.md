@@ -412,6 +412,11 @@ Paths in this section are relative to `_reference/renderer/`.
   creates `q3`, a duplicate. Deletion is only possible while the exam has no scores, but the
   duplicate stays.
 - **Why it matters:** Two questions share one score slot, which corrupts grades and RTTI.
+- **Step 10 (fixed for new questions):** `nextQuestionId` (`ui/src/domain/ids.ts`) continues
+  after the highest `q<n>` in use (e2e `quirks.spec.ts` B24). Exams saved by the old app can
+  still hold a duplicate: Gegevenscontrole (and the migration report) lists it as an error
+  ("Vraag-id q3 komt 2 keer voor"). Nothing is repaired automatically: which question the
+  shared scores belong to cannot be known, and a repair changes saved data (user's call).
 
 ### B25. Resits copy every parent field, including the opdrachten coupling and `_meta`
 

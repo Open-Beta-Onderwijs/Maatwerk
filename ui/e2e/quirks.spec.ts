@@ -5,7 +5,7 @@
 // Every page load starts a fresh MockApi, so tests do not share data.
 
 import { expect, test, type Page } from '@playwright/test';
-import { TEACHER, YEAR, login, readMockJson, seedFiles, withMock } from './helpers';
+import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
 
@@ -301,4 +301,22 @@ test('U20: a file dropped on the editor is ignored', async ({ page }) => {
   await content.dispatchEvent('drop', { dataTransfer });
   await page.waitForTimeout(300); // CodeMirror reads a dropped file asynchronously
   expect(await content.textContent()).toBe(before);
+});
+
+test('B24: a question added after a deletion gets a new id', async ({ page }) => {
+  const examId = `nat-lege-toets-${YEAR}`; // q1..q3, no scores
+  await login(page);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await examMenuItem(page, examId, 'Toets bewerken');
+  await page.locator('.qi-del[data-qi="0"]').click();
+  await page.locator('#f-addq').click();
+  await page.locator('#f-esave').click();
+  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(async () => {
+    const exam = await readMockJson<{ questions: { id: string }[] }>(
+      page,
+      `${YEAR}/exams/${examId}.json`,
+    );
+    expect(exam.questions.map((q) => q.id)).toEqual(['q2', 'q3', 'q4']);
+  }).toPass();
 });

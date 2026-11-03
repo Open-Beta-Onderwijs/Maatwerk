@@ -253,3 +253,29 @@ fn step_7b_files_and_sectie_references_are_checked() {
         "Sectievoorzitter nat: gebruiker gebr-weg bestaat niet"
     ));
 }
+
+/// Quirk B24: the reference could give two questions the same id after a deletion; their
+/// scores then share one slot. The check reports it; nothing is repaired.
+#[test]
+fn b24_a_repeated_question_id_is_an_error() {
+    let (_tmp, data) = copy();
+    let rel = "2025-2026/exams/nat-toets-1-2025-2026.json";
+    let text = fs::read_to_string(data.join(rel)).unwrap();
+    fs::write(
+        data.join(rel),
+        text.replacen(r#""id": "q3""#, r#""id": "q2""#, 1),
+    )
+    .unwrap();
+    let report = validate(&data).unwrap();
+    assert!(
+        has(
+            &report,
+            IssueKind::Shape,
+            rel,
+            "Vraag-id q2 komt 2 keer voor"
+        ),
+        "{:#?}",
+        report.issues
+    );
+    assert_eq!(report.errors(), 1, "{:#?}", report.issues);
+}
