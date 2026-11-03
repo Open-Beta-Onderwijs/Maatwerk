@@ -59,7 +59,17 @@ pub fn install_panic_hook() {
             .map(|s| (*s).to_owned())
             .or_else(|| payload.downcast_ref::<String>().cloned())
             .unwrap_or_else(|| "panic".to_owned());
-        tracing::error!("panic: {message}");
+        let location = info
+            .location()
+            .map(|l| format!(" at {}:{}", l.file(), l.line()))
+            .unwrap_or_default();
+        let thread = std::thread::current();
+        let backtrace = std::backtrace::Backtrace::force_capture();
+        tracing::error!(
+            "panic in thread {}{location}: {message}
+{backtrace}",
+            thread.name().unwrap_or("unnamed")
+        );
         if std::thread::current().name() == Some("main") && !STARTED.load(Ordering::SeqCst) {
             explain_start_error(&message);
         }

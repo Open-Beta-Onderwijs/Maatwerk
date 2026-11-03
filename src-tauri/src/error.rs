@@ -51,10 +51,13 @@ pub struct CommandError {
 }
 
 impl CommandError {
+    /// A failure of the shell itself; logged here, so every one is in the log file.
     pub fn internal(message: impl Into<String>) -> CommandError {
+        let message = message.into();
+        tracing::error!("internal error: {message}");
         CommandError {
             code: ErrorCode::Internal,
-            message: message.into(),
+            message,
             details: ErrorDetails::default(),
         }
     }

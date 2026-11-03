@@ -5,7 +5,8 @@
 // the full licence texts. Not in the reference. Opened from the startup screen
 // and from the title in the top bar.
 
-import { escHtml, showModal } from '../app.js';
+import { escHtml, showModal, toast } from '../app.js';
+import type { MaatwerkApi } from '../bridge/api';
 
 export const SOURCE_URL = 'https://github.com/Open-Beta-Onderwijs/Maatwerk';
 export const COPYRIGHT = 'Copyright © 2026 Open Beta Onderwijs - Matthias Kortleven';
@@ -37,6 +38,16 @@ export function aboutHtml(version: string, build: string): string {
       Maatwerk bevat software, lettertypen en Typst-pakketten van derden, elk onder een eigen
       licentie (zie "Licenties van derden").
     </p>
+    <h3>Probleem melden</h3>
+    <p>
+      Ging er iets mis? Beschrijf wat je deed en wat er gebeurde, en stuur het logbestand van
+      die dag mee naar de beheerder. De logbestanden staan op deze computer, niet in de gedeelde
+      map, en bevatten alleen technische meldingen.
+    </p>
+    <p>Map met logbestanden: <span class="about-url about-logdir">Laden…</span></p>
+    <div class="about-actions">
+      <button class="btn-secondary" data-about-action="open-logs">Map met logbestanden openen</button>
+    </div>
     <div class="about-actions">
       <button class="btn-secondary" data-about-text="licence">Licentietekst (AGPL-3.0)</button>
       <button class="btn-secondary" data-about-text="notices">Licenties van derden</button>
@@ -61,5 +72,28 @@ export function showAbout(): void {
         pre.scrollTop = 0;
       }),
     );
+    wireProblemReport(root, window.maatwerk);
+  });
+}
+
+/** "Probleem melden": the log folder on this PC and a button that opens it. */
+export function wireProblemReport(
+  root: HTMLElement,
+  api: Pick<MaatwerkApi, 'problemInfo' | 'openLogFolder'>,
+): void {
+  const dir = root.querySelector<HTMLElement>('.about-logdir')!;
+  const open = root.querySelector<HTMLButtonElement>('[data-about-action="open-logs"]')!;
+  api.problemInfo().then(
+    (info) => {
+      dir.textContent = info.logDir ?? 'geen (deze computer heeft geen map voor app-gegevens)';
+      open.disabled = !info.logDir;
+    },
+    () => {
+      dir.textContent = 'onbekend';
+      open.disabled = true;
+    },
+  );
+  open.addEventListener('click', () => {
+    api.openLogFolder().catch(() => toast('De map kon niet worden geopend.', 'error'));
   });
 }

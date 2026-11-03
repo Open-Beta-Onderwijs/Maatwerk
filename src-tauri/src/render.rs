@@ -303,7 +303,7 @@ pub async fn print_pdf(
 }
 
 /// ShellExecute can block (file associations, a slow share): off the async runtime (m5).
-async fn open_with_os(app: AppHandle, path: std::path::PathBuf) -> Res<()> {
+pub(crate) async fn open_with_os(app: AppHandle, path: std::path::PathBuf) -> Res<()> {
     tauri::async_runtime::spawn_blocking(move || {
         app.opener()
             .open_path(path.to_string_lossy(), None::<&str>)

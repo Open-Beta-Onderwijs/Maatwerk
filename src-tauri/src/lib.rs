@@ -9,6 +9,7 @@ mod data;
 mod editor;
 mod error;
 mod opdrachten;
+mod problems;
 mod render;
 mod scheme;
 mod start_error;
@@ -130,6 +131,9 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             editor::project_files_status,
             editor::restore_project_file,
             editor::bundled_project_file,
+            problems::problem_info,
+            problems::open_log_folder,
+            problems::log_ui_error,
         ])
         .events(collect_events![
             DataChanged,
@@ -227,9 +231,11 @@ pub fn run() {
         .register_asynchronous_uri_scheme_protocol(scheme::SCHEME, scheme::handle)
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
+            let log_dir = app.path().app_log_dir().ok();
             if cfg!(not(windows)) {
-                init_logging(app.path().app_log_dir().ok());
+                init_logging(log_dir.clone());
             }
+            app.manage(problems::LogDir(log_dir));
             builder.mount_events(app);
             let session_file = app.path().app_config_dir()?.join("session.json");
             // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output\<pid>`; old runs' folders go after a day.
