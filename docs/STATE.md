@@ -5,9 +5,20 @@ tags: `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags a
 
 ## Current step
 
-**Step 9 done**, 0.3.1 merged (PR #4, merge commit `b9fa9c3`, tagged `v0.3.1`). Next: Step 10
-"Cutover readiness" (`PLAN.md`, rescoped 2026-11-03) when the user says so. The cutover (0.3.x
-on real data) is the user's call; see "Open questions".
+**Step 10 "Cutover readiness" in progress** on `step/10-cutover-readiness` (from `main` at
+`4e1d8da`).
+
+## Step 10 so far
+
+1. Watcher thread panic restarts the driver; close waits at most 2 s (4b n6). Batch: panic per
+   job -> `BatchError::Panic` (5b n1). Commit 21323a7.
+2. Core opened off the main thread: `CoreSlot` (`src-tauri/src/state.rs`), commands wait on
+   their blocking thread; a panic while opening still fills the slot (6b m6).
+3. Snapshot claim re-checked after a 45 s settle wait (7b m1, m6 test).
+4. Quirk B24: `nextQuestionId`; Gegevenscontrole reports repeated question ids (error); no
+   repair of saved exams (open question for the user).
+5. Unexpected failures: panic hook with location + backtrace, `internal` errors logged, UI
+   errors logged via `log_ui_error`, Over Maatwerk > Probleem melden (log folder + open).
 
 ## After Step 9 (user decisions 2026-11-03, PR #4 merged 2026-11-03)
 
