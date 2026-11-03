@@ -1,7 +1,7 @@
 # State
 
-Last updated: 2026-11-03 (0.3.2 on `fix/manual-test-10`, PR open) Branch: `fix/manual-test-10` Last tags:
-`step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
+Last updated: 2026-11-03 (0.3.2 merged, PR #6, tagged `v0.3.2`) Branch: `main` Last tags:
+`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
 only)
 
 ## Current step
@@ -10,7 +10,7 @@ only)
 user: the open questions below and the manual checks before the cutover. Phase 2 per
 `ROADMAP.md` when the user says so.
 
-## After the Step 10 manual test (2026-11-03, `fix/manual-test-10`, PR into `main`)
+## After the Step 10 manual test (2026-11-03, PR #6 merged, `v0.3.2`)
 
 1. The user's results: `docs/reviews/manual-test-step-10.md`, all pass except **M-OPD-9**.
 2. **M-OPD-9 fixed:** the editor's questions ("Herstel standaardversie", "Toch sluiten?" after a
@@ -315,8 +315,9 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-0. User: review and merge the 0.3.2 PR; re-check M-OPD-9 (and M-TOE-6, M-ADM-1 with the
-   current checklist wording) on the CI exe.
+0. Done: 0.3.2 merged (PR #6) and tagged locally; M-OPD-9 and the school-year fix re-checked by
+   the user. Open: push `v0.3.2` (CI builds the release exe on the tag); re-check M-TOE-6 and
+   M-ADM-1 with the current checklist wording.
 1. User: the manual checks before the cutover: `docs/manual-test.md` M-OPD-2..11 in the real
    app, M-MIG-1..5, M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two
    machines, and the runbook rehearsal on a copy of real data. Run `maatwerk-cli validate-data`
@@ -339,8 +340,8 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 - **Perf at 4x (Step 10):** investigated 2026-11-03: the `step-07c` exe is as slow as `step-10`
   on battery, so likely the power state, not the code (`docs/perf.md`). User to decide after an
   optional re-run on mains power; then bump to `0.3.2` (user, 2026-11-03).
-- **Release version:** `0.3.2` bumped on `fix/manual-test-10` (user, 2026-11-03). Tag `v0.3.2`
-  on the merge commit once the PR is merged; pushing the tag waits for the user.
+- **Release version:** `0.3.2` merged and tagged `v0.3.2` on `9c856d7` (local; pushing the tag
+  waits for the user).
 
 ## How to resume
 
