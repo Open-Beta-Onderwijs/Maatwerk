@@ -4,6 +4,7 @@
 //! own compile, because opdracht files share function names and labels. Jobs run on a few worker
 //! threads that share the font store and the embedded packages; the PDFs are merged in job order.
 
+use std::panic::AssertUnwindSafe;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -68,6 +69,19 @@ pub enum BatchError {
         label: String,
         error: CompileError,
     },
+    /// A panic inside one job (a bug in Maatwerk or Typst, not in the opdracht text); caught
+    /// per job so it ends the batch like a compile error (review 5b n1). The panic itself is in
+    /// the log.
+    #[error(
+        "Fout in opdracht \"{label}\":
+
+Interne fout bij het maken van de PDF ({message}).          Meld dit probleem bij de beheerder (Over Maatwerk > Probleem melden)."
+    )]
+    Panic {
+        index: usize,
+        label: String,
+        message: String,
+    },
     #[error(transparent)]
     Merge(#[from] MergeError),
 }
@@ -88,6 +102,18 @@ pub fn render_assignment_batch(
     now: OffsetDateTime,
     progress: &(dyn Fn(BatchProgress) + Sync),
 ) -> Result<BatchOutput, BatchError> {
+    run_batch(jobs, options, progress, &|job: BatchJob| {
+        render_assignment_pdf(fonts.clone(), job.project, &job.inputs, now)
+    })
+}
+
+/// [`render_assignment_batch`] with the compile of one job passed in (tests inject failures).
+fn run_batch(
+    jobs: Vec<BatchJob>,
+    options: BatchOptions,
+    progress: &(dyn Fn(BatchProgress) + Sync),
+    render: &(dyn Fn(BatchJob) -> JobResult + Sync),
+) -> Result<BatchOutput, BatchError> {
     let total = jobs.len();
     if total == 0 {
         return Err(BatchError::Empty);
@@ -96,7 +122,8 @@ pub fn render_assignment_batch(
     let labels: Vec<String> = jobs.iter().map(|j| j.label.clone()).collect();
     let queue: Vec<Mutex<Option<BatchJob>>> =
         jobs.into_iter().map(|j| Mutex::new(Some(j))).collect();
-    let results: Vec<Mutex<Option<JobResult>>> = (0..total).map(|_| Mutex::new(None)).collect();
+    let results: Vec<Mutex<Option<Result<JobResult, String>>>> =
+        (0..total).map(|_| Mutex::new(None)).collect();
     let next = AtomicUsize::new(0);
     // Counted and reported under one lock, so `done` never goes backwards (review 5b m4).
     let done = Mutex::new(0usize);
@@ -116,9 +143,9 @@ pub fn render_assignment_batch(
                         break;
                     };
                     let job = lock(slot).take().expect("each job is taken once");
-                    let result =
-                        render_assignment_pdf(fonts.clone(), job.project, &job.inputs, now);
-                    if result.is_err() {
+                    let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
+                        .map_err(|payload| panic_message(payload.as_ref()));
+                    if !matches!(result, Ok(Ok(_))) {
                         failed.store(true, Ordering::SeqCst);
                     }
                     *lock(&results[index]) = Some(result);
@@ -137,7 +164,7 @@ pub fn render_assignment_batch(
     let mut warnings = Vec::new();
     for (index, slot) in results.into_iter().enumerate() {
         match slot.into_inner().unwrap_or_else(|e| e.into_inner()) {
-            Some(Ok(compiled)) => {
+            Some(Ok(Ok(compiled))) => {
                 warnings.extend(compiled.warnings.into_iter().map(|diagnostic| JobWarning {
                     index,
                     label: labels[index].clone(),
@@ -145,11 +172,18 @@ pub fn render_assignment_batch(
                 }));
                 pdfs.push(compiled.output);
             }
-            Some(Err(error)) => {
+            Some(Ok(Err(error))) => {
                 return Err(BatchError::Compile {
                     index,
                     label: labels[index].clone(),
                     error,
+                });
+            }
+            Some(Err(message)) => {
+                return Err(BatchError::Panic {
+                    index,
+                    label: labels[index].clone(),
+                    message,
                 });
             }
             // Not started because an earlier job failed; that failure has a lower index or is
@@ -174,6 +208,68 @@ pub fn render_assignment_batch(
 /// The PDF of one job, or why it failed.
 type JobResult = Result<Compiled<Vec<u8>>, CompileError>;
 
+/// The text of a caught panic.
+fn panic_message(payload: &(dyn std::any::Any + Send)) -> String {
+    payload
+        .downcast_ref::<&str>()
+        .map(|s| (*s).to_owned())
+        .or_else(|| payload.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "panic".to_owned())
+}
+
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::paths::{DataDir, RelPath};
+
+    fn jobs(dir: &DataDir, n: usize) -> Vec<BatchJob> {
+        (0..n)
+            .map(|i| BatchJob {
+                key: i.to_string(),
+                label: format!("opdracht {i}"),
+                project: TypstProject::folder(dir.root(), &RelPath::parse("main.typ").unwrap()),
+                inputs: OpdrachtInputs::default(),
+            })
+            .collect()
+    }
+
+    /// Review 5b n1: a panic in one job is that job's error; no new job starts after it.
+    #[test]
+    fn n1_a_panic_in_one_job_is_reported_as_that_jobs_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = DataDir::open(tmp.path()).unwrap();
+        let started = Mutex::new(Vec::new());
+        let options = BatchOptions {
+            duplex: false,
+            workers: Some(1),
+        };
+        let result = run_batch(jobs(&dir, 3), options, &|_| {}, &|job: BatchJob| {
+            lock(&started).push(job.key.clone());
+            if job.key == "1" {
+                panic!("layout bug");
+            }
+            Ok(Compiled {
+                output: Vec::new(),
+                warnings: Vec::new(),
+            })
+        });
+        let err = result.unwrap_err();
+        assert!(
+            matches!(&err, BatchError::Panic { index: 1, message, .. } if message == "layout bug"),
+            "{err:?}"
+        );
+        assert!(
+            err.to_string().starts_with(
+                "Fout in opdracht \"opdracht 1\":
+
+Interne fout"
+            ),
+            "{err}"
+        );
+        assert_eq!(*lock(&started), ["0", "1"]);
+    }
 }

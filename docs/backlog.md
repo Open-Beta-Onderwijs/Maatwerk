@@ -20,9 +20,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 6b
 
-- **Review 6 m6:** `Core::open` (schema check, seeding, image-folder walk, output cleanup) runs in
+- ~~**Review 6 m6:** `Core::open` (schema check, seeding, image-folder walk, output cleanup) runs in
   Tauri's setup on the main thread; a slow OneDrive folder delays the window. Open the core on a
-  blocking thread and let the UI wait on `data_folder_status`.
+  blocking thread and let the UI wait on `data_folder_status`.~~ Done (Step 10): `CoreSlot`.
 - **Review 6 n10:** `import_opdracht_image` reads the picked file in the shell with `std::fs::read`
   and no size cap. Move the read into `opdracht_images` with a limit (with 6a m4).
 - **Review 6 m3 (rest):** the real-PDF test runs under the mock CSP (`blob:`), not through the
@@ -63,8 +63,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   it; today only the CLI uses it (a path the user typed). Before the app opens v2 opdracht folders
   (Step 7/8), add an app constructor from `DataDir` + `RelPath` with `.within(data root)` and keep
   `folder` for the CLI.
-- **Review 5b n1:** a panic inside one compile is not caught; the other workers run all remaining
-  jobs before it surfaces. Catch per job (`catch_unwind`) and report it as that job's error.
+- ~~**Review 5b n1:** a panic inside one compile is not caught; the other workers run all remaining
+  jobs before it surfaces. Catch per job (`catch_unwind`) and report it as that job's error.~~ Done (Step 10): `BatchError::Panic`.
 - **Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
   `docs/perf.md`); opdrachten with large photos could change that. Merge in job order as results
   arrive if a real class batch gets heavy.
@@ -107,8 +107,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 ## From Step 4b
 
 - ~~**Startup error screen (review 4b m5)**~~ Done in 6b (see "From Step 6a").
-- **Watcher thread panic (n6):** a panic ends change reporting silently; shutdown also waits for
-  a slow OneDrive read in progress. Catch, log and restart the thread.
+- ~~**Watcher thread panic (n6):** a panic ends change reporting silently; shutdown also waits for
+  a slow OneDrive read in progress. Catch, log and restart the thread.~~ Done (Step 10).
 - ~~**`save_photo` / `write_text_file` accept any data path (n8)**~~ Done (6a):
   `check_photo_path` (`fotos/<name>`) and `check_opdracht_typ_path` (`opdrachten/<name>.typ`).
 - **Lock folder errors carry an absolute local path (n4, remaining part):** `CommitLock` errors
@@ -225,11 +225,11 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 7b (review `docs/reviews/step-07b.md`)
 
-- m1: two PCs that start in the same minute can both write a snapshot (the claim in
+- ~~m1: two PCs that start in the same minute can both write a snapshot (the claim in
   `snapshots/state.json` is per OneDrive replica). Option: after claiming, wait 20-60 s on the
-  background thread, re-read the state and give up if another PC claimed later.
-- m6: test for losing the snapshot claim to a concurrent writer (needs a hook between read and
-  CAS in `Storage`).
+  background thread, re-read the state and give up if another PC claimed later.~~ Done (Step 10): 45 s settle wait.
+- ~~m6: test for losing the snapshot claim to a concurrent writer (needs a hook between read and
+  CAS in `Storage`).~~ Done (Step 10): injected settle hook.
 - n4: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
   admin takes effect at the next login.
 - n5: the Rust login session survives a webview reload (dev only; release builds have no reload).
@@ -314,3 +314,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Upgrade to Tauri 3 once 3.0 is stable** (decided 2026-10-25, Step 0). On 2026-10-25 Tauri was
   at `3.0.0-alpha.5` (needs Rust 1.95), plugins at alpha, `tauri-specta` without Tauri 3 support.
   Revisit around Step 10; the thin `src-tauri` layer keeps the upgrade small.
+
+## From Step 10
+
+- **Perf at 4x (review 10 M1):** the `school` fixture at 4x CPU is 2-3x slower than in Step 7c
+  (score modal median ~130 ms vs 48); 1x within budget. Bisect `step-07c` vs `step-10` exes.
+- **m3 (rest):** an app closed during the 45 s snapshot settle leaves its claim for 30 min
+  (`CLAIM_STALE`), so that day's snapshot may be skipped. Remove our claim on `shutdown` when no
+  zip has started.
+- **m6:** exam delete is a blind delete after a stale scores check (reference behaviour): CAS on
+  `delete_file` and re-check scores after the confirm.
+- **n1:** `CoreSlot`: a `closing` flag so the snapshot thread does not start after `Exit`; a
+  panic inside `Core::failed` would leave the slot empty.
+- **n2:** an error before `legacy/globals` loads makes the handler import `app.js` early.
+- **n7:** the sandbox test passes on any failure; assert the diagnostic is "not found/denied".
+- Other nits in `docs/reviews/step-10.md`.

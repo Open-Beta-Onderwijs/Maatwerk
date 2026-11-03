@@ -6,7 +6,7 @@
 //! 6 M1); a panic during setup or window creation is caught by the panic hook. Shown with `rfd`,
 //! which needs no webview.
 
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 pub const TITLE: &str = "Maatwerk kan niet starten";
 
@@ -31,6 +31,10 @@ pub fn start_error_text(error: &str) -> String {
 fn is_webview_error(error: &str) -> bool {
     error.to_lowercase().contains("webview")
 }
+
+/// Panics logged with a backtrace so far, and the limit.
+static BACKTRACES: AtomicUsize = AtomicUsize::new(0);
+const MAX_BACKTRACES: usize = 5;
 
 /// Set once the event loop reports `Ready` after setup: later panics are not start failures.
 static STARTED: AtomicBool = AtomicBool::new(false);
@@ -59,7 +63,25 @@ pub fn install_panic_hook() {
             .map(|s| (*s).to_owned())
             .or_else(|| payload.downcast_ref::<String>().cloned())
             .unwrap_or_else(|| "panic".to_owned());
-        tracing::error!("panic: {message}");
+        let location = info
+            .location()
+            .map(|l| format!(" at {}:{}", l.file(), l.line()))
+            .unwrap_or_default();
+        let thread = std::thread::current();
+        // A backtrace for the first few panics only: a panic that repeats (e.g. a restarted
+        // thread) must not fill the log with them (review 10 m1).
+        let backtrace = if BACKTRACES.fetch_add(1, Ordering::Relaxed) < MAX_BACKTRACES {
+            // `capture` honours RUST_BACKTRACE: release exes are stripped, so a forced backtrace
+            // would hold no symbols (review 10 n4); the location above is always logged.
+            std::backtrace::Backtrace::capture().to_string()
+        } else {
+            "(no backtrace: logged for the first panics only)".to_owned()
+        };
+        tracing::error!(
+            "panic in thread {}{location}: {message}
+{backtrace}",
+            thread.name().unwrap_or("unnamed")
+        );
         if std::thread::current().name() == Some("main") && !STARTED.load(Ordering::SeqCst) {
             explain_start_error(&message);
         }

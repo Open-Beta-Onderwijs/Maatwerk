@@ -102,7 +102,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | done (`step-07a`, `step-07b`, `step-07c`, `step-07`) |
 | 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | done (`step-08a`, `step-08b`, `step-08`) |
 | 9 | AI-ready seams (design + CLI, no AI) | S | done (`step-09`) |
-| 10 | Hardening, refactor, maintainability | L | todo |
+| 10 | Cutover readiness (rescoped 2026-11-03) | M | done (`step-10`) |
 | 11 | macOS | M | todo (when needed) |
 
 Sizes: **S** < half a session, **M** about one session (5 h), **L** about two sessions. These are estimates; split earlier rather than later.

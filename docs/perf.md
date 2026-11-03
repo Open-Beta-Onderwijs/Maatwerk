@@ -244,3 +244,34 @@ section 12). Same script, data and machine:
 
 A burst of 20 keystrokes (15 ms apart) now gives 18 compiles instead of one, each of a newer text
 (generations only go up). Memory: 55 MiB at the start, 58-60 MiB from 50 to 300 edits, flat.
+
+## Cutover readiness (Step 10, 2026-11-03)
+
+### Batch of 200 PDFs
+
+`batch_memory` example (release), 100 students x 2 opdrachten = 200 jobs, 4 workers, duplex,
+peak working set polled every 50 ms: **599 pages, 5.0 MiB merged PDF, 1.9 s, peak 171 MiB**
+(60 students: 1.1 s, ~153 MiB in Step 5b). Memory still grows with the PDFs only; no cap needed.
+
+### `school` fixture in the release exe
+
+`tools/perf/measure.mjs` on the migrated `school` fixture (teacher nat, 600 students), release
+exe built from `step/10-cutover-readiness` (`4466a7f` + docs), same machine as Step 7c.
+
+| Span            | 1x median | 1x p90 | 4x median (2 runs) | 4x p90 (2 runs) | 4x in Step 7c |
+| --------------- | --------- | ------ | ------------------ | --------------- | ------------- |
+| tab:leerlingen  | 21        | 38     | 133 / 110          | 152 / 178       | 39 / 96       |
+| tab:groepen     | 10        | 35     | 51 / 48            | 221 / 246       | 19 / 69       |
+| tab:toetsen     | 10        | 50     | 55 / 54            | 290 / 312       | 14 / 113      |
+| tab:observaties | 8         | 29     | 35 / 42            | 112 / 138       | 11 / 39       |
+| tab:opdrachten  | 10        | 54     | 45 / 69            | 229 / 191       | 17 / 79       |
+| modal:scores    | 24        | 44     | 137 / 128          | 215 / 236       | 48 / 70       |
+
+Long tasks: 1x one (57 ms); 4x 154-161, 16.5 s in total, the longest 411-443 ms.
+
+**Budget (< 100 ms):** met at 1x everywhere. **At 4x it is not met** and the medians are 2-3x
+the Step 7c numbers on the same fixture. Not explained yet: Step 10 adds only two window
+listeners to the UI; the cause is somewhere between `step-07c` and now (Steps 8-9, 0.3.1) or in
+the machine (the first run came right after a release build). Open for the user: bisect
+`step-07c` vs `step-10` exes at 4x before the cutover, or accept on the strength of the 1x
+numbers and M-PERF-1/2 on a real school laptop.

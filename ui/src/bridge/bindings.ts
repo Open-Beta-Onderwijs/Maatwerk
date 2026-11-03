@@ -187,6 +187,15 @@ export const commands = {
 	restoreProjectFile: (opdrachtId: string, file: string, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("restore_project_file", { opdrachtId, file, expectedHash })),
 	/**  The bundled text of `main.typ` or `lib.typ` ("Bekijk verschillen"). */
 	bundledProjectFile: (file: string) => typedError<string, CommandError>(__TAURI_INVOKE("bundled_project_file", { file })),
+	/**  What "Probleem melden" shows. */
+	problemInfo: () => __TAURI_INVOKE<ProblemInfo>("problem_info"),
+	/**  Opens the log folder in the file manager. */
+	openLogFolder: () => typedError<null, CommandError>(__TAURI_INVOKE("open_log_folder")),
+	/**
+	 *  Logs an error the UI did not handle (`window.onerror`, an unhandled rejection). The UI
+	 *  sends the error text and stack only, no data.
+	 */
+	logUiError: (message: string) => __TAURI_INVOKE<void>("log_ui_error", { message }),
 };
 
 /** Events */
@@ -471,6 +480,12 @@ export type PrintNameArg = {
 	vak: string,
 	groep: string,
 	toets: string,
+};
+
+export type ProblemInfo = {
+	/**  Absolute path of the log folder (local to this PC, never the shared data folder). */
+	logDir: string | null,
+	version: string,
 };
 
 /**  `main.typ` or `lib.typ` of the opdracht (ADR-0002 5a). */

@@ -1,13 +1,34 @@
 # State
 
-Last updated: 2026-11-03 (0.3.1 merged and tagged; phase 2 plan merged) Branch: `main` Last
-tags: `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
+Last updated: 2026-11-03 (Step 10 done, merged, tagged `step-10`) Branch: `main` Last tags:
+`step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
+only)
 
 ## Current step
 
-**Step 9 done**, 0.3.1 merged (PR #4, merge commit `b9fa9c3`, tagged `v0.3.1`). Next: Step 10
-"Cutover readiness" (`PLAN.md`, rescoped 2026-11-03) when the user says so. The cutover (0.3.x
-on real data) is the user's call; see "Open questions".
+**Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the
+user: the open questions below and the manual checks before the cutover. Phase 2 per
+`ROADMAP.md` when the user says so.
+
+## Step 10 result
+
+1. Robustness: watcher panic restarts with backoff, close waits at most 2 s (4b n6); batch job
+   panic -> `BatchError::Panic` (5b n1); core opened off the main thread via `CoreSlot` (6b m6);
+   snapshot claim re-checked after a 45 s settle, only our own claim released (7b m1).
+2. Quirk B24: `nextQuestionId` (never reuses an id the exam had when the editor opened);
+   Gegevenscontrole reports repeated question ids as a **warning**; saved exams not repaired.
+3. Unexpected failures: panic hook (thread, location; backtrace with RUST_BACKTRACE), `internal`
+   errors logged, UI errors logged (student file names redacted, one line each), Over Maatwerk >
+   Probleem melden (log folder + open).
+4. Security: U8 fixed and `innerHTML` audit; path fuzzing; Typst sandbox tests; `cargo deny` ok;
+   `npm audit --omit=dev` 0; CSP unchanged; `/security-review` no findings
+   (`docs/testing.md`).
+5. Perf (`docs/perf.md`): 200-PDF batch 1.9 s / 171 MiB; `school` fixture 1x within budget, **4x
+   2-3x slower than Step 7c** (unexplained, backlog).
+6. Docs: README, `docs/architecture.md`, `docs/release.md`; CI uploads `maatwerk.exe.sha256` and
+   builds on `v*` tags; runbook B24 note; ADR-0002 section 13 (drift check).
+7. Review `docs/reviews/step-10.md`: 0 blockers; M1 (evidence) recorded, M2 fixed; m1-m5, n3-n5
+   fixed; m3 rest, m6, n1, n2, n7 in `docs/backlog.md` "From Step 10"; n6 rejected.
 
 ## After Step 9 (user decisions 2026-11-03, PR #4 merged 2026-11-03)
 
@@ -276,16 +297,13 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Step 10 "Cutover readiness" when the user says so: branch `step/10-cutover-readiness` from
-   `main`, scope in `PLAN.md` Step 10 (panic hook and log file, the robustness items 6b m6,
-   4b n6, 5b n1, 7b m1, quirk B24 (duplicate question ids; added by the user 2026-11-03),
-   performance on the `school` fixture and a 200-PDF batch, security audits
-   incl. U8, README/architecture/release-process docs, final whole-codebase review).
-2. In parallel (user): the phase 2 triage session (`ROADMAP.md` P0) with the feature and visual
-   lists; it does not block Step 10.
-3. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
-   M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two machines, and the
-   runbook rehearsal on a copy of real data.
+1. User: the manual checks before the cutover: `docs/manual-test.md` M-OPD-2..11 in the real
+   app, M-MIG-1..5, M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two
+   machines, and the runbook rehearsal on a copy of real data. Run `maatwerk-cli validate-data`
+   on the migrated copy to see whether B24 duplicates exist.
+2. User: decide the open questions below; then a release (`docs/release.md`) and the cutover
+   (`docs/cutover-runbook.md`) when the user says so.
+3. Phase 2 triage session (`ROADMAP.md` P0) in parallel.
 
 ## Open questions for the user
 
@@ -296,6 +314,12 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 - Push version tags (`v0.2.0-parity`, `v0.3.1`) to GitHub? So far only `step-*` tags are there.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
+- **B24 repair (Step 10):** if the real copy holds exams with a repeated question id, how to
+  repair them (which question the shared scores belong to cannot be known automatically).
+- **Perf at 4x (Step 10):** bisect the 4x slowdown before the cutover, or accept on the 1x
+  numbers plus M-PERF-1/2 on a school laptop.
+- **Release version for the cutover:** `0.3.1` is out; the plan names `0.3.0` for the cutover
+  (`docs/release.md`); suggest `0.4.0` or `0.3.2`.
 
 ## How to resume
 

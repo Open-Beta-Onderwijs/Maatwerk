@@ -5,7 +5,7 @@
 // Every page load starts a fresh MockApi, so tests do not share data.
 
 import { expect, test, type Page } from '@playwright/test';
-import { TEACHER, YEAR, login, readMockJson, seedFiles, withMock } from './helpers';
+import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
 
@@ -301,4 +301,45 @@ test('U20: a file dropped on the editor is ignored', async ({ page }) => {
   await content.dispatchEvent('drop', { dataTransfer });
   await page.waitForTimeout(300); // CodeMirror reads a dropped file asynchronously
   expect(await content.textContent()).toBe(before);
+});
+
+test('B24: a question added after a deletion gets a new id', async ({ page }) => {
+  const examId = `nat-lege-toets-${YEAR}`; // q1..q3, no scores
+  await login(page);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await examMenuItem(page, examId, 'Toets bewerken');
+  await page.locator('.qi-del[data-qi="0"]').click();
+  await page.locator('#f-addq').click();
+  await page.locator('#f-esave').click();
+  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(async () => {
+    const exam = await readMockJson<{ questions: { id: string }[] }>(
+      page,
+      `${YEAR}/exams/${examId}.json`,
+    );
+    expect(exam.questions.map((q) => q.id)).toEqual(['q2', 'q3', 'q4']);
+  }).toPass();
+});
+
+test('U8: a resit description is shown as text in the group overview', async ({ page }) => {
+  await page.goto('/');
+  const resit = await withMock(
+    page,
+    async (m, year) => {
+      const exams = (await m.readAllJson(`${year}/exams`)) as Record<string, unknown>[];
+      return exams.find((e) => e.description === 'HERKANSING')!;
+    },
+    YEAR,
+  );
+  const NASTY_DESC = `"><b class="u8">x</b>`;
+  await seedFiles(page, {
+    [`${YEAR}/exams/${resit.id as string}.json`]: { ...resit, description: NASTY_DESC },
+  });
+  await login(page);
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  await page.getByRole('button', { name: '3a nat', exact: true }).click();
+  const badges = page.locator('#modal-box .attempt-badge');
+  await expect(page.locator('#modal-box b.u8')).toHaveCount(0);
+  // In the fixture the resit is the best grade of some 3a students.
+  await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
 });

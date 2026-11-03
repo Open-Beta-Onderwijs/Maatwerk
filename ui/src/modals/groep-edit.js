@@ -112,13 +112,13 @@ export async function openGroupModal(id) {
           .map((g) => {
             const checked = g.student_ids.includes(s.id) ? 'checked' : '';
             return `<td class="gst-check-td"><input type="checkbox"
-              data-student-id="${s.id}"
+              data-student-id="${escHtml(s.id)}"
               data-group-id="${escHtml(g.id)}"
               data-subcategory="${escHtml(g.subcategory ?? '')}"
               ${checked} /></td>`;
           })
           .join('');
-        return `<tr data-student-id="${s.id}" data-stamklas-jl="${escHtml(jl)}">
+        return `<tr data-student-id="${escHtml(s.id)}" data-stamklas-jl="${escHtml(jl)}">
           <td>${escHtml(Store.fullName(s))}</td>
           <td class="gst-stamklas">${escHtml(s.stamklas ?? '')}</td>
           ${cols}

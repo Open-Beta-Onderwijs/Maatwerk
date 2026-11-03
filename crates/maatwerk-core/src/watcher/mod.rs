@@ -77,6 +77,11 @@ impl Default for WatchOptions {
     }
 }
 
+/// The longest wait before restarting a watcher that keeps panicking.
+const MAX_RESTART_WAIT: Duration = Duration::from_secs(600);
+/// How long closing waits for the watcher thread.
+const STOP_WAIT: Duration = Duration::from_secs(2);
+
 enum Msg {
     Paths(Vec<PathBuf>),
     WatchError(String),
@@ -131,7 +136,7 @@ impl Watcher {
         let thread_ready = Arc::clone(&ready);
         let thread = std::thread::Builder::new()
             .name("maatwerk-watcher".into())
-            .spawn(move || driver.run(&rx, &thread_ready, &on_changes))
+            .spawn(move || driver.run_restarting(&rx, &thread_ready, &on_changes))
             .expect("failed to start the watcher thread");
         Watcher {
             engine,
@@ -169,10 +174,20 @@ impl Watcher {
         self.stop();
     }
 
+    /// Waits at most [`STOP_WAIT`]: a scan stuck on a slow OneDrive read must not hold up
+    /// the app's exit (review 4b n6); such a thread ends on its own after the read.
     fn stop(&mut self) {
         let _ = self.tx.send(Msg::Stop);
         if let Some(thread) = self.thread.take() {
-            let _ = thread.join();
+            let deadline = Instant::now() + STOP_WAIT;
+            while !thread.is_finished() && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            if thread.is_finished() {
+                let _ = thread.join();
+            } else {
+                tracing::warn!("the watcher thread is still busy; not waiting for it");
+            }
         }
     }
 }
@@ -193,10 +208,55 @@ struct Driver {
 }
 
 impl Driver {
-    fn run(self, rx: &Receiver<Msg>, ready: &Ready, on_changes: &dyn Fn(Vec<Change>)) {
+    /// Runs the driver; after a panic (logged by the panic hook) it waits and runs again (review
+    /// 4b n6), keeping what it knew. The wait starts at `options.restart` and doubles per panic
+    /// up to [`MAX_RESTART_WAIT`], so a panic that keeps coming does not spin (review 10 m1).
+    /// The first poll after a restart reports what changed meanwhile in the poll scope (the root
+    /// and the active year); changes elsewhere during the gap are not reported. Ends on `Stop`
+    /// or when the [`Watcher`] is gone.
+    fn run_restarting(&self, rx: &Receiver<Msg>, ready: &Ready, on_changes: &dyn Fn(Vec<Change>)) {
+        // Set once the initial snapshot is applied: a panic inside the first scan takes it again
+        // instead of reporting every file as added (review 10 m2).
+        let snapshot_done = std::cell::Cell::new(false);
+        let mut wait = self.options.restart;
+        loop {
+            let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                self.run(rx, ready, on_changes, &snapshot_done);
+            }));
+            if run.is_ok() {
+                return;
+            }
+            tracing::error!(
+                "the watcher thread panicked; starting it again in {} s",
+                wait.as_secs()
+            );
+            let deadline = Instant::now() + wait;
+            loop {
+                match rx.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+                    Ok(Msg::Stop) | Err(RecvTimeoutError::Disconnected) => return,
+                    Err(RecvTimeoutError::Timeout) => break,
+                    // Events from before the restart: the first poll covers them.
+                    Ok(_) => {}
+                }
+            }
+            wait = (wait * 2).min(MAX_RESTART_WAIT);
+        }
+    }
+
+    fn run(
+        &self,
+        rx: &Receiver<Msg>,
+        ready: &Ready,
+        on_changes: &dyn Fn(Vec<Change>),
+        snapshot_done: &std::cell::Cell<bool>,
+    ) {
         let root = lock(&self.engine).root_path();
-        let scan = engine::scan_all(&root);
-        lock(&self.engine).apply_snapshot(scan);
+        let first = !snapshot_done.get();
+        if first {
+            let scan = engine::scan_all(&root);
+            lock(&self.engine).apply_snapshot(scan);
+            snapshot_done.set(true);
+        }
         let mut os_watch = None;
         let mut next_start = Instant::now();
         self.start_os_watch(&root, &mut os_watch, &mut next_start);
@@ -205,7 +265,11 @@ impl Driver {
             *flag.lock().unwrap_or_else(PoisonError::into_inner) = true;
             cv.notify_all();
         }
-        let mut next_poll = Instant::now() + self.options.poll;
+        let mut next_poll = if first {
+            Instant::now() + self.options.poll
+        } else {
+            Instant::now()
+        };
         loop {
             let now = Instant::now();
             let wake = [

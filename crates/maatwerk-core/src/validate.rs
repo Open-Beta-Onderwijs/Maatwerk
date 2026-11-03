@@ -443,6 +443,7 @@ fn check_exam(
             }
         }
     }
+    check_question_ids(rel, exam, out);
     let jaarlaag: u32 = exam
         .get("jaarlaag")
         .and_then(Value::as_str)
@@ -457,6 +458,35 @@ fn check_exam(
             IssueKind::Shape,
             rel,
             "Wiskunde bovenbouw zonder subcategorie: het rapport vindt geen leeradvies".into(),
+        );
+    }
+}
+
+/// Quirk B24: two questions with the same id share one score slot. Reported only; a repair
+/// would change saved exams and scores. A warning, not an error (review 10 M2): the app cannot
+/// fix it, and an error would make the migration screen advise rolling back the cutover.
+fn check_question_ids(rel: &str, exam: &Value, out: &mut Found) {
+    let mut seen: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    let questions = exam.get("questions").and_then(Value::as_array);
+    for (i, q) in questions.into_iter().flatten().enumerate() {
+        // Numeric ids in hand-edited or very old files count too (review 10 n5).
+        let id = match q.get("id") {
+            Some(Value::String(s)) => s.clone(),
+            Some(Value::Number(n)) => n.to_string(),
+            _ => continue,
+        };
+        seen.entry(id).or_default().push(i + 1);
+    }
+    for (id, rows) in seen.into_iter().filter(|(_, rows)| rows.len() > 1) {
+        let rows: Vec<String> = rows.iter().map(ToString::to_string).collect();
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            format!(
+                "Vraag-id {id} komt {} keer voor (vraag {} in de lijst): de scores van deze                  vragen vallen samen, dus de cijfers van deze toets kunnen niet kloppen. Niet zelf                  aanpassen; meld het bij de ontwikkelaar.",
+                rows.len(),
+                rows.join(", ")
+            ),
         );
     }
 }

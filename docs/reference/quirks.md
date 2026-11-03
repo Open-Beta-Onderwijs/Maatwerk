@@ -412,6 +412,12 @@ Paths in this section are relative to `_reference/renderer/`.
   creates `q3`, a duplicate. Deletion is only possible while the exam has no scores, but the
   duplicate stays.
 - **Why it matters:** Two questions share one score slot, which corrupts grades and RTTI.
+- **Step 10 (fixed for new questions):** `nextQuestionId` (`ui/src/domain/ids.ts`) continues
+  after the highest `q<n>` in use (e2e `quirks.spec.ts` B24). Exams saved by the old app can
+  still hold a duplicate: Gegevenscontrole (and the migration report) lists it as a warning
+  ("Vraag-id q3 komt 2 keer voor"; a warning so the migration screen does not advise a
+  rollback, review 10 M2). Nothing is repaired automatically: which question the
+  shared scores belong to cannot be known, and a repair changes saved data (user's call).
 
 ### B25. Resits copy every parent field, including the opdrachten coupling and `_meta`
 
@@ -832,6 +838,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
 
 - `modals/groep-leerlingen.js:182`: `title="${(fromExam.description ?? '').trim()}"`.
 - Effect: a resit description containing `"` cuts the attribute and the badge markup.
+- **Fixed in Step 10:** description and badge letter escaped (e2e `quirks.spec.ts` U8). The
+  Step 10 `innerHTML` audit also escaped student ids and observatie schoolsoort/jaarlagen
+  (only reachable with hand-edited shared files).
 
 ### U9. Typst editor: last edits can be lost on close
 

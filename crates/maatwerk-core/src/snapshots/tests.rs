@@ -15,6 +15,11 @@ fn setup() -> (tempfile::TempDir, Storage) {
     (tmp, storage)
 }
 
+/// Without the settle wait (tests that are not about it).
+fn run_if_due(s: &Storage, now: OffsetDateTime, who: &str) -> Result<Outcome> {
+    run_if_due_with(s, now, who, &|| {})
+}
+
 fn rel(s: &str) -> RelPath {
     RelPath::parse(s).unwrap()
 }
@@ -389,4 +394,54 @@ fn a_onedrive_conflict_copy_of_a_snapshot_is_pruned() {
     .unwrap();
     run_if_due(&s, datetime!(2026-10-31 08:15 UTC), "PC-1").unwrap();
     assert_eq!(names(&s), ["2026-10-31 0815.zip", "2026-10-01 0800.zip"]);
+}
+
+/// Review 7b m1 (and m6): two PCs that start in the same minute both claim, each in its own
+/// OneDrive replica. After the settle wait the claim that synced wins; the other PC gives up
+/// and leaves that claim alone.
+#[test]
+fn m1_a_claim_overwritten_while_settling_means_busy() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    let now = datetime!(2026-10-31 08:15 UTC);
+    let other = json!({ "claim": { "by": "PC-2", "atMs": ms(now) + 5_000 } });
+    let out = run_if_due_with(&s, now, "PC-1", &|| {
+        // OneDrive brings in PC-2's state.json.
+        s.write_json(&rel(STATE_FILE), &other, Expect::Any).unwrap();
+    })
+    .unwrap();
+    assert_eq!(out, Outcome::Busy);
+    assert!(names(&s).is_empty());
+    let state = s.read_json(&rel(STATE_FILE)).unwrap().unwrap();
+    assert_eq!(state["claim"]["by"], "PC-2", "{state}");
+}
+
+#[test]
+fn m1_a_snapshot_written_elsewhere_while_settling_means_not_due() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    let now = datetime!(2026-10-31 08:15 UTC);
+    let out = run_if_due_with(&s, now, "PC-1", &|| {
+        let done = json!({ "last": "2026-10-31 0815.zip", "lastAtMs": ms(now), "lastBy": "PC-2" });
+        s.write_json(&rel(STATE_FILE), &done, Expect::Any).unwrap();
+    })
+    .unwrap();
+    assert_eq!(out, Outcome::NotDue);
+    assert!(names(&s).is_empty());
+}
+
+#[test]
+fn m1_an_undisturbed_claim_is_kept_after_settling() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    let now = datetime!(2026-10-31 08:15 UTC);
+    let seen = std::cell::Cell::new(false);
+    let out = run_if_due_with(&s, now, "PC-1", &|| {
+        let state = s.read_json(&rel(STATE_FILE)).unwrap().unwrap();
+        assert_eq!(state["claim"]["by"], "PC-1");
+        seen.set(true);
+    })
+    .unwrap();
+    assert!(seen.get());
+    assert!(matches!(out, Outcome::Written { .. }), "{out:?}");
 }
