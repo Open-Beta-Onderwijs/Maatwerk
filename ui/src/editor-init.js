@@ -6,7 +6,9 @@
  * Loaded as an ES module inside editor.html (which runs inside the #editor-frame
  * iframe). Does NOT have access to window.maatwerk directly; all file I/O and
  * compilation is done by posting messages to the parent window, which proxies
- * the calls via modals/editor.js.
+ * the calls via modals/editor.js. The preview comes from a live compile session
+ * in Rust (Step 8b, editor-live.ts): edits go to it as they happen, changed
+ * pages and diagnostics come back as `maatwerk-editor-update` messages.
  *
  * CodeMirror comes from npm (pinned in ui/package.json); Vite bundles one copy
  * of @codemirror/state, so the "multiple instances" instanceof error of separate
@@ -42,6 +44,17 @@ import { Tag, tags } from '@lezer/highlight';
 import { applyStyleData } from './legacy/style-data';
 import editorCmCss from './editor-cm.css?inline';
 import { blockFileDrops } from './utils/no-file-drop';
+import {
+  clickPoint,
+  diagnosticsText,
+  liveExtensions,
+  patchPages,
+  renderDiff,
+  renderVragen,
+  showDiagnostics,
+  showPoint,
+  vragenSummary,
+} from './editor-live';
 
 blockFileDrops();
 
@@ -293,8 +306,13 @@ const wrapIndent = ViewPlugin.fromClass(
 // ── Initialisation ────────────────────────────────────────────────────────────
 
 const params = new URLSearchParams(window.location.search);
-const typFile = params.get('typFile') ?? '';
+// The opdracht folder (C14). The editor edits its opdracht.typ and, with a
+// warning, its own main.typ and lib.typ (ADR-0002 5a).
+const opdrachtId = params.get('id') ?? '';
 const naam = params.get('naam') ?? 'Opdracht';
+const MAIN_FILE = 'opdracht.typ';
+const LAYOUT_FILES = ['main.typ', 'lib.typ'];
+const filePath = (file) => `opdrachten/${opdrachtId}/${file}`;
 
 document.getElementById('editor-title-naam').textContent = naam;
 
@@ -369,149 +387,173 @@ function setStatus(msg, errorText = null) {
   }
 }
 
-// ── Cursor marker ─────────────────────────────────────────────────────────────
-// The preview is compiled from a copy of the document with an invisible
-// `#metadata(none)<__maatwerk_cursor>` inserted near the cursor. The opdracht's
-// main.typ (cursor mode) draws an <a href="maatwerk-cursor:"> at that spot in the
-// SVG, which we scroll to.
+// ── Files ─────────────────────────────────────────────────────────────────────
+// One EditorState per file (own undo history); the view shows the current one.
+// `baseHash` is C17's: the version this editor last loaded or saved.
 
-const CURSOR_MARKER = '#metadata(none)<__maatwerk_cursor>';
+/** @type {Map<string, { state: EditorState | null, baseHash: string | null, info: any }>} */
+const files = new Map(
+  [MAIN_FILE, ...LAYOUT_FILES].map((f) => [f, { state: null, baseHash: null, info: null }]),
+);
+let current = MAIN_FILE;
 
-// Insert the marker at pos. On a blank line the marker gets its own line, so the
-// blank line stays blank and the paragraphs around it are not joined into one.
-function insertCursorMarker(doc, pos) {
-  const lineStart = doc.lastIndexOf('\n', pos - 1) + 1;
-  let lineEnd = doc.indexOf('\n', pos);
-  if (lineEnd === -1) lineEnd = doc.length;
-  const blankLine = doc.slice(lineStart, lineEnd).trim() === '';
-  const marker = blankLine ? `\n${CURSOR_MARKER}\n` : CURSOR_MARKER;
-  return doc.slice(0, pos) + marker + doc.slice(pos);
+const tabsEl = document.getElementById('file-tabs');
+const bannerEl = document.getElementById('file-banner');
+
+/** Text as CodeMirror should hold it: without a BOM (review 8a n8), so offsets match Typst's. */
+const stripBom = (text) => (text.startsWith('\uFEFF') ? text.slice(1) : text);
+
+function renderTabs() {
+  for (const btn of tabsEl.querySelectorAll('.file-tab')) {
+    const file = btn.dataset.file;
+    btn.classList.toggle('active', file === current);
+    btn.setAttribute('aria-selected', String(file === current));
+    const state = files.get(file)?.info?.state;
+    btn.classList.toggle('needs-attention', state === 'outdated' || state === 'missing');
+  }
 }
 
-// Characters the marker must not be placed directly before: list/heading/term
-// markers at line start, and labels (which would attach to the marker instead).
-const MARKER_BLOCKED_NEXT = new Set(['-', '+', '=', '/', '<']);
+const BANNER_TEXT =
+  'Dit bestand bepaalt de opmaak van de opdracht. Wijzig het alleen als je weet wat je doet: ' +
+  'een fout hier kan de opdracht onbruikbaar maken.';
 
-const isIdentChar = (c) => /[\p{L}\p{N}_-]/u.test(c);
-
-// Embedded statements that continue in code mode until the end of the line.
-const LINE_KEYWORDS = new Set(['let', 'set', 'show', 'import', 'include', 'if', 'for', 'while']);
-
-/**
- * Find the last offset ≤ head where the marker can be inserted without breaking
- * the Typst syntax: inside a content block `[…]` (markup mode), right after
- * whitespace or the opening `[`, and outside comments, strings, raw and math.
- * Returns null when no such position exists (e.g. cursor at module top level).
- */
-function cursorMarkerPos(doc, head) {
-  const stack = []; // 'm' = markup ([…]), 'c' = code ((…) / {…})
-  let lastSafe = null;
-  let afterOpen = false; // just pushed a '[' at the previous index
-  let i = 0;
-
-  // Skip from i (on the opening char) past the closing delimiter; returns new i.
-  const skipUntil = (start, close) => {
-    const end = doc.indexOf(close, start);
-    return end === -1 ? doc.length : end + close.length;
-  };
-
-  while (i <= head) {
-    const mode = stack[stack.length - 1];
-    const c = doc[i];
-
-    if (mode === 'm') {
-      const prev = doc[i - 1];
-      if (
-        (afterOpen || prev === ' ' || prev === '\t' || prev === '\n') &&
-        !MARKER_BLOCKED_NEXT.has(c)
-      ) {
-        lastSafe = i;
-      }
-    }
-    afterOpen = false;
-    if (i === head) break;
-
-    // Comments (both modes). In markup, `://` is part of a URL, not a comment.
-    if (c === '/' && doc[i + 1] === '/' && !(mode === 'm' && doc[i - 1] === ':')) {
-      // Stop on the newline itself so it is still seen as whitespace / line end.
-      const nl = doc.indexOf('\n', i);
-      i = nl === -1 ? doc.length : nl;
-      continue;
-    }
-    if (c === '/' && doc[i + 1] === '*') {
-      i = skipUntil(i + 2, '*/');
-      continue;
-    }
-    // Raw text: a run of backticks closes with an equal run.
-    if (c === '`') {
-      let n = 0;
-      while (doc[i + n] === '`') n++;
-      i = skipUntil(i + n, '`'.repeat(n));
-      continue;
-    }
-    // Math: skip to the closing unescaped $.
-    if (c === '$') {
-      let j = i + 1;
-      while (j < doc.length && doc[j] !== '$') j += doc[j] === '\\' ? 2 : 1;
-      i = j + 1;
-      continue;
-    }
-
-    if (mode === 'm') {
-      if (c === '\\') {
-        i += 2;
-        continue;
-      }
-      if (c === '#') {
-        // Embedded code: #ident(.ident)* optionally followed by ( or {, or #( / #{.
-        let j = i + 1;
-        while (j < doc.length && (isIdentChar(doc[j]) || doc[j] === '.')) j++;
-        if (LINE_KEYWORDS.has(doc.slice(i + 1, j))) {
-          // Statement like `#let x = …` / `#show …`: code until the end of the line.
-          stack.push('l');
-          i = j;
-        } else if (doc[j] === '(' || doc[j] === '{') {
-          stack.push('c');
-          i = j + 1;
-        } else {
-          i = j; // a following '[' is handled as a content block below
-        }
-        continue;
-      }
-      if (c === '[') {
-        stack.push('m');
-        afterOpen = true;
-      } else if (c === ']') {
-        stack.pop();
-      }
-      i++;
-      continue;
-    }
-
-    // Code mode (also module top level, where stack is empty).
-    if (mode === 'l' && c === '\n') {
-      stack.pop();
-      i++;
-      continue;
-    }
-    if (c === '"') {
-      let j = i + 1;
-      while (j < doc.length && doc[j] !== '"') j += doc[j] === '\\' ? 2 : 1;
-      i = j + 1;
-      continue;
-    }
-    if (c === '[') {
-      stack.push('m');
-      afterOpen = true;
-    } else if (c === '(' || c === '{') {
-      stack.push('c');
-    } else if (c === ')' || c === '}' || c === ']') {
-      stack.pop();
-    }
-    i++;
+function renderBanner() {
+  const info = files.get(current)?.info;
+  if (!LAYOUT_FILES.includes(current)) {
+    bannerEl.style.display = 'none';
+    return;
   }
+  bannerEl.style.display = '';
+  bannerEl.replaceChildren();
+  const text = document.createElement('span');
+  let message = BANNER_TEXT;
+  if (info?.state === 'outdated') message = `Er is een nieuwere versie van ${current}. ${message}`;
+  if (info?.state === 'missing')
+    message = `${current} ontbreekt: de opdracht werkt pas weer na herstel.`;
+  text.textContent = message;
+  bannerEl.appendChild(text);
+  if (info?.state === 'outdated' || info?.state === 'modified') {
+    const diff = document.createElement('button');
+    diff.id = 'btn-file-diff';
+    diff.textContent = 'Bekijk verschillen';
+    diff.addEventListener('click', () => showDiff(current));
+    bannerEl.appendChild(diff);
+  }
+  const restore = document.createElement('button');
+  restore.id = 'btn-file-restore';
+  restore.textContent = 'Herstel standaardversie';
+  restore.addEventListener('click', () => restoreFile(current));
+  bannerEl.appendChild(restore);
+}
 
-  return lastSafe;
+async function loadFile(file) {
+  const entry = files.get(file);
+  if (entry.state) return entry.state;
+  const read = await postToParent('maatwerk-read-text-versioned', { path: filePath(file) });
+  // No file yet: the first save must not overwrite one a colleague made meanwhile ('').
+  entry.baseHash = read?.hash ?? '';
+  entry.state = createState(stripBom(read?.text ?? ''));
+  return entry.state;
+}
+
+/** Shows `file` in the editor; a pending save of the current file is written first. */
+async function switchTo(file) {
+  if (file === current || !view) return;
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    saveNow();
+  }
+  files.get(current).state = view.state;
+  let state;
+  try {
+    state = await loadFile(file);
+  } catch (err) {
+    setStatus('Fout bij laden', err.message);
+    return;
+  }
+  current = file;
+  view.setState(state);
+  renderTabs();
+  renderBanner();
+  applyDiagnostics();
+}
+
+tabsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.file-tab');
+  if (btn) switchTo(btn.dataset.file);
+});
+
+/** Go to a range in a project file (definitions, preview clicks). */
+async function reveal(file, from, to = from) {
+  if (!files.has(file)) {
+    setStatus(`Staat in ${file}`);
+    return;
+  }
+  await switchTo(file);
+  const len = view.state.doc.length;
+  view.dispatch({
+    selection: { anchor: Math.min(from, len), head: Math.min(to, len) },
+    scrollIntoView: true,
+  });
+  view.focus();
+}
+
+// "Herstel standaardversie": the bundled version goes to disk (CAS on the hash
+// this editor has); the editor text is replaced as one undoable change.
+async function restoreFile(file) {
+  const entry = files.get(file);
+  if (
+    !window.confirm(
+      `De standaardversie van ${file} vervangt jouw versie. Met Ongedaan maken (Ctrl+Z) krijg ` +
+        'je je eigen versie terug. Doorgaan?',
+    )
+  ) {
+    return;
+  }
+  try {
+    const flushed = await flushSave();
+    if (!flushed) return;
+    const expected = entry.info?.state === 'missing' ? null : entry.baseHash || null;
+    const hash = await callEditor('restoreProjectFile', opdrachtId, file, expected);
+    const text = await callEditor('bundledProjectFile', file);
+    entry.baseHash = hash;
+    replaceDoc(text);
+    if (session !== null) callEditor('editorUnset', session, file).catch(() => {});
+    const status = await callEditor('projectFilesStatus', opdrachtId);
+    applyFileStatus(status);
+    setStatus(`Standaardversie van ${file} hersteld`);
+  } catch (err) {
+    setStatus('Herstellen mislukt', err.message);
+  }
+}
+
+const diffModal = document.getElementById('diff-modal');
+document.getElementById('btn-diff-close').addEventListener('click', () => {
+  diffModal.style.display = 'none';
+});
+
+async function showDiff(file) {
+  try {
+    const bundled = await callEditor('bundledProjectFile', file);
+    const copy =
+      file === current ? view.state.doc.toString() : files.get(file).state.doc.toString();
+    document.getElementById('diff-title').textContent =
+      `Verschillen: jouw ${file} (−) en de standaardversie (+)`;
+    renderDiff(document.getElementById('diff-body'), copy, bundled);
+    diffModal.style.display = '';
+  } catch (err) {
+    setStatus('Fout bij vergelijken', err.message);
+  }
+}
+
+function applyFileStatus(status) {
+  for (const info of status ?? []) {
+    const entry = files.get(info.file);
+    if (entry) entry.info = info;
+  }
+  renderTabs();
+  renderBanner();
 }
 
 // ── SVG preview ───────────────────────────────────────────────────────────────
@@ -521,11 +563,6 @@ const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 const PT_TO_PX = 96 / 72;
 let zoomMode = 'fit'; // 'fit' (page width) or 'fixed'
 let zoomScale = 1;
-
-let rendering = false;
-let renderPending = false;
-let lastMarkerPos = null;
-let cursorTimer = null;
 
 function pageWidthPx(pageEl) {
   const vb = pageEl.querySelector('svg')?.viewBox?.baseVal;
@@ -577,100 +614,203 @@ svgViewer.addEventListener(
   { passive: false },
 );
 
-// Links inside the rendered document (e.g. @references) must not navigate the frame.
-svgViewer.addEventListener('click', (e) => {
-  if (e.target.closest('a')) e.preventDefault();
+// ── Live preview (Step 8b) ────────────────────────────────────────────────────
+// One compile session in Rust: every edit goes to it at once (it debounces and
+// compiles the latest), results come back as `editor:update` with only the
+// changed pages. Diagnostics go to CodeMirror's lint, the vragen to the panel.
+
+let session = null;
+let lastSent = 0; // the newest generation handed to the session
+let editSeq = 0; // edits sent, also those whose generation is not known yet
+let previewGeneration = null;
+let lastUpdate = null;
+
+/** A live editor bridge method through the parent (allowlist in modals/editor.js). */
+function callEditor(method, ...args) {
+  return postToParent('maatwerk-editor', { method, args });
+}
+
+function sendText(file, text) {
+  if (session === null) return;
+  editSeq += 1;
+  callEditor('editorUpdate', session, file, text)
+    .then((g) => (lastSent = Math.max(lastSent, g)))
+    .catch((err) => setStatus('Fout bij renderen', err.message));
+}
+
+const liveHost = {
+  session: () => session,
+  file: () => current,
+  call: (method, ...args) => callEditor(method, ...args),
+  reveal: (file, from, to) => reveal(file, from, to),
+};
+
+function applyDiagnostics() {
+  if (!view || !lastUpdate) return;
+  showDiagnostics(view, lastUpdate.diagnostics, current);
+}
+
+window.addEventListener('message', (evt) => {
+  const msg = evt.data;
+  if (msg?.type !== 'maatwerk-editor-update' || msg.update?.session !== session) return;
+  applyUpdate(msg.update);
 });
 
-// Replace page contents in place so the viewer keeps its scroll position.
-function showPages(pages) {
-  const existing = [...svgViewer.querySelectorAll('.svg-page')];
-  pages.forEach((svg, idx) => {
-    let pageEl = existing[idx];
-    if (!pageEl) {
-      pageEl = document.createElement('div');
-      pageEl.className = 'svg-page';
-      svgViewer.appendChild(pageEl);
+function applyUpdate(u) {
+  if (u.pages.length || u.pageCount !== svgViewer.querySelectorAll('.svg-page').length) {
+    patchPages(svgViewer, u);
+    if (u.pageCount > 0) {
+      document.getElementById('pdf-placeholder').style.display = 'none';
+      svgViewer.style.display = '';
     }
-    pageEl.innerHTML = svg;
-  });
-  for (const extra of existing.slice(pages.length)) extra.remove();
-
-  document.getElementById('pdf-placeholder').style.display = 'none';
-  svgViewer.style.display = '';
-  applyZoom();
+    applyZoom();
+  }
+  // No good compile yet (the opdracht had an error when it was opened).
+  if (u.previewGeneration === null) {
+    document.getElementById('pdf-placeholder').textContent = u.ok
+      ? 'Bezig met renderen…'
+      : 'Nog geen voorbeeld: de opdracht bevat een fout (zie "Fout bij renderen" bovenaan).';
+  }
+  previewGeneration = u.previewGeneration;
+  // Positions refer to the text of this generation: newer edits are on their way.
+  if (u.generation >= lastSent) showCompileResult(u);
+  if (u.vragen) showVragen(u.vragen);
+  if (u.ok && view?.hasFocus) syncPreviewToCursor();
 }
 
-// Scroll the cursor marker into view (about 1/3 from the top) if it is out of view.
-function scrollToCursorMarker() {
-  const marker = svgViewer.querySelector('a[href="maatwerk-cursor:"]');
-  if (!marker) return;
-  const m = marker.getBoundingClientRect();
-  const v = svgViewer.getBoundingClientRect();
-  if (m.top >= v.top && m.bottom <= v.bottom) return;
-  svgViewer.scrollTop += m.top - v.top - svgViewer.clientHeight / 3;
-}
+// Compiles run without delay, so half-typed code (`#vraag(`) fails for a
+// moment: new errors are shown only after ERROR_DELAY_MS without typing, while
+// a good result clears them at once (user, 2026-11-01).
+const ERROR_DELAY_MS = 500;
+let errorTimer = null;
+let lastEditAt = 0;
 
-function compileSvg(content) {
-  return postToParent('maatwerk-render-assignment-svg', {
-    typFile,
-    title: naam,
-    content,
-  }).catch((err) => ({ success: false, error: err.message }));
-}
-
-// Compile the current editor text (with cursor marker) and show the result.
-// Only one compile runs at a time; requests during a compile coalesce into one rerun.
-async function renderPreview() {
-  if (!view || !typFile) return;
-  if (rendering) {
-    renderPending = true;
+function showCompileResult(u) {
+  clearTimeout(errorTimer);
+  errorTimer = null;
+  const show = () => {
+    lastUpdate = u;
+    applyDiagnostics();
+    if (u.diagnostics.some((d) => d.severity === 'error')) {
+      setStatus('Fout bij renderen', diagnosticsText(u.diagnostics));
+    } else if (document.getElementById('btn-render-error')) {
+      setStatus('');
+    }
+  };
+  if (u.ok) {
+    show();
     return;
   }
-  rendering = true;
-
-  try {
-    const doc = view.state.doc.toString();
-    const markerPos = cursorMarkerPos(doc, view.state.selection.main.head);
-    lastMarkerPos = markerPos;
-
-    let result;
-    if (markerPos !== null) {
-      result = await compileSvg(insertCursorMarker(doc, markerPos));
-    }
-    // Retry without marker if there is none, or if the marker may have broken the build.
-    if (!result?.success) result = await compileSvg(doc);
-
-    if (result?.success) {
-      showPages(result.pages);
-      scrollToCursorMarker();
-      if (document.getElementById('btn-render-error')) setStatus('');
-    } else {
-      setStatus('Fout bij renderen', result?.error ?? 'Onbekende fout');
-    }
-  } finally {
-    rendering = false;
-    if (renderPending) {
-      renderPending = false;
-      renderPreview();
-    }
-  }
+  errorTimer = setTimeout(show, Math.max(0, lastEditAt + ERROR_DELAY_MS - performance.now()));
 }
+
+// Cursor -> preview: the preview follows the cursor (replaces the old
+// `<__maatwerk_cursor>` marker, ADR-0002 section 12).
+let cursorTimer = null;
+
+/**
+ * A jump answer fits the text on screen only when no edit went out since the
+ * question and the preview is of the newest text (review 8b m2).
+ */
+function jumpFits(j, seq) {
+  return !!j && seq === editSeq && j.generation === previewGeneration && j.generation >= lastSent;
+}
+
+async function syncPreviewToCursor() {
+  if (session === null || !view) return;
+  const seq = editSeq;
+  const j = await callEditor(
+    'editorJumpFromCursor',
+    session,
+    current,
+    view.state.selection.main.head,
+  ).catch(() => null);
+  if (jumpFits(j, seq) && j.points.length) showPoint(svgViewer, j.points[0]);
+}
+
+function scheduleCursorSync() {
+  clearTimeout(cursorTimer);
+  cursorTimer = setTimeout(syncPreviewToCursor, 250);
+}
+
+// Preview -> source: a click in the preview puts the cursor on what was clicked.
+svgViewer.addEventListener('click', async (e) => {
+  if (e.target.closest('a')) e.preventDefault(); // links must not navigate the frame
+  const point = clickPoint(e);
+  if (!point || session === null) return;
+  const seq = editSeq;
+  const j = await callEditor('editorJumpFromClick', session, point.page, point.x, point.y).catch(
+    () => null,
+  );
+  if (!jumpFits(j, seq)) return;
+  if (j.file !== null) reveal(j.file, j.offset);
+  else if (j.point) showPoint(svgViewer, j.point, true);
+});
+
+// ── Vragen panel ──────────────────────────────────────────────────────────────
+
+const vragenBtn = document.getElementById('pv-vragen');
+const vragenPanel = document.getElementById('vragen-panel');
+
+function showVragen(v) {
+  vragenBtn.textContent = vragenSummary(v);
+  vragenBtn.classList.toggle('has-checks', v.checks.length > 0);
+  vragenBtn.style.display = '';
+  renderVragen(vragenPanel, v, (item) =>
+    showPoint(svgViewer, { page: item.page, x: 0, y: item.y }, true),
+  );
+}
+
+vragenBtn.addEventListener('click', () => {
+  const open = vragenPanel.style.display === 'none';
+  vragenPanel.style.display = open ? '' : 'none';
+  vragenBtn.setAttribute('aria-expanded', String(open));
+});
 
 // ── Save ──────────────────────────────────────────────────────────────────────
 
 let saving = Promise.resolve(true); // the last write, so a close can wait for it
 let lastSaveFailed = false;
+let inConflict = false;
+let conflictFile = null; // the file whose save hit the conflict
+let replacingDoc = false; // "Hun versie laden" sets the text without saving it
 
-/** Writes the editor text; resolves to true when saved. */
-function saveNow() {
-  const content = view.state.doc.toString();
-  const relPath = `opdrachten/${typFile}`;
+const conflictBar = document.getElementById('conflict-bar');
+
+function showConflict(on, file = null) {
+  inConflict = on;
+  conflictFile = on ? file : null;
+  conflictBar.style.display = on ? '' : 'none';
+  // A copy is a new opdracht with this text as its opdracht.typ.
+  document.getElementById('btn-conflict-copy').style.display =
+    on && file !== MAIN_FILE ? 'none' : '';
+}
+
+/** Writes the text of `file` (default: the one shown); resolves to true when saved. */
+function saveNow(file = current) {
+  const entry = files.get(file);
+  const content = (file === current ? view.state : entry.state).doc.toString();
   saving = saving.then(async () => {
+    if (inConflict) {
+      setStatus('Niet opgeslagen: kies hierboven wat er moet gebeuren');
+      return false;
+    }
     try {
-      const writeResult = await postToParent('maatwerk-write-text', { path: relPath, content });
+      const writeResult = await postToParent('maatwerk-write-text', {
+        path: filePath(file),
+        content,
+        expectedHash: entry.baseHash,
+      });
+      if (writeResult?.reason === 'conflict') {
+        showConflict(true, file);
+        setStatus('Niet opgeslagen');
+        lastSaveFailed = true;
+        return false;
+      }
       if (!writeResult?.ok) throw new Error('niet opgeslagen');
-      setStatus('Opgeslagen');
+      entry.baseHash = writeResult.hash;
+      // A compile error stays in view: saving does not fix it.
+      if (!document.getElementById('btn-render-error')) setStatus('Opgeslagen');
       lastSaveFailed = false;
       return true;
     } catch (err) {
@@ -682,18 +822,46 @@ function saveNow() {
   return saving;
 }
 
-async function doSaveAndCompile() {
-  if (!view || !dataDir || !typFile) return;
-  if (!(await saveNow())) return;
-  await renderPreview();
+/** Replaces the editor text without saving it (one undoable change). */
+function replaceDoc(text) {
+  replacingDoc = true;
+  view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: stripBom(text) } });
+  replacingDoc = false;
 }
 
-function scheduleCompile() {
+/** Replaces the editor text with the version on disk (the colleague's). */
+async function loadTheirs() {
+  const file = conflictFile ?? current;
+  await switchTo(file);
+  const read = await postToParent('maatwerk-read-text-versioned', { path: filePath(file) });
+  replaceDoc(read?.text ?? '');
+  files.get(file).baseHash = read?.hash ?? '';
+  lastSaveFailed = false;
+  showConflict(false);
+  setStatus('Versie van je collega geladen');
+}
+
+document.getElementById('btn-conflict-theirs').addEventListener('click', () => {
+  loadTheirs().catch((err) => setStatus('Fout bij laden', err.message));
+});
+
+// "Mijn versie bewaren als kopie": a copy of the opdracht with this text; the
+// editor then shows the colleague's version of the original.
+document.getElementById('btn-conflict-copy').addEventListener('click', async () => {
+  try {
+    const copy = await postToParent('maatwerk-save-copy', { content: view.state.doc.toString() });
+    await loadTheirs();
+    setStatus(`Jouw versie staat in "${copy?.naam ?? 'de kopie'}"`);
+  } catch (err) {
+    setStatus('Fout bij kopiëren', err.message);
+  }
+});
+
+function scheduleSave() {
   clearTimeout(saveTimer);
-  clearTimeout(cursorTimer);
   saveTimer = setTimeout(() => {
     saveTimer = null;
-    doSaveAndCompile();
+    if (view && dataDir !== null && opdrachtId) saveNow();
   }, 600);
 }
 
@@ -707,7 +875,7 @@ async function flushSave() {
   clearTimeout(saveTimer);
   saveTimer = null;
   // A failed save is retried too, so a close after a passing hiccup saves.
-  if ((pending || (await saving) === false || lastSaveFailed) && view && dataDir && typFile) {
+  if ((pending || (await saving) === false || lastSaveFailed) && view && dataDir && opdrachtId) {
     return saveNow();
   }
   return saving;
@@ -728,21 +896,17 @@ async function closeAfterSave(type) {
   window.parent.postMessage({ type }, '*');
 }
 
-// Cursor moved without editing: re-render only if the marker would move.
-function scheduleCursorRender() {
-  clearTimeout(cursorTimer);
-  cursorTimer = setTimeout(() => {
-    const pos = cursorMarkerPos(view.state.doc.toString(), view.state.selection.main.head);
-    if (pos !== lastMarkerPos) renderPreview();
-  }, 400);
-}
-
 const changeListener = EditorView.updateListener.of((update) => {
   if (update.docChanged) {
+    lastEditAt = performance.now();
+    // An error shown later would be of older text; the next result decides.
+    clearTimeout(errorTimer);
+    sendText(current, update.state.doc.toString());
+    if (replacingDoc) return;
     setStatus('Niet opgeslagen…');
-    scheduleCompile();
+    scheduleSave();
   } else if (update.selectionSet) {
-    scheduleCursorRender();
+    scheduleCursorSync();
   }
 });
 
@@ -759,23 +923,9 @@ function editorRoot() {
   return shadow;
 }
 
-async function init() {
-  let content, dir;
-  try {
-    [content, dir] = await Promise.all([
-      postToParent('maatwerk-read-text', { path: `opdrachten/${typFile}` }),
-      postToParent('maatwerk-get-data-dir'),
-    ]);
-  } catch (err) {
-    // No editor view is created, so nothing can overwrite the file.
-    setStatus('Fout bij laden', err.message);
-    return;
-  }
-
-  dataDir = dir ?? '';
-
-  const state = EditorState.create({
-    doc: content ?? '',
+function createState(doc) {
+  return EditorState.create({
+    doc,
     extensions: [
       history(),
       lineNumbers(),
@@ -787,16 +937,39 @@ async function init() {
       syntaxHighlighting(typstHighlightStyle),
       typstLanguage,
       keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+      liveExtensions(liveHost),
       changeListener,
       imagePasteHandler,
       EditorView.lineWrapping,
       wrapIndent,
     ],
   });
+}
 
-  view = new EditorView({ state, parent: editorRoot() });
+async function init() {
+  let dir;
+  try {
+    [, dir] = await Promise.all([loadFile(MAIN_FILE), postToParent('maatwerk-get-data-dir')]);
+  } catch (err) {
+    // No editor view is created, so nothing can overwrite the file.
+    setStatus('Fout bij laden', err.message);
+    return;
+  }
+  dataDir = dir ?? '';
+  view = new EditorView({ state: files.get(MAIN_FILE).state, parent: editorRoot() });
+  renderTabs();
+  renderBanner();
 
-  await renderPreview();
+  try {
+    const opened = await callEditor('editorOpen', opdrachtId, naam);
+    session = opened.session;
+    applyFileStatus(opened.files);
+    // The session compiles the files on disk first; the editor's text (BOM
+    // stripped) is the same, so this changes nothing unless it differs.
+    sendText(MAIN_FILE, view.state.doc.toString());
+  } catch (err) {
+    setStatus('Fout bij renderen', err.message);
+  }
 }
 
 init();
@@ -1251,12 +1424,12 @@ function insertSelecting(v, snippet, placeholder) {
 }
 
 // ── Figures / images ──────────────────────────────────────────────────────────
-// Images live in data/opdrachten/images/<opdracht id>/ (see main.js). The figure
+// Images live in the opdracht's folder, opdrachten/<id>/images/ (C14). The figure
 // popup offers the opdracht's existing images, a file from disk and the
 // clipboard; Ctrl+V of an image in the editor works too. A new image is first
 // given a name, then a #figure referring to it is inserted at the cursor.
+// Image paths are relative to the opdracht folder: images/<name>.<ext> (C14).
 
-const opdrachtId = params.get('id') ?? '';
 const IMAGE_MIME_EXT = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
@@ -1414,6 +1587,8 @@ async function saveNamedImage(overwrite) {
         );
   if (result?.ok) {
     closeActivePopup();
+    // An overwritten image may keep its size and time stamp: read it again (review 8a m3).
+    if (session !== null) callEditor('editorRefresh', session).catch(() => {});
     insertFigure(result.file, result.name);
   } else if (result?.exists) {
     showFigError(

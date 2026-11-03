@@ -195,10 +195,25 @@ function startTextEdit(field, container, school) {
 
   async function doConfirm() {
     const newValue = input.value.trim();
-    school[field] = newValue;
     try {
-      await Store.updateSchool({ [field]: newValue });
-    } catch (_) {
+      // C16: saved over the version this screen showed; a colleague's save in
+      // between is not overwritten but shown.
+      const saved = await Store.updateSchool({ [field]: newValue }, school._meta?.rev);
+      school[field] = newValue;
+      school._meta = saved._meta;
+    } catch (e) {
+      if (e?.code === 'conflict') {
+        const users = await Store.loadUsers();
+        const other = users.find((u) => u.id === e.updatedBy);
+        const door = other ? ` door ${Store.fullName(other)}` : '';
+        toast(
+          `De schoolgegevens zijn intussen${door} gewijzigd en worden opnieuw geladen.`,
+          'error',
+        );
+        Store.invalidateSchool();
+        await renderSchool();
+        return;
+      }
       toast('Opslaan mislukt.', 'error');
     }
     restoreDisplay(field, newValue, confirmBtn, cancelBtn, container, school);

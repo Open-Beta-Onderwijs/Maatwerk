@@ -23,7 +23,13 @@ describe('csv golden', () => {
       const c = goldenCase(golden, id);
       const { text } = inputOf<{ text: string }>(c);
       const rows = parseCSV(text).rows;
-      expect(await run(() => ({ rows, students: studentsFromCsvRows(rows) }))).toEqual(c.output);
+      // C8: the same students, with the reference's numeric ids as strings.
+      const expected = c.output as { rows: unknown; students: { id: unknown }[] };
+      const v2 = {
+        ...expected,
+        students: expected.students.map((st) => ({ ...st, id: String(st.id) })),
+      };
+      expect(await run(() => ({ rows, students: studentsFromCsvRows(rows) }))).toEqual(v2);
     });
   }
 });

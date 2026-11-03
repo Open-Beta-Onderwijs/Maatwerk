@@ -3,14 +3,17 @@
 /**
  * store.js — Central data access layer.
  *
- * Per-subject file layout:
+ * File layout, format v2 (docs/reference/data-files-v2.md):
  *
  *   data/
- *   ├── config.json                          { activeYear }
+ *   ├── config.json                          { schema_version: 2, activeYear }
+ *   ├── school.json                          School + _meta
+ *   ├── gebruikers/<userId>.json             User + _meta
  *   ├── observaties/
  *   │   └── <obsId>.json                     { id, naam, icon, jaarlagen[], subject }
+ *   ├── opdrachten/<id>/                     opdracht.json, main.typ, opdracht.typ, lib.typ, images/
  *   └── YYYY-YYYY/
- *       ├── students-YYYY-YYYY.json          [{ id, voornaam, … }]
+ *       ├── students-YYYY-YYYY.json          { students: [{ id, voornaam, … }] }
  *       ├── exams/
  *       │   └── <examId>.json                { id, subject, title, jaarlaag, … }
  *       ├── groups/
@@ -20,6 +23,8 @@
  *           │   └── <studentId>.json
  *
  * Subject field inside each JSON file is authoritative (not derived from path).
+ * Students and score files pass through domain/v2.ts on every read and write:
+ * in memory a year's students are a plain array and "N" is null, as before.
  */
 
 import { bestAttempt, compareHistory, resitsOf, resolveBestAttempts } from './domain/attempts';
@@ -45,18 +50,46 @@ import {
   opdrachtMatchesExam as opdrachtMatchesExamFor,
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
+import { decode, encode, studentId as asStudentId } from './domain/v2';
+import { timed } from './utils/perf';
 
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
   // Exam/group/obs entries keyed as: `${year}/exams/${subject}`, `obs/${subject}`, etc.
-  const cache = {};
+  //
+  // `generation` counts changes to cached data (Step 7c): screens keep their DOM
+  // while it is unchanged. Replacing or dropping a cached entry counts; filling an
+  // empty one from disk does not (the data did not change). In-place edits of
+  // cached arrays happen only next to a write or an external change, which count
+  // through changed().
+  let generation = 0;
+  const changed = () => {
+    generation++;
+  };
+  const cache = new Proxy(
+    {},
+    {
+      set(target, key, value) {
+        if (target[key] !== undefined && target[key] !== value) changed();
+        target[key] = value;
+        return true;
+      },
+      deleteProperty(target, key) {
+        if (target[key] !== undefined) changed();
+        delete target[key];
+        return true;
+      },
+    },
+  );
   let _years = null;
   let _activeSubject = null;
   let _activeUser = null;
+  // Step 7b: `{ voorzitter: <vak> }` when logged in through the sectievoorzitter badge.
+  let _activeRole = null;
 
   async function load(relPath) {
     if (cache[relPath] !== undefined) return cache[relPath];
-    const data = await window.maatwerk.readJson(relPath);
+    const data = decode(relPath, await window.maatwerk.readJson(relPath));
     cache[relPath] = data;
     return data;
   }
@@ -86,12 +119,16 @@ const Store = (() => {
       for (let attempt = 0; attempt < 5; attempt++) {
         const read = await window.maatwerk.readJsonVersioned(relPath);
         if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
-        const next = mutator(read.data ?? fallback(), read.data);
-        const result = await window.maatwerk.writeJson(relPath, next, {
+        const onDisk = decode(relPath, read.data);
+        const next = mutator(onDisk ?? fallback(), onDisk);
+        const result = await window.maatwerk.writeJson(relPath, encode(relPath, next), {
           cas: true,
           expectedHash: read.hash,
         });
-        if (result?.ok) return next;
+        if (result?.ok) {
+          changed();
+          return next;
+        }
         if (result?.reason !== 'conflict') {
           throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
         }
@@ -116,6 +153,7 @@ const Store = (() => {
       expectedHash: hash ?? null,
     });
     if (result?.ok) {
+      changed();
       invalidate(relPath);
       return result.hash;
     }
@@ -158,8 +196,20 @@ const Store = (() => {
   }
 
   // ── Active user ────────────────────────────────────────────────────────────
-  function setActiveUser(user) {
+  function setActiveUser(user, role = null) {
     _activeUser = user;
+    _activeRole = user ? role : null;
+  }
+  function getActiveRole() {
+    return _activeRole;
+  }
+  /** Sectievoorzitter of `vak` in this session (Step 7b, decision 13). */
+  function isVoorzitterActive(vak) {
+    return Boolean(vak) && _activeRole?.voorzitter === vak;
+  }
+  /** The teacher assigned as sectievoorzitter of `vak` in school.json, or null. */
+  function voorzitterOf(vak) {
+    return getSchoolSync().secties?.[vak]?.voorzitter ?? null;
   }
   function getActiveUser() {
     return _activeUser;
@@ -168,9 +218,13 @@ const Store = (() => {
     return _activeUser?.isAdmin === true;
   }
 
-  // ── Users ──────────────────────────────────────────────────────────────────
+  // ── Users (gebruikers/<id>.json, ADR-0003 C16) ────────────────────────────
   async function loadUsers() {
-    return (await load('gebruikers.json')) ?? [];
+    if (cache['gebruikers'] === undefined) {
+      const all = await window.maatwerk.readAllJson('gebruikers');
+      cache['gebruikers'] = all.filter((u) => u && u.id);
+    }
+    return cache['gebruikers'];
   }
 
   // ── School ─────────────────────────────────────────────────────────────────
@@ -178,31 +232,74 @@ const Store = (() => {
     return await load('school.json');
   }
 
+  /** Forgets the cached school, so the next loadSchool reads the file. */
+  function invalidateSchool() {
+    invalidate('school.json');
+  }
+
   // Apply a change to the latest school.json on disk, so a change another
   // teacher made in the meantime is kept (ADR-0003 C6). `change` is either an
   // object of fields to set or a function that edits the school in place.
-  async function updateSchool(change) {
+  // With `baseRev` (the _meta.rev the form was loaded with) a school saved by
+  // someone else since is a conflict instead (C16), as for exams and groups.
+  async function updateSchool(change, baseRev) {
     const school = await update(
       'school.json',
-      (current) =>
-        typeof change === 'function' ? (change(current), current) : Object.assign(current, change),
+      (current, onDisk) => {
+        if (baseRev !== undefined && onDisk && (onDisk._meta?.rev ?? 0) !== (baseRev ?? 0)) {
+          throw conflictError(onDisk._meta);
+        }
+        if (typeof change === 'function') change(current);
+        else Object.assign(current, change);
+        return stampMeta(current, onDisk);
+      },
       () => ({}),
     );
     cache['school.json'] = school;
     return school;
   }
 
-  async function upsertUser(user) {
-    cache['gebruikers.json'] = await update(
-      'gebruikers.json',
-      (users) => {
-        const idx = users.findIndex((u) => u.id === user.id);
-        if (idx >= 0) users[idx] = user;
-        else users.push(user);
-        return users;
-      },
-      () => [],
-    );
+  // A file written by the backend outside the Store ("Herstellen uit snapshot",
+  // Step 7b): the next read takes it from disk. Year data (exams, groups,
+  // scores) is cached per year and subject and reloads at the next login.
+  function forgetFile(relPath) {
+    if (relPath.startsWith('gebruikers/')) delete cache['gebruikers'];
+    else invalidate(relPath);
+  }
+
+  // A user record written by the backend (PIN commands, Step 7b): own writes
+  // are not echoed by the watcher, so the cache is updated here.
+  function cacheUser(user) {
+    const users = cache['gebruikers'];
+    if (!users || !user?.id) return;
+    const idx = users.findIndex((u) => u.id === user.id);
+    if (idx >= 0) users[idx] = user;
+    else users.push(user);
+    if (_activeUser?.id === user.id) _activeUser = user;
+    changed();
+  }
+
+  // One file per user (C16): saving checks the rev the edit started from, so
+  // two admins editing the same user no longer overwrite each other silently.
+  async function upsertUser(user, baseRev = user._meta?.rev) {
+    const saved = await saveEntity(`gebruikers/${user.id}.json`, user, baseRev);
+    const users = await loadUsers();
+    const idx = users.findIndex((u) => u.id === saved.id);
+    if (idx >= 0) users[idx] = saved;
+    else users.push(saved);
+    return saved;
+  }
+
+  // ── Instellingen (instellingen.json, Step 7b; admin) ────────────────────
+  async function loadInstellingen() {
+    invalidate('instellingen.json');
+    return await load('instellingen.json');
+  }
+
+  async function saveInstellingen(data, baseRev) {
+    const saved = await saveEntity('instellingen.json', data, baseRev);
+    cache['instellingen.json'] = saved;
+    return saved;
   }
 
   // ── Session (machine-local, not synced via OneDrive) ──────────────────────
@@ -358,7 +455,9 @@ const Store = (() => {
   async function setActiveYear(year) {
     cache['config.json'] = await update(
       'config.json',
-      (cfg) => Object.assign(cfg, { activeYear: year }),
+      // A missing config.json (still syncing) must not come back without schema_version
+      // (review 7a m4): every PC would then offer the migration.
+      (cfg) => Object.assign(cfg, { activeYear: year, schema_version: cfg.schema_version ?? 2 }),
       () => ({}),
     );
   }
@@ -385,7 +484,7 @@ const Store = (() => {
 
   function mergeStudent(list, student) {
     const flat = {
-      id: student.id,
+      id: asStudentId(student.id),
       voornaam: student.voornaam ?? '',
       tussenvoegsel: student.tussenvoegsel ?? '',
       achternaam: student.achternaam ?? student.name ?? '',
@@ -414,7 +513,7 @@ const Store = (() => {
   }
 
   async function deleteStudent(id, year) {
-    await updateStudents(year, (list) => list.filter((s) => s.id !== id));
+    await updateStudents(year, (list) => list.filter((s) => s.id !== asStudentId(id)));
   }
 
   // ── Groups (year-scoped, subject-filtered) ────────────────────────────────
@@ -426,6 +525,9 @@ const Store = (() => {
     const subj = group.subject ?? subjectFromGroupName(group.name) ?? _activeSubject;
     const { academic_year: _ay, ...clean } = group;
     const updated = { ...clean, subject: subj };
+    if (Array.isArray(updated.student_ids)) {
+      updated.student_ids = [...new Set(updated.student_ids.map(asStudentId))]; // C8
+    }
     const saved = await saveEntity(ypGroup(year, updated.id), updated, updated._meta?.rev, {
       force,
     });
@@ -451,6 +553,7 @@ const Store = (() => {
     const group = getGroupsSync(year).find((g) => g.id === id);
     if (!group) return;
     await window.maatwerk.deleteFile(ypGroup(year, id));
+    changed();
     // The admin's list is the `__all__` cache; the reference only filtered the
     // subject cache, so the deleted group stayed on screen (quirk U21).
     for (const key of [
@@ -480,7 +583,8 @@ const Store = (() => {
   }
 
   function getStudentGroup(studentId, year) {
-    return getGroupsSync(year).find((g) => g.student_ids.includes(studentId)) ?? null;
+    const id = asStudentId(studentId);
+    return getGroupsSync(year).find((g) => g.student_ids.includes(id)) ?? null;
   }
 
   // ── Exams (year-scoped, subject-filtered) ─────────────────────────────────
@@ -535,6 +639,7 @@ const Store = (() => {
     if (!exam) return;
     if (examHasResits(id, year)) throw new Error('has_resits');
     await window.maatwerk.deleteFile(ypExam(year, id));
+    changed();
     const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
     cache[key] = (cache[key] ?? []).filter((e) => e.id !== id);
   }
@@ -542,7 +647,10 @@ const Store = (() => {
   // ── Scores (year-scoped, subject-scoped) ──────────────────────────────────
   async function getStudentScores(studentId, year, subject = _activeSubject) {
     const file = ypScore(year, subject, studentId);
-    return (await load(file)) ?? { student_id: studentId, scores: {} };
+    // A folder read in flight brings this file too (or tells it is absent).
+    const folderRead = scoreDirReads.get(`${year}/scores/${subject}`);
+    if (folderRead && cache[file] === undefined) await folderRead.catch(() => {});
+    return (await load(file)) ?? { student_id: asStudentId(studentId), scores: {} };
   }
 
   // Apply a change to the latest version of a student's score file on disk, so
@@ -556,7 +664,7 @@ const Store = (() => {
         mutator(rec);
         return rec;
       },
-      () => ({ student_id: studentId, scores: {} }),
+      () => ({ student_id: asStudentId(studentId), scores: {} }),
     );
     return cache[file];
   }
@@ -621,9 +729,26 @@ const Store = (() => {
 
   // RTTI calculations (calcResults, examResults, calcGrade): src/domain/grades.ts
 
+  // examResults per (score record, exam), for the statistics on the list screens
+  // (Step 7c). A cached record or exam that changes is replaced, never edited in
+  // place, so its identity is its revision; n_term and the question list are
+  // checked anyway (the score modal adjusts a copy's n_term). Results are read-only.
+  const resultsMemo = new WeakMap();
+  function examResultsMemo(rec, exam) {
+    if (!rec || typeof rec !== 'object' || !exam) return examResults(rec, exam);
+    let perExam = resultsMemo.get(rec);
+    if (!perExam) resultsMemo.set(rec, (perExam = new WeakMap()));
+    const hit = perExam.get(exam);
+    if (hit && hit.nTerm === exam.n_term && hit.questions === exam.questions) return hit.value;
+    const value = examResults(rec, exam);
+    perExam.set(exam, { nTerm: exam.n_term, questions: exam.questions, value });
+    return value;
+  }
+
   // ── Utilities ─────────────────────────────────────────────────────────────
-  function makeExamId(title, year, subject = _activeSubject) {
-    return makeExamIdFor(title, year, subject);
+  // New ids are opaque (C10, quirk B26): the title is only data.
+  function makeExamId() {
+    return makeExamIdFor();
   }
 
   // ── Observaties (subject-scoped, individual files) ────────────────────────
@@ -649,6 +774,7 @@ const Store = (() => {
 
   async function deleteObservation(id, subject = _activeSubject) {
     await window.maatwerk.deleteFile(ypObs(id));
+    changed();
     invalidateObsCache();
     await loadObservaties(subject);
   }
@@ -666,9 +792,40 @@ const Store = (() => {
     });
   }
 
-  async function preloadScores(year, subject = _activeSubject) {
-    const students = getStudentsSync(year);
-    await Promise.all(students.map((s) => getStudentScores(s.id, year, subject)));
+  // Every score file of a year and subject in one call (Step 7c): the list
+  // screens' statistics need them all, and one IPC call per student kept the
+  // main thread busy for seconds. Entries already cached are kept (they may be
+  // newer than this read); `ids` without a file are cached as "no file", as a
+  // single read would.
+  const scoreDirReads = new Map(); // dir -> in-flight read
+  async function preloadScores(
+    year,
+    subject = _activeSubject,
+    ids = getStudentsSync(year).map((s) => s.id),
+  ) {
+    if (!subject) return; // admin without a vak filter: no score folder (review 7c n6)
+    const dir = `${year}/scores/${subject}`;
+    // Everything cached already (a repeat render): nothing to read (review 7c M3).
+    // Absent files are cached as such and refreshed by the watcher like the others.
+    if (ids.every((id) => cache[ypScore(year, subject, id)] !== undefined)) return;
+    let read = scoreDirReads.get(dir);
+    if (!read) {
+      read = timed('store:readDir', () => window.maatwerk.readJsonDir(dir)).then((files) =>
+        timed('store:decodeDir', () => {
+          for (const { name, data } of files) {
+            const rel = `${dir}/${name}`;
+            if (cache[rel] === undefined) cache[rel] = decode(rel, data);
+          }
+        }),
+      );
+      scoreDirReads.set(dir, read);
+      void read.finally(() => scoreDirReads.delete(dir)).catch(() => {});
+    }
+    await read;
+    for (const id of ids) {
+      const rel = ypScore(year, subject, id);
+      if (cache[rel] === undefined) cache[rel] = null;
+    }
   }
 
   // migrate() of the reference (legacy layouts -> per-year -> per-subject) is
@@ -756,9 +913,13 @@ const Store = (() => {
 
   // ── Opdrachten ────────────────────────────────────────────────────────────
 
+  // One folder per opdracht (C14): opdrachten/<id>/opdracht.json with
+  // main.typ, opdracht.typ, lib.typ and images/ next to it.
+  const ypOpdracht = (id) => `opdrachten/${id}/opdracht.json`;
+
   async function loadOpdrachten() {
     if (cache['opdrachten'] !== undefined) return cache['opdrachten'];
-    const all = await window.maatwerk.readAllJson('opdrachten');
+    const all = await window.maatwerk.readOpdrachten();
     cache['opdrachten'] = all.filter((o) => o && o.id);
     return cache['opdrachten'];
   }
@@ -774,42 +935,33 @@ const Store = (() => {
   async function upsertOpdracht(opdracht) {
     const baseRev =
       opdracht._meta?.rev ?? getOpdrachtenSync().find((o) => o.id === opdracht.id)?._meta?.rev;
-    await saveEntity(`opdrachten/${opdracht.id}.json`, opdracht, baseRev);
+    const { typFile: _v1, ...clean } = opdracht; // v1 field; the text is always opdracht.typ
+    await saveEntity(ypOpdracht(opdracht.id), clean, baseRev);
     cache['opdrachten'] = undefined;
     await loadOpdrachten();
   }
 
-  // Copy an opdracht with its Typst file and images; image paths in the copy
-  // point to the copy's own images folder. Returns the new opdracht.
+  // Copy an opdracht: its folder (Typst files and images; the images are
+  // relative to the folder, so no paths change) and a fresh opdracht.json.
+  // Returns the new opdracht.
   async function copyOpdracht(id) {
     const original = getOpdrachtenSync().find((o) => o.id === id);
     if (!original) throw new Error('Opdracht niet gevonden.');
     const newId = `opdracht_${Date.now()}`;
-    const typFile = `${newId}.typ`;
-    const content = original.typFile
-      ? await window.maatwerk.readTextFile(`opdrachten/${original.typFile}`)
-      : null;
-    if (content == null) await window.maatwerk.createAssignmentTypFile(typFile);
-    else
-      await window.maatwerk.writeTextFile(
-        `opdrachten/${typFile}`,
-        content.split(`images/${id}/`).join(`images/${newId}/`),
-      );
-    await window.maatwerk.copyOpdrachtImages(id, newId);
+    await window.maatwerk.copyOpdrachtFolder(id, newId);
+    changed();
     const { _meta, ...rest } = JSON.parse(JSON.stringify(original));
-    const copy = { ...rest, id: newId, naam: `${original.naam} (kopie)`, typFile };
+    const copy = { ...rest, id: newId, naam: `${original.naam} (kopie)` };
     await upsertOpdracht(copy);
     return copy;
   }
 
   async function deleteOpdracht(id) {
-    const opdracht = getOpdrachtenSync().find((o) => o.id === id);
     cache['opdrachten'] = undefined;
-    await window.maatwerk.deleteFile(`opdrachten/${id}.json`);
-    if (opdracht?.typFile) {
-      await window.maatwerk.deleteFile(`opdrachten/${opdracht.typFile}`);
-    }
-    await window.maatwerk.deleteOpdrachtImages(id);
+    await window.maatwerk.deleteFile(ypOpdracht(id));
+    changed();
+    await window.maatwerk.deleteOpdrachtFolder(id);
+    changed();
     await loadOpdrachten();
   }
 
@@ -868,7 +1020,8 @@ const Store = (() => {
     const subject = exam.subject ?? _activeSubject;
     await Promise.all([
       loadYear(year, subject),
-      preloadScores(year, subject),
+      // A failed folder read falls back to single reads below (review 7c m2).
+      preloadScores(year, subject).catch(() => {}),
       getObservaties(subject),
       loadOpdrachten(),
     ]);
@@ -901,9 +1054,9 @@ const Store = (() => {
     ['group', new RegExp(`^${YEAR}/groups/([^/]+)\\.json$`)],
     ['students', new RegExp(`^${YEAR}/students-\\d{4}-\\d{4}\\.json$`)],
     ['observatie', /^observaties\/([^/]+)\.json$/],
-    ['opdracht', /^opdrachten\/([^/]+)\.json$/],
-    ['opdrachtTyp', /^opdrachten\/([^/]+)\.typ$/],
-    ['gebruikers', /^gebruikers\.json$/],
+    ['opdracht', /^opdrachten\/([^/]+)\/opdracht\.json$/],
+    ['opdrachtTyp', /^opdrachten\/([^/]+)\/[^/]+\.typ$/],
+    ['gebruikers', /^gebruikers\/([^/]+)\.json$/],
     ['school', /^school\.json$/],
     ['presence', /^users\/([^/]+)\.json$/],
   ];
@@ -921,11 +1074,15 @@ const Store = (() => {
       before = before ?? arr[i];
       if (item && targetKeys.includes(key)) arr[i] = item;
       else arr.splice(i, 1);
+      changed();
     }
     if (item) {
       for (const key of targetKeys) {
         const arr = cache[key];
-        if (Array.isArray(arr) && !arr.some((x) => x.id === id)) arr.push(item);
+        if (Array.isArray(arr) && !arr.some((x) => x.id === id)) {
+          arr.push(item);
+          changed();
+        }
       }
     }
     return before;
@@ -944,7 +1101,8 @@ const Store = (() => {
     const ev = { type, kind, relPath, meta, year: null, subject: null, id: null };
     ev.before = null;
     ev.after = null;
-    const readFresh = async () => (kind === 'deleted' ? null : window.maatwerk.readJson(relPath));
+    const readFresh = async () =>
+      kind === 'deleted' ? null : decode(relPath, await window.maatwerk.readJson(relPath));
 
     // Serialised with own writes to the same file, so a refresh can never put an
     // older version in the cache than one this app just wrote.
@@ -998,6 +1156,7 @@ const Store = (() => {
           ev.after = await readFresh();
           invalidateObsCache();
           if (_activeSubject) await loadObservaties(_activeSubject);
+          changed(); // a render between the drop and the reload saw no observaties (review 7c m4)
           break;
         }
         case 'opdracht': {
@@ -1007,15 +1166,31 @@ const Store = (() => {
           if (cache['opdrachten'] !== undefined) {
             cache['opdrachten'] = undefined;
             await loadOpdrachten();
+            changed(); // as for observaties (review 7c m4)
           }
           break;
         }
         case 'opdrachtTyp':
+          ev.id = match[1];
+          break;
         case 'presence':
           ev.id = match[1];
           ev.after = await readFresh();
           break;
-        case 'gebruikers':
+        case 'gebruikers': {
+          ev.id = match[1];
+          ev.after = await readFresh();
+          ev.before = (cache['gebruikers'] ?? []).find((u) => u.id === ev.id) ?? null;
+          const users = cache['gebruikers'];
+          if (users) {
+            const i = users.findIndex((u) => u.id === ev.id);
+            if (i >= 0 && ev.after) users[i] = ev.after;
+            else if (i >= 0) users.splice(i, 1);
+            else if (ev.after) users.push(ev.after);
+            changed();
+          }
+          break;
+        }
         case 'school':
           if (cache[relPath] === undefined) break;
           ev.before = cache[relPath];
@@ -1025,6 +1200,8 @@ const Store = (() => {
       }
     });
 
+    // `generation` grew above only where cached data changed (review 7c M2): a
+    // colleague's save in another vak or of an unread file keeps the kept screens.
     ev.inScope = changeIsInScope(ev);
     return ev;
   }
@@ -1041,6 +1218,9 @@ const Store = (() => {
   // ── Public API ────────────────────────────────────────────────────────────
   return {
     applyExternalChange,
+    /** Grows whenever cached data changes (own writes, external changes). */
+    generation: () => generation,
+    invalidateSchool,
     preload,
     initSubject,
     loadYear,
@@ -1055,11 +1235,18 @@ const Store = (() => {
     setActiveSubject,
     getActiveUser,
     setActiveUser,
+    getActiveRole,
+    isVoorzitterActive,
+    voorzitterOf,
     isAdminActive,
     loadUsers,
     upsertUser,
+    cacheUser,
+    forgetFile,
     loadSchool,
     updateSchool,
+    loadInstellingen,
+    saveInstellingen,
     getSchoolSync,
     saveLastSession,
     loadLastSession,
@@ -1096,7 +1283,7 @@ const Store = (() => {
     setScore,
     getStudentHistory,
     calcResults,
-    examResults,
+    examResults: examResultsMemo,
     calcGrade,
     setGradeOverride,
     makeExamId,

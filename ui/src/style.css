@@ -263,6 +263,12 @@ body::after {
   padding: 7px 14px;
   box-shadow: var(--shadow);
 }
+/* Long student lists (Step 7c): cards out of view skip style, layout and paint;
+   `auto` keeps a card's last real height once it has been shown. */
+#student-list > .card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 40px;
+}
 .card-main {
   display: flex;
   flex-direction: column;
@@ -1721,6 +1727,14 @@ body::after {
 }
 
 /* ── Score grid ───────────────────────────────────────────────────────────── */
+/* Grids built ahead while the exam menu is open (Step 7c): laid out, not seen. */
+.sc-prebuild {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  visibility: hidden;
+  pointer-events: none;
+}
 .score-group-section {
   margin-bottom: 28px;
 }
@@ -3637,4 +3651,160 @@ td.grade-override-stale::after {
   font-size: 12px;
   color: var(--muted);
   word-break: break-word;
+}
+
+/* ── One-time conversion of a v1 folder (ADR-0003 C1) ────────────────────── */
+.startup-error.migration {
+  border-left-color: var(--primary);
+}
+.migration-confirm {
+  display: block;
+  margin: 0 0 16px;
+}
+.migration-status {
+  white-space: pre-line;
+}
+.migration-done p {
+  margin: 0 0 8px;
+  word-break: break-word;
+}
+.migration-warnings {
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+.startup-error.migration-wide {
+  max-width: 900px;
+}
+.migration-heading {
+  margin: 16px 0 8px;
+}
+.migration-issues {
+  max-height: 40vh;
+  overflow: auto;
+  margin: 0 0 12px;
+}
+.migration-advice {
+  font-size: 13px;
+}
+.migration-advice-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ── Beheer > Gegevenscontrole (Step 7a, C19) ────────────────────────────── */
+.gegevens {
+  max-width: 1100px;
+}
+.gegevens-summary {
+  margin: 16px 0 8px;
+  font-weight: 600;
+}
+.gegevens-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.gegevens-table th,
+.gegevens-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.gegevens-path {
+  font-family: monospace;
+  word-break: break-all;
+}
+.gegevens-error .gegevens-sev {
+  color: var(--danger);
+  font-weight: 600;
+}
+.gegevens-warning .gegevens-sev {
+  color: var(--muted);
+}
+
+/* ── PIN login and account (Step 7b) ─────────────────────────────────────── */
+#modal-box.modal-narrow {
+  width: 420px;
+}
+.pin-input {
+  font-size: 20px;
+  letter-spacing: 0.3em;
+  width: 12em;
+}
+.pin-code-input {
+  font-family: monospace;
+  font-size: 18px;
+  text-transform: uppercase;
+  width: 12em;
+}
+.pin-role {
+  color: var(--muted);
+  margin-top: -8px;
+}
+.pin-error {
+  color: var(--danger);
+  min-height: 1.4em;
+  margin: 4px 0;
+}
+.recovery-codes {
+  columns: 2;
+  font-size: 16px;
+  margin: 12px 0 16px;
+}
+.recovery-codes code {
+  font-family: monospace;
+  letter-spacing: 0.05em;
+}
+.checkbox-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+.account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+.badge-voorzitter-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+#print-sheet {
+  display: none;
+}
+@media print {
+  body.printing-sheet > *:not(#print-sheet) {
+    display: none !important;
+  }
+  body.printing-sheet #print-sheet {
+    display: block;
+    font-size: 14pt;
+    white-space: pre-wrap;
+  }
+}
+.instellingen {
+  max-width: 640px;
+}
+.snapshot-list {
+  columns: 3;
+  font-family: monospace;
+  font-size: 13px;
+}
+.voorzitter-list {
+  max-width: 520px;
+}
+.voorzitter-row {
+  align-items: center;
+  margin-bottom: 8px;
+}
+.voorzitter-row select {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--surface);
 }

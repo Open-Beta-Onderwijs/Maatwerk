@@ -33,15 +33,15 @@ tests: `ui/src/bridge/mock/mock-api.test.ts` ("MockApi").
 | 9   | `fs:ensureDir`                                        | `ensureDir`                            | port (4b)     | `ensure_dir`                                                                                                         | only `migrate()` used it, which is not ported (C2); kept in the interface; Rust: `storage::tests`; compat: `tauri-api.test.ts`                                           |
 | 10  | `fs:getDataDir`                                       | `getDataDir`                           | port (4b)     | `get_data_dir`                                                                                                       | e2e editor (ready flag); Rust: `paths::tests::display_path_*`; compat: `tauri-api.test.ts`                                                                               |
 | 11  | `fs:readTextFile`                                     | `readTextFile`                         | port (4b)     | `read_text_file`                                                                                                     | e2e quirks "U9", "D25"; Rust: `storage::tests`; compat: `tauri-api.test.ts`; manual `M-OPD-2`                                                                            |
-| 12  | `fs:writeTextFile`                                    | `writeTextFile`                        | port (6a)     | `write_text_file` (only `opdrachten/<name>.typ`, n8)                                                                 | e2e quirks "U9"; Rust: `storage::tests` (`n8_*`); compat: `tauri-api.test.ts`; manual `M-OPD-3`                                                                          |
-| 13  | `app:createAssignmentTypFile`                         | `createAssignmentTypFile`              | port (6a)     | `create_assignment_typ_file` (bare `.typ` name)                                                                      | Rust: `typst_svc::project::tests::create_*`; compat: `tauri-api.test.ts` "opdracht images"; manual `M-OPD-1`                                                             |
+| 12  | `fs:writeTextFile`                                    | `writeTextFile`                        | C17 (7a)      | `write_text_file` (only `opdrachten/<id>/<name>.typ`, n8; `expectedHash` CAS) + `read_text_file_versioned`           | e2e quirks "U9"; Rust: `storage::tests` (`n8_*`); compat: `tauri-api.test.ts`; manual `M-OPD-3`                                                                          |
+| 13  | `app:createAssignmentTypFile`                         | `createOpdrachtFolder`                 | C14 (7a)      | `create_opdracht_folder` (`main.typ`, `lib.typ`, `opdracht.typ`)                                                     | Rust: `typst_svc::project::tests::create_*`; compat: `tauri-api.test.ts` "opdracht images"; manual `M-OPD-1`                                                             |
 | 14  | `opdracht:listImages`                                 | `listOpdrachtImages`                   | port (6a)     | `list_opdracht_images` (`opdracht_images::list`; thumbs for GIF/WebP too)                                            | mock-api.test "opdracht images"; Rust: `opdracht_images::tests`; compat: `tauri-api.test.ts`; manual `M-OPD-4`                                                           |
 | 15  | `opdracht:saveImage`                                  | `saveOpdrachtImage`                    | fixed (T30)   | `save_opdracht_image` (`opdracht_images::store`; case-insensitive names)                                             | mock-api.test "opdracht images"; Rust: `opdracht_images::tests` (cleaning, duplicates, types, order of checks); compat: `tauri-api.test.ts`; manual `M-OPD-4`, `M-OPD-5` |
 | 16  | `opdracht:pickImage`                                  | `pickImageFile`                        | port (6a)     | `pick_image_file` (dialog plugin from Rust; token, path stays in Rust)                                               | manual `M-OPD-4`; compat: `tauri-api.test.ts`                                                                                                                            |
 | 17  | `opdracht:importImage`                                | `importOpdrachtImage`                  | port (6a)     | `import_opdracht_image`                                                                                              | Rust: `opdracht_images::tests` (store); manual `M-OPD-4`; compat: `tauri-api.test.ts`                                                                                    |
 | 18  | `clipboard:readImage`                                 | `readClipboardImage`                   | port (6a)     | `read_clipboard_image` (clipboard plugin from Rust, RGBA -> PNG)                                                     | Rust: `opdracht_images::tests::clipboard_*`; manual `M-OPD-5`; compat: `tauri-api.test.ts`                                                                               |
-| 19  | `opdracht:copyImages`                                 | `copyOpdrachtImages`                   | port (6a)     | `copy_opdracht_images` (folders inside skipped)                                                                      | mock-api.test "opdracht images"; Rust: `opdracht_images::tests`; compat: `tauri-api.test.ts`; manual `M-OPD-1`                                                           |
-| 20  | `opdracht:deleteImages`                               | `deleteOpdrachtImages`                 | port (6a)     | `delete_opdracht_images` (+ background folder retry; noted to the watcher)                                           | mock-api.test "opdracht images"; Rust: `opdracht_images::tests`; compat: `tauri-api.test.ts`; manual `M-OPD-1`                                                           |
+| 19  | `opdracht:copyImages`                                 | `copyOpdrachtFolder`                   | C14 (7a)      | `copy_opdracht_folder` (Typst files + images, not `opdracht.json`)                                                   | mock-api.test "opdracht images"; Rust: `opdracht_images::tests`; compat: `tauri-api.test.ts`; manual `M-OPD-1`                                                           |
+| 20  | `opdracht:deleteImages`                               | `deleteOpdrachtFolder`                 | C14 (7a)      | `delete_opdracht_folder` (whole folder; background folder retry)                                                     | mock-api.test "opdracht images"; Rust: `opdracht_images::tests`; compat: `tauri-api.test.ts`; manual `M-OPD-1`                                                           |
 | 21  | `presence:update`                                     | `updatePresence`                       | port (4b)     | `update_presence`                                                                                                    | mock-api.test "presence: switching users…"; Rust: `presence::tests`; compat: `tauri-api.test.ts`; manual `M-SYNC-1`, `M-END-1`                                           |
 | 22  | `fs:readLocalSession`                                 | `readLocalSession`                     | port (4b)     | `read_local_session`                                                                                                 | e2e (login); Rust: `storage::tests`; compat: `tauri-api.test.ts`; manual `M-START-2`                                                                                     |
 | 23  | `fs:writeLocalSession`                                | `writeLocalSession`                    | port (4b)     | `write_local_session`                                                                                                | e2e (login); Rust: `storage::tests`; compat: `tauri-api.test.ts`; manual `M-START-2`                                                                                     |
@@ -122,7 +122,7 @@ Watcher rows: `crates/maatwerk-core/src/watcher/tests.rs`.
 | ------------------------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
 | Grade, n-term bounds, bonus/diag, RTTI %, overrides     | `store.js` `calcResults`, `calcGrade`, `examResults`, `qKind` | `ui/src/domain/grades.ts`                      | port      | `ui/tests/domain/grades.test.ts` (grades.json, 45 cases)                                                           |
 | Resits, best attempt, history                           | `store.js` `computeBestGradeMap`, `resolveBestAttempts`, …    | `ui/src/domain/attempts.ts` + Store            | port      | `ui/tests/store/attempts.test.ts` (attempts.json)                                                                  |
-| Ids, slugs, school year, names, group names, volgnummer | `store.js` `makeExamId`, `currentSchoolYear`, `upsertExam`, … | `ui/src/domain/ids.ts` + Store                 | port      | `ui/tests/domain/ids.test.ts` (ids.json)                                                                           |
+| Ids, slugs, school year, names, group names, volgnummer | `store.js` `makeExamId`, `currentSchoolYear`, `upsertExam`, … | `ui/src/domain/ids.ts` + Store                 | port      | `ui/tests/domain/ids.test.ts` (ids.json; makeExamId/makeGroupId opaque since 7a, ADR-0003 C10)                     |
 | Opdracht coupling, grade cards, assignments             | `store.js` `getOpdrachtCoupling`, `getOpdrachtAssignments`, … | `ui/src/domain/opdrachten.ts` + Store          | port      | `ui/tests/domain/opdrachten.test.ts` (opdrachten.json); C8: group lookup compares ids as strings ("C8" test)       |
 | Score writes (setScore, overrides, observations)        | `store.js` `update`, `setScore`, `setGradeOverride`, …        | Store (unchanged) on the bridge                | port      | `ui/tests/store/score-writes.test.ts` (score-writes.json, file bytes)                                              |
 | CSV parsing, student CSV                                | `utils/csv.js` `parseCSV`, `leerling-edit.js` rows            | `ui/src/domain/csv.ts`                         | fixed B22 | `ui/tests/domain/csv.test.ts` (csv.json + "B22")                                                                   |
@@ -159,3 +159,90 @@ Watcher rows: `crates/maatwerk-core/src/watcher/tests.rs`.
 | Render outputs per run, old runs' folders removed after a day    | `outputs::OutputStore`                                       | changed (6a m1)       | Rust: `outputs::tests`; manual `M-END-2`                                                |
 | Empty image folders removed at start                             | `opdracht_images::remove_empty_dirs`                         | port (6a)             | Rust: `opdracht_images::tests`                                                          |
 | Dropping a file on the window                                    | Tauri drag-drop (default on)                                 | fixed (U20)           | manual `M-OPD-6`                                                                        |
+
+## Data format v2 (Step 7a)
+
+The goldens were captured on v1 folders. From Step 7a the Store reads and writes v2
+(`docs/reference/data-files-v2.md`); tests seed the golden scenarios through
+`tools/fixtures/to-v2.mjs` and compare expected files and values in v2 form. All differences
+found were format-only: student ids as strings (C8), `"N"` instead of `null` (C9), `_meta` on
+`school.json` (C16), trailing newline (C13). New in the app, not in the reference:
+
+| Command                        | Bridge method                           | Tests                                                    |
+| ------------------------------ | --------------------------------------- | -------------------------------------------------------- |
+| `read_opdrachten`              | `readOpdrachten`                        | `opdracht_images::tests`, `mock-api.test.ts`             |
+| `read_text_file_versioned`     | `readTextFileVersioned`                 | `storage::tests::text_files_round_trip_with_cas`         |
+| `migrate_data_folder`          | `migrateDataFolder` (startup screen)    | `migrate::tests` (golden v1 -> v2 tree), CI `school` run |
+| `validate_data_folder`         | `validateDataFolder` (Gegevenscontrole) | `validate::tests`                                        |
+| `stamp_issues`, `accept_stamp` | `stampIssues`, `acceptStamp`            | `storage::tests::c19_stamps_*`                           |
+| CLI `validate-data`, `migrate` | —                                       | `maatwerk-cli` arg tests, CI step                        |
+
+## Accounts, roles, snapshots (Step 7b, ADR-0006)
+
+New in the app, not in the reference. One deliberate change of reference behaviour: clicking the
+top-bar badge opens an account modal ("Uitloggen" is one click further) instead of logging out at
+once.
+
+| Command / behaviour                                         | Bridge method / UI                                         | Tests                                                                       |
+| ----------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `verify_pin`, `set_first_pin`, `change_pin`, `logout`       | login screen PIN dialogs, account modal (`screens/pin.ts`) | `auth::tests`, `mock-api.test.ts`, `accounts.spec.ts`; manual `M-PIN-1/2/5` |
+| `recover_with_code`, `renew_recovery_codes`, `save_text_as` | "Pincode vergeten?", herstelcodes modal                    | `auth::tests`, `accounts.spec.ts`; manual `M-PIN-3/4`                       |
+| `reset_pin` (admin, session checked in Rust)                | Gebruikers "Pincode resetten"                              | `auth::tests`, `accounts.spec.ts`; manual `M-PIN-6`                         |
+| CLI `admin reset-pin`                                       | —                                                          | `maatwerk-cli/tests/admin.rs`; manual `M-PIN-7`                             |
+| Sectievoorzitter (`school.json` `secties`)                  | Gebruikers, login badge, `groep-edit.js`                   | `accounts.spec.ts`, `validate::tests`; manual `M-VZ-1/2`                    |
+| `instellingen.json`                                         | admin tab Instellingen (`screens/instellingen.ts`)         | `snapshots::tests`, `instellingen.test.ts`, `accounts.spec.ts`              |
+| Snapshot at start (claim, zip, retention)                   | `Core::start_snapshot`; `list_snapshots`                   | `snapshots::tests`; manual `M-SNAP-1/2`                                     |
+| `snapshot_for_file`, `restore_from_snapshot` (admin)        | Gegevenscontrole "Herstellen uit snapshot"                 | `snapshots::tests`, `accounts.spec.ts`; manual `M-SNAP-3`                   |
+| Same badge photo on login screen, top bar, Gebruikers       | `utils/badges.js`                                          | visual (local); manual `M-ADM-1`                                            |
+
+## Perceived speed (Step 7c, `docs/perf.md`)
+
+Same output as before; what changes is when the UI renders and reads. One deliberate change of
+reference behaviour: closing the score modal no longer redraws the exam list when nothing was
+saved (the reference always redrew it; the list looked the same).
+
+| Change                                                   | Where                                     | Tests                                                                                                      |
+| -------------------------------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Kept list screens (`Store.generation`, view key)         | `app.js` `navigateTo`, `store.js`         | `perceived-speed.spec.ts` "keeps its DOM"; Vitest `tests/store/generation.test.ts`; manual `M-PERF-2`      |
+| Long Leerlingen list in stages, admin-only delete checks | `screens/leerlingen.js`, `utils/idle.ts`  | `perceived-speed.spec.ts` "long student list", "admin: Verwijderen"; Vitest `utils/idle.test.ts`           |
+| `read_json_dir` (new): one call per score folder         | `readJsonDir`, `Store.preloadScores`      | Rust `storage::tests::read_all_json_named_*`; Vitest `generation.test.ts` "preloadScores"                  |
+| Memoised `Store.examResults`                             | `store.js`                                | Vitest `generation.test.ts` "examResults"; grade goldens unchanged                                         |
+| Score modal: first group at once, rest in idle; prebuild | `screens/scores.js`, `toetsen.js` menu    | `perceived-speed.spec.ts` (later groups, prebuild, presence); all `score-grid.spec.ts` run on the prebuild |
+| Timing spans and the measurement script                  | `utils/perf.ts`, `tools/perf/measure.mjs` | Vitest `utils/perf.test.ts`; manual `M-PERF-1`                                                             |
+
+## Live editor compile service (Step 8a)
+
+New in the core; the editor UI runs on it since Step 8b (below). The SVG pages are the same as the
+one-shot render. `render_assignment_svg` (row 30) stays in the bridge, but the editor no longer
+calls it.
+
+| Behaviour                                                          | Where                                    | Tests                                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------- |
+| Same SVG pages as path C; patched pages equal a fresh render       | `typst_svc::EditorSession`               | `typst_opdracht.rs` `editor_session_patches_equal_the_one_shot_render`          |
+| Only changed pages sent (hash per page); fewer pages trim          | `EditorSession::compile`                 | `editor::tests::the_first_compile_*`, `fewer_pages_shrink_the_preview`          |
+| Last good preview kept on errors; diagnostics with UTF-16 ranges   | `EditorSession`, `diagnostics::Location` | `editor::tests::errors_keep_the_last_good_preview_*`, `resend_all_*`            |
+| Buffer only in memory; disk files (images) re-checked per compile  | `MaatwerkWorld::set_file`, `reset`       | `editor::tests::the_buffer_is_never_written_*`, `files_on_disk_*`, `a_folder_*` |
+| Debounce; latest generation wins, stale compiles dropped           | `typst_svc::LiveEditor`                  | `editor::tests::live_*`, `a_stale_compile_changes_nothing`                      |
+| Long sessions do not grow (files held; comemo evicted per compile) | `compile_document`, `MaatwerkWorld`      | `editor::tests::a_long_session_holds_no_more_files`; `docs/perf.md`             |
+
+## Live editor UI (Step 8b)
+
+The editor of the reference compiled a saved copy per keystroke pause through the Typst CLI and
+showed stderr; it found the cursor in the preview through an inserted marker. Now the editor runs
+on `LiveEditor` (ADR-0002 section 12).
+
+| Behaviour                                                                   | Where                                                      | Tests                                                                                               |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Edits go to the session at once; only changed pages are patched             | `editor-init.js`, `editor-live.ts patchPages`              | `editor.spec.ts` "only the changed pages"; `mock-editor.test.ts`                                    |
+| Errors: lint underline + gutter, status text, last good preview kept        | `editor-live.ts cmDiagnostics`, `@codemirror/lint`         | `editor.spec.ts`; Rust `editor::tests::errors_*`                                                    |
+| No compile delay; new errors shown after 500 ms without typing              | `DEFAULT_DEBOUNCE` = 0, `editor-init.js showCompileResult` | `editor.spec.ts` "new errors show after a pause"                                                    |
+| Watchdog: a compile over the admin time limit is abandoned, Dutch message   | `LiveEditor` coordinator, `EditorSettings`                 | `editor::tests::the_watchdog_*`, `the_fresh_session_*`; `editor.spec.ts`, `accounts.spec.ts` (5 s)  |
+| Autocomplete, hover, Ctrl+click / F12 to the definition                     | `typst_svc::ide`, `editor-live.ts liveExtensions`          | `ide::tests::completes_*`, `hover_*`, `definition_*`; `editor.spec.ts`                              |
+| Preview follows the cursor; a click in the preview moves the cursor         | `ide::jump_from_cursor` / `jump_from_click` (no marker)    | `ide::tests::click_and_cursor_jumps_*`; `editor.spec.ts`; `tools/perf/editor.mjs`; manual `M-OPD-8` |
+| Jumps only on a document of the current sources (review 8a n7)              | `EditorSession::current_document`                          | `editor::tests::the_current_document_is_only_*`                                                     |
+| Vragen list (label, punten, antwoord), total, checks                        | `typst_svc::vragen` (introspector), `lib.typ` v2           | `vragen::tests`; `editor.spec.ts` "vragen panel"                                                    |
+| Tabs `main.typ`/`lib.typ` with warning, Bekijk verschillen, Herstel         | `editor-init.js`, `project::check_project_files`           | `project::tests::project_files_*`; `textdiff.test.ts`; `editor.spec.ts` "lib.typ"; manual `M-OPD-9` |
+| Unchanged older `lib.typ`/`main.typ` updated silently when the editor opens | `check_project_files` (CAS)                                | `project::tests::project_files_*`                                                                   |
+| BOM stripped in the editor (positions match Typst's, review 8a n8)          | `editor-init.js stripBom`                                  | `textdiff.test.ts` (BOM ignored); manual                                                            |
+| Image saved: the session reads disk files again                             | `editor_refresh`                                           | `editor::tests::reload_reads_a_disk_file_*`                                                         |
+| Compile time limit in Instellingen                                          | `screens/instellingen.ts`                                  | `instellingen.test.ts`; `accounts.spec.ts` "compile time limit"                                     |

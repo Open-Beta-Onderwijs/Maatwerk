@@ -15,7 +15,7 @@ import {
   readTree,
   student,
 } from '../../../tests/reference-harness/scenario.mjs';
-import { goldenCase, loadGolden, run } from '../golden';
+import { goldenCase, loadGolden, run, v2File } from '../golden';
 import { openStore } from '../store-session';
 
 const golden = loadGolden('score-writes');
@@ -111,6 +111,11 @@ describe('score-writes golden (Store)', () => {
     for (const [step, op, id] of steps) {
       out.push({ step, result: await run(op), file: text(id) });
     }
-    expect(out).toEqual(goldenCase(golden, 'sequence').output);
+    // The golden holds the files the reference wrote (v1); compared in v2 form.
+    const expected = (goldenCase(golden, 'sequence').output as typeof out).map((o, i) => ({
+      ...o,
+      file: v2File(`${YEAR}/scores/nat/${steps[i]![2]}.json`, o.file as string | null),
+    }));
+    expect(out).toEqual(expected);
   });
 });

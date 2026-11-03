@@ -1,0 +1,48 @@
+{
+  "uitleg": {
+    "R": "R wisb4",
+    "T1": "",
+    "T2": "",
+    "I": ""
+  },
+  "leeradvies": {
+    "R": {
+      "laag": "R laag wisb4",
+      "midden": "",
+      "hoog": ""
+    },
+    "T1": {
+      "laag": "T1 laag wisb4",
+      "midden": "",
+      "hoog": ""
+    },
+    "T2": {
+      "laag": "T2 laag wisb4",
+      "midden": "",
+      "hoog": ""
+    },
+    "I": {
+      "laag": "I laag wisb4",
+      "midden": "",
+      "hoog": ""
+    }
+  },
+  "grenswaarden": {
+    "R": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T1": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T2": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "I": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    }
+  }
+}

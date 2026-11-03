@@ -207,6 +207,93 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **n2:** keep the two licence allowlists (`deny.toml`, `tools/check-npm-licenses.mjs`) in sync;
   consider generating one from the other.
 
+## From Step 7a (review `docs/reviews/step-07a.md`)
+
+- **m2:** `stamp_issues`/`stampIssues` are not shown in the UI yet; use them for "Herstellen uit
+  snapshot" in 7b or drop them.
+- **m6:** CI check that `tools/fixtures/to-v2.mjs` and `maatwerk-cli migrate` give the same tree
+  for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).
+- **n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
+  remove after the cutover.
+- **n3:** the data-files-v2 text on merging duplicate students vs. the Rust merge details.
+- **n4:** the conflict-copy check can label a misplaced file as a conflict copy.
+- **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones
+  each file; measure in 7c.
+- **n6:** the user active toggle changes the cached user before saving; a conflict leaves the
+  wrong state on screen.
+- **n8:** saving the students file drops top-level keys other than `students`.
+
+## From Step 7b (review `docs/reviews/step-07b.md`)
+
+- m1: two PCs that start in the same minute can both write a snapshot (the claim in
+  `snapshots/state.json` is per OneDrive replica). Option: after claiming, wait 20-60 s on the
+  background thread, re-read the state and give up if another PC claimed later.
+- m6: test for losing the snapshot claim to a concurrent writer (needs a hook between read and
+  CAS in `Storage`).
+- n4: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
+  admin takes effect at the next login.
+- n5: the Rust login session survives a webview reload (dev only; release builds have no reload).
+- After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only at
+  the next login.
+
+## From Step 7c (perceived speed)
+
+- **Read vs. colleague change, file not cached yet** (older than 7c, also with single reads):
+  a score file read in flight when the watcher reports a colleague's change to that file is not
+  refreshed (the event is skipped because nothing is cached yet), so the read's older content
+  stays until the next login. Window: one read. Option: count external changes per path while
+  a read is in flight and read again.
+- **First tab visit after login at 4x CPU** is above 100 ms (Toetsen 113, admin Leerlingen 217,
+  admin Groepen 154 p90; `docs/perf.md`): the first folder reads and statistics. If the real
+  copy (M-PERF-1) shows it at 1x too: start `preloadScores` for the active year in idle time
+  right after login.
+- **Review 7c m4 (rest):** `loadInstellingen` and `invalidateSchool` (School screen) drop a cached
+  entry on every visit, which counts as a change, so the kept screens render once more for nothing.
+  Load Instellingen without invalidating (the versioned read gives the rev).
+- **Review 7c m5 (rest):** e2e for a colleague's change to a group still waiting for idle time
+  (stub `requestIdleCallback`), closing the score modal while groups are pending, and the 15 s
+  prebuild TTL.
+- **Review 7c n2:** closing the score modal after a save redraws the exam list without updating
+  the kept-screen key, so the next Toetsen visit renders once more.
+- **Review 7c n5:** `contain-intrinsic-size: auto 40px` on student cards is an estimate; measure a
+  real card (cards not shown yet count as 40 px for the scrollbar).
+- **e2e `examMenuItem` retries** because Playwright's scroll-into-view delivers a `scroll` event a
+  frame after the click, which closes the menu. Replace the retry with the scroll-first click of
+  `openExamMenu` in `ui/e2e/perceived-speed.spec.ts`.
+
+## From Step 8a (review `docs/reviews/step-08a.md`)
+
+- **m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
+  editor's cache out. Option: evict by the editor's own compile count only, or evict less
+  often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
+  a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
+- **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
+- **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
+  never got (set `document` only after the render succeeded).
+- **n3:** `close()` called from the sink would join its own thread. The app's sink only emits an
+  event (never blocks, never closes); keep it that way (documented on `LiveEditor`).
+- **n5:** one moved mount drops the disk files of every mount (performance only).
+- **n6:** check staleness between pages of the SVG render too.
+
+## From Step 8b (review `docs/reviews/step-08b.md`)
+
+- **m5:** help queries whose caller gave up (2 s) still run later on the compile thread and count
+  against the next compile's time limit; pass a cancel flag.
+- **m6:** the editor iframe uses `window.confirm` (close with unsaved changes since 3a, "Herstel
+  standaardversie" since 8b); move both to the app's own dialog (Step 10).
+- **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
+  een opgave" only before the first opgave.
+- **n4:** the bundled `main.typ` still has the cursor-marker code; remove it with `maatwerk-main 2`
+  and drop the marker from `render_assignment_svg` (no caller left in the editor).
+- **n6:** while two abandoned compiles still run, the editor waits silently; say so.
+- **n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.
+- **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do
+  nothing (by design, review 8a n7); consider mapping through the last good source.
+
+- **CSP report on native editing:** typing over a multi-line selection makes Chrome insert a
+  styled span in the editor's contenteditable, which the CSP blocks and reports (seen in e2e;
+  CodeMirror rewrites that DOM, nothing visible). Check whether real typing triggers it.
+
 ## Other
 
 - **`rapporten/` retention** (Step 1 decision, ADR-0002 section 9): printed copies accumulate in the

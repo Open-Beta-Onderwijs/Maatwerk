@@ -16,7 +16,9 @@ test('Over Maatwerk from the startup screen shows the notice and licence texts',
   await expect(modal).toContainText('Copyright © 2026 Open Beta Onderwijs - Matthias Kortleven');
   await expect(modal).toContainText('GNU Affero General Public License, versie 3');
   await expect(modal).toContainText('https://github.com/Open-Beta-Onderwijs/Maatwerk');
-  await expect(modal.locator('.about-version')).toContainText(/versie \d+\.\d+\.\d+ \(build .+\)/);
+  await expect(modal.locator('.about-version')).toContainText(
+    /versie \d+\.\d+\.\d+(-[\w.]+)? \(build .+\)/,
+  );
 
   const text = modal.locator('.about-text');
   await modal.getByRole('button', { name: 'Licentietekst (AGPL-3.0)' }).click();

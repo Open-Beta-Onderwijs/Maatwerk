@@ -19,6 +19,8 @@ pub enum ErrorCode {
     Conflict,
     Locked,
     UnsupportedSchema,
+    NeedsMigration,
+    MigrationBlocked,
     InvalidArgument,
     Io,
     Typst,
@@ -35,7 +37,7 @@ pub struct ErrorDetails {
     /// `conflict`: the colleague who wrote the file, from `_meta.updatedBy`, when known.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
-    /// `unsupported_schema`: the `schema_version` found.
+    /// `unsupported_schema`, `needs_migration`: the `schema_version` found.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub found: Option<String>,
 }
@@ -69,9 +71,11 @@ impl CommandError {
 
 impl From<Error> for CommandError {
     fn from(e: Error) -> CommandError {
-        // An invalid argument's message is already the text for the UI (`Ongeldige opdracht.`).
+        // These messages are already the Dutch text for the UI (`Ongeldige opdracht.`).
         let message = match &e {
-            Error::InvalidArgument { message } => message.clone(),
+            Error::InvalidArgument { message } | Error::MigrationBlocked { message } => {
+                message.clone()
+            }
             other => other.to_string(),
         };
         let path = |p: &str| ErrorDetails {
@@ -100,6 +104,16 @@ impl From<Error> for CommandError {
                     ..ErrorDetails::default()
                 },
             ),
+            Error::NeedsMigration { found } => (
+                ErrorCode::NeedsMigration,
+                ErrorDetails {
+                    found: Some(found.to_string()),
+                    ..ErrorDetails::default()
+                },
+            ),
+            Error::MigrationBlocked { .. } => {
+                (ErrorCode::MigrationBlocked, ErrorDetails::default())
+            }
             Error::InvalidArgument { .. } => (ErrorCode::InvalidArgument, ErrorDetails::default()),
             Error::Io { path: p, .. } => (ErrorCode::Io, path(p)),
         };
@@ -133,6 +147,10 @@ mod tests {
             },
             Error::Locked { path: "a".into() },
             Error::UnsupportedSchema { found: "9".into() },
+            Error::NeedsMigration { found: 1 },
+            Error::MigrationBlocked {
+                message: "m".into(),
+            },
             Error::InvalidArgument {
                 message: "m".into(),
             },

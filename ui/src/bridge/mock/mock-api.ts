@@ -2,15 +2,22 @@
 
 // In-memory backend for `npm run dev:mock`, Vitest and Playwright. Emulates the
 // reference main process (docs/reference/ipc-api.md) on a virtual data folder
-// seeded from tools/fixtures: CAS on the SHA-1 of the file bytes, own writes
-// are not echoed, external writes (test hooks below) emit `data:changed`.
-// Typst calls return canned output. Nothing is persisted: a reload starts over.
+// seeded from tools/fixtures (format v2, docs/reference/data-files-v2.md): CAS
+// on the SHA-1 of the file bytes, own writes are not echoed, external writes
+// (test hooks below) emit `data:changed`. Typst calls return canned output.
+// Integrity stamps (C19) are not computed. PINs (Step 7b) are stored as
+// `mock$<pin>`, not hashed: the rules (4-8 digits, delays, session, admin
+// checks) match maatwerk-core::auth. Nothing is persisted: a reload starts over.
 
 import type {
   BatchJob,
   BatchOptions,
   DataChange,
+  DataCheck,
   DataFolderStatus,
+  MigrationResult,
+  PinCheck,
+  StampIssue,
   FsResult,
   ImageResult,
   Json,
@@ -20,7 +27,20 @@ import type {
   RenderResult,
   Unsubscribe,
 } from '../api';
+import type {
+  EditorClickJump,
+  EditorCompletions,
+  EditorCursorJump,
+  EditorHover,
+  EditorOpened,
+  EditorRange,
+  EditorUpdateEvent,
+  ProjectFileInfo,
+  Value,
+} from '../bindings';
+import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
+import { stampMeta } from '../../domain/ids';
 
 /** A snapshot of a data folder: file contents (text or base64) and folders. */
 export interface MockSeed {
@@ -38,6 +58,13 @@ const MIME: Record<string, string> = {
   webp: 'image/webp',
 };
 const BASE_ASSIGNMENT = '#import "lib.typ": *\n\n// Nieuwe opdracht (mock-sjabloon)\n';
+export const MAIN_TYP = '// maatwerk-main 1 (mock)\n#include "opdracht.typ"\n';
+export const LIB_TYP = '// maatwerk-lib 2 (mock)\n';
+/** The mock's bundled versions; a copy with an older version line counts as outdated. */
+const BUNDLED: Record<string, { text: string; marker: string; version: number }> = {
+  'main.typ': { text: MAIN_TYP, marker: '// maatwerk-main ', version: 1 },
+  'lib.typ': { text: LIB_TYP, marker: '// maatwerk-lib ', version: 2 },
+};
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -101,6 +128,17 @@ function cleanImageName(name: string): string {
     .slice(0, 60);
 }
 
+/** maatwerk-core::auth::delay_after, in ms. */
+export function pinDelayMs(failures: number): number {
+  return failures < 2 ? 0 : Math.min(2 ** Math.min(failures - 1, 6), 60) * 1000;
+}
+
+function checkPinFormat(pin: string): void {
+  if (!/^\d{4,8}$/.test(pin)) throw new Error('Een pincode heeft 4 tot 8 cijfers.');
+}
+
+type UserRecord = Record<string, unknown> & { id: string };
+
 function checkOpdrachtId(id: string): void {
   if (!/^[\w-]+$/.test(String(id ?? ''))) throw new Error('Ongeldige opdracht.');
 }
@@ -116,8 +154,48 @@ export class MockApi implements MaatwerkApi {
   private pdfs = new Map<string, Uint8Array>();
   /** What `dataFolderStatus` reports; tests set an error to show the startup error screen. */
   folderStatus: DataFolderStatus = { dataDir: MOCK_DATA_DIR, error: null };
+  /** What `validateDataFolder` and `stampIssues` report; tests fill them. */
+  dataCheck: DataCheck = { filesChecked: 0, issues: [] };
+  stamps: StampIssue[] = [];
+  /** What `migrateDataFolder` returns; tests may replace it. */
+  migration: MigrationResult = {
+    fromVersion: 1,
+    toVersion: 2,
+    applied: true,
+    backup: 'C:\\Users\\docent\\AppData\\Local\\maatwerk\\backups\\maatwerk-backup-v1.zip',
+    written: 12,
+    moved: 1,
+    deleted: 3,
+    warnings: ['Groep 4H1: leerling 1002 stond er dubbel in; de eerste is gehouden.'],
+    validation: {
+      filesChecked: 12,
+      issues: [
+        {
+          severity: 'warning',
+          kind: 'stray',
+          path: 'nat/2025-2026/scores/toets-1 (1).json',
+          message: 'Conflictkopie van OneDrive; Maatwerk gebruikt dit bestand niet.',
+        },
+        {
+          severity: 'warning',
+          kind: 'reference',
+          path: 'nat/2025-2026/toetsen.json',
+          message: 'Toets toets-2 verwijst naar groep 4H9, die niet bestaat.',
+        },
+      ],
+    },
+    reportFile:
+      'C:\\Users\\docent\\AppData\\Local\\maatwerk\\backups\\maatwerk-backup-v1 verslag.txt',
+  };
+  /** Logged-in user and wrong attempts (maatwerk-core::auth::Auth). */
+  private authSession: string | null = null;
+  private pinFailures = new Map<string, { count: number; last: number }>();
+  /** Snapshot names (newest first) and the files each holds; tests fill them. */
+  snapshots: { name: string; files: Record<string, Json> }[] = [];
   /** Calls made through the bridge, for tests (`[method, ...args]`). */
   readonly calls: [string, ...unknown[]][] = [];
+  /** The live editor sessions (Step 8b); tests read `editor.updates`. */
+  readonly editor = new MockEditor();
 
   constructor(seed: MockSeed = { files: {}, dirs: [] }) {
     for (const [rel, content] of Object.entries(seed.files)) {
@@ -127,9 +205,9 @@ export class MockApi implements MaatwerkApi {
       );
     }
     for (const dir of seed.dirs) this.mkdir(dir);
-    // seedInitialData() in main.js
+    // seed_initial_data() in maatwerk-core
     this.mkdir('fotos');
-    this.mkdir('opdrachten/images');
+    this.mkdir('opdrachten');
   }
 
   // ── Virtual file system ───────────────────────────────────────────────────
@@ -265,7 +343,7 @@ export class MockApi implements MaatwerkApi {
       // reference compares and writes in one synchronous handler).
       if (this.files.get(relPath) !== current) return { ok: false, reason: 'conflict' };
     }
-    const bytes = encoder.encode(JSON.stringify(data, null, 2));
+    const bytes = encoder.encode(JSON.stringify(data, null, 2) + '\n'); // C13
     this.putFile(relPath, bytes);
     return { ok: true, hash: await sha1(bytes) };
   }
@@ -288,16 +366,41 @@ export class MockApi implements MaatwerkApi {
 
   async readAllJson(dirRelPath: string): Promise<Json[]> {
     this.record('readAllJson', [dirRelPath]);
-    const out: Json[] = [];
+    return this.jsonFilesIn(dirRelPath).map((f) => f.data);
+  }
+
+  async readJsonDir(dirRelPath: string): Promise<{ name: string; data: Json }[]> {
+    this.record('readJsonDir', [dirRelPath]);
+    return this.jsonFilesIn(dirRelPath);
+  }
+
+  private jsonFilesIn(dirRelPath: string): { name: string; data: Json }[] {
+    const out: { name: string; data: Json }[] = [];
     for (const name of this.list(dirRelPath)) {
       if (!name.endsWith('.json')) continue;
       const text = this.readText(`${dirRelPath}/${name}`);
       if (text === null) continue; // a directory
       try {
         const data = JSON.parse(text);
-        if (data !== null) out.push(data);
+        if (data !== null) out.push({ name, data });
       } catch {
         // skipped silently, as the reference does
+      }
+    }
+    return out;
+  }
+
+  async readOpdrachten(): Promise<Json[]> {
+    this.record('readOpdrachten', []);
+    const out: Json[] = [];
+    for (const id of this.list('opdrachten')) {
+      const text = this.readText(`opdrachten/${id}/opdracht.json`);
+      if (text === null) continue;
+      try {
+        const data = JSON.parse(text);
+        if (data !== null) out.push(data);
+      } catch {
+        // skipped, as readAllJson does
       }
     }
     return out;
@@ -326,16 +429,56 @@ export class MockApi implements MaatwerkApi {
     return this.readText(relPath);
   }
 
-  async writeTextFile(relPath: string, content: string): Promise<{ ok: true }> {
-    this.record('writeTextFile', [relPath, content]);
+  async readTextFileVersioned(relPath: string): Promise<{ text: string; hash: string } | null> {
+    this.record('readTextFileVersioned', [relPath]);
+    const bytes = this.files.get(relPath);
+    return bytes ? { text: decoder.decode(bytes), hash: await sha1(bytes) } : null;
+  }
+
+  async writeTextFile(
+    relPath: string,
+    content: string,
+    expectedHash?: string | null,
+  ): Promise<{ ok: true; hash: string } | { ok: false; reason: 'conflict' }> {
+    this.record('writeTextFile', [relPath, content, expectedHash]);
+    if (!/^opdrachten\/[\w-]+\/[^/]+\.typ$/i.test(relPath))
+      throw new Error(`invalid path ${JSON.stringify(relPath)}`);
+    if (expectedHash === '') {
+      if (this.files.has(relPath)) return { ok: false, reason: 'conflict' };
+    } else if (expectedHash) {
+      const current = this.files.get(relPath);
+      if (!current || (await sha1(current)) !== expectedHash)
+        return { ok: false, reason: 'conflict' };
+    }
+    const bytes = encoder.encode(content);
+    this.putFile(relPath, bytes);
+    return { ok: true, hash: await sha1(bytes) };
+  }
+
+  /** A colleague's save of a text file arriving through OneDrive. */
+  externalWriteText(relPath: string, content: string): void {
+    const kind = this.files.has(relPath) ? 'changed' : 'added';
     this.putFile(relPath, encoder.encode(content));
+    this.emit([{ relPath, kind, meta: null }]);
+  }
+
+  async createOpdrachtFolder(opdrachtId: string): Promise<{ ok: true }> {
+    this.record('createOpdrachtFolder', [opdrachtId]);
+    checkOpdrachtId(opdrachtId);
+    this.fillOpdrachtFolder(opdrachtId);
     return { ok: true };
   }
 
-  async createAssignmentTypFile(typFile: string): Promise<{ ok: true }> {
-    this.record('createAssignmentTypFile', [typFile]);
-    this.putFile(`opdrachten/${typFile}`, encoder.encode(BASE_ASSIGNMENT));
-    return { ok: true };
+  private fillOpdrachtFolder(opdrachtId: string): void {
+    const files: [string, string][] = [
+      ['main.typ', MAIN_TYP],
+      ['lib.typ', LIB_TYP],
+      ['opdracht.typ', BASE_ASSIGNMENT],
+    ];
+    for (const [name, text] of files) {
+      const rel = `opdrachten/${opdrachtId}/${name}`;
+      if (!this.files.has(rel)) this.putFile(rel, encoder.encode(text));
+    }
   }
 
   // ── Opdracht images ───────────────────────────────────────────────────────
@@ -343,7 +486,7 @@ export class MockApi implements MaatwerkApi {
   async listOpdrachtImages(opdrachtId: string): Promise<OpdrachtImage[]> {
     this.record('listOpdrachtImages', [opdrachtId]);
     checkOpdrachtId(opdrachtId);
-    const dir = `opdrachten/images/${opdrachtId}`;
+    const dir = `opdrachten/${opdrachtId}/images`;
     return this.list(dir)
       .filter((f) => IMAGE_EXTS.includes(extOf(f)) && this.files.has(`${dir}/${f}`))
       .sort((a, b) => a.localeCompare(b, 'nl'))
@@ -352,7 +495,7 @@ export class MockApi implements MaatwerkApi {
         const bytes = this.files.get(`${dir}/${f}`)!;
         const thumb =
           ext === 'svg' ? null : `data:${MIME[ext] ?? 'image/jpeg'};base64,${toBase64(bytes)}`;
-        return { file: `images/${opdrachtId}/${f}`, name: stem(f), thumb };
+        return { file: `images/${f}`, name: stem(f), thumb };
       });
   }
 
@@ -369,14 +512,14 @@ export class MockApi implements MaatwerkApi {
     if (!IMAGE_EXTS.includes(ext))
       return { ok: false, error: `Bestandstype .${ext} wordt niet ondersteund.` };
     checkOpdrachtId(opdrachtId);
-    const dir = `opdrachten/images/${opdrachtId}`;
+    const dir = `opdrachten/${opdrachtId}/images`;
     this.mkdir(dir);
     const existing = this.list(dir).filter((f) => stem(f) === name);
     if (existing.length && !overwrite) return { ok: false, exists: true, name };
     for (const f of existing) this.files.delete(`${dir}/${f}`);
     const file = `${name}.${ext}`;
     this.putFile(`${dir}/${file}`, bytes);
-    return { ok: true, file: `images/${opdrachtId}/${file}`, name };
+    return { ok: true, file: `images/${file}`, name };
   }
 
   async saveOpdrachtImage(
@@ -410,25 +553,27 @@ export class MockApi implements MaatwerkApi {
     return null;
   }
 
-  async copyOpdrachtImages(fromId: string, toId: string): Promise<{ ok: true }> {
-    this.record('copyOpdrachtImages', [fromId, toId]);
+  async copyOpdrachtFolder(fromId: string, toId: string): Promise<{ ok: true }> {
+    this.record('copyOpdrachtFolder', [fromId, toId]);
     checkOpdrachtId(fromId);
     checkOpdrachtId(toId);
-    const from = `opdrachten/images/${fromId}`;
-    for (const f of this.list(from)) {
-      const bytes = this.files.get(`${from}/${f}`);
-      if (bytes) this.putFile(`opdrachten/images/${toId}/${f}`, bytes);
+    const from = `opdrachten/${fromId}/`;
+    for (const [path, bytes] of [...this.files]) {
+      if (!path.startsWith(from) || path === `${from}opdracht.json`) continue;
+      this.putFile(`opdrachten/${toId}/${path.slice(from.length)}`, bytes);
     }
+    // Like the app: whatever the source lacked comes from the templates.
+    this.fillOpdrachtFolder(toId);
     return { ok: true };
   }
 
-  async deleteOpdrachtImages(opdrachtId: string): Promise<{ ok: true }> {
-    this.record('deleteOpdrachtImages', [opdrachtId]);
+  async deleteOpdrachtFolder(opdrachtId: string): Promise<{ ok: true }> {
+    this.record('deleteOpdrachtFolder', [opdrachtId]);
     checkOpdrachtId(opdrachtId);
-    const dir = `opdrachten/images/${opdrachtId}`;
+    const dir = `opdrachten/${opdrachtId}`;
     for (const path of [...this.files.keys()])
       if (path.startsWith(`${dir}/`)) this.files.delete(path);
-    this.dirs.delete(dir);
+    for (const d of [...this.dirs]) if (d === dir || d.startsWith(`${dir}/`)) this.dirs.delete(d);
     return { ok: true };
   }
 
@@ -512,13 +657,12 @@ export class MockApi implements MaatwerkApi {
   }
 
   async renderAssignmentSvg(
-    typFile: string,
+    opdrachtId: string,
     title: string,
     previewContent?: string,
   ): Promise<RenderResult<{ pages: string[] }>> {
-    this.record('renderAssignmentSvg', [typFile, title, previewContent]);
-    if (baseName(typFile) !== typFile || typFile.includes('\\'))
-      return { success: false, error: `Ongeldige bestandsnaam: ${typFile}` };
+    this.record('renderAssignmentSvg', [opdrachtId, title, previewContent]);
+    if (!/^[\w-]+$/.test(opdrachtId)) return { success: false, error: 'Ongeldige opdracht.' };
     const lines = (previewContent ?? '').split('\n').length;
     const escape = (s: string) =>
       s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -526,7 +670,7 @@ export class MockApi implements MaatwerkApi {
       '<svg xmlns="http://www.w3.org/2000/svg" width="595pt" height="842pt" viewBox="0 0 595 842">' +
       '<rect width="595" height="842" fill="#fff"/>' +
       `<text x="72" y="96" font-size="20">${escape(title)} (mock)</text>` +
-      `<text x="72" y="130" font-size="12">${escape(typFile)}: ${lines} regels</text></svg>`;
+      `<text x="72" y="130" font-size="12">${escape(opdrachtId)}: ${lines} regels</text></svg>`;
     return { success: true, pages: [svg] };
   }
 
@@ -538,16 +682,16 @@ export class MockApi implements MaatwerkApi {
     if (!Array.isArray(jobs) || jobs.length === 0)
       return { success: false, error: 'Er is niets om te genereren.' };
     const outputName = opts.outputName ?? 'opdrachten.pdf';
-    for (const name of [...jobs.map((j) => j.typFile), outputName]) {
-      if (baseName(name) !== name || name.includes('\\'))
-        return { success: false, error: `Ongeldige bestandsnaam: ${name}` };
-    }
+    if (jobs.some((j) => !/^[\w-]+$/.test(String(j.opdrachtId))))
+      return { success: false, error: 'Ongeldige opdracht.' };
+    if (baseName(outputName) !== outputName || outputName.includes('\\'))
+      return { success: false, error: `Ongeldige bestandsnaam: ${outputName}` };
     const total = jobs.length;
     for (const cb of this.progressListeners) cb({ done: 0, total });
     const pages: string[][] = [];
     for (const [i, job] of jobs.entries()) {
       pages.push([
-        job.header?.title ?? job.label ?? job.typFile,
+        job.header?.title ?? job.label ?? job.opdrachtId,
         job.header?.student ?? '',
         job.mode === 'answers' ? 'Antwoorden' : 'Opdracht',
       ]);
@@ -584,6 +728,353 @@ export class MockApi implements MaatwerkApi {
 
   async restartApp(): Promise<void> {
     this.record('restartApp', []);
+  }
+
+  async migrateDataFolder(): Promise<MigrationResult> {
+    this.record('migrateDataFolder', []);
+    return structuredClone(this.migration);
+  }
+
+  async validateDataFolder(): Promise<DataCheck> {
+    this.record('validateDataFolder', []);
+    return structuredClone(this.dataCheck);
+  }
+
+  async stampIssues(): Promise<StampIssue[]> {
+    this.record('stampIssues', []);
+    return structuredClone(this.stamps);
+  }
+
+  async acceptStamp(relPath: string): Promise<void> {
+    this.record('acceptStamp', [relPath]);
+    this.stamps = this.stamps.filter((s) => s.path !== relPath);
+    this.dataCheck.issues = this.dataCheck.issues.filter(
+      (i) => !(i.kind === 'stamp' && i.path === relPath),
+    );
+  }
+
+  // ── Accounts and snapshots (Step 7b) ──────────────────────────────────────
+
+  private readUser(userId: string): UserRecord {
+    if (!/^[A-Za-z0-9_-]+$/.test(userId)) throw new Error(`invalid path ${userId}`);
+    const text = this.readText(`gebruikers/${userId}.json`);
+    if (text === null) throw new Error(`not found: gebruikers/${userId}.json`);
+    return JSON.parse(text) as UserRecord;
+  }
+
+  private writeUser(userId: string, change: (u: UserRecord) => void): Value {
+    const onDisk = this.readUser(userId);
+    const next = structuredClone(onDisk);
+    change(next);
+    const saved = stampMeta(next, onDisk as { _meta?: never }, this.authSession ?? userId);
+    this.putFile(
+      `gebruikers/${userId}.json`,
+      encoder.encode(JSON.stringify(saved, null, 2) + '\n'),
+    );
+    return saved as unknown as Value;
+  }
+
+  private throttled(key: string, ok: () => boolean): PinCheck {
+    const now = Date.now();
+    const f = this.pinFailures.get(key);
+    const result = (outcome: PinCheck['outcome'], retryAfterMs = 0): PinCheck => ({
+      outcome,
+      retryAfterMs,
+      user: null,
+      recoveryCodes: null,
+    });
+    if (f && f.last + pinDelayMs(f.count) > now) {
+      return result('wait', f.last + pinDelayMs(f.count) - now);
+    }
+    if (ok()) {
+      this.pinFailures.delete(key);
+      return result('ok');
+    }
+    const count = (f?.count ?? 0) + 1;
+    this.pinFailures.set(key, { count, last: now });
+    return result('wrong', pinDelayMs(count));
+  }
+
+  private requireAdmin(): string {
+    const id = this.authSession;
+    if (!id) throw new Error('Niet ingelogd.');
+    const user = this.readUser(id);
+    if (user.isAdmin !== true || user.actief === false) {
+      throw new Error('Alleen de beheerder mag dit.');
+    }
+    return id;
+  }
+
+  private static newCodes(): string[] {
+    const alphabet = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+    const half = () =>
+      Array.from({ length: 4 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join(
+        '',
+      );
+    return Array.from({ length: 10 }, () => `${half()}-${half()}`);
+  }
+
+  private static canonicalCode(code: string): string {
+    const n = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return n.length === 8 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
+  }
+
+  async verifyPin(userId: string, pin: string): Promise<PinCheck> {
+    this.record('verifyPin', [userId]);
+    const user = this.readUser(userId);
+    if (user.actief === false) throw new Error('Deze gebruiker is gedeactiveerd.');
+    if (typeof user.pinHash !== 'string' || !user.pinHash) {
+      return { outcome: 'noPin', retryAfterMs: 0, user: null, recoveryCodes: null };
+    }
+    const check = this.throttled(`pin:${userId}`, () => user.pinHash === `mock$${pin}`);
+    if (check.outcome === 'ok') this.authSession = userId;
+    return check;
+  }
+
+  async setFirstPin(userId: string, pin: string): Promise<PinCheck> {
+    this.record('setFirstPin', [userId]);
+    checkPinFormat(pin);
+    const user = this.readUser(userId);
+    if (user.actief === false) throw new Error('Deze gebruiker is gedeactiveerd.');
+    if (user.pinHash) {
+      throw new Error('Er is intussen al een pincode ingesteld. Log in met die pincode.');
+    }
+    const codes = user.isAdmin === true ? MockApi.newCodes() : null;
+    const saved = this.writeUser(userId, (u) => {
+      u.pinHash = `mock$${pin}`;
+      if (codes) u.recoveryCodeHashes = codes.map((c) => `mock$${c}`);
+    });
+    this.authSession = userId;
+    return { outcome: 'ok', retryAfterMs: 0, user: saved, recoveryCodes: codes };
+  }
+
+  async changePin(currentPin: string, newPin: string): Promise<PinCheck> {
+    this.record('changePin', []);
+    checkPinFormat(newPin);
+    const id = this.authSession;
+    if (!id) throw new Error('Niet ingelogd.');
+    const check = await this.verifyPin(id, currentPin);
+    if (check.outcome !== 'ok') return check;
+    const saved = this.writeUser(id, (u) => {
+      u.pinHash = `mock$${newPin}`;
+    });
+    return { ...check, user: saved };
+  }
+
+  async resetPin(userId: string): Promise<Json> {
+    this.record('resetPin', [userId]);
+    const admin = this.requireAdmin();
+    if (admin === userId) throw new Error('Wijzig je eigen pincode via je profiel.');
+    return this.writeUser(userId, (u) => {
+      delete u.pinHash;
+    });
+  }
+
+  async recoverWithCode(userId: string, code: string, newPin: string): Promise<PinCheck> {
+    this.record('recoverWithCode', [userId]);
+    checkPinFormat(newPin);
+    const user = this.readUser(userId);
+    if (user.isAdmin !== true) throw new Error('Alleen de beheerder heeft herstelcodes.');
+    const hashes = Array.isArray(user.recoveryCodeHashes) ? user.recoveryCodeHashes : [];
+    const used = `mock$${MockApi.canonicalCode(code)}`;
+    const check = this.throttled(`recover:${userId}`, () => hashes.includes(used));
+    if (check.outcome !== 'ok') return check;
+    const saved = this.writeUser(userId, (u) => {
+      u.recoveryCodeHashes = hashes.filter((h) => h !== used);
+      u.pinHash = `mock$${newPin}`;
+    });
+    this.authSession = userId;
+    return { ...check, user: saved };
+  }
+
+  async renewRecoveryCodes(pin: string): Promise<PinCheck> {
+    this.record('renewRecoveryCodes', []);
+    const admin = this.requireAdmin();
+    const check = await this.verifyPin(admin, pin);
+    if (check.outcome !== 'ok') return check;
+    const codes = MockApi.newCodes();
+    const saved = this.writeUser(admin, (u) => {
+      u.recoveryCodeHashes = codes.map((c) => `mock$${c}`);
+    });
+    return { ...check, user: saved, recoveryCodes: codes };
+  }
+
+  async logout(): Promise<void> {
+    this.record('logout', []);
+    this.authSession = null;
+  }
+
+  /** The user logged in through the PIN methods (tests). */
+  get loggedIn(): string | null {
+    return this.authSession;
+  }
+
+  async saveTextAs(defaultName: string, content: string): Promise<string | null> {
+    this.record('saveTextAs', [defaultName, content]);
+    return `C:\\Users\\docent\\Documents\\${defaultName}`;
+  }
+
+  async listSnapshots(): Promise<string[]> {
+    this.record('listSnapshots', []);
+    return this.snapshots.map((s) => s.name);
+  }
+
+  async snapshotForFile(relPath: string): Promise<string | null> {
+    this.record('snapshotForFile', [relPath]);
+    return this.snapshots.find((s) => relPath in s.files)?.name ?? null;
+  }
+
+  async restoreFromSnapshot(relPath: string, snapshot: string): Promise<void> {
+    this.record('restoreFromSnapshot', [relPath, snapshot]);
+    this.requireAdmin();
+    const copy = this.snapshots.find((s) => s.name === snapshot)?.files[relPath];
+    if (copy === undefined) throw new Error(`not found: ${relPath}`);
+    this.putFile(relPath, encoder.encode(JSON.stringify(copy, null, 2) + '\n'));
+    this.stamps = this.stamps.filter((s) => s.path !== relPath);
+    this.dataCheck.issues = this.dataCheck.issues.filter(
+      (i) => !(i.kind === 'stamp' && i.path === relPath),
+    );
+  }
+
+  // ── Live editor ───────────────────────────────────────────────────────────
+
+  async editorOpen(opdrachtId: string, title: string): Promise<EditorOpened> {
+    this.record('editorOpen', [opdrachtId, title]);
+    checkOpdrachtId(opdrachtId);
+    const files = await this.projectFilesStatus(opdrachtId);
+    // EditorSettings::read: whole seconds 2-300 in instellingen.json, else 30.
+    const instellingen = JSON.parse(this.readText('instellingen.json') ?? 'null') as {
+      editor?: { compileTimeoutSeconds?: unknown };
+    } | null;
+    const t = instellingen?.editor?.compileTimeoutSeconds;
+    this.editor.timeoutSeconds =
+      typeof t === 'number' && Number.isInteger(t) && t >= 2 && t <= 300 ? t : 30;
+    const session = this.editor.open((path) => this.readText(`opdrachten/${opdrachtId}/${path}`));
+    return { session, files, timeoutSeconds: this.editor.timeoutSeconds };
+  }
+
+  async editorUpdate(session: number, path: string, text: string): Promise<number> {
+    this.record('editorUpdate', [session, path, text.length]);
+    return this.editor.update(session, path, text);
+  }
+
+  async editorUnset(session: number, path: string): Promise<number> {
+    this.record('editorUnset', [session, path]);
+    return this.editor.unset(session, path);
+  }
+
+  async editorRefresh(session: number): Promise<number> {
+    this.record('editorRefresh', [session]);
+    return this.editor.refresh(session);
+  }
+
+  async editorResend(session: number): Promise<number> {
+    this.record('editorResend', [session]);
+    return this.editor.resend(session);
+  }
+
+  async editorClose(session: number): Promise<void> {
+    this.record('editorClose', [session]);
+    this.editor.close(session);
+  }
+
+  async editorComplete(
+    session: number,
+    _path: string,
+    text: string,
+    offset: number,
+    explicit: boolean,
+  ): Promise<EditorCompletions | null> {
+    return this.editor.complete(session, text, offset, explicit);
+  }
+
+  async editorHover(
+    session: number,
+    _path: string,
+    text: string,
+    offset: number,
+  ): Promise<EditorHover | null> {
+    return this.editor.hover(session, text, offset);
+  }
+
+  async editorDefinition(
+    session: number,
+    _path: string,
+    text: string,
+    offset: number,
+  ): Promise<EditorRange | null> {
+    return this.editor.definition(session, text, offset);
+  }
+
+  async editorJumpFromClick(
+    session: number,
+    page: number,
+    x: number,
+    y: number,
+  ): Promise<EditorClickJump | null> {
+    this.record('editorJumpFromClick', [session, page, x, y]);
+    return this.editor.jumpFromClick(session, page, x, y);
+  }
+
+  async editorJumpFromCursor(
+    session: number,
+    _path: string,
+    offset: number,
+  ): Promise<EditorCursorJump | null> {
+    return this.editor.jumpFromCursor(session, offset);
+  }
+
+  onEditorUpdate(cb: (update: EditorUpdateEvent) => void): Unsubscribe {
+    return this.editor.onUpdate(cb);
+  }
+
+  async projectFilesStatus(opdrachtId: string): Promise<ProjectFileInfo[]> {
+    checkOpdrachtId(opdrachtId);
+    const out: ProjectFileInfo[] = [];
+    for (const [file, bundled] of Object.entries(BUNDLED)) {
+      const bytes = this.files.get(`opdrachten/${opdrachtId}/${file}`);
+      const base = { file, bundledVersion: bundled.version };
+      if (!bytes) {
+        out.push({ ...base, state: 'missing', version: null, hash: null });
+        continue;
+      }
+      const text = decoder.decode(bytes);
+      const line = text.split('\n').find((l) => l.startsWith(bundled.marker));
+      const version = line ? parseInt(line.slice(bundled.marker.length), 10) : null;
+      const state =
+        text === bundled.text
+          ? 'current'
+          : version !== null && version < bundled.version
+            ? 'outdated'
+            : 'modified';
+      out.push({ ...base, state, version, hash: await sha1(bytes) });
+    }
+    return out;
+  }
+
+  async restoreProjectFile(
+    opdrachtId: string,
+    file: string,
+    expectedHash: string | null,
+  ): Promise<string> {
+    this.record('restoreProjectFile', [opdrachtId, file, expectedHash]);
+    checkOpdrachtId(opdrachtId);
+    const bundled = BUNDLED[file];
+    if (!bundled) throw new Error(`not a bundled project file: ${file}`);
+    const rel = `opdrachten/${opdrachtId}/${file}`;
+    const current = this.files.get(rel);
+    const ok =
+      expectedHash === null ? !current : !!current && (await sha1(current)) === expectedHash;
+    if (!ok) throw new Error(`conflict on ${rel}`);
+    const bytes = encoder.encode(bundled.text);
+    this.putFile(rel, bytes);
+    return sha1(bytes);
+  }
+
+  async bundledProjectFile(file: string): Promise<string> {
+    const bundled = BUNDLED[file];
+    if (!bundled) throw new Error(`not a bundled project file: ${file}`);
+    return bundled.text;
   }
 
   // ── Events ────────────────────────────────────────────────────────────────

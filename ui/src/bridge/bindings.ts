@@ -23,6 +23,13 @@ export const commands = {
 	ensureYear: (year: string) => typedError<string, CommandError>(__TAURI_INVOKE("ensure_year", { year })),
 	/**  Every parsable `*.json` directly in the folder. */
 	readAllJson: (dirRelPath: string) => typedError<Value[], CommandError>(__TAURI_INVOKE("read_all_json", { dirRelPath })),
+	/**
+	 *  `readAllJson` with the file names: one call for a folder of records the UI would
+	 *  otherwise read one by one (score files, Step 7c).
+	 */
+	readJsonDir: (dirRelPath: string) => typedError<NamedJson[], CommandError>(__TAURI_INVOKE("read_json_dir", { dirRelPath })),
+	/**  Every `opdrachten/<id>/opdracht.json` (C14). */
+	readOpdrachten: () => typedError<Value[], CommandError>(__TAURI_INVOKE("read_opdrachten")),
 	/**  Deletes the file; a missing file is fine. */
 	deleteFile: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_file", { relPath })),
 	ensureDir: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("ensure_dir", { relPath })),
@@ -40,8 +47,14 @@ export const commands = {
 	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
 	/**  UTF-8 text; `null` if missing. */
 	readTextFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_text_file", { relPath })),
-	/**  Atomic text write without a check; only `opdrachten/<name>.typ` (backlog n8). */
-	writeTextFile: (relPath: string, content: string) => typedError<null, CommandError>(__TAURI_INVOKE("write_text_file", { relPath, content })),
+	/**  UTF-8 text with its hash; `null` if missing. */
+	readTextFileVersioned: (relPath: string) => typedError<VersionedText | null, CommandError>(__TAURI_INVOKE("read_text_file_versioned", { relPath })),
+	/**
+	 *  Atomic text write, only `opdrachten/<id>/<name>.typ` (backlog n8, C14). With
+	 *  `expectedHash` the file must still have that hash (`""`: must not exist), else error
+	 *  `conflict` (C17); without it the write is blind. Returns the new hash.
+	 */
+	writeTextFile: (relPath: string, content: string, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("write_text_file", { relPath, content, expectedHash })),
 	/**  Writes `users/<userId>.json`; `null` user = logged out. Write failures are only logged. */
 	updatePresence: (userId: string | null, presence: Value | null) => typedError<null, CommandError>(__TAURI_INVOKE("update_presence", { userId, presence })),
 	/**  The machine-local session file; `null` if missing or unreadable. */
@@ -56,8 +69,11 @@ export const commands = {
 	 *  `activeYear`. Not a reference method.
 	 */
 	setWatchYear: (year: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("set_watch_year", { year })),
-	/**  Writes the base template to `opdrachten/<typFile>` (a bare `.typ` name). */
-	createAssignmentTypFile: (typFile: string) => typedError<null, CommandError>(__TAURI_INVOKE("create_assignment_typ_file", { typFile })),
+	/**
+	 *  Fills `opdrachten/<id>/` with `main.typ`, `lib.typ` and `opdracht.typ` from the base
+	 *  template (`createAssignmentTypFile` for C14); existing files are kept.
+	 */
+	createOpdrachtFolder: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("create_opdracht_folder", { opdrachtId })),
 	listOpdrachtImages: (opdrachtId: string) => typedError<ImageInfo[], CommandError>(__TAURI_INVOKE("list_opdracht_images", { opdrachtId })),
 	/**  Saves a pasted image (base64) under a cleaned name. */
 	saveOpdrachtImage: (opdrachtId: string, name: string, ext: string, base64: string, overwrite: boolean) => typedError<ImageStored, CommandError>(__TAURI_INVOKE("save_opdracht_image", { opdrachtId, name, ext, base64, overwrite })),
@@ -70,9 +86,47 @@ export const commands = {
 	importOpdrachtImage: (opdrachtId: string, token: string, name: string, overwrite: boolean) => typedError<ImageStored, CommandError>(__TAURI_INVOKE("import_opdracht_image", { opdrachtId, token, name, overwrite })),
 	/**  The clipboard image as base64 PNG, or `null`. */
 	readClipboardImage: () => typedError<string | null, CommandError>(__TAURI_INVOKE("read_clipboard_image")),
-	copyOpdrachtImages: (fromId: string, toId: string) => typedError<null, CommandError>(__TAURI_INVOKE("copy_opdracht_images", { fromId, toId })),
-	/**  Deletes the images; a folder OneDrive keeps locked is retried in the background. */
-	deleteOpdrachtImages: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_images", { opdrachtId })),
+	/**  Copies an opdracht folder (Typst files and images, not `opdracht.json`). */
+	copyOpdrachtFolder: (fromId: string, toId: string) => typedError<null, CommandError>(__TAURI_INVOKE("copy_opdracht_folder", { fromId, toId })),
+	/**  Deletes an opdracht folder; a folder OneDrive keeps locked is retried in the background. */
+	deleteOpdrachtFolder: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_folder", { opdrachtId })),
+	/**
+	 *  Migrates the data folder to v2 after zipping it to the local backup folder, then checks it.
+	 *  Only while the folder could not be opened because it needs the migration; the UI restarts
+	 *  the app afterwards.
+	 */
+	migrateDataFolder: () => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder")),
+	/**  `validate-data` on the open data folder (admin screen). */
+	validateDataFolder: () => typedError<DataCheck, CommandError>(__TAURI_INVOKE("validate_data_folder")),
+	/**  Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd"). */
+	stampIssues: () => typedError<StampIssue[], CommandError>(__TAURI_INVOKE("stamp_issues")),
+	/**  "Accepteren": re-stamps the file as it is now. */
+	acceptStamp: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("accept_stamp", { relPath })),
+	/**  Login with a PIN; on success the user is logged in on this PC. */
+	verifyPin: (userId: string, pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("verify_pin", { userId, pin })),
+	/**  First login (or after a reset): sets the PIN of a user without one and logs them in. */
+	setFirstPin: (userId: string, pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("set_first_pin", { userId, pin })),
+	/**  The logged-in user changes their PIN. */
+	changePin: (currentPin: string, newPin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("change_pin", { currentPin, newPin })),
+	/**  Admin only: removes a teacher's PIN. Returns the user record as written. */
+	resetPin: (userId: string) => typedError<Value, CommandError>(__TAURI_INVOKE("reset_pin", { userId })),
+	/**  "Pincode vergeten": the admin logs in with a recovery code and sets a new PIN. */
+	recoverWithCode: (userId: string, code: string, newPin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("recover_with_code", { userId, code, newPin })),
+	/**  Admin only, with the PIN: ten new recovery codes replace the old ones. */
+	renewRecoveryCodes: (pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("renew_recovery_codes", { pin })),
+	/**  Back to the login screen. */
+	logout: () => typedError<null, CommandError>(__TAURI_INVOKE("logout")),
+	/**
+	 *  "Opslaan als" for the recovery codes: a save dialog, then the text as a UTF-8 file. Returns
+	 *  the path, `null` when cancelled.
+	 */
+	saveTextAs: (defaultName: string, content: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("save_text_as", { defaultName, content })),
+	/**  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`). */
+	listSnapshots: () => typedError<string[], CommandError>(__TAURI_INVOKE("list_snapshots")),
+	/**  The newest snapshot with an intact copy of the JSON file; `null` if none has one. */
+	snapshotForFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("snapshot_for_file", { relPath })),
+	/**  "Herstellen uit snapshot": writes that snapshot's copy of the JSON file back. Admin only. */
+	restoreFromSnapshot: (relPath: string, snapshot: string) => typedError<null, CommandError>(__TAURI_INVOKE("restore_from_snapshot", { relPath, snapshot })),
 	/**
 	 *  All students of one toets in one PDF. `examId` is unused, as in the reference. The UI passes
 	 *  the payload through `normaliseForTypst` first.
@@ -82,7 +136,7 @@ export const commands = {
 	 *  The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
 	 *  with the placeholder header and the cursor marker, one SVG per page.
 	 */
-	renderAssignmentSvg: (typFile: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { typFile, title, previewContent })),
+	renderAssignmentSvg: (opdrachtId: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { opdrachtId, title, previewContent })),
 	/**  Compiles every job and merges them in job order; reports `assignment:progress`. */
 	renderAssignmentBatch: (jobs: BatchJobArg[], opts: BatchOptionsArg | null) => typedError<RenderedBatch, CommandError>(__TAURI_INVOKE("render_assignment_batch", { jobs, opts })),
 	/**
@@ -97,12 +151,48 @@ export const commands = {
 	 *  says where the copy was saved.
 	 */
 	printPdf: (pdfPath: string, name: PrintNameArg) => typedError<string, CommandError>(__TAURI_INVOKE("print_pdf", { pdfPath, name })),
+	/**
+	 *  Opens a live session on `opdrachten/<opdrachtId>/` with the placeholder header (the editor
+	 *  preview); its first compile (generation 0, the files on disk) starts at once. Closes any
+	 *  other session.
+	 */
+	editorOpen: (opdrachtId: string, title: string) => typedError<EditorOpened, CommandError>(__TAURI_INVOKE("editor_open", { opdrachtId, title })),
+	/**  New buffer text for `path` (e.g. `opdracht.typ`); returns its generation. */
+	editorUpdate: (session: number, path: string, text: string) => typedError<number, CommandError>(__TAURI_INVOKE("editor_update", { session, path, text })),
+	/**  Drops the buffer of `path`: the file on disk counts again. */
+	editorUnset: (session: number, path: string) => typedError<number, CommandError>(__TAURI_INVOKE("editor_unset", { session, path })),
+	/**  Compiles again with every disk file read again (after an image was saved). */
+	editorRefresh: (session: number) => typedError<number, CommandError>(__TAURI_INVOKE("editor_refresh", { session })),
+	/**  Compiles again and sends every page (the preview was lost). */
+	editorResend: (session: number) => typedError<number, CommandError>(__TAURI_INVOKE("editor_resend", { session })),
+	/**  Ends the session. Unknown sessions are fine (already closed). */
+	editorClose: (session: number) => __TAURI_INVOKE<void>("editor_close", { session }),
+	/**  Autocomplete at `offset` (UTF-16) in `path`, with the editor's current `text`. */
+	editorComplete: (session: number, path: string, text: string, offset: number, explicit: boolean) => typedError<EditorCompletions | null, CommandError>(__TAURI_INVOKE("editor_complete", { session, path, text, offset, explicit })),
+	/**  Hover text for the item at `offset` in `path`. */
+	editorHover: (session: number, path: string, text: string, offset: number) => typedError<EditorHover | null, CommandError>(__TAURI_INVOKE("editor_hover", { session, path, text, offset })),
+	/**  Where the item at `offset` in `path` is defined (project files only). */
+	editorDefinition: (session: number, path: string, text: string, offset: number) => typedError<EditorRange | null, CommandError>(__TAURI_INVOKE("editor_definition", { session, path, text, offset })),
+	/**  The source behind a click at (`x`, `y`) pt on preview page `page` (0-based). */
+	editorJumpFromClick: (session: number, page: number, x: number | null, y: number | null) => typedError<EditorClickJump | null, CommandError>(__TAURI_INVOKE("editor_jump_from_click", { session, page, x, y })),
+	/**  The preview positions of `offset` in `path` (the cursor), for the last compiled text. */
+	editorJumpFromCursor: (session: number, path: string, offset: number) => typedError<EditorCursorJump | null, CommandError>(__TAURI_INVOKE("editor_jump_from_cursor", { session, path, offset })),
+	/**  `main.typ` and `lib.typ` of the opdracht; unchanged old copies are updated silently. */
+	projectFilesStatus: (opdrachtId: string) => typedError<ProjectFileInfo[], CommandError>(__TAURI_INVOKE("project_files_status", { opdrachtId })),
+	/**
+	 *  "Herstel standaardversie": the bundled `main.typ`/`lib.typ`, if the file still has
+	 *  `expectedHash` (`null`: it must be missing). Returns the new hash.
+	 */
+	restoreProjectFile: (opdrachtId: string, file: string, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("restore_project_file", { opdrachtId, file, expectedHash })),
+	/**  The bundled text of `main.typ` or `lib.typ` ("Bekijk verschillen"). */
+	bundledProjectFile: (file: string) => typedError<string, CommandError>(__TAURI_INVOKE("bundled_project_file", { file })),
 };
 
 /** Events */
 export const events = {
 	assignmentProgress: makeEvent<AssignmentProgress, AssignmentProgress>("assignment:progress"),
 	dataChanged: makeEvent<DataChanged, DataChanged>("data:changed"),
+	editorUpdate: makeEvent<EditorUpdateEvent, EditorUpdateEvent>("editor:update"),
 };
 
 /* Types */
@@ -115,7 +205,8 @@ export type AssignmentProgress = {
 /**  One `renderAssignmentBatch` job, as `modals/opdrachten-genereren.js` builds it. */
 export type BatchJobArg = {
 	key: string,
-	typFile: string,
+	/**  The opdracht folder `opdrachten/<id>/` (C14). */
+	opdrachtId: string,
 	label: string | null,
 	/**  `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing. */
 	header: Value | null,
@@ -151,6 +242,11 @@ export type DataChangeKind = "added" | "changed" | "deleted";
 /**  External changes in the data folder, one batch per event. */
 export type DataChanged = DataChange[];
 
+export type DataCheck = {
+	filesChecked: number,
+	issues: DataIssue[],
+};
+
 /**  What the UI checks first at start (review 4b m5): an unusable folder gets its own screen. */
 export type DataFolderStatus = {
 	dataDir: string,
@@ -158,12 +254,137 @@ export type DataFolderStatus = {
 	error: CommandError | null,
 };
 
+export type DataIssue = {
+	/**  `error` or `warning`. */
+	severity: string,
+	/**  `version`, `corrupt`, `stamp`, `shape`, `placement`, `reference`, `stray`. */
+	kind: string,
+	path: string,
+	/**  Dutch. */
+	message: string,
+};
+
+/**  Where a click in the preview leads: a source position, or another preview point. */
+export type EditorClickJump = {
+	/**  The preview generation the answer belongs to. */
+	generation: number,
+	file: string | null,
+	offset: number | null,
+	point: EditorPoint | null,
+};
+
+export type EditorCompletion = {
+	kind: string,
+	label: string,
+	/**  Snippet syntax with `${name}` placeholders; the label when `null`. */
+	apply: string | null,
+	detail: string | null,
+};
+
+export type EditorCompletions = {
+	/**  Where the completed text starts (UTF-16); it runs to the cursor. */
+	from: number,
+	items: EditorCompletion[],
+};
+
+export type EditorCursorJump = {
+	generation: number,
+	points: EditorPoint[],
+};
+
+export type EditorDiagnostic = {
+	/**  `error` or `warning`. */
+	severity: string,
+	message: string,
+	hints: string[],
+	location: EditorLocation | null,
+};
+
+export type EditorHover = {
+	/**  `text` or `code` (Typst). */
+	kind: string,
+	text: string,
+};
+
+/**  A place in a project file: 1-based line and column, and the UTF-16 range CodeMirror uses. */
+export type EditorLocation = {
+	file: string,
+	line: number,
+	column: number,
+	from: number,
+	to: number,
+};
+
+export type EditorOpened = {
+	session: number,
+	/**  `main.typ` and `lib.typ` after the silent update of unchanged old copies. */
+	files: ProjectFileInfo[],
+	/**  The compile time limit in seconds (admin setting). */
+	timeoutSeconds: number,
+};
+
+export type EditorPage = {
+	index: number,
+	hash: string,
+	svg: string,
+};
+
+export type EditorPoint = {
+	/**  0-based page. */
+	page: number,
+	/**  Points from the top left of the page. */
+	x: number | null,
+	y: number | null,
+};
+
+export type EditorRange = {
+	file: string,
+	from: number,
+	to: number,
+};
+
+/**  One compile result for the session `session` (`editor:update`). */
+export type EditorUpdateEvent = {
+	session: number,
+	/**  The generation this compile saw. */
+	generation: number,
+	ok: boolean,
+	/**  Errors first, then warnings. */
+	diagnostics: EditorDiagnostic[],
+	/**  The generation of the preview now shown; `null` before the first good compile. */
+	previewGeneration: number | null,
+	/**  Pages in that preview; the client drops pages at and after this index. */
+	pageCount: number,
+	/**  Only the pages that changed. */
+	pages: EditorPage[],
+	/**  On a successful compile only. */
+	vragen: EditorVragen | null,
+	compileMs: number,
+	renderMs: number,
+};
+
+export type EditorVraag = {
+	opgave: number,
+	label: string,
+	punten: number | null,
+	antwoord: string | null,
+	page: number,
+	y: number | null,
+};
+
+export type EditorVragen = {
+	items: EditorVraag[],
+	totalPunten: number | null,
+	/**  Dutch messages ("De opdracht heeft geen vragen."). */
+	checks: string[],
+};
+
 /**
  *  Stable error codes. One per core error variant, `typst` for a failed compile (the message is
  *  the diagnostics as text), plus `internal` for failures of the shell itself (a crashed blocking
  *  task).
  */
-export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "invalid_argument" | "io" | "typst" | "internal";
+export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "needs_migration" | "migration_blocked" | "invalid_argument" | "io" | "typst" | "internal";
 
 /**  Structured context; only the fields that apply are set. */
 export type ErrorDetails = {
@@ -171,13 +392,13 @@ export type ErrorDetails = {
 	path?: string | null,
 	/**  `conflict`: the colleague who wrote the file, from `_meta.updatedBy`, when known. */
 	updatedBy?: string | null,
-	/**  `unsupported_schema`: the `schema_version` found. */
+	/**  `unsupported_schema`, `needs_migration`: the `schema_version` found. */
 	found?: string | null,
 };
 
 /**  One image of an opdracht. */
 export type ImageInfo = {
-	/**  Relative to `opdrachten/`: `images/<id>/<name>.<ext>`. */
+	/**  Relative to the opdracht folder: `images/<name>.<ext>`. */
 	file: string,
 	name: string,
 	/**  PNG data URL, 48 px high; `null` for SVG and files that do not decode. */
@@ -191,12 +412,53 @@ export type ImageStored = { status: "saved"; file: string; name: string } |
 /**  Not saved; `message` is Dutch text for the teacher. */
 { status: "rejected"; message: string };
 
+export type MigrationResult = {
+	fromVersion: number,
+	toVersion: number,
+	applied: boolean,
+	/**  The backup zip. */
+	backup: string | null,
+	written: number,
+	moved: number,
+	deleted: number,
+	/**  Dutch, for the admin. */
+	warnings: string[],
+	/**  The check right after the migration. */
+	validation: DataCheck | null,
+	/**  The Dutch report next to the backup zip (`None` when it could not be written). */
+	reportFile: string | null,
+};
+
+/**  A JSON file of a folder with its name (`readJsonDir`). */
+export type NamedJson = {
+	name: string,
+	data: Value,
+};
+
 /**  A file chosen in the dialog: a token for the import, the cleaned name and the extension. */
 export type PickedImage = {
 	token: string,
 	name: string,
 	ext: string,
 };
+
+/**  Result of every PIN command. */
+export type PinCheck = {
+	outcome: PinOutcome,
+	retryAfterMs: number,
+	/**  The user record as written, when the command changed it. */
+	user: Value | null,
+	/**  New recovery codes, shown once (the admin's first PIN, or renewed codes). */
+	recoveryCodes: string[] | null,
+};
+
+export type PinOutcome = "ok" | 
+/**  Wrong PIN or code; `retryAfterMs` says when the next try is allowed. */
+"wrong" | 
+/**  Too soon after a wrong try: not checked. */
+"wait" | 
+/**  The user has no PIN yet and sets one first. */
+"noPin";
 
 /**
  *  What a printed copy is called (ADR-0002 section 9): `rapporten/<schooljaar>/<YYYY-MM-DD HHmm>
@@ -208,6 +470,20 @@ export type PrintNameArg = {
 	vak: string,
 	groep: string,
 	toets: string,
+};
+
+/**  `main.typ` or `lib.typ` of the opdracht (ADR-0002 5a). */
+export type ProjectFileInfo = {
+	file: string,
+	/**
+	 *  `current`, `updated` (an unchanged older version, just replaced), `modified`,
+	 *  `outdated` (changed, and a newer bundled version exists) or `missing`.
+	 */
+	state: string,
+	version: number | null,
+	bundledVersion: number,
+	/**  For `restore_project_file` (`null` when missing). */
+	hash: string | null,
 };
 
 /**  A merged batch in the output folder. */
@@ -232,11 +508,24 @@ export type RenderedSvg = {
 	warnings: string[],
 };
 
+/**  A JSON file read with a missing or wrong stamp since start (C19). */
+export type StampIssue = {
+	path: string,
+	/**  `missing` or `mismatch`. */
+	state: string,
+};
+
 export type Value = null | boolean | number | string | Value[] | { [key in string]: Value };
 
 /**  A JSON file and the SHA-1 of its bytes, the CAS token for the next write. */
 export type VersionedJson = {
 	data: Value,
+	hash: string,
+};
+
+/**  A text file and the SHA-1 of its bytes, the CAS token for [`write_text_file`] (C17). */
+export type VersionedText = {
+	text: string,
 	hash: string,
 };
 

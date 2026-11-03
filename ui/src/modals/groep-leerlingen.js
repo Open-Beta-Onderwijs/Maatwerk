@@ -319,7 +319,7 @@ export async function openGroupStudentsModal(groupId, year) {
       el.querySelectorAll('[data-action="open-student-from-group"]').forEach((b) =>
         b.addEventListener('click', () =>
           openProfielModal(
-            Number(b.dataset.id),
+            b.dataset.id,
             () => openGroupStudentsModal(b.dataset.groupid, b.dataset.year),
             students,
           ),

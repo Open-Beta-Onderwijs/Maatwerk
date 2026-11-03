@@ -1,0 +1,52 @@
+[
+  {
+    "id": "admin",
+    "voornaam": "Beheer",
+    "tussenvoegsel": "",
+    "achternaam": "Synthetisch",
+    "afkorting": "BEH",
+    "vakken": [
+      "nat"
+    ],
+    "kleur": "#336699",
+    "foto": null,
+    "isAdmin": true,
+    "actief": true
+  },
+  {
+    "id": "gebr-1756713600000",
+    "voornaam": "Docent",
+    "tussenvoegsel": "de",
+    "achternaam": "Proef",
+    "afkorting": "DPR",
+    "schoolsoort": [
+      "Havo"
+    ],
+    "vakken": [
+      "nat",
+      "wi"
+    ],
+    "kleur": "#aa3300",
+    "foto": "fotos/gebr-1756713600000.png",
+    "isAdmin": false,
+    "actief": true
+  },
+  {
+    "id": "gebr-1756713600000",
+    "voornaam": "Docent",
+    "tussenvoegsel": "de",
+    "achternaam": "Proef",
+    "afkorting": "DPR2",
+    "schoolsoort": [
+      "Havo"
+    ],
+    "vakken": [
+      "nat",
+      "wi"
+    ],
+    "kleur": "#aa3300",
+    "foto": "fotos/gebr-1756713600000.png",
+    "isAdmin": false,
+    "actief": false
+  }
+]

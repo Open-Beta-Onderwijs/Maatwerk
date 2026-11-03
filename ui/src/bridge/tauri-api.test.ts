@@ -47,6 +47,7 @@ function fakeBackend(reply: (command: string, args: unknown[]) => unknown) {
       progressListener = cb;
       return unlisten;
     },
+    listenEditorUpdate: async () => unlisten,
     outputUrl: (id) => `http://maatwerk-out.localhost/${id}`,
   };
   return {
@@ -144,10 +145,31 @@ describe('TauriApi', () => {
   it('success shapes of the void and {ok: true} methods', async () => {
     const { api } = fakeBackend(() => null);
     expect(await api.ensureDir('a')).toBeUndefined();
-    expect(await api.writeTextFile('a.typ', 'x')).toEqual({ ok: true });
     expect(await api.writeLocalSession({ a: 1 })).toBeUndefined();
     expect(await api.savePhoto('fotos/a.png', 'AA==')).toBeUndefined();
     expect(await api.updatePresence('jan', { online: true })).toBeUndefined();
+  });
+
+  it('writeTextFile: the new hash, a conflict as a result (C17), other errors throw', async () => {
+    const ok = fakeBackend(() => 'h2');
+    expect(await ok.api.writeTextFile('opdrachten/a/opdracht.typ', 'x', 'h1')).toEqual({
+      ok: true,
+      hash: 'h2',
+    });
+    expect(ok.calls[0]?.args).toEqual(['opdrachten/a/opdracht.typ', 'x', 'h1']);
+    await ok.api.writeTextFile('opdrachten/a/opdracht.typ', 'x');
+    expect(ok.calls[1]?.args).toEqual(['opdrachten/a/opdracht.typ', 'x', null]);
+    const conflict = fakeBackend(() => err('conflict'));
+    expect(await conflict.api.writeTextFile('opdrachten/a/opdracht.typ', 'x', 'h1')).toEqual({
+      ok: false,
+      reason: 'conflict',
+    });
+  });
+
+  it('a folder that needs the migration throws from the never-rejecting methods too', async () => {
+    const { api } = fakeBackend(() => err('needs_migration'));
+    await expect(api.listYears()).rejects.toBeInstanceOf(BackendError);
+    await expect(api.readJson('config.json')).rejects.toBeInstanceOf(BackendError);
   });
 
   it('null-on-error methods: readLocalSession, readPhotoAsDataUrl', async () => {
@@ -188,6 +210,7 @@ describe('TauriApi', () => {
       commands,
       listenDataChanged: async () => () => {},
       listenAssignmentProgress: async () => () => {},
+      listenEditorUpdate: async () => () => {},
       outputUrl: (id) => id,
     });
     const heartbeat = api.updatePresence('jan', { online: true });
@@ -245,16 +268,16 @@ describe('TauriApi', () => {
     for (const p of [
       invalid.api.listOpdrachtImages('../x'),
       invalid.api.saveOpdrachtImage('../x', 'a', 'png', ''),
-      invalid.api.copyOpdrachtImages('a', '../x'),
-      invalid.api.deleteOpdrachtImages('../x'),
-      invalid.api.createAssignmentTypFile('../x.typ'),
+      invalid.api.copyOpdrachtFolder('a', '../x'),
+      invalid.api.deleteOpdrachtFolder('../x'),
+      invalid.api.createOpdrachtFolder('../x'),
     ]) {
       await expect(p).rejects.toThrow('Ongeldige opdracht.');
     }
     const ok = fakeBackend(() => null);
-    expect(await ok.api.copyOpdrachtImages('a', 'b')).toEqual({ ok: true });
-    expect(await ok.api.deleteOpdrachtImages('a')).toEqual({ ok: true });
-    expect(await ok.api.createAssignmentTypFile('opdracht_1.typ')).toEqual({ ok: true });
+    expect(await ok.api.copyOpdrachtFolder('a', 'b')).toEqual({ ok: true });
+    expect(await ok.api.deleteOpdrachtFolder('a')).toEqual({ ok: true });
+    expect(await ok.api.createOpdrachtFolder('opdracht_1')).toEqual({ ok: true });
     expect(await ok.api.pickImageFile()).toBeNull();
     expect(await fakeBackend(() => err('io')).api.readClipboardImage()).toBeNull();
   });
@@ -297,12 +320,12 @@ describe('TauriApi', () => {
     const off = f.api.onAssignmentProgress((p) => seen.push(p));
     await Promise.resolve();
     f.progress({ done: 0, total: 1 });
-    const r = await f.api.renderAssignmentBatch([{ key: 's1', typFile: 'o.typ' }], {
+    const r = await f.api.renderAssignmentBatch([{ key: 's1', opdrachtId: 'o' }], {
       duplex: true,
     });
     expect(r).toEqual({ success: true, pdfPath: '2-opdrachten.pdf', pages: 3 });
     expect(f.calls[0]?.args).toEqual([
-      [{ key: 's1', typFile: 'o.typ', label: null, header: null, mode: null }],
+      [{ key: 's1', opdrachtId: 'o', label: null, header: null, mode: null }],
       { includeAnswers: null, duplex: true, outputName: null },
     ]);
     expect(seen).toEqual([{ done: 0, total: 1 }]);
@@ -313,7 +336,7 @@ describe('TauriApi', () => {
       error: 'Er is niets om te genereren.',
     });
     const bad = fakeBackend(() => err('typst', 'Fout in opdracht "A":\n\nerror: x'));
-    expect(await bad.api.renderAssignmentBatch([{ key: 's', typFile: 'o.typ' }])).toEqual({
+    expect(await bad.api.renderAssignmentBatch([{ key: 's', opdrachtId: 'o' }])).toEqual({
       success: false,
       error: 'Fout in opdracht "A":\n\nerror: x',
     });

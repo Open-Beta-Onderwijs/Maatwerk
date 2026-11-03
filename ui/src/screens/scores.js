@@ -16,6 +16,8 @@ import {
 } from '../app.js';
 import * as Presence from '../presence.js';
 import { createScoreGrid } from '../components/score-grid/score-grid';
+import { afterPaint, perfSpan, timed } from '../utils/perf';
+import { nextIdle } from '../utils/idle';
 import {
   computeRowStatus as rowStatusOf,
   normalizeScore,
@@ -75,6 +77,9 @@ const REMOTE_FLASH_COLOR = '#f5a623';
 let remoteFlashColor = REMOTE_FLASH_COLOR;
 // One per group grid: (cursors) => draws colleagues' positions in that grid.
 let cursorUpdaters = [];
+// Grows on every (re)build and teardown: a group grid still waiting for idle
+// time checks it and gives up when its build was replaced (Step 7c).
+let buildToken = 0;
 
 // Saves run one after the other, in the order they were made: a value typed
 // while an earlier save is still in flight is queued, never dropped (U2).
@@ -179,6 +184,7 @@ async function redoLast() {
 }
 
 export function destroyGridInstances() {
+  buildToken++;
   gridInstances.forEach((g) => g.destroy());
   gridInstances = [];
   unsavedCells.clear();
@@ -193,8 +199,8 @@ export function destroyGridInstances() {
 // Everything the score modal set up: the grids, the undo history and its
 // buttons, and the Ctrl+Z / Ctrl+Y listener. loadScoreGrid only replaces the
 // grids, so the listener and buttons stay wired (U1).
-function resetScoreModal() {
-  destroyGridInstances();
+function resetScoreModal({ keepGrids = false } = {}) {
+  if (!keepGrids) destroyGridInstances();
   scoreHistory = [];
   redoHistory = [];
   undoBtnEl = null;
@@ -205,10 +211,95 @@ function resetScoreModal() {
   }
 }
 
-export async function openScoreModal(examId, year, deps) {
-  resetScoreModal();
+// ── Prebuild (Step 7c) ───────────────────────────────────────────────────────
+// While an exam's menu is open, its grids are built off-screen, so "Scores
+// invoeren" only has to move them into the modal. Only the first group is
+// built ahead (the others wait for the modal, then idle time), so the modal's
+// first frame lays out one grid, as without a prebuild. Colleagues hear nothing
+// (presence) until the modal really opens. A prebuild is used only when no
+// cached data changed since it started (Store.generation); otherwise, or when
+// it is not used within PREBUILD_TTL_MS, it is thrown away.
+const PREBUILD_TTL_MS = 15_000;
+let prebuilt = null; // { examId, year, login, host, grids, generation, token, first, done, release, timer }
+
+// Who the grids were built for: a logout and login within the TTL must not reuse them (review 7c n1).
+const loginKey = () => `${Store.getActiveUser()?.id}|${Store.getActiveSubject()}`;
+let scoreModalOpen = false;
+
+function discardPrebuilt() {
+  if (!prebuilt) return;
+  clearTimeout(prebuilt.timer);
+  prebuilt.host.remove();
+  if (prebuilt.token === buildToken) destroyGridInstances();
+  prebuilt.release(); // the held build sees the new token and stops
+  prebuilt = null;
+}
+
+export function prebuildScoreModal(examId, year) {
+  if (scoreModalOpen) return; // its grids are the live ones
+  discardPrebuilt();
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
   if (!exam) return;
+  const host = document.createElement('div');
+  host.className = 'sc-prebuild';
+  host.setAttribute('aria-hidden', 'true');
+  const grids = document.createElement('div');
+  host.appendChild(grids);
+  document.body.appendChild(host);
+  const generation = Store.generation();
+  let firstBuilt;
+  const first = new Promise((resolve) => (firstBuilt = resolve));
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+  const done = loadScoreGrid(String(exam.jaarlaag), examId, grids, year, firstBuilt, held).finally(
+    firstBuilt,
+  );
+  void done.catch(() => {}); // reported when the modal awaits it; unused, it is dropped
+  prebuilt = {
+    examId,
+    year,
+    login: loginKey(),
+    host,
+    grids,
+    generation,
+    token: buildToken, // loadScoreGrid took its token synchronously
+    first,
+    done,
+    release,
+    timer: setTimeout(discardPrebuilt, PREBUILD_TTL_MS),
+  };
+}
+
+// The prebuild for this exam if it is still current, else null (and it is gone).
+function takePrebuilt(examId, year) {
+  const pre = prebuilt;
+  const current =
+    pre &&
+    pre.examId === examId &&
+    pre.year === year &&
+    pre.login === loginKey() &&
+    pre.token === buildToken &&
+    pre.generation === Store.generation();
+  if (!current) {
+    discardPrebuilt();
+    return null;
+  }
+  clearTimeout(pre.timer);
+  prebuilt = null;
+  pre.release();
+  return pre;
+}
+
+export async function openScoreModal(examId, year, deps) {
+  const endOpen = perfSpan('modal:scores');
+  const generationAtOpen = Store.generation();
+  const pre = takePrebuilt(examId, year);
+  resetScoreModal({ keepGrids: Boolean(pre) });
+  const exam = Store.getExamsSync(year).find((e) => e.id === examId);
+  if (!exam) {
+    if (pre) destroyGridInstances();
+    return;
+  }
 
   showModal(
     `
@@ -298,6 +389,9 @@ export async function openScoreModal(examId, year, deps) {
         });
       });
 
+      scoreModalOpen = true;
+      onModalCleanup(() => (scoreModalOpen = false));
+
       // ── Presence: tell colleagues we're here, show who else is ─────────────
       Presence.setScoreModal({ year, subject: Store.getActiveSubject(), examId });
       onModalCleanup(() => Presence.setScoreModal(null));
@@ -363,16 +457,34 @@ export async function openScoreModal(examId, year, deps) {
         });
       }
 
-      await loadScoreGrid(
-        String(exam.jaarlaag),
-        examId,
-        el.querySelector('#sc-grid-container'),
-        year,
-      );
+      const shown = () => {
+        renderPresence(el, examId, year);
+        void afterPaint().then(endOpen);
+      };
+      if (pre) {
+        // Later groups of the prebuild keep arriving in `grids`, now in the modal.
+        el.querySelector('#sc-grid-container').appendChild(pre.grids);
+        pre.host.remove();
+        void pre.first.then(shown);
+        await pre.done;
+      } else {
+        await loadScoreGrid(
+          String(exam.jaarlaag),
+          examId,
+          el.querySelector('#sc-grid-container'),
+          year,
+          shown,
+        );
+      }
+      // All grids built: colleagues' cursors in the later ones too.
       renderPresence(el, examId, year);
+      void afterPaint().then(endOpen); // no grid at all (no groups)
     },
     'modal-scores',
-    deps?.renderToetsenList,
+    // The exam list shows statistics: redraw it only when something was saved.
+    () => {
+      if (Store.generation() !== generationAtOpen) deps?.renderToetsenList?.();
+    },
   );
 }
 
@@ -482,10 +594,19 @@ async function reloadScoreModal(examId, year, deps) {
   if (Store.getExamsSync(year).some((e) => e.id === examId)) openScoreModal(examId, year, deps);
 }
 
-export async function loadScoreGrid(jaarlaag, examId, container, year) {
+/**
+ * Builds one grid per group. The first group is built at once; each further
+ * group waits for idle time, so the modal paints its first rows within budget
+ * (Step 7c). `onFirst` runs when the first grid is in the DOM; the further
+ * groups also wait for `held` (the prebuild holds them until the modal opens).
+ * The promise resolves when every grid is in the DOM (or the build was replaced).
+ */
+export async function loadScoreGrid(jaarlaag, examId, container, year, onFirst, held) {
   destroyGridInstances();
+  const token = buildToken;
   // Saves queued from a previous modal must land before the files are read (review 3b m7).
   await saveChain;
+  if (token !== buildToken) return;
   if (!container) container = document.getElementById('score-grid-container');
   if (!examId) {
     container.innerHTML = '<p class="hint">Selecteer een toets.</p>';
@@ -508,10 +629,16 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
 
   container.innerHTML = '';
 
+  let built = 0;
   for (let gi = 0; gi < groups.length; gi++) {
     const group = groups[gi];
     const groupStudents = groupStudentsOf(group, allStudents);
     if (groupStudents.length === 0) continue;
+    if (built > 0) {
+      if (built === 1) await held;
+      await nextIdle();
+      if (token !== buildToken) return;
+    }
 
     const section = document.createElement('div');
     section.className = 'score-group-section';
@@ -527,9 +654,13 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       .filter(Boolean)
       .sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
 
-    const scoreRecs = await Promise.all(
-      groupStudents.map((s) => Store.getStudentScores(s.id, year)),
+    // Read right before building: a colleague's change that arrived while this
+    // group waited is in the Store cache by now.
+    const scoreRecs = await timed('scores:read', () =>
+      Promise.all(groupStudents.map((s) => Store.getStudentScores(s.id, year))),
     );
+    if (token !== buildToken) return;
+    const endCompute = perfSpan('scores:compute');
 
     for (let si = 0; si < groupStudents.length; si++) {
       const s = groupStudents[si];
@@ -571,14 +702,17 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
     });
     recomputeSummaryRow(gridData, avgIdx, stdIdx, activeExam, O);
     activeGridData.push(gridData);
+    endCompute();
 
-    const grid = createGroupGrid(
-      section.querySelector('.score-grid-host'),
-      activeExam,
-      groupStudents,
-      gridData,
-      year,
-      activeObs,
+    const grid = timed('scores:dom', () =>
+      createGroupGrid(
+        section.querySelector('.score-grid-host'),
+        activeExam,
+        groupStudents,
+        gridData,
+        year,
+        activeObs,
+      ),
     );
     gridInstances.push(grid);
 
@@ -588,6 +722,7 @@ export async function loadScoreGrid(jaarlaag, examId, container, year) {
       section.style.maxWidth = `${tableWidth + 2}px`;
       section.style.marginInline = 'auto';
     }
+    if (built++ === 0) onFirst?.();
   }
 }
 

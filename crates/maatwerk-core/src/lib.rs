@@ -5,15 +5,20 @@
 //! Modules follow ADR-0002 section 1; model and migrate are added in later steps.
 
 pub mod assets;
+pub mod auth;
 pub mod error;
+pub mod integrity;
 pub mod jsonfmt;
+pub mod migrate;
 pub mod opdracht_images;
 pub mod outputs;
 pub mod paths;
 pub mod pdf_merge;
 pub mod presence;
+pub mod snapshots;
 pub mod storage;
 pub mod typst_svc;
+pub mod validate;
 pub mod watcher;
 
 pub use error::{Error, Result};

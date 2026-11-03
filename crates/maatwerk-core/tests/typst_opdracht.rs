@@ -11,9 +11,9 @@ use std::path::Path;
 use maatwerk_core::assets;
 use maatwerk_core::paths::{DataDir, RelPath};
 use maatwerk_core::typst_svc::{
-    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, CompileError, Compiled, Mode,
-    OpdrachtHeader, OpdrachtInputs, TypstProject, compile_document, opdracht_world,
-    render_assignment_batch, render_assignment_svg_pages,
+    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, CompileError, Compiled,
+    EditorSession, Mode, OpdrachtHeader, OpdrachtInputs, TypstProject, compile_document,
+    opdracht_world, render_assignment_batch, render_assignment_svg_pages,
 };
 use serde_json::Value;
 use support::{assert_matches_golden, decode, fonts, frame_text, load_case};
@@ -101,6 +101,38 @@ fn batch_job(job: &Value, opts: &Value, dir: &DataDir) -> (TypstProject, Opdrach
     (project, inputs)
 }
 
+/// The v1 opdracht `typ_file` as the migration lays it out (C14, `docs/reference/data-files-v2.md`):
+/// `opdrachten/<id>/` with `opdracht.typ` (image paths without `<id>/`), `images/`, and the
+/// bundled `main.typ` and `lib.typ`. Returns the folder project the app compiles.
+fn v2_project(dir: &DataDir, typ_file: &str) -> TypstProject {
+    let id = typ_file.strip_suffix(".typ").unwrap();
+    let opdrachten = dir.root().join("opdrachten");
+    let folder = opdrachten.join(id);
+    std::fs::create_dir_all(&folder).unwrap();
+    let text = std::fs::read_to_string(opdrachten.join(typ_file)).unwrap();
+    std::fs::write(
+        folder.join("opdracht.typ"),
+        text.replace(&format!("images/{id}/"), "images/"),
+    )
+    .unwrap();
+    std::fs::write(folder.join("main.typ"), assets::OPDRACHT_MAIN_TYP).unwrap();
+    std::fs::write(folder.join("lib.typ"), assets::LIB_TYP).unwrap();
+    let images = opdrachten.join("images").join(id);
+    if images.is_dir() {
+        copy_dir(&images, &folder.join("images"));
+    }
+    TypstProject::opdracht(dir, id).unwrap()
+}
+
+/// The `.typ` file a golden case compiles.
+fn golden_typ_file(case: &Value) -> String {
+    let args = decode(&case["call"]["args"]);
+    match case["call"]["channel"].as_str().unwrap() {
+        "app:renderAssignmentBatch" => args[0][0]["typFile"].as_str().unwrap().to_owned(),
+        _ => args[0].as_str().unwrap().to_owned(),
+    }
+}
+
 fn compile(
     project: TypstProject,
     inputs: &OpdrachtInputs,
@@ -120,6 +152,19 @@ fn golden(id: &str) -> PagedDocument {
         compiled.warnings
     );
     assert_matches_golden(id, &case, &compiled.output);
+    // Review 7a M3: the same opdracht as a v2 folder (what the app compiles since Step 7a)
+    // gives the same document.
+    let typ_file = golden_typ_file(&case);
+    let mut v2 = v2_project(&dir, &typ_file);
+    if case["call"]["channel"] == "app:renderAssignmentSvg" {
+        // The editor buffer, with the image paths the migration rewrites.
+        let id = typ_file.strip_suffix(".typ").unwrap();
+        let buffer = renamed_marker(decode(&case["call"]["args"])[2].as_str().unwrap())
+            .replace(&format!("images/{id}/"), "images/");
+        v2 = v2.with_file(&RelPath::parse("opdracht.typ").unwrap(), buffer);
+    }
+    let compiled_v2 = compile(v2, &inputs).unwrap_or_else(|e| panic!("{id} v2: {}", e.to_text()));
+    assert_matches_golden(id, &case, &compiled_v2.output);
     compiled.output
 }
 
@@ -224,6 +269,60 @@ fn svg_golden(id: &str) {
             );
         }
     }
+}
+
+/// Step 8a: an editor session on the many-pages preview gives the same SVG pages as the one-shot
+/// render (path C), and after an edit the client's pages patched with the changed ones equal a
+/// one-shot render of the new text.
+#[test]
+fn editor_session_patches_equal_the_one_shot_render() {
+    let case = load_case("svg-preview-many-pages");
+    let (_tmp, dir) = data_dir();
+    let (project, inputs) = golden_job(&case, &dir);
+    let opdracht = RelPath::parse("opdracht.typ").unwrap();
+    let source = renamed_marker(decode(&case["call"]["args"])[2].as_str().unwrap());
+    let one_shot = |text: &str| {
+        render_assignment_svg_pages(
+            fonts(),
+            project.clone().with_file(&opdracht, text),
+            &inputs,
+            fixed_now(),
+        )
+        .unwrap()
+        .output
+    };
+
+    let mut session = EditorSession::new(opdracht_world(
+        fonts(),
+        project.clone(),
+        &inputs,
+        fixed_now(),
+    ))
+    .with_clock(fixed_now);
+    let first = session.compile(0, &|| false).unwrap();
+    assert!(first.ok, "{:?}", first.diagnostics);
+    let mut client: Vec<String> = first.pages.into_iter().map(|p| p.svg).collect();
+    assert_eq!(client, one_shot(&source));
+    assert!(client.len() > 2);
+
+    // A word more in the last vraag changes the last page(s) only.
+    let edited = source.replace("veel tekst.]", "veel tekst en nog een zin.]");
+    assert_ne!(edited, source);
+    session.set_file(&opdracht, edited.clone()).unwrap();
+    let second = session.compile(1, &|| false).unwrap();
+    assert!(second.ok, "{:?}", second.diagnostics);
+    assert!(!second.pages.is_empty());
+    assert!(second.pages.iter().all(|p| p.index > 0), "page 1 unchanged");
+    client.truncate(second.page_count);
+    for page in second.pages {
+        if page.index < client.len() {
+            client[page.index] = page.svg;
+        } else {
+            assert_eq!(page.index, client.len());
+            client.push(page.svg);
+        }
+    }
+    assert_eq!(client, one_shot(&edited));
 }
 
 #[test]
@@ -364,6 +463,51 @@ fn the_opdracht_world_sees_its_own_images_and_nothing_else() {
             "review 5a n3: {}",
             err.to_text()
         );
+    }
+}
+
+#[test]
+fn the_v2_opdracht_folder_sees_its_own_files_and_nothing_else() {
+    let (_tmp, dir) = data_dir();
+    v2_project(&dir, "opdracht_1756713600200.typ");
+    v2_project(&dir, "opdracht_1756713600201.typ");
+    std::fs::write(dir.root().join("geheim.json"), "{}").unwrap();
+    let source = |s: &str| {
+        TypstProject::opdracht(&dir, "opdracht_1756713600200")
+            .unwrap()
+            .with_file(
+                &RelPath::parse("opdracht.typ").unwrap(),
+                format!(
+                    "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [{s}]\n#let render_opgaven() = []\n"
+                ),
+            )
+    };
+    compile(
+        source("#image(\"images/figuur.png\")"),
+        &OpdrachtInputs::default(),
+    )
+    .unwrap_or_else(|e| panic!("{}", e.to_text()));
+    for path in [
+        "../geheim.json",
+        "../../geheim.json",
+        "/geheim.json",
+        "../opdracht_1756713600201/opdracht.typ",
+        "/opdrachten/opdracht_1756713600201/opdracht.typ",
+        "C:/Windows/win.ini",
+    ] {
+        let err = compile(
+            source(&format!("#read(\"{path}\")")),
+            &OpdrachtInputs::default(),
+        )
+        .unwrap_err();
+        let message = &err.diagnostics[0].message;
+        assert!(
+            message.starts_with("file not found") || message.contains("access denied"),
+            "{path}: {message}"
+        );
+    }
+    for bad in ["../x", "a/b", ""] {
+        assert!(TypstProject::opdracht(&dir, bad).is_err(), "{bad}");
     }
 }
 

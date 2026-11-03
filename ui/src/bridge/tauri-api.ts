@@ -20,6 +20,7 @@ import {
   commands,
   events,
   type CommandError,
+  type EditorUpdateEvent,
   type ErrorCode,
   type ImageStored,
   type Value,
@@ -37,6 +38,7 @@ export interface Backend {
   commands: Commands;
   listenDataChanged(cb: (changes: DataChange[]) => void): Promise<() => void>;
   listenAssignmentProgress(cb: (progress: Progress) => void): Promise<() => void>;
+  listenEditorUpdate(cb: (update: EditorUpdateEvent) => void): Promise<() => void>;
   /** URL of a render output for the viewer iframe. */
   outputUrl(outputId: string): string;
 }
@@ -46,6 +48,7 @@ const tauriBackend: Backend = {
   // `meta` is whatever the file's `_meta` holds; the UI only reads objects from it.
   listenDataChanged: (cb) => events.dataChanged.listen((e) => cb(e.payload as DataChange[])),
   listenAssignmentProgress: (cb) => events.assignmentProgress.listen((e) => cb(e.payload)),
+  listenEditorUpdate: (cb) => events.editorUpdate.listen((e) => cb(e.payload)),
   // `http://maatwerk-out.localhost/<id>` on Windows, `maatwerk-out://localhost/<id>` elsewhere.
   outputUrl: (outputId) => convertFileSrc(outputId, OUTPUT_SCHEME),
 };
@@ -91,7 +94,8 @@ async function orThrow<T>(call: Promise<Result<T>>): Promise<T> {
 async function orElse<T, F>(call: Promise<Result<T>>, fallback: F): Promise<T | F> {
   const r = await call;
   if (r.status === 'ok') return r.data;
-  if (asCommandError(r.error)?.code === 'unsupported_schema') throw new BackendError(r.error);
+  const code = asCommandError(r.error)?.code;
+  if (code === 'unsupported_schema' || code === 'needs_migration') throw new BackendError(r.error);
   return fallback;
 }
 
@@ -165,6 +169,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     listYears: () => orElse(c.listYears(), [] as string[]),
     ensureYear: (year) => orThrow(c.ensureYear(year)),
     readAllJson: (dir) => orThrow(c.readAllJson(dir)) as Promise<Json[]>,
+    readJsonDir: (dir) => orThrow(c.readJsonDir(dir)) as Promise<{ name: string; data: Json }[]>,
+    readOpdrachten: () => orThrow(c.readOpdrachten()) as Promise<Json[]>,
 
     async deleteFile(relPath) {
       const r = await c.deleteFile(relPath);
@@ -178,12 +184,15 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
 
     // ── Text files ──────────────────────────────────────────────────────────
     readTextFile: (relPath) => orThrow(c.readTextFile(relPath)),
-    async writeTextFile(relPath, content) {
-      await orThrow(c.writeTextFile(relPath, content));
-      return { ok: true };
+    readTextFileVersioned: (relPath) => orThrow(c.readTextFileVersioned(relPath)),
+    async writeTextFile(relPath, content, expectedHash) {
+      const r = await c.writeTextFile(relPath, content, expectedHash ?? null);
+      if (r.status === 'ok') return { ok: true, hash: r.data };
+      if (asCommandError(r.error)?.code === 'conflict') return { ok: false, reason: 'conflict' };
+      throw new BackendError(r.error);
     },
-    async createAssignmentTypFile(typFile) {
-      await orThrow(c.createAssignmentTypFile(typFile));
+    async createOpdrachtFolder(opdrachtId) {
+      await orThrow(c.createOpdrachtFolder(opdrachtId));
       return { ok: true };
     },
 
@@ -202,12 +211,12 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       );
     },
     readClipboardImage: () => orElse(c.readClipboardImage(), null),
-    async copyOpdrachtImages(fromId, toId) {
-      await orThrow(c.copyOpdrachtImages(fromId, toId));
+    async copyOpdrachtFolder(fromId, toId) {
+      await orThrow(c.copyOpdrachtFolder(fromId, toId));
       return { ok: true };
     },
-    async deleteOpdrachtImages(opdrachtId) {
-      await orThrow(c.deleteOpdrachtImages(opdrachtId));
+    async deleteOpdrachtFolder(opdrachtId) {
+      await orThrow(c.deleteOpdrachtFolder(opdrachtId));
       return { ok: true };
     },
 
@@ -245,8 +254,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       logWarnings(r.data.warnings);
       return { success: true, pdfPath: r.data.pdfPath };
     },
-    async renderAssignmentSvg(typFile, title, previewContent) {
-      const r = await c.renderAssignmentSvg(typFile, title, previewContent ?? null);
+    async renderAssignmentSvg(opdrachtId, title, previewContent) {
+      const r = await c.renderAssignmentSvg(opdrachtId, title, previewContent ?? null);
       if (r.status === 'error') return { success: false, error: message(r.error) };
       logWarnings(r.data.warnings);
       return { success: true, pages: r.data.pages };
@@ -257,7 +266,7 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       const r = await c.renderAssignmentBatch(
         jobs.map((j) => ({
           key: String(j.key),
-          typFile: j.typFile,
+          opdrachtId: j.opdrachtId,
           label: j.label ?? null,
           header: (j.header ?? null) as Value,
           mode: j.mode ?? null,
@@ -285,6 +294,50 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     },
     dataFolderStatus: () => orThrow(c.dataFolderStatus()),
     restartApp: () => c.restartApp(),
+    migrateDataFolder: () => orThrow(c.migrateDataFolder()),
+    validateDataFolder: () => orThrow(c.validateDataFolder()),
+    stampIssues: () => orThrow(c.stampIssues()),
+    async acceptStamp(relPath) {
+      await orThrow(c.acceptStamp(relPath));
+    },
+    verifyPin: (userId, pin) => orThrow(c.verifyPin(userId, pin)),
+    setFirstPin: (userId, pin) => orThrow(c.setFirstPin(userId, pin)),
+    changePin: (currentPin, newPin) => orThrow(c.changePin(currentPin, newPin)),
+    resetPin: (userId) => orThrow(c.resetPin(userId)),
+    recoverWithCode: (userId, code, newPin) => orThrow(c.recoverWithCode(userId, code, newPin)),
+    renewRecoveryCodes: (pin) => orThrow(c.renewRecoveryCodes(pin)),
+    async logout() {
+      await orThrow(c.logout());
+    },
+    saveTextAs: (defaultName, content) => orThrow(c.saveTextAs(defaultName, content)),
+    listSnapshots: () => orThrow(c.listSnapshots()),
+    snapshotForFile: (relPath) => orThrow(c.snapshotForFile(relPath)),
+    async restoreFromSnapshot(relPath, snapshot) {
+      await orThrow(c.restoreFromSnapshot(relPath, snapshot));
+    },
+
+    // ── Live editor ─────────────────────────────────────────────────────────
+    editorOpen: (opdrachtId, title) => orThrow(c.editorOpen(opdrachtId, title)),
+    editorUpdate: (session, path, text) => orThrow(c.editorUpdate(session, path, text)),
+    editorUnset: (session, path) => orThrow(c.editorUnset(session, path)),
+    editorRefresh: (session) => orThrow(c.editorRefresh(session)),
+    editorResend: (session) => orThrow(c.editorResend(session)),
+    editorClose: (session) => c.editorClose(session),
+    editorComplete: (session, path, text, offset, explicit) =>
+      orThrow(c.editorComplete(session, path, text, offset, explicit)),
+    editorHover: (session, path, text, offset) =>
+      orThrow(c.editorHover(session, path, text, offset)),
+    editorDefinition: (session, path, text, offset) =>
+      orThrow(c.editorDefinition(session, path, text, offset)),
+    editorJumpFromClick: (session, page, x, y) =>
+      orThrow(c.editorJumpFromClick(session, page, x, y)),
+    editorJumpFromCursor: (session, path, offset) =>
+      orThrow(c.editorJumpFromCursor(session, path, offset)),
+    onEditorUpdate: (cb) => subscribe((f) => backend.listenEditorUpdate(f), cb, 'editor'),
+    projectFilesStatus: (opdrachtId) => orThrow(c.projectFilesStatus(opdrachtId)),
+    restoreProjectFile: (opdrachtId, file, expectedHash) =>
+      orThrow(c.restoreProjectFile(opdrachtId, file, expectedHash)),
+    bundledProjectFile: (file) => orThrow(c.bundledProjectFile(file)),
 
     // ── Events ──────────────────────────────────────────────────────────────
     onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),

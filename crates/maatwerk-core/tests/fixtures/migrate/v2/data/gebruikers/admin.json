@@ -1,0 +1,22 @@
+{
+  "id": "admin",
+  "voornaam": "Beheer",
+  "tussenvoegsel": "",
+  "achternaam": "Synthetisch",
+  "afkorting": "BEH",
+  "vakken": [
+    "nat"
+  ],
+  "kleur": "#336699",
+  "foto": null,
+  "isAdmin": true,
+  "actief": true,
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "d288035e00617c659de6609df8baf8aadf7cf082634a823ab5721bed93c952a0"
+  }
+}

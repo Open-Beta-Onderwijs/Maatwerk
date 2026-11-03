@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1001,
+    "voornaam": "Anna",
+    "tussenvoegsel": "",
+    "achternaam": "Abbing",
+    "stamklas": "3a",
+    "geslacht": "V",
+    "jaarlaag": "3",
+    "schoolsoort": [
+      "Havo"
+    ]
+  },
+  {
+    "id": "1002",
+    "voornaam": "Bram",
+    "tussenvoegsel": "van",
+    "achternaam": "Bos",
+    "stamklas": "3a",
+    "geslacht": "M",
+    "jaarlaag": "3",
+    "schoolsoort": [
+      "Havo"
+    ]
+  },
+  {
+    "id": 1002,
+    "voornaam": "Bram",
+    "tussenvoegsel": "van",
+    "achternaam": "Bos",
+    "stamklas": "3b",
+    "geslacht": "M",
+    "jaarlaag": "3",
+    "schoolsoort": [
+      "Havo"
+    ]
+  }
+]

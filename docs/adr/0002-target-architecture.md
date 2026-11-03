@@ -285,6 +285,51 @@ These record what was built; none changes a decided behaviour.
 - **Dependency:** `rfd` (MIT) for the start error message box and `wry` (pinned to Tauri's) for
   the WebView2 pre-check; both were already in the tree.
 
+### 12. Live editor service (Step 8a)
+
+- **Long-lived World (section 5):** the editor keeps one `MaatwerkWorld` per open opdracht
+  (`typst_svc::EditorSession`) instead of one per compile, so the buffer is reparsed incrementally
+  and comemo reuses unchanged work. Files read from disk are re-checked by modification time and
+  length before every compile; the buffer itself is never written. `typst_svc::LiveEditor` runs a
+  session on its own thread (not the async runtime) with a debounce; the latest generation wins.
+- **Limits (section 5): watchdog instead of cancellation (user, 2026-11-01).** Typst 0.14 has no
+  way to cancel a compile (it bounds `while` loops at 10,000 iterations and the call depth at 80,
+  but a long `for` loop or a huge document still runs to the end). A compile overtaken by a newer
+  edit is dropped before its SVG render, but not stopped. Step 8b adds a watchdog to
+  `LiveEditor`: a compile that runs longer than the time limit is abandoned (its thread is left
+  to finish and its result dropped), the editor gets an error update with a Dutch message, and a
+  fresh session on a new thread takes the next update. The time limit is an **admin setting** in
+  the Instellingen tab, stored in `instellingen.json` as `editor.compileTimeoutSeconds`
+  (default 30, range 2-300; additive field, an unusable value counts as the default, as the
+  snapshot settings; user, 2026-11-01).
+- **No cursor marker in the live session (review 8a M1).** The old preview inserted
+  `<__maatwerk_cursor>` into the buffer and compiled again without it when that failed. The live
+  session compiles the buffer exactly as typed (preview inputs with `cursor: false`), so every
+  diagnostic position matches the CodeMirror document and no marker error can hide a good
+  preview. Source <-> preview sync moves to `typst-ide` jumps on `EditorSession::document()`
+  (PLAN Step 8b). `render_assignment_svg` keeps the marker for the editor until 8b switches.
+- **No compile debounce (user, 2026-11-01).** An incremental compile takes 1-2 ms, so
+  `DEFAULT_DEBOUNCE` is zero: the coordinator compiles as soon as the compile thread is free, and
+  edits that arrive meanwhile are merged into the next compile. The editor UI shows _new_ errors
+  only after 500 ms without typing (half-typed code does not flash red) and clears them at once.
+- **As built in Step 8b.** `LiveEditor` is a coordinator thread (debounce, watchdog) in front of
+  a compile thread that owns the session; help queries (`typst-ide` 0.14.2: autocomplete, hover,
+  definition, jumps) run on the compile thread between compiles and wait at most 2 s. At most two
+  abandoned compiles may still run; the next compile waits until one ends. The fresh session starts cold (no comemo cache of its own), so a document near the limit may time out again (review 8b n5); it keeps the client's preview until it compiles. The app keeps one
+  session at a time (`editor_open` closes the others; sessions close with the editor and on
+  exit); results travel as the `editor:update` event and the iframe gets them through the parent.
+  Jumps answer only for a document compiled from the current sources, tagged with its
+  generation. `render_assignment_svg` stays in the bridge (ported method, row 30 of the parity
+  table) but the editor no longer calls it.
+- **Vragen through the introspector (Step 8b).** `lib.typ` version 2 adds `punten` to the
+  `<__maatwerk_vraag>` marker (output unchanged); `typst_svc::vragen` reads `{opgave, label,
+punten, antwoord}` from the document. A changed copy of `lib.typ` version 1 still works: its
+  vragen have no punten and the editor says why.
+- **Bundled file updates (section 5a) happen when the editor opens** an opdracht
+  (`check_project_files`, CAS on the hash just read): an unchanged older release is replaced; a
+  changed copy is reported as `modified` or `outdated` and never touched. Batch compiles use the
+  copy as it is.
+
 ## Consequences
 
 - Step 2 characterises the reference against these seams (bridge contract per method, storage

@@ -1,20 +1,95 @@
 # State
 
-Last updated: 2026-10-30 (Step 6 follow-up merged, PR #2) Branch: `main` Last tags: `step-06`, `v0.2.0-parity`
+Last updated: 2026-11-01 (Step 8 done) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
+`step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 7a, not started.** The Step 6 follow-up is merged into `main` (PR #2, version 0.2.0, CI
-green): manual-test fixes M-GRP-1 (quirk U21) and M-OPD-6 (quirk U20 update),
-`docs/reviews/manual-test-step-06.md`, full `THIRD_PARTY_NOTICES.txt` (`npm run notices`,
-cargo-about 0.9.3, CI check after `cargo fetch`), "Over Maatwerk" (`ui/src/screens/about.ts`,
-version + `git describe` build via Vite `define`), README "Licence and source", PLAN Step 7 as
-7a/7b/7c with decisions 12-14 recorded (no encryption -> integrity stamp C19; sectievoorzitter
-rights; copyright line). CI fixes on the way: the real-PDF e2e test only requires its PDF in the
-step after `cargo test` (`MAATWERK_REAL_PDF=1`), and that step uses `--project=chromium`.
+**Step 8 done** (8a `step-08a`, 8b `step-08b`), merged into `main` and tagged `step-08`. Next:
+Step 9 when the user says so. Cutover readiness: see "Open questions" below.
 
-Known: the local visual test `modal-scores` already fails on `main`; look at it in 7c, which
-touches the score modal.
+## After Step 8 (user decisions 2026-11-01)
+
+- Version `0.3.0-rc.1` (PLAN section 9 item 9: SemVer below 1.0 with release candidates, `0.3.0` at
+  the cutover). Branch `release/v0.3.0-rc.1` with a PR into `main` for Steps 7 and 8 (CI).
+- No compile debounce; new errors after 500 ms without typing; a save no longer hides a compile
+  error. Keystroke -> preview 61 ms median (`docs/perf.md`).
+
+## Step 8b result
+
+Commits b98ac1d..HEAD on `step/08-editor`, gate green (291 cargo tests, 321 Vitest, 117 e2e,
+cargo deny, npm licences, SPDX):
+
+1. Core `LiveEditor`: coordinator + compile thread, **watchdog** (time limit from
+   `instellingen.json` `editor.compileTimeoutSeconds`, 2-300 s, default 30; at most two abandoned
+   compiles; the fresh session keeps the client's preview), `query`, `unset_file`,
+   `current_document` (n7), `__maatwerk/` not editable (n4).
+2. `typst-ide` 0.14.2: autocomplete, hover, definition, jumps from click/cursor (UTF-16), query
+   text never stays in the buffer.
+3. `lib.typ` v2 (`punten` in the vraag marker, output unchanged; migrate golden regenerated);
+   `typst_svc::vragen`; `check_project_files` (silent update of unchanged old copies, CAS) and
+   `restore_project_file`.
+4. App: `src-tauri/src/editor.rs` (14 commands, `editor:update` event, one session at a time).
+   Bridge + `MockEditor`.
+5. UI: editor on the session (lint, autocomplete, hover, Ctrl+click/F12, preview <-> source,
+   page patches, vragen panel, tabs `main.typ`/`lib.typ` with banner, Bekijk verschillen,
+   Herstel standaardversie, BOM strip n8). Deps `@codemirror/autocomplete`, `@codemirror/lint`.
+6. Instellingen: compile time limit.
+7. `ui/e2e/editor.spec.ts` (7) + Instellingen e2e; `tools/perf/editor.mjs` on the release exe
+   (182 ms keystroke -> preview median, compile 1-2 ms, memory flat over 300 edits;
+   `docs/perf.md`); runbook rehearsal on the `school` fixture (log in the runbook).
+8. Review `docs/reviews/step-08b.md`: 0 blockers; M1, m1-m4, m7, n2, n3, n5, n7 fixed; m5, m6,
+   n1, n4, n6, n8 in `docs/backlog.md` "From Step 8b"; n9 not changed (reason in the review).
+
+## Step 8a so far
+
+1. `typst_svc::EditorSession` (commit 4376cc4): one long-lived `MaatwerkWorld` per open
+   opdracht; `set_file` (buffer in memory, incremental reparse via `Source::replace`), `reset`
+   before each compile (mount folders re-resolved, disk files re-checked by mtime + length,
+   missing files looked up again); `compile(generation, stale)` returns `EditorUpdate`
+   (`ok`, diagnostics, `preview_generation`, `page_count`, only changed `pages` as SVG + hash,
+   `compile_ms`, `render_ms`); last good document kept; `resend_all`. `LiveEditor`: worker
+   thread, debounce (`DEFAULT_DEBOUNCE` 150 ms, generation 0 at once), latest generation wins
+   (stale result dropped before the SVG render), panics reported as an error update, drop stops
+   the thread. `Location.range_utf16` for CodeMirror. Tests: 15 in `editor::tests`, parity test
+   `editor_session_patches_equal_the_one_shot_render`.
+2. `examples/editor_latency.rs`, `docs/perf.md` section, parity section, ADR-0002 section 12
+   (cancellation deviation: open question).
+3. Review `docs/reviews/step-08a.md`: 0 blockers; M1 (cursor marker) decided in ADR-0002
+   section 12 (no marker in the live session; 8b uses typst-ide jumps); m1 (sink panic), m3
+   (`refresh` / `reload_disk_files`), m4, m5, m6 partly, n1 fixed; m2, m6 rest, n2-n8 in
+   `docs/backlog.md` "From Step 8a".
+
+## Step 7a result
+
+User decisions (2026-10-30): C10 = opaque ids for _new_ exams/groups only, existing ids kept;
+C9 = `"N"` instead of `null`, invalid input stays the typed string. Format spec:
+`docs/reference/data-files-v2.md`; ADR-0003 has C16-C19.
+
+Done on the branch (`step/07-data-v2`, one commit each):
+
+1. ADR-0003 C16-C19 + C9/C10 shapes; `docs/reference/data-files-v2.md`.
+2. `maatwerk-core::integrity` (C19 stamp: SHA-256 of canonical JSON without `_meta.hash`).
+3. `maatwerk-core::migrate` (plan -> verified backup zip outside shared/OneDrive folder -> apply
+   -> `schema_version: 2` last; resumable; blocks on unmigrated legacy data / corrupt JSON).
+   Golden fixture `crates/maatwerk-core/tests/fixtures/migrate/{v1,v2}`
+   (`MAATWERK_UPDATE_GOLDEN=1` regenerates v2). Error codes `needs_migration`,
+   `migration_blocked`. zip 9.1.3 + sha2 0.11 (cargo deny ok, notices regenerated).
+4. `maatwerk-core::validate` (validate-data: version, corrupt, stamps, placement, conflict
+   copies/strays, references, images, opdracht folders; Dutch messages).
+5. CLI `validate-data`, `migrate --dry-run | --apply --backup-dir`; CI migrates the generated
+   `school` fixture and validates it.
+6. Storage/app on v2: v1 -> `needs_migration`; stamp on write, check on read (`stamp_issues`,
+   `accept_stamp`); trailing newline; v2 seed; opdracht folders (`TypstProject::opdracht`,
+   create/copy/delete folder, `read_opdrachten`); text CAS (C17); `rapporten/` next to `data/`
+   (C18); commands `migrate_data_folder`, `validate_data_folder`.
+7. UI on v2: `domain/v2.ts` codec at the Store boundary (in memory still `null` = N and a plain
+   student array, so grades/reports unchanged); users per file + school rev check (C16); opaque
+   ids (C10) with CSV group match by name; editor conflict bar (C17); migration screen at start;
+   admin tab Gegevenscontrole + check at admin login. `tools/fixtures/to-v2.mjs` converts the
+   mock fixture and the golden scenarios. All golden differences were format-only.
+8. e2e updated (94 pass); `docs/cutover-runbook.md`; manual tests M-MIG-1..5, M-SYNC-5/6,
+   M-START-3, M-TOE-6, M-OPD-1 updated; quirks B9/B21/B25/B26; parity rows.
 
 ## Step 6b summary
 
@@ -105,21 +180,71 @@ touches the score modal.
 
 ## In progress
 
-- Nothing.
+Nothing.
+
+## Step 7c result
+
+Commits 269a203..88b299f, gate green (109 e2e, 309 Vitest, cargo, deny, licences, SPDX):
+
+1. `mw:*` spans (`ui/src/utils/perf.ts`), `tools/perf/measure.mjs` (release exe over the WebView2
+   DevTools port, `--cpu 4`, `--admin 1`), baseline and results in `docs/perf.md`.
+2. Kept list screens: `Store.generation()` + view key in `navigateTo`; score-modal close redraws
+   the exam list only after a save.
+3. Leerlingen: 60 cards at once, rest via `utils/idle.ts`, delegated clicks, delete checks
+   admin-only, `content-visibility: auto` on cards.
+4. `read_json_dir` command: `Store.preloadScores` reads a score folder in one call.
+5. Memoised `Store.examResults`.
+6. Score modal: first group at once, rest in idle; prebuild of the first group when the exam
+   menu opens (no presence before the modal opens).
+7. Docs: parity "Perceived speed", manual `M-PERF-1/2`, backlog "From Step 7c".
+
+Result (4x CPU, school fixture): modal 209 -> 48 ms median, tabs within budget at the median,
+first visit after login still above 100 ms p90 (backlog). 1x: everything < 25 ms.
+
+Review `docs/reviews/step-07c.md`: 0 blockers; M1 (scroll on refresh), M2 (generation on every
+colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest, n2, n5 in
+`docs/backlog.md` "From Step 7c".
+
+## Step 7b result
+
+- Nothing. **Step 7b done** and tagged `step-07b` on `step/07-data-v2` (not merged: the step branch
+  merges into `main` at the end of Step 7). Review `docs/reviews/step-07b.md`: 0 blockers; M1
+  (snapshot names), M2 (restore as CAS with fresh `_meta`), m2-m5, m6 (tests), n1-n3, n6, n7 fixed;
+  m1 partly, n4, n5 in `docs/backlog.md`. Gate green (102 e2e). What 7b contains (ADR-0006):
+
+- core `auth` (Argon2id `pinHash`, admin `recoveryCodeHashes`, throttle, login session in Rust),
+  core `snapshots` (`instellingen.json`, CAS claim on `snapshots/state.json`, retention,
+  single-file restore), CLI `admin reset-pin`, app commands + bridge (Tauri + mock), background
+  snapshot at start.
+- UI: PIN dialogs (`screens/pin.ts`, texts in `domain/accounts.ts`), account modal on the
+  top-bar badge, Gebruikers (photos, "Pincode resetten", sectievoorzitters), sectievoorzitter
+  badge and group rights, tab Instellingen, Gegevenscontrole "Herstellen uit snapshot", badge
+  photos everywhere (`utils/badges.js`).
+- Tests: Rust `auth::tests` (13), `snapshots::tests` (8), validate, CLI; Vitest; e2e
+  `accounts.spec.ts` (8), all 102 e2e pass. Local visual baselines updated (badge photo,
+  Gebruikers).
+- Docs: data-files-v2, runbook sections 6-7, manual tests M-PIN/M-VZ/M-SNAP, parity, ADR-0006.
 
 ## Next action (concrete, resumable)
 
-1. Start Step 7a on a new branch `step/07-data-v2` (PLAN Step 7, "7a"). First sub-task: record
-   C16-C19 in `docs/adr/0003-data-format-v2-candidates.md` (decisions from PLAN section 9,
-   items 12-14), then migration tests from synthetic v1 fixtures before any migration code.
-2. Step 7 is L: tag `step-07a` at the end of 7a (safe checkpoint), then 7b, then 7c.
+1. Wait for the user. Step 9 (AI-ready seams) when asked.
+2. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
+   M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two machines, and the
+   runbook rehearsal on a copy of real data.
 
 ## Open questions for the user
 
+- Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
+- Tag `v0.3.0-rc.1` once the PR's CI is green and it is merged (not tagged yet).
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
 
 ## How to resume
+
+Perf measurement: `node tools/fixtures/generate.mjs school <dir>/shared/data`,
+`target/debug/maatwerk-cli.exe migrate --apply --backup-dir <dir>/backups <dir>/shared/data`,
+`npm run build:exe`, then `node tools/perf/measure.mjs --data <dir>/shared/data --cpu 4`.
+Commit messages: from Git Bash (`git commit -F - <<'EOF'`); PowerShell `Out-File` adds a BOM.
 
 After the folder move, release builds also needed `cargo clean --release -p maatwerk-core -p
 maatwerk-app -p maatwerk-cli` (stale build-script path). PowerShell for npm/cargo (Git Bash's

@@ -45,7 +45,8 @@ export interface Override {
 }
 
 /** Student ids are numbers in imported data and strings elsewhere (ADR-0003 C8). */
-export type StudentId = string | number;
+/** A student number; a string in format v2 (ADR-0003 C8). */
+export type StudentId = string;
 
 /** One student's score file for one subject and year. */
 export interface ScoreRecord {

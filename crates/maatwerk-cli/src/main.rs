@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Headless entry point. `typst compile` arrives in Step 5b; data subcommands in Steps 7-9.
+//! Headless entry point: `typst compile` (Step 5b), `validate-data` and `migrate` (Step 7a),
+//! `admin reset-pin` (Step 7b).
+
+mod data;
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -13,11 +16,23 @@ use typst::foundations::{Dict, IntoValue};
 const USAGE: &str = "\
 usage: maatwerk-cli typst compile <file.typ> [--out <file.pdf>] [--input <key>=<value>]...
                                   [--ignore-system-fonts]
+       maatwerk-cli admin reset-pin <data-folder>
        maatwerk-cli --version
 
 typst compile: compiles <file.typ> to PDF with Maatwerk's embedded packages and fonts. The
 folder of <file.typ> is the project root; nothing outside it is readable. In an opdracht folder,
-`--input maatwerk-data=<json>` sets the header and mode that main.typ reads.";
+`--input maatwerk-data=<json>` sets the header and mode that main.typ reads.
+
+validate-data: checks a data folder (format v2) and lists errors and warnings; exit code 1 when
+there are errors.
+
+migrate: converts a v1 data folder to v2 (docs/reference/data-files-v2.md). --dry-run lists what
+would change. --apply first zips the whole folder into --backup-dir, which must be outside the
+data folder, the shared folder and OneDrive, then migrates and validates. Nobody may have
+Maatwerk open on the folder meanwhile (docs/cutover-runbook.md).
+
+admin reset-pin: removes the admin's PIN and recovery codes; the next admin login sets a new PIN
+and gets new codes. Last resort when both are lost (docs/cutover-runbook.md).";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -29,6 +44,18 @@ fn main() -> ExitCode {
         }
         ["typst", "compile", rest @ ..] => match CompileArgs::parse(rest) {
             Ok(compile) => compile.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["validate-data", rest @ ..] => match data::ValidateArgs::parse(rest) {
+            Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["migrate", rest @ ..] => match data::MigrateArgs::parse(rest) {
+            Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["admin", "reset-pin", rest @ ..] => match data::ResetPinArgs::parse(rest) {
+            Ok(args) => args.run(),
             Err(message) => usage_error(&message),
         },
         ["--help" | "-h"] => {

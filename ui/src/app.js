@@ -9,6 +9,7 @@
 // ── Screen imports ────────────────────────────────────────────────────────────
 import { renderStartup } from './screens/startup.js';
 import { asFolderError, renderStartupError } from './screens/startup-error';
+import { renderMigration } from './screens/migration';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
 import { renderToetsen, renderToetsenList } from './screens/toetsen.js';
@@ -17,10 +18,15 @@ import { renderOpdrachten } from './screens/opdrachten.js';
 import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
+import { needsAttention, renderGegevens } from './screens/gegevens';
+import { openAccountModal } from './screens/pin';
+import { renderInstellingen } from './screens/instellingen';
+import { clearBadgePhoto, loadBadgePhoto } from './utils/badges.js';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
+import { afterPaint, perfSpan } from './utils/perf';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -61,7 +67,13 @@ export function navigateTo(name) {
 
   _screenRefreshPending = false;
   if (screens[name]) {
-    renderScreen(name); // render content (may be async; screen shows immediately)
+    const end = perfSpan(`tab:${name}`);
+    if (needsRender(name)) {
+      // Render content (may be async; screen shows immediately).
+      void Promise.resolve(renderScreen(name)).finally(() => afterPaint().then(end));
+    } else {
+      void afterPaint().then(end);
+    }
     screens[name].classList.add('active');
     window.scrollTo(0, 0);
     const targetRow = document.getElementById(`filter-row-${name}`);
@@ -69,7 +81,40 @@ export function navigateTo(name) {
   }
 }
 
+// ── Kept screens (Step 7c) ────────────────────────────────────────────────────
+// A list screen keeps its DOM between visits and is rendered again only when
+// what it shows may have changed: cached data (Store.generation: own writes and
+// colleagues' changes), the filter bar, or who is logged in. The other screens
+// (forms, checks, the startup screen) render on every visit, as before.
+const KEPT_SCREENS = new Set([
+  'leerlingen',
+  'groepen',
+  'toetsen',
+  'observaties',
+  'opdrachten',
+  'gebruikers',
+]);
+const _renderedAs = {}; // screen -> view key of its last render
+let _filterGeneration = 0;
+
+function viewKey() {
+  const user = Store.getActiveUser();
+  return JSON.stringify([
+    Store.generation(),
+    _filterGeneration,
+    user?.id ?? null,
+    Store.getActiveRole(),
+    Store.getActiveSubject(),
+  ]);
+}
+
+function needsRender(name) {
+  return !KEPT_SCREENS.has(name) || _renderedAs[name] !== viewKey();
+}
+
 function renderScreen(name) {
+  // Taken before rendering: a change while an async render runs renders again next visit.
+  _renderedAs[name] = viewKey();
   switch (name) {
     case 'startup':
       return renderStartup();
@@ -87,6 +132,24 @@ function renderScreen(name) {
       return renderGebruikers();
     case 'school':
       return renderSchool();
+    case 'gegevens':
+      return renderGegevens(
+        document.getElementById('screen-gegevens'),
+        window.maatwerk,
+        confirmDialog,
+        (path) => {
+          // Own writes are not echoed by the watcher (review 7b M2).
+          Store.forgetFile(path);
+          toast('Hersteld uit de snapshot.', 'success');
+        },
+      );
+    case 'instellingen':
+      return renderInstellingen(
+        document.getElementById('screen-instellingen'),
+        window.maatwerk,
+        Store,
+        toast,
+      );
   }
 }
 
@@ -169,19 +232,28 @@ overlay.addEventListener('click', (e) => {
 // click next to it then asks for confirmation while isDirty() is true. Annuleren
 // and closing after saving (closeModal()) are not guarded.
 let _closeGuard = null;
+let _closeGuardText = null;
 
-export function guardModalClose(isDirty) {
+/** `text`: optional `{ message, title, okLabel }` instead of the unsaved-changes question. */
+export function guardModalClose(isDirty, text = null) {
   _closeGuard = isDirty;
+  _closeGuardText = text;
 }
 
 async function requestCloseModal() {
   if (document.querySelector('.app-dialog-backdrop')) return;
   if (_closeGuard?.()) {
     const session = _modalSession;
-    const ok = await confirmDialog(
-      'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
-      { title: 'Onopgeslagen wijzigingen', okLabel: 'Sluiten zonder opslaan', danger: true },
-    );
+    const text = _closeGuardText ?? {
+      message: 'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
+      title: 'Onopgeslagen wijzigingen',
+      okLabel: 'Sluiten zonder opslaan',
+    };
+    const ok = await confirmDialog(text.message, {
+      title: text.title,
+      okLabel: text.okLabel,
+      danger: true,
+    });
     if (!ok || session !== _modalSession) return;
   }
   closeModal();
@@ -401,8 +473,8 @@ function initSelects() {
     onChange: async (v) => {
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
+      void Store.preloadScores(v).catch(() => {}); // before the statistics (Step 7c)
       renderToetsenList();
-      Store.preloadScores(v);
     },
   });
 }
@@ -885,6 +957,7 @@ function persistFilters() {
 }
 
 function rerenderActive() {
+  _filterGeneration++;
   const active = document.querySelector('.screen.active');
   if (active && active.id !== 'screen-startup') {
     renderScreen(active.id.replace('screen-', ''));
@@ -928,13 +1001,18 @@ document.getElementById('btn-about').addEventListener('click', showAbout);
 const userBadgeBtn = document.getElementById('user-badge-btn');
 
 export async function showUserBadge(user, subject) {
-  const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
+  const role = Store.getActiveRole();
+  const shape = user.isAdmin || role ? 'badge-square' : 'badge-circle';
   userBadgeBtn.className = `user-badge-mini ${shape}`;
   userBadgeBtn.style.setProperty('--badge-color', user.kleur ?? '#888');
+  clearBadgePhoto(userBadgeBtn);
   userBadgeBtn.textContent = user.afkorting || user.voornaam[0] || '?';
   userBadgeBtn.dataset.len = userBadgeBtn.textContent.length;
-  userBadgeBtn.title = `${user.voornaam} — klik om uit te loggen`;
+  userBadgeBtn.title = `${user.voornaam}${role ? ` (${roleLabel(role)})` : ''} — account en uitloggen`;
   userBadgeBtn.classList.remove('hidden');
+  // Only while this user is still the one shown (a slow read must not paint over the next).
+  const shownId = (userBadgeBtn.dataset.userId = user.id);
+  void loadBadgePhoto(userBadgeBtn, user.foto, () => userBadgeBtn.dataset.userId === shownId);
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
@@ -943,10 +1021,31 @@ export async function showUserBadge(user, subject) {
   await initFilterBar(user, subject);
   applyRoleVisibility(user);
   Presence.start(user.id);
+  if (user.isAdmin) void checkDataInBackground();
+}
+
+// validate-data at start (Step 7a, C19): the admin hears about files changed
+// outside Maatwerk and broken data without having to look. Never blocks.
+async function checkDataInBackground() {
+  try {
+    const check = await window.maatwerk.validateDataFolder();
+    if (!needsAttention(check)) return;
+    const changed = check.issues.filter((i) => i.kind === 'stamp').length;
+    const errors = check.issues.filter((i) => i.severity === 'error').length;
+    const parts = [
+      changed
+        ? `${changed} ${changed === 1 ? 'bestand' : 'bestanden'} buiten Maatwerk gewijzigd`
+        : '',
+      errors ? `${errors} ${errors === 1 ? 'fout' : 'fouten'}` : '',
+    ].filter(Boolean);
+    persistentError(`Gegevenscontrole: ${parts.join(', ')}. Zie het tabblad Gegevenscontrole.`);
+  } catch (e) {
+    console.warn('[gegevens]', e);
+  }
 }
 
 function applyRoleVisibility(user) {
-  const adminOnly = ['gebruikers', 'school'];
+  const adminOnly = ['gebruikers', 'school', 'gegevens', 'instellingen'];
   const teacherOnly = ['toetsen', 'observaties'];
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     const screen = btn.dataset.screen;
@@ -958,14 +1057,35 @@ function applyRoleVisibility(user) {
   });
 }
 
+function roleLabel(role) {
+  return role?.voorzitter
+    ? `Sectievoorzitter ${Store.SUBJECT_DISPLAY[role.voorzitter] ?? role.voorzitter}`
+    : '';
+}
+
+// Step 7b: the badge opens the account modal (PIN wijzigen, uitloggen).
 userBadgeBtn.addEventListener('click', () => {
+  const user = Store.getActiveUser();
+  if (!user) return;
+  openAccountModal(
+    user,
+    roleLabel(Store.getActiveRole()),
+    window.maatwerk,
+    (saved) => Store.cacheUser(saved),
+    logOut,
+  );
+});
+
+function logOut() {
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
+  clearBadgePhoto(userBadgeBtn);
+  delete userBadgeBtn.dataset.userId;
   _adminSubjectFilter = null;
   _activeUserId = null;
   _obsFilter = null;
   navigateTo('startup');
-});
+}
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
 async function applyWatermerk() {
@@ -996,7 +1116,7 @@ const SCREEN_REFRESH = {
   leerlingen: {
     types: ['students', 'group'],
     year: () => leerlingenState.year,
-    render: () => renderStudentList(),
+    render: () => renderStudentList({ staged: false }),
   },
   groepen: {
     types: ['group', 'students', 'exam', 'scores'],
@@ -1046,6 +1166,7 @@ async function runScreenRefresh() {
   const pageScroller = document.scrollingElement;
   const pageY = pageScroller.scrollTop;
   const screenY = screens[name].scrollTop;
+  _renderedAs[name] = viewKey();
   await cfg.render();
   pageScroller.scrollTop = pageY;
   screens[name].scrollTop = screenY;
@@ -1119,6 +1240,11 @@ async function init() {
     if (!status.error) await Store.preload();
   } catch (e) {
     status = { dataDir: status?.dataDir ?? '', error: asFolderError(e) };
+  }
+  if (status.error?.code === 'needs_migration') {
+    // A v1 folder: offer the one-time conversion (ADR-0003 C1).
+    renderMigration(container, status.dataDir, window.maatwerk);
+    return;
   }
   if (status.error) {
     console.error('[startup]', status.error.code, status.error.message);

@@ -31,3 +31,216 @@ Findings:
   opdrachten with many large images show otherwise (images are embedded once per job PDF).
 
 Not measured yet: the Tauri process as a whole (Step 6), and opdrachten with large photos.
+
+## Perceived speed (Step 7c)
+
+Budget (PLAN Step 7c): tab switch and score-modal open < 100 ms on the `school` fixture and on
+a real copy (500+ students).
+
+### How it is measured
+
+- The UI records spans as `performance.measure` entries named `mw:*` (`ui/src/utils/perf.ts`):
+  `tab:<screen>` from the nav click to the first paint after the render, `modal:scores` from
+  "Scores invoeren" to the first paint with the grids (all grids in the baseline; the first
+  group grid since the staged build, see below), `scores:read|compute|dom` per group grid,
+  `menu:exam`, and the background fills after a render (`leerlingen:checks`, `groepen:stats`,
+  `toetsen:stats`). They show in the DevTools Performance panel too.
+- `node tools/perf/measure.mjs --data <dir>` starts the release exe on that folder with the
+  WebView2 DevTools port open, logs in through the UI, switches the tabs 5 times, opens 4 score
+  modals 5 times, and prints median / p90 / max per span plus the main thread's long tasks.
+  `--cpu 4` throttles the webview 4x (CDP), as a stand-in for a school laptop; `--admin 1`
+  logs in as the admin.
+- Data: `node tools/fixtures/generate.mjs school <dir>/shared/data`, then
+  `maatwerk-cli migrate --apply --backup-dir <dir>/backups <dir>/shared/data` (600 students,
+  4 vakken, 2 years). The real copy is measured by the user, outside the repo.
+- Machine: Windows 11, 16 logical CPUs, release build, 2026-10-31. Times in ms.
+
+### Baseline (before any change)
+
+Teacher (nat), 600 students shown on Leerlingen:
+
+| Span                 | 1x median | 1x p90 | 4x median | 4x p90 |
+| -------------------- | --------- | ------ | --------- | ------ |
+| tab:leerlingen       | 33        | 185    | 153       | 1176   |
+| leerlingen:dom       | 4         | 6      | 20        | 27     |
+| leerlingen:checks    | 13        | 289    | 56        | 1963   |
+| tab:groepen          | 10        | 19     | 44        | 90     |
+| tab:toetsen          | 13        | 24     | 61        | 101    |
+| toetsen:stats        | 9         | 10     | 40        | 47     |
+| tab:observaties      | 6         | 9      | 13        | 40     |
+| tab:opdrachten       | 16        | 23     | 44        | 97     |
+| modal:scores         | 41        | 73     | 209       | 367    |
+| scores:dom (1 group) | 3         | 4      | 15        | 22     |
+| scores:read (1 grp)  | 0.1       | 0.3    | 0.4       | 1.4    |
+
+Long tasks at 4x: 65, 7.7 s in total, the longest 905 ms (first Leerlingen after login: 600
+delete checks, each a `querySelector` over all cards).
+
+Admin at 4x: tab:leerlingen 345 / 1339 (dom 62: every card has edit and delete buttons;
+checks read all years x vakken), tab:groepen 144 / 196, tab:gebruikers 28 / 92.
+
+Findings:
+
+- **Reading is not the cost.** Score files are read once and cached; `scores:read` is below
+  2 ms even throttled. No disk cache (PLAN: only if reading is the cost).
+- Every tab visit re-renders from scratch, also when nothing changed: that is most of the
+  repeat-visit time.
+- The score modal spends little in JS (`scores:dom` x 4 groups); the rest is style, layout
+  and paint of four full grids in one frame, plus a forced layout per grid.
+- Closing the score modal re-renders the Toetsen list (and its statistics) every time.
+
+### What changed (Step 7c)
+
+1. **Kept screens.** Leerlingen, Groepen, Toetsen, Observaties, Opdrachten and Gebruikers keep
+   their DOM between visits. `navigateTo` renders again only when the view key changed:
+   `Store.generation()` (grows on own writes, deletes and colleagues' data changes; not on
+   reads, not on presence), the filter bar, the user, role and vak. Closing the score modal
+   redraws the exam list only when something was saved.
+2. **Long lists.** Leerlingen renders the first 60 cards at once and the rest in idle slices
+   (`ui/src/utils/idle.ts`), with one delegated click handler. The delete checks run only for
+   the admin (teachers have no delete button) and apply through a map instead of one
+   `querySelector` per student. Cards use `content-visibility: auto`, so showing the screen
+   does not lay out cards out of view. No full virtualisation: not needed at these numbers.
+3. **One read per score folder.** New command `read_json_dir` (`Storage::read_all_json_named`):
+   `Store.preloadScores` reads a year's `scores/<vak>/` in one call instead of one call per
+   student; newer cached records are kept, absent files are cached as absent, and a single
+   read waits for a folder read in flight. Used before the statistics of Toetsen and Groepen
+   and before the admin's delete checks (8 calls instead of 4800).
+4. **Memoised grades.** `Store.examResults` is memoised per (score record, exam) identity: a
+   changed record or exam is a new object in the cache.
+5. **Score modal.** The first group grid is built at once, each further group in idle time; a
+   waiting group reads its records right before it is built. When an exam menu opens, the
+   first group is prebuilt off-screen (`.sc-prebuild`); "Scores invoeren" moves it into the
+   modal. No presence is written before the modal opens; a prebuild is used only if
+   `Store.generation()` did not change since it started and is dropped after 15 s.
+
+Decisions from the measurements:
+
+- No disk cache in `%LOCALAPPDATA%`: the disk was never the cost. The cost was one IPC call per
+  file (seconds at 4x for 600-4800 calls), solved with one call per folder.
+- The first prebuild version built all groups ahead. At 4x that made the modal slower (126 ms
+  median instead of 65 ms): moving four finished grids into the modal lays out all four in its
+  first frame. Only the first group is prebuilt now.
+
+### After (same machine and data, 2026-10-31)
+
+Teacher (nat), 600 students:
+
+| Span            | 1x median | 1x p90 | 4x median | 4x p90 | 4x before (median / p90) |
+| --------------- | --------- | ------ | --------- | ------ | ------------------------ |
+| tab:leerlingen  | 15        | 21     | 39        | 96     | 153 / 1176               |
+| tab:groepen     | 5         | 16     | 19        | 69     | 44 / 90                  |
+| tab:toetsen     | 6         | 25     | 14        | 113    | 61 / 101                 |
+| tab:observaties | 6         | 9      | 11        | 39     | 13 / 40                  |
+| tab:opdrachten  | 5         | 22     | 17        | 79     | 44 / 97                  |
+| modal:scores    | 10        | 14     | 48        | 70     | 209 / 367                |
+
+Long tasks at 4x: 12, 0.9 s in total, the longest 120 ms (before: 65, 7.7 s, 905 ms). At 1x:
+none. The teacher's delete checks (1.9 s at 4x before) are gone; the exam statistics run once
+per visit instead of after every score-modal close (26 times in the run before, 1 now).
+
+Admin at 4x: tab:leerlingen 55 / 217 (before 345 / 1339), leerlingen:checks 575 (before 2192),
+tab:groepen 42 / 154 (before 144 / 196), tab:gebruikers 14 / 62.
+
+Budget (< 100 ms): met at 1x everywhere. At 4x every median is within budget; the p90s above
+100 ms are the **first** visit of a tab after login (Toetsen 113, admin Leerlingen 217, admin
+Groepen 154), where the first folder reads and statistics run. Still to measure: the user's
+real copy (`docs/manual-test.md` M-PERF-1).
+
+After the review fixes (three more runs at 4x, same build): medians stable (modal:scores 50-53,
+tabs 11-64, admin Leerlingen 51-64); the first-visit p90s move between runs (admin Leerlingen
+252-320, admin Groepen 130-290, Toetsen 63-113); long tasks 1.0-3.2 s in total per run, the
+longest 123-184 ms; admin delete checks 0.6-0.8 s (one run right after a build: 4.2 s, not
+repeated). The teacher's run reads the score folder once instead of twice (review M3). Single
+first-visit samples at 4x vary by a factor of two: compare medians.
+
+Read the modal numbers with care (review 7c m1): after the change `modal:scores` ends when the
+**first** group is painted (the others follow in idle time), and the script pauses 300 ms in the
+exam menu (`--menu-ms`), so the prebuild runs before the span starts. "209 -> 48 ms" is what a
+teacher waits for the first rows, not the cost of all grids; `menu:exam` (median 2-3 ms at 4x)
+covers the menu itself. The Toetsen p90 at 4x is 113 ms against 101 before: its first visit now
+also waits for the score folder read.
+
+## Live editor compile (Step 8a)
+
+Question: is a long-lived `EditorSession` fast enough to compile on (almost) every key, and does
+it grow during a long editing session?
+
+Setup: `cargo run --release -p maatwerk-core --example editor_latency -- <typ file> <edits>` on
+the tiny fixture's opdrachten (`crates/maatwerk-core/tests/fixtures`) with the preview inputs
+(placeholder header, cursor marker). Every edit types one more character into the second
+paragraph (page 1) and compiles; the one-shot column renders the **first 50** of those edits
+with a fresh World and every page, as `render_assignment_svg` does per compile today. Peak
+working set polled from PowerShell every 50 ms; it covers the whole run, one-shot part included,
+and runs differ by tens of MiB, so it shows the absence of growth, not a precise footprint. Windows 11, 16 logical
+CPUs, system fonts on, 2026-10-31. Times in ms (median / p90 / max).
+
+| Opdracht            | Edits | Cold (layout + SVG) | Layout     | SVG of changed pages | Session total | Pages sent | One-shot total | Peak working set |
+| ------------------- | ----- | ------------------- | ---------- | -------------------- | ------------- | ---------- | -------------- | ---------------- |
+| `…203.typ`, 3 pages | 200   | 65 + 28             | 4 / 5 / 6  | 14 / 16 / 21         | 20 / 22 / 29  | 1 / 1 / 2  | 40 / 44 / 73   | ~80 MiB          |
+| `…203.typ`, 3 pages | 2000  | 60 + 24             | 5 / 6 / 9  | 14 / 16 / 29         | 20 / 23 / 45  | 1 / 1 / 2  | 33 / 37 / 57   | ~57 MiB          |
+| `…204.typ`, 4 pages | 200   | 54 + 39             | 4 / 5 / 7  | 14 / 16 / 21         | 19 / 22 / 43  | 1 / 1 / 2  | 62 / 69 / 150  | ~55 MiB          |
+| `…204.typ`, 4 pages | 2000  | 55 + 40             | 4 / 6 / 30 | 11 / 14 / 27         | 17 / 21 / 52  | 1 / 1 / 2  | 37 / 43 / 50   | ~61 MiB          |
+
+Findings:
+
+- Incremental layout is ~4 ms; the SVG of the one changed page is most of the cost. Sending only
+  changed pages halves the time against a full render and keeps the IPC payload to one page.
+- Memory does not grow with the number of edits (the 2000-edit runs peak no higher than the
+  200-edit runs): the World holds only the files Typst asked for (unit test
+  `a_long_session_holds_no_more_files`), and comemo is evicted after every compile.
+- comemo's cache is process-wide and `evict(10)` counts compiles of any kind, so a batch running
+  next to the editor ages the editor's entries out; the editor may then fall back to near-cold
+  compiles (~60 ms layout) until the batch ends (review 8a m2, backlog).
+- **Budgets** (this machine, release build, 3-4 page opdracht): an edit compile (layout + SVG of
+  the changed pages) **< 50 ms p90**; the opening compile **< 200 ms**; peak memory flat over
+  2000 edits. With `DEFAULT_DEBOUNCE` (150 ms) the preview follows ~170 ms after the last key
+  (the old editor: 600 ms autosave delay, then a Typst CLI process per compile). Step 8b measures
+  the end-to-end latency in the app, IPC and DOM included.
+
+Not measured yet: opdrachten with large photos (the SVG embeds images as data URIs, so a changed
+page with a photo costs its base64 again), and school laptops.
+
+## Live editor in the app (Step 8b)
+
+`node tools/perf/editor.mjs --data <dir>\shared\data --edits 300` on the release exe (2026-11-01,
+`school` fixture migrated to v2, first opdracht of `nat`, this dev machine, CPU unthrottled). The
+script works on a copy of the folder (the editor autosaves), types into `render_uitleg` (rendered
+content) and times each keystroke until the `editor:update` with that generation arrives in the
+editor iframe.
+
+| Measure                                  | Median | p90    | Max    |
+| ---------------------------------------- | ------ | ------ | ------ |
+| Keystroke -> preview patched (300 edits) | 182 ms | 185 ms | 202 ms |
+| `compileMs` (layout, incremental)        | 1 ms   | 2 ms   | 2 ms   |
+| `renderMs` (changed pages to SVG)        | 0 ms   | 1 ms   | 1 ms   |
+| Editor opened -> first preview           | 432 ms |        |        |
+
+The latency is almost all the 150 ms debounce (`DEFAULT_DEBOUNCE`) plus the IPC hops (Rust ->
+main window -> editor iframe). A burst of 20 keystrokes gave one compile of the last text.
+**Memory** (working set of `maatwerk.exe`, Typst runs in it): 56 MiB at the start, 59-60 MiB
+after 50-300 edits, no growth trend. The webview processes are not included.
+
+Checks the script also makes against the real Typst path (all passed): a syntax error is reported
+and underlined and the preview stays; `typst-ide` autocomplete offers `table`; a click in the
+preview moves the cursor (the header text leads into `lib.typ`).
+
+**m2 (comemo shared with batch compiles):** not seen in this measurement: a single editor session
+compiles in 1-2 ms after every edit. A batch run while the editor is open would evict the
+editor's cache once (the next edit then costs about one full compile, ~300-400 ms here). Kept in
+the backlog; measure again with a large opdracht if teachers notice it.
+
+### Without the compile debounce (2026-11-01, `0.3.0-rc.1`)
+
+User decision: no compile delay; new errors are shown after 500 ms without typing (ADR-0002
+section 12). Same script, data and machine:
+
+| Measure                                  | Median | p90   | Max    |
+| ---------------------------------------- | ------ | ----- | ------ |
+| Keystroke -> preview patched (300 edits) | 61 ms  | 83 ms | 210 ms |
+| `compileMs`                              | 4 ms   | 5 ms  | 7 ms   |
+| `renderMs`                               | 1 ms   | 3 ms  | 5 ms   |
+| Editor opened -> first preview           | 280 ms |       |        |
+
+A burst of 20 keystrokes (15 ms apart) now gives 18 compiles instead of one, each of a newer text
+(generations only go up). Memory: 55 MiB at the start, 58-60 MiB from 50 to 300 edits, flat.

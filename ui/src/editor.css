@@ -65,6 +65,30 @@ body {
   white-space: nowrap;
 }
 
+/* ── Save conflict (C17) ───────────────────────────────────────────────── */
+#conflict-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: #fff4e5;
+  border-bottom: 1px solid #f0b46c;
+  color: #6b3d00;
+  font-size: 13px;
+}
+#conflict-bar span {
+  flex: 1;
+}
+#conflict-bar button {
+  font: inherit;
+  padding: 3px 10px;
+  border: 1px solid #c98a3a;
+  border-radius: 4px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+}
+
 #editor-status {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.5);
@@ -404,13 +428,144 @@ body {
   overflow: hidden;
 }
 
-#cm-container {
+#editor-left {
   width: 50%;
   height: 100%;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
   border-right: 1px solid #d8d8d8;
   background: #ffffff;
+}
+
+#cm-container {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #ffffff;
   /* CodeMirror fills this */
+}
+
+/* ── Files of the opdracht (Step 8b) ───────────────────────────────────── */
+#file-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px 0;
+  background: #f0f2f4;
+  border-bottom: 1px solid #d0d7de;
+  flex-shrink: 0;
+}
+.file-tab {
+  font:
+    13px 'Segoe UI',
+    Arial,
+    sans-serif;
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: none;
+  color: #57606a;
+  cursor: pointer;
+}
+.file-tab:hover {
+  background: #e4e7ea;
+}
+.file-tab.active {
+  background: #fff;
+  border-color: #d0d7de;
+  color: #24292e;
+  margin-bottom: -1px;
+}
+.file-tab.needs-attention::after {
+  content: ' \2022';
+  color: #c75000;
+}
+#file-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: #fff8db;
+  border-bottom: 1px solid #e3c766;
+  color: #5c4300;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+#file-banner span {
+  flex: 1;
+}
+#file-banner button,
+#btn-diff-close {
+  font: inherit;
+  padding: 3px 10px;
+  border: 1px solid #b89a3a;
+  border-radius: 4px;
+  background: #fff;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ── Bekijk verschillen ────────────────────────────────────────────────── */
+#diff-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#diff-box {
+  width: min(900px, 92vw);
+  height: min(640px, 86vh);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+#diff-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #d0d7de;
+  font:
+    600 14px 'Segoe UI',
+    Arial,
+    sans-serif;
+}
+#diff-title {
+  flex: 1;
+}
+#diff-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.diff-view {
+  margin: 0;
+  padding: 8px 0;
+  font:
+    12px/1.5 'Cascadia Code',
+    'Consolas',
+    monospace;
+}
+.diff-view > div {
+  padding: 0 12px;
+  white-space: pre-wrap;
+}
+.diff-removed {
+  background: #ffebe9;
+  color: #82071e;
+}
+.diff-added {
+  background: #dafbe1;
+  color: #116329;
+}
+.diff-same {
+  color: #57606a;
 }
 
 /* CodeMirror theme and Typst token colours: editor-cm.css (inside the shadow root) */
@@ -597,6 +752,90 @@ body {
   text-align: center;
 }
 
+.pv-spacer {
+  flex: 1;
+}
+
+#pv-vragen.has-checks {
+  border-color: #d9a400;
+  color: #ffd75e;
+}
+
+/* ── Vragen panel (Step 8b) ────────────────────────────────────────────── */
+#vragen-panel {
+  flex-shrink: 0;
+  max-height: 40%;
+  overflow: auto;
+  background: #fff;
+  border-bottom: 1px solid #3c3f41;
+  font:
+    13px 'Segoe UI',
+    Arial,
+    sans-serif;
+  color: #24292e;
+}
+.vragen-checks {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  background: #fff8db;
+  color: #5c4300;
+}
+.vragen-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.vragen-table th,
+.vragen-table td {
+  padding: 4px 10px;
+  text-align: left;
+  border-bottom: 1px solid #eaeef2;
+  vertical-align: top;
+}
+.vragen-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+.vragen-table td:nth-child(2),
+.vragen-table th:nth-child(2) {
+  text-align: right;
+  white-space: nowrap;
+}
+.vragen-row {
+  cursor: pointer;
+}
+.vragen-row:hover,
+.vragen-row:focus {
+  background: #eef4ff;
+  outline: none;
+}
+.vragen-table tfoot td {
+  font-weight: 600;
+}
+
+/* Where the cursor is, or what was picked, in the preview. */
+.preview-mark {
+  position: absolute;
+  left: 0;
+  width: 4px;
+  height: 1.2em;
+  background: #2f81f7;
+  border-radius: 2px;
+  opacity: 0;
+  pointer-events: none;
+}
+.preview-mark.flash {
+  animation: preview-mark 1.6s ease-out;
+}
+@keyframes preview-mark {
+  0%,
+  60% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 #svg-viewer {
   flex: 1;
   min-height: 0;
@@ -609,6 +848,7 @@ body {
 }
 
 .svg-page {
+  position: relative;
   flex-shrink: 0;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);

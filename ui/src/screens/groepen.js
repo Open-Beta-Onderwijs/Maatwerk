@@ -12,6 +12,7 @@ import {
   getAdminSubjectFilter,
 } from '../app.js';
 import { gradeStatHtml } from '../utils/grades.js';
+import { perfSpan } from '../utils/perf';
 import { openGroupStudentsModal } from './leerlingen.js';
 
 // ── Modal imports (used directly in this screen file) ───────────────────────
@@ -55,7 +56,7 @@ export function renderGroepen() {
     btnImport.onclick = () => openGroupCSVImport();
     btnImportAssignment.onclick = () => openGroupAssignmentCSVImport();
   }
-  renderGroepenForYear(SEL.groupsYear.getValue());
+  return renderGroepenForYear(SEL.groupsYear.getValue()); // the tab span ends when the list is in (review 7c n4)
 }
 
 const SUBCATEGORY_TO_FILTER = {
@@ -158,7 +159,12 @@ export async function renderGroepenForYear(year) {
           <button class="btn-sm btn-sm-icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Groep bewerken">${ICONS.pen}</button>
           <button class="btn-sm btn-danger btn-sm-icon" data-action="del-group" data-id="${escHtml(g.id)}"${g.student_ids.length > 0 ? ' disabled title="Deze groep heeft leerlingen en kan dus niet worden verwijderd."' : ' title="Groep verwijderen"'}>${ICONS.trash}</button>
         </div>`
-            : ''
+            : Store.isVoorzitterActive(g.subject)
+              ? `
+        <div class="card-actions">
+          <button class="btn-sm btn-sm-icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Leerlingen en docenten van de groep (sectievoorzitter)">${ICONS.pen}</button>
+        </div>`
+              : ''
         }
       </div>`;
   }
@@ -266,10 +272,15 @@ async function calcGroupGradeStats(group, year) {
 }
 
 async function fillGroupGradeStats(groups, year, container) {
+  const end = perfSpan('groepen:stats');
+  // One folder read per vak instead of one read per student (Step 7c).
+  const subjects = [...new Set(groups.map((g) => g.subject).filter(Boolean))];
+  await Promise.all(subjects.map((s) => Store.preloadScores(year, s).catch(() => {})));
   for (const g of groups) {
     const stats = await calcGroupGradeStats(g, year);
     if (!stats) continue;
     const el = container.querySelector('[data-grade-stats="' + g.id + '"]');
     if (el) el.innerHTML = gradeStatHtml(stats);
   }
+  end();
 }

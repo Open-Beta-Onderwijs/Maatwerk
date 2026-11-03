@@ -6,7 +6,7 @@
 
 use maatwerk_core::opdracht_images::{self, Stored};
 use maatwerk_core::storage::decode_base64_lenient;
-use maatwerk_core::typst_svc::create_v1_opdracht_file;
+use maatwerk_core::typst_svc::create_opdracht_folder as create_folder;
 use serde::Serialize;
 use specta::Type;
 use tauri::{AppHandle, State, Window};
@@ -20,7 +20,7 @@ use crate::state::Shared;
 /// One image of an opdracht.
 #[derive(Serialize, Type)]
 pub struct ImageInfo {
-    /// Relative to `opdrachten/`: `images/<id>/<name>.<ext>`.
+    /// Relative to the opdracht folder: `images/<name>.<ext>`.
     pub file: String,
     pub name: String,
     /// PNG data URL, 48 px high; `null` for SVG and files that do not decode.
@@ -63,12 +63,13 @@ pub struct PickedImage {
     pub ext: String,
 }
 
-/// Writes the base template to `opdrachten/<typFile>` (a bare `.typ` name).
+/// Fills `opdrachten/<id>/` with `main.typ`, `lib.typ` and `opdracht.typ` from the base
+/// template (`createAssignmentTypFile` for C14); existing files are kept.
 #[tauri::command]
 #[specta::specta]
-pub async fn create_assignment_typ_file(state: State<'_, Shared>, typ_file: String) -> Res<()> {
+pub async fn create_opdracht_folder(state: State<'_, Shared>, opdracht_id: String) -> Res<()> {
     blocking(state, move |c| {
-        Ok(create_v1_opdracht_file(c.storage()?, &typ_file)?)
+        Ok(create_folder(c.storage()?, &opdracht_id)?)
     })
     .await
 }
@@ -193,9 +194,10 @@ pub async fn read_clipboard_image(app: AppHandle) -> Res<Option<String>> {
     .map_err(|e| CommandError::internal(format!("clipboard task failed: {e}")))
 }
 
+/// Copies an opdracht folder (Typst files and images, not `opdracht.json`).
 #[tauri::command]
 #[specta::specta]
-pub async fn copy_opdracht_images(
+pub async fn copy_opdracht_folder(
     state: State<'_, Shared>,
     from_id: String,
     to_id: String,
@@ -206,10 +208,10 @@ pub async fn copy_opdracht_images(
     .await
 }
 
-/// Deletes the images; a folder OneDrive keeps locked is retried in the background.
+/// Deletes an opdracht folder; a folder OneDrive keeps locked is retried in the background.
 #[tauri::command]
 #[specta::specta]
-pub async fn delete_opdracht_images(state: State<'_, Shared>, opdracht_id: String) -> Res<()> {
+pub async fn delete_opdracht_folder(state: State<'_, Shared>, opdracht_id: String) -> Res<()> {
     let core = Shared::clone(state.inner());
     blocking(state, move |c| {
         if let Some(dir) = opdracht_images::delete_all(c.storage()?, &opdracht_id)? {

@@ -7,8 +7,6 @@ import { expect, test } from '@playwright/test';
 import { YEAR, examMenuItem, login, readMockJson, watchErrors, withMock } from './helpers';
 import { screen } from './views';
 
-const EXAM_ID = `nat-smoketoets-${YEAR}`;
-
 interface ScoreFile {
   scores?: Record<string, Record<string, unknown>>;
 }
@@ -32,6 +30,16 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await page.locator('#f-e-next').click();
   await page.locator('#f-esave').click();
   await expect(page.locator('#modal-overlay')).toBeHidden();
+  // The id is opaque (C10): find the new exam by its title.
+  const EXAM_ID = await withMock(
+    page,
+    async (m, dir) => {
+      const all = (await m.readAllJson(dir)) as { id: string; title: string }[];
+      return all.find((e) => e.title === 'Smoketoets')?.id ?? '';
+    },
+    `${YEAR}/exams`,
+  );
+  expect(EXAM_ID).toMatch(/^toets-/);
   const exam = await readMockJson<{ title: string; questions: unknown[] }>(
     page,
     `${YEAR}/exams/${EXAM_ID}.json`,

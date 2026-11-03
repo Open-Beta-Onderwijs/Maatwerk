@@ -30,8 +30,13 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
     await api.writeJson('school.json', { naam: 'A', plaats: 'Y' });
     writes.mockClear();
     await Store.updateSchool!({ naam: 'B' });
-    expect(await disk(api, 'school.json')).toEqual({ naam: 'B', plaats: 'Y' });
-    expect(Store.getSchoolSync!()).toEqual({ naam: 'B', plaats: 'Y' });
+    // C16: school.json carries _meta now.
+    expect(await disk(api, 'school.json')).toMatchObject({
+      naam: 'B',
+      plaats: 'Y',
+      _meta: { rev: 1 },
+    });
+    expect(Store.getSchoolSync!()).toMatchObject({ naam: 'B', plaats: 'Y' });
     expect(writes.mock.calls.every((c) => c[2]?.cas === true)).toBe(true);
   });
 
@@ -46,7 +51,7 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
       cur.schoolsoort = [...cur.schoolsoort, 'havo'];
     });
     expect(saved.schoolsoort).toEqual(['vmbo', 'vwo', 'havo']);
-    expect(await disk(api, 'school.json')).toEqual({
+    expect(await disk(api, 'school.json')).toMatchObject({
       naam: 'A',
       schoolsoort: ['vmbo', 'vwo', 'havo'],
     });
@@ -55,7 +60,52 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
   it('updateSchool creates school.json when it is missing', async () => {
     const { Store, api } = await session({ 'config.json': JSON.stringify({ activeYear: YEAR }) });
     await Store.updateSchool!({ schoolsoort: ['havo'] });
-    expect(await disk(api, 'school.json')).toEqual({ schoolsoort: ['havo'] });
+    expect(await disk(api, 'school.json')).toMatchObject({ schoolsoort: ['havo'] });
+  });
+
+  it('C16: a school field saved from a stale form conflicts and names the colleague', async () => {
+    const { Store, api } = await session({
+      'config.json': JSON.stringify({ activeYear: YEAR }),
+      'school.json': JSON.stringify({ naam: 'A', _meta: { rev: 3 } }),
+    });
+    const loaded = await Store.loadSchool!();
+    await api.writeJson('school.json', { naam: 'C', _meta: { rev: 4, updatedBy: 'gebr-2' } });
+    const err = await Store.updateSchool!({ naam: 'B' }, loaded._meta.rev).catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'conflict', updatedBy: 'gebr-2' });
+    expect(await disk(api, 'school.json')).toMatchObject({ naam: 'C' });
+    const saved = await Store.updateSchool!({ naam: 'B' }, 4);
+    expect(saved._meta.rev).toBe(5);
+  });
+
+  it('C16: users are one file each; a stale edit of the same user conflicts', async () => {
+    const { Store, api } = await session({
+      'config.json': JSON.stringify({ activeYear: YEAR }),
+      'gebruikers.json': JSON.stringify([
+        { id: 'admin', voornaam: 'A', isAdmin: true },
+        { id: 'gebr-1', voornaam: 'Jan' },
+      ]),
+    });
+    const users = await Store.loadUsers!();
+    expect(users.map((u: { id: string }) => u.id)).toEqual(['admin', 'gebr-1']);
+    const jan = users[1];
+    await Store.upsertUser!({ ...jan, voornaam: 'Janneke' });
+    expect(await disk(api, 'gebruikers/gebr-1.json')).toMatchObject({
+      voornaam: 'Janneke',
+      _meta: { rev: 1 },
+    });
+    // Another admin's edit of the same user, saved after this one loaded it:
+    await api.writeJson('gebruikers/gebr-1.json', {
+      id: 'gebr-1',
+      voornaam: 'Johan',
+      _meta: { rev: 2, updatedBy: 'admin' },
+    });
+    const err = await Store.upsertUser!({ ...jan, voornaam: 'Jan B' }, 1).catch((e: unknown) => e);
+    expect(err).toMatchObject({ code: 'conflict', updatedBy: 'admin' });
+    expect(await disk(api, 'gebruikers/gebr-1.json')).toMatchObject({ voornaam: 'Johan' });
+    // A new user is a new file; the others are untouched.
+    await Store.upsertUser!({ id: 'gebr-2', voornaam: 'Piet' });
+    expect(await disk(api, 'gebruikers/admin.json')).toMatchObject({ voornaam: 'A' });
+    expect((await Store.loadUsers!()).length).toBe(3);
   });
 
   it('setActiveYear keeps other config fields written meanwhile', async () => {
@@ -66,7 +116,12 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
     await api.writeJson('config.json', { activeYear: '2024-2025', other: 1 });
     writes.mockClear();
     await Store.setActiveYear!(YEAR);
-    expect(await disk(api, 'config.json')).toEqual({ activeYear: YEAR, other: 1 });
+    // Review 7a m4: schema_version is (re)set too.
+    expect(await disk(api, 'config.json')).toEqual({
+      activeYear: YEAR,
+      other: 1,
+      schema_version: 2,
+    });
     expect((await Store.getConfig!()).activeYear).toBe(YEAR);
     expect(writes.mock.calls.every((c) => c[2]?.cas === true)).toBe(true);
   });

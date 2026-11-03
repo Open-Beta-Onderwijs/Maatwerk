@@ -4,6 +4,7 @@
 // overwrites them; the user confirms an overview of old vs new first).
 
 import type { Group, StudentId } from './types';
+import { opaqueId } from './v2';
 
 /** Group fields shown in the overview, in display order. */
 export const GROUP_FIELDS = [
@@ -67,4 +68,35 @@ export function groupOverwrites(existing: Group[], incoming: Group[]): GroupOver
     }
   }
   return result;
+}
+
+/**
+ * Group names compare as the v1 id did (`makeGroupId`'s slug): case, spaces and punctuation
+ * do not matter, so "3a nat" matches "3A-Nat" as before (review 7a m7).
+ */
+const nameKey = (name: unknown) =>
+  String(name ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+/**
+ * Ids for imported groups (C10): an existing group with the same name in the
+ * year keeps its id, so a re-import replaces it (D34) as the v1 id scheme did;
+ * a new name gets a fresh opaque id. Returns new objects.
+ */
+export function withImportIds<T extends Pick<Group, 'name'>>(
+  existing: Pick<Group, 'id' | 'name'>[],
+  incoming: T[],
+): (T & { id: string })[] {
+  const byName = new Map(existing.map((g) => [nameKey(g.name), g.id]));
+  return incoming.map((g) => {
+    const key = nameKey(g.name);
+    let id = byName.get(key);
+    if (!id) {
+      id = opaqueId('groep');
+      byName.set(key, id); // the same name twice in one file is one group
+    }
+    return { ...g, id };
+  });
 }

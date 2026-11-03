@@ -99,8 +99,8 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 4 | Rust core: paths, storage, watcher | L (4a, 4b) | done (`step-04`) |
 | 5 | Typst service (parity with the old output) | L (5a, 5b) | done (`step-05`) |
 | 6 | Tauri wiring + parity + portable build | L (6a, 6b) | done (`step-06`, `v0.2.0-parity`) |
-| 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | todo |
-| 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | todo |
+| 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | done (`step-07a`, `step-07b`, `step-07c`, `step-07`) |
+| 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | done (`step-08a`, `step-08b`, `step-08`) |
 | 9 | AI-ready seams (design + CLI, no AI) | S | todo |
 | 10 | Hardening, refactor, maintainability | L | todo |
 | 11 | macOS | M | todo (when needed) |
@@ -366,7 +366,7 @@ record C16-C19 in ADR-0003 at the start of 7a.
 
 **7b: accounts, roles, snapshots** (additive: an absent field means "no PIN yet", "no role")
 
-- **PIN login:** each teacher sets a PIN (5-8 digits) at the first login and can change it. Stored per user as an Argon2id hash with salt (`argon2` crate, MIT/Apache) in `gebruikers/<id>.json`. Wrong PIN: a growing delay per attempt (local). Only the admin can reset a teacher's PIN; the teacher then sets a new one at the next login.
+- **PIN login:** each teacher sets a PIN (4-8 digits; 5-8 until 0.3.1) at the first login and can change it. Stored per user as an Argon2id hash with salt (`argon2` crate, MIT/Apache) in `gebruikers/<id>.json`. Wrong PIN: a growing delay per attempt (local). Only the admin can reset a teacher's PIN; the teacher then sets a new one at the next login.
 - **Admin PIN and recovery:** the admin has a PIN too, plus 10 single-use recovery codes shown **once** at setup ("Afdrukken" / "Opslaan als"), stored only as hashes. Last resort, documented in the runbook: `maatwerk-cli admin reset-pin` on the data folder. Anyone with write access to the folder can edit the files anyway; the PIN guards the shared PC, not the files.
 - **Sectievoorzitter (decision 13):** a role per vak, assigned by the admin to a teacher of that vak (e.g. `school.json` `secties: { nat: { voorzitter: <userId> } }`), not a separate user record. The login screen shows a separate "Sectievoorzitter <vak>" badge; it asks the PIN of the assigned teacher, and `_meta.updatedBy` records that teacher. Rights, for the groups of that vak only: change the group composition (students in/out) and the assigned teachers. Everything else stays admin-only: student data, other group data (name, jaarlaag, schoolsoort; creating and deleting groups), users, school, settings. Regular teachers keep no group editing at all (as today).
 - **Admin settings tab "Instellingen"** (`instellingen.json` with `_meta`): snapshot interval and retention; room for later settings.
@@ -486,7 +486,7 @@ Order: biggest risk first, always with tests around the code you touch.
 6. **macOS signing** (Step 11).
 7. **Repo name and remote** (Step 0). Decided: `maatwerk`, public, AGPL-3.0-or-later. Remote created by the user (`github.com/Open-Beta-Onderwijs/Maatwerk`); first push after Step 5 (2026-10-28).
 8. **App identifier**: decided in Step 0: `nl.openbetaonderwijs.maatwerk` (was `nl.school.rtti-app`). Changing it moves the local app-config folder, which is fine because of the cutover.
-9. **Versioning and update policy** for a portable exe on OneDrive.
+9. **Versioning and update policy** for a portable exe on OneDrive. Versioning decided 2026-11-01: SemVer below 1.0 with release candidates: `0.3.0-rc.1` after Step 8, `0.3.0` at the cutover, `-rc.N` for fixes before it; 1.0 later (e.g. after Step 10). Git tags `vX.Y.Z[-rc.N]`. The update policy (how teachers get a new exe) is still open.
 10. **AI integration style** (Step 9 ADR lists the questions).
 11. **Cutover date.** Decided: after Step 8; the exact date is the user's call.
 12. **Encryption of the JSON files.** Decided 2026-10-30: no encryption (a key in the exe of a public AGPL repo is public). Instead an integrity stamp inside each JSON file to detect accidental outside changes (Step 7a, C19).

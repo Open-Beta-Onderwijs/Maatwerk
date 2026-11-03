@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Opdracht images in `opdrachten/images/<opdrachtId>/` (reference `main.js:237-395`, `ipc-api.md`
-//! 14-20). An opdracht refers to them as `image("images/<id>/<file>")`.
+//! Opdracht folders `opdrachten/<id>/` (ADR-0003 C14) and their images in `images/` (reference
+//! `main.js:237-395`, `ipc-api.md` 14-20). An opdracht refers to them as
+//! `image("images/<file>")`, relative to its own folder.
 
 use std::cmp::Ordering;
 use std::io::Cursor;
@@ -26,7 +27,7 @@ const THUMB_HEIGHT: u32 = 48;
 /// One image of an opdracht.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpdrachtImage {
-    /// Relative to `opdrachten/`: `images/<id>/<name>.<ext>`.
+    /// Relative to the opdracht folder: `images/<name>.<ext>`.
     pub file: String,
     /// The file name without extension.
     pub name: String,
@@ -83,9 +84,14 @@ pub fn check_opdracht_id(id: &str) -> Result<()> {
     }
 }
 
-fn images_dir(id: &str) -> Result<RelPath> {
+/// `opdrachten/<id>`.
+pub fn folder(id: &str) -> Result<RelPath> {
     check_opdracht_id(id)?;
-    RelPath::parse(&format!("opdrachten/images/{id}"))
+    RelPath::parse(&format!("opdrachten/{id}"))
+}
+
+fn images_dir(id: &str) -> Result<RelPath> {
+    folder(id)?.join("images")
 }
 
 /// Lower-case extension without the dot; `""` if none.
@@ -126,7 +132,7 @@ pub fn list(storage: &Storage, id: &str) -> Result<Vec<OpdrachtImage>> {
                     .and_then(|bytes| thumbnail_data_url(&bytes)),
             };
             OpdrachtImage {
-                file: format!("images/{id}/{f}"),
+                file: format!("images/{f}"),
                 name: stem_of(&f).to_owned(),
                 thumb,
             }
@@ -175,32 +181,61 @@ pub fn store(
     let file = format!("{name}.{ext}");
     storage.write_bytes(&dir.join(&file)?, bytes, Expect::Any)?;
     Ok(Stored::Saved {
-        file: format!("images/{id}/{file}"),
+        file: format!("images/{file}"),
         name,
     })
 }
 
-/// Copies every file of one opdracht's images to another (`opdracht:copyImages`). Folders inside
-/// are skipped (the reference threw on them).
-pub fn copy(storage: &Storage, from_id: &str, to_id: &str) -> Result<()> {
-    let from = images_dir(from_id)?;
-    let to = images_dir(to_id)?;
-    for f in storage.list_dir(&from, false)? {
-        if let Some(bytes) = storage.read_bytes(&from.join(&f)?)? {
-            storage.write_bytes(&to.join(&f)?, &bytes, Expect::Any)?;
+/// Every `opdrachten/<id>/opdracht.json` that parses and is not `null` (`readAllJson('opdrachten')`
+/// for the C14 layout). Folders without one, or with an unparsable one, are skipped.
+pub fn read_all(storage: &Storage) -> Result<Vec<serde_json::Value>> {
+    let mut out = Vec::new();
+    for id in storage.list_dir(&RelPath::parse("opdrachten")?, true)? {
+        if check_opdracht_id(&id).is_err() {
+            continue;
+        }
+        let rel = folder(&id)?.join("opdracht.json")?;
+        if let Ok(Some(v)) = storage.read_json(&rel)
+            && !v.is_null()
+        {
+            out.push(v);
         }
     }
-    Ok(())
+    Ok(out)
 }
 
-/// Deletes an opdracht's images (`opdracht:deleteImages`). Returns the folder if it is still
-/// there: OneDrive keeps an emptied folder locked while it syncs, so the caller retries it in
-/// the background with [`remove_dir_later`]. Folders inside are left alone.
-pub fn delete_all(storage: &Storage, id: &str) -> Result<Option<RelPath>> {
-    let dir = images_dir(id)?;
-    for f in storage.list_dir(&dir, false)? {
-        delete_retrying(storage, &dir.join(&f)?)?;
+/// Copies an opdracht folder (`opdracht:copyImages` grown to C14): its `.typ` files and images,
+/// not `opdracht.json` (the caller writes the copy's own). No paths need rewriting: images are
+/// relative to the folder. Other folders inside are skipped.
+pub fn copy(storage: &Storage, from_id: &str, to_id: &str) -> Result<()> {
+    for (from, to) in [
+        (folder(from_id)?, folder(to_id)?),
+        (images_dir(from_id)?, images_dir(to_id)?),
+    ] {
+        for f in storage.list_dir(&from, false)? {
+            if f == "opdracht.json" {
+                continue;
+            }
+            if let Some(bytes) = storage.read_bytes(&from.join(&f)?)? {
+                storage.write_bytes(&to.join(&f)?, &bytes, Expect::Any)?;
+            }
+        }
     }
+    crate::typst_svc::create_opdracht_folder(storage, to_id)
+}
+
+/// Deletes an opdracht folder with everything in it (`opdracht:deleteImages` grown to C14).
+/// Returns the folder if it is still there: OneDrive keeps an emptied folder locked while it
+/// syncs, so the caller retries it in the background with [`remove_dir_later`]. Unknown folders
+/// inside are left alone.
+pub fn delete_all(storage: &Storage, id: &str) -> Result<Option<RelPath>> {
+    let dir = folder(id)?;
+    for sub in [images_dir(id)?, dir.clone()] {
+        for f in storage.list_dir(&sub, false)? {
+            delete_retrying(storage, &sub.join(&f)?)?;
+        }
+    }
+    let _ = storage.remove_empty_dir(&images_dir(id)?);
     match storage.remove_empty_dir(&dir) {
         Ok(_) => Ok(None),
         Err(_) => Ok(Some(dir)),
@@ -230,6 +265,9 @@ pub fn remove_dir_later(storage: &Storage, dir: &RelPath) {
 
 fn remove_dir_retrying(storage: &Storage, dir: &RelPath, attempts: u32, interval: Duration) {
     for attempt in 1..=attempts {
+        if let Ok(images) = dir.join("images") {
+            let _ = storage.remove_empty_dir(&images);
+        }
         match storage.remove_empty_dir(dir) {
             Ok(_) => return,
             Err(e) if attempt == attempts => {
@@ -240,15 +278,21 @@ fn remove_dir_retrying(storage: &Storage, dir: &RelPath, attempts: u32, interval
     }
 }
 
-/// Removes empty folders in `opdrachten/images/` (`removeEmptyImageDirs`, at start). Only empty
-/// ones: a folder with images may belong to a colleague's opdracht whose JSON has not synced yet.
+/// Removes opdracht folders that are empty, or hold only an empty `images/` (left by a delete
+/// that OneDrive held up; `removeEmptyImageDirs`, at start). Only empty ones: a folder with files
+/// may belong to a colleague's opdracht whose JSON has not synced yet.
 pub fn remove_empty_dirs(storage: &Storage) -> Result<()> {
-    let root = RelPath::parse("opdrachten/images")?;
+    let root = RelPath::parse("opdrachten")?;
+    let is_empty = |dir: &RelPath| -> Result<bool> {
+        Ok(storage.list_dir(dir, false)?.is_empty() && storage.list_dir(dir, true)?.is_empty())
+    };
     for name in storage.list_dir(&root, true)? {
         let dir = root.join(&name)?;
-        let empty =
-            storage.list_dir(&dir, false)?.is_empty() && storage.list_dir(&dir, true)?.is_empty();
-        if empty {
+        let images = dir.join("images")?;
+        if is_empty(&images)? {
+            let _ = storage.remove_empty_dir(&images);
+        }
+        if is_empty(&dir)? {
             let _ = storage.remove_empty_dir(&dir);
         }
     }
@@ -369,7 +413,7 @@ mod tests {
         assert_eq!(
             saved,
             Stored::Saved {
-                file: "images/op_1/Remweg-auto.png".into(),
+                file: "images/Remweg-auto.png".into(),
                 name: "Remweg-auto".into()
             }
         );
@@ -384,15 +428,36 @@ mod tests {
         store(&s, "op_1", "b", "jpg", b"not a jpeg", false).unwrap();
         let images = list(&s, "op_1").unwrap();
         let names: Vec<&str> = images.iter().map(|i| i.file.as_str()).collect();
-        assert_eq!(names, ["images/op_1/b.jpg", "images/op_1/remweg-auto.svg"]);
+        assert_eq!(names, ["images/b.jpg", "images/remweg-auto.svg"]);
         assert_eq!(images[0].thumb, None, "undecodable");
         assert_eq!(images[1].thumb, None, "SVG");
 
+        // C14: the folder is copied, Typst files too, but not opdracht.json.
+        let typ = RelPath::parse("opdrachten/op_1/opdracht.typ").unwrap();
+        s.write_text(&typ, "// eigen", Expect::Any).unwrap();
+        let json = RelPath::parse("opdrachten/op_1/opdracht.json").unwrap();
+        s.write_json(&json, &serde_json::json!({"id": "op_1"}), Expect::Any)
+            .unwrap();
         copy(&s, "op_1", "op_2").unwrap();
         assert_eq!(list(&s, "op_2").unwrap().len(), 2);
+        let root = s.data_dir().root();
+        assert_eq!(
+            std::fs::read_to_string(root.join("opdrachten/op_2/opdracht.typ")).unwrap(),
+            "// eigen"
+        );
+        assert!(root.join("opdrachten/op_2/main.typ").is_file());
+        assert!(!root.join("opdrachten/op_2/opdracht.json").exists());
+        let all = read_all(&s).unwrap();
+        assert_eq!(
+            all,
+            [serde_json::json!({"id": "op_1"})].map(|mut v| {
+                crate::integrity::stamp(&mut v);
+                v
+            })
+        );
         assert_eq!(delete_all(&s, "op_1").unwrap(), None);
         assert!(list(&s, "op_1").unwrap().is_empty());
-        assert!(!s.data_dir().root().join("opdrachten/images/op_1").exists());
+        assert!(!root.join("opdrachten/op_1").exists());
         // Missing source and missing folder are fine.
         copy(&s, "nope", "op_3").unwrap();
         assert_eq!(delete_all(&s, "nope").unwrap(), None);
@@ -450,22 +515,27 @@ mod tests {
     fn remove_empty_dirs_keeps_folders_with_files() {
         let (_tmp, s) = storage();
         s.seed_initial_data().unwrap();
-        s.ensure_dir(&RelPath::parse("opdrachten/images/leeg").unwrap())
+        s.ensure_dir(&RelPath::parse("opdrachten/leeg/images").unwrap())
             .unwrap();
         store(&s, "vol", "a", "png", &png(2, 2), false).unwrap();
         remove_empty_dirs(&s).unwrap();
-        let root = s.data_dir().root().join("opdrachten/images");
+        let root = s.data_dir().root().join("opdrachten");
         assert!(!root.join("leeg").exists());
-        assert!(root.join("vol/a.png").exists());
+        assert!(root.join("vol/images/a.png").exists());
     }
 
     #[test]
     fn remove_dir_later_gives_up_after_the_attempts() {
         let (_tmp, s) = storage();
         store(&s, "vol", "a", "png", &png(2, 2), false).unwrap();
-        let dir = RelPath::parse("opdrachten/images/vol").unwrap();
+        let dir = RelPath::parse("opdrachten/vol").unwrap();
         remove_dir_retrying(&s, &dir, 2, Duration::from_millis(1));
-        assert!(s.data_dir().root().join("opdrachten/images/vol").exists());
+        assert!(
+            s.data_dir()
+                .root()
+                .join("opdrachten/vol/images/a.png")
+                .exists()
+        );
     }
 
     #[test]
