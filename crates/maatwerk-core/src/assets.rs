@@ -49,8 +49,9 @@ impl ProjectFile {
             ],
             ProjectFile::Main => &[
                 (1, "7b59d765923398c424fe61cc3fa0b3d76f967548"),
-                // 2: `setup_extra(body)` as a show rule (quirk T31), 0.3.1.
-                (2, "7f3be9b884783ce35bba035f0d9eea7fe537f005"),
+                // 2: `setup_extra(body)` as a show rule (quirk T31) and no cursor marker
+                // (review 8b n4), 0.3.1.
+                (2, "46159ead80b65e7da0800ddcc610b5fb2e02872b"),
             ],
         }
     }

@@ -42,7 +42,6 @@ data/opdrachten/<opdrachtId>/
 | ----------------- | ------------------------------------------------------------------- | --------------------- |
 | `mode`            | `"student"` (the opdracht) or `"answers"` (key)                     | `"student"`           |
 | `include_answers` | student mode: answers upside down at the bottom                     | `true`                |
-| `cursor`          | live preview: a link at `<__maatwerk_cursor>`                       | `false`               |
 | `header`          | `title`, `student`, `group`, `exam`, `observaties` (`icon`, `name`) | placeholder texts     |
 
 When the app prints an opdracht for a student it fills `header` with that student's name, group,

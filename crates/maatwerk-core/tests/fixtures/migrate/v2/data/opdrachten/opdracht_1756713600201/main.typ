@@ -12,8 +12,6 @@
   mode: "student",
   // Student mode: the answers upside down at the bottom.
   include_answers: true,
-  // Live preview: draw a `maatwerk-cursor:` link where `<__maatwerk_cursor>` is.
-  cursor: false,
   header: (
     title: "Titel",
     student: "Leerling Voornaam Achternaam",
@@ -32,17 +30,6 @@
 #let header = _placeholder.header + _input.at("header", default: (:))
 
 #show: setup
-#show: body => if data.cursor {
-  set page(foreground: context {
-    for m in query(<__maatwerk_cursor>).filter(m => m.location().page() == here().page()) {
-      let p = m.location().position()
-      place(top + left, dx: p.x, dy: p.y, link("maatwerk-cursor:")[#box(width: 1pt, height: 1em)])
-    }
-  })
-  body
-} else {
-  body
-}
 // `setup_extra(body)` is a show rule: its set and show rules apply to the whole opdracht. Files
 // made before main.typ 2 have `setup_extra()` without a parameter; that still works as before
 // (content only, its set rules end with it: quirk T31).

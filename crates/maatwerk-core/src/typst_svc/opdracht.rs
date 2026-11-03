@@ -81,9 +81,6 @@ pub struct OpdrachtInputs {
     /// Student mode: print the answers upside down at the bottom (`includeAnswers`).
     #[serde(deserialize_with = "or_true")]
     pub include_answers: bool,
-    /// Draw a `maatwerk-cursor:` link at `<__maatwerk_cursor>` (live preview).
-    #[serde(deserialize_with = "or_default")]
-    pub cursor: bool,
     #[serde(deserialize_with = "or_default")]
     pub header: OpdrachtHeader,
 }
@@ -93,7 +90,6 @@ impl Default for OpdrachtInputs {
         OpdrachtInputs {
             mode: Mode::Student,
             include_answers: true,
-            cursor: false,
             header: OpdrachtHeader::default(),
         }
     }
@@ -101,9 +97,8 @@ impl Default for OpdrachtInputs {
 
 impl OpdrachtInputs {
     /// Editor preview (paths B and C): placeholder header, student mode, answers included.
-    pub fn preview(title: impl Into<String>, cursor: bool) -> OpdrachtInputs {
+    pub fn preview(title: impl Into<String>) -> OpdrachtInputs {
         OpdrachtInputs {
-            cursor,
             header: OpdrachtHeader::placeholder(title),
             ..OpdrachtInputs::default()
         }

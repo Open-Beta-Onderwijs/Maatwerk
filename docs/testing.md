@@ -184,19 +184,19 @@ Color Emoji (`main-process.mjs`, `EMOJI_FONT`; `_reference/` stays untouched), a
 rendered with `--ignore-system-fonts`, so they do not depend on the machine (quirk T2). PNGs use 30 ppi instead of the 110-144 ppi in typst-contract.md section 10, to keep the
 repo small (size budget); Step 5 renders its own PNGs at the same 30 ppi for the comparison.
 
-| #   | Candidate                                           | Golden case(s)                                                                 |
-| --- | --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| 1   | Base template, placeholder header, student mode     | `opdracht-base-template`, `opdracht-placeholder-pdf`                           |
-| 2   | Base template, answers mode                         | `opdracht-base-template-answers`, `opdracht-grid-answers`                      |
-| 3   | Header text injection, emoji observaties            | `opdracht-lib-features`, `opdracht-images-student`, `opdracht-grid-no-answers` |
-| 4   | Empty observaties (quirk T19)                       | `opdracht-grid-no-answers`                                                     |
-| 5   | lib.typ features, images (PNG, JPG, SVG)            | `opdracht-lib-features`, `opdracht-images-student`, `opdracht-zero-vragen`     |
-| 6   | SVG preview, cursor marker, 10+ pages               | `svg-preview`, `svg-preview-cursor`, `svg-preview-many-pages`                  |
-| 7   | Batch duplex, failing job                           | `batch-duplex`, `batch-answer-key`, `batch-error`                              |
-| 8   | Rapport, one student                                | `rapport-one-student`                                                          |
-| 9   | Rapport, class, override, markup in leeradvies      | `rapport-valid` (11 students, histogram, long and Typst-special names)         |
-| 10  | Rapport edge cases                                  | `rapport-no-watermark` (T4), `rapport-tiny` (T26), `rapport-markup` (T27)      |
-| 11  | Diagnostics name the opdracht file, not `_preview_` | `svg-preview-error`, `batch-error`                                             |
+| #   | Candidate                                                           | Golden case(s)                                                                 |
+| --- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1   | Base template, placeholder header, student mode                     | `opdracht-base-template`, `opdracht-placeholder-pdf`                           |
+| 2   | Base template, answers mode                                         | `opdracht-base-template-answers`, `opdracht-grid-answers`                      |
+| 3   | Header text injection, emoji observaties                            | `opdracht-lib-features`, `opdracht-images-student`, `opdracht-grid-no-answers` |
+| 4   | Empty observaties (quirk T19)                                       | `opdracht-grid-no-answers`                                                     |
+| 5   | lib.typ features, images (PNG, JPG, SVG)                            | `opdracht-lib-features`, `opdracht-images-student`, `opdracht-zero-vragen`     |
+| 6   | SVG preview, cursor marker (none drawn since main.typ 2), 10+ pages | `svg-preview`, `svg-preview-cursor`, `svg-preview-many-pages`                  |
+| 7   | Batch duplex, failing job                                           | `batch-duplex`, `batch-answer-key`, `batch-error`                              |
+| 8   | Rapport, one student                                                | `rapport-one-student`                                                          |
+| 9   | Rapport, class, override, markup in leeradvies                      | `rapport-valid` (11 students, histogram, long and Typst-special names)         |
+| 10  | Rapport edge cases                                                  | `rapport-no-watermark` (T4), `rapport-tiny` (T26), `rapport-markup` (T27)      |
+| 11  | Diagnostics name the opdracht file, not `_preview_`                 | `svg-preview-error`, `batch-error`                                             |
 
 Multi-page opdrachten: `opdracht-long-odd` (3 pages), `batch-duplex` (long-even 4 pages).
 

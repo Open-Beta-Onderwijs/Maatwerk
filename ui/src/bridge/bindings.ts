@@ -134,7 +134,8 @@ export const commands = {
 	renderRapportPdf: (examId: string, students: Value, examInfo: Value) => typedError<RenderedPdf, CommandError>(__TAURI_INVOKE("render_rapport_pdf", { examId, students, examInfo })),
 	/**
 	 *  The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
-	 *  with the placeholder header and the cursor marker, one SVG per page.
+	 *  with the placeholder header, one SVG per page. (The old cursor marker is gone since
+	 *  `maatwerk-main 2`; the editor uses `editor_jump_from_cursor`.)
 	 */
 	renderAssignmentSvg: (opdrachtId: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { opdrachtId, title, previewContent })),
 	/**  Compiles every job and merges them in job order; reports `assignment:progress`. */

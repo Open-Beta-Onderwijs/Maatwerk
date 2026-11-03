@@ -123,7 +123,7 @@ opdrachten/<id>/
 - **`main.typ` and `lib.typ` are editable** by the teacher in the editor, with a clear warning
   ("Dit bestand bepaalt de opmaak van de opdracht ...") and a **"Herstel standaardversie"** button
   that restores the bundled version (with confirmation; the old file goes to the undo history).
-- **Runtime data** (student header, mode student/antwoorden, cursor marker for the editor) is passed
+- **Runtime data** (student header, mode student/antwoorden) is passed
   as JSON through `sys.inputs` (`maatwerk-data`). `main.typ` falls back to a placeholder header and
   student mode when it is missing, so `typst compile main.typ` works inside the folder with the
   plain Typst CLI.
@@ -304,10 +304,10 @@ These record what was built; none changes a decided behaviour.
   snapshot settings; user, 2026-11-01).
 - **No cursor marker in the live session (review 8a M1).** The old preview inserted
   `<__maatwerk_cursor>` into the buffer and compiled again without it when that failed. The live
-  session compiles the buffer exactly as typed (preview inputs with `cursor: false`), so every
-  diagnostic position matches the CodeMirror document and no marker error can hide a good
-  preview. Source <-> preview sync moves to `typst-ide` jumps on `EditorSession::document()`
-  (PLAN Step 8b). `render_assignment_svg` keeps the marker for the editor until 8b switches.
+  session compiles the buffer exactly as typed, so every diagnostic position matches the
+  CodeMirror document and no marker error can hide a good preview. Source <-> preview sync uses
+  `typst-ide` jumps on `EditorSession::document()` (Step 8b). Since `maatwerk-main 2` (0.3.1,
+  review 8b n4) `main.typ` has no marker code and `OpdrachtInputs` no `cursor` field.
 - **No compile debounce (user, 2026-11-01).** An incremental compile takes 1-2 ms, so
   `DEFAULT_DEBOUNCE` is zero: the coordinator compiles as soon as the compile thread is free, and
   edits that arrive meanwhile are merged into the next compile. The editor UI shows _new_ errors

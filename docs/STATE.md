@@ -16,6 +16,8 @@ The cutover (0.3.x on real data) is the user's call; see "Open questions".
    not rewritten). New starter template, examples and AI context use `setup_extra(body) = body`.
    Unmodified `main.typ` 1 copies update silently (ProjectFile release row 2). Migration fixture
    `tests/fixtures/migrate/v2` updated (it holds the bundled main.typ and starter file).
+   `main.typ` 2 also drops the leftover cursor-marker code (review 8b n4, user 2026-11-03):
+   no `cursor` in `OpdrachtInputs`; `svg-preview-many-pages` golden tolerance 1 grey level.
 3. **ADR-0009 accepted: option D**, an in-app assistant that runs the teacher's own AI CLI
    (Claude Code, Codex, Gemini, ...; detected on PATH, presets plus per-teacher override) in a
    temp copy of the opdracht folder, diff/accept in the editor. Every teacher, provider of their

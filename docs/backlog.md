@@ -283,8 +283,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   standaardversie" since 8b); move both to the app's own dialog (Step 10).
 - **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
   een opgave" only before the first opgave.
-- **n4:** the bundled `main.typ` still has the cursor-marker code; remove it with `maatwerk-main 2`
-  and drop the marker from `render_assignment_svg` (no caller left in the editor).
+- ~~**n4:** the bundled `main.typ` still has the cursor-marker code~~ Done in `maatwerk-main 2`
+  (0.3.1): no marker in `main.typ`, no `cursor` in `OpdrachtInputs` or `render_assignment_svg`.
+  The command itself has no caller in the editor any more; remove it in phase 2.
 - **n6:** while two abandoned compiles still run, the editor waits silently; say so.
 - **n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.
 - **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do

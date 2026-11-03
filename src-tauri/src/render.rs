@@ -147,7 +147,8 @@ pub async fn render_rapport_pdf(
 }
 
 /// The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
-/// with the placeholder header and the cursor marker, one SVG per page.
+/// with the placeholder header, one SVG per page. (The old cursor marker is gone since
+/// `maatwerk-main 2`; the editor uses `editor_jump_from_cursor`.)
 #[tauri::command]
 #[specta::specta]
 pub async fn render_assignment_svg(
@@ -164,7 +165,7 @@ pub async fn render_assignment_svg(
         let compiled = typst_svc::render_assignment_svg_pages(
             c.fonts(),
             project,
-            &OpdrachtInputs::preview(title, true),
+            &OpdrachtInputs::preview(title),
             local_now(),
         )
         .map_err(|e| CommandError::typst(e.to_text()))?;
@@ -206,7 +207,6 @@ pub async fn render_assignment_batch(
                         _ => Mode::Student,
                     },
                     include_answers,
-                    cursor: false,
                     header: header(job.header.clone())?,
                 },
             });

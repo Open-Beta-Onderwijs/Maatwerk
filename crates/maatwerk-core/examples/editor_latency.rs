@@ -33,7 +33,7 @@ fn main() {
     let source = std::fs::read_to_string(fixtures.join("opdrachten").join(&file)).expect("file");
     let at = source.find("Alinea 2.").expect("a second paragraph") + "Alinea 2.".len();
     let opdracht = RelPath::parse("opdracht.typ").unwrap();
-    let inputs = OpdrachtInputs::preview("Opdracht", true);
+    let inputs = OpdrachtInputs::preview("Opdracht");
     let project = TypstProject::opdracht_v1(&dir, &file).expect("fixture opdracht");
 
     let start = Instant::now();

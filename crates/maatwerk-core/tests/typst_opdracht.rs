@@ -68,9 +68,9 @@ fn golden_job(case: &Value, dir: &DataDir) -> (TypstProject, OpdrachtInputs) {
         // Path B: placeholder header, no cursor.
         "app:renderAssignmentPdf" => (
             TypstProject::opdracht_v1(dir, str_arg(0)).unwrap(),
-            OpdrachtInputs::preview(str_arg(1), false),
+            OpdrachtInputs::preview(str_arg(1)),
         ),
-        // Path C: the editor buffer instead of the file, with the cursor foreground.
+        // Path C: the editor buffer instead of the file (the reference also drew a cursor link).
         "app:renderAssignmentSvg" => (
             TypstProject::opdracht_v1(dir, str_arg(0))
                 .unwrap()
@@ -78,7 +78,7 @@ fn golden_job(case: &Value, dir: &DataDir) -> (TypstProject, OpdrachtInputs) {
                     &RelPath::parse("opdracht.typ").unwrap(),
                     renamed_marker(str_arg(2)),
                 ),
-            OpdrachtInputs::preview(str_arg(1), true),
+            OpdrachtInputs::preview(str_arg(1)),
         ),
         "app:renderAssignmentBatch" => {
             let jobs = args[0].as_array().unwrap();
@@ -94,7 +94,6 @@ fn batch_job(job: &Value, opts: &Value, dir: &DataDir) -> (TypstProject, Opdrach
     let inputs = OpdrachtInputs {
         mode: serde_json::from_value(job["mode"].clone()).unwrap(),
         include_answers: opts["includeAnswers"].as_bool().unwrap_or(true),
-        cursor: false,
         header: serde_json::from_value(job["header"].clone()).unwrap(),
     };
     let project = TypstProject::opdracht_v1(dir, job["typFile"].as_str().unwrap()).unwrap();
@@ -240,21 +239,12 @@ fn svg_golden(id: &str) {
             )),
             "{id} p{n}: viewBox"
         );
-        // As the golden counted them: `<a ...>` tags with `href="rtti-cursor:"` (renamed).
-        let anchors = svg
-            .split("<a ")
-            .skip(1)
-            .filter(|tag| {
-                tag.split('>')
-                    .next()
-                    .unwrap()
-                    .contains("href=\"maatwerk-cursor:\"")
-            })
-            .count();
-        assert_eq!(
-            anchors,
-            want["cursorLinks"].as_u64().unwrap() as usize,
-            "{id} p{n}: cursor links"
+        // The golden counts the reference's cursor links (`want["cursorLinks"]`). `main.typ` 2
+        // dropped the marker (review 8b n4; the editor jumps with `editor_jump_from_cursor`), so
+        // the `<__maatwerk_cursor>` metadata in the source draws nothing any more.
+        assert!(
+            !svg.contains("maatwerk-cursor:"),
+            "{id} p{n}: no cursor links"
         );
         assert!(!svg.contains("rtti-cursor:"), "{id} p{n}");
         assert_eq!(
@@ -396,7 +386,7 @@ fn main_typ_without_inputs_uses_the_placeholder_header_and_student_mode() {
     let plain = compile_document(&project().world(fonts(), fixed_now()))
         .unwrap()
         .output;
-    let with = compile(project(), &OpdrachtInputs::preview("Titel", false))
+    let with = compile(project(), &OpdrachtInputs::preview("Titel"))
         .unwrap()
         .output;
     assert_eq!(plain.pages.len(), with.pages.len());
@@ -520,7 +510,7 @@ fn a_folder_project_compiles_main_typ_from_disk() {
     std::fs::write(root.join("lib.typ"), assets::LIB_TYP).unwrap();
     std::fs::write(root.join("opdracht.typ"), assets::BASE_ASSIGNMENT_TYP).unwrap();
     let project = TypstProject::folder(root, &RelPath::parse("main.typ").unwrap());
-    let doc = compile(project, &OpdrachtInputs::preview("Remweg", false))
+    let doc = compile(project, &OpdrachtInputs::preview("Remweg"))
         .unwrap()
         .output;
     // TC 10.1: the base template is 2 pages in student mode.
