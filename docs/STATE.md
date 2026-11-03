@@ -314,12 +314,13 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 - Push version tags (`v0.2.0-parity`, `v0.3.1`) to GitHub? So far only `step-*` tags are there.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
-- **B24 repair (Step 10):** if the real copy holds exams with a repeated question id, how to
-  repair them (which question the shared scores belong to cannot be known automatically).
-- **Perf at 4x (Step 10):** bisect the 4x slowdown before the cutover, or accept on the 1x
-  numbers plus M-PERF-1/2 on a school laptop.
-- **Release version for the cutover:** `0.3.1` is out; the plan names `0.3.0` for the cutover
-  (`docs/release.md`); suggest `0.4.0` or `0.3.2`.
+- **B24 repair (Step 10):** the user expects no duplicates in the real data (2026-11-03); no
+  repair planned.
+- **Perf at 4x (Step 10):** investigated 2026-11-03: the `step-07c` exe is as slow as `step-10`
+  on battery, so likely the power state, not the code (`docs/perf.md`). User to decide after an
+  optional re-run on mains power; then bump to `0.3.2` (user, 2026-11-03).
+- **Release version:** `0.3.2`, bumped after the perf decision (user, 2026-11-03). Pushing
+  `main` and the tags waits for that too.
 
 ## How to resume
 

@@ -269,9 +269,21 @@ exe built from `step/10-cutover-readiness` (`4466a7f` + docs), same machine as S
 
 Long tasks: 1x one (57 ms); 4x 154-161, 16.5 s in total, the longest 411-443 ms.
 
-**Budget (< 100 ms):** met at 1x everywhere. **At 4x it is not met** and the medians are 2-3x
-the Step 7c numbers on the same fixture. Not explained yet: Step 10 adds only two window
-listeners to the UI; the cause is somewhere between `step-07c` and now (Steps 8-9, 0.3.1) or in
-the machine (the first run came right after a release build). Open for the user: bisect
-`step-07c` vs `step-10` exes at 4x before the cutover, or accept on the strength of the 1x
-numbers and M-PERF-1/2 on a real school laptop.
+**Budget (< 100 ms):** met at 1x everywhere; at 4x not met in these runs.
+
+**Cause investigated (2026-11-03): not a regression.** The `step-07c` exe, built from its tag
+in a worktree, measured alternately with the `step-10` exe on the same fixture with the same
+script (unchanged since 7c), 4x, two runs each:
+
+| Exe      | modal:scores median | scores:dom median | tab:leerlingen median | long tasks total |
+| -------- | ------------------- | ----------------- | --------------------- | ---------------- |
+| step-07c | 122 / 131           | 51 / 49           | 124 / 110             | 17.3 / 17.7 s    |
+| step-10  | 129 / 136           | 53 / 50           | 113 / 120             | 18.1 / 17.9 s    |
+
+Both are equally slow, so the difference with the Step 7c table is the environment, not the
+code: the laptop ran **on battery** (Win32_Battery status "discharging", 51 %, power plan
+Balanced) during all Step 10 runs; the Step 7c baseline was presumably taken on mains power.
+The JS of the measured screens (scores, store, app, score grid) did not change since 7c.
+WebView2 runtime here: 156.0.4314.58. To confirm: repeat on mains power (expected: back to the
+Step 7c numbers). For the cutover, M-PERF-1/2 on a school laptop (also on battery) is the
+relevant check.
