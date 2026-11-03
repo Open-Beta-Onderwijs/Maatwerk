@@ -2,7 +2,7 @@
 // met punten en een antwoord.
 #import "lib.typ": *
 
-#let setup_extra() = []
+#let setup_extra(body) = body
 
 #let render_uitleg() = [
   = Snelheid

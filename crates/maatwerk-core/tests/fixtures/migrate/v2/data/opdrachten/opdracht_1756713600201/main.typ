@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// maatwerk-main 1
+// maatwerk-main 2
 // main.typ: entry point of an opdracht (ADR-0002 5a). It lays out the teacher's opdracht.typ with
 // lib.typ, as the generated wrapper of the old app did. Maatwerk passes the student header and
 // the mode as JSON in `sys.inputs` ("maatwerk-data"). Without it (plain `typst compile main.typ`
@@ -43,7 +43,11 @@
 } else {
   body
 }
-#setup_extra()
+// `setup_extra(body)` is a show rule: its set and show rules apply to the whole opdracht. Files
+// made before main.typ 2 have `setup_extra()` without a parameter; that still works as before
+// (content only, its set rules end with it: quirk T31).
+#let _setup_extra_is_rule = read("opdracht.typ").contains(regex("(?m)^\\s*#let\\s+setup_extra\\s*\\(\\s*[^\\s)]"))
+#show: body => if _setup_extra_is_rule { setup_extra(body) } else { setup_extra(); body }
 
 #if data.mode == "answers" [
   #antwoorden_header(title: header.title)

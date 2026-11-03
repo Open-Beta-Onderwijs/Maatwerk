@@ -2,7 +2,7 @@
 // grid. Vragen mogen overal in een opgave staan, ook in een grid.
 #import "lib.typ": *
 
-#let setup_extra() = []
+#let setup_extra(body) = body
 
 #let render_uitleg() = [
   = Fotosynthese

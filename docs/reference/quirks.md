@@ -716,16 +716,19 @@ Paths in this section are relative to `_reference/renderer/`.
 ### T31. Set rules in `setup_extra()` do not reach the opdracht
 
 - Where: `main.js:642-655` (generated wrapper) places `#setup_extra()` as content; `main.typ`
-  (`opdracht-main.typ`) keeps that. `base_assignment.typ` says "Extra aanpassingen bovenop setup
+  (`opdracht-main.typ`) 1 kept that. `base_assignment.typ` says "Extra aanpassingen bovenop setup
   — voeg hier inhoud of stijlen toe".
 - Evidence (Step 9 review M1): a `#set` rule inside the content block that `setup_extra()`
   returns ends with that block, so it does not apply to `render_uitleg()` or `render_opgaven()`.
   Content in it is shown (between the header and the uitleg).
-- **Port: unchanged.** Making it a show rule (`#show: setup_extra` or similar) changes the
-  opdracht format and the output of existing opdrachten: needs the user (PLAN 2.6). The authoring
-  docs (`docs/ai-context/assignment-authoring.md`, `docs/assignment-format.md`) say to put rules
-  at the top of `render_uitleg()` / `render_opgaven()` instead. The template's comment is left
-  as it is (it is the start of every new teacher file); open question for the user.
+- **Port: fixed in 0.3.1 (user decision 2026-11-03).** `main.typ` 2 applies
+  `setup_extra(body)` as a show rule, so its set and show rules reach the whole opdracht
+  (uitleg, opgaven, answers). New opdrachten start with `#let setup_extra(body) = body`
+  (`base_assignment.typ`, comment rewritten). A file with the old `setup_extra()` (no parameter,
+  detected by a regex on `opdracht.typ`) keeps the old behaviour: content placed before the
+  header, set rules without effect. Old files are not rewritten; a teacher adds `body` to opt in.
+  Tests: `setup_extra_with_body_applies_its_set_rules_to_the_whole_opdracht`,
+  `setup_extra_without_body_keeps_the_old_behaviour`.
 
 ## U. UI
 

@@ -2,7 +2,7 @@
 // verwijzing ernaar met @label ("Figuur 1").
 #import "lib.typ": *
 
-#let setup_extra() = []
+#let setup_extra(body) = body
 
 #let render_uitleg() = [
   = Een eenvoudige stroomkring

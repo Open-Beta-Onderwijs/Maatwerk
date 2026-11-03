@@ -27,8 +27,8 @@ an opdracht: the student header is filled in by the app when it prints.
 ```typst
 #import "lib.typ": *
 
-// Content shown between the header and the uitleg. Usually empty. (Not for set rules.)
-#let setup_extra() = []
+// Set and show rules for the whole opdracht go before `body`. Usually just `body`.
+#let setup_extra(body) = body
 
 // The explanation: theory, examples, formulas, context.
 #let render_uitleg() = [
@@ -45,7 +45,9 @@ an opdracht: the student header is filled in by the app when it prints.
 ]
 ```
 
-All three functions must exist, with these names, and return content. `main.typ` prints the
+All three functions must exist, with these names. `setup_extra(body)` is applied as a show rule
+to the whole opdracht and must return `body` (styled); the other two take no parameters and return
+content. `main.typ` prints the
 header, then `render_uitleg()`, a page break, then `render_opgaven()`. Do not add a page break
 between them yourself, and do not call `setup`, the header or answer functions.
 
@@ -104,10 +106,19 @@ Import them with exactly these versions. Any other package fails.
    `"images/<name>"`. No URLs, no paths outside the folder.
 9. **Fonts:** do not set fonts. Emoji work (Noto Color Emoji is embedded).
 10. **No new helpers in lib.typ.** Small local helpers go in `opdracht.typ` with `#let`.
-11. **Set rules** (e.g. `#set math.equation(numbering: "(1)")`) go at the top of
-    `render_uitleg()` and of `render_opgaven()`: a rule applies only inside the block it is in.
-    A set rule in `setup_extra()` does nothing; `setup_extra()` only places content and must
-    return content (`[]` when empty).
+11. **Set rules** for the whole opdracht (e.g. numbered equations) go in `setup_extra`, before
+    `body`:
+
+    ```typst
+    #let setup_extra(body) = {
+      set math.equation(numbering: "(1)")
+      body
+    }
+    ```
+
+    A rule at the top of `render_uitleg()` or `render_opgaven()` applies only inside that block.
+    Older opdrachten have `#let setup_extra() = []` (no parameter): there a set rule does nothing
+    (it only places content). Change it to the form above to add rules.
 
 ## 5. Checks (what the editor shows, what `check` reports)
 
@@ -163,7 +174,7 @@ Repeat edit, check, fix until `ok` is true and `diagnostics` and `checks` are em
 ```typst
 #import "lib.typ": *
 
-#let setup_extra() = []
+#let setup_extra(body) = body
 
 #let render_uitleg() = [
   = Snelheid

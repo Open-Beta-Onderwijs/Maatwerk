@@ -2,7 +2,7 @@
 // een decimale komma krijgen, en een vraag die naar de tabel verwijst.
 #import "lib.typ": *
 
-#let setup_extra() = []
+#let setup_extra(body) = body
 
 #let render_uitleg() = [
   = Dichtheid

@@ -15,7 +15,8 @@ pub const OPDRACHT_MAIN_TYP: &str = include_str!("../assets/templates/opdracht-m
 /// The opdracht library (`include/templates/lib.typ`), with markers renamed to `__maatwerk_*`.
 pub const LIB_TYP: &str = include_str!("../assets/templates/lib.typ");
 
-/// Starting point for a new opdracht (`include/templates/base_assignment.typ`), unchanged.
+/// Starting point for a new opdracht (`include/templates/base_assignment.typ`); since 0.3.1 with
+/// `setup_extra(body)` as a show rule (quirk T31).
 pub const BASE_ASSIGNMENT_TYP: &str = include_str!("../assets/templates/base_assignment.typ");
 
 /// A bundled file that every opdracht folder has its own copy of (ADR-0002 5a). Teachers may
@@ -46,7 +47,11 @@ impl ProjectFile {
                 (1, "e340d281c7d275c2df798a12adf916adf3634b57"),
                 (2, "47a3c6689cf3fdab4636f91758240084ab002d96"),
             ],
-            ProjectFile::Main => &[(1, "7b59d765923398c424fe61cc3fa0b3d76f967548")],
+            ProjectFile::Main => &[
+                (1, "7b59d765923398c424fe61cc3fa0b3d76f967548"),
+                // 2: `setup_extra(body)` as a show rule (quirk T31), 0.3.1.
+                (2, "7f3be9b884783ce35bba035f0d9eea7fe537f005"),
+            ],
         }
     }
 

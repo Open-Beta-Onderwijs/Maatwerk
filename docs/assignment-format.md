@@ -24,7 +24,7 @@ data/opdrachten/<opdrachtId>/
   downloaded: `@preview/zero:0.7.1`, `@preview/cetz:0.3.4`, `@preview/oxifmt:0.2.1`,
   `@preview/unify:0.8.0`. Any other package is a compile error.
 - **`main.typ` and `lib.typ`** start as the bundled versions (`maatwerk-core/assets/templates/`,
-  `opdracht-main.typ` and `lib.typ`). Each has a version line (`// maatwerk-main 1`,
+  `opdracht-main.typ` and `lib.typ`). Each has a version line (`// maatwerk-main 2`,
   `// maatwerk-lib 2`). An unmodified old copy is updated silently when the editor opens the
   opdracht; a changed copy is never overwritten (the editor offers "Bekijk verschillen" and
   "Herstel standaardversie").
@@ -57,12 +57,16 @@ numbers exist) and prints `antwoorden_lijst()`.
 ```typst
 #import "lib.typ": *
 
-#let setup_extra() = []          // content between the header and the uitleg (quirk T31)
+#let setup_extra(body) = body    // show rule: set/show rules for the whole opdracht, before body
 #let render_uitleg() = [ ... ]   // explanation: theory, examples, formulas
 #let render_opgaven() = [ ... ]  // exercises: #opgave[...] blocks with #vraag(...)[...]
 ```
 
-The three functions must exist (main.typ imports them). The `lib.typ` API, the conventions and
+The three functions must exist (main.typ imports them). `main.typ` 2 (0.3.1) applies
+`setup_extra(body)` as a show rule. Older files have `#let setup_extra() = []` without a
+parameter; `main.typ` sees that in the source (a regex on `opdracht.typ`) and places its content
+before the header as before, where set rules have no effect (quirk T31). Maatwerk does not rewrite
+old files. The `lib.typ` API, the conventions and
 the checks are in [`ai-context/assignment-authoring.md`](ai-context/assignment-authoring.md),
 sections 3 to 5; examples that compile cleanly are in
 [`assignment-examples/`](assignment-examples/) (a test checks them).

@@ -319,6 +319,50 @@ fn validate(root: &Value, schema: &Value, value: &Value, at: &str) {
     }
 }
 
+fn both_modes() -> [RenderOptions; 2] {
+    [
+        RenderOptions::default(),
+        RenderOptions {
+            mode: Mode::Answers,
+            include_answers: true,
+        },
+    ]
+}
+
+/// Quirk T31, fixed in `maatwerk-main 2`: `setup_extra(body)` is a show rule, so its set rules
+/// reach the uitleg, the opgaven and the answers.
+#[test]
+fn setup_extra_with_body_applies_its_set_rules_to_the_whole_opdracht() {
+    let tmp = opdracht(Some(
+        "#import \"lib.typ\": *\n\
+         #let setup_extra(body) = {\n  set text(lang: \"de\")\n  body\n}\n\
+         #let render_uitleg() = [#context assert(text.lang == \"de\", message: \"uitleg: \" + text.lang)]\n\
+         #let render_opgaven() = [#opgave[#vraag(punten: 1, antwoord: [#context assert(text.lang == \"de\", message: \"antwoord\")])[V]]]\n",
+    ));
+    for options in both_modes() {
+        let report = check_dir(tmp.path(), options);
+        assert!(report.ok, "{:#?}", report.diagnostics);
+        assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    }
+}
+
+/// Opdrachten made before `maatwerk-main 2` keep `setup_extra()` without a parameter: it still
+/// compiles, and (as before, quirk T31) its set rules stay inside it.
+#[test]
+fn setup_extra_without_body_keeps_the_old_behaviour() {
+    let tmp = opdracht(Some(
+        "#import \"lib.typ\": *\n\
+         #let setup_extra() = [#set text(lang: \"de\")\nEXTRA]\n\
+         #let render_uitleg() = [#context assert(text.lang == \"nl\", message: \"uitleg: \" + text.lang)]\n\
+         #let render_opgaven() = [#opgave[#vraag(punten: 1, antwoord: [A])[V]]]\n",
+    ));
+    for options in both_modes() {
+        let report = check_dir(tmp.path(), options);
+        assert!(report.ok, "{:#?}", report.diagnostics);
+        assert!(report.diagnostics.is_empty(), "{:#?}", report.diagnostics);
+    }
+}
+
 /// Every example in `docs/assignment-examples/` (the AI context points at them) compiles without
 /// errors, warnings or checks, in both modes.
 #[test]

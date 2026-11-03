@@ -298,16 +298,13 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 - **m3 No time limit in headless `assignment check`/`render`.** A runaway loop in an opdracht
   hangs the CLI until Ctrl+C. Reuse the editor's watchdog (`LiveEditor`) or run the compile on a
-  thread with a deadline before an in-app assistant calls the API (ADR-0009 constraint 4).
+  thread with a deadline before the in-app assistant uses it (ADR-0009 constraint 4, option D).
 - **m7 `ui/e2e/editor.spec.ts:66-75` depends on wall-clock timing** (the 500 ms error delay of
   commit 294161a). Use Playwright's `page.clock` or a test hook for `ERROR_DELAY_MS`.
 - **n6 `export_lib`:** an unreadable existing file counts as no clash, writes are not atomic, a
   junction inside `<dir>` is followed. Low risk (the user picks the folder).
 - **n9** `el()` helper duplicated in `ui/src/screens/migration.ts` and `gegevens.ts`; share one in
   the Step 10 UI refactor.
-- **Quirk T31 (`setup_extra()` set rules have no effect)**: ask the user whether `main.typ` should
-  apply it as a show rule (format change, changes existing output) and whether the comment in
-  `base_assignment.typ` should change.
 
 ## Other
 
