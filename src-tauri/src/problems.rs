@@ -57,7 +57,7 @@ static UI_ERRORS: AtomicUsize = AtomicUsize::new(0);
 /// sends the error text and stack only, no data.
 #[tauri::command]
 #[specta::specta]
-pub fn log_ui_error(message: String) {
+pub async fn log_ui_error(message: String) {
     if let Some(line) = ui_error_line(&message, UI_ERRORS.fetch_add(1, Ordering::Relaxed)) {
         tracing::error!(target: "maatwerk::ui", "{line}");
     }
@@ -71,6 +71,8 @@ fn ui_error_line(message: &str, count: usize) -> Option<String> {
             if line.len() < message.len() {
                 line.push_str(" [...]");
             }
+            // One log line per error: a stack's newlines cannot fake other lines (review 10 n3).
+            let line = line.replace('\r', "").replace('\n', " | ");
             Some(line)
         }
         n if n == MAX_UI_ERRORS => Some(format!(
@@ -87,6 +89,10 @@ mod tests {
     #[test]
     fn ui_errors_are_cut_and_capped() {
         assert_eq!(ui_error_line("boom", 0).as_deref(), Some("boom"));
+        assert_eq!(
+            ui_error_line("a\r\n  at f", 0).as_deref(),
+            Some("a |   at f")
+        );
         let long = "é".repeat(MAX_UI_ERROR_CHARS + 10);
         let line = ui_error_line(&long, 1).unwrap();
         assert!(line.ends_with(" [...]"));

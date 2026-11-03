@@ -2,7 +2,7 @@
 
 //! Compiled PDFs (ADR-0002 section 9). They live in a local cache folder under an output ID, which
 //! the UI gets instead of a path; the viewer loads them through the app's URI scheme. Printing
-//! copies one into `rapporten/<schooljaar>/` in the data folder under a descriptive name (C15).
+//! copies one into `rapporten/<schooljaar>/` next to the data folder (C18) under a descriptive name (C15).
 
 use std::fs;
 use std::io::{self, Write as _};

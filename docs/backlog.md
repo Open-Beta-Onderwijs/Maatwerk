@@ -314,3 +314,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Upgrade to Tauri 3 once 3.0 is stable** (decided 2026-10-25, Step 0). On 2026-10-25 Tauri was
   at `3.0.0-alpha.5` (needs Rust 1.95), plugins at alpha, `tauri-specta` without Tauri 3 support.
   Revisit around Step 10; the thin `src-tauri` layer keeps the upgrade small.
+
+## From Step 10
+
+- **Perf at 4x (review 10 M1):** the `school` fixture at 4x CPU is 2-3x slower than in Step 7c
+  (score modal median ~130 ms vs 48); 1x within budget. Bisect `step-07c` vs `step-10` exes.
+- **m3 (rest):** an app closed during the 45 s snapshot settle leaves its claim for 30 min
+  (`CLAIM_STALE`), so that day's snapshot may be skipped. Remove our claim on `shutdown` when no
+  zip has started.
+- **m6:** exam delete is a blind delete after a stale scores check (reference behaviour): CAS on
+  `delete_file` and re-check scores after the confirm.
+- **n1:** `CoreSlot`: a `closing` flag so the snapshot thread does not start after `Exit`; a
+  panic inside `Core::failed` would leave the slot empty.
+- **n2:** an error before `legacy/globals` loads makes the handler import `app.js` early.
+- **n7:** the sandbox test passes on any failure; assert the diagnostic is "not found/denied".
+- Other nits in `docs/reviews/step-10.md`.

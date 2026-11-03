@@ -243,3 +243,17 @@ teachers switch:
 
 m1 to m4 are cheap and lower the risk of noisy logs, missed sync events and stale snapshot claims
 in the first weeks. Fix them now or put them in the backlog with that reasoning.
+
+## Triage (implementer, 2026-11-03)
+
+- **M1:** perf and audit results now recorded (`docs/perf.md` "Cutover readiness",
+  `docs/testing.md` "Security checks before the cutover"). The 4x perf regression against Step 7c
+  is recorded as unexplained and raised with the user; manual checks (M-SYNC, M-MIG, runbook
+  rehearsal) stay the user's next action in STATE.
+- **M2:** fixed: B24 is a warning; runbook steps 1 and 5 agree. Repair decision asked of the user.
+- **m1, m2, m4, m5:** fixed (commit `a87629f`). **m3:** releasing keeps another PC's claim
+  (fixed); a claim left by an app closed during the 45 s settle -> backlog.
+- **m6:** exam delete without CAS is reference behaviour -> backlog (phase 2, data safety).
+- **n3, n4, n5:** fixed. **n6:** rejected: printed copies go to `rapporten\` next to the data
+  folder (C18, `outputs::shared_dir`); only the module doc in `outputs.rs` said otherwise
+  (fixed). **n1, n2, n7** and the rest -> backlog.

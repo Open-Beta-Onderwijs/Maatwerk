@@ -466,12 +466,16 @@ fn check_exam(
 /// would change saved exams and scores. A warning, not an error (review 10 M2): the app cannot
 /// fix it, and an error would make the migration screen advise rolling back the cutover.
 fn check_question_ids(rel: &str, exam: &Value, out: &mut Found) {
-    let mut seen: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
+    let mut seen: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     let questions = exam.get("questions").and_then(Value::as_array);
     for (i, q) in questions.into_iter().flatten().enumerate() {
-        if let Some(id) = q.get("id").and_then(Value::as_str) {
-            seen.entry(id).or_default().push(i + 1);
-        }
+        // Numeric ids in hand-edited or very old files count too (review 10 n5).
+        let id = match q.get("id") {
+            Some(Value::String(s)) => s.clone(),
+            Some(Value::Number(n)) => n.to_string(),
+            _ => continue,
+        };
+        seen.entry(id).or_default().push(i + 1);
     }
     for (id, rows) in seen.into_iter().filter(|(_, rows)| rows.len() > 1) {
         let rows: Vec<String> = rows.iter().map(ToString::to_string).collect();

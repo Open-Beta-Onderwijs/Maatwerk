@@ -209,3 +209,19 @@ Multi-page opdrachten: `opdracht-long-odd` (3 pages), `batch-duplex` (long-even 
 | Presence files (`users/<id>.json`), local session, photos                | Step 4 Rust tests against `data-files.md`                           |
 | Opdracht image and `.typ` file IPC (list, save, import, copy, delete)    | Step 4 Rust tests                                                   |
 | Rapport with a 3-page first section (footer still "/ 2", contract 10.10) | Step 5 parity tests                                                 |
+
+## Security checks before the cutover (Step 10, 2026-11-03)
+
+- `cargo deny check licenses bans sources advisories`: ok (advisories use the RustSec database,
+  the same as `cargo audit`, which is not installed here; the two quick-xml advisories via Typst
+  0.14.2 stay ignored with reason in `deny.toml`).
+- `npm audit --omit=dev`: 0. `npm audit` (with dev): 12 moderate, all eslint /
+  typescript-eslint -> minimatch (GHSA-g3hv-75wg-m249, ReDoS), dev-only, not shipped.
+- CSP (`ui/vite/csp.ts`, `tauri.conf.json`): no `unsafe-inline` / `unsafe-eval` in the app,
+  `object-src 'none'`, connect only to IPC and `maatwerk-out`; unchanged since Step 6.
+- `innerHTML` audit (U8): 83 sinks; U8 fixed; student ids and observatie lists escaped; nothing
+  else with teacher text unescaped (commit `92ab971`).
+- Typst sandbox: absolute and drive paths and non-embedded packages refused
+  (`assignment::tests::absolute_paths_and_unknown_packages_are_not_readable`).
+- Path fuzzing: `paths::tests::any_accepted_path_resolves_under_root` (proptest).
+- `/security-review` on the branch: no findings. Whole-codebase review: `docs/reviews/step-10.md`.

@@ -71,7 +71,9 @@ pub fn install_panic_hook() {
         // A backtrace for the first few panics only: a panic that repeats (e.g. a restarted
         // thread) must not fill the log with them (review 10 m1).
         let backtrace = if BACKTRACES.fetch_add(1, Ordering::Relaxed) < MAX_BACKTRACES {
-            std::backtrace::Backtrace::force_capture().to_string()
+            // `capture` honours RUST_BACKTRACE: release exes are stripped, so a forced backtrace
+            // would hold no symbols (review 10 n4); the location above is always logged.
+            std::backtrace::Backtrace::capture().to_string()
         } else {
             "(no backtrace: logged for the first panics only)".to_owned()
         };
