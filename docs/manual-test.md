@@ -131,8 +131,10 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       from the header switches to `main.typ`). Works after an error is fixed; while there is an
       error, a click does nothing.
 - [ ] **M-OPD-9** Tabs `main.typ` / `lib.typ`: the yellow warning shows; "Bekijk verschillen"
-      lists your changes against the standard version; "Herstel standaardversie" asks first,
-      replaces the text and the file, and Ctrl+Z brings your version back (saved again). An
+      (on every existing copy, also an unchanged one: "Geen verschillen") lists your changes
+      against the standard version, including edits not saved yet; "Herstel standaardversie"
+      asks first in the app's own dialog ("Annuleren" changes nothing), then replaces the text
+      and the file, and Ctrl+Z brings your version back (saved again). An
       opdracht folder with an unchanged `lib.typ` from an older Maatwerk is updated silently when
       the editor opens; a changed older one shows "Er is een nieuwere versie van lib.typ".
 - [ ] **M-OPD-10** "Vragen: n · p" in the preview bar: the list shows every vraag as on the

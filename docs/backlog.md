@@ -2,6 +2,18 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From the Step 10 manual test (`docs/reviews/manual-test-step-10.md`, 2026-11-03)
+
+- ~~**M-OPD-9** "Herstel standaardversie" did not ask first; "Bekijk verschillen" missing~~
+  Fixed in 0.3.2 (`fix/manual-test-10`): the editor's questions use the app dialog (Tauri's
+  dialog plugin makes `window.confirm` async), the diff button shows for every existing
+  `main.typ`/`lib.typ`. Re-check by hand on the 0.3.2 exe.
+- **M-OPD-8** smooth preview scrolling: `ROADMAP.md` V-03.
+- **M-OPD-11** a sign that a compile is still running: `ROADMAP.md` F-05.
+- **M-ADM-1** photos inconsistent (Step 6 comment repeated): `ROADMAP.md` B-04, re-check.
+- **M-LEER-3, M-GRP-3** example CSV: `ROADMAP.md` F-02. **M-TOE-6** `rapporten\` next to
+  `data\`: done in Step 7a (C18); re-check against the current checklist.
+
 ## From the Step 6 manual test (`docs/reviews/manual-test-step-06.md`, 2026-10-30)
 
 - ~~**M-GRP-1** a deleted group stayed in the admin list until a restart~~ Fixed

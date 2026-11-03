@@ -71,31 +71,34 @@ from the inventory keep their old ID in "Source".
 
 ### 4.1 Features (F)
 
-| ID   | What                                                           | Area                 | Pri | Size | User? | Source                    |
-| ---- | -------------------------------------------------------------- | -------------------- | --- | ---- | ----- | ------------------------- |
-| F-01 | AI assistant on the teacher's own AI CLI                       | Opdrachten           |     | L    |       | ADR-0009 option D         |
-| F-02 | CSV import: example CSV shown and downloadable                 | Admin                |     | S    |       | backlog M-LEER-3, M-GRP-3 |
-| F-03 | Ctrl+X in the score grid                                       | Scores               |     | S    |       | backlog 3b m5             |
-| F-04 | Show Typst warnings in the editor, generate and rapport modals | Opdrachten / Rapport |     | S    |       | backlog 6a                |
-|      | _user's list_                                                  |                      |     |      |       |                           |
+| ID   | What                                                              | Area                 | Pri | Size | User? | Source                    |
+| ---- | ----------------------------------------------------------------- | -------------------- | --- | ---- | ----- | ------------------------- |
+| F-01 | AI assistant on the teacher's own AI CLI                          | Opdrachten           |     | L    |       | ADR-0009 option D         |
+| F-02 | CSV import: example CSV shown and downloadable                    | Admin                |     | S    |       | backlog M-LEER-3, M-GRP-3 |
+| F-03 | Ctrl+X in the score grid                                          | Scores               |     | S    |       | backlog 3b m5             |
+| F-04 | Show Typst warnings in the editor, generate and rapport modals    | Opdrachten / Rapport |     | S    |       | backlog 6a                |
+| F-05 | Editor: show that a compile is still running (spinner or similar) | Opdrachten           |     | S    | yes   | manual test 10 M-OPD-11   |
+|      | _user's list_                                                     |                      |     |      |       |                           |
 
 ### 4.2 Bugs and quirks (B)
 
-| ID   | What                                                         | Area    | Pri              | Size | User? | Source                     |
-| ---- | ------------------------------------------------------------ | ------- | ---------------- | ---- | ----- | -------------------------- |
-| B-01 | Adding a question after a deletion can repeat a question id  | Toetsen | Moved to Step 10 | S    |       | quirk B24                  |
-| B-02 | Best-attempt logic in four places, with different edge cases | Domain  |                  | M    | yes   | quirk B13, B15, B18        |
-| B-03 | Grade and statistics differences between screens             | Domain  |                  | M    | yes   | quirks B1-B8, B12, B14, U5 |
-|      | _rest of inventory section 1, after triage_                  |         |                  |      |       |                            |
-|      | _user's list_                                                |         |                  |      |       |                            |
+| ID   | What                                                             | Area    | Pri              | Size | User? | Source                       |
+| ---- | ---------------------------------------------------------------- | ------- | ---------------- | ---- | ----- | ---------------------------- |
+| B-01 | Adding a question after a deletion can repeat a question id      | Toetsen | Moved to Step 10 | S    |       | quirk B24                    |
+| B-02 | Best-attempt logic in four places, with different edge cases     | Domain  |                  | M    | yes   | quirk B13, B15, B18          |
+| B-03 | Grade and statistics differences between screens                 | Domain  |                  | M    | yes   | quirks B1-B8, B12, B14, U5   |
+| B-04 | User photos look inconsistent across the app (re-check after 7b) | Shell   |                  | S    | yes   | manual test 6 and 10 M-ADM-1 |
+|      | _rest of inventory section 1, after triage_                      |         |                  |      |       |                              |
+|      | _user's list_                                                    |         |                  |      |       |                              |
 
 ### 4.3 Visual changes (V)
 
-| ID   | What                                                              | Area       | Pri | Size | User? | Source     |
-| ---- | ----------------------------------------------------------------- | ---------- | --- | ---- | ----- | ---------- |
-| V-01 | Consistent grade pills, paddings and greys (from the CSS cleanup) | Foundation |     | M    | yes   | backlog 3a |
-| V-02 | Period separators in the group students modal                     | Admin      |     | S    | yes   | quirk U18  |
-|      | _user's list_                                                     |            |     |      |       |            |
+| ID   | What                                                              | Area       | Pri | Size | User? | Source                 |
+| ---- | ----------------------------------------------------------------- | ---------- | --- | ---- | ----- | ---------------------- |
+| V-01 | Consistent grade pills, paddings and greys (from the CSS cleanup) | Foundation |     | M    | yes   | backlog 3a             |
+| V-02 | Period separators in the group students modal                     | Admin      |     | S    | yes   | quirk U18              |
+| V-03 | Editor preview sync scrolls smoothly instead of jumping           | Opdrachten |     | S    | yes   | manual test 10 M-OPD-8 |
+|      | _user's list_                                                     |            |     |      |       |                        |
 
 ### 4.4 Refactors (R)
 
