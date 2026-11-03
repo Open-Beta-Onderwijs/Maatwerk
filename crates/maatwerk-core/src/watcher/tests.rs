@@ -623,3 +623,54 @@ fn m4_own_writes_to_ignored_paths_are_not_tracked() {
         "S31: templates/ is ignored"
     );
 }
+
+// ── Step 10 (review 4b n6) ───────────────────────────────────────────────────
+
+/// A panic in the watcher thread (here: the change callback) is logged and the thread starts
+/// again, so later colleague changes are still reported.
+#[test]
+fn n6_a_panic_in_the_watcher_thread_restarts_it() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = DataDir::open(tmp.path()).unwrap();
+    let start: Box<StartOsWatch> = Box::new(|_, _| Err("unavailable".into()));
+    let options = WatchOptions {
+        poll: Duration::from_millis(700),
+        restart: Duration::from_millis(100),
+        refresh: Duration::from_secs(60),
+    };
+    let calls = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&calls);
+    let (tx, rx) = mpsc::channel();
+    let watcher = Watcher::start_with(dir.clone(), options, start, move |b| {
+        if counted.fetch_add(1, Ordering::SeqCst) == 0 {
+            panic!("callback failed");
+        }
+        let _ = tx.send(b);
+    });
+    watcher.wait_ready();
+    write_file(dir.root(), "a.json", "{}");
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while calls.load(Ordering::SeqCst) == 0 && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    write_file(dir.root(), "b.json", "{}");
+    let got = recv_changes(&rx, Duration::from_secs(4));
+    watcher.close();
+    assert_eq!(got, [change("b.json", ChangeKind::Added, None)]);
+}
+
+/// Closing does not wait for a scan that hangs (a slow OneDrive read): the thread is left to
+/// finish on its own.
+#[test]
+fn n6_close_does_not_wait_for_a_hanging_thread() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = DataDir::open(tmp.path()).unwrap();
+    let start: Box<StartOsWatch> = Box::new(|_, _| {
+        std::thread::sleep(Duration::from_secs(10));
+        Ok(Box::new(()))
+    });
+    let watcher = Watcher::start_with(dir, WatchOptions::default(), start, |_| {});
+    let t0 = Instant::now();
+    watcher.close();
+    assert!(t0.elapsed() < Duration::from_secs(5), "{:?}", t0.elapsed());
+}
