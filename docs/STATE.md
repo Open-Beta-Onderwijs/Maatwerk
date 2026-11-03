@@ -1,16 +1,17 @@
 # State
 
-Last updated: 2026-11-03 (0.3.1: T31 fix, ADR-0009 decided) Branch: `release/v0.3.1` Last tags:
-`step-09`, `step-08`, `step-07`, `v0.2.0-parity`
+Last updated: 2026-11-03 (0.3.1 merged and tagged; phase 2 plan merged) Branch: `main` Last
+tags: `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 9 done**, merged into `main` and tagged `step-09`. Next: Step 10 when the user says so.
-The cutover (0.3.x on real data) is the user's call; see "Open questions".
+**Step 9 done**, 0.3.1 merged (PR #4, merge commit `b9fa9c3`, tagged `v0.3.1`). Next: Step 10
+"Cutover readiness" (`PLAN.md`, rescoped 2026-11-03) when the user says so. The cutover (0.3.x
+on real data) is the user's call; see "Open questions".
 
-## After Step 9 (user decisions 2026-11-03, on `release/v0.3.1`, PR into `main`)
+## After Step 9 (user decisions 2026-11-03, PR #4 merged 2026-11-03)
 
-1. **Publish 0.3.1 as its own PR** (`release/v0.3.1` -> `main`; PR #3 was already merged).
+1. **Published 0.3.1 as its own PR** (#4, `release/v0.3.1` -> `main`; CI green on `097cf31`).
 2. **Quirk T31 fixed:** `main.typ` 2 applies `setup_extra(body)` as a show rule; the old
    `setup_extra()` form keeps its old behaviour (detected by a regex on `opdracht.typ`, files are
    not rewritten). New starter template, examples and AI context use `setup_extra(body) = body`.
@@ -265,7 +266,7 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
   Gebruikers).
 - Docs: data-files-v2, runbook sections 6-7, manual tests M-PIN/M-VZ/M-SNAP, parity, ADR-0006.
 
-## Phase 2 planning (2026-11-03, branch `plan/phase-2`, local only)
+## Phase 2 planning (2026-11-03, PR #5 merged into `main`)
 
 - `ROADMAP.md`: draft skeleton for after the cutover (rules without parity, intake list with
   F/B/V/R/X IDs, areas, step proposal, open decisions). `docs/phase-2/inventory.md`: quirks
@@ -275,10 +276,13 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Step 10 when asked. PR #3 is merged. Step 9 and 0.3.1 are in the
-   `release/v0.3.1` PR; after it merges, `git pull` on local `main` (it has the local Step 9
-   merge commit; the PR branch contains it plus `origin/main`). Tag `v0.3.1` when the user says.
-2. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
+1. Step 10 "Cutover readiness" when the user says so: branch `step/10-cutover-readiness` from
+   `main`, scope in `PLAN.md` Step 10 (panic hook and log file, the robustness items 6b m6,
+   4b n6, 5b n1, 7b m1, performance on the `school` fixture and a 200-PDF batch, security audits
+   incl. U8, README/architecture/release-process docs, final whole-codebase review).
+2. In parallel (user): the phase 2 triage session (`ROADMAP.md` P0) with the feature and visual
+   lists; it does not block Step 10.
+3. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
    M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two machines, and the
    runbook rehearsal on a copy of real data.
 
@@ -288,6 +292,7 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
   cutover.
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
 - Tag `v0.3.0-rc.1` (PR #3 merged 2026-11-01; not tagged yet).
+- Push version tags (`v0.2.0-parity`, `v0.3.1`) to GitHub? So far only `step-*` tags are there.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
 
