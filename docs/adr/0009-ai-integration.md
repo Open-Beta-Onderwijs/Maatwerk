@@ -1,9 +1,9 @@
-# ADR-0009: AI assistance for writing opdrachten (options, not decided)
+# ADR-0009: AI assistance for writing opdrachten
 
-Status: **proposed, nothing decided** (Step 9, 2026-11-02). PLAN section 1 says "AI assistance:
-not decided. Keep the door open"; PLAN section 9 item 10 is this decision. This ADR records the
-seams that exist now, the options, the constraints any option must meet, and the questions for the
-user. No AI feature is built.
+Status: **accepted 2026-11-03: option D** (see "Decision"). Proposed in Step 9 (2026-11-02). PLAN
+section 1 said "AI assistance: not decided. Keep the door open"; PLAN section 9 item 10 is this
+decision. This ADR records the seams that exist, the options, the constraints, the user's answers
+and the decision. No AI feature is built yet; a later step implements option D.
 
 ## Context
 
@@ -97,9 +97,57 @@ decision on provider, cost and privacy. The seams of Step 9 serve both.
 6. May an opdracht's images be sent (e.g. for "describe this figure"), with a warning?
 7. For option B: is editing opdracht files outside the app acceptable, or only on copies?
 
+## Answers (user, 2026-11-03)
+
+1. **Wanted, for every teacher.** The assistant is available to every teacher (no school-level
+   switch); it appears when an AI CLI is found on the machine.
+2. **Option A, but through the AI vendors' command-line tools, not their APIs** (option D below).
+3. **Provider: the teacher's choice.** Maatwerk is provider-neutral; whatever CLI the teacher has
+   installed and logged in to is acceptable. (Any processing agreement is between the teacher or
+   school and that vendor, not Maatwerk's concern.)
+4. **No API key, nobody pays through Maatwerk.** The teacher installs the CLI and logs in to their
+   own subscription outside Maatwerk. Maatwerk stores no credentials.
+5. **First tasks: all four**: draft a new opdracht from a description, fix compile errors, add
+   missing answers/punten, rewrite for another level.
+6. **Images: yes, per request, with a warning.** Off by default; the teacher ticks it for one
+   request and sees a warning that images could show students.
+7. **Workspace: a temporary copy.** The CLI never works in the shared data folder. Maatwerk copies
+   the opdracht folder to a temp dir, runs the CLI there, and shows the result as a diff to accept
+   in the editor.
+8. **CLI commands: built-in presets plus an override.** Maatwerk ships a preset per known CLI
+   (detected on `PATH`); a settings screen lets the teacher edit the command and arguments per CLI,
+   with "standaard herstellen", so a vendor's syntax change does not need a new Maatwerk release.
+
+## Decision
+
+**(D) In-app assistant on the teacher's own AI CLI.** A panel in the opdracht editor. Maatwerk
+detects which supported AI CLIs are installed (e.g. Claude Code, OpenAI Codex CLI, Gemini CLI;
+the list and the exact non-interactive invocation of each are researched in the implementing
+step), the teacher picks one, types a request, and Maatwerk:
+
+1. copies the opdracht folder (`opdracht.typ`, `lib.typ`, `main.typ`, and `images/` only when the
+   teacher ticked it) plus the context document to a fresh temp dir outside the data folder;
+2. runs the CLI non-interactively in that dir with the request, the task (one of the four above)
+   and the instruction to use `maatwerk-cli assignment check --json` (or a bundled equivalent) as
+   the feedback loop, under a time limit, with the CLI's own restrictions (no network tools beyond
+   the model, edits only in the working dir) where the CLI offers them;
+3. checks the result itself with `check` (constraint 3), and shows `opdracht.typ` as a diff with
+   the remaining diagnostics; accept puts it in the editor buffer (undo history, CAS save as
+   usual), reject discards it. The temp dir is deleted afterwards.
+
+Command presets live in the app (code) with per-teacher overrides in the local settings (not in
+the shared data folder). Constraints 1-7 above still apply, with these changes: no API keys, no
+HTTP client and no CSP exception in Maatwerk (the CLI does the network); cost is the teacher's
+subscription; an agentic CLI can in principle read files outside its working dir, so Maatwerk
+passes the CLI's sandbox/permission flags where they exist and documents the residual risk.
+
 ## Consequences
 
 - Step 9 adds no AI code and no new dependency; the seams (check/render/export-lib, the JSON
   schema, the context document and examples) are useful without AI too (CI, tinymist, reviews).
 - The check JSON is versioned (`maatwerk-assignment-check/1`); a consumer can rely on it.
-- When the user decides, a new step implements the chosen option against these constraints.
+- A later step implements option D against these constraints: CLI detection and presets, the
+  settings screen, spawning a child process from Rust (`spawn_blocking`/async process, time limit,
+  cancel), the temp-copy workspace, the diff/accept panel and Dutch error texts (CLI missing, not
+  logged in, time-out, no change). Options A (API) and B (external only) are not pursued; B stays
+  possible for anyone with `export-lib` and the CLI.

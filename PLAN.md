@@ -21,7 +21,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | Rollout | **One-time cutover, planned after Step 8.** Old and new app never share a data folder at the same time. Data format *may* change, with a migration and a backup |
 | Repo & licence | **Public repo, AGPL-3.0** (ask whether `-only` or `-or-later`). Every dependency shipped in the exe must be AGPL-compatible (see 2.5, Step 3b) |
 | UI code | **Keep the JS UI**, add tests, migrate to **TypeScript gradually**. No framework rewrite |
-| AI assistance | **Not decided.** Keep the door open (headless API, documented assignment format, sandboxed Typst world). Build **no** AI features now |
+| AI assistance | **Decided 2026-11-03 (ADR-0009, option D):** in-app assistant that runs the teacher's own AI CLI in a temp copy of the opdracht folder; no API keys. Seams built in Step 9; implementation in a later step |
 | Tests | Start **before** porting (Step 2), against the old app |
 | Order | Port to parity first with clean seams. Refactor/optimise after parity. **Exception:** the Typst editor pipeline (Step 8), which is the main reason for using the crate |
 
