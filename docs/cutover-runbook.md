@@ -13,7 +13,10 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
    `maatwerk-cli migrate <copy>\data --dry-run --verbose`, then
    `maatwerk-cli migrate <copy>\data --apply --backup-dir C:\Maatwerk-backups`. Read the warnings
    and the check (`Controle: ... fouten`). Fix what blocks (the dry run names the file) in the real
-   folder with the old app, or ask the developer.
+   folder with the old app, or ask the developer. An error "Vraag-id qN komt 2 keer voor" (quirk
+   B24, an exam saved by the old app after deleting and adding a question) does not block, but
+   that exam's grades are wrong where the two questions share scores: tell the developer, who
+   decides with the teacher how to repair it.
 2. Start the new exe on the migrated copy (`MAATWERK_DATA_DIR=<copy>\data`) and click through
    [`manual-test.md`](manual-test.md) (at least M-START, M-TOE, M-OPD, M-RAP).
 3. Check that OneDrive's version history is on for the shared folder (it is the last resort if

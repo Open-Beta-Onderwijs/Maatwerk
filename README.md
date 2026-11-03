@@ -1,13 +1,56 @@
 # Maatwerk
 
-Desktop app for teachers to enter exam scores, analyse them with the RTTI framework and produce
-per-student reports and remedial assignments with Typst. Built with Rust and Tauri 2.
+Desktop app for Dutch secondary-school teachers (the app is in Dutch): enter exam scores, analyse
+them with the RTTI framework (Reproductie, Toepassen 1, Toepassen 2, Inzicht), and produce
+per-student reports and remedial assignments (opdrachten) written in Typst. Several teachers of a
+school share one data folder, for example through OneDrive. Built with Rust and Tauri 2; a port of
+an earlier Electron app.
 
-Work in progress: this is a port of an existing Electron app. See `PLAN.md` and `docs/STATE.md`.
+## Install
+
+Maatwerk is one portable Windows exe, no installer.
+
+1. Download `maatwerk.exe` (and `maatwerk.exe.sha256`) from the release, or the CI artifact
+   `maatwerk-windows-x64`. Check the checksum:
+   `(Get-FileHash maatwerk.exe -Algorithm SHA256).Hash.ToLower()`.
+2. Put it in the shared folder of the school, next to the `data\` folder (on first start an
+   empty `data\` is created next to the exe).
+3. Start it. It needs Microsoft Edge WebView2 (standard on Windows 10 and 11); without it,
+   Maatwerk says so in a message box.
+
+macOS is planned (`ROADMAP.md`, X-04).
+
+## The data folder
+
+- `data\` next to the exe holds everything: school settings, users, groups, students, exams,
+  scores, observaties, opdrachten (JSON files and Typst folders, format v2:
+  `docs/reference/data-files-v2.md`). Printed PDFs go to `rapporten\` next to it.
+- Every teacher's app watches the folder and shows colleagues' changes; a save that would
+  overwrite a colleague's newer change is refused with a message, never done silently.
+- To use a different folder (tests, a copy): set `MAATWERK_DATA_DIR` before starting.
+- A folder from the old Electron app is converted once, after a backup; see
+  `docs/cutover-runbook.md`.
+
+## Backup
+
+- **Snapshots:** the first app that starts after the interval writes
+  `data\snapshots\<datum tijd>.zip` (default daily; keeps 7 daily, 4 weekly, 12 monthly;
+  Beheer > Instellingen). Single files can be restored in Beheer > Gegevenscontrole; restoring
+  the whole folder is in `docs/cutover-runbook.md` section 7.
+- **OneDrive version history** is the last resort; keep it on.
+- The conversion from the old app writes a verified backup zip outside the shared folder.
+
+## Problems
+
+"Over Maatwerk" (the title top left) > Probleem melden shows where the log files are
+(`%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs`, 14 days, technical messages only). Send
+the log of that day with a description to the admin or the developer.
 
 ## Development
 
-See `docs/dev-setup.md` for prerequisites and `CLAUDE.md` for the command list.
+`docs/dev-setup.md` (prerequisites), `CLAUDE.md` (commands), `docs/architecture.md` (map),
+`docs/release.md` (release process), `PLAN.md` and `docs/STATE.md` (status), `ROADMAP.md`
+(phase 2).
 
 ## Licence and source
 
