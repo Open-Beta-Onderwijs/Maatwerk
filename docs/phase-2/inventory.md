@@ -133,7 +133,7 @@ Step 9 m3 (time limit on headless check/render, needed for the AI assistant), St
 
 **Typst and output:** upgrade Typst from 0.14.2 (plus Noto, quick-xml advisories, goldens), show
 Typst warnings in the UI (6a), name the field in errors from eval'd teacher text (5a m3), 5b n4
-hash normalisation, 5b n5, 8b n4 (cursor-marker code still in `main.typ` 2; see note below), 8b n1
+hash normalisation, 5b n5, 8b n1
 (vragen checks edge cases), jumps after an error, `rapporten/` retention policy.
 
 **UI and UX:** CSV import screens show an example CSV (M-LEER-3, M-GRP-3), Ctrl+X in the score
@@ -157,11 +157,8 @@ for toml/yml (n6), the verbatim LICENSE text (n3).
 
 **Cleanup after the cutover:** `TypstProject::opdracht_v1` (7a n1), the compat layer in
 `ui/src/bridge/tauri-api.ts` (removed screen by screen), v1 goldens that only served parity, the
-`_reference/` harness (keep as history or archive).
-
-**Note on 8b n4:** the backlog planned to drop the cursor-marker code from `main.typ` together with
-the next `main.typ` version. Version 2 (T31, PR #4) does not include it, so it needs version 3, or
-should be folded into PR #4 before 0.3.1 ships. To decide.
+`_reference/` harness (keep as history or archive), and the `render_assignment_svg` command (no
+caller since Step 8b; its cursor marker went with `main.typ` 2 in 0.3.1, review 8b n4).
 
 ## 3. UI code: size and duplication
 
