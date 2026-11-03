@@ -22,8 +22,8 @@ pub(crate) async fn blocking<T: Send + 'static>(
     state: State<'_, Shared>,
     f: impl FnOnce(&Core) -> Res<T> + Send + 'static,
 ) -> Res<T> {
-    let core = Shared::clone(state.inner());
-    tauri::async_runtime::spawn_blocking(move || f(&core))
+    let slot = Shared::clone(state.inner());
+    tauri::async_runtime::spawn_blocking(move || f(&slot.wait()))
         .await
         .map_err(|e| CommandError::internal(format!("blocking task failed: {e}")))?
 }

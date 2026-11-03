@@ -235,16 +235,24 @@ pub fn run() {
             // `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\output\<pid>`; old runs' folders go after a day.
             let output_dir = app.path().app_cache_dir()?.join("output");
             let handle = app.handle().clone();
-            let core =
-                state::Core::open(state::data_dir(), session_file, output_dir, move |batch| {
-                    let batch = batch.into_iter().map(DataChange::from).collect();
-                    if let Err(e) = DataChanged(batch).emit(&handle) {
-                        tracing::warn!("emitting data:changed failed: {e}");
-                    }
-                });
-            let core = Arc::new(core);
-            core.start_snapshot();
-            app.manage::<state::Shared>(core);
+            let slot = Arc::new(state::CoreSlot::default());
+            let data_dir = state::data_dir();
+            let (failed_dir, failed_session, failed_output) =
+                (data_dir.clone(), session_file.clone(), output_dir.clone());
+            // Off the main thread (review 6 m6): commands wait for it on their blocking thread.
+            slot.open_in_background(
+                move || {
+                    state::Core::open(data_dir, session_file, output_dir, move |batch| {
+                        let batch = batch.into_iter().map(DataChange::from).collect();
+                        if let Err(e) = DataChanged(batch).emit(&handle) {
+                            tracing::warn!("emitting data:changed failed: {e}");
+                        }
+                    })
+                },
+                move |e| state::Core::failed(failed_dir, failed_session, failed_output, e),
+                |core| core.start_snapshot(),
+            );
+            app.manage::<state::Shared>(slot);
             app.manage(editor::Editors::default());
             Ok(())
         })
@@ -263,7 +271,11 @@ pub fn run() {
         if let tauri::RunEvent::Ready = event {
             start_error::mark_started();
         }
-        let Some(core) = handle.try_state::<state::Shared>() else {
+        // Not open yet: nothing to mark offline or stop.
+        let Some(core) = handle
+            .try_state::<state::Shared>()
+            .and_then(|slot| slot.get())
+        else {
             return;
         };
         match event {

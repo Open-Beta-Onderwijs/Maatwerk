@@ -122,7 +122,8 @@ fn run_batch(
     let labels: Vec<String> = jobs.iter().map(|j| j.label.clone()).collect();
     let queue: Vec<Mutex<Option<BatchJob>>> =
         jobs.into_iter().map(|j| Mutex::new(Some(j))).collect();
-    let results: Vec<Mutex<Option<Result<JobResult, String>>>> = (0..total).map(|_| Mutex::new(None)).collect();
+    let results: Vec<Mutex<Option<Result<JobResult, String>>>> =
+        (0..total).map(|_| Mutex::new(None)).collect();
     let next = AtomicUsize::new(0);
     // Counted and reported under one lock, so `done` never goes backwards (review 5b m4).
     let done = Mutex::new(0usize);
@@ -262,10 +263,11 @@ mod tests {
             "{err:?}"
         );
         assert!(
-            err.to_string()
-                .starts_with("Fout in opdracht \"opdracht 1\":
+            err.to_string().starts_with(
+                "Fout in opdracht \"opdracht 1\":
 
-Interne fout"),
+Interne fout"
+            ),
             "{err}"
         );
         assert_eq!(*lock(&started), ["0", "1"]);

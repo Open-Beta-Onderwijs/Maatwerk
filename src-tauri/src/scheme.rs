@@ -26,12 +26,12 @@ pub fn handle<R: Runtime>(
     request: Request<Vec<u8>>,
     responder: UriSchemeResponder,
 ) {
-    let core = ctx
+    let slot = ctx
         .app_handle()
         .try_state::<Shared>()
         .map(|s| Shared::clone(s.inner()));
     tauri::async_runtime::spawn_blocking(move || {
-        let response = match core {
+        let response = match slot.map(|slot| slot.wait()) {
             Some(core) => respond(&request, |id| core.outputs().ok()?.read(id).ok()),
             None => status(StatusCode::SERVICE_UNAVAILABLE),
         };

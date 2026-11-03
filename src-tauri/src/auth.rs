@@ -170,8 +170,11 @@ pub async fn renew_recovery_codes(state: State<'_, Shared>, pin: String) -> Res<
 #[tauri::command]
 #[specta::specta]
 pub async fn logout(state: State<'_, Shared>) -> Res<()> {
-    state.auth.logout();
-    Ok(())
+    blocking(state, |c| {
+        c.auth.logout();
+        Ok(())
+    })
+    .await
 }
 
 /// "Opslaan als" for the recovery codes: a save dialog, then the text as a UTF-8 file. Returns
