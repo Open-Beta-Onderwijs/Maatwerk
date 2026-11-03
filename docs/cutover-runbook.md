@@ -13,7 +13,7 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
    `maatwerk-cli migrate <copy>\data --dry-run --verbose`, then
    `maatwerk-cli migrate <copy>\data --apply --backup-dir C:\Maatwerk-backups`. Read the warnings
    and the check (`Controle: ... fouten`). Fix what blocks (the dry run names the file) in the real
-   folder with the old app, or ask the developer. An error "Vraag-id qN komt 2 keer voor" (quirk
+   folder with the old app, or ask the developer. A warning "Vraag-id qN komt 2 keer voor" (quirk
    B24, an exam saved by the old app after deleting and adding a question) does not block, but
    that exam's grades are wrong where the two questions share scores: tell the developer, who
    decides with the teacher how to repair it.
@@ -47,6 +47,7 @@ Roles: **the admin** runs the migration; **the teachers** close the old app and 
    warnings, the check and every change) to a second place (a USB stick or the school network
    drive). Note its name in the log below.
 5. Open **Gegevenscontrole** (admin tab). No errors expected; warnings are listed for later.
+   A "Vraag-id qN komt 2 keer voor" warning (B24, see section 1) is no reason to roll back.
 6. Wait until OneDrive has synced the migrated folder (many files change once: this is expected).
 
 ## 4. Distribute the new exe

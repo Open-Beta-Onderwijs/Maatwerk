@@ -463,7 +463,8 @@ fn check_exam(
 }
 
 /// Quirk B24: two questions with the same id share one score slot. Reported only; a repair
-/// would change saved exams and scores.
+/// would change saved exams and scores. A warning, not an error (review 10 M2): the app cannot
+/// fix it, and an error would make the migration screen advise rolling back the cutover.
 fn check_question_ids(rel: &str, exam: &Value, out: &mut Found) {
     let mut seen: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
     let questions = exam.get("questions").and_then(Value::as_array);
@@ -474,11 +475,11 @@ fn check_question_ids(rel: &str, exam: &Value, out: &mut Found) {
     }
     for (id, rows) in seen.into_iter().filter(|(_, rows)| rows.len() > 1) {
         let rows: Vec<String> = rows.iter().map(ToString::to_string).collect();
-        out.error(
+        out.warn(
             IssueKind::Shape,
             rel,
             format!(
-                "Vraag-id {id} komt {} keer voor (vraag {} in de lijst): de scores van deze                  vragen vallen samen. Niet zelf aanpassen; vraag de beheerder.",
+                "Vraag-id {id} komt {} keer voor (vraag {} in de lijst): de scores van deze                  vragen vallen samen, dus de cijfers van deze toets kunnen niet kloppen. Niet zelf                  aanpassen; meld het bij de ontwikkelaar.",
                 rows.len(),
                 rows.join(", ")
             ),

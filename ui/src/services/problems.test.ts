@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it, vi } from 'vitest';
-import { UNEXPECTED_TEXT, errorText, reportUnexpected } from './problems';
+import { UNEXPECTED_TEXT, errorText, redact, reportUnexpected } from './problems';
 
 function rig() {
   const logged: string[] = [];
@@ -37,5 +37,16 @@ describe('unexpected errors', () => {
     const api = { logUiError: vi.fn(() => Promise.reject(new Error('no bridge'))) };
     expect(reportUnexpected(api, () => {}, 'rejection', 'boom')).toBe(true);
     await Promise.resolve();
+  });
+
+  it('student file names are not logged (review 10 m5)', () => {
+    expect(redact('Save failed for 2025-2026/scores/nat/123456.json')).toBe(
+      'Save failed for 2025-2026/scores/nat/<leerling>',
+    );
+    expect(redact('conflict on fotos/Jan de Vries.jpg')).toBe('conflict on fotos/<foto>');
+    expect(redact('io: C:\\data\\2025-2026\\scores\\nat\\99.json')).toBe(
+      'io: C:\\data\\2025-2026\\scores\\nat\\<leerling>',
+    );
+    expect(redact('exams/t1.json')).toBe('exams/t1.json');
   });
 });

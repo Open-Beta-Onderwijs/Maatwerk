@@ -350,7 +350,14 @@ pub(crate) fn run_if_due_with(
                 Value::Object(m) => m,
                 _ => Default::default(),
             };
-            s.remove("claim");
+            // Only our own claim: another PC's later claim stays (review 10 m3).
+            let ours = s.get("claim").is_some_and(|c| {
+                c.get("by").and_then(Value::as_str) == Some(who)
+                    && c.get("atMs").and_then(Value::as_i64) == Some(now_ms)
+            });
+            if ours {
+                s.remove("claim");
+            }
             if let Ok((name, _, _)) = &written {
                 s.insert("last".into(), Value::String(name.clone()));
                 s.insert("lastAtMs".into(), Value::from(now_ms));

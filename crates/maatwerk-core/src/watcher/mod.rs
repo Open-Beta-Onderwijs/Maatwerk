@@ -77,6 +77,8 @@ impl Default for WatchOptions {
     }
 }
 
+/// The longest wait before restarting a watcher that keeps panicking.
+const MAX_RESTART_WAIT: Duration = Duration::from_secs(600);
 /// How long closing waits for the watcher thread.
 const STOP_WAIT: Duration = Duration::from_secs(2);
 
@@ -206,25 +208,38 @@ struct Driver {
 }
 
 impl Driver {
-    /// Runs the driver; after a panic (logged by the panic hook) it waits `options.restart`
-    /// and runs again (review 4b n6), keeping what it knew: the first poll then reports what
-    /// changed meanwhile. Ends on `Stop` or when the [`Watcher`] is gone.
+    /// Runs the driver; after a panic (logged by the panic hook) it waits and runs again (review
+    /// 4b n6), keeping what it knew. The wait starts at `options.restart` and doubles per panic
+    /// up to [`MAX_RESTART_WAIT`], so a panic that keeps coming does not spin (review 10 m1).
+    /// The first poll after a restart reports what changed meanwhile in the poll scope (the root
+    /// and the active year); changes elsewhere during the gap are not reported. Ends on `Stop`
+    /// or when the [`Watcher`] is gone.
     fn run_restarting(&self, rx: &Receiver<Msg>, ready: &Ready, on_changes: &dyn Fn(Vec<Change>)) {
-        let mut first = true;
+        // Set once the initial snapshot is applied: a panic inside the first scan takes it again
+        // instead of reporting every file as added (review 10 m2).
+        let snapshot_done = std::cell::Cell::new(false);
+        let mut wait = self.options.restart;
         loop {
             let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                self.run(rx, ready, on_changes, first);
+                self.run(rx, ready, on_changes, &snapshot_done);
             }));
             if run.is_ok() {
                 return;
             }
-            tracing::error!("the watcher thread panicked; starting it again");
-            first = false;
-            match rx.recv_timeout(self.options.restart) {
-                Ok(Msg::Stop) | Err(RecvTimeoutError::Disconnected) => return,
-                // Events from before the restart: the first poll covers them.
-                Ok(_) | Err(RecvTimeoutError::Timeout) => {}
+            tracing::error!(
+                "the watcher thread panicked; starting it again in {} s",
+                wait.as_secs()
+            );
+            let deadline = Instant::now() + wait;
+            loop {
+                match rx.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
+                    Ok(Msg::Stop) | Err(RecvTimeoutError::Disconnected) => return,
+                    Err(RecvTimeoutError::Timeout) => break,
+                    // Events from before the restart: the first poll covers them.
+                    Ok(_) => {}
+                }
             }
+            wait = (wait * 2).min(MAX_RESTART_WAIT);
         }
     }
 
@@ -233,12 +248,14 @@ impl Driver {
         rx: &Receiver<Msg>,
         ready: &Ready,
         on_changes: &dyn Fn(Vec<Change>),
-        first: bool,
+        snapshot_done: &std::cell::Cell<bool>,
     ) {
         let root = lock(&self.engine).root_path();
+        let first = !snapshot_done.get();
         if first {
             let scan = engine::scan_all(&root);
             lock(&self.engine).apply_snapshot(scan);
+            snapshot_done.set(true);
         }
         let mut os_watch = None;
         let mut next_start = Instant::now();

@@ -106,6 +106,11 @@ describe('nextQuestionId (quirk B24)', () => {
     expect(nextQuestionId(qs('q1', 'q3'))).toBe('q4');
   });
 
+  it('does not reuse the id of a deleted last question when the opened ids are passed', () => {
+    // Review 10 m4: q4 deleted while a colleague may hold scores for it.
+    expect(nextQuestionId([...qs('q1', 'q2', 'q3'), ...qs('q1', 'q2', 'q3', 'q4')])).toBe('q5');
+  });
+
   it('skips ids of another shape and existing duplicates', () => {
     expect(nextQuestionId(qs('q2', 'q2', 'extra', 'q10a'))).toBe('q3');
   });

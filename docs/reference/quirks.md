@@ -414,8 +414,9 @@ Paths in this section are relative to `_reference/renderer/`.
 - **Why it matters:** Two questions share one score slot, which corrupts grades and RTTI.
 - **Step 10 (fixed for new questions):** `nextQuestionId` (`ui/src/domain/ids.ts`) continues
   after the highest `q<n>` in use (e2e `quirks.spec.ts` B24). Exams saved by the old app can
-  still hold a duplicate: Gegevenscontrole (and the migration report) lists it as an error
-  ("Vraag-id q3 komt 2 keer voor"). Nothing is repaired automatically: which question the
+  still hold a duplicate: Gegevenscontrole (and the migration report) lists it as a warning
+  ("Vraag-id q3 komt 2 keer voor"; a warning so the migration screen does not advise a
+  rollback, review 10 M2). Nothing is repaired automatically: which question the
   shared scores belong to cannot be known, and a repair changes saved data (user's call).
 
 ### B25. Resits copy every parent field, including the opdrachten coupling and `_meta`

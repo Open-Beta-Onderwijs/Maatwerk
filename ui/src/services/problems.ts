@@ -28,6 +28,16 @@ export function errorText(reason: unknown): string {
   return String(reason);
 }
 
+/**
+ * Removes student data from a logged text (review 10 m5): score files are named after the
+ * leerlingnummer (`<year>/scores/<vak>/<id>.json`) and photos after the student.
+ */
+export function redact(text: string): string {
+  return text
+    .replace(/(scores[\\/][^\\/\s"'`]+[\\/])[^\\/\s"'`]+/g, '$1<leerling>')
+    .replace(/(fotos[\\/])[^\\/"'`\n]+?\.(png|jpe?g|gif|svg|webp)\b/gi, '$1<foto>');
+}
+
 /** Logs `reason` and shows the message, unless it is noise or a save conflict. */
 export function reportUnexpected(
   api: Pick<MaatwerkApi, 'logUiError'>,
@@ -38,7 +48,7 @@ export function reportUnexpected(
   if ((reason as { code?: unknown } | null)?.code === 'conflict') return false;
   const text = errorText(reason);
   if (IGNORED.some((re) => re.test(text))) return false;
-  api.logUiError(`${kind}: ${text}`).catch(() => {});
+  api.logUiError(`${kind}: ${redact(text)}`).catch(() => {});
   show(UNEXPECTED_TEXT);
   return true;
 }

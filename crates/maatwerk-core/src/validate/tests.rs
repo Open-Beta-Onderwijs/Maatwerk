@@ -255,9 +255,10 @@ fn step_7b_files_and_sectie_references_are_checked() {
 }
 
 /// Quirk B24: the reference could give two questions the same id after a deletion; their
-/// scores then share one slot. The check reports it; nothing is repaired.
+/// scores then share one slot. The check reports it as a warning (review 10 M2); nothing is
+/// repaired.
 #[test]
-fn b24_a_repeated_question_id_is_an_error() {
+fn b24_a_repeated_question_id_is_reported() {
     let (_tmp, data) = copy();
     let rel = "2025-2026/exams/nat-toets-1-2025-2026.json";
     let text = fs::read_to_string(data.join(rel)).unwrap();
@@ -277,5 +278,5 @@ fn b24_a_repeated_question_id_is_an_error() {
         "{:#?}",
         report.issues
     );
-    assert_eq!(report.errors(), 1, "{:#?}", report.issues);
+    assert_eq!(report.errors(), 0, "{:#?}", report.issues);
 }
