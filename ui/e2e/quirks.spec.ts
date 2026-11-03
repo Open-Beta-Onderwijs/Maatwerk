@@ -345,3 +345,21 @@ test('U8: a resit description is shown as text in the group overview', async ({ 
   // In the fixture the resit is the best grade of some 3a students.
   await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
 });
+
+test('a migrated config.json without activeYear opens every tab on the current school year', async ({
+  page,
+}) => {
+  // Since Step 7a config.json holds only schema_version; the reference fell back to the
+  // current school year when activeYear was missing (user, 2026-11-03).
+  await page.clock.setFixedTime(new Date('2025-11-03T12:00:00'));
+  await seedFiles(page, { 'config.json': { schema_version: 2 } });
+  await login(page);
+  for (const [screen, select] of [
+    ['leerlingen', '#student-year-select'],
+    ['groepen', '#groups-year-select'],
+    ['toetsen', '#toetsen-year-select'],
+  ] as const) {
+    await page.locator(`.nav-btn[data-screen="${screen}"]`).click();
+    await expect(page.locator(`${select} .csel-trigger`)).toContainText('2025-2026');
+  }
+});
