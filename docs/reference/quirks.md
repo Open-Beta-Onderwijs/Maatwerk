@@ -837,6 +837,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
 
 - `modals/groep-leerlingen.js:182`: `title="${(fromExam.description ?? '').trim()}"`.
 - Effect: a resit description containing `"` cuts the attribute and the badge markup.
+- **Fixed in Step 10:** description and badge letter escaped (e2e `quirks.spec.ts` U8). The
+  Step 10 `innerHTML` audit also escaped student ids and observatie schoolsoort/jaarlagen
+  (only reachable with hand-edited shared files).
 
 ### U9. Typst editor: last edits can be lost on close
 

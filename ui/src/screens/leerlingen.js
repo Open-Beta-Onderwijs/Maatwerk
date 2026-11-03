@@ -169,17 +169,17 @@ export function renderStudentList({ staged = true } = {}) {
       <div class="card">
         <div class="card-main">
           <div class="student-card-row">
-            <button class="student-name-btn" data-action="profile" data-id="${s.id}" ${isAdmin ? 'disabled' : ''}>${escHtml(Store.fullName(s))}</button>
+            <button class="student-name-btn" data-action="profile" data-id="${escHtml(s.id)}" ${isAdmin ? 'disabled' : ''}>${escHtml(Store.fullName(s))}</button>
             <span class="card-sep">·</span>
-            <span class="student-id-inline">${s.id}${s._geslacht ? ' · ' + escHtml(s._geslacht) : ''}</span>
+            <span class="student-id-inline">${escHtml(s.id)}${s._geslacht ? ' · ' + escHtml(s._geslacht) : ''}</span>
           </div>
         </div>
         ${
           isAdmin
             ? `
         <div class="card-actions">
-          <button class="btn-sm btn-sm-icon" data-action="edit-student" data-id="${s.id}" title="Leerling bewerken">${ICONS.pen}</button>
-          <button class="btn-sm btn-danger btn-sm-icon" data-action="del-student" data-id="${s.id}" title="Leerling verwijderen">${ICONS.trash}</button>
+          <button class="btn-sm btn-sm-icon" data-action="edit-student" data-id="${escHtml(s.id)}" title="Leerling bewerken">${ICONS.pen}</button>
+          <button class="btn-sm btn-danger btn-sm-icon" data-action="del-student" data-id="${escHtml(s.id)}" title="Leerling verwijderen">${ICONS.trash}</button>
         </div>`
             : ''
         }

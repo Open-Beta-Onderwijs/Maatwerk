@@ -157,10 +157,10 @@ export async function openGroupStudentsModal(groupId, year) {
 
       const nameCell = `<td class="gl-name-td ${rowBg}">
       <button class="u-fs-13 student-name-btn group-name-btn" data-action="open-student-from-group"
-        data-id="${s.id}" data-groupid="${escHtml(groupId)}" data-year="${escHtml(year)}"
+        data-id="${escHtml(s.id)}" data-groupid="${escHtml(groupId)}" data-year="${escHtml(year)}"
        >${escHtml(Store.fullName(s))}</button>
       <span class="u-mx-4 card-sep">·</span>
-      <span class="student-id-inline">${s.id}</span></td>`;
+      <span class="student-id-inline">${escHtml(s.id)}</span></td>`;
 
       const examCells = byPeriode
         .map(({ families }, pi) =>
@@ -178,7 +178,7 @@ export async function openGroupStudentsModal(groupId, year) {
               const badgeCell =
                 `<td class="gl-badge-td ${rowBg}${borderR}">` +
                 (badgeLetter
-                  ? `<span class="attempt-badge" title="${(fromExam.description ?? '').trim()}">${badgeLetter}</span>`
+                  ? `<span class="attempt-badge" title="${escHtml((fromExam.description ?? '').trim())}">${escHtml(badgeLetter)}</span>`
                   : '') +
                 `</td>`;
               return (
