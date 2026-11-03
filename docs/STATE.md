@@ -21,7 +21,11 @@ user: the open questions below and the manual checks before the cutover. Phase 2
 3. Remarks: new ROADMAP items F-05 (compile indicator), V-03 (smooth preview scroll), B-04
    (photo re-check). The M-LEER-3/M-GRP-3/M-TOE-6/M-ADM-1 comments repeat Step 6 (F-02, C18 done
    in 7a, photos in 7b): re-check M-TOE-6 and M-ADM-1 against the current checklist.
-4. Version **0.3.2**. Gate green (cargo fmt/clippy/test, lint, typecheck, Vitest, 123 e2e,
+4. **No school year selected after a restart** (user, after retesting): `config.json` written
+   by the migration/first-run setup has no `activeYear`; the reference's fallback to the current
+   school year only covered a missing file. `Store.getConfigSync/getConfig` now fill it in
+   (`ui/tests/store/active-year.test.ts`, e2e in `quirks.spec.ts`). No data change.
+5. Version **0.3.2**. Gate green (cargo fmt/clippy/test, lint, typecheck, Vitest, 124 e2e,
    `cargo deny`, licences, SPDX, `npm audit`).
 
 ## Step 10 result

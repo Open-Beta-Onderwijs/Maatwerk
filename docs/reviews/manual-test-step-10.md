@@ -270,3 +270,13 @@ and M-ADM-1 are the Step 6 comments word for word. Each one is answered below.
   edited in this session, had no button. It now shows for every existing `main.typ`/`lib.typ`;
   the diff uses the editor text and says "Geen verschillen" when the copy equals the standard
   version.
+
+### Found while retesting: no school year selected after a restart
+
+M-OPD-9 passed on the 0.3.2 exe. The user then saw that after reopening the app no Schooljaar
+was selected on any tab ("— kies schooljaar —"). Cause: the reference never writes `activeYear`
+and falls back to the current school year when `config.json` is missing; since Step 7a the
+migration and the first-run setup write `config.json` with only `schema_version`, so the
+fallback no longer applied. The first session after migrating still worked because the Store
+had cached "no `config.json`" before the migration wrote it. Fixed in the Store (missing key
+falls back too); nothing is written to the data.
