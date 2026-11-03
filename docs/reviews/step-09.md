@@ -208,7 +208,7 @@ files; 4 digits accepted by the user on 2026-11-0x) and correct the version.
 - **n2.** `ui/src/screens/migration.ts:34`: "`${filesChecked} bestanden gecontroleerd`" says
   "1 bestanden"; the core text uses `plural()`.
 - **n3.** `crates/maatwerk-core/src/assignment.rs` / `typst_svc/vragen.rs:112`: `punten:
-  float.nan` or a negative number gives `totalPunten` `null` (serde_json writes NaN as null) or
+float.nan` or a negative number gives `totalPunten` `null` (serde_json writes NaN as null) or
   < 0, both violating the schema (`type: number`, `minimum: 0`). Filter non-finite values, or relax
   the schema.
 - **n4.** `docs/ai-context/assignment-authoring.md:132-150`: the JSON example omits the required
