@@ -10,6 +10,8 @@
  * its compile results are forwarded to the iframe as `maatwerk-editor-update`.
  */
 
+import { confirmDialog } from '../app.js';
+
 let _messageHandler = null;
 let _unsubscribeUpdates = null;
 let _session = null;
@@ -174,6 +176,17 @@ function handleEditorMessage(evt, frame, opdracht) {
         }
         return result;
       });
+      break;
+    case 'maatwerk-confirm':
+      // The app's own dialog: in Tauri, tauri-plugin-dialog replaces window.confirm
+      // with an async function, so a native confirm in the iframe never asks
+      // (manual test M-OPD-9, review 8b m6).
+      answer(() =>
+        confirmDialog(String(rest.message ?? ''), {
+          okLabel: String(rest.okLabel ?? 'OK'),
+          danger: rest.danger === true,
+        }),
+      );
       break;
     case 'maatwerk-get-data-dir':
       answer(() => window.maatwerk.getDataDir());

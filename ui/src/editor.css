@@ -567,6 +567,11 @@ body {
 .diff-same {
   color: #57606a;
 }
+.diff-none {
+  margin: 0;
+  padding: 8px 12px;
+  font-weight: 600;
+}
 
 /* CodeMirror theme and Typst token colours: editor-cm.css (inside the shadow root) */
 
