@@ -257,34 +257,6 @@ test('lib.typ: a current copy edited in the editor offers Bekijk verschillen', a
   await expect(frame.locator('#diff-body')).not.toContainText('Geen verschillen');
 });
 
-test('closing with an unsaved edit asks in the app dialog', async ({ page }) => {
-  await tauriConfirm(page);
-  const { frame, id } = await openEditor(page);
-  await setText(page, frame, 'Mijn tekst');
-  await expect(frame.locator('#editor-status')).toHaveText('Opgeslagen');
-  // The next save fails: closing must ask, not close silently.
-  await withMock(
-    page,
-    (m, rel) => {
-      const write = m.writeTextFile.bind(m);
-      m.writeTextFile = async (path, ...rest) => {
-        if (path === rel) throw new Error('schijf vol');
-        return write(path, ...rest);
-      };
-    },
-    `opdrachten/${id}/opdracht.typ`,
-  );
-  await page.keyboard.insertText(' erbij');
-  await frame.locator('#btn-app-title').click();
-  const dialog = page.locator('.app-dialog');
-  await expect(dialog).toContainText('niet opgeslagen');
-  await dialog.getByRole('button', { name: 'Annuleren' }).click();
-  await expect(page.locator('#editor-overlay')).toBeVisible();
-  await frame.locator('#btn-app-title').click();
-  await dialog.getByRole('button', { name: 'Toch sluiten' }).click();
-  await expect(page.locator('#editor-overlay')).toBeHidden();
-});
-
 test('closing the editor closes the session', async ({ page }) => {
   const { frame } = await openEditor(page);
   await frame.locator('#btn-app-title').click();

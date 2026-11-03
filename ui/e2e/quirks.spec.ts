@@ -87,23 +87,25 @@ test('D25: the editor reports a failed load instead of waiting forever', async (
 test('U9: after a failed save the editor can still be closed, after confirming', async ({
   page,
 }) => {
+  // As in Tauri: tauri-plugin-dialog makes window.confirm async, so it never stops
+  // anything; the editor must ask in the app's own dialog (manual test 10, M-OPD-9).
+  await page.addInitScript(() => {
+    window.confirm = (async () => true) as unknown as typeof window.confirm;
+  });
   await login(page);
   const frame = await openFirstOpdrachtInEditor(page);
   await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
   await frame.locator('.cm-content').click();
   await page.keyboard.type('x');
-  const dialogs: string[] = [];
-  page.on('dialog', (d) => {
-    dialogs.push(d.message());
-    void (dialogs.length === 1 ? d.dismiss() : d.accept());
-  });
-  await frame.locator('#btn-app-title').click(); // save fails -> asks; dismissed: stays open
-  await expect.poll(() => dialogs.length).toBe(1);
+  const dialog = page.locator('.app-dialog');
+  await frame.locator('#btn-app-title').click(); // save fails -> asks; cancelled: stays open
+  await expect(dialog).toContainText('niet opgeslagen');
+  await dialog.getByRole('button', { name: 'Annuleren' }).click();
+  await expect(dialog).toBeHidden();
   await expect(page.locator('#editor-overlay')).toBeVisible();
   await frame.locator('#btn-app-title').click(); // retries, fails, asks again; accepted: closes
+  await dialog.getByRole('button', { name: 'Toch sluiten' }).click();
   await expect(page.locator('#editor-overlay')).toBeHidden();
-  expect(dialogs).toHaveLength(2);
-  expect(dialogs[0]).toContain('niet opgeslagen');
 });
 
 test('U7: the user dialog keeps the colour attribute intact', async ({ page }) => {
