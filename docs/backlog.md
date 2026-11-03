@@ -317,8 +317,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 10
 
-- **Perf at 4x (review 10 M1):** the `school` fixture at 4x CPU is 2-3x slower than in Step 7c
-  (score modal median ~130 ms vs 48); 1x within budget. Bisect `step-07c` vs `step-10` exes.
+- **Perf at 4x (review 10 M1):** investigated: `step-07c` and `step-10` exes are equally slow
+  on battery (`docs/perf.md`); likely the power state, not a regression. Confirm on mains power.
 - **m3 (rest):** an app closed during the 45 s snapshot settle leaves its claim for 30 min
   (`CLAIM_STALE`), so that day's snapshot may be skipped. Remove our claim on `shutdown` when no
   zip has started.
