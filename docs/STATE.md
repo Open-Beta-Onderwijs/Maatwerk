@@ -278,7 +278,8 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 1. Step 10 "Cutover readiness" when the user says so: branch `step/10-cutover-readiness` from
    `main`, scope in `PLAN.md` Step 10 (panic hook and log file, the robustness items 6b m6,
-   4b n6, 5b n1, 7b m1, performance on the `school` fixture and a 200-PDF batch, security audits
+   4b n6, 5b n1, 7b m1, quirk B24 (duplicate question ids; added by the user 2026-11-03),
+   performance on the `school` fixture and a 200-PDF batch, security audits
    incl. U8, README/architecture/release-process docs, final whole-codebase review).
 2. In parallel (user): the phase 2 triage session (`ROADMAP.md` P0) with the feature and visual
    lists; it does not block Step 10.

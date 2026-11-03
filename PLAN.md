@@ -423,6 +423,7 @@ Step 10 keeps only what has to be done before teachers switch to the new app.
 
 - Consistent error handling for unexpected failures: panic hook, log file in app-data, "report a problem" shows the log path.
 - Robustness items that can lose work or hide changes (inventory section 2, "Needed before the cutover"): core opened off the main thread (6b m6), watcher thread panic (4b n6), per-job panic in the batch (5b n1), concurrent snapshot claim (7b m1).
+- **Quirk B24** (user, 2026-11-03): adding a question after a deletion can repeat a question id (`modals/toets-edit.js`, `q${questions.length + 1}`), so two questions share one score slot. Failing test first; new ids must be unique within the exam. Also check whether existing data can already hold duplicates (the data check / Gegevenscontrole should report them); any repair of saved exams is a data change: ask the user first.
 - Performance: run the `school` fixture and a batch of 200 PDFs; budgets in `docs/perf.md`.
 - Security: `cargo audit`, `cargo deny`, `npm audit`, CSP review, `innerHTML` audit (U8), Typst sandbox tests, path-traversal fuzzing.
 - Docs: README (what it is, install, data folder, backup), `docs/architecture.md` (short), release process (version bump, tag, CI exe + checksum).

@@ -81,13 +81,13 @@ from the inventory keep their old ID in "Source".
 
 ### 4.2 Bugs and quirks (B)
 
-| ID   | What                                                         | Area    | Pri | Size | User? | Source                     |
-| ---- | ------------------------------------------------------------ | ------- | --- | ---- | ----- | -------------------------- |
-| B-01 | Adding a question after a deletion can repeat a question id  | Toetsen |     | S    |       | quirk B24                  |
-| B-02 | Best-attempt logic in four places, with different edge cases | Domain  |     | M    | yes   | quirk B13, B15, B18        |
-| B-03 | Grade and statistics differences between screens             | Domain  |     | M    | yes   | quirks B1-B8, B12, B14, U5 |
-|      | _rest of inventory section 1, after triage_                  |         |     |      |       |                            |
-|      | _user's list_                                                |         |     |      |       |                            |
+| ID   | What                                                         | Area    | Pri              | Size | User? | Source                     |
+| ---- | ------------------------------------------------------------ | ------- | ---------------- | ---- | ----- | -------------------------- |
+| B-01 | Adding a question after a deletion can repeat a question id  | Toetsen | Moved to Step 10 | S    |       | quirk B24                  |
+| B-02 | Best-attempt logic in four places, with different edge cases | Domain  |                  | M    | yes   | quirk B13, B15, B18        |
+| B-03 | Grade and statistics differences between screens             | Domain  |                  | M    | yes   | quirks B1-B8, B12, B14, U5 |
+|      | _rest of inventory section 1, after triage_                  |         |                  |      |       |                            |
+|      | _user's list_                                                |         |                  |      |       |                            |
 
 ### 4.3 Visual changes (V)
 
