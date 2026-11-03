@@ -141,12 +141,14 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
 
 /// Per-channel tolerance of a golden: 0, except where a JPEG photo is drawn. JPEGs differ by up
 /// to 3 levels because our `image` crate decodes with zune-jpeg 0.5 and the reference CLI's
-/// build used an older decoder (`foto.jpg`; review 5b m3).
+/// build used an older decoder (`foto.jpg`; review 5b m3). `svg-preview-many-pages`: 1 level,
+/// because `main.typ` 2 no longer wraps the preview in the cursor-marker show rule (review 8b
+/// n4), which moves 12 anti-aliased pixels on page 1 by one grey level (nothing visible).
 fn tolerance(id: &str) -> u8 {
-    if id == "opdracht-images-student" {
-        3
-    } else {
-        0
+    match id {
+        "opdracht-images-student" => 3,
+        "svg-preview-many-pages" => 1,
+        _ => 0,
     }
 }
 

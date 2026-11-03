@@ -1,7 +1,11 @@
 #import "lib.typ": *
 
-// Extra aanpassingen bovenop setup — voeg hier inhoud of stijlen toe.
-#let setup_extra() = []
+// Stijlregels voor de hele opdracht. Zet ze vóór `body`, bijvoorbeeld:
+//   #let setup_extra(body) = {
+//     set math.equation(numbering: "(1)")
+//     body
+//   }
+#let setup_extra(body) = body
 
 // Achtergrondinfo, theorie, context.
 #let render_uitleg() = [

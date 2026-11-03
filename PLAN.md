@@ -21,7 +21,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | Rollout | **One-time cutover, planned after Step 8.** Old and new app never share a data folder at the same time. Data format *may* change, with a migration and a backup |
 | Repo & licence | **Public repo, AGPL-3.0** (ask whether `-only` or `-or-later`). Every dependency shipped in the exe must be AGPL-compatible (see 2.5, Step 3b) |
 | UI code | **Keep the JS UI**, add tests, migrate to **TypeScript gradually**. No framework rewrite |
-| AI assistance | **Not decided.** Keep the door open (headless API, documented assignment format, sandboxed Typst world). Build **no** AI features now |
+| AI assistance | **Decided 2026-11-03 (ADR-0009, option D):** in-app assistant that runs the teacher's own AI CLI in a temp copy of the opdracht folder; no API keys. Seams built in Step 9; implementation in a later step |
 | Tests | Start **before** porting (Step 2), against the old app |
 | Order | Port to parity first with clean seams. Refactor/optimise after parity. **Exception:** the Typst editor pipeline (Step 8), which is the main reason for using the crate |
 
@@ -101,7 +101,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 6 | Tauri wiring + parity + portable build | L (6a, 6b) | done (`step-06`, `v0.2.0-parity`) |
 | 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | done (`step-07a`, `step-07b`, `step-07c`, `step-07`) |
 | 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | done (`step-08a`, `step-08b`, `step-08`) |
-| 9 | AI-ready seams (design + CLI, no AI) | S | todo |
+| 9 | AI-ready seams (design + CLI, no AI) | S | done (`step-09`) |
 | 10 | Hardening, refactor, maintainability | L | todo |
 | 11 | macOS | M | todo (when needed) |
 
@@ -486,8 +486,8 @@ Order: biggest risk first, always with tests around the code you touch.
 6. **macOS signing** (Step 11).
 7. **Repo name and remote** (Step 0). Decided: `maatwerk`, public, AGPL-3.0-or-later. Remote created by the user (`github.com/Open-Beta-Onderwijs/Maatwerk`); first push after Step 5 (2026-10-28).
 8. **App identifier**: decided in Step 0: `nl.openbetaonderwijs.maatwerk` (was `nl.school.rtti-app`). Changing it moves the local app-config folder, which is fine because of the cutover.
-9. **Versioning and update policy** for a portable exe on OneDrive. Versioning decided 2026-11-01: SemVer below 1.0 with release candidates: `0.3.0-rc.1` after Step 8, `0.3.0` at the cutover, `-rc.N` for fixes before it; 1.0 later (e.g. after Step 10). Git tags `vX.Y.Z[-rc.N]`. The update policy (how teachers get a new exe) is still open.
-10. **AI integration style** (Step 9 ADR lists the questions).
+9. **Versioning and update policy** for a portable exe on OneDrive. Versioning decided 2026-11-01: SemVer below 1.0 with release candidates: `0.3.0-rc.1` after Step 8, `0.3.0` at the cutover, `-rc.N` for fixes before it; 1.0 later (e.g. after Step 10). Git tags `vX.Y.Z[-rc.N]`. `0.3.1` after Step 9 (user, 2026-11-02; the pre-cutover fixes and Step 9 together). The update policy (how teachers get a new exe) is still open.
+10. **AI integration style** (Step 9 ADR lists the questions). Step 9 done: options and questions in `docs/adr/0009-ai-integration.md`; nothing decided.
 11. **Cutover date.** Decided: after Step 8; the exact date is the user's call.
 12. **Encryption of the JSON files.** Decided 2026-10-30: no encryption (a key in the exe of a public AGPL repo is public). Instead an integrity stamp inside each JSON file to detect accidental outside changes (Step 7a, C19).
 13. **Sectievoorzitter rights.** Decided 2026-10-30: group composition and assigned teachers of the groups of their vak; everything else on students and groups stays admin-only; regular teachers cannot edit groups (Step 7b).

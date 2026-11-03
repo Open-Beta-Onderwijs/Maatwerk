@@ -1,12 +1,52 @@
 # State
 
-Last updated: 2026-11-01 (Step 8 done) Branch: `step/08-editor` Last tags: `step-07`, `step-07c`,
-`step-07b`, `step-07a`, `step-06`, `v0.2.0-parity`
+Last updated: 2026-11-03 (0.3.1: T31 fix, ADR-0009 decided) Branch: `release/v0.3.1` Last tags:
+`step-09`, `step-08`, `step-07`, `v0.2.0-parity`
 
 ## Current step
 
-**Step 8 done** (8a `step-08a`, 8b `step-08b`), merged into `main` and tagged `step-08`. Next:
-Step 9 when the user says so. Cutover readiness: see "Open questions" below.
+**Step 9 done**, merged into `main` and tagged `step-09`. Next: Step 10 when the user says so.
+The cutover (0.3.x on real data) is the user's call; see "Open questions".
+
+## After Step 9 (user decisions 2026-11-03, on `release/v0.3.1`, PR into `main`)
+
+1. **Publish 0.3.1 as its own PR** (`release/v0.3.1` -> `main`; PR #3 was already merged).
+2. **Quirk T31 fixed:** `main.typ` 2 applies `setup_extra(body)` as a show rule; the old
+   `setup_extra()` form keeps its old behaviour (detected by a regex on `opdracht.typ`, files are
+   not rewritten). New starter template, examples and AI context use `setup_extra(body) = body`.
+   Unmodified `main.typ` 1 copies update silently (ProjectFile release row 2). Migration fixture
+   `tests/fixtures/migrate/v2` updated (it holds the bundled main.typ and starter file).
+   `main.typ` 2 also drops the leftover cursor-marker code (review 8b n4, user 2026-11-03):
+   no `cursor` in `OpdrachtInputs`; `svg-preview-many-pages` golden tolerance 1 grey level.
+3. **ADR-0009 accepted: option D**, an in-app assistant that runs the teacher's own AI CLI
+   (Claude Code, Codex, Gemini, ...; detected on PATH, presets plus per-teacher override) in a
+   temp copy of the opdracht folder, diff/accept in the editor. Every teacher, provider of their
+   choice, no API keys, all four tasks, images per request with a warning. To be implemented in a
+   later step (not scheduled yet).
+
+## Before Step 9 (user requests 2026-11-02, on `release/v0.3.0-rc.1`, pushed to PR #3)
+
+1. CI fix: `THIRD_PARTY_NOTICES.txt` lacked `@codemirror/autocomplete` and `@codemirror/lint`
+   (Step 8b). PR #3 CI is green since.
+2. Migration report: the migration screen lists every migration warning and every check issue
+   (read-only Gegevenscontrole table, errors first), and `<backup> verslag.txt` next to the backup
+   zip holds the same plus every change (`migrate::save_report`; app and `maatwerk-cli migrate
+--apply`). Before, only the counts were shown (user's dry run: "0 fouten, 3 waarschuwingen").
+3. PIN 4-8 digits (was 5-8).
+
+## Step 9 result
+
+Commits 6da2ddf..HEAD on `step/09-ai-seams`, gate green:
+
+1. `maatwerk-core::assignment` (`Assignment::open` only on an opdracht folder, `check`,
+   `render_pdf`, `export_lib`); `maatwerk-cli assignment check [--json] | render --pdf |
+export-lib`. JSON schema `docs/schemas/assignment-check.schema.json` (+ generated sample).
+2. `docs/assignment-format.md`, `docs/ai-context/assignment-authoring.md` (~2.5k tokens),
+   `docs/assignment-examples/01..05` (a test checks they compile clean, plus the inline example).
+3. `docs/adr/0009-ai-integration.md`: options A/B/C, constraints, seven questions. Nothing decided.
+4. Review `docs/reviews/step-09.md`: 0 blockers; M1 (quirk T31, docs fixed), M2 (sandbox root),
+   m1, m2, m4, m5, m6, m8 and most nits fixed; m3, m7, n6, n9 in `docs/backlog.md`.
+5. Version 0.3.1 (Cargo workspace, `ui/package.json`).
 
 ## After Step 8 (user decisions 2026-11-01)
 
@@ -227,15 +267,19 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Step 9 (AI-ready seams) when asked.
+1. Wait for the user. Step 10 when asked. PR #3 is merged. Step 9 and 0.3.1 are in the
+   `release/v0.3.1` PR; after it merges, `git pull` on local `main` (it has the local Step 9
+   merge commit; the PR branch contains it plus `origin/main`). Tag `v0.3.1` when the user says.
 2. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
    M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two machines, and the
    runbook rehearsal on a copy of real data.
 
 ## Open questions for the user
 
+- When to schedule the ADR-0009 option D step (AI CLI assistant), relative to Step 10 and the
+  cutover.
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
-- Tag `v0.3.0-rc.1` once the PR's CI is green and it is merged (not tagged yet).
+- Tag `v0.3.0-rc.1` (PR #3 merged 2026-11-01; not tagged yet).
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
 

@@ -255,7 +255,7 @@ pub async fn editor_open(
         let settings = EditorSettings::read(storage);
         let fonts = c.fonts();
         let data_dir = storage.data_dir().clone();
-        let inputs = OpdrachtInputs::preview(title, false);
+        let inputs = OpdrachtInputs::preview(title);
         let factory = move || {
             let project = TypstProject::opdracht(&data_dir, &opdracht_id)?;
             let world = typst_svc::opdracht_world(fonts.clone(), project, &inputs, local_now());

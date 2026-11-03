@@ -148,10 +148,7 @@ impl MigrateArgs {
                 print_validation(v);
             }
             if let Some(f) = &report_file {
-                println!(
-                    "
-Verslag: {f}"
-                );
+                println!("\nVerslag: {f}");
             }
         }
         match validation {

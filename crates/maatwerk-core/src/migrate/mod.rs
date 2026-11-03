@@ -24,7 +24,7 @@ use time::OffsetDateTime;
 
 pub use backup::{BACKUP_PREFIX, check_backup_dir};
 pub(crate) use plan::walk_all;
-pub use report::{report_path, report_text, save_report};
+pub use report::{report_text, save_report};
 
 use crate::error::{Error, Result};
 use crate::storage::atomic::write_atomic;

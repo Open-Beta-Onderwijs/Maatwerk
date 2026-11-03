@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Open-Beta-Onderwijs/Maatwerk/docs/schemas/assignment-check.schema.json",
+  "title": "maatwerk-cli assignment check --json",
+  "description": "The result of checking one opdracht folder (maatwerk-core::assignment::CheckReport, Step 9). Exit code 0 when `ok`, 1 when it did not compile. A new incompatible version changes `schema`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "ok",
+    "entry",
+    "mode",
+    "pageCount",
+    "diagnostics",
+    "vragen",
+    "totalPunten",
+    "checks"
+  ],
+  "properties": {
+    "schema": {
+      "const": "maatwerk-assignment-check/1"
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "True when the opdracht compiled. Warnings and checks may remain."
+    },
+    "entry": {
+      "type": "string",
+      "description": "The compiled file, relative to root; main.typ for an opdracht folder."
+    },
+    "mode": {
+      "enum": ["student", "answers"],
+      "description": "student: the opdracht itself; answers: the answer key."
+    },
+    "pageCount": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "null when it did not compile."
+    },
+    "diagnostics": {
+      "type": "array",
+      "description": "Errors first, then warnings, as Typst reports them.",
+      "items": {
+        "$ref": "#/$defs/diagnostic"
+      }
+    },
+    "vragen": {
+      "type": "array",
+      "description": "Every #vraag in document order; empty when it did not compile.",
+      "items": {
+        "$ref": "#/$defs/vraag"
+      }
+    },
+    "totalPunten": {
+      "type": "number",
+      "description": "The sum of the punten that are given (finite numbers only)."
+    },
+    "checks": {
+      "type": "array",
+      "description": "The editor's checks on the vragen, Dutch text (e.g. \"Vraag 2a heeft geen antwoord.\").",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "message", "hints", "location", "trace"],
+      "properties": {
+        "severity": {
+          "enum": ["error", "warning"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Typst's message (English)."
+        },
+        "hints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "location": {
+          "type": ["object", "null"],
+          "$comment": "null for a span without a file",
+          "additionalProperties": false,
+          "required": ["file", "line", "column", "range"],
+          "properties": {
+            "file": {
+              "type": "string"
+            },
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "column": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "range": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        "trace": {
+          "type": "array",
+          "description": "Where the error came through, innermost first.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["message", "location"],
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "location": {
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "required": ["file", "line", "column", "range"],
+                "properties": {
+                  "file": {
+                    "type": "string"
+                  },
+                  "line": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "column": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "range": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vraag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["opgave", "label", "punten", "antwoord", "page"],
+      "properties": {
+        "opgave": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The opgave number; 0 for a vraag outside any #opgave."
+        },
+        "label": {
+          "type": "string",
+          "description": "\"1\", \"2a\", ... as on the answer key (no letter when the opgave has one vraag)."
+        },
+        "punten": {
+          "type": ["number", "null"],
+          "description": "null when not given, not a finite number, or when the folder's lib.typ is older than maatwerk-lib 2."
+        },
+        "antwoord": {
+          "type": ["string", "null"],
+          "description": "The answer as plain text."
+        },
+        "page": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "1-based page the vraag is on; null in answers mode (the opdracht is laid out hidden there)."
+        }
+      }
+    }
+  }
+}

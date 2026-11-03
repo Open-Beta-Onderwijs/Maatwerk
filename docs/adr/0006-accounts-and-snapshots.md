@@ -14,7 +14,11 @@ stays plain JSON in a OneDrive folder that every teacher can write.
 
 **PINs (`maatwerk-core::auth`).**
 
-- 4-8 digits (5-8 before 0.3.1, user request), stored as Argon2id PHC strings (`argon2` 0.5.3, default parameters
+- 4-8 digits (5-8 before 0.3.1, user request 2026-11-02; trade-off: 10,000 instead of 100,000
+  four-digit-minimum combinations. Online guessing stays slow through the growing delay; an
+  offline attack on a `pinHash` copied from the shared folder was already cheap at 5 digits, and
+  anyone with write access can edit the files anyway, so the PIN guards the shared PC, not the
+  files), stored as Argon2id PHC strings (`argon2` 0.5.3, default parameters
   m=19 MiB, t=2, p=1, random salt) in `gebruikers/<id>.json` as `pinHash`. The admin's ten
   recovery codes (`ABCD-EFGH`, 40 random bits each) as `recoveryCodeHashes`. Plain PINs and codes
   never reach the disk; codes are shown once.

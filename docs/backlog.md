@@ -283,8 +283,9 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   standaardversie" since 8b); move both to the app's own dialog (Step 10).
 - **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
   een opgave" only before the first opgave.
-- **n4:** the bundled `main.typ` still has the cursor-marker code; remove it with `maatwerk-main 2`
-  and drop the marker from `render_assignment_svg` (no caller left in the editor).
+- ~~**n4:** the bundled `main.typ` still has the cursor-marker code~~ Done in `maatwerk-main 2`
+  (0.3.1): no marker in `main.typ`, no `cursor` in `OpdrachtInputs` or `render_assignment_svg`.
+  The command itself has no caller in the editor any more; remove it in phase 2.
 - **n6:** while two abandoned compiles still run, the editor waits silently; say so.
 - **n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.
 - **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do
@@ -293,6 +294,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **CSP report on native editing:** typing over a multi-line selection makes Chrome insert a
   styled span in the editor's contenteditable, which the CSP blocks and reports (seen in e2e;
   CodeMirror rewrites that DOM, nothing visible). Check whether real typing triggers it.
+
+## From Step 9 (review `docs/reviews/step-09.md`)
+
+- **m3 No time limit in headless `assignment check`/`render`.** A runaway loop in an opdracht
+  hangs the CLI until Ctrl+C. Reuse the editor's watchdog (`LiveEditor`) or run the compile on a
+  thread with a deadline before the in-app assistant uses it (ADR-0009 constraint 4, option D).
+- **m7 `ui/e2e/editor.spec.ts:66-75` depends on wall-clock timing** (the 500 ms error delay of
+  commit 294161a). Use Playwright's `page.clock` or a test hook for `ERROR_DELAY_MS`.
+- **n6 `export_lib`:** an unreadable existing file counts as no clash, writes are not atomic, a
+  junction inside `<dir>` is followed. Low risk (the user picks the folder).
+- **n9** `el()` helper duplicated in `ui/src/screens/migration.ts` and `gegevens.ts`; share one in
+  the Step 10 UI refactor.
 
 ## Other
 
