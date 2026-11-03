@@ -88,6 +88,19 @@ function askParent(type, data, fallback) {
   });
 }
 
+/**
+ * Asks the teacher in the app's own dialog (in the parent window). Never the
+ * native window.confirm: in Tauri, tauri-plugin-dialog makes it async, so it
+ * returns a Promise and `!window.confirm(...)` never stops anything (M-OPD-9).
+ * Resolves false when the dialog cannot be shown.
+ */
+function askConfirm(message, { okLabel = 'OK', danger = false } = {}) {
+  return postToParent('maatwerk-confirm', { message, okLabel, danger }).then(
+    (ok) => ok === true,
+    () => false,
+  );
+}
+
 window.addEventListener('message', (evt) => {
   const msg = evt.data;
   if (msg?.type === 'maatwerk-response' && _pending[msg.id]) {
@@ -432,7 +445,9 @@ function renderBanner() {
     message = `${current} ontbreekt: de opdracht werkt pas weer na herstel.`;
   text.textContent = message;
   bannerEl.appendChild(text);
-  if (info?.state === 'outdated' || info?.state === 'modified') {
+  // Always offered for an existing file: the state is from the last status check,
+  // edits made since then count too (the diff uses the editor text; M-OPD-9).
+  if (info?.state !== 'missing') {
     const diff = document.createElement('button');
     diff.id = 'btn-file-diff';
     diff.textContent = 'Bekijk verschillen';
@@ -503,14 +518,12 @@ async function reveal(file, from, to = from) {
 // this editor has); the editor text is replaced as one undoable change.
 async function restoreFile(file) {
   const entry = files.get(file);
-  if (
-    !window.confirm(
-      `De standaardversie van ${file} vervangt jouw versie. Met Ongedaan maken (Ctrl+Z) krijg ` +
-        'je je eigen versie terug. Doorgaan?',
-    )
-  ) {
-    return;
-  }
+  const ok = await askConfirm(
+    `De standaardversie van ${file} vervangt jouw versie. Met Ongedaan maken (Ctrl+Z) krijg ` +
+      'je je eigen versie terug. Doorgaan?',
+    { okLabel: 'Herstellen', danger: true },
+  );
+  if (!ok) return;
   try {
     const flushed = await flushSave();
     if (!flushed) return;
@@ -887,9 +900,10 @@ async function closeAfterSave(type) {
   const saved = await flushSave();
   if (
     !saved &&
-    !window.confirm(
+    !(await askConfirm(
       'De laatste wijzigingen zijn niet opgeslagen. Toch sluiten? Dan gaan ze verloren.',
-    )
+      { okLabel: 'Toch sluiten', danger: true },
+    ))
   ) {
     return;
   }

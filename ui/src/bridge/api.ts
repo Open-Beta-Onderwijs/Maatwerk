@@ -57,7 +57,8 @@ export interface DataChange {
  * when it cannot be used (e.g. `unsupported_schema`, `io`); the app then shows
  * the startup error screen instead of running on empty data (review 4b m5).
  */
-export type { DataFolderStatus } from './bindings';
+export type { DataFolderStatus, ProblemInfo } from './bindings';
+import type { ProblemInfo } from './bindings';
 
 /** Live editor types (generated from Rust, Step 8b). */
 export type {
@@ -239,6 +240,12 @@ export interface MaatwerkApi {
   dataFolderStatus(): Promise<DataFolderStatus>;
   /** "Opnieuw proberen" on the startup error screen: restarts the app. */
   restartApp(): Promise<void>;
+  /** "Over Maatwerk > Probleem melden": the log folder on this PC and the version. */
+  problemInfo(): Promise<ProblemInfo>;
+  /** Opens the log folder; rejects when there is none or it cannot be opened. */
+  openLogFolder(): Promise<void>;
+  /** Writes an error the UI did not handle to the log file (text and stack, no data). */
+  logUiError(message: string): Promise<void>;
   /** v1 -> v2 after a backup, only while the folder needs it (startup screen). */
   migrateDataFolder(): Promise<MigrationResult>;
   /** `validate-data` on the open folder (admin, "Gegevenscontrole"). */

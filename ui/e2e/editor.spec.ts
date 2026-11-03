@@ -148,7 +148,18 @@ test('a compile over the time limit reports the admin setting', async ({ page })
   await expect(frame.locator('.svg-page')).toContainText('Goed');
 });
 
+/**
+ * As in the Tauri app: tauri-plugin-dialog replaces window.confirm with an async
+ * function, so a native confirm never stops anything (manual test M-OPD-9).
+ */
+async function tauriConfirm(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.confirm = (async () => true) as unknown as typeof window.confirm;
+  });
+}
+
 test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async ({ page }) => {
+  await tauriConfirm(page);
   await login(page);
   // An older, changed lib.typ in the first opdracht.
   const id = await withMock(page, async (m) => {
@@ -180,8 +191,17 @@ test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async (
   await expect(frame.locator('.diff-added')).toHaveText('+ // maatwerk-lib 2 (mock)');
   await frame.getByRole('button', { name: 'Sluiten' }).click();
 
-  page.once('dialog', (d) => void d.accept());
+  // The app's own dialog asks first; "Annuleren" keeps my version (M-OPD-9).
+  const dialog = page.locator('.app-dialog');
   await banner.getByRole('button', { name: 'Herstel standaardversie' }).click();
+  await expect(dialog).toContainText('De standaardversie van lib.typ vervangt jouw versie');
+  await dialog.getByRole('button', { name: 'Annuleren' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(frame.locator('.cm-content')).toContainText('mijn aanpassing');
+  expect(await withMock(page, (m) => m.calls.map((c) => c[0]))).not.toContain('restoreProjectFile');
+
+  await banner.getByRole('button', { name: 'Herstel standaardversie' }).click();
+  await dialog.getByRole('button', { name: 'Herstellen' }).click();
   await expect(frame.locator('#editor-status')).toContainText(
     'Standaardversie van lib.typ hersteld',
   );
@@ -202,6 +222,39 @@ test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async (
   // Back to opdracht.typ: no banner.
   await frame.locator('.file-tab[data-file="opdracht.typ"]').click();
   await expect(banner).toBeHidden();
+});
+
+test('lib.typ: a current copy edited in the editor offers Bekijk verschillen', async ({ page }) => {
+  // M-OPD-9: the button only showed for a copy that was already changed when the editor opened.
+  await login(page);
+  const id = await withMock(page, async (m) => {
+    const all = (await m.readOpdrachten()) as { id: string }[];
+    return all[0]!.id;
+  });
+  // The current bundled version (mock-api.ts LIB_TYP).
+  await withMock(
+    page,
+    (m, rel) => m.externalWriteText(rel, '// maatwerk-lib 2 (mock)\n'),
+    `opdrachten/${id}/lib.typ`,
+  );
+  await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+  await page.locator(`[data-action="open-editor"][data-id="${id}"]`).click();
+  const frame = page.frameLocator('#editor-frame');
+  await expect(frame.locator('.cm-content')).toBeVisible();
+  await expect(frame.locator('.file-tab[data-file="lib.typ"]')).not.toHaveClass(/needs-attention/);
+  await frame.locator('.file-tab[data-file="lib.typ"]').click();
+  const banner = frame.locator('#file-banner');
+  await expect(banner).toContainText('bepaalt de opmaak');
+  await banner.getByRole('button', { name: 'Bekijk verschillen' }).click();
+  await expect(frame.locator('#diff-body')).toContainText('Geen verschillen');
+  await frame.getByRole('button', { name: 'Sluiten' }).click();
+
+  await frame.locator('.cm-content').click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.insertText('// mijn regel\n');
+  await banner.getByRole('button', { name: 'Bekijk verschillen' }).click();
+  await expect(frame.locator('.diff-removed')).toHaveText('- // mijn regel');
+  await expect(frame.locator('#diff-body')).not.toContainText('Geen verschillen');
 });
 
 test('closing the editor closes the session', async ({ page }) => {

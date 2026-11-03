@@ -102,7 +102,7 @@ Electron app, v0.1.4 when this plan was written. About 16.6k lines of JS: ~1.4k 
 | 7 | Data format v2 + migration (7a); accounts, roles, snapshots (7b); perceived speed (7c) | L (7a, 7b, 7c) | done (`step-07a`, `step-07b`, `step-07c`, `step-07`) |
 | 8 | New editor and assignment pipeline on the crate | L (8a, 8b) | done (`step-08a`, `step-08b`, `step-08`) |
 | 9 | AI-ready seams (design + CLI, no AI) | S | done (`step-09`) |
-| 10 | Hardening, refactor, maintainability | L | todo |
+| 10 | Cutover readiness (rescoped 2026-11-03) | M | done (`step-10`) |
 | 11 | macOS | M | todo (when needed) |
 
 Sizes: **S** < half a session, **M** about one session (5 h), **L** about two sessions. These are estimates; split earlier rather than later.
@@ -423,6 +423,7 @@ Step 10 keeps only what has to be done before teachers switch to the new app.
 
 - Consistent error handling for unexpected failures: panic hook, log file in app-data, "report a problem" shows the log path.
 - Robustness items that can lose work or hide changes (inventory section 2, "Needed before the cutover"): core opened off the main thread (6b m6), watcher thread panic (4b n6), per-job panic in the batch (5b n1), concurrent snapshot claim (7b m1).
+- **Quirk B24** (user, 2026-11-03): adding a question after a deletion can repeat a question id (`modals/toets-edit.js`, `q${questions.length + 1}`), so two questions share one score slot. Failing test first; new ids must be unique within the exam. Also check whether existing data can already hold duplicates (the data check / Gegevenscontrole should report them); any repair of saved exams is a data change: ask the user first.
 - Performance: run the `school` fixture and a batch of 200 PDFs; budgets in `docs/perf.md`.
 - Security: `cargo audit`, `cargo deny`, `npm audit`, CSP review, `innerHTML` audit (U8), Typst sandbox tests, path-traversal fuzzing.
 - Docs: README (what it is, install, data folder, backup), `docs/architecture.md` (short), release process (version bump, tag, CI exe + checksum).

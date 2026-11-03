@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
+use std::sync::{Arc, Condvar, Mutex, PoisonError};
 
 use maatwerk_core::auth::Auth;
 use maatwerk_core::opdracht_images;
@@ -46,8 +46,66 @@ pub struct DataFolderStatus {
     pub error: Option<CommandError>,
 }
 
-/// Managed Tauri state; cloned into blocking tasks.
-pub type Shared = Arc<Core>;
+/// Managed Tauri state; cloned into blocking tasks. The core is opened on a background thread
+/// (review 6 m6: a slow OneDrive folder must not delay the window), so commands wait for it on
+/// their blocking thread with [`CoreSlot::wait`].
+pub type Shared = Arc<CoreSlot>;
+
+/// The core once it is open.
+#[derive(Default)]
+pub struct CoreSlot {
+    core: Mutex<Option<Arc<Core>>>,
+    opened: Condvar,
+}
+
+impl CoreSlot {
+    /// Opens the core on a thread of its own and fills the slot. A panic while opening still
+    /// fills it, with a core whose storage reports an `internal` error (the startup error
+    /// screen shows it), so no command waits forever.
+    pub fn open_in_background(
+        self: &Arc<CoreSlot>,
+        open: impl FnOnce() -> Core + Send + 'static,
+        failed: impl FnOnce(CommandError) -> Core + Send + 'static,
+        then: impl FnOnce(&Arc<Core>) + Send + 'static,
+    ) {
+        let slot = Arc::clone(self);
+        // Failing to start a thread at start is a start error (the panic hook shows it).
+        std::thread::Builder::new()
+            .name("open-data-folder".into())
+            .spawn(move || {
+                let started = std::time::Instant::now();
+                let core = std::panic::catch_unwind(std::panic::AssertUnwindSafe(open))
+                    .unwrap_or_else(|_| {
+                        failed(CommandError::internal("opening the data folder panicked"))
+                    });
+                tracing::info!("data folder opened in {} ms", started.elapsed().as_millis());
+                let core = slot.set(core);
+                then(&core);
+            })
+            .expect("cannot start the thread that opens the data folder");
+    }
+
+    fn set(&self, core: Core) -> Arc<Core> {
+        let core = Arc::new(core);
+        *lock(&self.core) = Some(Arc::clone(&core));
+        self.opened.notify_all();
+        core
+    }
+
+    /// The core, waiting until it is open. Blocks: call it on a blocking thread only.
+    pub fn wait(&self) -> Arc<Core> {
+        let guard = self
+            .opened
+            .wait_while(lock(&self.core), |core| core.is_none())
+            .unwrap_or_else(PoisonError::into_inner);
+        Arc::clone(guard.as_ref().expect("filled"))
+    }
+
+    /// The core if it is open already.
+    pub fn get(&self) -> Option<Arc<Core>> {
+        lock(&self.core).clone()
+    }
+}
 
 impl Core {
     /// Opens the data folder, seeds it on first run, starts the watcher (which hands each batch
@@ -84,6 +142,29 @@ impl Core {
             tracing::error!("cannot create the PDF output folder: {e}");
             CommandError::internal(format!("cannot create the PDF output folder: {e}"))
         });
+        Core::with(data_dir, storage, session_file, outputs, watcher)
+    }
+
+    /// A core whose data folder could not be opened at all (a panic while opening).
+    pub fn failed(
+        data_dir: PathBuf,
+        session_file: PathBuf,
+        output_dir: PathBuf,
+        error: CommandError,
+    ) -> Core {
+        let outputs = OutputStore::open(output_dir).map_err(|e| {
+            CommandError::internal(format!("cannot create the PDF output folder: {e}"))
+        });
+        Core::with(data_dir, Err(error), session_file, outputs, None)
+    }
+
+    fn with(
+        data_dir: PathBuf,
+        storage: Result<Arc<Storage>, CommandError>,
+        session_file: PathBuf,
+        outputs: Result<OutputStore, CommandError>,
+        watcher: Option<Watcher>,
+    ) -> Core {
         Core {
             data_dir,
             storage,
@@ -239,6 +320,38 @@ mod tests {
         assert!(status.error.is_none());
         assert!(status.data_dir.ends_with("data"), "{}", status.data_dir);
         core.shutdown();
+    }
+
+    /// Review 6 m6: commands wait for the core opened in the background; a panic while
+    /// opening still fills the slot.
+    #[test]
+    fn m6_commands_wait_for_the_core_and_a_panic_still_fills_the_slot() {
+        let tmp = tempfile::tempdir().unwrap();
+        let slot = Arc::new(CoreSlot::default());
+        assert!(slot.get().is_none());
+        let (gate_tx, gate_rx) = std::sync::mpsc::channel::<()>();
+        let session = tmp.path().join("session.json");
+        let output = tmp.path().join("output");
+        let data = tmp.path().join("data");
+        let (s2, o2, d2) = (session.clone(), output.clone(), data.clone());
+        slot.open_in_background(
+            move || {
+                gate_rx.recv().unwrap();
+                panic!("slow OneDrive, then a bug");
+            },
+            move |e| Core::failed(d2, s2, o2, e),
+            |_| {},
+        );
+        let waiter = {
+            let slot = Arc::clone(&slot);
+            std::thread::spawn(move || slot.wait().data_folder_status())
+        };
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        assert!(!waiter.is_finished(), "waits while the folder opens");
+        gate_tx.send(()).unwrap();
+        let status = waiter.join().unwrap();
+        assert_eq!(status.error.unwrap().code, ErrorCode::Internal);
+        assert_eq!(status.data_dir, display_path(&data));
     }
 
     /// Review 4b m5: the UI shows the reason and the folder instead of an empty app.

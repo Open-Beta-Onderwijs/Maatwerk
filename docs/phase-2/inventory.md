@@ -47,7 +47,7 @@ Tests that pin today's behaviour exist for B3, B4, B5, B6, B10, B11, B27, B28 an
 | B19 | Three different rules for "the student's group"                                                        | Bug?                   |
 | B20 | Observatie availability and opdracht fit treat empty lists differently                                 | Bug?                   |
 | B23 | Score input accepts hex and exponent notation                                                          | Bug?                   |
-| B24 | Adding a question after a deletion can repeat a question id (corrupts scores)                          | Bug? **high**          |
+| B24 | Adding a question after a deletion can repeat a question id (corrupts scores)                          | Moved to Step 10       |
 | B27 | `volgnummer` overflows above 99 exams per jaarlaag                                                     | Bug? (unlikely)        |
 | B28 | An unknown `rtti` tag makes `calcResults` crash                                                        | Bug?                   |
 | B29 | `calcGrade` checks the bounds in sequence instead of min/max                                           | Verify (equivalent?)   |

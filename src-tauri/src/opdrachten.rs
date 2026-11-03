@@ -142,7 +142,7 @@ pub async fn pick_image_file(
         .to_owned();
     let name = opdracht_images::clean_image_name(opdracht_images::stem_of(&file_name));
     let ext = opdracht_images::extension_of(&file_name);
-    let token = state.picked().add(path);
+    let token = blocking(state, move |c| Ok(c.picked().add(path))).await?;
     Ok(Some(PickedImage { token, name, ext }))
 }
 
@@ -212,10 +212,11 @@ pub async fn copy_opdracht_folder(
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_opdracht_folder(state: State<'_, Shared>, opdracht_id: String) -> Res<()> {
-    let core = Shared::clone(state.inner());
+    let slot = Shared::clone(state.inner());
     blocking(state, move |c| {
         if let Some(dir) = opdracht_images::delete_all(c.storage()?, &opdracht_id)? {
             std::thread::spawn(move || {
+                let core = slot.wait();
                 if let Ok(storage) = core.storage() {
                     opdracht_images::remove_dir_later(storage, &dir);
                 }

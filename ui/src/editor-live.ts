@@ -317,9 +317,16 @@ export function renderVragen(
 /** Fills `container` with the line diff of the copy against the bundled version. */
 export function renderDiff(container: HTMLElement, copy: string, bundled: string): void {
   container.replaceChildren();
+  const lines = diffLines(copy, bundled);
+  if (lines.every((line) => line.kind === 'same')) {
+    const none = document.createElement('p');
+    none.className = 'diff-none';
+    none.textContent = 'Geen verschillen: jouw versie is gelijk aan de standaardversie.';
+    container.appendChild(none);
+  }
   const pre = document.createElement('pre');
   pre.className = 'diff-view';
-  for (const line of diffLines(copy, bundled)) {
+  for (const line of lines) {
     const row = document.createElement('div');
     row.className = `diff-${line.kind}`;
     const sign = line.kind === 'added' ? '+ ' : line.kind === 'removed' ? '- ' : '  ';

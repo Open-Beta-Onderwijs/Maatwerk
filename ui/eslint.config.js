@@ -24,6 +24,28 @@ export default defineConfig(
     },
   },
   {
+    // No native dialogs: in Tauri, tauri-plugin-dialog replaces window.confirm with
+    // an async function, so `if (!confirm(...))` never stops anything (M-OPD-9).
+    files: ['src/**/*.{js,ts}'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        ...['alert', 'confirm', 'prompt'].map((property) => ({
+          object: 'window',
+          property,
+          message: 'Use confirmDialog (app.js) or askConfirm (editor-init.js).',
+        })),
+      ],
+      'no-restricted-globals': [
+        'error',
+        ...['alert', 'confirm', 'prompt'].map((name) => ({
+          name,
+          message: 'Use confirmDialog (app.js) or askConfirm (editor-init.js).',
+        })),
+      ],
+    },
+  },
+  {
     // Legacy JS imported from the reference renderer (Step 3a). It uses the
     // globals that src/legacy/globals.ts installs, and its idioms (`catch (_)`,
     // unused callback parameters, `a ? b() : c()`). New code is TypeScript.

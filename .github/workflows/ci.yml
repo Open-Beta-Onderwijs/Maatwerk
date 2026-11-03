@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main, 'step/**']
+    # A version tag builds the release exe (docs/release.md); publishing it stays manual.
+    tags: ['v*']
   pull_request:
 
 permissions:
@@ -96,11 +98,18 @@ jobs:
       # Only upload an exe whose shipped npm dependencies pass the allowlist (review 3a M3).
       - name: npm licence allowlist (before upload)
         run: npm run licenses
+      - name: SHA-256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash target/release/maatwerk.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  maatwerk.exe" | Set-Content -Encoding ascii -NoNewline target/release/maatwerk.exe.sha256
+          Get-Content target/release/maatwerk.exe.sha256
       - uses: actions/upload-artifact@v7
         with:
           name: maatwerk-windows-x64
           path: |
             target/release/maatwerk.exe
+            target/release/maatwerk.exe.sha256
             LICENSE
             THIRD_PARTY_NOTICES.txt
           if-no-files-found: error

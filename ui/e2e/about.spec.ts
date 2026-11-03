@@ -4,7 +4,7 @@
 // before login (startup screen) and after it (title in the top bar).
 
 import { expect, test } from '@playwright/test';
-import { login, watchErrors } from './helpers';
+import { login, watchErrors, withMock } from './helpers';
 
 test('Over Maatwerk from the startup screen shows the notice and licence texts', async ({
   page,
@@ -33,4 +33,34 @@ test('Over Maatwerk opens from the title in the top bar', async ({ page }) => {
   await login(page);
   await page.locator('#btn-about').click();
   await expect(page.locator('.about-modal h2')).toHaveText('Over Maatwerk');
+});
+
+test('Probleem melden shows the log folder and opens it', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Over Maatwerk' }).click();
+  const modal = page.locator('.about-modal');
+  await expect(modal.locator('.about-logdir')).toHaveText(
+    'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs',
+  );
+  await modal.getByRole('button', { name: 'Map met logbestanden openen' }).click();
+  await expect
+    .poll(() => withMock(page, (m) => m.calls.map((c) => c[0])))
+    .toContain('openLogFolder');
+});
+
+test('an unexpected error is logged and points to Probleem melden', async ({ page }) => {
+  await login(page);
+  await page.evaluate(() => {
+    setTimeout(() => {
+      throw new Error('e2e-unexpected');
+    });
+    void Promise.reject(new Error('e2e-rejected'));
+  });
+  await expect(page.locator('.toast-persistent')).toHaveCount(1);
+  await expect(page.locator('.toast-persistent')).toContainText('Probleem melden');
+  await expect
+    .poll(() => withMock(page, (m) => m.uiErrors.join('\n')))
+    .toMatch(
+      /error: .*e2e-unexpected[\s\S]*rejection: .*e2e-rejected|rejection: .*e2e-rejected[\s\S]*error: .*e2e-unexpected/,
+    );
 });

@@ -170,7 +170,7 @@ export function renderObservaties() {
           <strong class="obs-card-naam">${escHtml(o.naam)}</strong>
         </div>
         <span class="muted">${escHtml(o.uitleg)}</span>
-        <span class="small">Schoolsoort: ${(o.schoolsoort ?? []).join(', ') || '—'} &nbsp;·&nbsp; Jaarlagen: ${(o.jaarlagen ?? []).join(', ') || '—'}</span>
+        <span class="small">Schoolsoort: ${escHtml((o.schoolsoort ?? []).join(', ')) || '—'} &nbsp;·&nbsp; Jaarlagen: ${escHtml((o.jaarlagen ?? []).join(', ')) || '—'}</span>
       </div>
       <div class="card-actions">
         <button class="btn-sm btn-sm-icon" data-action="edit-obs" data-id="${escHtml(o.id)}" title="Observatie bewerken">${ICONS.pen}</button>

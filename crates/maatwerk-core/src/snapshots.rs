@@ -29,6 +29,8 @@ pub const STATE_FILE: &str = "snapshots/state.json";
 pub const SETTINGS_FILE: &str = "instellingen.json";
 /// A claim older than this is from an app that stopped while zipping.
 const CLAIM_STALE: Duration = Duration::from_secs(30 * 60);
+/// How long a claim waits for OneDrive to bring in a competing one (review 7b m1).
+const CLAIM_SETTLE: Duration = Duration::from_secs(45);
 /// Top-level folders never zipped: the snapshots themselves, photos (size: measure a real copy
 /// first, PLAN Step 7b), and leftovers the app does not use.
 const SKIPPED_DIRS: [&str; 5] = [DIR, "fotos", "rapporten", "bak", "temp"];
@@ -250,7 +252,25 @@ fn ms(t: OffsetDateTime) -> i64 {
 /// Writes a snapshot when the newest is older than the interval (or there is none), claiming
 /// the job first; then removes the snapshots [`keep`] does not keep. `who` names this machine
 /// in the claim. Blocking: run it on a background thread.
+///
+/// The claim in `state.json` lives in each PC's own OneDrive replica, so two PCs that start in
+/// the same minute could both claim (review 7b m1). After claiming, this waits [`CLAIM_SETTLE`]
+/// for OneDrive to sync and re-reads the state: if another PC's claim or a fresh snapshot came
+/// in meanwhile, it gives up. When OneDrive is slower than that, both PCs still write one; that
+/// only costs space (a same-name copy becomes an OneDrive conflict copy, which [`prune`]
+/// removes).
 pub fn run_if_due(storage: &Storage, now: OffsetDateTime, who: &str) -> Result<Outcome> {
+    run_if_due_with(storage, now, who, &|| std::thread::sleep(CLAIM_SETTLE))
+}
+
+/// [`run_if_due`] with the settle wait passed in (tests run it at once, or let another "PC"
+/// write meanwhile).
+pub(crate) fn run_if_due_with(
+    storage: &Storage,
+    now: OffsetDateTime,
+    who: &str,
+    settle: &dyn Fn(),
+) -> Result<Outcome> {
     let settings = Settings::read(storage);
     let interval = time::Duration::hours(i64::from(settings.interval_hours));
     // A snapshot dated more than a day ahead (a PC with a wrong clock) does not count, or it
@@ -299,6 +319,27 @@ pub fn run_if_due(storage: &Storage, now: OffsetDateTime, who: &str) -> Result<O
         Err(e) => return Err(e),
     }
 
+    settle();
+    let state = storage.read_json(&state_rel)?.unwrap_or(json!({}));
+    let ours = state.get("claim").is_some_and(|c| {
+        c.get("by").and_then(Value::as_str) == Some(who)
+            && c.get("atMs").and_then(Value::as_i64) == Some(now_ms)
+    });
+    if !ours {
+        let fresh = state
+            .get("lastAtMs")
+            .and_then(Value::as_i64)
+            .is_some_and(|t| {
+                now_ms - t < interval.whole_milliseconds() as i64 && t - now_ms < ahead_ms
+            });
+        tracing::info!("snapshot claim lost to another PC while settling");
+        return Ok(if fresh {
+            Outcome::NotDue
+        } else {
+            Outcome::Busy
+        });
+    }
+
     let written = write_zip(storage, local(now));
     // Release the claim and, if it worked, note the snapshot.
     storage.update(
@@ -309,7 +350,14 @@ pub fn run_if_due(storage: &Storage, now: OffsetDateTime, who: &str) -> Result<O
                 Value::Object(m) => m,
                 _ => Default::default(),
             };
-            s.remove("claim");
+            // Only our own claim: another PC's later claim stays (review 10 m3).
+            let ours = s.get("claim").is_some_and(|c| {
+                c.get("by").and_then(Value::as_str) == Some(who)
+                    && c.get("atMs").and_then(Value::as_i64) == Some(now_ms)
+            });
+            if ours {
+                s.remove("claim");
+            }
             if let Ok((name, _, _)) = &written {
                 s.insert("last".into(), Value::String(name.clone()));
                 s.insert("lastAtMs".into(), Value::from(now_ms));

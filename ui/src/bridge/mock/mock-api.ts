@@ -15,6 +15,7 @@ import type {
   DataChange,
   DataCheck,
   DataFolderStatus,
+  ProblemInfo,
   MigrationResult,
   PinCheck,
   StampIssue,
@@ -49,6 +50,8 @@ export interface MockSeed {
 }
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
+export const MOCK_LOG_DIR =
+  'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
 const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
 const MIME: Record<string, string> = {
@@ -728,6 +731,23 @@ export class MockApi implements MaatwerkApi {
 
   async restartApp(): Promise<void> {
     this.record('restartApp', []);
+  }
+
+  async problemInfo(): Promise<ProblemInfo> {
+    this.record('problemInfo', []);
+    return { logDir: MOCK_LOG_DIR, version: '0.0.0-mock' };
+  }
+
+  async openLogFolder(): Promise<void> {
+    this.record('openLogFolder', []);
+  }
+
+  /** Logged UI errors, for tests. */
+  uiErrors: string[] = [];
+
+  async logUiError(message: string): Promise<void> {
+    this.record('logUiError', [message]);
+    this.uiErrors.push(message);
   }
 
   async migrateDataFolder(): Promise<MigrationResult> {

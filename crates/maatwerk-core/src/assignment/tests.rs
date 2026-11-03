@@ -135,6 +135,30 @@ fn nothing_outside_the_opdracht_folder_is_readable() {
     assert_eq!(report.errors(), 1, "{:?}", report.diagnostics);
 }
 
+/// Step 10 sandbox: absolute paths, drive paths and packages that are not embedded are not
+/// readable from an opdracht either.
+#[test]
+fn absolute_paths_and_unknown_packages_are_not_readable() {
+    let outer = TempDir::new().unwrap();
+    let secret = outer.path().join("geheim.txt");
+    fs::write(&secret, "x").unwrap();
+    let abs = secret.to_string_lossy().replace('\\', "/");
+    for source in [
+        format!(r#"#read("{abs}")"#),
+        r#"#read("C:/Windows/win.ini")"#.to_owned(),
+        r#"#read("/../../geheim.txt")"#.to_owned(),
+        r#"#import "@preview/nonexistent-maatwerk:0.1.0": *"#.to_owned(),
+        r#"#import "@local/anything:0.1.0": *"#.to_owned(),
+    ] {
+        let dir = outer.path().join("opdracht");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("main.typ"), &source).unwrap();
+        fs::write(dir.join("opdracht.typ"), "").unwrap();
+        let report = check_dir(&dir, RenderOptions::default());
+        assert!(!report.ok, "{source}");
+    }
+}
+
 #[test]
 fn render_writes_a_pdf_in_both_modes() {
     let tmp = opdracht(None);

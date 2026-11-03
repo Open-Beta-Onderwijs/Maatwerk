@@ -15,6 +15,7 @@ import {
   formSnapshot,
 } from '../app.js';
 import { SEC_ROMAN, SEC_ALPHA2, renderToetsen } from '../screens/toetsen.js';
+import { nextQuestionId } from '../domain/ids';
 
 export async function openExamModal(existingId, afterSave = null) {
   const cfg = await Store.getConfig();
@@ -366,6 +367,9 @@ export function showExamEditor(
   lockTopFields = false,
 ) {
   const mode = exam.structureMode ?? 'roman';
+  // Ids the exam had when the editor opened: a colleague may enter scores for them meanwhile,
+  // so a deleted id is never handed out again (review 10 m4).
+  const openedIds = exam.questions.map((q) => ({ id: q.id }));
   const secLabels =
     mode === 'roman'
       ? SEC_ROMAN
@@ -671,7 +675,7 @@ export function showExamEditor(
           return;
         const last = exam.questions[exam.questions.length - 1];
         exam.questions.push({
-          id: `q${exam.questions.length + 1}`,
+          id: nextQuestionId([...exam.questions, ...openedIds]),
           section: last?.section ?? 'I',
           number: (last?.number ?? 0) + 1,
           max_points: last?.max_points ?? 2,

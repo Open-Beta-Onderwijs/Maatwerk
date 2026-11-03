@@ -5,7 +5,7 @@
 // Every page load starts a fresh MockApi, so tests do not share data.
 
 import { expect, test, type Page } from '@playwright/test';
-import { TEACHER, YEAR, login, readMockJson, seedFiles, withMock } from './helpers';
+import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
 
@@ -87,23 +87,25 @@ test('D25: the editor reports a failed load instead of waiting forever', async (
 test('U9: after a failed save the editor can still be closed, after confirming', async ({
   page,
 }) => {
+  // As in Tauri: tauri-plugin-dialog makes window.confirm async, so it never stops
+  // anything; the editor must ask in the app's own dialog (manual test 10, M-OPD-9).
+  await page.addInitScript(() => {
+    window.confirm = (async () => true) as unknown as typeof window.confirm;
+  });
   await login(page);
   const frame = await openFirstOpdrachtInEditor(page);
   await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
   await frame.locator('.cm-content').click();
   await page.keyboard.type('x');
-  const dialogs: string[] = [];
-  page.on('dialog', (d) => {
-    dialogs.push(d.message());
-    void (dialogs.length === 1 ? d.dismiss() : d.accept());
-  });
-  await frame.locator('#btn-app-title').click(); // save fails -> asks; dismissed: stays open
-  await expect.poll(() => dialogs.length).toBe(1);
+  const dialog = page.locator('.app-dialog');
+  await frame.locator('#btn-app-title').click(); // save fails -> asks; cancelled: stays open
+  await expect(dialog).toContainText('niet opgeslagen');
+  await dialog.getByRole('button', { name: 'Annuleren' }).click();
+  await expect(dialog).toBeHidden();
   await expect(page.locator('#editor-overlay')).toBeVisible();
   await frame.locator('#btn-app-title').click(); // retries, fails, asks again; accepted: closes
+  await dialog.getByRole('button', { name: 'Toch sluiten' }).click();
   await expect(page.locator('#editor-overlay')).toBeHidden();
-  expect(dialogs).toHaveLength(2);
-  expect(dialogs[0]).toContain('niet opgeslagen');
 });
 
 test('U7: the user dialog keeps the colour attribute intact', async ({ page }) => {
@@ -301,4 +303,63 @@ test('U20: a file dropped on the editor is ignored', async ({ page }) => {
   await content.dispatchEvent('drop', { dataTransfer });
   await page.waitForTimeout(300); // CodeMirror reads a dropped file asynchronously
   expect(await content.textContent()).toBe(before);
+});
+
+test('B24: a question added after a deletion gets a new id', async ({ page }) => {
+  const examId = `nat-lege-toets-${YEAR}`; // q1..q3, no scores
+  await login(page);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await examMenuItem(page, examId, 'Toets bewerken');
+  await page.locator('.qi-del[data-qi="0"]').click();
+  await page.locator('#f-addq').click();
+  await page.locator('#f-esave').click();
+  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(async () => {
+    const exam = await readMockJson<{ questions: { id: string }[] }>(
+      page,
+      `${YEAR}/exams/${examId}.json`,
+    );
+    expect(exam.questions.map((q) => q.id)).toEqual(['q2', 'q3', 'q4']);
+  }).toPass();
+});
+
+test('U8: a resit description is shown as text in the group overview', async ({ page }) => {
+  await page.goto('/');
+  const resit = await withMock(
+    page,
+    async (m, year) => {
+      const exams = (await m.readAllJson(`${year}/exams`)) as Record<string, unknown>[];
+      return exams.find((e) => e.description === 'HERKANSING')!;
+    },
+    YEAR,
+  );
+  const NASTY_DESC = `"><b class="u8">x</b>`;
+  await seedFiles(page, {
+    [`${YEAR}/exams/${resit.id as string}.json`]: { ...resit, description: NASTY_DESC },
+  });
+  await login(page);
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  await page.getByRole('button', { name: '3a nat', exact: true }).click();
+  const badges = page.locator('#modal-box .attempt-badge');
+  await expect(page.locator('#modal-box b.u8')).toHaveCount(0);
+  // In the fixture the resit is the best grade of some 3a students.
+  await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
+});
+
+test('a migrated config.json without activeYear opens every tab on the current school year', async ({
+  page,
+}) => {
+  // Since Step 7a config.json holds only schema_version; the reference fell back to the
+  // current school year when activeYear was missing (user, 2026-11-03).
+  await page.clock.setFixedTime(new Date('2025-11-03T12:00:00'));
+  await seedFiles(page, { 'config.json': { schema_version: 2 } });
+  await login(page);
+  for (const [screen, select] of [
+    ['leerlingen', '#student-year-select'],
+    ['groepen', '#groups-year-select'],
+    ['toetsen', '#toetsen-year-select'],
+  ] as const) {
+    await page.locator(`.nav-btn[data-screen="${screen}"]`).click();
+    await expect(page.locator(`${select} .csel-trigger`)).toContainText('2025-2026');
+  }
 });

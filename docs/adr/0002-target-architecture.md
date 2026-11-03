@@ -330,6 +330,24 @@ punten, antwoord}` from the document. A changed copy of `lib.typ` version 1 stil
   changed copy is reported as `modified` or `outdated` and never touched. Batch compiles use the
   copy as it is.
 
+### 13. Recorded at the Step 10 drift check
+
+- **Section 11 resolved:** `Core::open` no longer runs on the main thread; it fills a `CoreSlot`
+  on its own thread and commands wait for it on their blocking thread (review 6 m6).
+- **Commands beyond the reference (section 2):** `problem_info`, `open_log_folder` and
+  `log_ui_error` (`src-tauri/src/problems.rs`). `open_log_folder` opens only the log folder, so
+  section 7's rule (the UI cannot open arbitrary paths) holds.
+- **Logging (section 8):** panics are logged with thread, location and backtrace; every
+  `internal` command error is logged; errors the UI did not handle are logged as message and
+  stack (capped at 200 per run and 4000 characters). A thrown message could in theory hold data a
+  screen put in it; the UI's own messages do not.
+- **Moved to phase 2 with the Step 10 rescope (user, 2026-11-03):** the domain consolidation
+  (section 6, "Step 10 decides"), the styling cleanup of the `u-*` utilities (section 7), and
+  removing the compat layer in `ui/src/bridge/tauri-api.ts` (section 2). They change no
+  decision, only when it happens (`ROADMAP.md`, `docs/phase-2/inventory.md`).
+- **Still open (backlog):** `import_opdracht_image` reads the picked file in the shell without a
+  size cap (review 6 n10).
+
 ## Consequences
 
 - Step 2 characterises the reference against these seams (bridge contract per method, storage

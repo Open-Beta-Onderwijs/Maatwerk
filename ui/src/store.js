@@ -427,8 +427,14 @@ const Store = (() => {
   }
 
   // ── Sync getters (safe after preload / loadYear / initSubject) ────────────
+  // The reference never writes `activeYear` (it falls back to the current school
+  // year); since Step 7a config.json exists with only `schema_version`, so the
+  // fallback also covers a missing key, not only a missing file.
+  function withActiveYear(cfg) {
+    return cfg?.activeYear ? cfg : { ...cfg, activeYear: currentSchoolYear() };
+  }
   function getConfigSync() {
-    return cache['config.json'] ?? { activeYear: currentSchoolYear() };
+    return withActiveYear(cache['config.json']);
   }
   function getSchoolSync() {
     return cache['school.json'] ?? {};
@@ -449,7 +455,7 @@ const Store = (() => {
 
   // ── Config ────────────────────────────────────────────────────────────────
   async function getConfig() {
-    return (await load('config.json')) ?? { activeYear: currentSchoolYear() };
+    return withActiveYear(await load('config.json'));
   }
 
   async function setActiveYear(year) {

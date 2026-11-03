@@ -1,16 +1,56 @@
 # State
 
-Last updated: 2026-11-03 (0.3.1: T31 fix, ADR-0009 decided) Branch: `release/v0.3.1` Last tags:
-`step-09`, `step-08`, `step-07`, `v0.2.0-parity`
+Last updated: 2026-11-03 (0.3.2 on `fix/manual-test-10`, PR open) Branch: `fix/manual-test-10` Last tags:
+`step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
+only)
 
 ## Current step
 
-**Step 9 done**, merged into `main` and tagged `step-09`. Next: Step 10 when the user says so.
-The cutover (0.3.x on real data) is the user's call; see "Open questions".
+**Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the
+user: the open questions below and the manual checks before the cutover. Phase 2 per
+`ROADMAP.md` when the user says so.
 
-## After Step 9 (user decisions 2026-11-03, on `release/v0.3.1`, PR into `main`)
+## After the Step 10 manual test (2026-11-03, `fix/manual-test-10`, PR into `main`)
 
-1. **Publish 0.3.1 as its own PR** (`release/v0.3.1` -> `main`; PR #3 was already merged).
+1. The user's results: `docs/reviews/manual-test-step-10.md`, all pass except **M-OPD-9**.
+2. **M-OPD-9 fixed:** the editor's questions ("Herstel standaardversie", "Toch sluiten?" after a
+   failed save) used `window.confirm`, which `tauri-plugin-dialog` makes async, so they never
+   stopped anything. They now use the app's `confirmDialog` through `maatwerk-confirm`; ESLint
+   forbids native `alert/confirm/prompt`; e2e tests emulate the async confirm. "Bekijk
+   verschillen" shows for every existing `main.typ`/`lib.typ` ("Geen verschillen" when equal).
+3. Remarks: new ROADMAP items F-05 (compile indicator), V-03 (smooth preview scroll), B-04
+   (photo re-check). The M-LEER-3/M-GRP-3/M-TOE-6/M-ADM-1 comments repeat Step 6 (F-02, C18 done
+   in 7a, photos in 7b): re-check M-TOE-6 and M-ADM-1 against the current checklist.
+4. **No school year selected after a restart** (user, after retesting): `config.json` written
+   by the migration/first-run setup has no `activeYear`; the reference's fallback to the current
+   school year only covered a missing file. `Store.getConfigSync/getConfig` now fill it in
+   (`ui/tests/store/active-year.test.ts`, e2e in `quirks.spec.ts`). No data change.
+5. Version **0.3.2**. Gate green (cargo fmt/clippy/test, lint, typecheck, Vitest, 124 e2e,
+   `cargo deny`, licences, SPDX, `npm audit`).
+
+## Step 10 result
+
+1. Robustness: watcher panic restarts with backoff, close waits at most 2 s (4b n6); batch job
+   panic -> `BatchError::Panic` (5b n1); core opened off the main thread via `CoreSlot` (6b m6);
+   snapshot claim re-checked after a 45 s settle, only our own claim released (7b m1).
+2. Quirk B24: `nextQuestionId` (never reuses an id the exam had when the editor opened);
+   Gegevenscontrole reports repeated question ids as a **warning**; saved exams not repaired.
+3. Unexpected failures: panic hook (thread, location; backtrace with RUST_BACKTRACE), `internal`
+   errors logged, UI errors logged (student file names redacted, one line each), Over Maatwerk >
+   Probleem melden (log folder + open).
+4. Security: U8 fixed and `innerHTML` audit; path fuzzing; Typst sandbox tests; `cargo deny` ok;
+   `npm audit --omit=dev` 0; CSP unchanged; `/security-review` no findings
+   (`docs/testing.md`).
+5. Perf (`docs/perf.md`): 200-PDF batch 1.9 s / 171 MiB; `school` fixture 1x within budget, **4x
+   2-3x slower than Step 7c** (unexplained, backlog).
+6. Docs: README, `docs/architecture.md`, `docs/release.md`; CI uploads `maatwerk.exe.sha256` and
+   builds on `v*` tags; runbook B24 note; ADR-0002 section 13 (drift check).
+7. Review `docs/reviews/step-10.md`: 0 blockers; M1 (evidence) recorded, M2 fixed; m1-m5, n3-n5
+   fixed; m3 rest, m6, n1, n2, n7 in `docs/backlog.md` "From Step 10"; n6 rejected.
+
+## After Step 9 (user decisions 2026-11-03, PR #4 merged 2026-11-03)
+
+1. **Published 0.3.1 as its own PR** (#4, `release/v0.3.1` -> `main`; CI green on `097cf31`).
 2. **Quirk T31 fixed:** `main.typ` 2 applies `setup_extra(body)` as a show rule; the old
    `setup_extra()` form keeps its old behaviour (detected by a regex on `opdracht.typ`, files are
    not rewritten). New starter template, examples and AI context use `setup_extra(body) = body`.
@@ -265,7 +305,7 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
   Gebruikers).
 - Docs: data-files-v2, runbook sections 6-7, manual tests M-PIN/M-VZ/M-SNAP, parity, ADR-0006.
 
-## Phase 2 planning (2026-11-03, branch `plan/phase-2`, local only)
+## Phase 2 planning (2026-11-03, PR #5 merged into `main`)
 
 - `ROADMAP.md`: draft skeleton for after the cutover (rules without parity, intake list with
   F/B/V/R/X IDs, areas, step proposal, open decisions). `docs/phase-2/inventory.md`: quirks
@@ -275,12 +315,15 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
 
 ## Next action (concrete, resumable)
 
-1. Wait for the user. Step 10 when asked. PR #3 is merged. Step 9 and 0.3.1 are in the
-   `release/v0.3.1` PR; after it merges, `git pull` on local `main` (it has the local Step 9
-   merge commit; the PR branch contains it plus `origin/main`). Tag `v0.3.1` when the user says.
-2. Before the cutover (user): `docs/manual-test.md` M-OPD-2..11 in the real app, M-MIG-1..5,
-   M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two machines, and the
-   runbook rehearsal on a copy of real data.
+0. User: review and merge the 0.3.2 PR; re-check M-OPD-9 (and M-TOE-6, M-ADM-1 with the
+   current checklist wording) on the CI exe.
+1. User: the manual checks before the cutover: `docs/manual-test.md` M-OPD-2..11 in the real
+   app, M-MIG-1..5, M-PIN/M-VZ/M-SNAP and M-PERF-1/2 on a copy of real data, M-SYNC-1..4 on two
+   machines, and the runbook rehearsal on a copy of real data. Run `maatwerk-cli validate-data`
+   on the migrated copy to see whether B24 duplicates exist.
+2. User: decide the open questions below; then a release (`docs/release.md`) and the cutover
+   (`docs/cutover-runbook.md`) when the user says so.
+3. Phase 2 triage session (`ROADMAP.md` P0) in parallel.
 
 ## Open questions for the user
 
@@ -288,8 +331,16 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
   cutover.
 - Snapshot contents: photos (`fotos/`) are left out until M-SNAP-4 is measured on a real copy.
 - Tag `v0.3.0-rc.1` (PR #3 merged 2026-11-01; not tagged yet).
+- Push version tags (`v0.2.0-parity`, `v0.3.1`) to GitHub? So far only `step-*` tags are there.
 - None blocking. Section 9 items still open: versioning policy (9), domain logic location
   (Step 10), macOS.
+- **B24 repair (Step 10):** the user expects no duplicates in the real data (2026-11-03); no
+  repair planned.
+- **Perf at 4x (Step 10):** investigated 2026-11-03: the `step-07c` exe is as slow as `step-10`
+  on battery, so likely the power state, not the code (`docs/perf.md`). User to decide after an
+  optional re-run on mains power; then bump to `0.3.2` (user, 2026-11-03).
+- **Release version:** `0.3.2` bumped on `fix/manual-test-10` (user, 2026-11-03). Tag `v0.3.2`
+  on the merge commit once the PR is merged; pushing the tag waits for the user.
 
 ## How to resume
 
