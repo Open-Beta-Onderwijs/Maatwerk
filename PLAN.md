@@ -415,23 +415,25 @@ No AI features. Make them cheap to add later.
 
 ---
 
-### Step 10: Hardening, refactor, maintainability (L; may take several sessions)
+### Step 10: Cutover readiness (M)
 
-Order: biggest risk first, always with tests around the code you touch.
+Rescoped 2026-11-03. The refactor, the UI split, the CSV example and the other improvements moved
+to phase 2 (`ROADMAP.md`, intake in `docs/phase-2/inventory.md`), where parity no longer binds.
+Step 10 keeps only what has to be done before teachers switch to the new app.
 
-- Split the largest UI files (candidates from the reference: `scores.js` ~1.5k lines, `store.js` ~1.5k, `toets-overzicht.js` ~1.3k, `profiel.js` ~1.2k, `editor-init.js` ~1.7k, `style.css` ~2.8k) into cohesive modules. Convert extracted modules to TypeScript. Remove dead code (`docx` dependency, legacy `migrate()` if v2 made it obsolete).
-- Decide, with measurements, whether domain logic moves to Rust (open decision 4).
-- Consistent error handling and Dutch user-facing messages; panic hook; log file in app-data; "report a problem" shows the log path.
+- Consistent error handling for unexpected failures: panic hook, log file in app-data, "report a problem" shows the log path.
+- Robustness items that can lose work or hide changes (inventory section 2, "Needed before the cutover"): core opened off the main thread (6b m6), watcher thread panic (4b n6), per-job panic in the batch (5b n1), concurrent snapshot claim (7b m1).
 - Performance: run the `school` fixture and a batch of 200 PDFs; budgets in `docs/perf.md`.
-- Security: `cargo audit`, `cargo deny`, `npm audit`, CSP review, `innerHTML` audit, Typst sandbox tests, path-traversal fuzzing.
-- Optional: real-app E2E with tauri-driver on Windows CI.
-- CSV import screens (students `M-LEER-3`, groups `M-GRP-3`): show a 5-row example of the expected CSV and offer it as a download (user, Step 6 manual test).
-- Docs: README (what it is, install, data folder, backup), `docs/architecture.md` (short), contributing + test guide, release process (version bump, tag, CI exe + checksum).
+- Security: `cargo audit`, `cargo deny`, `npm audit`, CSP review, `innerHTML` audit (U8), Typst sandbox tests, path-traversal fuzzing.
+- Docs: README (what it is, install, data folder, backup), `docs/architecture.md` (short), release process (version bump, tag, CI exe + checksum).
+- The manual checks before the cutover (STATE "Next action"): M-SYNC on two machines, M-MIG and the runbook rehearsal on a copy of real data.
 - Final **whole-codebase review** by a fresh reviewer, plus `/security-review`.
 
 ---
 
-### Step 11: macOS (M, when needed)
+### Step 11: macOS
+
+Moved to phase 2 (`ROADMAP.md`, item X-04). The notes stay here for when it is planned:
 
 - CI macOS job; universal build (`--target universal-apple-darwin`).
 - WebKit compatibility: test the score grid, Chart.js, CodeMirror, pdf.js, the score-grid keyboard handling.

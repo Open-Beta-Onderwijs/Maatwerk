@@ -265,6 +265,14 @@ colleague change), M3 (folder re-reads), m1-m4, n1, n3, n4, n6 fixed; m4/m5 rest
   Gebruikers).
 - Docs: data-files-v2, runbook sections 6-7, manual tests M-PIN/M-VZ/M-SNAP, parity, ADR-0006.
 
+## Phase 2 planning (2026-11-03, branch `plan/phase-2`, local only)
+
+- `ROADMAP.md`: draft skeleton for after the cutover (rules without parity, intake list with
+  F/B/V/R/X IDs, areas, step proposal, open decisions). `docs/phase-2/inventory.md`: quirks
+  without a recorded fix, open backlog by theme, UI size and duplication.
+- `PLAN.md` Step 10 rescoped to "Cutover readiness"; Step 11 (macOS) moved to the roadmap (X-04).
+- Next: the user's triage session (ROADMAP P0) with their feature and visual lists.
+
 ## Next action (concrete, resumable)
 
 1. Wait for the user. Step 10 when asked. PR #3 is merged. Step 9 and 0.3.1 are in the
