@@ -410,6 +410,35 @@ mod tests {
             prop_assert!(RelPath::parse(&raw).is_err());
         }
 
+        /// Step 10 path fuzzing: any text (Unicode, Windows prefixes, `..\`, `C:`, `\\?\`,
+        /// trailing dots); whatever parses has only normal components under the root.
+        #[test]
+        fn any_accepted_path_resolves_under_root(
+            raw in prop_oneof![
+                "\\PC{0,40}",
+                proptest::collection::vec(
+                    prop_oneof![
+                        Just(".."), Just("."), Just("..\\"), Just("C:"), Just("\\\\?\\"),
+                        Just("/"), Just("\\"), Just("a"), Just("b.json"), Just("~"),
+                        Just("%2e%2e"), Just("con"), Just("x. "), Just("\u{FF0E}\u{FF0E}"),
+                        Just("\u{0}"),
+                    ],
+                    1..8,
+                )
+                .prop_map(|parts| parts.concat()),
+            ]
+        ) {
+            if let Ok(rel) = RelPath::parse(&raw) {
+                let root = Path::new("C:/maatwerk/data");
+                let joined = root.join(rel.as_str());
+                let tail = joined.strip_prefix(root).unwrap();
+                prop_assert!(
+                    tail.components().all(|c| matches!(c, std::path::Component::Normal(_))),
+                    "{raw:?} -> {joined:?}"
+                );
+            }
+        }
+
         #[test]
         fn resolved_paths_stay_under_root(segs in proptest::collection::vec("[a-zA-Z0-9_-]{1,8}", 1..5)) {
             let tmp = tempfile::tempdir().unwrap();
