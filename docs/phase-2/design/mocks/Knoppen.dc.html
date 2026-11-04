@@ -1,0 +1,129 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: knoppen en invoer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-spin{animation:mwspin .9s linear infinite;transform-origin:50% 50%}
+@keyframes mwspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 880px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+  <sc-for list="{{panels}}" as="p" hint-placeholder-count="2">
+    <div style="background: {{p.t.bg}}; color: {{p.t.text}}; padding: 36px 44px; display: flex; flex-direction: column; gap: 22px">
+      <h2 style="margin: 0; font-size: 20px; color: {{p.a.text}}">{{p.title}}</h2>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px; color: {{p.t.muted}}">KNOPPEN · 36 PX</span>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+          <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.a.fill}}; background: {{p.a.fill}}; color: {{p.a.on}}; font: inherit; font-weight: 600; cursor: pointer">+ Toets toevoegen</button>
+          <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.t.borderStrong}}; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit; font-weight: 600; cursor: pointer">RTTI uitleg / leeradvies</button>
+          <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: {{p.a.text}}; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+          <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.t.dangerFill}}; background: {{p.t.dangerFill}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Verwijderen</button>
+        </div>
+        <div style="display: flex; gap: 18px; font-size: 12px; color: {{p.t.muted}}"><span>Primair</span><span>Secundair</span><span>Tekstknop</span><span>Gevaar (alleen in bevestiging)</span></div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px; color: {{p.t.muted}}">KLEIN · 30 PX, PICTOGRAMKNOPPEN · 32 PX</span>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+          <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{p.t.borderStrong}}; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Overzicht openen</button>
+          <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{p.a.fill}}; background: {{p.a.fill}}; color: {{p.a.on}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Opslaan</button>
+          <span style="width: 1px; height: 24px; background: {{p.t.border}}; margin: 0 4px"></span>
+          <button aria-label="Bewerken" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid {{p.t.border}}; background: {{p.t.surface}}; color: {{p.t.text}}; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="m13.5 6.5 4 4"></path></svg></button>
+          <button aria-label="Kopiëren" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid {{p.t.border}}; background: {{p.t.surface}}; color: {{p.t.text}}; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg></button>
+          <button aria-label="Verwijderen" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid {{p.t.border}}; background: {{p.t.surface}}; color: {{p.t.danger}}; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button>
+          <button aria-label="Meer acties" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid {{p.t.border}}; background: {{p.t.surface}}; color: {{p.t.text}}; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+          <button aria-label="Sluiten" style="width: 32px; height: 32px; border-radius: 7px; border: 0; background: transparent; color: {{p.t.muted}}; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px; color: {{p.t.muted}}">TOESTANDEN</span>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+          <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.a.fill}}; background: {{p.a.fill}}; color: {{p.a.on}}; font: inherit; font-weight: 600; outline: 2px solid {{p.a.fill}}; outline-offset: 2px">Focus</button>
+          <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.a.fill}}; background: {{p.a.fill}}; color: {{p.a.on}}; font: inherit; font-weight: 600; display: inline-flex; align-items: center; gap: 8px"><svg class="mw-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9"></path></svg>Bezig…</button>
+          <button disabled style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.t.border}}; background: {{p.t.surface2}}; color: {{p.t.disabled}}; font: inherit; font-weight: 600">Niet beschikbaar</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px; color: {{p.t.muted}}">INVOER EN FILTERS</span>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+          <input placeholder="Zoeken…" aria-label="Zoeken" style="height: 36px; width: 180px; box-sizing: border-box; padding: 0 12px; border: 1px solid {{p.t.borderStrong}}; border-radius: 8px; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit">
+          <select aria-label="Schooljaar" style="height: 36px; padding: 0 10px; border: 1px solid {{p.t.borderStrong}}; border-radius: 8px; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit"><option>2026-2027</option></select>
+          <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid {{p.t.border}}; border-radius: 999px; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit; font-size: 13px; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"></path></svg>Alle jaarlagen</button>
+          <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid {{p.a.fill}}; border-radius: 999px; background: {{p.a.soft}}; color: {{p.a.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"></path></svg>Jaarlaag 4, 5</button>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px; color: {{p.t.muted}}">TOETSSOORTEN</span>
+        <div style="display: flex; gap: 18px; flex-wrap: wrap">
+          <sc-for list="{{p.types}}" as="ty" hint-placeholder-count="5">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 104px">
+              <span style="font-size: 12px; font-weight: 700; color: {{ty.on}}; background: {{ty.bg}}; border: 1.5px solid {{ty.border}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{ty.shadow}}">{{ty.code}}</span>
+              <span style="font-size: 12px; line-height: 1.35; color: {{p.t.muted}}">{{ty.label}}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px; color: {{p.t.muted}}">DIALOOG: KNOPPEN RECHTS, PRIMAIR ACHTERAAN</span>
+        <div style="width: 380px; background: {{p.t.surface}}; border: 1px solid {{p.t.border}}; border-radius: 14px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px">
+          <span style="font-weight: 700; font-size: 16px">Matthias Kortleven</span>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: {{p.t.muted}}">PINCODE
+            <input type="password" value="••••" aria-label="Pincode" style="height: 36px; width: 160px; box-sizing: border-box; padding: 0 12px; border: 1px solid {{p.a.fill}}; outline: 3px solid {{p.a.ring}}; border-radius: 8px; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit; letter-spacing: 3px">
+          </label>
+          <div style="display: flex; justify-content: flex-end; gap: 8px">
+            <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.t.borderStrong}}; background: {{p.t.surface}}; color: {{p.t.text}}; font: inherit; font-weight: 600">Annuleren</button>
+            <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{p.a.fill}}; background: {{p.a.fill}}; color: {{p.a.on}}; font: inherit; font-weight: 600">Inloggen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rood&quot;,&quot;oranje&quot;,&quot;geel&quot;,&quot;groen&quot;,&quot;blauw&quot;,&quot;indigo&quot;,&quot;paars&quot;,&quot;turquoise&quot;,&quot;roze&quot;,&quot;grafiet&quot;],&quot;default&quot;:&quot;blauw&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:880}}">
+class Component extends DCLogic {
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C', '#FFFFFF'], oranje: ['#C2540F', '#A8480C', '#FFB27A', '#FFFFFF'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C', '#2A2000'], groen: ['#24804E', '#1F7045', '#7DD8A3', '#FFFFFF'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF', '#FFFFFF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF', '#FFFFFF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5', '#FFFFFF'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC', '#FFFFFF'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9', '#FFFFFF'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1', '#FFFFFF'] };
+    const accName = this.props.accent ?? 'blauw';
+    const ac = ACC[accName];
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const anti = ANTI[accName];
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const shade = (c) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(c.slice(i, i + 2), 16) * 0.78).toString(16).padStart(2, '0')).join('');
+    const lighten = (c, k) => '#' + [1, 3, 5].map((i) => { const v = parseInt(c.slice(i, i + 2), 16); return Math.round(v + (255 - v) * k).toString(16).padStart(2, '0'); }).join('');
+    const stripes = (c) => `repeating-linear-gradient(135deg, ${c} 0 4px, ${lighten(c, c === '#E5AE0B' ? 0.6 : 0.5)} 4px 8px)`;
+    const sh = (c) => `0 0 2px ${shade(shade(c))}, 0 0 3px ${shade(shade(c))}`;
+    const types = (tk) => [
+      { code: '201', label: 'Toets', bg: ac[0], border: ac[0], on: onOf(ac[0]) },
+      { code: '202', label: 'Praktische opdracht', bg: stripes(ac[0]), border: ac[0], on: onOf(ac[0]), shadow: onOf(ac[0]) === '#FFFFFF' ? sh(ac[0]) : 'none' },
+      { code: '501', label: 'SE-toets', bg: anti, border: anti, on: onOf(anti) },
+      { code: '502', label: 'SE praktische opdracht', bg: stripes(anti), border: anti, on: onOf(anti), shadow: onOf(anti) === '#FFFFFF' ? sh(anti) : 'none' },
+      { code: '203', label: 'Diagnostisch, telt niet mee', bg: tk.surface2, border: '#9AA1AD', on: tk.muted },
+    ];
+    const light = { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', borderStrong: '#C9CED8', text: '#1B2230', muted: '#5D6675', disabled: '#9AA1AD', danger: '#B42318', dangerFill: '#C0362C' };
+    const dark = { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', borderStrong: '#434A57', text: '#E7EAF0', muted: '#A3ABB8', disabled: '#6B7380', danger: '#FF8A80', dangerFill: '#C0362C' };
+    return {
+      panels: [
+        { title: 'Licht', t: light, types: types(light), a: { fill: ac[0], text: ac[1], on: ac[3], soft: ac[0] + '14', ring: ac[0] + '33' } },
+        { title: 'Donker', t: dark, types: types(dark), a: { fill: ac[0], text: ac[2], on: ac[3], soft: ac[0] + '2E', ring: ac[0] + '55' } },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

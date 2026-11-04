@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: splash screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;family=Lexend:wght@800&amp;family=Outfit:wght@800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-in{animation:mwin .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes mwin{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.mw-bar{animation:mwbar 1.4s ease-in-out infinite}
+@keyframes mwbar{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px; background: {{bg}}; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; position: relative">
+  <svg class="mw-in" width="520" height="215" viewBox="70 220 1400 580" role="img" aria-label="Maatwerk">
+    <polygon fill="{{ink}}" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+    <polygon fill="{{ink}}" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+    <text x="700" y="494" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="{{ink}}">AAT</text>
+    <text transform="translate(797 784) skewX(-20)" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="{{ink}}">ERK</text>
+  </svg>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 12px">
+    <div role="progressbar" aria-label="Laden" style="width: 220px; height: 3px; border-radius: 3px; background: {{track}}; overflow: hidden">
+      <div class="mw-bar" style="width: 40%; height: 100%; border-radius: 3px; background: {{ink}}"></div>
+    </div>
+    <span style="font-size: 13px; color: {{muted}}">{{status}}</span>
+  </div>
+  <span style="position: absolute; bottom: 24px; font-size: 12px; color: {{muted}}">versie 0.4.0</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["licht","donker"],"default":"licht"},"status":{"editor":"enum","options":["Gegevens laden…","Gedeelde map openen…","Bijna klaar…"],"default":"Gegevens laden…"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const f = (this.props.lettertype ?? 'A').charAt(0);
+    const F = { A: ["'Outfit', sans-serif", 360, -6], B: ["'Archivo Black', sans-serif", 330, -4], C: ["'Lexend', sans-serif", 340, -10] }[f];
+    return {
+      bg: dark ? '#14171C' : '#F5F6F8', ink: dark ? '#E7EAF0' : '#2E3E50', muted: dark ? '#A3ABB8' : '#5D6675', track: dark ? '#272C35' : '#E1E4EA',
+      font: F[0], size: F[1], ls: F[2], status: this.props.status ?? 'Gegevens laden…',
+    };
+  }
+}
+</script>
+</body>
+</html>

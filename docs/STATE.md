@@ -1,12 +1,18 @@
 # State
 
-Last updated: 2026-11-03 (0.3.2 merged, PR #6, tagged `v0.3.2`) Branch: `main` Last tags:
+Last updated: 2026-11-04 (phase 2 intake; cutover done) Branch: `main` Last tags:
 `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
 only)
 
 ## Current step
 
-**Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the
+**Phase 2 (`PLAN-2.md`).** Cutover done by the user (2026-11). Intake in `ROADMAP.md` section 4;
+design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-29).
+Step 12 (triage) done 2026-11-04: decisions in `PLAN-2.md` section 1 and ADR-0010, triage in
+`ROADMAP.md` 4.6. **Next: step 13** (Foundation a). Before step 18 the user runs `validate-data`
+on a copy of the real data folder.
+
+Earlier: **Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the
 user: the open questions below and the manual checks before the cutover. Phase 2 per
 `ROADMAP.md` when the user says so.
 

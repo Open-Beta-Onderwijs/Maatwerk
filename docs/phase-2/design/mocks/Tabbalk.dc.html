@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: tabbalk-logo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+</style>
+</helmet>
+<div style="width: 1440px; height: 760px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+  <sc-for list="{{panels}}" as="p" hint-placeholder-count="2">
+    <div style="background: {{p.bg}}; color: {{p.muted}}; padding: 36px 40px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0 0 6px; font-size: 18px; color: {{p.ink}}">{{p.title}}</h2>
+      <sc-for list="{{p.rows}}" as="r" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px">{{r.label}}</span>
+          <div style="height: 56px; display: flex; align-items: center; gap: 26px; padding: 0 20px; background: {{p.head}}; border: 1px solid {{p.border}}; border-radius: 10px">
+            <div style="display: flex; align-items: center; gap: 10px; margin-right: 6px">
+              <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true">
+                <rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50" stroke="{{p.stroke}}" stroke-width="40"></rect>
+                <polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+                <polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+              </svg>
+              <sc-if value="{{r.v0}}" hint-placeholder-val="{{ false }}">
+                <span style="font-weight: 700; font-size: 18px; color: {{p.ink}}">Maatwerk</span>
+              </sc-if>
+              <sc-if value="{{r.v1}}" hint-placeholder-val="{{ false }}">
+                <span aria-label="MaatWerk" style="font-family: 'Archivo Black', sans-serif; font-size: 18px; color: {{p.ink}}; white-space: nowrap">Maat<span style="display: inline-block; transform: skewX(-20deg); margin-left: 1px">Werk</span></span>
+              </sc-if>
+              <sc-if value="{{r.v2}}" hint-placeholder-val="{{ false }}">
+                <span aria-label="MaatWerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; color: {{p.ink}}; white-space: nowrap; letter-spacing: .5px">M<span style="font-size: 0.72em">AAT</span>W<span style="font-size: 0.72em">ERK</span></span>
+              </sc-if>
+              <sc-if value="{{r.v4}}" hint-placeholder-val="{{ false }}">
+                <span aria-label="Maatwerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; color: {{p.ink}}; white-space: nowrap; letter-spacing: .5px">M<span style="font-size: 0.72em">AATWERK</span></span>
+              </sc-if>
+              <sc-if value="{{r.v3}}" hint-placeholder-val="{{ false }}">
+                <span aria-label="MaatWerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; color: {{p.ink}}; white-space: nowrap; letter-spacing: .5px">M<span style="font-size: 0.72em">AAT</span><span style="display: inline-block; transform: skewX(-20deg); margin-left: 1px">W<span style="font-size: 0.72em">ERK</span></span></span>
+              </sc-if>
+            </div>
+            <span style="font-weight: 600; color: {{p.ink}}; height: 56px; display: flex; align-items: center; box-shadow: inset 0 -3px 0 {{p.accent}}">Leerlingen</span>
+            <span>Groepen</span>
+            <span>Toetsen</span>
+            <span>Observaties</span>
+            <span>Opdrachten</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const R = [
+      ['0 · HUIDIG (SEGOE UI)', 0],
+      ['1 · MAATWERK, WERK SCHUIN 20°', 1],
+      ['2 · KLEINKAPITALEN, M EN W GROOT', 2],
+      ['3 · KLEINKAPITALEN, WERK SCHUIN 20°', 3],
+      ['4 · KLEINKAPITALEN, ÉÉN WOORD (ALLEEN DE M GROOT)', 4],
+    ];
+    const rows = R.map(([label, v]) => ({ label, v0: v === 0, v1: v === 1, v2: v === 2, v3: v === 3, v4: v === 4 }));
+    return {
+      panels: [
+        { title: 'Licht', bg: '#F5F6F8', head: '#FFFFFF', border: '#E1E4EA', ink: '#2E3E50', muted: '#5D6675', stroke: 'none', accent: '#2560BF', rows },
+        { title: 'Donker', bg: '#14171C', head: '#1D2128', border: '#30363F', ink: '#E7EAF0', muted: '#A3ABB8', stroke: '#5B6B80', accent: '#8DB6FF', rows },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

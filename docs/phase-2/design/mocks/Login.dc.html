@@ -1,0 +1,197 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: inloggen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2E3E50}a:hover{color:#1B2230}
+.mw-tile{transition:width .5s cubic-bezier(.2,.8,.2,1),height .5s cubic-bezier(.2,.8,.2,1),opacity .3s,box-shadow .2s,border-color .2s}
+.mw-tile:hover{box-shadow:0 6px 18px rgba(16,24,40,.10)}
+.mw-ease{transition:all .5s cubic-bezier(.2,.8,.2,1)}
+.mw-user{transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
+.mw-user:hover .mw-av{transform:translateY(-2px)}
+.mw-av{transition:transform .15s}
+.mw-pin:focus{outline:3px solid #2E3E5033;border-color:#2E3E50}
+</style>
+</helmet>
+<div data-mw-root="1" style="width: 100%; height: 960px; position: relative; overflow: hidden; background: #F5F6F8; color: #1B2230; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <div class="mw-ease" style="position: absolute; top: 22px; left: 28px; display: flex; align-items: center; gap: 10px; opacity: {{smallLogoOpacity}}">
+    <svg width="30" height="30" viewBox="0 0 1024 1024" aria-hidden="true">
+      <rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50"></rect>
+      <polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+      <polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+    </svg>
+    <span aria-label="Maatwerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: .5px; color: #2E3E50">M<span style="font-size: 0.72em">AATWERK</span></span>
+  </div>
+
+  <div class="mw-ease" style="position: absolute; left: 0; right: 0; top: {{markTop}}px; display: flex; flex-direction: column; align-items: center; gap: 28px; opacity: {{markOpacity}}; pointer-events: none">
+    <svg width="400" height="166" viewBox="70 220 1400 580" role="img" aria-label="Maatwerk">
+      <polygon fill="#2E3E50" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+      <polygon fill="#2E3E50" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+      <text x="700" y="494" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="#2E3E50">AAT</text>
+      <text transform="translate(797 784) skewX(-20)" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="#2E3E50">ERK</text>
+    </svg>
+    <span style="font-size: 16px; color: #5D6675">Kies je vak</span>
+  </div>
+
+  <div role="group" aria-label="Vak" class="mw-ease" style="position: absolute; left: 0; right: 0; top: {{rowTop}}px; display: flex; justify-content: center; gap: {{gap}}px; opacity: {{rowOpacity}}; pointer-events: {{rowEvents}}">
+    <sc-for list="{{subjects}}" as="v" hint-placeholder-count="4">
+      <button class="mw-tile" onClick="{{v.pick}}" aria-pressed="{{v.pressed}}" disabled="{{v.disabled}}" title="{{v.title}}" style="width: {{tile}}px; height: {{tile}}px; border-radius: {{radius}}px; border: 2px solid {{v.border}}; background: #FFFFFF; opacity: {{v.opacity}}; cursor: {{v.cursor}}; font: inherit; color: #1B2230; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: {{tileGap}}px; padding: 0; box-shadow: {{v.shadow}}">
+        <span class="mw-ease" aria-hidden="true" style="font-size: {{emo}}px; line-height: 1">{{v.emo}}</span>
+        <span class="mw-ease" style="font-size: {{label}}px; font-weight: 600">{{v.name}}</span>
+        <sc-if value="{{v.showNone}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #5D6675">nog geen gebruikers</span></sc-if>
+      </button>
+    </sc-for>
+  </div>
+
+  <div class="mw-ease" style="position: absolute; left: 50%; top: {{panelTop}}px; width: 960px; transform: translateX(-50%); opacity: {{panelOpacity}}; pointer-events: {{panelEvents}}; display: flex; flex-direction: column">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <section style="display: flex; gap: 32px; padding: 26px 0; border-top: 1px solid {{g.line}}; transition: border-color .4s">
+        <h2 class="mw-ease" style="margin: 12px 0 0; width: 150px; flex: none; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #5D6675; opacity: {{g.labelOpacity}}">{{g.label}}</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 28px">
+          <sc-for list="{{g.users}}" as="u" hint-placeholder-count="4">
+            <button class="mw-user" onClick="{{u.pick}}" tabindex="{{u.tab}}" style="border: 0; background: transparent; font: inherit; color: #1B2230; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 96px; padding: 0; opacity: {{u.opacity}}; transform: translateY({{u.dy}}px); transition-delay: {{u.delay}}ms">
+              <span class="mw-av" style="width: 80px; height: 80px; box-sizing: border-box; border-radius: {{u.radius}}; border: 3px solid {{u.ring}}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: {{u.fs}}px; letter-spacing: .5px">{{u.ini}}</span>
+              <span style="font-weight: 600">{{u.name}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{hasHero}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position: absolute; left: {{hero.x}}px; top: {{hero.y}}px; width: {{hero.size}}px; height: {{hero.size}}px; box-sizing: border-box; border-radius: {{hero.radius}}; border: {{hero.ring}}px solid {{hero.color}}; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: {{hero.fs}}px; letter-spacing: .5px; box-shadow: {{hero.shadow}}; transition: {{hero.tr}}">{{hero.ini}}</div>
+
+    <form onSubmit="{{submit}}" style="position: absolute; left: 652px; top: 330px; width: 440px; display: flex; flex-direction: column; gap: 16px; opacity: {{pinOpacity}}; transform: translateX({{pinDx}}px); transition: {{pinTr}}">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h2 style="margin: 0; font-size: 26px; font-weight: 700">{{sel.full}}</h2>
+        <span style="color: #5D6675">{{sel.role}} · {{subjectName}}</span>
+      </div>
+      <div style="min-height: 168px; display: flex; flex-direction: column; gap: 12px">
+        <sc-if value="{{sel.first}}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 0; font-size: 13px; color: #5D6675; line-height: 1.5">Je logt voor het eerst in. Kies een pincode van minstens 4 cijfers.</p>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">NIEUWE PINCODE
+            <input class="mw-pin" type="password" inputmode="numeric" autocomplete="new-password" style="height: 40px; width: 220px; box-sizing: border-box; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 8px; font: inherit; font-size: 16px; letter-spacing: 4px; outline: none">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">HERHAAL PINCODE
+            <input class="mw-pin" type="password" inputmode="numeric" autocomplete="new-password" style="height: 40px; width: 220px; box-sizing: border-box; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 8px; font: inherit; font-size: 16px; letter-spacing: 4px; outline: none">
+          </label>
+        </sc-if>
+        <sc-if value="{{sel.normal}}" hint-placeholder-val="{{ true }}">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">PINCODE
+            <input class="mw-pin" type="password" inputmode="numeric" autocomplete="current-password" style="height: 40px; width: 220px; box-sizing: border-box; padding: 0 12px; border: 1px solid #2E3E50; outline: 3px solid #2E3E5033; border-radius: 8px; font: inherit; font-size: 16px; letter-spacing: 4px">
+          </label>
+          <span style="font-size: 13px; color: #5D6675; font-style: italic">Pincode vergeten? Vraag de beheerder om je pincode te resetten.</span>
+        </sc-if>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 380px">
+        <button type="button" onClick="{{back}}" style="height: 36px; padding: 0 12px 0 6px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: #2E3E50; font: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>Andere gebruiker</button>
+        <button type="submit" style="height: 36px; padding: 0 18px; border-radius: 8px; border: 1px solid #2E3E50; background: #2E3E50; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">{{sel.cta}}</button>
+      </div>
+    </form>
+  </sc-if>
+
+  <button style="position: absolute; left: 28px; bottom: 22px; border: 0; background: transparent; font: inherit; font-size: 13px; color: #5D6675; cursor: pointer; padding: 6px 0">Over Maatwerk</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { subject: null, user: null, from: null, phase: 'idle' }; }
+  componentWillUnmount() { cancelAnimationFrame(this.raf); clearTimeout(this.backTimer); }
+  selectUser(ev, u) {
+    const btn = ev.currentTarget, root = btn.closest('[data-mw-root]');
+    const av = btn.querySelector('.mw-av');
+    const rr = root.getBoundingClientRect(), ar = av.getBoundingClientRect();
+    const k = rr.width / root.offsetWidth || 1;
+    const from = { x: (ar.left - rr.left) / k, y: (ar.top - rr.top) / k };
+    this.setState({ user: u, from, phase: 'start' });
+    cancelAnimationFrame(this.raf);
+    this.raf = requestAnimationFrame(() => { this.raf = requestAnimationFrame(() => this.setState({ phase: 'move' })); });
+  }
+  renderVals() {
+    const FULL = { MK: 'Matthias Kortleven', WESTH: 'Thijs van Westen', HOF: 'Herman Hofman', TEST: 'Test Gebruiker', EJ: 'Eva Janssen', DEK: 'Pieter Dekker', ADM: 'Administrator' };
+    const FIRST = { TEST: true, DEK: true };
+    const S = [
+      { key: 'nat', name: 'Natuurkunde', emo: '⚡', groups: [
+        ['DOCENTEN', 'Docent', [['Matthias', 'MK', '#2F6FD6'], ['Thijs', 'WESTH', '#3DBE4A'], ['Herman', 'HOF', '#E2C410'], ['Test', 'TEST', '#1B2230']]],
+        ['SECTIEVOORZITTER', 'Sectievoorzitter', [['Matthias', 'MK', '#2F6FD6']]],
+        ['BEHEER', 'Administrator', [['Administrator', 'ADM', '#C93636']]],
+      ] },
+      { key: 'bio', name: 'Biologie', emo: '🌱', groups: [] },
+      { key: 'schk', name: 'Scheikunde', emo: '⚗️', groups: [] },
+      { key: 'wi', name: 'Wiskunde', emo: '📐', groups: [
+        ['DOCENTEN', 'Docent', [['Eva', 'EJ', '#8A3FC2'], ['Pieter', 'DEK', '#0F7F86']]],
+        ['SECTIEVOORZITTER', 'Sectievoorzitter', [['Eva', 'EJ', '#8A3FC2']]],
+        ['BEHEER', 'Administrator', [['Administrator', 'ADM', '#C93636']]],
+      ] },
+    ];
+    const cur = S.find((s) => s.key === this.state.subject) ?? null;
+    const on = !!cur;
+    const u = this.state.user, phase = this.state.phase, moving = phase === 'move', returning = phase === 'return', picked = !!u && !returning;
+    const subjects = S.map((s) => {
+      const empty = !s.groups.length, sel = cur && cur.key === s.key;
+      return {
+        name: s.name, emo: s.emo, pressed: sel ? 'true' : 'false', disabled: empty ? true : undefined,
+        title: empty ? 'Nog geen gebruikers voor dit vak' : s.name,
+        showNone: empty && !on, border: sel ? '#2E3E50' : '#E1E4EA',
+        opacity: empty ? 0.45 : on && !sel ? 0.7 : 1, cursor: empty ? 'not-allowed' : 'pointer',
+        shadow: sel ? '0 6px 18px rgba(16,24,40,.12)' : '0 1px 2px rgba(16,24,40,.04)',
+        pick: () => { if (empty) return; this.setState({ subject: sel ? null : s.key, user: null, phase: 'idle' }); },
+      };
+    });
+    let i = 0;
+    const groups = (cur ? cur.groups : S[0].groups).map(([label, role, us], gi) => ({
+      label, line: gi === 0 || picked ? 'transparent' : '#E1E4EA', labelOpacity: picked ? 0 : 1,
+      users: us.map(([name, ini, ring]) => {
+        const k = i++;
+        const me = picked && u.key === role + ini;
+        const radius = role === 'Docent' ? '50%' : '18px';
+        return {
+          name, ini, ring, radius, fs: ini.length > 3 ? 15 : 20, tab: picked ? -1 : 0,
+          opacity: !on ? 0 : picked || (returning && u.key === role + ini) ? 0 : 1,
+          dy: !on ? 18 : picked && !me ? -14 : 0,
+          delay: !on ? 0 : picked ? k * 30 : returning ? 150 + k * 35 : 120 + k * 45,
+          pick: (ev) => this.selectUser(ev, { key: role + ini, ini, ring, role, radius, fs: ini.length > 3 ? 15 : 20 }),
+        };
+      }),
+    }));
+    const SIZE = 152, TX = 452, TY = 480 - SIZE / 2;
+    const from = this.state.from ?? { x: TX, y: TY };
+    const hero = u ? {
+      ini: u.ini, color: u.ring,
+      radius: u.role === 'Docent' ? '50%' : moving ? '30px' : '18px',
+      x: moving ? TX : from.x, y: moving ? TY : from.y, size: moving ? SIZE : 80,
+      ring: moving ? 5 : 3, fs: moving ? Math.round(u.fs * 1.8) : u.fs,
+      shadow: moving ? '0 12px 32px rgba(16,24,40,.14)' : 'none',
+      tr: phase === 'start' ? 'none' : 'all .6s cubic-bezier(.2,.8,.2,1)',
+    } : {};
+    const first = u ? !!FIRST[u.ini] : false;
+    return {
+      subjects, groups, hero, hasHero: !!u,
+      rowTop: on ? 84 : 470, tile: on ? 112 : 200, radius: on ? 14 : 20, gap: on ? 14 : 22, tileGap: on ? 6 : 14, emo: on ? 32 : 64, label: on ? 13 : 18,
+      rowOpacity: picked ? 0 : 1, rowEvents: picked ? 'none' : 'auto',
+      markTop: on ? 60 : 180, markOpacity: on ? 0 : 1, smallLogoOpacity: on ? 1 : 0,
+      panelTop: on ? 236 : 280, panelOpacity: on ? 1 : 0, panelEvents: on && !picked ? 'auto' : 'none',
+      pinOpacity: moving ? 1 : 0, pinDx: moving ? 0 : 24,
+      pinTr: returning ? 'opacity .2s ease, transform .3s ease' : 'opacity .4s ease .25s, transform .5s cubic-bezier(.2,.8,.2,1) .2s',
+      sel: u ? { full: FULL[u.ini], role: u.role, first, normal: !first, cta: first ? 'Pincode opslaan en inloggen' : 'Inloggen' } : { full: '', role: '', first: false, normal: true, cta: '' },
+      subjectName: cur ? cur.name : '',
+      back: () => { this.setState({ phase: 'return' }); clearTimeout(this.backTimer); this.backTimer = setTimeout(() => this.setState({ user: null, phase: 'idle' }), 620); },
+      submit: (ev) => { ev.preventDefault(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

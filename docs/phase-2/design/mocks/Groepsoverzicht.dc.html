@@ -1,0 +1,351 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: groepsoverzicht</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.sk{background-size:200% 100%;animation:mwsh 1.3s linear infinite}
+@keyframes mwsh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.mw-row:hover td{background:rgba(127,140,160,.07)}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; overflow: hidden; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; background: {{t.bg}}; color: {{t.text}}">
+
+  <header style="height: 56px; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+    <span style="font-weight: 700; font-size: 17px">Maatwerk</span>
+    <span style="color: {{t.muted}}">Leerlingen</span>
+    <span style="font-weight: 600; height: 56px; display: flex; align-items: center; box-shadow: inset 0 -3px 0 {{a.text}}">Groepen</span>
+    <span style="color: {{t.muted}}">Toetsen</span>
+    <span style="color: {{t.muted}}">Observaties</span>
+    <span style="color: {{t.muted}}">Opdrachten</span>
+  </header>
+  <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+    <div style="grid-column: 1 / -1; font-size: 24px; font-weight: 650; color: {{a.text}}; margin-bottom: 40px">Groepen</div>
+    <div style="height: 110px; border-radius: 12px; background: {{t.surface}}; border: 1px solid {{t.border}}"></div>
+    <div style="height: 110px; border-radius: 12px; background: {{t.surface}}; border: 1px solid {{t.border}}"></div>
+    <div style="height: 110px; border-radius: 12px; background: {{t.surface}}; border: 1px solid {{t.border}}"></div>
+  </div>
+
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: {{t.scrim}}"></div>
+
+  <section role="dialog" aria-modal="true" aria-labelledby="mw-dlg-title" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 1120px; max-height: 864px; height: 864px; display: flex; flex-direction: column; background: {{t.surface}}; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); overflow: hidden">
+
+    <div style="flex: none; padding: 20px 28px 0; border-bottom: 1px solid {{t.border}}">
+      <div style="display: flex; align-items: flex-start; gap: 16px">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <h2 id="mw-dlg-title" style="margin: 0; font-size: 22px; font-weight: 700; color: {{a.text}}">2A</h2>
+            <span style="font-size: 12px; line-height: 18px; padding: 1px 8px; border-radius: 999px; background: {{t.surface2}}; color: {{t.muted}}">Gymnasium</span>
+          </div>
+          <span style="font-size: 13px; color: {{t.muted}}">M. Kortleven · 12 leerlingen · klik een naam om het leerlingprofiel te openen</span>
+        </div>
+        <button aria-label="Sluiten" style="width: 36px; height: 36px; border-radius: 8px; border: 0; background: transparent; color: {{t.muted}}; cursor: pointer; display: flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+        </button>
+      </div>
+      <nav role="tablist" aria-label="Weergave" style="display: flex; gap: 4px; margin-top: 14px">
+        <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="5">
+          <button role="tab" aria-selected="{{tb.sel}}" onClick="{{tb.pick}}" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; font-weight: {{tb.weight}}; color: {{tb.color}}; box-shadow: inset 0 -3px 0 {{tb.bar}}">{{tb.label}}</button>
+        </sc-for>
+      </nav>
+    </div>
+
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 28px 24px">
+
+      <sc-if value="{{isRes}}" hint-placeholder-val="{{ true }}">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums">
+          <thead style="position: sticky; top: 0; z-index: 1">
+            <tr>
+              <th style="background: {{t.surface}}; padding: 10px 8px 2px"></th>
+              <th colspan="2" style="background: {{t.surface}}; padding: 10px 8px 2px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}; border-bottom: 1px solid {{t.border}}">PERIODE 1</th>
+              <th colspan="2" style="background: {{t.surface}}; padding: 10px 8px 2px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}; border-bottom: 1px solid {{t.border}}; border-left: 8px solid {{t.surface}}">PERIODE 2</th>
+              <th style="background: {{t.surface}}; padding: 10px 8px 2px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}; border-bottom: 1px solid {{t.border}}; border-left: 8px solid {{t.surface}}">JAAR</th>
+            </tr>
+            <tr>
+              <th style="background: {{t.surface}}; text-align: left; padding: 8px; font-weight: 600; border-bottom: 2px solid {{t.border}}">Naam</th>
+              <sc-for list="{{exams}}" as="e" hint-placeholder-count="4">
+                <th title="{{e.name}}" style="background: {{t.surface}}; padding: 8px; width: 72px; border-bottom: 2px solid {{t.border}}"><span style="font-size: 12px; font-weight: 700; color: {{e.on}}; background: {{e.badgeBg}}; border: 1.5px solid {{e.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.shadow}}">{{e.code}}</span></th>
+              </sc-for>
+              <th style="background: {{t.surface}}; padding: 8px; width: 80px; font-size: 12px; color: {{t.muted}}; font-weight: 600; border-bottom: 2px solid {{t.border}}">gem.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{students}}" as="s" hint-placeholder-count="12">
+              <tr class="mw-row">
+                <td style="padding: 0 8px; height: 29px; border-bottom: 1px solid {{t.line}}">
+                  <span style="display: inline-flex; align-items: center; gap: 6px"><a href="#" style="color: {{a.text}}; font-weight: 600; text-decoration: none">{{s.name}}</a><span style="color: {{t.muted}}; font-size: 12px">· {{s.nr}}</span>
+                  <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{s.trendLabel}}" style="color: {{s.trendColor}}; transform: rotate({{s.rot}}deg)"><path d="M4 12h15M13 6l6 6-6 6"></path></svg></sc-if></span>
+                </td>
+                <sc-for list="{{s.cells}}" as="c" hint-placeholder-count="5">
+                  <td style="text-align: center; padding: 0 4px; border-bottom: 1px solid {{t.line}}">
+                    <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><span style="display: inline-block; min-width: 44px; box-sizing: border-box; padding: 0 6px; line-height: 19px; border-radius: 6px; border: 1.5px solid {{c.border}}; color: {{c.color}}; font-weight: {{c.weight}}; font-style: {{c.fs}}">{{c.v}}</span></sc-if>
+                    <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="sk" style="display: inline-block; width: 44px; height: 22px; border-radius: 6px; background-image: {{t.sk}}; vertical-align: middle"></span></sc-if>
+                  </td>
+                </sc-for>
+              </tr>
+            </sc-for>
+          </tbody>
+          <tfoot style="position: sticky; bottom: 0">
+            <tr>
+              <td style="background: {{t.foot}}; padding: 0 8px; height: 32px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}; border-top: 2px solid {{t.border}}">GEMIDDELDE</td>
+              <sc-for list="{{meanRow}}" as="c" hint-placeholder-count="5">
+                <td style="background: {{t.foot}}; text-align: center; border-top: 2px solid {{t.border}}">
+                  <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><span style="display: inline-block; min-width: 44px; box-sizing: border-box; padding: 2px 6px; border-radius: 6px; border: 1.5px solid {{c.border}}; color: {{c.color}}; font-weight: 700; font-style: {{c.fs}}">{{c.v}}</span></sc-if>
+                  <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="sk" style="display: inline-block; width: 44px; height: 22px; border-radius: 6px; background-image: {{t.sk}}; vertical-align: middle"></span></sc-if>
+                </td>
+              </sc-for>
+            </tr>
+            <tr>
+              <td style="background: {{t.foot}}; padding: 0 8px; height: 28px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}">STANDAARDDEVIATIE</td>
+              <sc-for list="{{sdRow}}" as="c" hint-placeholder-count="5">
+                <td style="background: {{t.foot}}; text-align: center; color: {{t.muted}}">
+                  <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}">± {{c}}</sc-if>
+                  <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="sk" style="display: inline-block; width: 36px; height: 14px; border-radius: 4px; background-image: {{t.sk}}; vertical-align: middle"></span></sc-if>
+                </td>
+              </sc-for>
+            </tr>
+          </tfoot>
+        </table>
+      </sc-if>
+
+      <sc-if value="{{isDist}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 14px; padding-top: 18px">
+          <sc-for list="{{exams}}" as="e" hint-placeholder-count="4">
+            <div style="border: 1px solid {{t.border}}; border-radius: 12px; padding: 14px 18px">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px">
+                <span style="font-size: 12px; font-weight: 700; color: {{e.on}}; background: {{e.badgeBg}}; border: 1.5px solid {{e.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.shadow}}">{{e.code}}</span>
+                <span style="font-weight: 600">{{e.name}}</span>
+                <span style="flex: 1"></span>
+                <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><span style="color: {{t.muted}}; font-size: 13px">gem. <b style="color: {{e.meanColor}}">{{e.mean}}</b> ± {{e.sd}} · {{e.fail}} onvoldoende</span></sc-if>
+              </div>
+              <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}">
+                <div role="img" aria-label="{{e.histLabel}}" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; align-items: end; height: 110px; border-bottom: 1px solid {{t.border}}">
+                  <sc-for list="{{e.bins}}" as="b" hint-placeholder-count="9"><div title="{{b.t}}" style="height: {{b.h}}px; background: {{b.c}}; border-radius: 4px 4px 0 0"></div></sc-for>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; font-size: 11px; color: {{t.muted}}; text-align: center; padding-top: 4px">
+                  <sc-for list="{{binLabels}}" as="l" hint-placeholder-count="9"><span>{{l}}</span></sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><div class="sk" style="height: 128px; border-radius: 8px; background-image: {{t.sk}}"></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isBox}}" hint-placeholder-val="{{ false }}">
+        <div style="padding-top: 22px; display: flex; flex-direction: column; gap: 6px">
+          <sc-for list="{{exams}}" as="e" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 16px; height: 64px">
+              <div style="width: 260px; flex: none; display: flex; align-items: center; gap: 10px">
+                <span style="font-size: 12px; font-weight: 700; color: {{e.on}}; background: {{e.badgeBg}}; border: 1.5px solid {{e.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.shadow}}">{{e.code}}</span>
+                <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{e.name}}</span>
+              </div>
+              <div style="flex: 1; position: relative; height: 40px">
+                <div style="position: absolute; top: 0; bottom: 0; left: {{passPct}}%; border-left: 1px dashed {{t.border}}"></div>
+                <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}">
+                  <div style="position: absolute; top: 19px; height: 2px; left: {{e.minPct}}%; width: {{e.rangePct}}%; background: {{e.color}}"></div>
+                  <div style="position: absolute; top: 12px; height: 16px; width: 2px; left: {{e.minPct}}%; background: {{e.color}}"></div>
+                  <div style="position: absolute; top: 12px; height: 16px; width: 2px; left: {{e.maxPct}}%; background: {{e.color}}"></div>
+                  <div title="{{e.boxLabel}}" style="position: absolute; top: 4px; height: 32px; left: {{e.q1Pct}}%; width: {{e.iqrPct}}%; background: {{e.tint}}; border: 2px solid {{e.color}}; border-radius: 6px; box-sizing: border-box"></div>
+                  <div style="position: absolute; top: 4px; height: 32px; width: 3px; left: {{e.medPct}}%; background: {{e.color}}"></div>
+                </sc-if>
+                <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><div class="sk" style="position: absolute; top: 4px; height: 32px; left: 30%; width: 40%; border-radius: 6px; background-image: {{t.sk}}"></div></sc-if>
+              </div>
+              <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><span style="width: 110px; font-size: 12px; color: {{t.muted}}">mediaan <b style="color: {{t.text}}">{{e.med}}</b></span></sc-if>
+              <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span style="width: 110px"></span></sc-if>
+            </div>
+          </sc-for>
+          <div style="display: flex; gap: 16px">
+            <div style="width: 260px; flex: none"></div>
+            <div style="flex: 1; display: flex; justify-content: space-between; font-size: 11px; color: {{t.muted}}; border-top: 1px solid {{t.border}}; padding-top: 4px">
+              <sc-for list="{{axis}}" as="x" hint-placeholder-count="10"><span>{{x}}</span></sc-for>
+            </div>
+            <div style="width: 110px"></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isRtti}}" hint-placeholder-val="{{ false }}">
+        <div style="padding-top: 18px">
+          <div style="display: flex; gap: 18px; margin-bottom: 10px; font-size: 13px">
+            <sc-for list="{{rtti}}" as="r" hint-placeholder-count="4"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 3px; border-radius: 2px; background: {{r.c}}"></span>{{r.k}} <span style="color: {{t.muted}}">{{r.desc}}</span></span></sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+            <sc-for list="{{rttiExams}}" as="e" hint-placeholder-count="4">
+              <div style="border: 1px solid {{t.border}}; border-radius: 12px; padding: 14px 18px">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+                  <span style="font-size: 12px; font-weight: 700; color: {{e.on}}; background: {{e.badgeBg}}; border: 1.5px solid {{e.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.shadow}}">{{e.code}}</span>
+                  <span style="font-weight: 600">{{e.name}}</span>
+                </div>
+                <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}">
+                  <div role="img" aria-label="{{e.rttiLabel}}" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; align-items: end; height: 190px; border-bottom: 1px solid {{t.border}}; padding: 0 12px">
+                    <sc-for list="{{e.bars}}" as="b" hint-placeholder-count="4">
+                      <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%">
+                        <span style="font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums">{{b.v}}</span>
+                        <div style="width: 100%; max-width: 56px; height: {{b.h}}px; background: {{b.c}}; border-radius: 4px 4px 0 0"></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; padding: 4px 12px 0; text-align: center; font-size: 12px; font-weight: 700; color: {{t.muted}}">
+                    <sc-for list="{{e.bars}}" as="b" hint-placeholder-count="4"><span>{{b.k}}</span></sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><div class="sk" style="height: 211px; border-radius: 8px; background-image: {{t.sk}}"></div></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isObs}}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 18px 0 10px; color: {{t.muted}}; font-size: 13px">Aantal leerlingen per toets bij wie de observatie is aangevinkt, met het percentage van de groep.</p>
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0 6px; font-variant-numeric: tabular-nums">
+          <thead><tr>
+            <th style="text-align: left; font-weight: 600; padding: 0 8px">Observatie</th>
+            <sc-for list="{{exams}}" as="e" hint-placeholder-count="4"><th style="width: 90px"><span style="font-size: 12px; font-weight: 700; color: {{e.on}}; background: {{e.badgeBg}}; border: 1.5px solid {{e.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.shadow}}">{{e.code}}</span></th></sc-for>
+            <th style="width: 90px; font-size: 12px; color: {{t.muted}}; font-weight: 600">verloop</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{obs}}" as="o" hint-placeholder-count="5">
+              <tr>
+                <td style="padding: 0 8px; height: 40px"><span style="display: inline-flex; align-items: center; gap: 10px"><span aria-hidden="true" style="width: 22px; font-size: 17px; display: inline-flex; justify-content: center">{{o.ic}}</span>{{o.name}}</span></td>
+                <sc-for list="{{o.cells}}" as="c" hint-placeholder-count="4">
+                  <td style="text-align: center">
+                    <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><span style="display: inline-block; width: 84px; padding: 6px 0; border-radius: 8px; background: {{c.bg}}; color: {{c.fg}}; font-weight: 600">{{c.n}}</span></sc-if>
+                    <sc-if value="{{loading}}" hint-placeholder-val="{{ false }}"><span class="sk" style="display: inline-block; width: 84px; height: 30px; border-radius: 8px; background-image: {{t.sk}}; vertical-align: middle"></span></sc-if>
+                  </td>
+                </sc-for>
+                <td style="text-align: center">
+                  <sc-if value="{{ready}}" hint-placeholder-val="{{ true }}"><svg width="64" height="24" viewBox="0 0 64 24" role="img" aria-label="Verloop"><polyline points="{{o.spark}}" fill="none" stroke="{{a.fill}}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></polyline></svg></sc-if>
+                </td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </sc-if>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;licht&quot;,&quot;donker&quot;],&quot;default&quot;:&quot;licht&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rood&quot;,&quot;oranje&quot;,&quot;geel&quot;,&quot;groen&quot;,&quot;blauw&quot;,&quot;indigo&quot;,&quot;paars&quot;,&quot;turquoise&quot;,&quot;roze&quot;,&quot;grafiet&quot;],&quot;default&quot;:&quot;blauw&quot;},&quot;laadtijd&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:0,&quot;max&quot;:4000,&quot;step&quot;:100,&quot;unit&quot;:&quot;ms&quot;,&quot;default&quot;:900},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'Resultaten', loading: true }; }
+  componentDidMount() { this.load(); }
+  componentWillUnmount() { clearTimeout(this.timer); }
+  load() {
+    clearTimeout(this.timer);
+    this.setState({ loading: true });
+    this.timer = setTimeout(() => this.setState({ loading: false }), this.props.laadtijd ?? 900);
+  }
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, t) { t = Math.max(0, Math.min(1, t)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+  fmt(g) { return g.toFixed(1).replace('.', ','); }
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const accName = this.props.accent ?? 'blauw';
+    const ac = ACC[accName];
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1] };
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const anti = ANTI[accName];
+    const stripes = (c, w) => `repeating-linear-gradient(135deg, ${c} 0 ${w}px, ${c === '#E5AE0B' ? this.lerp(c, '#FFFFFF', 0.6) : this.lerp(c, '#FFFFFF', 0.5)} ${w}px ${w * 2}px)`;
+    const typeStyle = (type) => {
+      if (type === 'diag') return { color: '#8A93A3', on: t.muted, badgeBg: t.surface2, badgeBorder: '#9AA1AD', tint: '#8A93A333', shadow: 'none' };
+      const c = type === 'se' || type === 'sepo' ? anti : ac[0];
+      const striped = type === 'po' || type === 'sepo';
+      return {
+        color: c, on: onOf(c), badgeBorder: c, shadow: striped && onOf(c) === '#FFFFFF' ? `0 0 2px ${this.lerp(c, '#000000', 0.4)}, 0 0 3px ${this.lerp(c, '#000000', 0.4)}` : 'none',
+        badgeBg: striped ? stripes(c, 4) : c,
+        tint: striped ? `repeating-linear-gradient(135deg, ${c}AA 0 6px, ${c}1A 6px 12px)` : c + (dark ? '40' : '26'),
+      };
+    };
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', foot: '#22272F', scrim: 'rgba(0,0,0,.55)', sk: 'linear-gradient(90deg,#262B33 25%,#323843 50%,#262B33 75%)' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', foot: '#F7F8FA', scrim: 'rgba(16,24,40,.42)', sk: 'linear-gradient(90deg,#EEF0F3 25%,#F7F8FA 50%,#EEF0F3 75%)' };
+    const gc = (g) => g < 5.5 ? (dark ? '#FF8A80' : '#B42318') : (dark ? this.lerp('#E2BD45', '#6CCB8A', (g - 5.5) / 4) : this.lerp('#8A6A00', '#1E7B3C', (g - 5.5) / 4));
+    const gb = (g) => g < 5.5 ? '#E5736B' : this.lerp('#F2C94C', '#5DB97B', (g - 5.5) / 4);
+    const loading = this.state.loading, ready = !loading;
+
+    const EC = [['#2F6FD6', '#FFFFFF'], ['#C2540F', '#FFFFFF'], ['#24804E', '#FFFFFF'], ['#8A3FC2', '#FFFFFF']];
+    const E = [['201', 'Practicum Dichtheid', 'po'], ['202', 'Toets H1 Krachten', 'toets'], ['203', 'Diagnostische toets H2', 'diag'], ['204', 'Toets H3 Energie', 'toets']];
+    const counts = (g, i) => g != null && E[i][2] !== 'diag';
+    const S = [
+      ['Noor Bakker', '106101', [8.0, 7.2, 7.9, 8.4]], ['Daan Visser', '106102', [6.1, 5.4, 5.0, 4.6]], ['Lotte Jansen', '106103', [8.8, 9.1, 8.6, 9.0]],
+      ['Mehmet Yilmaz', '106104', [5.2, 6.0, 6.6, 7.4]], ['Sanne de Vries', '106105', [7.5, 7.0, 7.3, 7.4]], ['Bram Smit', '106106', [6.9, 7.4, 6.2, 6.0]],
+      ['Yara El Idrissi', '106107', [4.8, 5.6, 6.1, 6.9]], ['Thijs Mulder', '106108', [8.1, 7.6, 7.9, 6.6]], ['Fleur de Boer', '106109', [9.2, 8.9, 9.4, 9.6]],
+      ['Ravi Sharma', '106110', [null, 6.3, 5.9, 6.8]], ['Anouk Willems', '106111', [7.7, 8.0, 7.1, 7.5]], ['Jesse Bos', '106112', [5.9, 4.9, 5.3, 5.8]],
+    ];
+    const mean = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(xs.reduce((s, x) => s + (x - m) * (x - m), 0) / xs.length); };
+    const q = (xs, p) => { const s = [...xs].sort((x, y) => x - y), i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo); };
+    const pct = (g) => ((g - 1) / 9) * 100;
+    const trend = (d) => d > 1 ? [-50, dark ? '#3DDC84' : '#0E9F4F', 'Sterk omhoog'] : d >= 0.5 ? [-25, dark ? '#86C99C' : '#4E8F63', 'Licht omhoog'] : d > -0.5 ? [0, t.muted, 'Gelijk'] : d >= -1 ? [25, dark ? '#E6A08F' : '#B4654F', 'Licht omlaag'] : [50, dark ? '#FF6B5E' : '#D92D20', 'Sterk omlaag'];
+    const cell = (g) => g == null ? { v: '—', color: t.muted, border: t.border, weight: 400, fs: 'normal' } : { v: this.fmt(g), color: gc(g), border: gb(g), weight: g < 5.5 ? 700 : 500, fs: 'normal' };
+    const dcell = (g) => ({ v: g == null ? '—' : this.fmt(g), color: t.muted, border: '#9AA1AD', weight: 400, fs: 'italic' });
+    const cellAt = (g, i) => (i < E.length && E[i][2] === 'diag' ? dcell(g) : cell(g));
+
+    const students = S.map(([name, nr, gs]) => {
+      const have = gs.filter(counts), avg = mean(have), last = have[have.length - 1], tr = trend(last - avg);
+      return { name, nr, rot: tr[0], trendColor: tr[1], trendLabel: 'Trend: ' + tr[2], cells: [...gs.map(cellAt), cell(avg)] };
+    });
+    const cols = E.map((_, i) => S.map((s) => s[2][i]).filter((g) => g != null));
+    const avgs = S.map((s) => mean(s[2].filter(counts)));
+    const meanRow = [...cols.map((c, i) => cellAt(mean(c), i)), cell(mean(avgs))];
+    const sdRow = [...cols.map((c) => this.fmt(sd(c))), this.fmt(sd(avgs))];
+
+    const binLabels = ['1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10'];
+    const exams = E.map(([code, name], i) => {
+      const c = cols[i], m = mean(c), counts = Array(9).fill(0);
+      c.forEach((g) => { counts[Math.min(8, Math.max(0, Math.floor(g - 1)))]++; });
+      const mx = Math.max(...counts);
+      const q1 = q(c, 0.25), q3 = q(c, 0.75), md = q(c, 0.5), mn = Math.min(...c), mxg = Math.max(...c);
+      return {
+        code, name: E[i][2] === 'diag' ? name + ' (telt niet mee)' : name, ...typeStyle(E[i][2]),
+        mean: this.fmt(m), sd: this.fmt(sd(c)), meanColor: gc(m), fail: Math.round((c.filter((g) => g < 5.5).length / c.length) * 100) + '%',
+        bins: counts.map((n, k) => ({ h: n ? Math.round((n / mx) * 104) + 4 : 2, c: n ? gb(k + 1.5) : t.border, t: binLabels[k] + ': ' + n + ' leerlingen' })),
+        histLabel: 'Cijferverdeling ' + code,
+        minPct: pct(mn), maxPct: pct(mxg), rangePct: pct(mxg) - pct(mn), q1Pct: pct(q1), iqrPct: pct(q3) - pct(q1), medPct: pct(md) - 0.15,
+        med: this.fmt(md), boxLabel: 'Kwartielen ' + this.fmt(q1) + ' – ' + this.fmt(q3),
+      };
+    });
+
+    const R = [['R', 'reproductie', '#3A9A4A', [82, 78, 85, 80]], ['T1', 'toepassen bekend', '#2A9FC4', [74, 70, 72, 76]], ['T2', 'toepassen nieuw', '#E0922F', [61, 58, 66, 63]], ['I', 'inzicht', '#D24A45', [48, 44, 52, 57]]];
+    const X = (i) => 120 + i * 270, Y = (v) => 320 - v * 3;
+    const rtti = R.map(([k, desc, c, vs]) => ({ k, desc, c, pts: vs.map((v, i) => X(i) + ',' + Y(v)).join(' '), dots: vs.map((v, i) => ({ x: X(i), y: Y(v), t: k + ' ' + E[i][0] + ': ' + v + '%' })) }));
+    const rttiExams = exams.map((e, i) => ({ ...e, rttiLabel: 'RTTI ' + e.code + ': ' + R.map((r) => r[0] + ' ' + r[3][i] + '%').join(', '), bars: R.map(([k, , c, vs]) => ({ k, c, v: vs[i] + '%', h: Math.round(vs[i] * 1.6) })) }));
+    const gridY = [0, 25, 50, 75, 100].map((v) => ({ y: Y(v), ty: Y(v) + 4, l: v + '%' }));
+    const xLabels = E.map(([code], i) => ({ x: X(i), l: code }));
+
+    const O = [['📏', 'Eenheid vergeten / verkeerd', [3, 5, 2, 1]], ['➗', 'Formule verkeerd omgeschreven', [4, 3, 4, 2]], ['🧮', 'Rekenfout', [2, 4, 1, 3]], ['🎯', 'Significantie antwoord verkeerd', [0, 2, 3, 1]], ['📈', 'Grafiek: aslabels vergeten', [5, 0, 2, 0]]];
+    const omax = 5;
+    const obs = O.map(([ic, name, ns]) => ({
+      ic, name,
+      cells: ns.map((n) => ({ n: n ? n + ' (' + Math.round((n / S.length) * 100) + '%)' : '—', bg: n ? a.fill + Math.round(24 + (n / omax) * 150).toString(16).padStart(2, '0') : 'transparent', fg: n / omax > 0.6 ? '#FFFFFF' : t.text })),
+      spark: ns.map((n, i) => (4 + i * 18.6).toFixed(1) + ',' + (21 - (n / omax) * 18).toFixed(1)).join(' '),
+    }));
+
+    const names = ['Resultaten', 'Cijferverdeling', 'Boxplot', 'RTTI-analyse', 'Observaties'];
+    const tabs = names.map((label) => {
+      const on = this.state.tab === label;
+      return { label, sel: on ? 'true' : 'false', weight: on ? 600 : 400, color: on ? t.text : t.muted, bar: on ? a.text : 'transparent', pick: () => { this.setState({ tab: label }); this.load(); } };
+    });
+    const tab = this.state.tab;
+    return {
+      t, a, tabs, rttiExams, students, meanRow, sdRow, exams, binLabels, rtti, gridY, xLabels, obs, loading, ready,
+      passPct: pct(5.5), axis: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+      isRes: tab === 'Resultaten', isDist: tab === 'Cijferverdeling', isBox: tab === 'Boxplot', isRtti: tab === 'RTTI-analyse', isObs: tab === 'Observaties',
+    };
+  }
+}
+</script>
+</body>
+</html>

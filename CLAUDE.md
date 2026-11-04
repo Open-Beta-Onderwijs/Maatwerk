@@ -3,8 +3,9 @@
 Desktop app for Dutch secondary-school teachers: exam scores, RTTI analysis, Typst PDF reports and
 remedial assignments (opdrachten). Port of the Electron app in `_reference/` to Rust + Tauri 2.
 
-**Every session:** read `PLAN.md` sections 1-3 and `docs/STATE.md`, then only the current step's
-section of `PLAN.md`. Do not re-read the whole plan.
+**Every session (phase 2):** read `PLAN-2.md` sections 1-3 and `docs/STATE.md`, then only the
+current step's section of `PLAN-2.md`. `PLAN.md` (phase 1) is frozen history; its section 2 rules
+still apply. Do not re-read the whole plan, roadmap or design spec.
 
 ## Commands
 

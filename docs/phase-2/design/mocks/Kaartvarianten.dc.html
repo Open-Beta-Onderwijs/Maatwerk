@@ -1,0 +1,117 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Leerlingkaart: varianten</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+</style>
+</helmet>
+<div style="width: 1440px; height: 620px; box-sizing: border-box; padding: 40px 48px; background: #F5F6F8; color: #1B2230; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px">
+
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 18px; color: #2560BF">A · Regel</h2>
+    <p style="margin: 0 0 6px; color: #5D6675; font-size: 13px; line-height: 1.5">Eén regel hoog, veel kaarten per scherm. Lijnsparkline, laatste cijfer met pijl, gemiddelde eronder.</p>
+    <sc-for list="{{cards}}" as="s" hint-placeholder-count="3">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 10px">
+        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+          <span style="font-weight: 600">{{s.name}}</span>
+          <span style="font-size: 12px; color: #5D6675">{{s.nr}}</span>
+        </div>
+        <svg width="64" height="28" viewBox="0 0 64 28" role="img" aria-label="Cijferverloop"><line x1="0" x2="64" y1="{{s.passY}}" y2="{{s.passY}}" stroke="#E1E4EA" stroke-dasharray="2 3"></line><polyline points="{{s.spark}}" fill="none" stroke="#9AA3B2" stroke-width="1.6" stroke-linejoin="round"></polyline><circle cx="{{s.lx}}" cy="{{s.ly}}" r="2.8" fill="{{s.lastColor}}"></circle></svg>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 74px">
+          <div style="display: flex; align-items: center; gap: 4px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{s.trendLabel}}" style="color: {{s.trendColor}}; transform: rotate({{s.rot}}deg)"><path d="M4 12h15M13 6l6 6-6 6"></path></svg>
+            <span style="font-weight: 700; font-size: 15px; padding: 1px 7px; border-radius: 6px; color: {{s.lastColor}}; background: {{s.lastBg}}">{{s.last}}</span>
+          </div>
+          <span style="font-size: 12px; color: #5D6675">gem. <b style="color: {{s.avgColor}}">{{s.avg}}</b> · SE <b style="color: {{s.seColor}}">{{s.se}}</b></span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 18px; color: #2560BF">B · Blok</h2>
+    <p style="margin: 0 0 6px; color: #5D6675; font-size: 13px; line-height: 1.5">Hogere kaart met een brede grafiek. Leest als een mini-profiel, maar er passen minder kaarten op een scherm.</p>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <sc-for list="{{cards}}" as="s" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+          <div style="display: flex; flex-direction: column">
+            <span style="font-weight: 600">{{s.name}}</span>
+            <span style="font-size: 12px; color: #5D6675">{{s.nr}}</span>
+          </div>
+          <svg width="100%" height="40" viewBox="0 0 64 28" preserveAspectRatio="none" role="img" aria-label="Cijferverloop"><line x1="0" x2="64" y1="{{s.passY}}" y2="{{s.passY}}" stroke="#E1E4EA" stroke-dasharray="2 3" vector-effect="non-scaling-stroke"></line><polyline points="{{s.spark}}" fill="none" stroke="#9AA3B2" stroke-width="1.6" vector-effect="non-scaling-stroke"></polyline></svg>
+          <div style="display: flex; align-items: flex-end; justify-content: space-between">
+            <div style="display: flex; align-items: center; gap: 4px">
+              <span style="font-weight: 700; font-size: 22px; color: {{s.lastColor}}">{{s.last}}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{s.trendLabel}}" style="color: {{s.trendColor}}; transform: rotate({{s.rot}}deg)"><path d="M4 12h15M13 6l6 6-6 6"></path></svg>
+            </div>
+            <span style="font-size: 12px; color: #5D6675; text-align: right">gem. <b style="color: {{s.avgColor}}">{{s.avg}}</b><br>SE <b style="color: {{s.seColor}}">{{s.se}}</b></span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <h2 style="margin: 0; font-size: 18px; color: #2560BF">C · Staafjes</h2>
+    <p style="margin: 0 0 6px; color: #5D6675; font-size: 13px; line-height: 1.5">Eén staafje per toets in de cijferkleur: onvoldoendes vallen direct op. Gemiddelde groot, laatste cijfer klein.</p>
+    <sc-for list="{{cards}}" as="s" hint-placeholder-count="3">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 10px">
+        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0">
+          <span style="font-weight: 600">{{s.name}}</span>
+          <span style="font-size: 12px; color: #5D6675">{{s.nr}}</span>
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 3px; height: 28px" role="img" aria-label="Cijferverloop">
+          <sc-for list="{{s.bars}}" as="b" hint-placeholder-count="4"><div style="width: 7px; border-radius: 2px; height: {{b.h}}px; background: {{b.c}}"></div></sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 1px; min-width: 70px">
+          <div style="display: flex; align-items: center; gap: 4px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{s.trendLabel}}" style="color: {{s.trendColor}}; transform: rotate({{s.rot}}deg)"><path d="M4 12h15M13 6l6 6-6 6"></path></svg>
+            <span style="font-weight: 700; font-size: 17px; color: {{s.avgColor}}">{{s.avg}}</span>
+          </div>
+          <span style="font-size: 12px; color: #5D6675">laatste <b style="color: {{s.lastColor}}">{{s.last}}</b></span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":620}}'>
+class Component extends DCLogic {
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, t) { t = Math.max(0, Math.min(1, t)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+  fmt(g) { return g.toFixed(1).replace('.', ','); }
+  gc(g) { return g < 5.5 ? '#B42318' : this.lerp('#8A6A00', '#1E7B3C', (g - 5.5) / 4); }
+  bar(g) { return g < 5.5 ? '#E5584F' : this.lerp('#F2C94C', '#4CAF6E', (g - 5.5) / 4); }
+  renderVals() {
+    const rows = [
+      ['Julia Hendriks', '105201', [6.4, 7.1, 6.9, 7.9], 7.2],
+      ['Luuk Peters', '105204', [6.0, 6.5, 5.9, 4.3], 5.6],
+      ['Mehmet Yilmaz', '105207', [5.2, 6.0, 6.6, 7.4], 6.4],
+      ['Sanne de Vries', '105208', [7.5, 7.0, 7.3, 7.4], 7.3],
+    ];
+    const y = (g) => 26 - ((g - 1) / 9) * 24;
+    const trend = (d) => d > 1 ? [-50, '#0E9F4F', 'Sterk omhoog'] : d >= 0.5 ? [-25, '#4E8F63', 'Licht omhoog'] : d > -0.5 ? [0, '#5D6675', 'Gelijk'] : d >= -1 ? [25, '#B4654F', 'Licht omlaag'] : [50, '#D92D20', 'Sterk omlaag'];
+    const cards = rows.map(([name, nr, gs, se]) => {
+      const avg = gs.reduce((s, g) => s + g, 0) / gs.length, last = gs[gs.length - 1], tr = trend(last - avg), step = 60 / (gs.length - 1), lc = this.gc(last);
+      return {
+        name, nr, last: this.fmt(last), lastColor: lc, lastBg: lc + '18', avg: this.fmt(avg), avgColor: this.gc(avg), se: this.fmt(se), seColor: this.gc(se),
+        rot: tr[0], trendColor: tr[1], trendLabel: 'Trend: ' + tr[2],
+        spark: gs.map((g, i) => `${(2 + i * step).toFixed(1)},${y(g).toFixed(1)}`).join(' '), lx: 2 + (gs.length - 1) * step, ly: y(last), passY: y(5.5),
+        bars: gs.map((g) => ({ h: Math.round(4 + (g / 10) * 24), c: this.bar(g) })),
+      };
+    });
+    return { cards };
+  }
+}
+</script>
+</body>
+</html>
