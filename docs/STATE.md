@@ -1,12 +1,12 @@
 # State
 
-Last updated: 2026-11-05 (step 14a in progress) Branch: `step/14-foundation-b` Last tags: `v0.4.1`,
+Last updated: 2026-11-05 (step 14b in progress) Branch: `step/14-foundation-b` Last tags: `v0.4.1`,
 `step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
 `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 14 (Foundation b), session 14a.** Branch `step/14-foundation-b` (from `main` `766e4aa`).
+**Step 14 (Foundation b), session 14b.** Branch `step/14-foundation-b` (from `main` `766e4aa`).
 Baseline green (cargo test, Vitest). Step 14 also takes the step 13 backlog items m3/m4/n6
 (`docs/backlog.md` "From Step 13").
 
@@ -33,8 +33,29 @@ Baseline green (cargo test, Vitest). Step 14 also takes the step 13 backlog item
    (title row + filter row) on the five teacher tabs. `e2e/dialog.spec.ts` (34 tests).
    R-05 call: the three ported modal files stay JS (only their open call changed; their area
    steps 20/23/25 convert them), as with m7 in step 13.
-3. **Next:** visual diff for the user (every modal changed: top 64, radius 14, new close button;
-   exam overview/rapport/group edit have the new header). Then 14b.
+3. **Done:** user OK on the 14a visual diff (2026-11-05); local baselines updated.
+
+## Step 14b progress
+
+1. **Done** (`fa77dd1`): every modal on `openModal` (title/subtitle in the header,
+   `footerHtml` keeps the buttons' ids and listeners and arranges them; `onShow` gets the
+   whole dialog element). `showModal`, the legacy ids (`modal-box`/`modal-content`/
+   `modal-close`) and `dlg--legacy` are gone. Keys: `exam-edit` (new test step 1/2, inhaal ->
+   editor), `student-edit`, `group-edit`, `group-overview`, `profile`, `exam-overview`,
+   `rapport`, `opdrachten-genereren`. **Behaviour changes:** the profile stacks on the group
+   overview (closing returns there; `backFn` removed, Vorige/Volgende in the footer); the
+   account modal stays under "Pincode wijzigen"/"Nieuwe herstelcodes" (stacked);
+   `modalRefresher` waits while its modal is covered. PIN submit buttons use `setBusy` (n6).
+   Rule I applied: a danger/delete action is not in any footer yet (none of the forms has one).
+2. **Done** (`6728884`): `components/form.ts` (`field`, `formRow`, `tickBox`, `toggleTick`) +
+   `styles/forms.css`; form rows align on labels; PTA tick boxes; m4 (CustomSelect trigger and
+   inline selects/textareas on the 3.2 look, now 36 px; question table dense 26 px); m3 (school
+   field input on the base). 16 dead u-* removed (103 left: the rest live in the big modal
+   files and go with their area steps 20-25, as R-05/m7). Form markup is not rewritten to
+   `field()` everywhere: the CSS rule aligns every `.form-row`; the helper is used for the new
+   tick-box fields. Steppers lining up across rows (board 14) is step 20.
+3. **Next:** gate, visual diff for the user (screen headers: year selects now 36 px; every form
+   modal), reviewer subagent (`docs/reviews/step-14.md`), version 0.5.0.
 
 E2E: the editor test "a compile over the time limit" flaked once more under the full suite
 (backlog).
