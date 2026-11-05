@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-05 (step 14b in progress) Branch: `step/14-foundation-b` Last tags: `v0.4.1`,
+Last updated: 2026-11-05 (step 14 done on its branch, waiting for the visual OK) Branch: `step/14-foundation-b` Last tags: `v0.4.1`,
 `step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
 `v0.2.0-parity` (version tags are local only)
 
@@ -54,8 +54,16 @@ Baseline green (cargo test, Vitest). Step 14 also takes the step 13 backlog item
    files and go with their area steps 20-25, as R-05/m7). Form markup is not rewritten to
    `field()` everywhere: the CSS rule aligns every `.form-row`; the helper is used for the new
    tick-box fields. Steppers lining up across rows (board 14) is step 20.
-3. **Next:** gate, visual diff for the user (screen headers: year selects now 36 px; every form
-   modal), reviewer subagent (`docs/reviews/step-14.md`), version 0.5.0.
+3. **Done:** gate green (cargo fmt/clippy/test, lint, typecheck, 391 Vitest, licences, cargo
+   deny, SPDX, `npm audit --omit=dev` 0); version **0.5.0** (`4797c2d`).
+4. **Done:** review `docs/reviews/step-14.md`: 0 blockers, 3 majors (M1 covered modal got the
+   wrong reload notice, M2 focus stayed on the opener, M3 tabs not keyboard-reachable), all fixed
+   with tests (`914fa57`); m1, m5, m6, n1, n7 fixed; rest in `docs/backlog.md` "From Step 14".
+   Every modal now has a `key`. Empty footers hidden (`69cdf07`, seen in the visual diff).
+   e2e: 193 tests green.
+5. **Waiting for the user:** visual diff vs the 14a baselines (75 of 111 views differ: every form
+   modal; screens with a year select or the sectievoorzitter selects, now 36 px). Then update
+   baselines, merge `step/14-foundation-b` into `main` (merge commit), tag `step-14` and `v0.5.0`.
 
 E2E: the editor test "a compile over the time limit" flaked once more under the full suite
 (backlog).
