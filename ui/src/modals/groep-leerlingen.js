@@ -5,26 +5,19 @@ import {
   showModal,
   closeModal,
   escHtml,
-  formatGrade,
   onModalSync,
   showReloadNotice,
   changedByName,
   modalRefresher,
 } from '../app.js';
-import { examTypeColor, isFail } from '../utils/colors.js';
-import { gradeTextColor, gradeBorderColor } from '../utils/grades.js';
+import { testBadgeClass } from '../domain/test-type';
+import { gradePillHtml } from '../utils/grades';
 import { openProfielModal } from './profiel.js';
 
 // The version of one student in a students-file change (before, after), as JSON.
 function studentVersions(ev, id) {
   const find = (list) => JSON.stringify((list ?? []).find((s) => s.id === id) ?? null);
   return [find(ev.before), find(ev.after)];
-}
-
-// Grade pill of an average; colours via style data (src/legacy/style-data.ts).
-function gradePill(g) {
-  const fail = isFail(g) ? ' grade-pill--fail' : '';
-  return `<span class="grade-pill${fail}" data-border-color="${gradeBorderColor(g)}" data-color="${gradeTextColor(g)}">${formatGrade(g)}</span>`;
 }
 
 export async function openGroupStudentsModal(groupId, year) {
@@ -141,7 +134,7 @@ export async function openGroupStudentsModal(groupId, year) {
           .map(
             (f, fi) =>
               `<th class="u-text-right u-p-4-6 u-border-b-2">
-        <span class="volgnummer u-text-center u-mr-0" data-bg="${examTypeColor(f.original)}">${f.original.volgnummer}</span></th>
+        <span class="${testBadgeClass(f.original)}">${f.original.volgnummer}</span></th>
         <th class="gl-badge-th${fi === families.length - 1 ? ' u-border-r-light' : ''}"></th>`,
           )
           .join(''),
@@ -167,10 +160,6 @@ export async function openGroupStudentsModal(groupId, year) {
           families
             .map((f, fi) => {
               const { grade: g, exam: fromExam } = bestGradeForFamily(s, f);
-              const label = g !== null ? formatGrade(g) : '—';
-              const bc = gradeBorderColor(g);
-              const tc = gradeTextColor(g);
-              const fw = g !== null && isFail(g) ? 'bold' : '500';
               const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
               const badgeLetter = fromExam?.parent_id
                 ? (fromExam.description ?? '').trim().charAt(0).toUpperCase() || '?'
@@ -183,7 +172,7 @@ export async function openGroupStudentsModal(groupId, year) {
                 `</td>`;
               return (
                 `<td class="gl-grade-td ${rowBg}">` +
-                `<span class="grade-pill grade-pill--wide${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>` +
+                `${gradePillHtml(g, 'grade-pill--wide')}</td>` +
                 badgeCell
               );
             })
@@ -201,10 +190,10 @@ export async function openGroupStudentsModal(groupId, year) {
 
       const avgCells =
         `<td class="gl-avg-td u-border-l-2 ${rowBg}">${
-          yearAvg !== null ? gradePill(yearAvg) : `<span class="u-text-faint">—</span>`
+          yearAvg !== null ? gradePillHtml(yearAvg) : `<span class="u-text-faint">—</span>`
         }</td>` +
         `<td class="gl-avg-td ${rowBg}">${
-          dossierAvg !== null ? gradePill(dossierAvg) : `<span class="u-text-faint">—</span>`
+          dossierAvg !== null ? gradePillHtml(dossierAvg) : `<span class="u-text-faint">—</span>`
         }</td>`;
 
       return `<tr>${nameCell}${examCells}${avgCells}</tr>`;
@@ -220,14 +209,10 @@ export async function openGroupStudentsModal(groupId, year) {
             .map((s) => bestGradeForFamily(s, f).grade)
             .filter((g) => g !== null);
           const avg = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
-          const label = avg !== null ? formatGrade(avg) : '—';
-          const bc = gradeBorderColor(avg);
-          const tc = gradeTextColor(avg);
-          const fw = avg !== null && isFail(avg) ? 'bold' : '500';
           const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
           return (
             `<td class="u-text-right u-p-3-4 u-bg-highlight">` +
-            `<span class="grade-pill grade-pill--wide${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>` +
+            `${gradePillHtml(avg, 'grade-pill--wide')}</td>` +
             `<td class="u-bg-highlight${borderR}"></td>`
           );
         })
@@ -252,10 +237,10 @@ export async function openGroupStudentsModal(groupId, year) {
 
   const avgRowSummary =
     `<td class="u-text-center u-p-3-4 u-bg-highlight u-border-l-2">${
-      yearAvgOfAvgs !== null ? gradePill(yearAvgOfAvgs) : `<span class="u-text-faint">—</span>`
+      yearAvgOfAvgs !== null ? gradePillHtml(yearAvgOfAvgs) : `<span class="u-text-faint">—</span>`
     }</td>` +
     `<td class="u-text-center u-p-3-4 u-bg-highlight">${
-      seAvgOfAvgs !== null ? gradePill(seAvgOfAvgs) : `<span class="u-text-faint">—</span>`
+      seAvgOfAvgs !== null ? gradePillHtml(seAvgOfAvgs) : `<span class="u-text-faint">—</span>`
     }</td>`;
 
   const avgRow =

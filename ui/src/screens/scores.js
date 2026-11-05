@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { gradeColor, stdDevGradeColor, rttiPctColor, examTypeColor } from '../utils/colors.js';
-import { wireSpinners, spinnerValue } from '../utils/spinners.js';
+import { testBadgeClass } from '../domain/test-type';
+import { gradeCellColor, rttiPctCellColor, sdCellColor } from '../domain/grade-colors';
+import { formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
+import { wireSpinners, spinnerValue } from '../utils/spinners';
 import {
   showModal,
   closeModal,
   toast,
   persistentError,
   escHtml,
-  formatGrade,
   onModalSync,
   showReloadNotice,
   changedByName,
@@ -28,6 +29,12 @@ import {
   sameOverride,
   scoreCellText,
 } from '../domain/scoregrid';
+
+// A grid cell's text as a number; null when empty or not a number.
+const cellNumber = (v) => {
+  const n = v === '' || v == null ? NaN : parseDecimalLoose(v);
+  return Number.isFinite(n) ? n : null;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Scores invoeren
@@ -308,16 +315,16 @@ export async function openScoreModal(examId, year, deps) {
         <span class="u-nowrap">Scores invoeren voor</span>
         ${
           exam.volgnummer
-            ? `<span class="volgnummer u-mr-0 u-shrink-0" data-bg="${examTypeColor(exam)}">${escHtml(String(exam.volgnummer))}</span>`
+            ? `<span class="${testBadgeClass(exam)} u-shrink-0">${escHtml(String(exam.volgnummer))}</span>`
             : ''
         }
         <em class="u-min-w-0 u-overflow-hidden u-ellipsis u-nowrap">${escHtml(exam.title)}</em>
         <div id="sc-presence" class="presence-badges"></div>
       </div>
       <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">
-        <button class="u-w-32 u-h-32 u-p-0 u-fs-16 btn-secondary" id="sc-undo" title="Ongedaan maken (Ctrl+Z)">&#x21B6;</button>
-        <button class="u-w-32 u-h-32 u-p-0 u-fs-16 btn-secondary" id="sc-redo" title="Opnieuw (Ctrl+Y)">&#x21B7;</button>
-        <button class="u-cursor-default u-text-subtle u-border-light btn-secondary" id="sc-help" disabled
+        <button class="btn btn--icon" id="sc-undo" title="Ongedaan maken (Ctrl+Z)">&#x21B6;</button>
+        <button class="btn btn--icon" id="sc-redo" title="Opnieuw (Ctrl+Y)">&#x21B7;</button>
+        <button class="btn btn--secondary u-cursor-default u-text-subtle u-border-light" id="sc-help" disabled
           title="Navigeer sneller door gebruik te maken van de numpad:&#10;0-9: Punten invullen&#10;Punt (.): N invullen (als '. → N' aangevinkt is)&#10;Enter: Bevestigen &amp; volgende veld&#10;/ of *: Vorige / volgende veld&#10;- of +: Vorige / volgende leerling&#10;F1, F2, …: Eerste, tweede, … observatie aan/uit voor de huidige leerling&#10;&#10;Cijfer overschrijven: typ een cijfer in de kolom Cijfer. Leegmaken (of rechtermuisklik) herstelt het berekende cijfer."
          >Help ?</button>
         <label class="sc-dot-toggle"
@@ -326,12 +333,12 @@ export async function openScoreModal(examId, year, deps) {
         </label>
       </div>
       <div class="u-d-flex u-items-center u-gap-8 u-shrink-0">
-        <button class="btn-secondary" id="sc-edit-exam">Toets bewerken</button>
+        <button class="btn btn--secondary" id="sc-edit-exam">Toets bewerken</button>
         <span class="toolbar-label">N-term:</span>
         <div class="num-spinner spinner-wrap-sm" id="sc-nterm"
           data-val="${exam.n_term ?? 1}" data-step="0.1" data-min="0" data-max="3">
           <button type="button" class="spin-btn spin-minus">&minus;</button>
-          <input class="spin-val" value="${String(exam.n_term ?? 1).replace('.', ',')}" />
+          <input class="spin-val" value="${formatNumber(exam.n_term ?? 1)}" />
           <button type="button" class="spin-btn spin-plus">+</button>
         </div>
       </div>
@@ -429,7 +436,7 @@ export async function openScoreModal(examId, year, deps) {
         if (val === activeExam.n_term) return;
         activeExam.n_term = val;
         ntermSp.dataset.val = val;
-        input.value = String(val).replace('.', ',');
+        input.value = formatNumber(val);
         recomputeAllRows();
         input.style.transition = 'none';
         input.style.background = REMOTE_FLASH_COLOR;
@@ -1197,11 +1204,11 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
     TD.style.fontWeight = 'bold';
     TD.style.color = '#000';
     if (row === stdIdx) {
-      TD.style.background = stdDevGradeColor(value) || '#dde4f0';
+      TD.style.background = sdCellColor(cellNumber(value)) || '#dde4f0';
     } else if (row === summaryIdx) {
-      TD.style.background = gradeColor(value) || '#dde4f0';
+      TD.style.background = gradeCellColor(cellNumber(value)) || '#dde4f0';
     } else {
-      TD.style.background = gradeColor(value) || '#eef2f7';
+      TD.style.background = gradeCellColor(cellNumber(value)) || '#eef2f7';
     }
     const info = row < summaryIdx ? gridData.gradeInfo[row] : null;
     const overridden = !!info?.overridden;
@@ -1220,7 +1227,10 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
   function rttiRenderer(TD, row, col, value) {
     TD.style.textAlign = 'center';
     TD.style.fontWeight = '500';
-    TD.style.background = row === summaryIdx ? '#e8ecf2' : rttiPctColor(value) || '#eef2f7';
+    TD.style.background =
+      row === summaryIdx
+        ? '#e8ecf2'
+        : rttiPctCellColor(value === 'NVT' ? null : cellNumber(value)) || '#eef2f7';
     applyHighlight(TD, row, col);
   }
 

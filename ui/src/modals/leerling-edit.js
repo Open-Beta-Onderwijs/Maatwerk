@@ -80,7 +80,7 @@ export function openStudentModal(id) {
     <div class="u-mt-10 form-row">
       <div class="u-flex-1 u-mb-0 form-group">
         <label>Schoolsoort</label>
-        <div class="vak-toggle-group">${schoolsoortHtml}</div>
+        <div class="vak-toggle-group vak-toggle-group--nowrap">${schoolsoortHtml}</div>
       </div>
       <div class="u-flex-auto u-mb-0 form-group">
         <label>Schooljaar</label>
@@ -88,8 +88,8 @@ export function openStudentModal(id) {
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-s-save">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-s-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     async (el) => {
@@ -185,6 +185,7 @@ export function openStudentModal(id) {
         renderLeerlingen();
       });
     },
+    'modal-md',
   );
 }
 
@@ -216,8 +217,8 @@ export async function openStudentCSVImport() {
     </div>
     <div id="csv-preview"></div>
     <div class="u-mt-12 form-actions">
-      <button class="btn-primary" id="f-csv-import" disabled>Importeren</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-csv-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {

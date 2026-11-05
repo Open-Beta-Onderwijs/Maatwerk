@@ -15,6 +15,7 @@
 //   N+5+TOFF    = spacer3
 //   N+6+TOFF    = R%, then T1%, T2%, I%
 
+import { formatFixed, formatGrade, formatNumber, parseDecimal, parseDecimalLoose } from './format';
 import { calcResults } from './grades';
 import type { Exam, Override, Question, QuestionScores } from './types';
 
@@ -38,11 +39,11 @@ type GridExam = Pick<Exam, 'n_term' | 'questions'>;
 
 /** Scores may be typed with a decimal comma or point; the grid shows a comma. */
 export function parseScoreNum(v: unknown): number {
-  return Number(String(v).trim().replace(',', '.'));
+  return parseDecimal(v);
 }
 
 export function scoreCellText(v: unknown): string {
-  return String(v).replace('.', ',');
+  return formatNumber(String(v));
 }
 
 /** A typed grade (comma or point) rounded to one decimal; NaN when not 1–10. */
@@ -102,12 +103,6 @@ export function computeRowStatus(
   if (invalid) return 'invalid';
   if (filled > 0 && filled < exam.questions.length) return 'partial';
   return 'ok';
-}
-
-/** A grade with one decimal and a comma; '—' for none. */
-export function formatGrade(g: number | null | undefined): string {
-  if (g === null || g === undefined) return '—';
-  return (Math.round(g * 10) / 10).toFixed(1).replace('.', ',');
 }
 
 /**
@@ -198,7 +193,7 @@ export function recomputeSummaryRow(
       if (!isNaN(scored)) totaals.push(scored);
     }
     if (gradeStr && gradeStr !== '—') {
-      const g = parseFloat(String(gradeStr).replace(',', '.'));
+      const g = parseDecimalLoose(gradeStr);
       if (!isNaN(g)) grades.push(g);
     }
   }
@@ -218,9 +213,8 @@ export function recomputeSummaryRow(
     totaals.length > 0 ? totaals.reduce((a, b) => a + b, 0) / totaals.length : null;
   const meanGrade = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
   clearSpecialRow(avgRow);
-  avgRow[N + 3 + TOFF] =
-    meanTotaal !== null ? meanTotaal.toFixed(1).replace('.', ',') + ' / ' + examMaxTotal : '';
-  avgRow[N + 4 + TOFF] = meanGrade !== null ? meanGrade.toFixed(1).replace('.', ',') : '';
+  avgRow[N + 3 + TOFF] = meanTotaal !== null ? formatFixed(meanTotaal) + ' / ' + examMaxTotal : '';
+  avgRow[N + 4 + TOFF] = meanGrade !== null ? formatFixed(meanGrade) : '';
 
   // Std dev row
   if (stdIdx == null) return;
@@ -232,6 +226,6 @@ export function recomputeSummaryRow(
   const sdTotaal = meanTotaal !== null ? sdFn(totaals, meanTotaal) : null;
   const sdGrade = meanGrade !== null ? sdFn(grades, meanGrade) : null;
   clearSpecialRow(sdRow);
-  sdRow[N + 3 + TOFF] = sdTotaal !== null ? sdTotaal.toFixed(1).replace('.', ',') : '';
-  sdRow[N + 4 + TOFF] = sdGrade !== null ? sdGrade.toFixed(1).replace('.', ',') : '';
+  sdRow[N + 3 + TOFF] = sdTotaal !== null ? formatFixed(sdTotaal) : '';
+  sdRow[N + 4 + TOFF] = sdGrade !== null ? formatFixed(sdGrade) : '';
 }

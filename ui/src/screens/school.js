@@ -40,7 +40,7 @@ function buildHtml(school, logoUrl, watermerkUrl) {
       <div class="school-logo-wrap">
         <div class="school-logo-area" id="school-logo-area">
           ${logoHtml(logoUrl)}
-          <button class="school-logo-edit-btn btn-sm btn-sm-icon" id="btn-edit-logo" title="Logo wijzigen">${ICONS.pen}</button>
+          <button class="btn btn--icon school-logo-edit-btn" id="btn-edit-logo" title="Logo wijzigen">${ICONS.pen}</button>
           <input type="file" id="input-logo" accept="${LOGO_ACCEPT}" class="hidden" />
         </div>
       </div>
@@ -68,7 +68,7 @@ function textFieldRow(field, value) {
       <div class="school-field-value-wrap">
         <span class="school-field-text school-field-${field}${hasValue ? '' : ' school-placeholder'}"
               data-value="${escHtml(value)}">${hasValue ? escHtml(value) : 'Nog niet ingesteld'}</span>
-        <button class="btn-sm btn-sm-icon" data-action="edit-field" data-field="${field}"
+        <button class="btn btn--icon" data-action="edit-field" data-field="${field}"
                 title="${label} bewerken">${ICONS.pen}</button>
       </div>
     </div>`;
@@ -97,7 +97,7 @@ function watermerkRow(url) {
       <div class="school-field-label">Watermerk</div>
       <div class="school-field-value-wrap">
         <div class="school-watermark-preview" id="school-watermark-preview">${preview}</div>
-        <button class="btn-sm btn-sm-icon" data-action="edit-watermerk" title="Watermerk wijzigen">${ICONS.pen}</button>
+        <button class="btn btn--icon" data-action="edit-watermerk" title="Watermerk wijzigen">${ICONS.pen}</button>
         <input type="file" id="input-watermerk" accept="image/svg+xml,.svg" class="hidden" />
       </div>
     </div>`;
@@ -180,12 +180,12 @@ function startTextEdit(field, container, school) {
   span.replaceWith(input);
 
   const confirmBtn = document.createElement('button');
-  confirmBtn.className = 'btn-sm btn-sm-icon btn-primary';
+  confirmBtn.className = 'btn btn--icon btn--primary';
   confirmBtn.title = 'Opslaan';
   confirmBtn.innerHTML = ICONS.check;
 
   const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn-sm btn-sm-icon btn-danger';
+  cancelBtn.className = 'btn btn--icon btn--icon-danger';
   cancelBtn.title = 'Annuleren';
   cancelBtn.innerHTML = ICONS.x;
 
@@ -243,7 +243,7 @@ function restoreDisplay(field, value, confirmBtn, cancelBtn, container, school) 
   input.replaceWith(newSpan);
 
   const newEditBtn = document.createElement('button');
-  newEditBtn.className = 'btn-sm btn-sm-icon';
+  newEditBtn.className = 'btn btn--icon';
   newEditBtn.dataset.action = 'edit-field';
   newEditBtn.dataset.field = field;
   newEditBtn.title = `${FIELD_LABELS[field]} bewerken`;

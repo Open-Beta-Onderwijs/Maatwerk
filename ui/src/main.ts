@@ -7,7 +7,10 @@ import { installBridge } from './bridge';
 import { installErrorReporting } from './services/problems';
 import { watchStyleData } from './legacy/style-data';
 import { blockFileDrops } from './utils/no-file-drop';
+import { installLook } from './theme';
 
+// Dev and mock builds get the theme menu (Ctrl+Alt+T) until step 15.
+installLook(import.meta.env.DEV || import.meta.env.MODE === 'mock');
 blockFileDrops();
 watchStyleData();
 await installBridge();

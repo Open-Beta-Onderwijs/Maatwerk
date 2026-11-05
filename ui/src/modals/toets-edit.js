@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { wireSpinners, spinnerValue } from '../utils/spinners.js';
+import { wireSpinners, spinnerValue } from '../utils/spinners';
+import { formatNumber } from '../domain/format';
 import {
   showModal,
   closeModal,
@@ -42,7 +43,7 @@ export async function openExamModal(existingId, afterSave = null) {
         <div class="u-flex-1"></div>
         <div class="u-flex-none u-w-110 u-mb-0 form-group">
           <label>Schooljaar</label>
-          <div id="f-exam-year-label" class="u-h-30 u-d-flex u-items-center u-fs-13 u-text-muted u-italic"></div>
+          <div id="f-exam-year-label" class="form-value u-fs-13 u-text-muted u-italic"></div>
         </div>
       </div>
       <div class="u-items-end u-gap-20 u-mt-10 form-row">
@@ -111,7 +112,7 @@ export async function openExamModal(existingId, afterSave = null) {
           <label>Opgave- &amp; Vraagstructuur</label>
           <div id="f-struct-host" class="csel-host"></div>
         </div>
-        <div class="u-flex-none u-w-108 form-group">
+        <div class="form-group spinner-wrap-sm">
           <label>Aantal vragen</label>
           <div class="num-spinner" id="f-enum" data-val="10" data-step="1" data-min="1" data-max="40">
             <button type="button" class="spin-btn spin-minus">−</button>
@@ -129,8 +130,8 @@ export async function openExamModal(existingId, afterSave = null) {
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn-primary" id="f-e-next">Verder →</button>
-        <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+        <button class="btn btn--primary" id="f-e-next">Verder →</button>
+        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
       </div>
     `,
       (el) => {
@@ -279,6 +280,7 @@ export async function openExamModal(existingId, afterSave = null) {
           showExamEditor(exam, false, toetsYear, afterSave);
         });
       },
+      'modal-md',
     );
   } else {
     const all = await Store.getExams(toetsYear);
@@ -436,23 +438,23 @@ export function showExamEditor(
         <label>Weging</label>
         ${
           lockTopFields
-            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
-            : `<div class="num-spinner" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${formatNumber(exam.weging ?? 1)}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
+            : `<div class="num-spinner" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${formatNumber(exam.weging ?? 1)}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
         }
       </div>
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
         ${
           lockTopFields
-            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
-            : `<div class="num-spinner" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${formatNumber(exam.weging_se ?? exam.weging ?? 1)}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
+            : `<div class="num-spinner" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${formatNumber(exam.weging_se ?? exam.weging ?? 1)}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
         }
       </div>
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>N-term</label>
         <div class="num-spinner" id="f-enterm2" data-val="${exam.n_term}" data-step="0.1" data-min="0" data-max="3">
           <button type="button" class="spin-btn spin-minus">−</button>
-          <input class="spin-val" value="${String(exam.n_term).replace('.', ',')}" />
+          <input class="spin-val" value="${formatNumber(exam.n_term)}" />
           <button type="button" class="spin-btn spin-plus">+</button>
         </div>
       </div>
@@ -470,7 +472,7 @@ export function showExamEditor(
         <tbody id="f-qbody"></tbody>
       </table>
     </div>
-    <button class="u-mt-8 btn-secondary" id="f-addq">+ Vraag toevoegen</button>
+    <button class="btn btn--secondary u-mt-8" id="f-addq">+ Vraag toevoegen</button>
     ${
       availableObs.length > 0
         ? `
@@ -490,8 +492,8 @@ export function showExamEditor(
         : ''
     }
     <div class="u-mt-14 form-actions">
-      <button class="btn-primary" id="f-esave">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-esave">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -591,7 +593,7 @@ export function showExamEditor(
                   .join('')}
               </div>
             </td>
-            <td><button class="btn-sm btn-danger qi-del" data-qi="${i}"${hasScores ? ' disabled title="Er zijn scores ingevoerd voor deze toets, bestaande vragen kunnen dus niet worden verwijderd."' : ''}>\u2715</button></td>
+            <td><button class="btn btn--icon btn--icon-danger qi-del" data-qi="${i}"${hasScores ? ' disabled title="Er zijn scores ingevoerd voor deze toets, bestaande vragen kunnen dus niet worden verwijderd."' : ''}>\u2715</button></td>
           </tr>`;
           })
           .join('');

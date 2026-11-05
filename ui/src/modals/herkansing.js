@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { wireSpinners, spinnerValue } from '../utils/spinners.js';
+import { wireSpinners, spinnerValue } from '../utils/spinners';
+import { formatNumber } from '../domain/format';
 import { showModal, closeModal, toast, escHtml } from '../app.js';
 import { showExamEditor } from './toets-edit.js';
 import { openExamOverviewModal } from './toets-overzicht.js';
@@ -37,9 +38,9 @@ export async function openResitModal(parentId, year) {
       </div>
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging</label>
-        <div class="u-w-90 num-spinner spinner-disabled">
+        <div class="num-spinner spinner-disabled">
           <button type="button" class="spin-btn spin-minus" disabled>−</button>
-          <input class="spin-val" value="${String(parent.weging ?? 1).replace('.', ',')}" readonly />
+          <input class="spin-val" value="${formatNumber(parent.weging ?? 1)}" readonly />
           <button type="button" class="spin-btn spin-plus" disabled>+</button>
         </div>
       </div>
@@ -48,9 +49,9 @@ export async function openResitModal(parentId, year) {
           ? `
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
-        <div class="u-w-90 num-spinner spinner-disabled">
+        <div class="num-spinner spinner-disabled">
           <button type="button" class="spin-btn spin-minus" disabled>−</button>
-          <input class="spin-val" value="${String(parent.weging_se ?? parent.weging ?? 1).replace('.', ',')}" readonly />
+          <input class="spin-val" value="${formatNumber(parent.weging_se ?? parent.weging ?? 1)}" readonly />
           <button type="button" class="spin-btn spin-plus" disabled>+</button>
         </div>
       </div>`
@@ -74,14 +75,14 @@ export async function openResitModal(parentId, year) {
         <label>N-term</label>
         <div class="num-spinner" id="f-resit-nterm" data-val="${parent.n_term}" data-step="0.1" data-min="0" data-max="3">
           <button type="button" class="spin-btn spin-minus">−</button>
-          <input class="spin-val" value="${String(parent.n_term).replace('.', ',')}" />
+          <input class="spin-val" value="${formatNumber(parent.n_term)}" />
           <button type="button" class="spin-btn spin-plus">+</button>
         </div>
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-resit-next">Verder →</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-resit-next">Verder →</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -186,7 +187,7 @@ export async function openSummaryEditModal(parentId, year) {
         <label>Weging</label>
         <div class="num-spinner" id="f-sum-weging" data-val="${parent.weging ?? 1}" data-step="0.5" data-min="0" data-max="100">
           <button type="button" class="spin-btn spin-minus">−</button>
-          <input class="spin-val" value="${String(parent.weging ?? 1).replace('.', ',')}" />
+          <input class="spin-val" value="${formatNumber(parent.weging ?? 1)}" />
           <button type="button" class="spin-btn spin-plus">+</button>
         </div>
       </div>
@@ -194,14 +195,14 @@ export async function openSummaryEditModal(parentId, year) {
         <label>Weging SE</label>
         <div class="num-spinner${isPta ? '' : ' spinner-disabled'}" id="f-sum-weging-se" data-val="${parent.weging_se ?? parent.weging ?? 1}" data-step="0.5" data-min="0" data-max="100">
           <button type="button" class="spin-btn spin-minus"${isPta ? '' : ' disabled'}>−</button>
-          <input class="spin-val" value="${String(parent.weging_se ?? parent.weging ?? 1).replace('.', ',')}" />
+          <input class="spin-val" value="${formatNumber(parent.weging_se ?? parent.weging ?? 1)}" />
           <button type="button" class="spin-btn spin-plus"${isPta ? '' : ' disabled'}>+</button>
         </div>
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-sum-save">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-sum-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -272,5 +273,6 @@ export async function openSummaryEditModal(parentId, year) {
         renderToetsen();
       });
     },
+    'modal-md',
   );
 }

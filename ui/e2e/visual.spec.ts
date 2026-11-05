@@ -16,13 +16,29 @@ const SETTLE = 1300; // Chart.js animations last 1000 ms
 // Tall window: modals show most of their content without scrolling.
 test.use({ viewport: { width: 1280, height: 2000 } });
 
-for (const view of VIEWS) {
-  test(view.name, async ({ page }) => {
-    await openView(page, view);
-    await page.waitForTimeout(SETTLE);
-    const opts = { animations: 'disabled' as const, maxDiffPixels: 0 };
-    if (view.target === 'modal')
-      await expect(page.locator('#modal-box')).toHaveScreenshot(`${view.name}.png`, opts);
-    else await expect(page).toHaveScreenshot(`${view.name}.png`, { ...opts, fullPage: true });
-  });
+// Light/blauw (the default, no suffix), dark, and yellow (the contrast edge
+// case: dark text on the accent). Set through the dev theme menu's storage key.
+const LOOKS = [
+  { suffix: '', look: null },
+  { suffix: '--dark', look: { theme: 'dark', accent: 'blauw' } },
+  { suffix: '--geel', look: { theme: 'light', accent: 'geel' } },
+] as const;
+
+for (const { suffix, look } of LOOKS) {
+  for (const view of VIEWS) {
+    test(`${view.name}${suffix}`, async ({ page }) => {
+      if (look)
+        await page.addInitScript(
+          (v) => localStorage.setItem('maatwerk.dev.look', v),
+          JSON.stringify(look),
+        );
+      await openView(page, view);
+      await page.waitForTimeout(SETTLE);
+      const opts = { animations: 'disabled' as const, maxDiffPixels: 0 };
+      const file = `${view.name}${suffix}.png`;
+      if (view.target === 'modal')
+        await expect(page.locator('#modal-box')).toHaveScreenshot(file, opts);
+      else await expect(page).toHaveScreenshot(file, { ...opts, fullPage: true });
+    });
+  }
 }

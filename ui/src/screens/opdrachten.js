@@ -112,9 +112,9 @@ export async function renderOpdrachten() {
         <span class="small">Schoolsoort: ${escHtml(ssDisplay)} &nbsp;·&nbsp; Vakken: ${escHtml(vakDisplay)} &nbsp;·&nbsp; Jaarlagen: ${escHtml(jlDisplay)} &nbsp;·&nbsp; Observaties: ${obsIcons || '—'}</span>
       </div>
       <div class="card-actions">
-        <button class="btn-sm btn-sm-icon" data-action="edit-opdracht" data-id="${escHtml(o.id)}" title="Opdracht bewerken">${ICONS.pen}</button>
-        <button class="btn-sm btn-sm-icon" data-action="copy-opdracht" data-id="${escHtml(o.id)}" title="Opdracht kopiëren">${ICONS.copy}</button>
-        <button class="btn-sm btn-danger btn-sm-icon" data-action="del-opdracht" data-id="${escHtml(o.id)}" title="Opdracht verwijderen">${ICONS.trash}</button>
+        <button class="btn btn--icon" data-action="edit-opdracht" data-id="${escHtml(o.id)}" title="Opdracht bewerken">${ICONS.pen}</button>
+        <button class="btn btn--icon" data-action="copy-opdracht" data-id="${escHtml(o.id)}" title="Opdracht kopiëren">${ICONS.copy}</button>
+        <button class="btn btn--icon btn--icon-danger" data-action="del-opdracht" data-id="${escHtml(o.id)}" title="Opdracht verwijderen">${ICONS.trash}</button>
       </div>
     </div>`;
     })
@@ -233,8 +233,8 @@ async function openOpdrachtenModal(existingId) {
       <div id="op-obs-group" class="u-d-flex u-flex-wrap u-gap-6 u-min-h-36 u-py-4"></div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-opsave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-opsave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ICONS } from '../utils/icons.js';
-import { isFail } from '../utils/colors.js';
+import { isFail } from '../domain/grade-colors';
 import {
   escHtml,
   SEL,
@@ -11,7 +11,7 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { gradeStatHtml } from '../utils/grades.js';
+import { gradeStatHtml } from '../utils/grades';
 import { perfSpan } from '../utils/perf';
 import { openGroupStudentsModal } from './leerlingen.js';
 
@@ -156,13 +156,13 @@ export async function renderGroepenForYear(year) {
           Store.isAdminActive()
             ? `
         <div class="card-actions">
-          <button class="btn-sm btn-sm-icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Groep bewerken">${ICONS.pen}</button>
-          <button class="btn-sm btn-danger btn-sm-icon" data-action="del-group" data-id="${escHtml(g.id)}"${g.student_ids.length > 0 ? ' disabled title="Deze groep heeft leerlingen en kan dus niet worden verwijderd."' : ' title="Groep verwijderen"'}>${ICONS.trash}</button>
+          <button class="btn btn--icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Groep bewerken">${ICONS.pen}</button>
+          <button class="btn btn--icon btn--icon-danger" data-action="del-group" data-id="${escHtml(g.id)}"${g.student_ids.length > 0 ? ' disabled title="Deze groep heeft leerlingen en kan dus niet worden verwijderd."' : ' title="Groep verwijderen"'}>${ICONS.trash}</button>
         </div>`
             : Store.isVoorzitterActive(g.subject)
               ? `
         <div class="card-actions">
-          <button class="btn-sm btn-sm-icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Leerlingen en docenten van de groep (sectievoorzitter)">${ICONS.pen}</button>
+          <button class="btn btn--icon" data-action="edit-group" data-id="${escHtml(g.id)}" title="Leerlingen en docenten van de groep (sectievoorzitter)">${ICONS.pen}</button>
         </div>`
               : ''
         }

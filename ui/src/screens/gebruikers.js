@@ -26,7 +26,7 @@ export async function renderGebruikers() {
     <div class="screen-header">
       <h2>Gebruikers</h2>
       <div class="header-actions">
-        <button class="btn-primary" id="btn-add-user">+ Gebruiker toevoegen</button>
+        <button class="btn btn--primary" id="btn-add-user">+ Gebruiker toevoegen</button>
       </div>
     </div>
     <div id="user-list" class="card-list"></div>
@@ -74,9 +74,9 @@ async function renderUserList() {
           ${
             !user.isAdmin
               ? `
-            <button class="btn-sm btn-sm-icon" data-action="edit-user" data-id="${escHtml(user.id)}" title="Gebruiker bewerken">${ICONS.pen}</button>
-            ${user.pinHash ? `<button class="btn-sm" data-action="reset-pin" data-id="${escHtml(user.id)}" title="De gebruiker kiest bij de volgende aanmelding een nieuwe pincode">Pincode resetten</button>` : ''}
-            <button class="btn-sm btn-danger btn-sm-icon" data-action="toggle-user" data-id="${escHtml(user.id)}"
+            <button class="btn btn--icon" data-action="edit-user" data-id="${escHtml(user.id)}" title="Gebruiker bewerken">${ICONS.pen}</button>
+            ${user.pinHash ? `<button class="btn btn--secondary btn--sm" data-action="reset-pin" data-id="${escHtml(user.id)}" title="De gebruiker kiest bij de volgende aanmelding een nieuwe pincode">Pincode resetten</button>` : ''}
+            <button class="btn btn--icon btn--icon-danger" data-action="toggle-user" data-id="${escHtml(user.id)}"
                     title="${user.actief ? 'Gebruiker deactiveren' : 'Gebruiker activeren'}">
               ${user.actief ? ICONS.ban : ICONS.check}
             </button>
@@ -265,8 +265,8 @@ function openUserModal(user) {
       ${user?.foto ? `<span class="u-d-block u-mt-4 hint">Huidig: ${escHtml(user.foto)}</span>` : ''}
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>`;
 
   showModal(html, (content) => {

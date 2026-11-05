@@ -107,7 +107,7 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
   box.append(label);
   const status = el('p', 'startup-error-detail migration-status');
   status.setAttribute('aria-live', 'polite');
-  const go = el('button', 'btn-primary migration-go', 'Omzetten') as HTMLButtonElement;
+  const go = el('button', 'btn btn--primary migration-go', 'Omzetten') as HTMLButtonElement;
   go.disabled = true;
   check.addEventListener('change', () => (go.disabled = !check.checked));
   go.addEventListener('click', async () => {
@@ -118,7 +118,7 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
       const result = await api.migrateDataFolder();
       const done = migrationReport(result);
       box.classList.add('migration-wide');
-      const start = el('button', 'btn-primary', 'Maatwerk starten') as HTMLButtonElement;
+      const start = el('button', 'btn btn--primary', 'Maatwerk starten') as HTMLButtonElement;
       start.addEventListener('click', () => {
         start.disabled = true;
         void api.restartApp();

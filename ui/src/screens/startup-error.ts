@@ -82,7 +82,7 @@ export function renderStartupError(
   }
   const detail = el('p', 'startup-error-detail', `Technische melding: ${error.message}`);
   box.append(detail);
-  const retry = el('button', 'btn-primary startup-error-retry', 'Opnieuw proberen');
+  const retry = el('button', 'btn btn--primary startup-error-retry', 'Opnieuw proberen');
   retry.addEventListener('click', () => {
     (retry as HTMLButtonElement).disabled = true;
     api.restartApp().catch((e: unknown) => {

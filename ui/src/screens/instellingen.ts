@@ -176,7 +176,7 @@ export async function renderInstellingen(
   );
   box.append(timeoutGroup);
 
-  const save = el('button', 'btn-primary', 'Opslaan') as HTMLButtonElement;
+  const save = el('button', 'btn btn--primary', 'Opslaan') as HTMLButtonElement;
   save.id = 'inst-save';
   const actions = el('div', 'form-actions');
   actions.append(save);

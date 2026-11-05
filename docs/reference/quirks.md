@@ -265,6 +265,11 @@ Paths in this section are relative to `_reference/renderer/`.
   product, which has already been rounded to a double. The two can disagree at x.x5 boundaries. For
   example, `(1.005).toFixed(2)` gives `1.00`.
 - **Why it matters:** Golden tests at rounding boundaries need to pin each path on its own.
+- **Step 13 (R-01):** both paths now live in `ui/src/domain/format.ts`: `formatGrade`
+  (`Math.round(x * 10) / 10`, for grades) and `formatFixed` (`toFixed`, for means, SDs and
+  bounds). Every caller kept the path it had, so no shown number changed. Unifying them is a
+  number change and waits for step 19 (before/after table). One display change: `formatGrade` of
+  `NaN` shows `—` instead of `NaN`.
 
 ### B9. Rapport reads the wrong advice file for bovenbouw wiskunde
 

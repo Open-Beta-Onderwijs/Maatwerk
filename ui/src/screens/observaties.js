@@ -173,8 +173,8 @@ export function renderObservaties() {
         <span class="small">Schoolsoort: ${escHtml((o.schoolsoort ?? []).join(', ')) || '—'} &nbsp;·&nbsp; Jaarlagen: ${escHtml((o.jaarlagen ?? []).join(', ')) || '—'}</span>
       </div>
       <div class="card-actions">
-        <button class="btn-sm btn-sm-icon" data-action="edit-obs" data-id="${escHtml(o.id)}" title="Observatie bewerken">${ICONS.pen}</button>
-        <button class="btn-sm btn-danger btn-sm-icon" data-action="del-obs" data-id="${escHtml(o.id)}"${Store.obsIsUsedInAnyExam(o.id) ? ' disabled title="Deze observatie is gekoppeld aan een toets en kan dus niet worden verwijderd."' : ' title="Observatie verwijderen"'}>${ICONS.trash}</button>
+        <button class="btn btn--icon" data-action="edit-obs" data-id="${escHtml(o.id)}" title="Observatie bewerken">${ICONS.pen}</button>
+        <button class="btn btn--icon btn--icon-danger" data-action="del-obs" data-id="${escHtml(o.id)}"${Store.obsIsUsedInAnyExam(o.id) ? ' disabled title="Deze observatie is gekoppeld aan een toets en kan dus niet worden verwijderd."' : ' title="Observatie verwijderen"'}>${ICONS.trash}</button>
       </div>
     </div>`,
     )
@@ -305,8 +305,8 @@ export async function openObsModal(existingId) {
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-osave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-osave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {

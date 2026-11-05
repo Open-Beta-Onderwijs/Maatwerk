@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { lerpColor, isFail } from '../utils/colors.js';
+import { gradeBarColor, isFail } from '../domain/grade-colors';
+import { testBadgeClass } from '../domain/test-type';
+import { formatFixed, formatNumber, parseDecimalLoose } from '../domain/format';
 import { ICONS } from '../utils/icons.js';
 import {
   escHtml,
@@ -90,9 +92,9 @@ export async function computeExamStats(year, exam) {
     mp = mean(points);
   return {
     n: grades.length,
-    avgPts: points.length ? mp.toFixed(1).replace('.', ',') : '—',
-    avgG: mg.toFixed(1).replace('.', ','),
-    sd: sd(grades, mg).toFixed(1).replace('.', ','),
+    avgPts: points.length ? formatFixed(mp) : '—',
+    avgG: formatFixed(mg),
+    sd: formatFixed(sd(grades, mg)),
     fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
     normalMax,
   };
@@ -132,8 +134,8 @@ export async function computeBestGradeStats(parentId, year) {
   const sd = Math.sqrt(grades.reduce((s, g) => s + (g - mean) ** 2, 0) / grades.length);
   return {
     n: grades.length,
-    avgG: mean.toFixed(1).replace('.', ','),
-    sd: sd.toFixed(1).replace('.', ','),
+    avgG: formatFixed(mean),
+    sd: formatFixed(sd),
     fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
   };
 }
@@ -278,11 +280,7 @@ export async function renderToetsenList() {
   function metaLine(e) {
     const ss = (e.schoolsoort ?? []).join(' / ');
     const ssPrefix = ss ? escHtml(ss) + ' · ' : '';
-    return `${ssPrefix}${e.periode ? 'Periode ' + escHtml(String(e.periode)) + ' · ' : ''}N-term: ${String(e.n_term).replace('.', ',')} · Weging: ${String(e.weging ?? 1).replace('.', ',')}${e.type === 'pta' ? ` · Weging SE: ${String(e.weging_se ?? e.weging ?? 1).replace('.', ',')}` : ''}`;
-  }
-
-  function typeColor(e) {
-    return e?.type === 'pta' ? '#d9534f' : e?.type === 'po' ? '#f0ad4e' : '#4A90D9';
+    return `${ssPrefix}${e.periode ? 'Periode ' + escHtml(String(e.periode)) + ' · ' : ''}N-term: ${formatNumber(e.n_term)} · Weging: ${formatNumber(e.weging ?? 1)}${e.type === 'pta' ? ` · Weging SE: ${formatNumber(e.weging_se ?? e.weging ?? 1)}` : ''}`;
   }
 
   const SUBCATEGORY_LETTER = { wisa: 'A', wisb: 'B', wisc: 'C', wisd: 'D' };
@@ -292,7 +290,7 @@ export async function renderToetsenList() {
     if (!letter) return '';
     const jl = parseInt(e.jaarlaag, 10);
     if (jl < 4) return '';
-    return `<span class="u-bg-dark u-mr-0 volgnummer">${letter}</span> `;
+    return `<span class="test-badge test-badge--sub">${letter}</span> `;
   }
 
   function attemptBadge(e) {
@@ -306,20 +304,20 @@ export async function renderToetsenList() {
   }
 
   function menuBtnHtml(examId, kind) {
-    return `<button class="btn-sm btn-sm-icon exam-menu-btn" data-action="exam-menu" data-id="${escHtml(examId)}" data-kind="${kind}" title="Meer acties" aria-haspopup="menu" aria-expanded="false">${ICONS.dots}</button>`;
+    return `<button class="btn btn--icon exam-menu-btn" data-action="exam-menu" data-id="${escHtml(examId)}" data-kind="${kind}" title="Meer acties" aria-haspopup="menu" aria-expanded="false">${ICONS.dots}</button>`;
   }
 
   function attemptCardHtml(e) {
     return `
       <div class="card exam-attempt-card">
         <div class="card-main">
-          <strong>${wiSubBadge(e)}<span class="volgnummer" data-bg="${typeColor(e)}">${escHtml(attemptBadge(e))}</span> <button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+          <strong>${wiSubBadge(e)}<span class="${testBadgeClass(e)}">${escHtml(attemptBadge(e))}</span> <button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
           <span class="rtti-summary">${examSummaryLine(e)}</span>
           ${statsSpanHtml(e.id)}
         </div>
         <div class="card-actions">
           ${presenceSpanHtml(e.id)}
-          <button class="btn-sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
+          <button class="btn btn--secondary btn--sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
           <div class="card-vsep"></div>
           ${menuBtnHtml(e.id, 'attempt')}
         </div>
@@ -342,14 +340,14 @@ export async function renderToetsenList() {
       html += `
         <div class="card">
           <div class="card-main">
-            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" data-bg="${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="${testBadgeClass(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
             <span class="muted">${metaLine(e)}</span>
             <span class="rtti-summary">${examSummaryLine(e)}</span>
             ${statsSpanHtml(e.id)}
           </div>
           <div class="card-actions">
             ${presenceSpanHtml(e.id)}
-            <button class="btn-sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
+            <button class="btn btn--secondary btn--sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
             <div class="card-vsep"></div>
             ${menuBtnHtml(e.id, 'solo')}
           </div>
@@ -359,12 +357,12 @@ export async function renderToetsenList() {
       html += `
         <div class="card exam-summary-card">
           <div class="card-main">
-            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" data-bg="${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="${testBadgeClass(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
             <span class="muted">${metaLine(e)}</span>
             ${statsSpanHtml(e.id, true)}
           </div>
           <div class="card-actions">
-            <button class="btn-sm exam-card-btn" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">Overzicht openen</button>
+            <button class="btn btn--secondary btn--sm exam-card-btn" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">Overzicht openen</button>
             <div class="card-vsep"></div>
             ${menuBtnHtml(e.id, 'summary')}
           </div>
@@ -401,8 +399,8 @@ export async function renderToetsenList() {
       el.remove();
       return;
     }
-    const gv = parseFloat(st.avgG.replace(',', '.'));
-    const circleColor = isFail(gv) ? '#e57373' : lerpColor('#ffd54f', '#66bb6a', (gv - 5.5) / 4.5);
+    const gv = parseDecimalLoose(st.avgG);
+    const circleColor = gradeBarColor(gv);
     el.innerHTML =
       `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mr-5 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${circleColor}"/></svg>` +
       `${st.avgG} ± ${st.sd} · ${st.fails}% onvoldoende`;

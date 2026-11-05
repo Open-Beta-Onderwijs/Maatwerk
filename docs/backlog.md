@@ -341,3 +341,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **n2:** an error before `legacy/globals` loads makes the handler import `app.js` early.
 - **n7:** the sandbox test passes on any failure; assert the diagnostic is "not found/denied".
 - Other nits in `docs/reviews/step-10.md`.
+
+## From Step 13 (review `docs/reviews/step-13.md`)
+
+- **m3/m4 (step 14, form rules):** scope the input base to form contexts or give every inline
+  input an explicit size; CustomSelect trigger, `.toolbar select`, `.voorzitter-row select` and
+  `.questions-table input` on the spec 3.2 look.
+- **m7 (R-05):** JS files touched only for class renames stay JS until their area step.
+- **n5:** raw colours left in component CSS (`#3a404b` pressed segment in dark); `.grade-pill`
+  to the spec 2.3 sizes (min-width 44, radius 6, 1.5 px) with the overview redesign (step 25).
+- **n6:** `setBusy` drops icons; use it in `pin.ts`, `instellingen.ts`, `gegevens.ts`,
+  `migration.ts` (step 14 dialog component).
+- **n8:** dev theme menu: Escape also reaches open modals; AltGr+T on some layouts (dev only).
+- **n9:** theme test: cover the dark zwart override and the neutrals table.
+- RTTI chart colours still the old `#5cb85c/#5bc0de/#f0ad4e/#d9534f`; spec 2.6 tokens exist
+  (`--rtti-*`), apply with the overview redesign (step 25).

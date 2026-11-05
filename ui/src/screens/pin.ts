@@ -138,7 +138,7 @@ function modal<T>(
   });
 }
 
-const ACTIONS_CANCEL = `<button class="btn-secondary" data-close-modal="1">Annuleren</button>`;
+const ACTIONS_CANCEL = `<button class="btn btn--secondary" data-close-modal="1">Annuleren</button>`;
 
 /** First login: the user chooses a PIN. Resolves with the check (user written, codes). */
 function setFirstPinDialog(user: PinUser, api: Api, roleLabel: string): Promise<PinCheck | null> {
@@ -150,7 +150,7 @@ function setFirstPinDialog(user: PinUser, api: Api, roleLabel: string): Promise<
     ${pinInput('pin-repeat', 'Herhaal de pincode')}
     <p class="pin-error" role="alert"></p>
     <div class="form-actions">
-      <button class="btn-primary" id="pin-ok">Pincode instellen</button>
+      <button class="btn btn--primary" id="pin-ok">Pincode instellen</button>
       ${ACTIONS_CANCEL}
     </div>`;
   return modal<PinCheck>(html, (content, finish) => {
@@ -181,7 +181,7 @@ function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
     ${pinInput('pin-repeat', 'Herhaal de pincode')}
     <p class="pin-error" role="alert"></p>
     <div class="form-actions">
-      <button class="btn-primary" id="pin-ok">Inloggen</button>
+      <button class="btn btn--primary" id="pin-ok">Inloggen</button>
       ${ACTIONS_CANCEL}
     </div>
     <p class="hint">Geen codes meer? Zie "Pincode beheerder kwijt" in het draaiboek.</p>`;
@@ -205,7 +205,7 @@ type LoginResult = { check: PinCheck } | { forgot: true };
 
 function loginDialog(user: PinUser, api: Api, roleLabel: string): Promise<LoginResult | null> {
   const forgot = user.isAdmin
-    ? `<button type="button" class="btn-link" id="pin-forgot">Pincode vergeten?</button>`
+    ? `<button type="button" class="btn btn--text" id="pin-forgot">Pincode vergeten?</button>`
     : `<p class="hint">Pincode vergeten? Vraag de beheerder om je pincode te resetten.</p>`;
   const html = `
     <h3>${escHtml(fullUserName(user))}</h3>
@@ -213,7 +213,7 @@ function loginDialog(user: PinUser, api: Api, roleLabel: string): Promise<LoginR
     ${pinInput('pin-input', 'Pincode', true)}
     <p class="pin-error" role="alert"></p>
     <div class="form-actions">
-      <button class="btn-primary" id="pin-ok">Inloggen</button>
+      <button class="btn btn--primary" id="pin-ok">Inloggen</button>
       ${ACTIONS_CANCEL}
     </div>
     ${forgot}`;
@@ -244,12 +244,12 @@ export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Pro
        op een veilige plek (niet in de gedeelde map).</p>
     <ol class="recovery-codes">${codes.map((c) => `<li><code>${escHtml(c)}</code></li>`).join('')}</ol>
     <div class="form-actions">
-      <button class="btn-secondary" id="codes-print">Afdrukken</button>
-      <button class="btn-secondary" id="codes-save">Opslaan als…</button>
+      <button class="btn btn--secondary" id="codes-print">Afdrukken</button>
+      <button class="btn btn--secondary" id="codes-save">Opslaan als…</button>
     </div>
     <label class="checkbox-row"><input type="checkbox" id="codes-kept" /> Ik heb de codes bewaard</label>
     <div class="form-actions">
-      <button class="btn-primary" id="codes-done" disabled>Verder</button>
+      <button class="btn btn--primary" id="codes-done" disabled>Verder</button>
     </div>`;
   return new Promise((resolve) => {
     showModal(
@@ -353,7 +353,7 @@ function changePinDialog(api: Api): Promise<PinCheck | null> {
     ${pinInput('pin-repeat', 'Herhaal de nieuwe pincode')}
     <p class="pin-error" role="alert"></p>
     <div class="form-actions">
-      <button class="btn-primary" id="pin-ok">Wijzigen</button>
+      <button class="btn btn--primary" id="pin-ok">Wijzigen</button>
       ${ACTIONS_CANCEL}
     </div>`;
   return modal<PinCheck>(html, (content, finish) => {
@@ -379,7 +379,7 @@ function renewCodesDialog(api: Api): Promise<PinCheck | null> {
     ${pinInput('pin-current', 'Pincode', true)}
     <p class="pin-error" role="alert"></p>
     <div class="form-actions">
-      <button class="btn-primary" id="pin-ok">Nieuwe codes maken</button>
+      <button class="btn btn--primary" id="pin-ok">Nieuwe codes maken</button>
       ${ACTIONS_CANCEL}
     </div>`;
   return modal<PinCheck>(html, (content, finish) => {
@@ -407,9 +407,9 @@ export function openAccountModal(
     <h3>${escHtml(fullUserName(user))}</h3>
     ${roleLabel ? `<p class="pin-role">${escHtml(roleLabel)}</p>` : ''}
     <div class="account-actions">
-      <button class="btn-secondary" id="acc-pin">Pincode wijzigen</button>
-      ${user.isAdmin ? `<button class="btn-secondary" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
-      <button class="btn-primary" id="acc-logout">Uitloggen</button>
+      <button class="btn btn--secondary" id="acc-pin">Pincode wijzigen</button>
+      ${user.isAdmin ? `<button class="btn btn--secondary" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
+      <button class="btn btn--primary" id="acc-logout">Uitloggen</button>
     </div>`;
   showModal(
     html,

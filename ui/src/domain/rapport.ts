@@ -5,6 +5,7 @@
 // pinned by tests/golden/logic/rapport.json, except the quirks fixed in the
 // port: T26 (non-numeric score), T27 (`$` guard) and B9 (wiskunde advice file).
 
+import { formatCompact, formatGrade } from './format';
 import { calcResults, qKind } from './grades';
 import { fullName, jaarlaagFromStamklas } from './ids';
 import {
@@ -171,7 +172,7 @@ export function getScoreBracket(
 }
 
 export function fmtNum(n: number): string {
-  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+  return formatCompact(n);
 }
 
 /**
@@ -391,7 +392,7 @@ export function buildRapportData({
       group: e.group?.name ?? '—',
       score: e.scored,
       max_score: e.normalMax,
-      grade: e.grade !== null ? (Math.round(e.grade * 10) / 10).toFixed(1).replace('.', ',') : '—',
+      grade: formatGrade(e.grade),
       grade_num: e.grade !== null ? Math.round(e.grade * 10) / 10 : null,
       grade_overridden: e.overridden,
       vragen,

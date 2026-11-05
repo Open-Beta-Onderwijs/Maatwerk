@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { lerpColor, gradeColor, rttiPctColor, isFail } from '../utils/colors.js';
 import {
-  gradeGroupIdx,
-  gradeChartColor,
-  GRADE_GROUP_LABELS,
-  GRADE_GROUP_MIDPOINTS,
-} from '../utils/grades.js';
+  GRADE_BAR,
+  gradeBarColor,
+  gradeCellColor,
+  isFail,
+  pctBarColor,
+  rttiPctCellColor,
+} from '../domain/grade-colors';
+import { formatFixed, formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
+import { chartInk } from '../theme';
+import { gradeGroupIdx, GRADE_GROUP_LABELS, GRADE_GROUP_MIDPOINTS } from '../utils/grades';
 import {
   showModal,
   closeModal,
   escHtml,
-  formatGrade,
   pushModalChart,
   onModalSync,
   showReloadNotice,
@@ -175,9 +178,8 @@ export async function openExamOverviewModal(
         ? 0
         : Math.sqrt(grades.reduce((s, v) => s + (v - mean) ** 2, 0) / grades.length);
     const fails = Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100);
-    const dotColor = isFail(mean) ? '#e57373' : lerpColor('#ffd54f', '#66bb6a', (mean - 5.5) / 4.5);
-    const dot = `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mx-3 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${dotColor}"/></svg>`;
-    summaryHtml = `<span class="u-d-flex u-items-center u-flex-wrap u-gap-0 muted">${grades.length} leerlingen &nbsp;·&nbsp; ${dot} ${mean.toFixed(1).replace('.', ',')} ± ${sd.toFixed(1).replace('.', ',')} &nbsp;·&nbsp; ${fails}% onvoldoende</span>`;
+    const dot = `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mx-3 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${gradeBarColor(mean)}"/></svg>`;
+    summaryHtml = `<span class="u-d-flex u-items-center u-flex-wrap u-gap-0 muted">${grades.length} leerlingen &nbsp;·&nbsp; ${dot} ${formatFixed(mean)} ± ${formatFixed(sd)} &nbsp;·&nbsp; ${fails}% onvoldoende</span>`;
   }
 
   const qChartHeight = Math.max(180, exam.questions.length * 22 + 60);
@@ -200,7 +202,7 @@ export async function openExamOverviewModal(
 
   // ── Resultaten tab: one table per group, students ordered like the score grid ──
   function resultatenHtml() {
-    const fmtNum = (v) => String(v).replace('.', ',');
+    const fmtNum = formatNumber;
     const resObs = [...examObsObjects].sort((a, b) => a.naam.localeCompare(b.naam, 'nl'));
     // Fixed column widths, so every group's table lines up; Naam takes the rest.
     // The badge column (best attempt was a resit) only exists in the resit summary.
@@ -253,11 +255,11 @@ export async function openExamOverviewModal(
       const rttiCells = RTTI_CATS.map((cat, i) => {
         const v = hasScores ? res[cat] : null;
         const text = v == null ? '' : v === 'NVT' ? 'NVT' : `${v}%`;
-        const bg = rttiPctColor(text);
+        const bg = rttiPctCellColor(text && text !== 'NVT' ? parseDecimalLoose(text) : null);
         return `<td class="${i === 0 ? 'res-sep' : ''}"${bg ? ` data-bg="${bg}"` : ''}>${text}</td>`;
       }).join('');
 
-      const gbg = gradeColor(gradeTxt);
+      const gbg = gradeCellColor(gradeTxt ? parseDecimalLoose(gradeTxt) : null);
       const overridden = !!res?.overridden;
       const gradeTitle = overridden
         ? `Met de hand overschreven cijfer. Berekend cijfer: ${formatGrade(res.calculatedGrade)}.` +
@@ -434,7 +436,7 @@ export async function openExamOverviewModal(
               if (v == null || v === 0) return;
               if (bar.y >= bar.base - 12) return;
               ctx.save();
-              ctx.fillStyle = '#444';
+              ctx.fillStyle = chartInk().text;
               ctx.font = 'bold 10px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'bottom';
@@ -457,7 +459,7 @@ export async function openExamOverviewModal(
               const isZero = v === 0;
               if (!isZero && bar.y >= bar.base - 12) return;
               ctx.save();
-              ctx.fillStyle = '#444';
+              ctx.fillStyle = chartInk().text;
               ctx.font = 'bold 10px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'bottom';
@@ -481,7 +483,7 @@ export async function openExamOverviewModal(
               const isNvt = ds.nvtArr?.[j] === true;
               if (!isNvt && (v === 0 || bar.y >= bar.base - 12)) return;
               ctx.save();
-              ctx.fillStyle = isNvt ? '#8895a4' : '#444';
+              ctx.fillStyle = isNvt ? chartInk().disabled : chartInk().text;
               ctx.font = 'bold 10px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'bottom';
@@ -503,7 +505,7 @@ export async function openExamOverviewModal(
               if (v == null) return;
               if (bar.x <= bar.base + 8) return;
               ctx.save();
-              ctx.fillStyle = '#444';
+              ctx.fillStyle = chartInk().text;
               ctx.font = '10px sans-serif';
               ctx.textAlign = 'left';
               ctx.textBaseline = 'middle';
@@ -538,10 +540,10 @@ export async function openExamOverviewModal(
         const binLabels = bins.map((_, i) => {
           const upper = Math.min(start + (i + 1) * step, 10.0);
           const prefix = i === count - 1 ? '\u2264' : '<';
-          return prefix + upper.toFixed(1).replace('.', ',');
+          return prefix + formatFixed(upper);
         });
         const passBinIndex = Math.round((5.5 - start) / step);
-        const barColors = bins.map((_, i) => gradeChartColor(start + (i + 0.5) * step));
+        const barColors = bins.map((_, i) => gradeBarColor(start + (i + 0.5) * step));
         return { data: bins, binLabels, barColors, passBinIndex };
       }
 
@@ -572,7 +574,7 @@ export async function openExamOverviewModal(
                     type: 'line',
                     xMin: bins.passBinIndex - 0.5,
                     xMax: bins.passBinIndex - 0.5,
-                    borderColor: '#555',
+                    borderColor: chartInk().muted,
                     borderWidth: 2,
                     borderDash: [4, 4],
                   },
@@ -668,7 +670,7 @@ export async function openExamOverviewModal(
                 [xMed, stats.median],
                 [xQ3, stats.q3],
                 [xMax, stats.max],
-              ].forEach(([xPos, val]) => ctx.fillText(val.toFixed(1).replace('.', ','), xPos, yt));
+              ].forEach(([xPos, val]) => ctx.fillText(formatFixed(val), xPos, yt));
               ctx.restore();
             });
           },
@@ -716,11 +718,7 @@ export async function openExamOverviewModal(
       // ── % correct chart helper ────────────────────────────────────────────
       function buildQChart(canvas, pcts, title) {
         const colors = pcts.map((p) => {
-          if (p === null) return '#ccc';
-          const t = p / 100;
-          return t <= 0.5
-            ? lerpColor('#e57373', '#ffd54f', t * 2)
-            : lerpColor('#ffd54f', '#66bb6a', (t - 0.5) * 2);
+          return pctBarColor(p);
         });
         return new Chart(canvas, {
           type: 'bar',
@@ -904,7 +902,7 @@ export async function openExamOverviewModal(
                     return max > 0 ? Math.round((scored / max) * 100) : null;
                   }),
                   backgroundColor:
-                    gi === 0 ? '#c62828' : gradeChartColor(GRADE_GROUP_MIDPOINTS[gi]),
+                    gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),
                   borderRadius: 2,
                 })),
               },
@@ -1209,7 +1207,7 @@ export async function openExamOverviewModal(
                   label,
                   data: examObsObjects.map((o) => obsAccum[o.id]?.byGradeGroup[gi] ?? 0),
                   backgroundColor:
-                    gi === 0 ? '#c62828' : gradeChartColor(GRADE_GROUP_MIDPOINTS[gi]),
+                    gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),
                   borderRadius: 2,
                 })),
               },

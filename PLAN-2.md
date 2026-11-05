@@ -71,7 +71,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | Step | Title                                                            | Size         | Release | Status |
 | ---- | ---------------------------------------------------------------- | ------------ | ------- | ------ |
 | 12   | Triage and open decisions                                        | S (user)     | -       | done   |
-| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | todo   |
+| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done   |
 | 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | todo   |
 | 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | todo   |
 | 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | todo   |

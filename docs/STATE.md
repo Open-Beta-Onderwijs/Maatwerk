@@ -1,15 +1,73 @@
 # State
 
-Last updated: 2026-11-04 (phase 2 intake; cutover done) Branch: `main` Last tags:
-`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
-only)
+Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `step-13`, `v0.4.0`,
+`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are
+local only)
 
 ## Current step
+
+**Step 13 done** (merged, tagged `step-13`, version 0.4.0). **Next: step 14** (Foundation b:
+dialog component, placeholders, sticky, form rules; L, 14a/14b). Step 14 also takes the step 13
+backlog items m3/m4/n6 (`docs/backlog.md` "From Step 13").
+
+## Step 13 result
+
+Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `PLAN-2.md` step 13:
+
+1. **Done:** tokens (`ui/src/styles/tokens.css`: neutrals light/dark, 21 accents, grade, RTTI,
+   type, radii, shadows, control sizes); `ui/src/domain/look.ts` + `ui/src/theme.ts` (dev/mock
+   only menu, Ctrl+Alt+T, `localStorage` `maatwerk.dev.look`); `style.css` colours mapped to
+   tokens (legacy `--primary`/`--radius`/`--shadow`/`--success` gone); `controls.css`
+   (segmented control, accent swatch). Visual spec runs every view in light/blauw, dark and
+   geel (`--dark`/`--geel` suffix). Pre-change baselines: 37/37 equal to `main`, copied to the
+   session scratchpad.
+2. **Done:** `ui/src/domain/format.ts` (`formatGrade`, `formatFixed`, `formatNumber`,
+   `formatCompact`, `parseDecimal`, `parseDecimalLoose`) and `ui/src/domain/grade-colors.ts`
+   (spec 2.3: text colours as theme-token mixes, bar colours hex, score-grid cell fills) replace
+   the copies in ~15 files; `utils/grades.js` -> `utils/grades.ts`; `utils/colors.js` keeps only
+   `examTypeColor` until sub-task 4. Rounding paths unchanged (B8 note in `quirks.md`). The
+   score grid stays light in dark mode (token island) until step 21.
+3. **Done:** `ui/src/styles/buttons.css` (`.btn` + `--primary/--secondary/--text/--danger/
+--icon/--icon-danger/--sm`, focus ring, disabled, `aria-busy` spinner) and
+   `components/button.ts` `setBusy`. All ~100 buttons converted (PIN dialogs included);
+   `.btn-primary/-secondary/-sm/-danger/-link/-sm-icon` CSS removed. Dialog footer order
+   (primary last) waits for the dialog component (step 14).
+4. **Done:** `controls.css`: inputs/selects/textareas as a zero-specificity (`:where`) base
+   (36 px, `--border-strong`, accent focus ring), search field 220 px with magnifier, stepper
+   (`.num-spinner`), toggle buttons (`.tog-btn`), filter chips (`.filter-btn`, active state),
+   test-type badge (`.test-badge`, `domain/test-type.ts`: toets = accent, SE = anti; PO and
+   diagnostic classes ready for step 20). `utils/colors.js` removed; `utils/spinners.js` ->
+   `.ts`; `theme.ts` `cssToken` for chart colours. Question-editor table keeps dense controls (26 px).
+5. **Done:** 9 unused `u-*` utilities removed (`u-w-32`, `u-h-32`, `u-mr-0`, `u-bg-dark` freed
+   by this step; `u-align-bottom`, `u-border-b`, `u-p-3-6`, `u-text-left`, `u-tracking` already
+   dead). 119 remain for later steps.
+6. **Done:** user OK on the visual diff; local baselines updated (111 views: light/blauw, dark,
+   geel). Gate green (cargo fmt/clippy/test, lint, typecheck, 385 Vitest, 124 e2e, 111 visual,
+   cargo deny, npm licences, SPDX, `npm audit --omit=dev` 0).
+7. Review `docs/reviews/step-13.md`: 0 blockers; M1 (charts in dark) fixed; m1, m2, m5, m6 and
+   n1, n2, n4, n7 fixed; m3/m4 partly; rest in `docs/backlog.md` "From Step 13". R-05 rule
+   (user-visible decision recorded here): JS files touched only for class renames or imports
+   stay JS until their area step.
+8. Version 0.4.0.
+
+User decisions (2026-11-05): zwart accent in dark theme keeps the light fill (`#E7EAF0`, dark
+text); B8 rounding unification stays in step 19. `editor.css`/`pdf-viewer.css` (own windows)
+keep their colours until step 27.
+
+User review of the visual diff (2026-11-05), fixed: groep-edit Schoolsoort on one line; text in
+inputs had no left padding (the `* { padding: 0 }` reset beat the zero-specificity base; base is
+now element-level); toets-new and herkansing steppers aligned (108 px, no `u-w-90`); verzamelkaart
+labels aligned (toggle groups and PTA box 36 px). Then (user): every control in a form row is 36 px (toggles,
+jaarlaag/periode/subcategorie squares, schoolsoort/vak/docent toggles); question-editor table
+stays dense (26 px toggles and selects). New `modal-md` (760 px) for Nieuwe toets,
+verzamelkaart and Leerling bewerken.
+
+## Phase 2 intake (earlier)
 
 **Phase 2 (`PLAN-2.md`).** Cutover done by the user (2026-11). Intake in `ROADMAP.md` section 4;
 design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-29).
 Step 12 (triage) done 2026-11-04: decisions in `PLAN-2.md` section 1 and ADR-0010, triage in
-`ROADMAP.md` 4.6. **Next: step 13** (Foundation a). Before step 18 the user runs `validate-data`
+`ROADMAP.md` 4.6. Step 13 done 2026-11-05. Before step 18 the user runs `validate-data`
 on a copy of the real data folder.
 
 Earlier: **Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the

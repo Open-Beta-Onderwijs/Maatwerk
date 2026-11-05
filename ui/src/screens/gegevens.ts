@@ -90,7 +90,7 @@ export function issueTable(
     const { onAccept, onRestore } = actions;
     const action = el('td');
     if (issue.kind === 'stamp') {
-      const btn = el('button', 'btn-secondary btn-sm', 'Accepteren') as HTMLButtonElement;
+      const btn = el('button', 'btn btn--secondary btn--sm', 'Accepteren') as HTMLButtonElement;
       btn.title = 'Het bestand is goed zoals het nu is';
       btn.addEventListener('click', () => {
         btn.disabled = true;
@@ -98,7 +98,7 @@ export function issueTable(
       });
       const restore = el(
         'button',
-        'btn-secondary btn-sm',
+        'btn btn--secondary btn--sm',
         'Herstellen uit snapshot',
       ) as HTMLButtonElement;
       restore.title = 'De laatste goede versie uit een snapshot terugzetten';
@@ -127,7 +127,7 @@ export async function renderGegevens(
       'Maatwerk zijn gewijzigd, OneDrive-conflictkopieën en verwijzingen naar iets dat niet ' +
       'bestaat.',
   );
-  const run = el('button', 'btn-primary', 'Opnieuw controleren') as HTMLButtonElement;
+  const run = el('button', 'btn btn--primary', 'Opnieuw controleren') as HTMLButtonElement;
   const result = el('div', 'gegevens-result');
   box.append(el('h2', '', 'Gegevenscontrole'), intro, run, result);
   container.replaceChildren(box);
