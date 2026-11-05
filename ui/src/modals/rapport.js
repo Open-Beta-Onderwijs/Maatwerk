@@ -308,6 +308,7 @@ export async function openRttiUitlegModal() {
   let selectTab = null; // set in onShow; the dialog calls onTab on open
   openModal({
     title: 'Leerlingrapport RTTI uitleg en leeradvies',
+    key: 'rtti-uitleg',
     size: 'lg',
     fixedHeight: true,
     tabs: tabs.map((t, i) => ({ id: String(i), label: t.label })),

@@ -207,6 +207,7 @@ async function openOpdrachtenModal(existingId) {
 
   openModal({
     title: isEdit ? 'Opdracht bewerken' : 'Opdracht toevoegen',
+    key: 'opdracht-edit',
     footerHtml: `
       <button class="btn btn--primary" id="f-opsave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>

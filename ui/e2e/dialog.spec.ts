@@ -5,6 +5,7 @@
 // modal with lazy content does not change size while loading.
 
 import { expect, test, type Page } from '@playwright/test';
+import { readMockJson, withMock, YEAR } from './helpers';
 import { VIEWS, openView } from './views';
 
 const TOP = 64;
@@ -171,5 +172,72 @@ test.describe('form rules (spec 3.7, 3.9)', () => {
     await box.click();
     await expect(box).toHaveAttribute('aria-pressed', 'true');
     await expect(box).toHaveAttribute('data-checked', 'true');
+  });
+});
+
+test.describe('review 14 fixes', () => {
+  test('M2: opening moves focus into the dialog; Enter does not open a second one', async ({
+    page,
+  }) => {
+    await openView(page, view('modal-observatie-new'));
+    await expect(page.locator('.dlg')).toHaveCount(1);
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.dlg'))).toBe(true);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(300);
+    await expect(page.locator('.dlg')).toHaveCount(1);
+  });
+
+  test('M2: Tab stays inside the dialog', async ({ page }) => {
+    await openView(page, view('modal-observatie-new'));
+    for (let i = 0; i < 40; i++) {
+      await page.keyboard.press('Tab');
+      expect(await page.evaluate(() => !!document.activeElement?.closest('.dlg'))).toBe(true);
+    }
+  });
+
+  test('M3: arrow keys move between dialog tabs', async ({ page }) => {
+    await openView(page, view('modal-overzicht-resultaten'));
+    const tabs = topDialog(page).locator('[role="tab"]');
+    await tabs.first().focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(tabs.nth(1)).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(tabs.last()).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Home');
+    await expect(tabs.first()).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('M1 + m1: a colleague change to a covered group overview waits; its notice reloads that overview', async ({
+    page,
+  }) => {
+    await openView(page, view('screen-groepen'));
+    const id = await page.locator('[data-action="open-group"]').first().getAttribute('data-id');
+    await page.locator('[data-action="open-group"]').first().click();
+    await topDialog(page).locator('[data-action="open-student-from-group"]').first().click();
+    await expect(page.locator('.dlg')).toHaveCount(2);
+
+    // A colleague edits the group while the profile covers the overview.
+    const file = `${YEAR}/groups/${id}.json`;
+    const group = await readMockJson<Record<string, unknown>>(page, file);
+    await withMock(page, (m, [p, d]) => m.externalWrite(p as string, d as never), [
+      file,
+      { ...group, docenten: [] },
+    ]);
+    await page.waitForTimeout(500);
+    await expect(page.locator('#reload-notice')).toHaveCount(0);
+
+    // Back on the overview: now the notice; Escape and the backdrop do not dismiss it.
+    await page.keyboard.press('Escape');
+    const notice = page.locator('#reload-notice');
+    await expect(notice).toBeVisible();
+    await page.mouse.click(5, 5);
+    await page.keyboard.press('Escape');
+    await expect(notice).toBeVisible();
+    await notice.getByRole('button', { name: 'OK' }).click();
+    await expect(page.locator('.dlg')).toHaveCount(1);
+    await expect(
+      topDialog(page).locator('[data-action="open-student-from-group"]').first(),
+    ).toBeVisible();
   });
 });

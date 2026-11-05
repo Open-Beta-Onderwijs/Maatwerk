@@ -21,6 +21,7 @@ export function askSchoolYear(activeYear, existingYears, ui) {
     );
     openModal({
       title: 'Schooljaar kiezen',
+      key: 'school-year',
       size: 'sm',
       footerHtml: `
         <button class="btn btn--primary" id="f-year-ok">Verder</button>

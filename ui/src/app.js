@@ -190,6 +190,8 @@ export function openModal({ onShow, ...opts }) {
       _modals = _modals.filter((m) => m !== d);
       opts.onClose?.();
       if (_screenRefreshPending && !_modals.length) scheduleScreenRefresh();
+      // The modal underneath is on top again: deliver what it missed.
+      queueMicrotask(flushHeldSync);
     },
   });
   _modals.push(d);
@@ -254,12 +256,34 @@ export function formSnapshot(root) {
 // or is replaced by another one, so modals never react to changes after they
 // are gone.
 
+// Background changes for a modal that has another modal stacked on it (a
+// profile over a group overview) wait until it is on top again. Its handlers
+// may show a reload notice whose OK closes or re-opens "the current modal";
+// that must be this one, not the one on top of it (review 14 M1).
+const _heldSync = new Map(); // Dialog -> [() => void]
+
+function flushHeldSync() {
+  const top = currentModal();
+  const held = top && _heldSync.get(top);
+  if (!held) return;
+  _heldSync.delete(top);
+  held.forEach((run) => run());
+}
+
 /** Subscribe to background changes of `type` for as long as the current modal is open. */
 export function onModalSync(type, handler) {
-  const off = Sync.on(type, handler);
   const d = currentModal();
-  if (d) d.onCleanup(off);
-  else off();
+  if (!d) return;
+  const off = Sync.on(type, (ev) => {
+    if (!d.isOpen) return;
+    if (currentModal() === d) return handler(ev);
+    if (!_heldSync.has(d)) _heldSync.set(d, []);
+    _heldSync.get(d).push(() => handler(ev));
+  });
+  d.onCleanup(() => {
+    off();
+    _heldSync.delete(d);
+  });
 }
 
 /** Run fn when the current modal closes or is replaced by another one. */
@@ -267,11 +291,6 @@ export function onModalCleanup(fn) {
   const d = currentModal();
   if (d) d.onCleanup(fn);
   else fn();
-}
-
-/** The current modal's session number (changes on every open), or 0. */
-export function modalSession() {
-  return currentModal()?.session ?? 0;
 }
 
 /**
@@ -323,6 +342,7 @@ export function showReloadNotice(message, onOk) {
     dialogId: 'reload-notice',
     closeButton: false,
     backdropCloses: false,
+    dismissible: false, // only OK: the modal underneath must be reloaded first
     body: `<h2 class="dlg-confirm-title">Gewijzigd door een collega</h2>
       <p class="dlg-confirm-msg">${escHtml(message)}</p>`,
     footer: [

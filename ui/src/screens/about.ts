@@ -58,6 +58,7 @@ export function aboutHtml(version: string, build: string): string {
 export function showAbout(): void {
   openModal({
     title: 'Over Maatwerk',
+    key: 'about',
     body: aboutHtml(__MAATWERK_VERSION__, __MAATWERK_BUILD__),
     onShow: (root: HTMLElement) => wireAbout(root),
   });

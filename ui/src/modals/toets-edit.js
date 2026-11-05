@@ -47,7 +47,7 @@ export async function openExamModal(existingId, afterSave = null) {
           <label>Naam</label>
           <input id="f-etitle" type="text" placeholder="PTA t.na-3 (H4, 9, 11, K3)" />
         </div>
-        ${field('PTA', tickBox('f-epta-btn', { title: PTA_TITLE }), { grow: 'none', center: true, className: 'u-mb-0' })}
+        ${field('PTA', tickBox('f-epta-btn', { title: PTA_TITLE }), { grow: 'none', center: true, className: 'u-mb-0', for: 'f-epta-btn' })}
         <div class="u-flex-1"></div>
         <div class="u-flex-none u-w-110 u-mb-0 form-group">
           <label>Schooljaar</label>
@@ -420,7 +420,7 @@ export function showExamEditor(
           title: lockTopFields ? LOCKED_TITLE : PTA_TITLE,
           ariaLabel: 'PTA',
         }),
-        { grow: 'none', center: true, className: 'u-mb-0' },
+        { grow: 'none', center: true, className: 'u-mb-0', for: 'f-epta-btn' },
       )}
       ${
         !isEdit

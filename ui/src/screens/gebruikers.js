@@ -267,6 +267,7 @@ function openUserModal(user) {
 
   openModal({
     title,
+    key: 'user-edit',
     size: 'form',
     footerHtml: `
       <button class="btn btn--primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>

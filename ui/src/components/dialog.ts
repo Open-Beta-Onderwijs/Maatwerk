@@ -79,6 +79,8 @@ export interface DialogOptions {
   closeButton?: boolean;
   /** false: a backdrop click does nothing. */
   backdropCloses?: boolean;
+  /** false: only its own buttons close it (no Escape, backdrop or ✕), e.g. the reload notice. */
+  dismissible?: boolean;
   /** Called once after the dialog has closed (also when replaced). */
   onClose?: () => void;
   /** Id for the dialog element. */
@@ -195,6 +197,7 @@ export class Dialog {
       close.title = 'Sluiten';
       close.innerHTML = CLOSE_ICON;
       close.addEventListener('click', () => void this.requestClose());
+      // Without a header (no title) the button sits in the top-right corner.
       if (this.header) this.header.querySelector('.dlg-head-row')!.append(close);
       else {
         close.classList.add('dlg-close--float');
@@ -224,9 +227,30 @@ export class Dialog {
     }
 
     if (opts.tabs?.length) {
-      this.header!.querySelector('.dlg-tabs')!.addEventListener('click', (e) => {
+      const list = this.header!.querySelector<HTMLElement>('.dlg-tabs')!;
+      list.addEventListener('click', (e) => {
         const tab = (e.target as Element).closest<HTMLElement>('[data-tab]');
         if (tab?.dataset.tab) this.selectTab(tab.dataset.tab);
+      });
+      // Keyboard (WAI-ARIA tabs): arrows move and select, Home/End go to the ends.
+      list.addEventListener('keydown', (e) => {
+        const tabs = [...list.querySelectorAll<HTMLButtonElement>('[data-tab]:not(:disabled)')];
+        const i = tabs.indexOf(document.activeElement as HTMLButtonElement);
+        if (i < 0) return;
+        const next =
+          e.key === 'ArrowRight'
+            ? tabs[(i + 1) % tabs.length]
+            : e.key === 'ArrowLeft'
+              ? tabs[(i - 1 + tabs.length) % tabs.length]
+              : e.key === 'Home'
+                ? tabs[0]
+                : e.key === 'End'
+                  ? tabs[tabs.length - 1]
+                  : null;
+        if (!next) return;
+        e.preventDefault();
+        next.focus();
+        if (next.dataset.tab) this.selectTab(next.dataset.tab);
       });
     }
 
@@ -244,6 +268,31 @@ export class Dialog {
     // [data-close-modal] anywhere in the dialog: unguarded close (Annuleren).
     el.addEventListener('click', (e) => {
       if ((e.target as Element).closest('[data-close-modal]')) this.close();
+    });
+
+    // Tab and Shift+Tab stay inside the dialog.
+    this.backdrop.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || !this.isTop) return;
+      const focusable = [
+        ...this.el.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ].filter((x) => !(x as HTMLButtonElement).disabled && x.offsetParent !== null);
+      if (!focusable.length) {
+        e.preventDefault();
+        this.el.focus();
+        return;
+      }
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !this.el.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !this.el.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
     });
 
     this.backdrop.append(el);
@@ -277,16 +326,6 @@ export class Dialog {
     arrangeFooter(this.footer);
   }
 
-  /** Change the title and subtitle (multi-step dialogs). */
-  setTitle(title: string, subtitle?: string): void {
-    const t = this.header?.querySelector('.dlg-title');
-    if (t) t.textContent = title;
-    if (subtitle !== undefined) {
-      const sub = this.header?.querySelector('.dlg-subtitle');
-      if (sub) sub.textContent = subtitle;
-    }
-  }
-
   /** Shown in the DOM, on top of the stack. Called by openDialog. */
   mount(): void {
     stack.push(this);
@@ -295,6 +334,11 @@ export class Dialog {
     if (this.opts.tabs?.length) {
       this.selectTab(this.opts.activeTab ?? this.opts.tabs[0]!.id);
     }
+    // Focus leaves the button that opened the dialog (behind the backdrop), so
+    // Enter or a second click cannot open another one (review 14 M2). A field
+    // marked autofocus gets it; otherwise the dialog itself.
+    const auto = this.el.querySelector<HTMLElement>('[autofocus]');
+    (auto ?? this.el).focus({ preventScroll: true });
   }
 
   get key(): string | undefined {
@@ -340,6 +384,7 @@ export class Dialog {
   /** Close with the guard. Resolves true when the dialog closed. */
   async requestClose(): Promise<boolean> {
     if (this.closed || this.asking) return false;
+    if (this.opts.dismissible === false) return false;
     if (!this.isTop) return false;
     if (this.guard?.()) {
       const t = { ...DEFAULT_GUARD, ...(this.guardText ?? {}) };
@@ -416,11 +461,6 @@ export function topDialog(): Dialog | null {
   return stack[stack.length - 1] ?? null;
 }
 
-/** Every open dialog, bottom first (for tests and the reload notice). */
-export function openDialogs(): readonly Dialog[] {
-  return stack;
-}
-
 export interface ConfirmOptions {
   title?: string;
   okLabel?: string;
@@ -472,6 +512,7 @@ export function confirmDialog(
       onClose: () => resolve(answer),
     });
     d.el.setAttribute('aria-describedby', `dlg-msg-${d.session}`);
+    d.el.setAttribute('aria-label', title || okLabel);
     d.body.querySelector('.dlg-confirm-msg')!.id = `dlg-msg-${d.session}`;
     // Keys stay inside the dialog (the score grid listens on the document).
     d.el.addEventListener('keydown', (e) => {

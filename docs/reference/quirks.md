@@ -886,6 +886,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   `document` (`custom-select.js:57-64`); `destroy()` (`custom-select.js:107-110`) is never called.
 - Effect: listeners and detached DOM accumulate per modal open (small leak; each keydown/click runs
   all of them).
+- **Fixed (Step 14):** closing a dialog (`ui/src/components/dialog.ts`) calls `destroy()` on every CustomSelect inside it (`host._csel`).
 
 ### U13. Legacy migration runs on every start, in every client, without coordination
 
@@ -904,6 +905,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   `.app-dialog-backdrop`.
 - Effect: inconsistent behaviour; if the modal is ever replaced by another `showModal`, the capture
   listeners stay and swallow the next modal's ✕ / backdrop clicks.
+- **Fixed (Step 14):** the RTTI uitleg modal registers its dirty check with `guardModalClose`; ✕, Escape, the backdrop and Annuleren all ask through the shared question. No capture listeners. Test: `ui/e2e/dialog.spec.ts` "stacked dialogs".
 
 ### U15. `showModal` over an open modal drops the previous `onClose`
 
@@ -912,6 +914,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   `onClose` (`scores.js:298`).
 - Effect: a modal replaced by another (not closed first) never runs its close callback (list not
   refreshed, presence/`setScoreModal(null)` relies on `onModalCleanup`, which is fine).
+- **Fixed (Step 14):** a modal replaced by another (`openModal` with the same `key`) is closed properly first: cleanups, charts and its `onClose` run.
 
 ### U16. Student id type drift (number vs string)
 

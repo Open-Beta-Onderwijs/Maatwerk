@@ -167,6 +167,7 @@ export async function openSummaryEditModal(parentId, year) {
 
   openModal({
     title: 'Verzamelkaart bewerken',
+    key: 'summary-edit',
     subtitle: parent.title,
     size: 'form',
     footerHtml: `
@@ -179,7 +180,7 @@ export async function openSummaryEditModal(parentId, year) {
         <label>Naam</label>
         <input id="f-sum-naam" type="text" value="${escHtml(parent.title)}" />
       </div>
-      ${field('PTA', tickBox('f-sum-pta', { checked: isPta, title: PTA_TITLE }), { grow: 'none', center: true, className: 'u-mb-0' })}
+      ${field('PTA', tickBox('f-sum-pta', { checked: isPta, title: PTA_TITLE }), { grow: 'none', center: true, className: 'u-mb-0', for: 'f-sum-pta' })}
       <div class="u-flex-1-5 u-mb-0 form-group">
         <label>Periode</label>
         <div class="btn-toggle-group">

@@ -527,6 +527,7 @@ export async function openGroupCSVImport() {
 
   openModal({
     title: 'Groepen importeren',
+    key: 'group-import',
     subtitle: year,
     footerHtml: `
       <button class="btn btn--primary" id="f-csv-grp-import" disabled>Importeren</button>
@@ -670,6 +671,7 @@ export async function openGroupAssignmentCSVImport() {
 
   openModal({
     title: 'Groepsindeling importeren',
+    key: 'group-assignment-import',
     subtitle: year,
     footerHtml: `
       <button class="btn btn--primary" id="f-csv-assignment-import" disabled>Importeren</button>

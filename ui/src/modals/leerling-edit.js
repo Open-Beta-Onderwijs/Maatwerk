@@ -207,6 +207,7 @@ export async function openStudentCSVImport() {
 
   openModal({
     title: 'Leerlingen importeren',
+    key: 'student-import',
     subtitle: year,
     footerHtml: `
       <button class="btn btn--primary" id="f-csv-import" disabled>Importeren</button>

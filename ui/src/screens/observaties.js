@@ -246,6 +246,7 @@ export async function openObsModal(existingId) {
 
   openModal({
     title: isEdit ? 'Observatie bewerken' : 'Observatie toevoegen',
+    key: 'obs-edit', // a second open replaces it (double click)
     footerHtml: `
       <button class="btn btn--primary" id="f-osave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>

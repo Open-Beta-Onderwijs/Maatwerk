@@ -133,6 +133,7 @@ function modal<T>(
     let settled = false;
     openModal({
       title: spec.title,
+      key: 'pin',
       subtitle: spec.subtitle,
       size: 'sm',
       body: spec.body,
@@ -263,6 +264,7 @@ export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Pro
   return new Promise((resolve) => {
     openModal({
       title: 'Herstelcodes',
+      key: 'recovery-codes',
       size: 'sm',
       body,
       footerHtml: '<button class="btn btn--primary" id="codes-done" disabled>Verder</button>',
@@ -422,6 +424,7 @@ export function openAccountModal(
     title: fullUserName(user),
     subtitle: roleLabel,
     size: 'sm',
+    key: 'account',
     body: html,
     onShow: (content: HTMLElement) => {
       content.querySelector('#acc-logout')!.addEventListener('click', () => {

@@ -1897,6 +1897,10 @@ code {
 }
 
 /* ── Over Maatwerk ───────────────────────────────────────────────────────── */
+.about-modal h3 {
+  font-size: 17px;
+  margin: 16px 0 8px;
+}
 .about-modal p {
   margin: 0 0 8px;
   line-height: 1.45;

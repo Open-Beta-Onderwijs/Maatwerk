@@ -310,6 +310,7 @@ export async function openScoreModal(examId, year, deps) {
 
   openModal({
     title: 'Scores invoeren',
+    key: 'scores',
     subtitle: exam.title,
     className: 'modal-scores',
     fixedHeight: true,
