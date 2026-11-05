@@ -5,13 +5,13 @@ import {
   showModal,
   closeModal,
   escHtml,
-  formatGrade,
   pushModalChart,
   onModalSync,
   showReloadNotice,
   modalRefresher,
 } from '../app.js';
 import { examTypeColor } from '../utils/colors.js';
+import { formatGrade, parseDecimalLoose } from '../domain/format';
 import { computeExamStats } from '../screens/toetsen.js';
 import { leerlingenState } from '../screens/leerlingen.js';
 
@@ -514,8 +514,8 @@ export async function openProfielModal(
                   examSds = [];
                 for (const { exam } of filtered) {
                   const stats = await computeExamStats(selectedYear, exam);
-                  examAvgs.push(stats ? parseFloat(stats.avgG.replace(',', '.')) : null);
-                  examSds.push(stats ? parseFloat(stats.sd.replace(',', '.')) : null);
+                  examAvgs.push(stats ? parseDecimalLoose(stats.avgG) : null);
+                  examSds.push(stats ? parseDecimalLoose(stats.sd) : null);
                 }
                 if (!el.isConnected) return;
                 jaarState.chart = new Chart(canvas, {

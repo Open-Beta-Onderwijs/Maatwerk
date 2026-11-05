@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { formatFixed, parseDecimalLoose } from '../domain/format';
+
 // ── Numeric spinner helpers ───────────────────────────────────────────────────
 
 /**
@@ -23,7 +25,7 @@ export function wireSpinners(root) {
       v = Math.min(max, Math.max(min, Math.round(v / step) * step));
       v = parseFloat(v.toFixed(dec));
       sp.dataset.val = v;
-      inp.value = v.toFixed(dec).replace('.', ',');
+      inp.value = formatFixed(v, dec);
     }
 
     sp.querySelector('.spin-minus').addEventListener('click', () =>
@@ -34,9 +36,9 @@ export function wireSpinners(root) {
     );
 
     inp.addEventListener('change', () => {
-      const v = parseFloat(inp.value.replace(',', '.'));
+      const v = parseDecimalLoose(inp.value);
       if (!isNaN(v)) set(v);
-      else inp.value = parseFloat(sp.dataset.val).toFixed(dec).replace('.', ',');
+      else inp.value = formatFixed(parseFloat(sp.dataset.val), dec);
     });
     inp.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowUp') {
@@ -53,7 +55,5 @@ export function wireSpinners(root) {
 
 /** Read the current numeric value from a .num-spinner element. */
 export function spinnerValue(sp) {
-  return parseFloat(
-    (sp?.dataset?.val ?? sp?.querySelector?.('.spin-val')?.value ?? '0').replace(',', '.'),
-  );
+  return parseDecimalLoose(sp?.dataset?.val ?? sp?.querySelector?.('.spin-val')?.value ?? '0');
 }

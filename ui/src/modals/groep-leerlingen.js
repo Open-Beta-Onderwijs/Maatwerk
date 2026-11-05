@@ -5,14 +5,15 @@ import {
   showModal,
   closeModal,
   escHtml,
-  formatGrade,
   onModalSync,
   showReloadNotice,
   changedByName,
   modalRefresher,
 } from '../app.js';
-import { examTypeColor, isFail } from '../utils/colors.js';
-import { gradeTextColor, gradeBorderColor } from '../utils/grades.js';
+import { examTypeColor } from '../utils/colors.js';
+import { formatGrade } from '../domain/format';
+import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
+import { gradePillHtml } from '../utils/grades';
 import { openProfielModal } from './profiel.js';
 
 // The version of one student in a students-file change (before, after), as JSON.
@@ -23,8 +24,7 @@ function studentVersions(ev, id) {
 
 // Grade pill of an average; colours via style data (src/legacy/style-data.ts).
 function gradePill(g) {
-  const fail = isFail(g) ? ' grade-pill--fail' : '';
-  return `<span class="grade-pill${fail}" data-border-color="${gradeBorderColor(g)}" data-color="${gradeTextColor(g)}">${formatGrade(g)}</span>`;
+  return gradePillHtml(g);
 }
 
 export async function openGroupStudentsModal(groupId, year) {
@@ -167,8 +167,8 @@ export async function openGroupStudentsModal(groupId, year) {
           families
             .map((f, fi) => {
               const { grade: g, exam: fromExam } = bestGradeForFamily(s, f);
-              const label = g !== null ? formatGrade(g) : '—';
-              const bc = gradeBorderColor(g);
+              const label = formatGrade(g);
+              const bc = gradeBarColor(g);
               const tc = gradeTextColor(g);
               const fw = g !== null && isFail(g) ? 'bold' : '500';
               const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
@@ -220,8 +220,8 @@ export async function openGroupStudentsModal(groupId, year) {
             .map((s) => bestGradeForFamily(s, f).grade)
             .filter((g) => g !== null);
           const avg = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
-          const label = avg !== null ? formatGrade(avg) : '—';
-          const bc = gradeBorderColor(avg);
+          const label = formatGrade(avg);
+          const bc = gradeBarColor(avg);
           const tc = gradeTextColor(avg);
           const fw = avg !== null && isFail(avg) ? 'bold' : '500';
           const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';

@@ -7,7 +7,10 @@
  * only uses these semantic names, never raw colours. */
 
 /* ── Neutrals (2.1), light ─────────────────────────────────────────────────── */
-:root {
+/* .score-grid stays light in both themes: its cell fills are light pastels set
+ * from JS. Its redesign (step 21) gives it dark values. */
+:root,
+html[data-theme='dark'] .score-grid {
   color-scheme: light;
 
   --bg: #f5f6f8;
@@ -47,7 +50,10 @@
   --grade-pass-lo-bar: #f2c94c;
   --grade-pass-hi-bar: #5db97b;
   --grade-diagnostic-border: #9aa1ad;
+  --accent-text: var(--accent-text-light);
+}
 
+:root {
   /* RTTI (2.6), UI only; the rapport keeps its own colours. */
   --rtti-r: #3a9a4a;
   --rtti-t1: #2a9fc4;
@@ -94,7 +100,6 @@
   --anti: #c2540f;
   --on-anti: #ffffff;
 
-  --accent-text: var(--accent-text-light);
   --accent-hover: color-mix(in srgb, var(--accent) 86%, #000);
   --accent-soft: color-mix(in srgb, var(--accent) 8%, transparent);
   --accent-ring: color-mix(in srgb, var(--accent) 20%, transparent);

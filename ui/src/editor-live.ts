@@ -27,6 +27,7 @@ import type {
   EditorUpdateEvent,
   EditorVragen,
 } from './bridge/api';
+import { formatNumber } from './domain/format';
 import { diffLines } from './domain/textdiff';
 
 /** What the extensions need from the editor. */
@@ -257,7 +258,7 @@ export function showPoint(viewer: HTMLElement, point: EditorPoint, always = fals
 // ── Vragen ─────────────────────────────────────────────────────────────────
 
 // Rounded to hundredths: sums of halves and tenths carry float noise (review 8b n2).
-const nl = (n: number | null) => String(Math.round((n ?? 0) * 100) / 100).replace('.', ',');
+const nl = (n: number | null) => formatNumber(Math.round((n ?? 0) * 100) / 100);
 
 /** The button text: "Vragen: 3 · 7 p", with a warning sign when there are checks. */
 export function vragenSummary(v: EditorVragen): string {

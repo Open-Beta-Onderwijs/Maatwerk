@@ -11,6 +11,7 @@ import {
   changedByName,
 } from '../app.js';
 import { printName } from '../domain/print';
+import { formatFixed, parseDecimal } from '../domain/format';
 import { printOutput } from './rapport.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -101,7 +102,7 @@ const couplingJson = (state) => JSON.stringify({ obs: state.coupling, cijfer: st
 
 const countLabel = (n) => (n === undefined ? '' : n === 1 ? '1 leerling' : `${n} leerlingen`);
 
-const fmtOnder = (onder) => Number(onder).toFixed(1).replace('.', ',');
+const fmtOnder = (onder) => formatFixed(Number(onder));
 
 function renderCijferList(el, state) {
   const list = el.querySelector('.og-cijfer-list');
@@ -452,7 +453,7 @@ function initModal(el, state, year) {
       case 'og-cijfer-onder': {
         const card = state.cijfer.find((c) => c.id === t.dataset.card);
         if (!card) break;
-        const n = Number(t.value.trim().replace(',', '.'));
+        const n = parseDecimal(t.value);
         if (t.value.trim() === '' || isNaN(n) || n <= 1 || n > 10) {
           toast('Vul een cijfergrens in tussen 1,0 en 10,0.', 'error');
           t.value = fmtOnder(card.onder);

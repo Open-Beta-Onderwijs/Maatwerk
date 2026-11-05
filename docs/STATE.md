@@ -15,7 +15,12 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    (segmented control, accent swatch). Visual spec runs every view in light/blauw, dark and
    geel (`--dark`/`--geel` suffix). Pre-change baselines: 37/37 equal to `main`, copied to the
    session scratchpad.
-2. Todo: `domain/format.ts` + grade colours module (B8, R-01).
+2. **Done:** `ui/src/domain/format.ts` (`formatGrade`, `formatFixed`, `formatNumber`,
+   `formatCompact`, `parseDecimal`, `parseDecimalLoose`) and `ui/src/domain/grade-colors.ts`
+   (spec 2.3: text colours as theme-token mixes, bar colours hex, score-grid cell fills) replace
+   the copies in ~15 files; `utils/grades.js` -> `utils/grades.ts`; `utils/colors.js` keeps only
+   `examTypeColor` until sub-task 4. Rounding paths unchanged (B8 note in `quirks.md`). The
+   score grid stays light in dark mode (token island) until step 21.
 3. Todo: button component.
 4. Todo: inputs, selects, steppers, segmented, chips, test-type badge.
 5. Todo: remove replaced `u-*` utilities.

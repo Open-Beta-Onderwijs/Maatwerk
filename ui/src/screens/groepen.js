@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ICONS } from '../utils/icons.js';
-import { isFail } from '../utils/colors.js';
+import { isFail } from '../domain/grade-colors';
 import {
   escHtml,
   SEL,
@@ -11,7 +11,7 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { gradeStatHtml } from '../utils/grades.js';
+import { gradeStatHtml } from '../utils/grades';
 import { perfSpan } from '../utils/perf';
 import { openGroupStudentsModal } from './leerlingen.js';
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { wireSpinners, spinnerValue } from '../utils/spinners.js';
+import { formatNumber } from '../domain/format';
 import {
   showModal,
   closeModal,
@@ -436,23 +437,23 @@ export function showExamEditor(
         <label>Weging</label>
         ${
           lockTopFields
-            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
-            : `<div class="num-spinner" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${String(exam.weging ?? 1).replace('.', ',')}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${formatNumber(exam.weging ?? 1)}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
+            : `<div class="num-spinner" id="f-eweging2" data-val="${exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${formatNumber(exam.weging ?? 1)}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
         }
       </div>
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
         ${
           lockTopFields
-            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
-            : `<div class="num-spinner" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${String(exam.weging_se ?? exam.weging ?? 1).replace('.', ',')}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
+            ? `<div class="u-cursor-not-allowed" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><div class="num-spinner spinner-disabled" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus" disabled>−</button><input class="spin-val" value="${formatNumber(exam.weging_se ?? exam.weging ?? 1)}" readonly /><button type="button" class="spin-btn spin-plus" disabled>+</button></div></div>`
+            : `<div class="num-spinner" id="f-eweging-se2" data-val="${exam.weging_se ?? exam.weging ?? 1}" data-step="0.5" data-min="0" data-max="100"><button type="button" class="spin-btn spin-minus">−</button><input class="spin-val" value="${formatNumber(exam.weging_se ?? exam.weging ?? 1)}" /><button type="button" class="spin-btn spin-plus">+</button></div>`
         }
       </div>
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>N-term</label>
         <div class="num-spinner" id="f-enterm2" data-val="${exam.n_term}" data-step="0.1" data-min="0" data-max="3">
           <button type="button" class="spin-btn spin-minus">−</button>
-          <input class="spin-val" value="${String(exam.n_term).replace('.', ',')}" />
+          <input class="spin-val" value="${formatNumber(exam.n_term)}" />
           <button type="button" class="spin-btn spin-plus">+</button>
         </div>
       </div>

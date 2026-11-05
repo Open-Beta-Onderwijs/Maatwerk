@@ -10,6 +10,7 @@
 // Observaties without a saved coupling fall back to the matching opdrachten
 // that list the observatie in their observaties[].
 
+import { formatFixed } from './format';
 import { examResults } from './grades';
 import { fullName } from './ids';
 import {
@@ -87,7 +88,7 @@ export function opdrachtCijferCards(exam: Exam, opdrachten: Opdracht[]): CijferC
 export function cijferCardReason(card: Pick<CijferCard, 'onder'>): { icon: string; naam: string } {
   return {
     icon: '5️⃣',
-    naam: `Cijfer onder ${Number(card.onder).toFixed(1).replace('.', ',')}`,
+    naam: `Cijfer onder ${formatFixed(Number(card.onder))}`,
   };
 }
 

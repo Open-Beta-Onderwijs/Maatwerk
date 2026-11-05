@@ -442,10 +442,7 @@ export function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-export function formatGrade(g) {
-  if (g === null || g === undefined) return '—';
-  return (Math.round(g * 10) / 10).toFixed(1).replace('.', ',');
-}
+export { formatGrade } from './domain/format';
 
 // ── CustomSelect instances (created once at init, reused every render) ─────────
 export const SEL = {}; // populated by initSelects(); exported as live object

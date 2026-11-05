@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { lerpColor, isFail } from '../utils/colors.js';
+import { gradeBarColor, isFail } from '../domain/grade-colors';
+import { formatFixed, formatNumber, parseDecimalLoose } from '../domain/format';
 import { ICONS } from '../utils/icons.js';
 import {
   escHtml,
@@ -90,9 +91,9 @@ export async function computeExamStats(year, exam) {
     mp = mean(points);
   return {
     n: grades.length,
-    avgPts: points.length ? mp.toFixed(1).replace('.', ',') : '—',
-    avgG: mg.toFixed(1).replace('.', ','),
-    sd: sd(grades, mg).toFixed(1).replace('.', ','),
+    avgPts: points.length ? formatFixed(mp) : '—',
+    avgG: formatFixed(mg),
+    sd: formatFixed(sd(grades, mg)),
     fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
     normalMax,
   };
@@ -132,8 +133,8 @@ export async function computeBestGradeStats(parentId, year) {
   const sd = Math.sqrt(grades.reduce((s, g) => s + (g - mean) ** 2, 0) / grades.length);
   return {
     n: grades.length,
-    avgG: mean.toFixed(1).replace('.', ','),
-    sd: sd.toFixed(1).replace('.', ','),
+    avgG: formatFixed(mean),
+    sd: formatFixed(sd),
     fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
   };
 }
@@ -278,7 +279,7 @@ export async function renderToetsenList() {
   function metaLine(e) {
     const ss = (e.schoolsoort ?? []).join(' / ');
     const ssPrefix = ss ? escHtml(ss) + ' · ' : '';
-    return `${ssPrefix}${e.periode ? 'Periode ' + escHtml(String(e.periode)) + ' · ' : ''}N-term: ${String(e.n_term).replace('.', ',')} · Weging: ${String(e.weging ?? 1).replace('.', ',')}${e.type === 'pta' ? ` · Weging SE: ${String(e.weging_se ?? e.weging ?? 1).replace('.', ',')}` : ''}`;
+    return `${ssPrefix}${e.periode ? 'Periode ' + escHtml(String(e.periode)) + ' · ' : ''}N-term: ${formatNumber(e.n_term)} · Weging: ${formatNumber(e.weging ?? 1)}${e.type === 'pta' ? ` · Weging SE: ${formatNumber(e.weging_se ?? e.weging ?? 1)}` : ''}`;
   }
 
   function typeColor(e) {
@@ -401,8 +402,8 @@ export async function renderToetsenList() {
       el.remove();
       return;
     }
-    const gv = parseFloat(st.avgG.replace(',', '.'));
-    const circleColor = isFail(gv) ? '#e57373' : lerpColor('#ffd54f', '#66bb6a', (gv - 5.5) / 4.5);
+    const gv = parseDecimalLoose(st.avgG);
+    const circleColor = gradeBarColor(gv);
     el.innerHTML =
       `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mr-5 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${circleColor}"/></svg>` +
       `${st.avgG} ± ${st.sd} · ${st.fails}% onvoldoende`;

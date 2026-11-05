@@ -2,6 +2,7 @@
 
 import { toast, showModal, closeModal, escHtml } from '../app.js';
 import { printName } from '../domain/print';
+import { GRADE_BAR } from '../domain/grade-colors';
 import { defaultTabData, rttiExplFilePath } from '../domain/rapport';
 import { compileRapport } from '../services/rapport';
 
@@ -241,9 +242,9 @@ function updateSliderTrack(track, labels, low, high) {
   const lo = Math.min(low, high);
   const hi = Math.max(low, high);
   track.style.background = `linear-gradient(to right,
-    #e57373 0%, #e57373 ${lo}%,
-    #ffd54f ${lo}%, #ffd54f ${hi}%,
-    #66bb6a ${hi}%, #66bb6a 100%)`;
+    ${GRADE_BAR.fail} 0%, ${GRADE_BAR.fail} ${lo}%,
+    ${GRADE_BAR.passLow} ${lo}%, ${GRADE_BAR.passLow} ${hi}%,
+    ${GRADE_BAR.passHigh} ${hi}%, ${GRADE_BAR.passHigh} 100%)`;
   labels.textContent = `${lo}% / ${hi}%`;
 }
 
