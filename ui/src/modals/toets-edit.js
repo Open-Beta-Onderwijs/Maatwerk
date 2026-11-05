@@ -43,7 +43,7 @@ export async function openExamModal(existingId, afterSave = null) {
         <div class="u-flex-1"></div>
         <div class="u-flex-none u-w-110 u-mb-0 form-group">
           <label>Schooljaar</label>
-          <div id="f-exam-year-label" class="u-h-30 u-d-flex u-items-center u-fs-13 u-text-muted u-italic"></div>
+          <div id="f-exam-year-label" class="form-value u-fs-13 u-text-muted u-italic"></div>
         </div>
       </div>
       <div class="u-items-end u-gap-20 u-mt-10 form-row">
@@ -112,7 +112,7 @@ export async function openExamModal(existingId, afterSave = null) {
           <label>Opgave- &amp; Vraagstructuur</label>
           <div id="f-struct-host" class="csel-host"></div>
         </div>
-        <div class="u-flex-none u-w-108 form-group">
+        <div class="form-group spinner-wrap-sm">
           <label>Aantal vragen</label>
           <div class="num-spinner" id="f-enum" data-val="10" data-step="1" data-min="1" data-max="40">
             <button type="button" class="spin-btn spin-minus">−</button>

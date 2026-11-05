@@ -38,7 +38,7 @@ export async function openResitModal(parentId, year) {
       </div>
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging</label>
-        <div class="u-w-90 num-spinner spinner-disabled">
+        <div class="num-spinner spinner-disabled">
           <button type="button" class="spin-btn spin-minus" disabled>−</button>
           <input class="spin-val" value="${formatNumber(parent.weging ?? 1)}" readonly />
           <button type="button" class="spin-btn spin-plus" disabled>+</button>
@@ -49,7 +49,7 @@ export async function openResitModal(parentId, year) {
           ? `
       <div class="u-mb-0 form-group spinner-wrap-sm">
         <label>Weging SE</label>
-        <div class="u-w-90 num-spinner spinner-disabled">
+        <div class="num-spinner spinner-disabled">
           <button type="button" class="spin-btn spin-minus" disabled>−</button>
           <input class="spin-val" value="${formatNumber(parent.weging_se ?? parent.weging ?? 1)}" readonly />
           <button type="button" class="spin-btn spin-plus" disabled>+</button>

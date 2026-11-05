@@ -81,12 +81,11 @@ html[data-theme='dark'] .segmented__opt[aria-pressed='true'] {
 }
 
 /* ── Inputs, selects, textareas (3.2) ──────────────────────────────────────── */
-/* Zero specificity (:where), so any component class can still change them. */
-:where(
-  input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']),
-  select,
-  textarea
-) {
+/* Element specificity: beats the `* { padding: 0 }` reset in style.css (which
+ * comes later), loses to any component class. */
+input:where(:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color'])),
+select,
+textarea {
   height: var(--h-control);
   padding: 0 12px;
   border: 1px solid var(--border-strong);
@@ -96,33 +95,48 @@ html[data-theme='dark'] .segmented__opt[aria-pressed='true'] {
   font: inherit;
   font-size: var(--fs-body);
 }
-:where(select) {
+select {
   padding: 0 8px 0 10px;
 }
-:where(textarea) {
+textarea {
   height: auto;
   padding: 8px 12px;
   line-height: 1.45;
 }
-:where(
-  input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']),
-  select,
-  textarea
-):focus {
+input:where(
+  :not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']):focus
+),
+select:where(:focus),
+textarea:where(:focus) {
   border-color: var(--accent);
   outline: 3px solid var(--accent-ring);
   outline-offset: 0;
 }
-:where(input, select, textarea):disabled {
+input:where(:disabled),
+select:where(:disabled),
+textarea:where(:disabled) {
   background: var(--surface-2);
   color: var(--disabled);
   cursor: not-allowed;
 }
-:where(input, textarea)::placeholder {
+input:where(*)::placeholder,
+textarea:where(*)::placeholder {
   color: var(--disabled);
 }
 :where(input[type='checkbox'], input[type='radio'], input[type='range']) {
   accent-color: var(--accent);
+}
+
+/* Form rows: toggle groups and the PTA box take the control height, so
+ * labels in a row line up and the buttons sit centred under them. */
+.form-group > .btn-toggle-group {
+  min-height: var(--h-control);
+  align-items: center;
+}
+.form-value {
+  display: flex;
+  align-items: center;
+  height: var(--h-control);
 }
 
 /* Dense tables (question editor): 30 px controls. */

@@ -659,8 +659,8 @@ body::after {
 
 /* PTA toggle button: checkmark-style, grey unchecked / blue checked */
 .pta-btn {
-  width: 30px;
-  height: 30px;
+  width: var(--h-control);
+  height: var(--h-control);
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--surface-2);
@@ -694,7 +694,7 @@ body::after {
 /* Fixed width containers for narrow spinner fields */
 .spinner-wrap-sm {
   flex: none;
-  width: 116px;
+  width: 108px;
 }
 .spinner-wrap-xs {
   flex: none;
@@ -2318,6 +2318,9 @@ code {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+.vak-toggle-group--nowrap {
+  flex-wrap: nowrap;
 }
 
 /* ── Admin filter disabled state (e.g. vakken on leerlingen screen) ──────── */

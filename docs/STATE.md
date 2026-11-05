@@ -35,11 +35,16 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
 5. **Done:** 9 unused `u-*` utilities removed (`u-w-32`, `u-h-32`, `u-mr-0`, `u-bg-dark` freed
    by this step; `u-align-bottom`, `u-border-b`, `u-p-3-6`, `u-text-left`, `u-tracking` already
    dead). 119 remain for later steps.
-6. **Next:** visual diff to the user (stop), then gate, reviewer, release 0.4.0.
+6. **Next:** user OK on the updated visual diff, then baselines, gate, reviewer, release 0.4.0.
 
-Decisions to raise: zwart accent in dark theme uses a light fill (`#E7EAF0`, dark text), since
-`#111418` is invisible on the dark surface (spec silent). `editor.css`/`pdf-viewer.css` (own
-windows) keep their colours until step 27.
+User decisions (2026-11-05): zwart accent in dark theme keeps the light fill (`#E7EAF0`, dark
+text); B8 rounding unification stays in step 19. `editor.css`/`pdf-viewer.css` (own windows)
+keep their colours until step 27.
+
+User review of the visual diff (2026-11-05), fixed: groep-edit Schoolsoort on one line; text in
+inputs had no left padding (the `* { padding: 0 }` reset beat the zero-specificity base; base is
+now element-level); toets-new and herkansing steppers aligned (108 px, no `u-w-90`); verzamelkaart
+labels aligned (toggle groups and PTA box 36 px).
 
 ## Current step
 

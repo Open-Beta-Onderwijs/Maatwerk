@@ -156,9 +156,9 @@ export async function openGroupModal(id) {
         <label>Naam (bijv. 6nat4 of 2anat)</label>
         <input id="f-gname" type="text" value="${escHtml(group.name)}" ${locked ? 'disabled' : ''} />
       </div>
-      <div class="u-flex-1 u-min-w-0 form-group">
+      <div class="u-flex-none form-group">
         <label>Schoolsoort</label>
-        <div class="vak-toggle-group">${schoolsoortHtml}</div>
+        <div class="vak-toggle-group vak-toggle-group--nowrap">${schoolsoortHtml}</div>
       </div>
     </div>
     <div class="u-gap-20 u-items-start u-mt-4 form-row">
