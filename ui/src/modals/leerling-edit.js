@@ -6,7 +6,6 @@ import {
   closeModal,
   toast,
   escHtml,
-  overlayElement,
   onModalSync,
   showReloadNotice,
   confirmDialog,
@@ -201,7 +200,7 @@ export async function deleteStudent(id) {
 export async function openStudentCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
-  const ui = { showModal, closeModal, toast, overlay: overlayElement };
+  const ui = { showModal, closeModal, toast };
   const year = await askSchoolYear(cfg.activeYear, existingYears, ui);
   if (!year) return;
 

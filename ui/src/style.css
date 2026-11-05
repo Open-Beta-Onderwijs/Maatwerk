@@ -3,6 +3,7 @@
 @import './styles/tokens.css';
 @import './styles/buttons.css';
 @import './styles/controls.css';
+@import './styles/dialog.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -910,57 +911,6 @@ body::after {
 }
 
 /* ── Modal ────────────────────────────────────────────────────────────────── */
-#modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-#modal-overlay.hidden {
-  display: none;
-}
-
-/* In-app dialogs (confirmDialog, showReloadNotice in app.js): centered card over
-   a dimmed backdrop, optional bold title, message, buttons right-aligned with
-   Annuleren (secondary) left of the action (primary, or solid red when destructive). */
-.app-dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-.app-dialog {
-  background: var(--surface);
-  border-radius: var(--r-btn);
-  padding: 20px 24px;
-  width: min(440px, 90vw);
-  box-shadow: var(--shadow-modal);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.app-dialog-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-.app-dialog p {
-  margin: 0;
-  line-height: 1.5;
-  white-space: pre-line;
-}
-.app-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
 /* Background notices (e.g. a colleague added an exam), top right, stay until clicked */
 #bg-notices {
   position: fixed;
@@ -1073,68 +1023,38 @@ body::after {
     transform: translateX(16px);
   }
 }
-#modal-box {
-  background: var(--surface);
-  border-radius: var(--r-btn);
-  padding: 28px;
-  width: 680px;
-  max-width: 95vw;
-  max-height: 88vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: var(--shadow-modal);
-}
-/* Forms whose rows hold several 36 px toggle groups (Nieuwe toets, verzamelkaart). */
-#modal-box.modal-md {
-  width: 760px;
-}
-#modal-box.modal-xl {
+/* Legacy size classes on the dialog component (styles/dialog.css): all open at
+   the fixed top; the ones with tabs or lazy content have a fixed height. */
+.dlg.modal-overview {
   width: 960px;
+  height: var(--dlg-max-h);
 }
-/* Exam overview: anchored to the top, so its tabs stay in place when switching
-   between tabs of different heights. */
-#modal-box.modal-overview {
-  width: 960px;
-  align-self: flex-start;
-  margin-top: 5vh;
-  max-height: 90vh;
-}
-#modal-box.modal-scores {
-  width: min(95vw, 1600px);
-  max-height: 94vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.dlg.modal-scores {
+  width: min(100%, 1600px);
+  height: var(--dlg-max-h);
 }
 /* Only the grids scroll, so the header bar (title, buttons, N-term) stays in view. */
-#modal-box.modal-scores #modal-content {
-  flex: 1 1 auto;
-  min-height: 0;
+.dlg.modal-scores .dlg-body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-#modal-box.modal-scores #sc-grid-container {
+.dlg.modal-scores #sc-grid-container {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
 }
-#modal-box.modal-profile {
-  width: 92vw;
-  max-width: 1400px;
-  max-height: 92vh;
+.dlg.modal-profile {
+  width: min(100%, 1400px);
+  height: var(--dlg-max-h);
 }
 /* Rapport PDF viewer opened from the Toetsen screen */
-#modal-box.modal-pdf {
-  width: min(95vw, 1100px);
-  height: 92vh;
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.dlg.modal-pdf {
+  width: 1100px;
+  height: var(--dlg-max-h);
 }
-#modal-box.modal-pdf #modal-content {
-  flex: 1;
-  min-height: 0;
+.dlg.modal-pdf .dlg-body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -1302,30 +1222,18 @@ body::after {
 .og-result-bar {
   margin-bottom: 10px;
 }
-#modal-box h3 {
+.dlg--legacy .dlg-body > h3,
+.dlg--legacy .dlg-body > .modal-title {
   font-size: 17px;
   margin-bottom: 16px;
 }
-#modal-box h4 {
+.dlg-body h4 {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin: 14px 0 8px;
-}
-#modal-close {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: var(--muted);
-}
-#modal-close:hover {
-  color: var(--text);
 }
 
 /* ── Exam overview tabs ───────────────────────────────────────────────────── */
@@ -2608,28 +2516,6 @@ code {
   padding-top: 14px;
   border-top: 1px solid var(--border);
 }
-#rtti-confirm-slot:not(:empty) {
-  margin-bottom: 12px;
-}
-.rtti-unsaved-confirm {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  border-radius: var(--r-btn);
-  font-size: 13px;
-  color: var(--text);
-}
-.rtti-unsaved-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 /* ── Disabled toggle button (greyed out, not interactive) ────────────────── */
 .tog-btn-disabled {
   opacity: 0.35;
@@ -3368,8 +3254,8 @@ td.grade-override-stale::after {
 }
 
 /* ── PIN login and account (Step 7b) ─────────────────────────────────────── */
-#modal-box.modal-narrow {
-  width: 420px;
+.dlg.modal-narrow {
+  width: 440px;
 }
 .pin-input {
   font-size: 20px;

@@ -27,6 +27,7 @@ import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
 import { afterPaint, perfSpan } from './utils/perf';
+import { alertDialog, confirmDialog, openDialog } from './components/dialog';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -154,109 +155,95 @@ function renderScreen(name) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-const overlay = document.getElementById('modal-overlay');
-const modalBox = document.getElementById('modal-box');
-const modalContent = document.getElementById('modal-content');
-
-/** The overlay DOM node, exported for use in csv.js askSchoolYear calls. */
-export { overlay as overlayElement };
+// Every modal is a dialog (components/dialog.ts). The helpers below act on the
+// current modal: the top one opened through showModal() or openModal().
+// showModal() is the legacy form (free HTML with its own title and buttons);
+// it replaces a legacy modal on top and stacks on a structured one. openModal()
+// always stacks (ported modals: sticky header, tabs, footer).
 
 /** Open the full-screen Typst editor for an assignment. Imported from modals/editor.js. */
 export { openEditor };
+export { confirmDialog, alertDialog };
 
-let _modalCharts = [];
+/** Modals opened through showModal/openModal, bottom first. */
+let _modals = [];
 
-/** Register a Chart.js instance to be destroyed when the modal closes. */
-export function pushModalChart(chart) {
-  _modalCharts.push(chart);
+function currentModal() {
+  return _modals[_modals.length - 1] ?? null;
 }
 
-let _onCloseModal = null;
+/** True while any modal is open. */
+export function modalOpen() {
+  return _modals.length > 0;
+}
 
-function destroyModalCharts() {
-  _modalCharts.forEach((c) => {
-    try {
-      c.destroy();
-    } catch (_) {}
+/** Structured modal (see DialogOptions); stacks on whatever is open. */
+export function openModal(opts) {
+  const d = openDialog({
+    ...opts,
+    onClose: () => {
+      _modals = _modals.filter((m) => m !== d);
+      opts.onClose?.();
+      if (_screenRefreshPending && !_modals.length) scheduleScreenRefresh();
+    },
   });
-  _modalCharts = [];
+  _modals.push(d);
+  return d;
 }
+
+const LEGACY_SIZES = { 'modal-md': 'form', 'modal-xl': 'lg' };
 
 export function showModal(html, onShow, wide = false, onClose) {
-  _modalSession++;
-  _closeGuard = null;
-  clearModalSubs();
-  destroyModalCharts();
-  modalContent.innerHTML = html;
+  const prev = currentModal();
+  // U15: the replaced modal closes properly (cleanups, charts, its onClose).
+  if (prev?.el.classList.contains('dlg--legacy')) prev.close();
+  const size = wide === true ? 'lg' : (LEGACY_SIZES[wide] ?? 'md');
+  const extra = typeof wide === 'string' && !LEGACY_SIZES[wide] ? ` ${wide}` : '';
+  const d = openModal({
+    body: html,
+    size,
+    className: `dlg--legacy${extra}`,
+    dialogId: 'modal-box',
+    bodyId: 'modal-content',
+    onClose,
+  });
+  d.el.querySelector('.dlg-close')?.setAttribute('id', 'modal-close');
   // Before onShow, which may measure (charts): see src/legacy/style-data.ts.
-  applyStyleData(modalContent);
-  modalBox.className = '';
-  if (wide === true) modalBox.classList.add('modal-xl');
-  else if (typeof wide === 'string') modalBox.classList.add(wide);
-  overlay.classList.remove('hidden');
-  _onCloseModal = onClose || null;
-  if (onShow) onShow(modalContent);
+  applyStyleData(d.body);
+  if (onShow) onShow(d.body);
+  return d;
 }
 
+/** Close the current modal without its guard (after saving, Annuleren). */
 export function closeModal() {
-  _modalSession++;
-  _closeGuard = null;
-  clearModalSubs();
-  overlay.classList.add('hidden');
-  modalBox.className = '';
-  modalContent.innerHTML = '';
-  destroyModalCharts();
-  const cb = _onCloseModal;
-  _onCloseModal = null;
-  if (cb) cb();
-  if (_screenRefreshPending) scheduleScreenRefresh();
+  currentModal()?.close();
 }
 
-modalContent.addEventListener('click', (e) => {
-  if (e.target.closest('[data-close-modal]')) closeModal();
-});
-document.getElementById('modal-close').addEventListener('click', requestCloseModal);
-// Only a click that also started on the backdrop closes the modal, so selecting
-// text in a field and releasing the mouse outside the modal doesn't.
-let _overlayPress = false;
-overlay.addEventListener('mousedown', (e) => {
-  _overlayPress = e.target === overlay;
-});
-overlay.addEventListener('click', (e) => {
-  if (e.target === overlay && _overlayPress) requestCloseModal();
-  _overlayPress = false;
-});
+/** Close the current modal through its close guard (like ✕). */
+export function requestCloseModal() {
+  return currentModal()?.requestClose() ?? Promise.resolve(false);
+}
+
+/** Register a Chart.js instance to be destroyed when the current modal closes. */
+export function pushModalChart(chart) {
+  const d = currentModal();
+  const destroy = () => {
+    try {
+      chart.destroy();
+    } catch (_) {}
+  };
+  if (d) d.onCleanup(destroy);
+  else destroy();
+}
 
 // ── Unsaved changes ───────────────────────────────────────────────────────────
-// A modal with a form registers guardModalClose(isDirty); closing it with ✕ or a
-// click next to it then asks for confirmation while isDirty() is true. Annuleren
-// and closing after saving (closeModal()) are not guarded.
-let _closeGuard = null;
-let _closeGuardText = null;
+// A modal with a form registers guardModalClose(isDirty); closing it with ✕,
+// Escape or a click next to it then asks for confirmation while isDirty() is
+// true. Annuleren and closing after saving (closeModal()) are not guarded.
 
 /** `text`: optional `{ message, title, okLabel }` instead of the unsaved-changes question. */
 export function guardModalClose(isDirty, text = null) {
-  _closeGuard = isDirty;
-  _closeGuardText = text;
-}
-
-async function requestCloseModal() {
-  if (document.querySelector('.app-dialog-backdrop')) return;
-  if (_closeGuard?.()) {
-    const session = _modalSession;
-    const text = _closeGuardText ?? {
-      message: 'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
-      title: 'Onopgeslagen wijzigingen',
-      okLabel: 'Sluiten zonder opslaan',
-    };
-    const ok = await confirmDialog(text.message, {
-      title: text.title,
-      okLabel: text.okLabel,
-      danger: true,
-    });
-    if (!ok || session !== _modalSession) return;
-  }
-  closeModal();
+  currentModal()?.setGuard(isDirty, text);
 }
 
 /**
@@ -276,82 +263,29 @@ export function formSnapshot(root) {
   return JSON.stringify(parts);
 }
 
-// ── Dialogs ───────────────────────────────────────────────────────────────────
-/**
- * In-app replacement for window.confirm(). Never use the native alert/confirm/
- * prompt: they look out of place and, in Electron, leave text fields unable to
- * receive typed characters afterwards. Resolves true for the confirm button,
- * false for Annuleren, Escape or a click next to the dialog.
- * With cancelLabel: null it is a plain notice with one button (like alert()).
- * detailsHtml: optional scrollable block under the message; the caller escapes
- * every text in it.
- */
-export function confirmDialog(
-  message,
-  { title = '', okLabel = 'OK', cancelLabel = 'Annuleren', danger = false, detailsHtml = '' } = {},
-) {
-  return new Promise((resolve) => {
-    const prevFocus = document.activeElement;
-    const el = document.createElement('div');
-    el.className = 'app-dialog-backdrop';
-    el.innerHTML = `
-      <div class="app-dialog" role="alertdialog" aria-modal="true" aria-describedby="app-dialog-msg">
-        ${title ? `<h4 class="app-dialog-title">${escHtml(title)}</h4>` : ''}
-        <p id="app-dialog-msg">${escHtml(message)}</p>
-        ${detailsHtml ? `<div class="app-dialog-details">${detailsHtml}</div>` : ''}
-        <div class="app-dialog-actions">
-          ${cancelLabel !== null ? `<button class="btn btn--secondary" data-answer="0">${escHtml(cancelLabel)}</button>` : ''}
-          <button class="btn ${danger ? 'btn--danger' : 'btn--primary'}" data-answer="1">${escHtml(okLabel)}</button>
-        </div>
-      </div>`;
-    const done = (answer) => {
-      el.remove();
-      if (prevFocus?.isConnected) prevFocus.focus();
-      resolve(answer);
-    };
-    el.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-answer]');
-      if (btn) done(btn.dataset.answer === '1');
-      else if (e.target === el) done(false);
-    });
-    // Keys stay inside the dialog (the score grid listens on the document).
-    el.addEventListener('keydown', (e) => {
-      e.stopPropagation();
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        done(false);
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        const btns = [...el.querySelectorAll('button')];
-        const i = btns.indexOf(document.activeElement);
-        btns[(i + (e.shiftKey ? -1 : 1) + btns.length) % btns.length].focus();
-      }
-    });
-    document.body.appendChild(el);
-    el.querySelector('[data-answer="1"]').focus();
-  });
-}
-
 // ── Background changes while a modal is open ──────────────────────────────────
 // Subscriptions made with onModalSync() end automatically when the modal closes
 // or is replaced by another one, so modals never react to changes after they
-// are gone. _modalSession changes on every open/close for the same reason.
-let _modalSubs = [];
-let _modalSession = 0;
-
-function clearModalSubs() {
-  _modalSubs.forEach((off) => off());
-  _modalSubs = [];
-}
+// are gone.
 
 /** Subscribe to background changes of `type` for as long as the current modal is open. */
 export function onModalSync(type, handler) {
-  _modalSubs.push(Sync.on(type, handler));
+  const off = Sync.on(type, handler);
+  const d = currentModal();
+  if (d) d.onCleanup(off);
+  else off();
 }
 
 /** Run fn when the current modal closes or is replaced by another one. */
 export function onModalCleanup(fn) {
-  _modalSubs.push(fn);
+  const d = currentModal();
+  if (d) d.onCleanup(fn);
+  else fn();
+}
+
+/** The current modal's session number (changes on every open), or 0. */
+export function modalSession() {
+  return currentModal()?.session ?? 0;
 }
 
 /**
@@ -361,15 +295,16 @@ export function onModalCleanup(fn) {
  * only display data, so they can refresh silently.
  */
 export function modalRefresher(reopen, ms = 500) {
-  const session = _modalSession;
+  const d = currentModal();
   let timer = null;
   return () => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
-      if (session !== _modalSession || document.getElementById('reload-notice')) return;
-      const y = modalBox.scrollTop;
+      if (!d?.isOpen || currentModal() !== d || document.getElementById('reload-notice')) return;
+      const y = d.body.scrollTop;
       await reopen();
-      modalBox.scrollTop = y;
+      const now = currentModal();
+      if (now) now.body.scrollTop = y;
     }, ms);
   };
 }
@@ -388,23 +323,30 @@ export async function changedByName(ev) {
  */
 export function showReloadNotice(message, onOk) {
   if (document.getElementById('reload-notice')) return;
-  const el = document.createElement('div');
-  el.id = 'reload-notice';
-  el.className = 'app-dialog-backdrop';
-  el.innerHTML = `
-    <div class="app-dialog" role="alertdialog" aria-modal="true" aria-describedby="reload-notice-msg">
-      <h4 class="app-dialog-title">Gewijzigd door een collega</h4>
-      <p id="reload-notice-msg">${escHtml(message)}</p>
-      <div class="app-dialog-actions"><button class="btn btn--primary">OK</button></div>
-    </div>`;
-  el.addEventListener('keydown', (e) => e.stopPropagation());
-  const btn = el.querySelector('button');
-  btn.addEventListener('click', async () => {
-    el.remove();
-    await onOk?.();
+  const d = openDialog({
+    role: 'alertdialog',
+    size: 'sm',
+    className: 'dlg--confirm',
+    dialogId: 'reload-notice',
+    closeButton: false,
+    backdropCloses: false,
+    body: `<h2 class="dlg-confirm-title">Gewijzigd door een collega</h2>
+      <p class="dlg-confirm-msg">${escHtml(message)}</p>`,
+    footer: [
+      {
+        label: 'OK',
+        variant: 'primary',
+        id: 'ok',
+        onClick: async (dlg) => {
+          dlg.close();
+          await onOk?.();
+        },
+      },
+    ],
   });
-  document.body.appendChild(el);
-  btn.focus();
+  // No Escape: the modal underneath must be reloaded first.
+  d.el.addEventListener('keydown', (e) => e.stopPropagation());
+  d.el.querySelector('[data-action="ok"]').focus();
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
@@ -1149,7 +1091,7 @@ function scheduleScreenRefresh() {
 async function runScreenRefresh() {
   _screenRefreshTimer = null;
   if (!_screenRefreshPending) return;
-  if (!overlay.classList.contains('hidden')) return; // closeModal() picks it up
+  if (modalOpen()) return; // closing the last modal picks it up
   if (document.querySelector('.exam-menu')) {
     _screenRefreshTimer = setTimeout(runScreenRefresh, 2000);
     return;

@@ -29,7 +29,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await page.locator('.per-btn[data-per="1"]').click();
   await page.locator('#f-e-next').click();
   await page.locator('#f-esave').click();
-  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
   // The id is opaque (C10): find the new exam by its title.
   const EXAM_ID = await withMock(
     page,

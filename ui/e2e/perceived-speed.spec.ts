@@ -81,7 +81,7 @@ test('a long student list renders completely and every card works', async ({ pag
   const cards = page.locator('#student-list .card');
   await expect(cards).toHaveCount(many.students.length);
   await cards.last().locator('[data-action="profile"]').click();
-  await expect(page.locator('#modal-overlay')).toBeVisible();
+  await expect(page.locator('.dlg-backdrop')).toBeVisible();
   expect(errors).toEqual([]);
 });
 

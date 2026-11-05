@@ -11,10 +11,10 @@ export { decodeCsv, parseCSV } from '../domain/csv';
  *
  * @param {string}   activeYear
  * @param {string[]} existingYears
- * @param {{ showModal: Function, closeModal: Function, toast: Function, overlay: Element }} ui
+ * @param {{ showModal: Function, closeModal: Function, toast: Function }} ui
  */
 export function askSchoolYear(activeYear, existingYears, ui) {
-  const { showModal, closeModal, toast, overlay } = ui;
+  const { showModal, closeModal, toast } = ui;
   return new Promise((resolve) => {
     const allYears = [...new Set([activeYear, ...existingYears])].sort((a, b) =>
       b.localeCompare(a),
@@ -53,23 +53,13 @@ export function askSchoolYear(activeYear, existingYears, ui) {
             toast('Kies een schooljaar.', 'error');
             return;
           }
-          closeModal();
           resolve(chosen);
+          closeModal();
         });
       },
+      false,
+      // Closed any other way (Annuleren, ✕, Escape, backdrop): no year.
+      () => resolve(null),
     );
-    overlay.addEventListener(
-      'click',
-      function handler(e) {
-        if (e.target === overlay) {
-          overlay.removeEventListener('click', handler);
-          resolve(null);
-        }
-      },
-      { once: true },
-    );
-    document
-      .getElementById('modal-close')
-      .addEventListener('click', () => resolve(null), { once: true });
   });
 }

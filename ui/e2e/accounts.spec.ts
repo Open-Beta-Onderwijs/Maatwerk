@@ -113,7 +113,7 @@ test('the admin resets a teacher PIN; the teacher chooses a new one', async ({ p
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="gebruikers"]').click();
   await page.locator(`[data-action="reset-pin"][data-id="${TEACHER}"]`).click();
-  await page.locator('.app-dialog [data-answer="1"]').click();
+  await page.locator('.dlg--confirm [data-action="ok"]').click();
   await expect(page.locator(`[data-action="reset-pin"][data-id="${TEACHER}"]`)).toHaveCount(0);
   const user = await readMockJson<User>(page, `gebruikers/${TEACHER}.json`);
   expect(user.pinHash).toBeUndefined();
@@ -275,8 +275,8 @@ test('a file changed outside Maatwerk is restored from a snapshot', async ({ pag
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="gegevens"]').click();
   await page.getByRole('button', { name: 'Herstellen uit snapshot' }).click();
-  await expect(page.locator('.app-dialog')).toContainText('30-10-2026 08:00');
-  await page.locator('.app-dialog [data-answer="1"]').click();
+  await expect(page.locator('.dlg--confirm')).toContainText('30-10-2026 08:00');
+  await page.locator('.dlg--confirm [data-action="ok"]').click();
   await expect(page.locator('.gegevens-summary')).toContainText('Geen fouten of waarschuwingen');
   const restored = await readMockJson<{ voornaam: string }>(page, file);
   expect(restored.voornaam).toBe('Terug');

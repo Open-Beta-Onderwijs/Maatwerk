@@ -7,7 +7,6 @@ import {
   toast,
   escHtml,
   SEL,
-  overlayElement,
   onModalSync,
   showReloadNotice,
   changedByName,
@@ -517,7 +516,7 @@ function groupOverwritesHtml(overwrites, students, users) {
 export async function openGroupCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
-  const ui = { showModal, closeModal, toast, overlay: overlayElement };
+  const ui = { showModal, closeModal, toast };
   const year = await askSchoolYear(cfg.activeYear, existingYears, ui);
   if (!year) return;
 
@@ -661,7 +660,7 @@ export async function openGroupCSVImport() {
 export async function openGroupAssignmentCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
-  const ui = { showModal, closeModal, toast, overlay: overlayElement };
+  const ui = { showModal, closeModal, toast };
   const year = await askSchoolYear(cfg.activeYear, existingYears, ui);
   if (!year) return;
 

@@ -97,7 +97,7 @@ test('U9: after a failed save the editor can still be closed, after confirming',
   await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
   await frame.locator('.cm-content').click();
   await page.keyboard.type('x');
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await frame.locator('#btn-app-title').click(); // save fails -> asks; cancelled: stays open
   await expect(dialog).toContainText('niet opgeslagen');
   await dialog.getByRole('button', { name: 'Annuleren' }).click();
@@ -156,7 +156,7 @@ test('D34: a group CSV import asks before overwriting an existing group', async 
   await page.locator('#f-csv-grp-import').click();
 
   // Old vs new per overwritten group: its students are removed (red rows).
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await expect(dialog).toContainText('3a nat');
   await expect(dialog.locator('tr.diff-removed')).toHaveCount(before.student_ids.length);
   await expect(dialog).not.toContainText('nieuwe groep');
@@ -313,7 +313,7 @@ test('B24: a question added after a deletion gets a new id', async ({ page }) =>
   await page.locator('.qi-del[data-qi="0"]').click();
   await page.locator('#f-addq').click();
   await page.locator('#f-esave').click();
-  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
   await expect(async () => {
     const exam = await readMockJson<{ questions: { id: string }[] }>(
       page,

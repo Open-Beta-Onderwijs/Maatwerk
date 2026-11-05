@@ -761,7 +761,8 @@ function showCellMenu(x, y, items) {
   };
   const onKey = (e) => {
     if (e.key !== 'Escape') return;
-    e.stopPropagation(); // don't close the score modal as well
+    e.preventDefault(); // handled: the score modal stays open
+    e.stopPropagation();
     close();
   };
   menu.addEventListener('click', (e) => {

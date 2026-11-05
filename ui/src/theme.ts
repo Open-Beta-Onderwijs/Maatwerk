@@ -124,6 +124,7 @@ export function installLook(dev: boolean): void {
       e.preventDefault();
       panel.hidden = !panel.hidden;
     } else if (e.key === 'Escape' && !panel.hidden) {
+      e.preventDefault(); // n8: closes the menu, not an open dialog
       panel.hidden = true;
     }
   });

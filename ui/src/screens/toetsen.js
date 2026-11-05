@@ -623,6 +623,7 @@ async function toggleExamMenu(btn, year) {
   };
   const onKey = (e) => {
     if (e.key === 'Escape') {
+      e.preventDefault();
       closeExamMenu();
       btn.focus();
     }

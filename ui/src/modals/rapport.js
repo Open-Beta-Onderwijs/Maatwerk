@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { toast, showModal, closeModal, escHtml } from '../app.js';
+import {
+  toast,
+  showModal,
+  closeModal,
+  escHtml,
+  guardModalClose,
+  requestCloseModal,
+} from '../app.js';
 import { printName } from '../domain/print';
 import { GRADE_BAR } from '../domain/grade-colors';
 import { setBusy } from '../components/button';
@@ -304,7 +311,6 @@ export async function openRttiUitlegModal() {
 
   const modalHtml = `
     <h3 class="modal-title">Leerlingrapport RTTI uitleg en leeradvies</h3>
-    <div id="rtti-confirm-slot"></div>
     <div class="overview-tab-bar rtti-uitleg-tab-bar" id="rtti-uitleg-tabs">${tabButtons}</div>
     <div id="rtti-uitleg-tab-content"></div>
     <div class="rtti-uitleg-footer">
@@ -322,57 +328,9 @@ export async function openRttiUitlegModal() {
         _dirty = true;
       }
 
-      function showUnsavedConfirm() {
-        const slot = el.querySelector('#rtti-confirm-slot');
-        if (slot.querySelector('.rtti-unsaved-confirm')) return; // already showing
-        const bar = document.createElement('div');
-        bar.className = 'rtti-unsaved-confirm';
-        bar.innerHTML =
-          '<span>Er zijn niet-opgeslagen wijzigingen. Toch sluiten?</span>' +
-          '<div class="rtti-unsaved-actions">' +
-          '<button class="btn btn--secondary btn--sm" id="btn-rtti-confirm-stay">Blijven bewerken</button>' +
-          '<button class="btn btn--danger btn--sm" id="btn-rtti-confirm-discard">Toch sluiten</button>' +
-          '</div>';
-        slot.appendChild(bar);
-        document.getElementById('modal-box').scrollTop = 0;
-        bar.querySelector('#btn-rtti-confirm-stay').addEventListener('click', () => bar.remove());
-        bar.querySelector('#btn-rtti-confirm-discard').addEventListener('click', () => {
-          _dirty = false;
-          cleanupAndClose();
-        });
-      }
-
-      function tryClose() {
-        if (_dirty) {
-          showUnsavedConfirm();
-        } else {
-          cleanupAndClose();
-        }
-      }
-
-      // Intercept overlay click and modal-close X button using capture phase
-      const overlay = document.getElementById('modal-overlay');
-      const modalCloseBtn = document.getElementById('modal-close');
-
-      function onOverlayCapture(e) {
-        if (e.target === overlay) {
-          e.stopImmediatePropagation();
-          tryClose();
-        }
-      }
-      function onModalCloseBtnCapture(e) {
-        e.stopImmediatePropagation();
-        tryClose();
-      }
-
-      function cleanupAndClose() {
-        overlay.removeEventListener('click', onOverlayCapture, true);
-        modalCloseBtn.removeEventListener('click', onModalCloseBtnCapture, true);
-        closeModal();
-      }
-
-      overlay.addEventListener('click', onOverlayCapture, true);
-      modalCloseBtn.addEventListener('click', onModalCloseBtnCapture, true);
+      // Unsaved changes: the shared close guard (✕, Escape, backdrop and
+      // Annuleren all ask first; U14).
+      guardModalClose(() => _dirty);
 
       function renderTab(idx) {
         el.querySelector('#rtti-uitleg-tab-content').innerHTML = buildTabHtml(
@@ -471,7 +429,7 @@ export async function openRttiUitlegModal() {
         renderTab(activeTab);
       });
 
-      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () => tryClose());
+      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () => requestCloseModal());
 
       el.querySelector('#btn-rtti-uitleg-save').addEventListener('click', async () => {
         readCurrentTabIntoData(activeTab);
@@ -494,7 +452,7 @@ export async function openRttiUitlegModal() {
         if (failed.length === 0) {
           _dirty = false;
           toast('RTTI uitleg en leeradvies opgeslagen.', 'success');
-          cleanupAndClose();
+          closeModal();
         } else if (results.some((r) => r.status === 'rejected' && r.reason?.code === 'conflict')) {
           const names = failed.map((t) => `tabblad ${t.label}`).join(', ');
           toast(
