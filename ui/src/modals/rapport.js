@@ -429,7 +429,9 @@ export async function openRttiUitlegModal() {
         renderTab(activeTab);
       });
 
-      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () => requestCloseModal());
+      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () =>
+        requestCloseModal(),
+      );
 
       el.querySelector('#btn-rtti-uitleg-save').addEventListener('click', async () => {
         readCurrentTabIntoData(activeTab);
