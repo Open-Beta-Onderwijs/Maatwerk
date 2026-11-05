@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `step-13`, `v0.4.0`,
+Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `step-13`, `v0.4.0` (pushed),
 `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are
 local only)
 
