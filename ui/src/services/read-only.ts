@@ -21,9 +21,36 @@ export const READ_ONLY_SAVE_TEXT =
   'Niet opgeslagen: deze versie van Maatwerk is te oud voor deze gegevens. ' +
   'Installeer de nieuwe versie van Maatwerk.';
 
-/** The error a Store write throws when the backend refused it as read-only. */
+/**
+ * The error a Store write throws when the backend refused it as read-only. Its
+ * message is the Dutch text, so a screen that shows `e.message` reads well
+ * (review 15 M1).
+ */
 export function readOnlyError(): Error & { code: string } {
-  return Object.assign(new Error(READ_ONLY_CODE), { code: READ_ONLY_CODE });
+  return Object.assign(new Error(READ_ONLY_SAVE_TEXT), { code: READ_ONLY_CODE });
+}
+
+// ── Read-only state of this app ────────────────────────────────────────────
+// Known at start (dataFolderStatus) or from the first refused write, when a
+// colleague's newer app raised the minimum while this one runs.
+
+let readOnly = false;
+let listener: (() => void) | null = null;
+
+export function isReadOnly(): boolean {
+  return readOnly;
+}
+
+/** Called by app.js: shows the banner the first time the app turns read-only. */
+export function onReadOnly(fn: () => void): void {
+  listener = fn;
+}
+
+/** A write was refused as read-only (or the start status said so). */
+export function noteReadOnly(): void {
+  if (readOnly) return;
+  readOnly = true;
+  listener?.();
 }
 
 /** Whether a thrown value or rejection reason is a read-only refusal. */
@@ -52,7 +79,9 @@ export function parseVersion(version: string): [number, number, number] | null {
 export function requiredVersion(school: unknown, appVersion: string): string | null {
   const raw = (school as { minAppVersion?: unknown } | null)?.minAppVersion;
   if (raw === undefined || raw === null) return null;
-  const min = typeof raw === 'string' ? raw.trim() : JSON.stringify(raw);
+  // Not a version string (a number, an object): refused, as in maatwerk-core.
+  if (typeof raw !== 'string') return JSON.stringify(raw);
+  const min = raw.trim();
   if (min === '') return null;
   const a = parseVersion(appVersion);
   const m = parseVersion(min);

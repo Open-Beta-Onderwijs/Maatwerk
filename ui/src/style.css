@@ -3115,12 +3115,6 @@ td.grade-override-stale::after {
   align-items: center;
   margin: 8px 0;
 }
-.account-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
-}
 .badge-voorzitter-label {
   font-size: 11px;
   color: var(--muted);

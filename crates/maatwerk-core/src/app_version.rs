@@ -51,7 +51,8 @@ pub fn required_version(school: &Value, app_version: &str) -> Option<String> {
         Value::Null => return None,
         Value::String(s) if s.trim().is_empty() => return None,
         Value::String(s) => s.trim().to_owned(),
-        other => other.to_string(),
+        // Not a version string (a number, an object): a format this app does not know.
+        other => return Some(other.to_string()),
     };
     match compare(app_version, &min) {
         Some(Ordering::Less) | None => Some(min),
@@ -107,6 +108,11 @@ mod tests {
         assert_eq!(
             required_version(&school(json!(3)), "0.6.0"),
             Some("3".into())
+        );
+        // A number is never a version here, also a small one (review 15 m3).
+        assert_eq!(
+            required_version(&school(json!(0.5)), "0.6.0"),
+            Some("0.5".into())
         );
     }
 }

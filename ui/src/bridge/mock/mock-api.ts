@@ -454,6 +454,7 @@ export class MockApi implements MaatwerkApi {
     expectedHash?: string | null,
   ): Promise<{ ok: true; hash: string } | { ok: false; reason: 'conflict' }> {
     this.record('writeTextFile', [relPath, content, expectedHash]);
+    this.refuseIfReadOnly();
     if (!/^opdrachten\/[\w-]+\/[^/]+\.typ$/i.test(relPath))
       throw new Error(`invalid path ${JSON.stringify(relPath)}`);
     if (expectedHash === '') {
@@ -543,6 +544,7 @@ export class MockApi implements MaatwerkApi {
     overwrite?: boolean,
   ): Promise<ImageResult> {
     this.record('saveOpdrachtImage', [opdrachtId, name, ext, '<base64>', overwrite]);
+    this.refuseIfReadOnly();
     return this.storeImage(opdrachtId, name, ext, fromBase64(base64), overwrite);
   }
 
@@ -631,7 +633,7 @@ export class MockApi implements MaatwerkApi {
 
   async savePhoto(relPath: string, base64Data: string): Promise<void> {
     this.record('savePhoto', [relPath, '<base64>']);
-    if (this.readOnly()) throw { code: 'read_only', message: 'read-only', details: {} };
+    this.refuseIfReadOnly();
     this.putFile(relPath, fromBase64(base64Data));
   }
 
@@ -742,6 +744,11 @@ export class MockApi implements MaatwerkApi {
     return status;
   }
 
+  /** Rejects like a backend command refused with `read_only`. */
+  private refuseIfReadOnly(): void {
+    if (this.readOnly()) throw { code: 'read_only', message: 'read-only', details: {} };
+  }
+
   /** `minAppVersion` of the mock `school.json` when it is newer than the app (as the backend). */
   private readOnly(): string | null {
     const text = this.readText('school.json');
@@ -807,7 +814,7 @@ export class MockApi implements MaatwerkApi {
   }
 
   private writeUser(userId: string, change: (u: UserRecord) => void): Value {
-    if (this.readOnly()) throw { code: 'read_only', message: 'read-only', details: {} };
+    this.refuseIfReadOnly();
     const onDisk = this.readUser(userId);
     const next = structuredClone(onDisk);
     change(next);

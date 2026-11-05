@@ -2,8 +2,8 @@
 
 // PIN login (Step 7b): the dialogs on the login screen (first PIN, login, the
 // admin's "Pincode vergeten" with a recovery code), the recovery codes shown
-// once, and the account modal behind the top-bar badge (PIN wijzigen, nieuwe
-// herstelcodes, uitloggen). PINs are checked in Rust (maatwerk-core::auth); the
+// once, and the PIN actions of the user menu (Pincode wijzigen, Nieuwe
+// herstelcodes; components/user-menu.ts). PINs are checked in Rust (maatwerk-core::auth); the
 // UI only shows the outcome. The PIN guards the shared PC, not the files.
 
 import {
@@ -85,13 +85,13 @@ function holdOff(button: HTMLButtonElement, box: HTMLElement, check: PinCheck, w
   setTimeout(tick, Math.min(check.retryAfterMs, 1000));
 }
 
-/** Runs `submit` on the button and on Enter in any input; errors go to the box. */
 /** The Dutch text for a failed PIN action (the backend's messages are Dutch, except read-only). */
 function errorMessage(e: unknown): string {
   if (isReadOnlyError(e)) return READ_ONLY_SAVE_TEXT;
   return e instanceof Error ? e.message : String(e);
 }
 
+/** Runs `submit` on the button and on Enter in any input; errors go to the box. */
 function onSubmit(content: HTMLElement, button: HTMLButtonElement, submit: () => Promise<void>) {
   const run = async () => {
     if (button.disabled) return;
@@ -410,11 +410,7 @@ function renewCodesDialog(api: Api): Promise<PinCheck | null> {
   });
 }
 
-/**
- * The account modal behind the top-bar badge. `onUserChanged` gets the record
- * as written after a PIN change; `onLogout` runs after "Uitloggen".
- */
-/** "Pincode wijzigen" in the user menu (F-17). */
+/** "Pincode wijzigen" in the user menu (F-17); `onUserChanged` gets the record as written. */
 export async function changePinFlow(
   api: Api,
   onUserChanged: (user: unknown) => void,

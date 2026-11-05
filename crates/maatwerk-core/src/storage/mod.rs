@@ -516,6 +516,7 @@ impl Storage {
     /// empty or locked.
     pub fn remove_empty_dir(&self, rel: &RelPath) -> Result<bool> {
         let path = self.dir.resolve(rel)?;
+        self.check_writable()?;
         match fs::remove_dir(&path) {
             Ok(()) => Ok(true),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),

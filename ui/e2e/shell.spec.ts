@@ -15,6 +15,7 @@ import {
   seedFiles,
   withMock,
 } from './helpers';
+import { EXAMS, openGrid, select } from './grid-driver';
 
 const SCHOOL = 'school.json';
 
@@ -277,5 +278,63 @@ test.describe('user menu (F-17) and look per user (F-18, F-21)', () => {
     await expect(page.locator('#user-menu .user-menu__role')).toHaveText('Beheerder');
     await expect(page.locator('#acc-codes')).toBeVisible();
     await expect(page.locator('#user-menu .avatar')).toHaveClass(/avatar--square/);
+  });
+});
+
+test.describe('read-only while running (review 15 M1, M2)', () => {
+  async function raiseMinimum(page: import('@playwright/test').Page) {
+    await withMock(page, (m) => {
+      const school = JSON.parse(m.peek('school.json') ?? '{}');
+      m.externalWrite('school.json', { ...school, minAppVersion: '99.0.0' });
+    });
+  }
+
+  test('a refused score save shows the read-only text and the banner', async ({ page }) => {
+    await openGrid(page, EXAMS.empty); // logs in
+    await raiseMinimum(page);
+    await select(page, 0, 2); // first question of the empty exam
+    await page.keyboard.type('1');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.toast-persistent').first()).toContainText(
+      'Niet opgeslagen: deze versie van Maatwerk is te oud',
+    );
+    await expect(page.locator('.toast-persistent')).not.toContainText('read_only');
+    await expect(page.locator('#read-only-banner')).toBeVisible();
+  });
+
+  test('a user without a PIN cannot choose one when read-only, and is told why', async ({
+    page,
+  }) => {
+    await seedFiles(page, { 'school.json': await schoolWith(page, '99.0.0') });
+    await page.goto('/');
+    await expect(page.locator('#read-only-banner')).toBeVisible();
+    await page.locator('.subject-card[data-subject="nat"]').click();
+    await page.locator('.user-badge[data-user-id="admin"]').click();
+    // The admin has no PIN in the fixture: choosing one is a write, refused with the clear text.
+    await page.locator('#pin-new').fill('24680');
+    await page.locator('#pin-repeat').fill('24680');
+    await page.locator('#pin-ok').click();
+    await expect(page.locator('.pin-error')).toContainText('Niet opgeslagen');
+  });
+
+  test('a year or accent change while read-only applies on screen without errors', async ({
+    page,
+  }) => {
+    await login(page);
+    await raiseMinimum(page);
+    // The first refused write turns the app read-only (here: a look change).
+    await page.locator('#user-badge-btn').click();
+    await page.locator('#user-menu [data-accent-choice="groen"]').click();
+    await expect(page.locator('#read-only-banner')).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-accent', 'groen');
+    await page.locator('#user-menu [data-accent-choice="paars"]').click();
+    await expect(page.locator('html')).toHaveAttribute('data-accent', 'paars');
+    await page.keyboard.press('Escape');
+    await page.locator('.nav-btn[data-screen="toetsen"]').click();
+    await expect(page.locator('#toetsen-year-select .csel-trigger')).toBeVisible();
+    await page.locator('#toetsen-year-select .csel-trigger').click();
+    await page.locator('#toetsen-year-select [data-value]').first().click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.toast-persistent')).toHaveCount(0);
   });
 });

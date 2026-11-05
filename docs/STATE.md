@@ -63,9 +63,16 @@ decision 5.
 6. **Done:** U11 fixed (`onclick` per Alles/Niets button; e2e fails without the fix), U13 and U16
    checked: superseded (quirks.md).
 7. **Done:** R-05 for the shell, partly: the filter bar (~470 lines) moved verbatim from `app.js`
-   to `shell/filter-bar.js` (app.js 1262 -> 709 lines); app.js re-exports its getters. Both stay
+   to `shell/filter-bar.js` (app.js 1209 lines on `main` -> 789); app.js re-exports its getters. Both stay
    JS until Store is typed (backlog "From Step 15").
-8. **Next:** version 0.6.0, gate, reviewer subagent, then the visual diff for the user.
+8. **Done:** version 0.6.0 (`22023dc`); gate green (`npm audit` with dev: the known
+   eslint -> minimatch advisory, dev-only, `--omit=dev` 0; see `docs/testing.md`).
+9. **Done:** review (`docs/reviews/step-15.md`): 0 blockers, 2 majors (read-only messages and
+   banner while running; read-only browsing), both fixed with tests; most minors and nits fixed,
+   rest in `docs/backlog.md` "From Step 15".
+10. **Waiting for the user:** visual diff vs the step 14 baselines (every screen's top bar, the
+    login badges; new views `user-menu-*`). Then update baselines, merge `step/15-shell` into
+    `main` (merge commit), tag `step-15` and `v0.6.0`.
 
 ## Step 14a progress
 

@@ -9,7 +9,7 @@ import {
   confirmDialog,
 } from '../app.js';
 import { ICONS } from '../utils/icons.js';
-import { avatarHtml, loadAvatarPhotos } from '../components/avatar';
+import { avatarHtml, forgetAvatarPhotos, loadAvatarPhotos } from '../components/avatar';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Gebruikers — admin-only user management, PIN reset and
@@ -350,6 +350,7 @@ function openUserModal(user) {
 
       // C16: saved over the version this form was opened with.
       await Store.upsertUser(saved, user?._meta?.rev);
+      forgetAvatarPhotos(); // a new photo under the same name shows at once (review 15 m8)
       closeModal();
       toast(isNew ? `${voornaam} toegevoegd.` : `${voornaam} opgeslagen.`, 'success');
       await renderUserList();

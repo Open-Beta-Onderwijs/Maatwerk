@@ -398,7 +398,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 15
 
-- **R-05 (shell):** `app.js` (709 lines after the step 15 split) and the new `shell/filter-bar.js`
+- **R-05 (shell):** `app.js` (789 lines after the step 15 split, from 1209) and the new `shell/filter-bar.js`
   stay JS: the filter bar was moved out verbatim (lower risk), not converted. Converting them,
   and splitting the rest of `app.js` (modal helpers, sync notices, navigation), is easier once
   `Store` has types (step 19); do it then or with step 22 (login), which touches the same code.
+- **Review 15 m5:** a teacher's look or year change bumps their user file's rev, so an admin's
+  open Gebruikers edit of that teacher ends in a save conflict (the message tells them to reopen).
+  Rare; if it bites, give the Gebruikers form a field-level merge.
+- **Review 15 m2 / step 18:** the migration must write `school.json` (with the higher
+  `minAppVersion`) first; the guard sets no limit while `school.json` is unreadable. Also decide
+  whether a newer `schema_version` with a `minAppVersion` opens read-only (runbook section 8).
+- **Review 15 m6:** e2e gaps left: another user logging in after logout on the same PC (look,
+  year, filters reset); the U11 test waits 300 ms to see extra writes (a fixed wait).
+- **Review 15 n4-n6:** the version compare exists in Rust and in TS (the TS copy is used by the
+  mock only); three HTML-escape helpers (`app.js`, `avatar.ts`, `user-menu.ts`) could share one
+  `utils/html.ts`; presence reads `school.json` twice per heartbeat when read-only.

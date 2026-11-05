@@ -32,7 +32,7 @@ function prefsOf(user: unknown): Record<string, unknown> {
   return p && typeof p === 'object' && !Array.isArray(p) ? (p as Record<string, unknown>) : {};
 }
 
-/** The user's saved look, or null when they never chose one (both parts must be valid). */
+/** The user's saved look, or null when neither part is valid; a missing part takes its default. */
 export function savedLook(user: unknown): Look | null {
   const p = prefsOf(user);
   if (!isTheme(p.theme) && !isAccent(p.accent)) return null;

@@ -29,7 +29,12 @@ import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
 import { afterPaint, perfSpan } from './utils/perf';
 import { alertDialog, confirmDialog, openDialog } from './components/dialog';
-import { READ_ONLY_SAVE_TEXT, isReadOnlyError } from './services/read-only';
+import {
+  READ_ONLY_SAVE_TEXT,
+  isReadOnlyError,
+  noteReadOnly,
+  onReadOnly,
+} from './services/read-only';
 import { showReadOnlyBanner } from './components/read-only-banner';
 import { applyLook, baseLook, currentLook } from './theme';
 import {
@@ -616,7 +621,19 @@ window.addEventListener('unhandledrejection', async (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   if (!isReadOnlyError(e.reason)) return;
   e.preventDefault();
+  noteReadOnly();
   persistentError(READ_ONLY_SAVE_TEXT);
+});
+
+// The banner, also when a colleague's newer app raised the minimum while this
+// app runs (review 15 M1): the start status has the versions.
+onReadOnly(async () => {
+  try {
+    const status = await window.maatwerk.dataFolderStatus();
+    showReadOnlyBanner(status.readOnly ?? '?', status.appVersion);
+  } catch (e) {
+    console.warn('[read-only]', e);
+  }
 });
 
 // ── Background changes (other teachers) ──────────────────────────────────────
@@ -763,7 +780,7 @@ async function init() {
     return;
   }
   // An older app on data that needs a newer one: read-only, with a banner.
-  if (status.readOnly) showReadOnlyBanner(status.readOnly, status.appVersion);
+  if (status.readOnly) noteReadOnly();
   applyWatermerk();
   initSelects();
   navigateTo('startup');

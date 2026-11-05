@@ -51,7 +51,7 @@ import {
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
-import { READ_ONLY_CODE, readOnlyError } from './services/read-only';
+import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { timed } from './utils/perf';
 
@@ -131,7 +131,10 @@ const Store = (() => {
           changed();
           return next;
         }
-        if (result?.reason === READ_ONLY_CODE) throw readOnlyError();
+        if (result?.reason === READ_ONLY_CODE) {
+          noteReadOnly();
+          throw readOnlyError();
+        }
         if (result?.reason !== 'conflict') {
           throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
         }
@@ -161,7 +164,10 @@ const Store = (() => {
       return result.hash;
     }
     if (result?.reason === 'conflict') throw conflictError(null);
-    if (result?.reason === READ_ONLY_CODE) throw readOnlyError();
+    if (result?.reason === READ_ONLY_CODE) {
+      noteReadOnly();
+      throw readOnlyError();
+    }
     throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
   }
 
@@ -289,14 +295,24 @@ const Store = (() => {
   async function savePreferences(patch) {
     const user = _activeUser;
     if (!user?.id) return null;
-    // Applied at once, also when the save fails (the look is already on screen).
+    // Applied at once, also when the save fails (the look is already on screen);
+    // a new active year makes the kept screens render again.
     _activeUser = withPreferences(user, patch);
-    const saved = await update(`gebruikers/${user.id}.json`, (current, onDisk) => {
-      if (!onDisk) throw new Error(`gebruikers/${user.id}.json ontbreekt`);
-      return stampMeta(withPreferences(current, patch), onDisk);
-    });
-    cacheUser(saved);
-    return saved;
+    changed();
+    // Read-only (review 15 M2): looking around stays possible, nothing is saved.
+    if (isReadOnly()) return null;
+    try {
+      const saved = await update(`gebruikers/${user.id}.json`, (current, onDisk) => {
+        if (!onDisk) throw new Error(`gebruikers/${user.id}.json ontbreekt`);
+        // The id captured above: a logout during the write must not stamp the next user.
+        return stampMetaBy(withPreferences(current, patch), onDisk, user.id);
+      });
+      cacheUser(saved);
+      return saved;
+    } catch (e) {
+      if (e?.code === READ_ONLY_CODE) return null; // the banner says why
+      throw e;
+    }
   }
 
   // One file per user (C16): saving checks the rev the edit started from, so

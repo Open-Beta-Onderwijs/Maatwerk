@@ -128,18 +128,24 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
     if (!el.contains(t) && !opts.anchor.contains(t)) close(false);
   };
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      // Only the menu closes, not a dialog under it (n8).
-      e.preventDefault();
-      e.stopPropagation();
-      close(true);
-    } else if (e.key === 'Tab') {
-      // Tab out of the menu closes it; focus moves on as usual.
-      queueMicrotask(() => {
-        if (!el.contains(document.activeElement)) close(false);
-      });
+    if (e.key !== 'Escape') return;
+    // A dialog that opened meanwhile (a reload notice) is on top: Escape is
+    // its; the menu just goes (review 15 m4).
+    if (document.querySelector('.dlg-backdrop')) {
+      close(false);
+      return;
     }
+    // Only the menu closes, not a dialog under it (n8).
+    e.preventDefault();
+    e.stopPropagation();
+    close(true);
   };
+  // Tab out of the menu (focus to something outside it) closes it (review 15 m4).
+  el.addEventListener('focusout', (e) => {
+    const next = e.relatedTarget as Node | null;
+    // Not to the avatar: its click toggles the menu itself.
+    if (next && !el.contains(next) && !opts.anchor.contains(next)) close(false);
+  });
   /** Runs an action after the menu is gone (it may open a dialog). */
   const act = (fn: () => void) => () => {
     close(false);
@@ -152,7 +158,9 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
     const theme = b.dataset.themeChoice as Theme | undefined;
     const accent = b.dataset.accentChoice as Accent | undefined;
     if (!theme && !accent) return;
-    look = { theme: theme ?? look.theme, accent: accent ?? look.accent };
+    const next = { theme: theme ?? look.theme, accent: accent ?? look.accent };
+    if (next.theme === look.theme && next.accent === look.accent) return; // nothing to save
+    look = next;
     sync();
     opts.onLook({ ...look });
   });

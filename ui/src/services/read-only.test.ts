@@ -31,6 +31,7 @@ describe('read-only (minimum app version)', () => {
     expect(requiredVersion({ minAppVersion: '0.10.0' }, '0.9.0')).toBe('0.10.0');
     expect(requiredVersion({ minAppVersion: 'next' }, '0.6.0')).toBe('next');
     expect(requiredVersion({ minAppVersion: 3 }, '0.6.0')).toBe('3');
+    expect(requiredVersion({ minAppVersion: 0.5 }, '0.6.0')).toBe('0.5');
   });
 
   it('recognises a read-only refusal', () => {

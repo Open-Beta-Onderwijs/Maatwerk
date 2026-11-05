@@ -16,6 +16,7 @@ import {
   onModalCleanup,
 } from '../app.js';
 import * as Presence from '../presence.js';
+import { READ_ONLY_SAVE_TEXT, isReadOnlyError, noteReadOnly } from '../services/read-only';
 import { createScoreGrid } from '../components/score-grid/score-grid';
 import { afterPaint, perfSpan, timed } from '../utils/perf';
 import { nextIdle } from '../utils/idle';
@@ -119,11 +120,14 @@ function saveCell(student, col, write) {
       if (unsavedCells.delete(key)) renderAllGrids();
     } catch (err) {
       if (err?.code === 'conflict') throw err;
+      if (isReadOnlyError(err)) noteReadOnly();
       // U3: any other failure (locked file, broken JSON, disk full) was silently lost.
       unsavedCells.add(key);
       renderAllGrids();
       persistentError(
-        `Score niet opgeslagen (${student ? Store.fullName(student) : 'onbekend'}): ${err?.message ?? err}. Controleer de gedeelde map en voer de score opnieuw in.`,
+        isReadOnlyError(err)
+          ? READ_ONLY_SAVE_TEXT
+          : `Score niet opgeslagen (${student ? Store.fullName(student) : 'onbekend'}): ${err?.message ?? err}. Controleer de gedeelde map en voer de score opnieuw in.`,
       );
     } finally {
       const n = pendingSaves.get(key) - 1;
