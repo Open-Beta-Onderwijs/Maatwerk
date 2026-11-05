@@ -44,7 +44,10 @@ keep their colours until step 27.
 User review of the visual diff (2026-11-05), fixed: groep-edit Schoolsoort on one line; text in
 inputs had no left padding (the `* { padding: 0 }` reset beat the zero-specificity base; base is
 now element-level); toets-new and herkansing steppers aligned (108 px, no `u-w-90`); verzamelkaart
-labels aligned (toggle groups and PTA box 36 px).
+labels aligned (toggle groups and PTA box 36 px). Then (user): every control in a form row is 36 px (toggles,
+jaarlaag/periode/subcategorie squares, schoolsoort/vak/docent toggles); question-editor table
+stays dense (26 px toggles, 30 px selects). New `modal-md` (760 px) for Nieuwe toets,
+verzamelkaart and Leerling bewerken.
 
 ## Current step
 

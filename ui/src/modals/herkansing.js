@@ -273,5 +273,6 @@ export async function openSummaryEditModal(parentId, year) {
         renderToetsen();
       });
     },
+    'modal-md',
   );
 }

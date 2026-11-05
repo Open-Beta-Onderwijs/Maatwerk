@@ -280,6 +280,7 @@ export async function openExamModal(existingId, afterSave = null) {
           showExamEditor(exam, false, toetsYear, afterSave);
         });
       },
+      'modal-md',
     );
   } else {
     const all = await Store.getExams(toetsYear);

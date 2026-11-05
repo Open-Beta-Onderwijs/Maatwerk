@@ -448,12 +448,14 @@ body::after {
   gap: 2px;
 }
 
-/* Jaarlaag buttons: square 30×30 */
-.jl-btn {
-  width: 30px !important;
-  height: 30px !important;
+/* Jaarlaag, periode and wiskunde subcategorie buttons: square, control height */
+.jl-btn,
+.per-btn,
+.sub-btn {
+  width: var(--h-control) !important;
+  height: var(--h-control) !important;
   padding: 0 !important;
-  font-size: 13px !important;
+  font-size: var(--fs-secondary) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -465,31 +467,7 @@ body::after {
   pointer-events: none !important;
 }
 
-/* Periode buttons: same size as jl-btn */
-.per-btn {
-  width: 30px !important;
-  height: 30px !important;
-  padding: 0 !important;
-  font-size: 13px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* Subcategorie buttons (wiskunde A/B/C/D): same size as jl-btn */
-.sub-btn {
-  width: 30px !important;
-  height: 30px !important;
-  padding: 0 !important;
-  font-size: 13px !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* ── Schoolsoort + Vakken toggle buttons (all contexts) — 30 px tall ───── */
+/* ── Schoolsoort + Vakken toggle buttons (all contexts): control height ─── */
 .ss-toggle,
 .ss-s-toggle,
 .ss-btn,
@@ -498,7 +476,7 @@ body::after {
 .vak-g-btn,
 .subj-btn,
 .docent-toggle {
-  height: 30px !important;
+  height: var(--h-control) !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   display: inline-flex !important;
@@ -1105,6 +1083,10 @@ body::after {
   overflow-y: auto;
   position: relative;
   box-shadow: var(--shadow-modal);
+}
+/* Forms whose rows hold several 36 px toggle groups (Nieuwe toets, verzamelkaart). */
+#modal-box.modal-md {
+  width: 760px;
 }
 #modal-box.modal-xl {
   width: 960px;

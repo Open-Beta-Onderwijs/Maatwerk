@@ -145,6 +145,15 @@ textarea:where(*)::placeholder {
   height: var(--h-control-sm);
   font-size: var(--fs-secondary);
 }
+table.questions-table .tog-btn {
+  height: 26px;
+  min-width: 24px;
+  padding: 0 6px;
+  font-size: var(--fs-caption);
+}
+table.questions-table .rtti-btn {
+  min-width: 36px;
+}
 
 /* Search field in a screen header: 220 px, magnifier inside. */
 .search-input {
@@ -233,6 +242,13 @@ textarea:where(*)::placeholder {
 }
 .tog-btn:hover {
   background: var(--surface-2);
+}
+/* In a form every control has the same height (36 px), so rows line up. */
+.form-group .tog-btn {
+  height: var(--h-control);
+  min-width: var(--h-control);
+  padding: 0 12px;
+  font-size: var(--fs-secondary);
 }
 .tog-btn.selected {
   background: var(--accent);

@@ -80,7 +80,7 @@ export function openStudentModal(id) {
     <div class="u-mt-10 form-row">
       <div class="u-flex-1 u-mb-0 form-group">
         <label>Schoolsoort</label>
-        <div class="vak-toggle-group">${schoolsoortHtml}</div>
+        <div class="vak-toggle-group vak-toggle-group--nowrap">${schoolsoortHtml}</div>
       </div>
       <div class="u-flex-auto u-mb-0 form-group">
         <label>Schooljaar</label>
@@ -185,6 +185,7 @@ export function openStudentModal(id) {
         renderLeerlingen();
       });
     },
+    'modal-md',
   );
 }
 
