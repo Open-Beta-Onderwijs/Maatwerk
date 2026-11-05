@@ -241,3 +241,8 @@ test.describe('review 14 fixes', () => {
     ).toBeVisible();
   });
 });
+
+test('a modal without actions shows no footer', async ({ page }) => {
+  await openView(page, view('modal-scores'));
+  await expect(topDialog(page).locator('.dlg-footer')).toBeHidden();
+});

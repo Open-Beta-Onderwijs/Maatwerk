@@ -195,6 +195,9 @@
   padding: 14px var(--dlg-pad-x);
   border-top: 1px solid var(--border);
 }
+.dlg-footer[hidden] {
+  display: none;
+}
 .dlg-footer-spacer {
   flex: 1;
 }
