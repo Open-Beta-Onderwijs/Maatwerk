@@ -105,8 +105,6 @@ export function computeRowStatus(
   return 'ok';
 }
 
-export { formatGrade };
-
 /**
  * Fills the computed columns (Totaal, Cijfer, R%…I%) of row `rowIdx` from its
  * question cells. A grade overwritten by the teacher (gridData.overrides[rowIdx])

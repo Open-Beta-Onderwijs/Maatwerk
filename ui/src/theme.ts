@@ -17,9 +17,13 @@ import {
 
 const DEV_KEY = 'maatwerk.dev.look';
 
+/** Token values read by cssToken; cleared when the look changes. */
+const tokenCache = new Map<string, string>();
+
 export function applyLook(look: Look, root: HTMLElement = document.documentElement): void {
   root.dataset.theme = look.theme;
   root.dataset.accent = look.accent;
+  tokenCache.clear();
   root.dispatchEvent(new CustomEvent('maatwerk:look', { detail: look }));
 }
 
@@ -125,7 +129,25 @@ export function installLook(dev: boolean): void {
   });
 }
 
+/** Colours for text and grid lines drawn on a chart canvas (follow the theme). */
+export function chartInk() {
+  return {
+    text: cssToken('--text'),
+    muted: cssToken('--muted'),
+    disabled: cssToken('--disabled'),
+    grid: cssToken('--border'),
+    gridMinor: cssToken('--line'),
+  };
+}
+
 /** The current value of a colour token, for canvases (Chart.js) that cannot use var(). */
 export function cssToken(name: string, root: HTMLElement = document.documentElement): string {
-  return getComputedStyle(root).getPropertyValue(name).trim();
+  if (root !== document.documentElement)
+    return getComputedStyle(root).getPropertyValue(name).trim();
+  let v = tokenCache.get(name);
+  if (v === undefined) {
+    v = getComputedStyle(root).getPropertyValue(name).trim();
+    tokenCache.set(name, v);
+  }
+  return v;
 }

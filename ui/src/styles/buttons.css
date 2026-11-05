@@ -121,7 +121,7 @@
   color: var(--disabled);
   cursor: not-allowed;
 }
-.btn--text:disabled {
+.btn--text:disabled:not([aria-busy='true']) {
   background: transparent;
   border-color: transparent;
 }

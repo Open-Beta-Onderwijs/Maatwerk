@@ -9,6 +9,7 @@ import {
   rttiPctCellColor,
 } from '../domain/grade-colors';
 import { formatFixed, formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
+import { chartInk } from '../theme';
 import { gradeGroupIdx, GRADE_GROUP_LABELS, GRADE_GROUP_MIDPOINTS } from '../utils/grades';
 import {
   showModal,
@@ -435,7 +436,7 @@ export async function openExamOverviewModal(
               if (v == null || v === 0) return;
               if (bar.y >= bar.base - 12) return;
               ctx.save();
-              ctx.fillStyle = '#444';
+              ctx.fillStyle = chartInk().text;
               ctx.font = 'bold 10px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'bottom';
@@ -458,7 +459,7 @@ export async function openExamOverviewModal(
               const isZero = v === 0;
               if (!isZero && bar.y >= bar.base - 12) return;
               ctx.save();
-              ctx.fillStyle = '#444';
+              ctx.fillStyle = chartInk().text;
               ctx.font = 'bold 10px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'bottom';
@@ -482,7 +483,7 @@ export async function openExamOverviewModal(
               const isNvt = ds.nvtArr?.[j] === true;
               if (!isNvt && (v === 0 || bar.y >= bar.base - 12)) return;
               ctx.save();
-              ctx.fillStyle = isNvt ? '#8895a4' : '#444';
+              ctx.fillStyle = isNvt ? chartInk().disabled : chartInk().text;
               ctx.font = 'bold 10px sans-serif';
               ctx.textAlign = 'center';
               ctx.textBaseline = 'bottom';
@@ -504,7 +505,7 @@ export async function openExamOverviewModal(
               if (v == null) return;
               if (bar.x <= bar.base + 8) return;
               ctx.save();
-              ctx.fillStyle = '#444';
+              ctx.fillStyle = chartInk().text;
               ctx.font = '10px sans-serif';
               ctx.textAlign = 'left';
               ctx.textBaseline = 'middle';
@@ -573,7 +574,7 @@ export async function openExamOverviewModal(
                     type: 'line',
                     xMin: bins.passBinIndex - 0.5,
                     xMax: bins.passBinIndex - 0.5,
-                    borderColor: '#555',
+                    borderColor: chartInk().muted,
                     borderWidth: 2,
                     borderDash: [4, 4],
                   },

@@ -442,8 +442,6 @@ export function escHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-export { formatGrade } from './domain/format';
-
 // ── CustomSelect instances (created once at init, reused every render) ─────────
 export const SEL = {}; // populated by initSelects(); exported as live object
 

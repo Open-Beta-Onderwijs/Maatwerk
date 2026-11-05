@@ -11,10 +11,11 @@ import {
   modalRefresher,
 } from '../app.js';
 import { testKind, testKindToken } from '../domain/test-type';
-import { cssToken } from '../theme';
+import { chartInk, cssToken } from '../theme';
 
-// Chart bar colour of an exam: its test-type colour (design spec 2.5).
-const examTypeColor = (exam) => cssToken(testKindToken(testKind(exam)));
+// Chart colours of an exam and of the two test kinds (design spec 2.5).
+const kindColor = (kind) => cssToken(testKindToken(kind));
+const examTypeColor = (exam) => kindColor(testKind(exam));
 import { formatGrade, parseDecimalLoose } from '../domain/format';
 import { computeExamStats } from '../screens/toetsen.js';
 import { leerlingenState } from '../screens/leerlingen.js';
@@ -251,14 +252,14 @@ export async function openProfielModal(
               cv.width = 12;
               cv.height = 12;
               const c = cv.getContext('2d');
-              c.fillStyle = '#4A90D9';
+              c.fillStyle = kindColor('toets');
               c.beginPath();
               c.moveTo(0, 0);
               c.lineTo(12, 0);
               c.lineTo(12, 12);
               c.closePath();
               c.fill();
-              c.fillStyle = '#d9534f';
+              c.fillStyle = kindColor('se');
               c.beginPath();
               c.moveTo(0, 0);
               c.lineTo(0, 12);
@@ -305,7 +306,7 @@ export async function openProfielModal(
                       ctx.lineTo(x0, bandY + bandH);
                       ctx.stroke();
                     }
-                    ctx.fillStyle = '#4A90D9';
+                    ctx.fillStyle = kindColor('toets');
                     ctx.textAlign = 'center';
                     ctx.fillText(g.label, (x0 + x1) / 2, bandY + bandH / 2);
                   });
@@ -333,7 +334,7 @@ export async function openProfielModal(
                           ? opts.format(raw, di, pi)
                           : String(Math.round(raw));
                       ctx.save();
-                      ctx.fillStyle = isNvt ? '#8895a4' : '#333';
+                      ctx.fillStyle = isNvt ? chartInk().disabled : chartInk().text;
                       ctx.font = opts.font || 'bold 9px sans-serif';
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'bottom';
@@ -449,7 +450,7 @@ export async function openProfielModal(
                       ticks: { stepSize: 0.5, callback: (v) => (Number.isInteger(v) ? v : '') },
                       grid: {
                         color: (ctx) =>
-                          Number.isInteger(ctx.tick.value) ? 'rgba(0,0,0,.08)' : 'rgba(0,0,0,.03)',
+                          Number.isInteger(ctx.tick.value) ? chartInk().grid : chartInk().gridMinor,
                       },
                     },
                     x: { grid: { display: false } },
@@ -561,8 +562,8 @@ export async function openProfielModal(
                         grid: {
                           color: (ctx) =>
                             Number.isInteger(ctx.tick.value)
-                              ? 'rgba(0,0,0,.08)'
-                              : 'rgba(0,0,0,.03)',
+                              ? chartInk().grid
+                              : chartInk().gridMinor,
                         },
                       },
                       x: { grid: { display: false } },
@@ -746,7 +747,7 @@ export async function openProfielModal(
                 // Build chart data
                 const xLabels = [...allYears.map(yearLabel), 'SE'];
                 const leerlingData = [...allYears.map((yr) => studentYearAvgs[yr]), studentPtaAvg];
-                const leerlingColors = [...allYears.map(() => '#4A90D9'), '#d9534f'];
+                const leerlingColors = [...allYears.map(() => kindColor('toets')), kindColor('se')];
                 const jlData = [...allYears.map((yr) => jlYearAvgs[yr]), jlPtaAvg];
 
                 gemWrap.innerHTML = '';
@@ -886,7 +887,7 @@ export async function openProfielModal(
                       if (!isNvt && !isZero && bar.y >= bar.base - 12) return;
 
                       ctx.save();
-                      ctx.fillStyle = isNvt ? '#8895a4' : '#444';
+                      ctx.fillStyle = isNvt ? chartInk().disabled : chartInk().text;
                       ctx.font = 'bold 10px sans-serif';
                       ctx.textAlign = 'center';
                       ctx.textBaseline = 'bottom';
@@ -1078,7 +1079,7 @@ export async function openProfielModal(
                                 const v = ds.data[j];
                                 if (!v || bar.y >= bar.base - 12) return;
                                 ctx.save();
-                                ctx.fillStyle = '#444';
+                                ctx.fillStyle = chartInk().text;
                                 ctx.font = 'bold 10px sans-serif';
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'bottom';
@@ -1094,7 +1095,7 @@ export async function openProfielModal(
                         datasets: [
                           {
                             data: xEntries.map((e) => e.count),
-                            backgroundColor: '#4A90D9',
+                            backgroundColor: kindColor('toets'),
                             borderRadius: 3,
                           },
                         ],

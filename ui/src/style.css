@@ -1209,6 +1209,7 @@ body::after {
   gap: 6px;
 }
 .og-cijfer-input {
+  height: var(--h-control-sm);
   width: 3.5em;
   padding: 2px 6px;
   text-align: center;
@@ -1619,6 +1620,7 @@ body::after {
   outline-offset: -2px;
 }
 .score-grid-editor {
+  border-radius: 0;
   position: absolute;
   z-index: 10;
   box-sizing: border-box;
@@ -1998,7 +2000,7 @@ code {
   width: 100%;
 }
 .form-group textarea:focus {
-  outline: none;
+  outline: 3px solid var(--accent-ring);
   border-color: var(--accent);
 }
 .form-group textarea::placeholder {
@@ -2534,7 +2536,7 @@ code {
   box-sizing: border-box;
 }
 .rtti-uitleg-table textarea:focus {
-  outline: none;
+  outline: 3px solid var(--accent-ring);
   border-color: var(--accent);
 }
 .rtti-uitleg-table textarea::placeholder {
@@ -2764,7 +2766,7 @@ td.grade-override-stale::after {
   height: 32px;
 }
 
-/* Grade pill in tables (utils/grades.js gradeCell); colours via data-border-color/data-color */
+/* Grade pill in tables (utils/grades.ts gradePillHtml); colours via data-border-color/data-color */
 .grade-cell-td {
   text-align: center;
   padding: 3px 4px;
@@ -2782,7 +2784,7 @@ td.grade-override-stale::after {
   font-weight: bold;
 }
 
-/* Mean ± sd line with a coloured dot (utils/grades.js gradeStatHtml) */
+/* Mean ± sd line with a coloured dot (utils/grades.ts gradeStatHtml) */
 .stat-line {
   display: flex;
   align-items: center;

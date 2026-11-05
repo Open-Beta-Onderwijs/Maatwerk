@@ -20,8 +20,8 @@ describe('formatGrade', () => {
   });
 
   it('rounds the product, as the grade system does (quirk B8)', () => {
-    // 1.05 * 10 = 10.5 -> 11 -> 1,1; toFixed(1) on 1.05 gives 1.1 too, but
-    // 1.005-style binary cases differ: 5.45 * 10 = 54.5 -> 55 -> 5,5.
+    // 5.45 * 10 = 54.5 rounds up to 55; see formatFixed below for 1.15,
+    // where the two paths differ.
     expect(formatGrade(5.45)).toBe('5,5');
     expect(formatGrade(5.449)).toBe('5,4');
   });

@@ -2,13 +2,7 @@
 
 import { testBadgeClass } from '../domain/test-type';
 import { gradeCellColor, rttiPctCellColor, sdCellColor } from '../domain/grade-colors';
-import { formatNumber, parseDecimalLoose } from '../domain/format';
-
-// A grid cell's text as a number; null when empty or not a number.
-const cellNumber = (v) => {
-  const n = v === '' || v == null ? NaN : parseDecimalLoose(v);
-  return Number.isFinite(n) ? n : null;
-};
+import { formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
 import { wireSpinners, spinnerValue } from '../utils/spinners';
 import {
   showModal,
@@ -16,7 +10,6 @@ import {
   toast,
   persistentError,
   escHtml,
-  formatGrade,
   onModalSync,
   showReloadNotice,
   changedByName,
@@ -36,6 +29,12 @@ import {
   sameOverride,
   scoreCellText,
 } from '../domain/scoregrid';
+
+// A grid cell's text as a number; null when empty or not a number.
+const cellNumber = (v) => {
+  const n = v === '' || v == null ? NaN : parseDecimalLoose(v);
+  return Number.isFinite(n) ? n : null;
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Scores invoeren

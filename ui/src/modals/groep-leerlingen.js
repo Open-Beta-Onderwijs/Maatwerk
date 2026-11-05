@@ -11,8 +11,6 @@ import {
   modalRefresher,
 } from '../app.js';
 import { testBadgeClass } from '../domain/test-type';
-import { formatGrade } from '../domain/format';
-import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
 import { gradePillHtml } from '../utils/grades';
 import { openProfielModal } from './profiel.js';
 
@@ -20,11 +18,6 @@ import { openProfielModal } from './profiel.js';
 function studentVersions(ev, id) {
   const find = (list) => JSON.stringify((list ?? []).find((s) => s.id === id) ?? null);
   return [find(ev.before), find(ev.after)];
-}
-
-// Grade pill of an average; colours via style data (src/legacy/style-data.ts).
-function gradePill(g) {
-  return gradePillHtml(g);
 }
 
 export async function openGroupStudentsModal(groupId, year) {
@@ -167,10 +160,6 @@ export async function openGroupStudentsModal(groupId, year) {
           families
             .map((f, fi) => {
               const { grade: g, exam: fromExam } = bestGradeForFamily(s, f);
-              const label = formatGrade(g);
-              const bc = gradeBarColor(g);
-              const tc = gradeTextColor(g);
-              const fw = g !== null && isFail(g) ? 'bold' : '500';
               const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
               const badgeLetter = fromExam?.parent_id
                 ? (fromExam.description ?? '').trim().charAt(0).toUpperCase() || '?'
@@ -183,7 +172,7 @@ export async function openGroupStudentsModal(groupId, year) {
                 `</td>`;
               return (
                 `<td class="gl-grade-td ${rowBg}">` +
-                `<span class="grade-pill grade-pill--wide${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>` +
+                `${gradePillHtml(g, 'grade-pill--wide')}</td>` +
                 badgeCell
               );
             })
@@ -201,10 +190,10 @@ export async function openGroupStudentsModal(groupId, year) {
 
       const avgCells =
         `<td class="gl-avg-td u-border-l-2 ${rowBg}">${
-          yearAvg !== null ? gradePill(yearAvg) : `<span class="u-text-faint">—</span>`
+          yearAvg !== null ? gradePillHtml(yearAvg) : `<span class="u-text-faint">—</span>`
         }</td>` +
         `<td class="gl-avg-td ${rowBg}">${
-          dossierAvg !== null ? gradePill(dossierAvg) : `<span class="u-text-faint">—</span>`
+          dossierAvg !== null ? gradePillHtml(dossierAvg) : `<span class="u-text-faint">—</span>`
         }</td>`;
 
       return `<tr>${nameCell}${examCells}${avgCells}</tr>`;
@@ -220,14 +209,10 @@ export async function openGroupStudentsModal(groupId, year) {
             .map((s) => bestGradeForFamily(s, f).grade)
             .filter((g) => g !== null);
           const avg = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
-          const label = formatGrade(avg);
-          const bc = gradeBarColor(avg);
-          const tc = gradeTextColor(avg);
-          const fw = avg !== null && isFail(avg) ? 'bold' : '500';
           const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
           return (
             `<td class="u-text-right u-p-3-4 u-bg-highlight">` +
-            `<span class="grade-pill grade-pill--wide${fw === 'bold' ? ' grade-pill--fail' : ''}" data-border-color="${bc}" data-color="${tc}">${label}</span></td>` +
+            `${gradePillHtml(avg, 'grade-pill--wide')}</td>` +
             `<td class="u-bg-highlight${borderR}"></td>`
           );
         })
@@ -252,10 +237,10 @@ export async function openGroupStudentsModal(groupId, year) {
 
   const avgRowSummary =
     `<td class="u-text-center u-p-3-4 u-bg-highlight u-border-l-2">${
-      yearAvgOfAvgs !== null ? gradePill(yearAvgOfAvgs) : `<span class="u-text-faint">—</span>`
+      yearAvgOfAvgs !== null ? gradePillHtml(yearAvgOfAvgs) : `<span class="u-text-faint">—</span>`
     }</td>` +
     `<td class="u-text-center u-p-3-4 u-bg-highlight">${
-      seAvgOfAvgs !== null ? gradePill(seAvgOfAvgs) : `<span class="u-text-faint">—</span>`
+      seAvgOfAvgs !== null ? gradePillHtml(seAvgOfAvgs) : `<span class="u-text-faint">—</span>`
     }</td>`;
 
   const avgRow =

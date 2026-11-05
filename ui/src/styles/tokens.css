@@ -46,9 +46,6 @@ html[data-theme='dark'] .score-grid {
   --grade-pass-lo-text: #8a6a00;
   --grade-pass-hi-text: #1e7b3c;
   --grade-none-text: var(--disabled);
-  --grade-fail-bar: #e5736b;
-  --grade-pass-lo-bar: #f2c94c;
-  --grade-pass-hi-bar: #5db97b;
   --grade-diagnostic-border: #9aa1ad;
   --accent-text: var(--accent-text-light);
   --icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235d6675' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
@@ -202,4 +199,9 @@ html[data-accent='magenta']   { --accent: #a3248f; --accent-text-light: #a3248f;
 html[data-theme='dark'][data-accent='zwart'] {
   --accent: #e7eaf0;
   --on-accent: #111418;
+}
+/* ...but inside the light score grid it stays black. */
+html[data-theme='dark'][data-accent='zwart'] .score-grid {
+  --accent: #111418;
+  --on-accent: #ffffff;
 }
