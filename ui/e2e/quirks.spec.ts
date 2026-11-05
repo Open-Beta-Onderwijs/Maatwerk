@@ -391,7 +391,7 @@ test('U11: Alles/Niets in a filter popover act once, however often someone logge
     ['#btn-filter-ss', '#pop-ss', '#pop-ss-niets'],
     ['#btn-filter-ss', '#pop-ss', '#pop-ss-alles'],
     ['#btn-filter-jl', '#pop-jl', '#pop-jl-niets'],
-  ]) {
+  ] as const) {
     if (await page.locator(popover).isHidden()) await page.locator(open).click();
     const before = await writes();
     await page.locator(button).click();

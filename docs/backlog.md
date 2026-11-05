@@ -395,3 +395,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **n3:** JS files over 500 lines (`toets-overzicht.js`, `profiel.js`, `toets-edit.js`,
   `scores.js`, `groep-edit.js`, `opdrachten-genereren.js`, `rapport.js`): split in their area
   steps (R-05).
+
+## From Step 15
+
+- **R-05 (shell):** `app.js` (709 lines after the step 15 split) and the new `shell/filter-bar.js`
+  stay JS: the filter bar was moved out verbatim (lower risk), not converted. Converting them,
+  and splitting the rest of `app.js` (modal helpers, sync notices, navigation), is easier once
+  `Store` has types (step 19); do it then or with step 22 (login), which touches the same code.

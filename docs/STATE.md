@@ -62,7 +62,10 @@ decision 5.
    edit kept, admin menu).
 6. **Done:** U11 fixed (`onclick` per Alles/Niets button; e2e fails without the fix), U13 and U16
    checked: superseded (quirks.md).
-7. **Next:** version 0.6.0, gate, reviewer subagent, then the visual diff for the user.
+7. **Done:** R-05 for the shell, partly: the filter bar (~470 lines) moved verbatim from `app.js`
+   to `shell/filter-bar.js` (app.js 1262 -> 709 lines); app.js re-exports its getters. Both stay
+   JS until Store is typed (backlog "From Step 15").
+8. **Next:** version 0.6.0, gate, reviewer subagent, then the visual diff for the user.
 
 ## Step 14a progress
 
