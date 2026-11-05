@@ -192,7 +192,7 @@ test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async (
   await frame.getByRole('button', { name: 'Sluiten' }).click();
 
   // The app's own dialog asks first; "Annuleren" keeps my version (M-OPD-9).
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await banner.getByRole('button', { name: 'Herstel standaardversie' }).click();
   await expect(dialog).toContainText('De standaardversie van lib.typ vervangt jouw versie');
   await dialog.getByRole('button', { name: 'Annuleren' }).click();

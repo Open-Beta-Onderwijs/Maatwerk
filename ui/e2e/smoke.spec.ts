@@ -29,7 +29,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await page.locator('.per-btn[data-per="1"]').click();
   await page.locator('#f-e-next').click();
   await page.locator('#f-esave').click();
-  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
   // The id is opaque (C10): find the new exam by its title.
   const EXAM_ID = await withMock(
     page,
@@ -59,7 +59,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await expect
     .poll(async () => (await readMockJson<ScoreFile>(page, scoreFile))?.scores?.[EXAM_ID])
     .toEqual({ q1: 1 });
-  await page.locator('#modal-close').click();
+  await page.locator('.dlg-close').click();
 
   // Rapport: the mock compiles a canned PDF that the PDF viewer renders.
   await examMenuItem(page, EXAM_ID, 'Rapport genereren');

@@ -37,7 +37,7 @@ for (const { suffix, look } of LOOKS) {
       const opts = { animations: 'disabled' as const, maxDiffPixels: 0 };
       const file = `${view.name}${suffix}.png`;
       if (view.target === 'modal')
-        await expect(page.locator('#modal-box')).toHaveScreenshot(file, opts);
+        await expect(page.locator('.dlg').last()).toHaveScreenshot(file, opts);
       else await expect(page).toHaveScreenshot(file, { ...opts, fullPage: true });
     });
   }

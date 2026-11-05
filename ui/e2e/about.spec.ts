@@ -32,7 +32,7 @@ test('Over Maatwerk from the startup screen shows the notice and licence texts',
 test('Over Maatwerk opens from the title in the top bar', async ({ page }) => {
   await login(page);
   await page.locator('#btn-about').click();
-  await expect(page.locator('.about-modal h2')).toHaveText('Over Maatwerk');
+  await expect(page.locator('.dlg-title')).toHaveText('Over Maatwerk');
 });
 
 test('Probleem melden shows the log folder and opens it', async ({ page }) => {

@@ -365,3 +365,33 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   setting" failed on PR #8 (2026-11-05) at its first step: the mock preview still showed the
   initial page instead of "Goed" after 5 s; a rerun passed. Probably a slow runner; give that
   first wait a longer timeout or wait for the compile event instead of the text.
+  Again locally on 2026-11-05 (step 14, full suite with 8 workers), this time at its **last**
+  step: after the time-limit error the preview showed page " 1" instead of keeping "Goed".
+  Passed 6x in a row alone. Look at what the mock renders for `#traag` when it times out.
+
+## From Step 14 (review `docs/reviews/step-14.md`)
+
+- **m2:** async work after an `await` still targets "the current modal": `modalRefresher` can
+  re-open a modal that was closed during the reopen's await, and `pushModalChart` after an await
+  attaches to whatever is on top. Fix with the area steps: pass the `Dialog` to the helpers
+  (`d.onCleanup`) instead of the module-level current modal.
+- **m3:** skeleton helpers (`components/skeleton.ts`) and the `.dlg-sticky` table rules are not
+  used yet; each area step (V-09 "14 + areas") uses them for its lazy parts. The "lazy modal"
+  e2e test checks the fixed size, not the loading state itself.
+- **m4:** no regression test for U12 (CustomSelect destroyed) and U15 (onClose on replace), the
+  footer's left group, or Vitest for `dialog.ts` (Vitest has no DOM environment; adding jsdom
+  is a dependency decision).
+- **n6 (step 13) rest:** `setBusy` in `instellingen.ts`, `gegevens.ts`, `migration.ts` (PIN
+  buttons done in step 14). **n8 rest:** AltGr+T on some layouts (dev menu only).
+- **u-\* utilities:** 103 left, almost all in the big modal files; removed with each area step
+  (20-25), as R-05/m7.
+- **n2:** the profile shows the active tab's pane before its charts are built (two frames).
+- **n4:** skeleton colours are raw hex in `styles/skeleton.css` (spec 3.4 values); move to
+  `tokens.css` with the next token pass.
+- **n5 (step 16):** `:has()` in `styles/dialog.css` (header padding): check WebKitGTK and
+  WKWebView versions on the macOS/Linux checklist.
+- **n6:** account modal: "Uitloggen" (primary) is in the body, not the footer; with the user menu
+  (F-17, step 15).
+- **n3:** JS files over 500 lines (`toets-overzicht.js`, `profiel.js`, `toets-edit.js`,
+  `scores.js`, `groep-edit.js`, `opdrachten-genereren.js`, `rapport.js`): split in their area
+  steps (R-05).

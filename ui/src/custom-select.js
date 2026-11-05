@@ -26,6 +26,8 @@ class CustomSelect {
 
     // ── Build DOM ──
     host.classList.add('csel');
+    // The dialog component destroys every CustomSelect in a dialog it closes (U12).
+    host._csel = this;
 
     this._trigger = document.createElement('button');
     this._trigger.type = 'button';
@@ -67,7 +69,10 @@ class CustomSelect {
     document.addEventListener(
       'keydown',
       (this._keydown = (e) => {
-        if (e.key === 'Escape' && this._open) this._close();
+        if (e.key === 'Escape' && this._open) {
+          e.preventDefault(); // handled: the dialog around it stays open
+          this._close();
+        }
       }),
     );
 
@@ -125,6 +130,7 @@ class CustomSelect {
     document.removeEventListener('keydown', this._keydown);
     this._host.innerHTML = '';
     this._host.classList.remove('csel');
+    delete this._host._csel;
   }
 
   // ── Private ──────────────────────────────────────────────────────────────────

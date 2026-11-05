@@ -10,10 +10,12 @@ import {
   closeModal,
   escHtml,
   guardModalClose as guardModalCloseJs,
-  showModal as showModalJs,
+  openModal as openModalJs,
   toast,
 } from '../app.js';
 import type { MaatwerkApi, PinCheck } from '../bridge/api';
+import { setBusy } from '../components/button';
+import type { Dialog, DialogOptions } from '../components/dialog';
 import {
   fullUserName,
   newPinProblem,
@@ -22,13 +24,8 @@ import {
   type PinUser,
 } from '../domain/accounts';
 
-// app.js is untyped: its `wide` parameter also takes a modal class name.
-const showModal = showModalJs as (
-  html: string,
-  onShow?: (content: HTMLElement) => void,
-  wide?: boolean | string,
-  onClose?: () => void,
-) => void;
+// app.js is untyped.
+const openModal = openModalJs as (opts: DialogOptions) => Dialog;
 const guardModalClose = guardModalCloseJs as (
   isDirty: () => boolean,
   text?: { message: string; title: string; okLabel: string } | null,
@@ -91,13 +88,17 @@ function holdOff(button: HTMLButtonElement, box: HTMLElement, check: PinCheck, w
 function onSubmit(content: HTMLElement, button: HTMLButtonElement, submit: () => Promise<void>) {
   const run = async () => {
     if (button.disabled) return;
-    button.disabled = true;
+    setBusy(button, true);
     try {
       await submit();
     } catch (e) {
       errorBox(content).textContent = e instanceof Error ? e.message : String(e);
     } finally {
-      if (button.isConnected && !button.dataset.holding) button.disabled = false;
+      if (button.isConnected) {
+        setBusy(button, false);
+        // holdOff keeps it disabled while the wait runs.
+        if (button.dataset.holding) button.disabled = true;
+      }
     }
   };
   button.addEventListener('click', run);
@@ -116,25 +117,37 @@ function onSubmit(content: HTMLElement, button: HTMLButtonElement, submit: () =>
  * Opens a modal and resolves with what `body` passes to `finish`, or null
  * when the modal is closed otherwise (Annuleren, Escape, the cross).
  */
+interface PinModal {
+  title: string;
+  /** e.g. the role ("Sectievoorzitter Natuurkunde"). */
+  subtitle?: string;
+  body: string;
+  footer: string;
+}
+
 function modal<T>(
-  html: string,
+  spec: PinModal,
   body: (content: HTMLElement, finish: (result: T) => void) => void,
 ): Promise<T | null> {
   return new Promise((resolve) => {
     let settled = false;
-    showModal(
-      html,
-      (content: HTMLElement) =>
+    openModal({
+      title: spec.title,
+      key: 'pin',
+      subtitle: spec.subtitle,
+      size: 'sm',
+      body: spec.body,
+      footerHtml: spec.footer,
+      onShow: (content: HTMLElement) =>
         body(content, (result) => {
           settled = true;
           resolve(result);
           closeModal();
         }),
-      'modal-narrow',
-      () => {
+      onClose: () => {
         if (!settled) resolve(null);
       },
-    );
+    });
   });
 }
 
@@ -142,18 +155,17 @@ const ACTIONS_CANCEL = `<button class="btn btn--secondary" data-close-modal="1">
 
 /** First login: the user chooses a PIN. Resolves with the check (user written, codes). */
 function setFirstPinDialog(user: PinUser, api: Api, roleLabel: string): Promise<PinCheck | null> {
-  const html = `
-    <h3>Welkom, ${escHtml(user.voornaam)}</h3>
-    ${roleLabel ? `<p class="pin-role">${escHtml(roleLabel)}</p>` : ''}
+  const spec = {
+    title: `Welkom, ${user.voornaam}`,
+    subtitle: roleLabel,
+    body: `
     <p>Kies een pincode van 4 tot 8 cijfers. Daarmee log je voortaan in.</p>
     ${pinInput('pin-new', 'Nieuwe pincode', true)}
     ${pinInput('pin-repeat', 'Herhaal de pincode')}
-    <p class="pin-error" role="alert"></p>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="pin-ok">Pincode instellen</button>
-      ${ACTIONS_CANCEL}
-    </div>`;
-  return modal<PinCheck>(html, (content, finish) => {
+    <p class="pin-error" role="alert"></p>`,
+    footer: `<button class="btn btn--primary" id="pin-ok">Pincode instellen</button>${ACTIONS_CANCEL}`,
+  };
+  return modal<PinCheck>(spec, (content, finish) => {
     const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
     onSubmit(content, ok, async () => {
       const pin = value(content, 'pin-new');
@@ -169,8 +181,9 @@ function setFirstPinDialog(user: PinUser, api: Api, roleLabel: string): Promise<
 
 /** "Pincode vergeten?" for the admin: a recovery code and a new PIN. */
 function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
-  const html = `
-    <h3>Pincode vergeten</h3>
+  const spec = {
+    title: 'Pincode vergeten',
+    body: `
     <p>Vul een van je herstelcodes in en kies een nieuwe pincode. De code werkt daarna niet meer.</p>
     <div class="form-group">
       <label for="pin-code">Herstelcode</label>
@@ -180,12 +193,10 @@ function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
     ${pinInput('pin-new', 'Nieuwe pincode')}
     ${pinInput('pin-repeat', 'Herhaal de pincode')}
     <p class="pin-error" role="alert"></p>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="pin-ok">Inloggen</button>
-      ${ACTIONS_CANCEL}
-    </div>
-    <p class="hint">Geen codes meer? Zie "Pincode beheerder kwijt" in het draaiboek.</p>`;
-  return modal<PinCheck>(html, (content, finish) => {
+    <p class="hint">Geen codes meer? Zie "Pincode beheerder kwijt" in het draaiboek.</p>`,
+    footer: `<button class="btn btn--primary" id="pin-ok">Inloggen</button>${ACTIONS_CANCEL}`,
+  };
+  return modal<PinCheck>(spec, (content, finish) => {
     const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
     onSubmit(content, ok, async () => {
       const pin = value(content, 'pin-new');
@@ -204,20 +215,23 @@ function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
 type LoginResult = { check: PinCheck } | { forgot: true };
 
 function loginDialog(user: PinUser, api: Api, roleLabel: string): Promise<LoginResult | null> {
+  // The admin's "Pincode vergeten?" is a navigational action: footer, left.
   const forgot = user.isAdmin
-    ? `<button type="button" class="btn btn--text" id="pin-forgot">Pincode vergeten?</button>`
-    : `<p class="hint">Pincode vergeten? Vraag de beheerder om je pincode te resetten.</p>`;
-  const html = `
-    <h3>${escHtml(fullUserName(user))}</h3>
-    ${roleLabel ? `<p class="pin-role">${escHtml(roleLabel)}</p>` : ''}
+    ? `<button type="button" class="btn btn--text" id="pin-forgot" data-align="start">Pincode vergeten?</button>`
+    : '';
+  const hint = user.isAdmin
+    ? ''
+    : '<p class="hint">Pincode vergeten? Vraag de beheerder om je pincode te resetten.</p>';
+  const spec = {
+    title: fullUserName(user),
+    subtitle: roleLabel,
+    body: `
     ${pinInput('pin-input', 'Pincode', true)}
     <p class="pin-error" role="alert"></p>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="pin-ok">Inloggen</button>
-      ${ACTIONS_CANCEL}
-    </div>
-    ${forgot}`;
-  return modal<LoginResult>(html, (content, finish) => {
+    ${hint}`,
+    footer: `${forgot}<button class="btn btn--primary" id="pin-ok">Inloggen</button>${ACTIONS_CANCEL}`,
+  };
+  return modal<LoginResult>(spec, (content, finish) => {
     const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
     content.querySelector('#pin-forgot')?.addEventListener('click', () => finish({ forgot: true }));
     onSubmit(content, ok, async () => {
@@ -237,8 +251,7 @@ function loginDialog(user: PinUser, api: Api, roleLabel: string): Promise<LoginR
 /** Shows new recovery codes once; resolves when the admin confirms they are kept. */
 export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Promise<void> {
   const text = recoveryCodesText(user, codes, new Date());
-  const html = `
-    <h3>Herstelcodes</h3>
+  const body = `
     <p>Met deze codes kom je erin als je je pincode vergeten bent. Elke code werkt één keer.
        <strong>Ze worden maar één keer getoond.</strong> Druk ze af of sla ze op, en bewaar ze
        op een veilige plek (niet in de gedeelde map).</p>
@@ -247,14 +260,15 @@ export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Pro
       <button class="btn btn--secondary" id="codes-print">Afdrukken</button>
       <button class="btn btn--secondary" id="codes-save">Opslaan als…</button>
     </div>
-    <label class="checkbox-row"><input type="checkbox" id="codes-kept" /> Ik heb de codes bewaard</label>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="codes-done" disabled>Verder</button>
-    </div>`;
+    <label class="checkbox-row"><input type="checkbox" id="codes-kept" /> Ik heb de codes bewaard</label>`;
   return new Promise((resolve) => {
-    showModal(
-      html,
-      (content: HTMLElement) => {
+    openModal({
+      title: 'Herstelcodes',
+      key: 'recovery-codes',
+      size: 'sm',
+      body,
+      footerHtml: '<button class="btn btn--primary" id="codes-done" disabled>Verder</button>',
+      onShow: (content: HTMLElement) => {
         const done = content.querySelector('#codes-done') as HTMLButtonElement;
         const kept = content.querySelector('#codes-kept') as HTMLInputElement;
         kept.addEventListener('change', () => (done.disabled = !kept.checked));
@@ -275,9 +289,8 @@ export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Pro
         });
         done.addEventListener('click', () => closeModal());
       },
-      'modal-narrow',
-      () => resolve(),
-    );
+      onClose: () => resolve(),
+    });
   });
 }
 
@@ -346,17 +359,16 @@ export async function pinLogin<U extends PinUser>(
 }
 
 function changePinDialog(api: Api): Promise<PinCheck | null> {
-  const html = `
-    <h3>Pincode wijzigen</h3>
+  const spec = {
+    title: 'Pincode wijzigen',
+    body: `
     ${pinInput('pin-current', 'Huidige pincode', true)}
     ${pinInput('pin-new', 'Nieuwe pincode')}
     ${pinInput('pin-repeat', 'Herhaal de nieuwe pincode')}
-    <p class="pin-error" role="alert"></p>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="pin-ok">Wijzigen</button>
-      ${ACTIONS_CANCEL}
-    </div>`;
-  return modal<PinCheck>(html, (content, finish) => {
+    <p class="pin-error" role="alert"></p>`,
+    footer: `<button class="btn btn--primary" id="pin-ok">Wijzigen</button>${ACTIONS_CANCEL}`,
+  };
+  return modal<PinCheck>(spec, (content, finish) => {
     const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
     onSubmit(content, ok, async () => {
       const pin = value(content, 'pin-new');
@@ -373,16 +385,15 @@ function changePinDialog(api: Api): Promise<PinCheck | null> {
 }
 
 function renewCodesDialog(api: Api): Promise<PinCheck | null> {
-  const html = `
-    <h3>Nieuwe herstelcodes</h3>
+  const spec = {
+    title: 'Nieuwe herstelcodes',
+    body: `
     <p>Je krijgt tien nieuwe codes; de oude werken daarna niet meer.</p>
     ${pinInput('pin-current', 'Pincode', true)}
-    <p class="pin-error" role="alert"></p>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="pin-ok">Nieuwe codes maken</button>
-      ${ACTIONS_CANCEL}
-    </div>`;
-  return modal<PinCheck>(html, (content, finish) => {
+    <p class="pin-error" role="alert"></p>`,
+    footer: `<button class="btn btn--primary" id="pin-ok">Nieuwe codes maken</button>${ACTIONS_CANCEL}`,
+  };
+  return modal<PinCheck>(spec, (content, finish) => {
     const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
     onSubmit(content, ok, async () => {
       const check = await api.renewRecoveryCodes(value(content, 'pin-current'));
@@ -404,16 +415,18 @@ export function openAccountModal(
   onLogout: () => void,
 ): void {
   const html = `
-    <h3>${escHtml(fullUserName(user))}</h3>
-    ${roleLabel ? `<p class="pin-role">${escHtml(roleLabel)}</p>` : ''}
     <div class="account-actions">
       <button class="btn btn--secondary" id="acc-pin">Pincode wijzigen</button>
       ${user.isAdmin ? `<button class="btn btn--secondary" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
       <button class="btn btn--primary" id="acc-logout">Uitloggen</button>
     </div>`;
-  showModal(
-    html,
-    (content: HTMLElement) => {
+  openModal({
+    title: fullUserName(user),
+    subtitle: roleLabel,
+    size: 'sm',
+    key: 'account',
+    body: html,
+    onShow: (content: HTMLElement) => {
       content.querySelector('#acc-logout')!.addEventListener('click', () => {
         closeModal();
         void api.logout().catch((e) => console.warn('[pin]', e));
@@ -432,6 +445,5 @@ export function openAccountModal(
         if (check?.recoveryCodes) await showRecoveryCodes(user, check.recoveryCodes, api);
       });
     },
-    'modal-narrow',
-  );
+  });
 }

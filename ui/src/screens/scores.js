@@ -5,7 +5,7 @@ import { gradeCellColor, rttiPctCellColor, sdCellColor } from '../domain/grade-c
 import { formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
 import { wireSpinners, spinnerValue } from '../utils/spinners';
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   persistentError,
@@ -308,17 +308,21 @@ export async function openScoreModal(examId, year, deps) {
     return;
   }
 
-  showModal(
-    `
-    <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-pr-30 u-shrink-0">
-      <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0 u-fs-17 u-fw-600">
-        <span class="u-nowrap">Scores invoeren voor</span>
-        ${
-          exam.volgnummer
-            ? `<span class="${testBadgeClass(exam)} u-shrink-0">${escHtml(String(exam.volgnummer))}</span>`
-            : ''
-        }
-        <em class="u-min-w-0 u-overflow-hidden u-ellipsis u-nowrap">${escHtml(exam.title)}</em>
+  openModal({
+    title: 'Scores invoeren',
+    key: 'scores',
+    // The exam badge sits before the exam name, in the line under the title.
+    subtitleHtml: `${
+      exam.volgnummer
+        ? `<span class="${testBadgeClass(exam)}">${escHtml(String(exam.volgnummer))}</span>`
+        : ''
+    }<span>${escHtml(exam.title)}</span>`,
+    className: 'modal-scores',
+    fixedHeight: true,
+    // The toolbar row stays in place: only the grids scroll (#sc-grid-container).
+    body: `
+    <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-shrink-0">
+      <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0">
         <div id="sc-presence" class="presence-badges"></div>
       </div>
       <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">
@@ -345,7 +349,7 @@ export async function openScoreModal(examId, year, deps) {
     </div>
     <div id="sc-grid-container"></div>
   `,
-    async (el) => {
+    onShow: async (el) => {
       wireSpinners(el);
 
       const ntermSp = el.querySelector('#sc-nterm');
@@ -487,12 +491,11 @@ export async function openScoreModal(examId, year, deps) {
       renderPresence(el, examId, year);
       void afterPaint().then(endOpen); // no grid at all (no groups)
     },
-    'modal-scores',
     // The exam list shows statistics: redraw it only when something was saved.
-    () => {
+    onClose: () => {
       if (Store.generation() !== generationAtOpen) deps?.renderToetsenList?.();
     },
-  );
+  });
 }
 
 // Badges of colleagues in this score modal (green: entered scores in the last
@@ -761,7 +764,8 @@ function showCellMenu(x, y, items) {
   };
   const onKey = (e) => {
     if (e.key !== 'Escape') return;
-    e.stopPropagation(); // don't close the score modal as well
+    e.preventDefault(); // handled: the score modal stays open
+    e.stopPropagation();
     close();
   };
   menu.addEventListener('click', (e) => {

@@ -1,14 +1,73 @@
 # State
 
-Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `v0.4.1`, `step-13`, `v0.4.0` (pushed),
-`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are
-local only)
+Last updated: 2026-11-05 (step 14 done, 0.5.0) Branch: `main` Last tags: `v0.5.0`, `step-14`, `v0.4.1`,
+`step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
+`v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 13 done** (merged, tagged `step-13`, version 0.4.0). **Next: step 14** (Foundation b:
-dialog component, placeholders, sticky, form rules; L, 14a/14b). Step 14 also takes the step 13
-backlog items m3/m4/n6 (`docs/backlog.md` "From Step 13").
+**Step 14 done** (merged, tagged `step-14`, version 0.5.0). **Next: step 15** (Shell: tab bar,
+logo, user menu, theme per user, version guard; M). Step 14 deferrals: `docs/backlog.md` "From
+Step 14".
+
+## Step 14a progress
+
+1. **Done** (`5538f85`): `ui/src/components/dialog.ts` + `styles/dialog.css`: one dialog
+   component (fixed top 64 px, centred, max height `100vh - 96px`, `fixedHeight`; sticky header
+   with title/badge/subtitle/close/tabs; scrolling body; footer: right-aligned, primary last,
+   `align: 'start'` for a navigational action; busy state on async buttons; per-dialog close
+   guard and cleanups; stacking with one backdrop each; Escape on `window` in the bubble phase,
+   skipped when a control inside called `preventDefault()`). `app.js` `showModal`/`closeModal`/
+   `guardModalClose`/`onModalSync`/`onModalCleanup`/`modalRefresher`/`pushModalChart` act on the
+   current modal (top of the modals opened through `showModal`/`openModal`; confirms do not
+   count). `showModal` = legacy form (key `legacy`: replaces a legacy modal, stacks on a
+   structured one; keeps ids `modal-box`/`modal-content`/`modal-close`). `confirmDialog`,
+   `alertDialog`, `showReloadNotice` on the component. U15 (replaced modal runs its onClose),
+   U14 (RTTI uitleg uses the shared guard; its inline confirm bar is gone), U12 (closing a dialog
+   destroys its CustomSelects; `host._csel`), n8 (dev menu Escape). New behaviour: **Escape
+   closes modals** (through the guard); before, only ✕ and the backdrop did.
+2. **Done** (`a77cd39`): exam overview, rapport and group edit on `openModal` (structured header,
+   tabs via `onTab`, `fixedHeight`, group edit footer). `openModal({ key })` replaces a modal
+   with the same key (refresh in place). Skeleton helpers `components/skeleton.ts` +
+   `styles/skeleton.css` (not used yet; areas use them, V-09 "14 + areas"). Sticky `.screen-head`
+   (title row + filter row) on the five teacher tabs. `e2e/dialog.spec.ts` (34 tests).
+   R-05 call: the three ported modal files stay JS (only their open call changed; their area
+   steps 20/23/25 convert them), as with m7 in step 13.
+3. **Done:** user OK on the 14a visual diff (2026-11-05); local baselines updated.
+
+## Step 14b progress
+
+1. **Done** (`fa77dd1`): every modal on `openModal` (title/subtitle in the header,
+   `footerHtml` keeps the buttons' ids and listeners and arranges them; `onShow` gets the
+   whole dialog element). `showModal`, the legacy ids (`modal-box`/`modal-content`/
+   `modal-close`) and `dlg--legacy` are gone. Keys: `exam-edit` (new test step 1/2, inhaal ->
+   editor), `student-edit`, `group-edit`, `group-overview`, `profile`, `exam-overview`,
+   `rapport`, `opdrachten-genereren`. **Behaviour changes:** the profile stacks on the group
+   overview (closing returns there; `backFn` removed, Vorige/Volgende in the footer); the
+   account modal stays under "Pincode wijzigen"/"Nieuwe herstelcodes" (stacked);
+   `modalRefresher` waits while its modal is covered. PIN submit buttons use `setBusy` (n6).
+   Rule I applied: a danger/delete action is not in any footer yet (none of the forms has one).
+2. **Done** (`6728884`): `components/form.ts` (`field`, `formRow`, `tickBox`, `toggleTick`) +
+   `styles/forms.css`; form rows align on labels; PTA tick boxes; m4 (CustomSelect trigger and
+   inline selects/textareas on the 3.2 look, now 36 px; question table dense 26 px); m3 (school
+   field input on the base). 16 dead u-* removed (103 left: the rest live in the big modal
+   files and go with their area steps 20-25, as R-05/m7). Form markup is not rewritten to
+   `field()` everywhere: the CSS rule aligns every `.form-row`; the helper is used for the new
+   tick-box fields. Steppers lining up across rows (board 14) is step 20.
+3. **Done:** gate green (cargo fmt/clippy/test, lint, typecheck, 391 Vitest, licences, cargo
+   deny, SPDX, `npm audit --omit=dev` 0); version **0.5.0** (`4797c2d`).
+4. **Done:** review `docs/reviews/step-14.md`: 0 blockers, 3 majors (M1 covered modal got the
+   wrong reload notice, M2 focus stayed on the opener, M3 tabs not keyboard-reachable), all fixed
+   with tests (`914fa57`); m1, m5, m6, n1, n7 fixed; rest in `docs/backlog.md` "From Step 14".
+   Every modal now has a `key`. Empty footers hidden (`69cdf07`, seen in the visual diff).
+   e2e: 193 tests green.
+5. **Done:** user OK on the 14b visual diff (2026-11-05) with two remarks, both fixed: the exam
+   badge of Scores invoeren sits before the exam name in the subtitle line (`subtitleHtml` dialog
+   option), and an unticked tick box shows a faint tick (`--border`; `--border-strong` on hover).
+   Local baselines updated (111 views). Merged into `main`, tagged `step-14` and `v0.5.0`.
+
+E2E: the editor test "a compile over the time limit" flaked once more under the full suite
+(backlog).
 
 ## Fix 0.4.1 (2026-11-05, user report)
 

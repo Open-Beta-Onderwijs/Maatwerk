@@ -11,17 +11,22 @@ export { decodeCsv, parseCSV } from '../domain/csv';
  *
  * @param {string}   activeYear
  * @param {string[]} existingYears
- * @param {{ showModal: Function, closeModal: Function, toast: Function, overlay: Element }} ui
+ * @param {{ openModal: Function, closeModal: Function, toast: Function }} ui
  */
 export function askSchoolYear(activeYear, existingYears, ui) {
-  const { showModal, closeModal, toast, overlay } = ui;
+  const { openModal, closeModal, toast } = ui;
   return new Promise((resolve) => {
     const allYears = [...new Set([activeYear, ...existingYears])].sort((a, b) =>
       b.localeCompare(a),
     );
-    showModal(
-      `
-      <h3>Schooljaar kiezen</h3>
+    openModal({
+      title: 'Schooljaar kiezen',
+      key: 'school-year',
+      size: 'sm',
+      footerHtml: `
+        <button class="btn btn--primary" id="f-year-ok">Verder</button>
+        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>`,
+      body: `
       <p class="muted u-mb-12">
         Voor welk schooljaar wil je deze gegevens importeren?
         Als het schooljaar al bestaat, worden de gegevens bijgewerkt.
@@ -34,12 +39,8 @@ export function askSchoolYear(activeYear, existingYears, ui) {
         <label>Of voer een schooljaar in</label>
         <input id="f-import-year-custom" type="text" placeholder="2025-2026" />
       </div>
-      <div class="form-actions">
-        <button class="btn btn--primary" id="f-year-ok">Verder</button>
-        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-      </div>
     `,
-      (el) => {
+      onShow: (el) => {
         const yearSel = new CustomSelect(el.querySelector('#f-import-year-host'), {
           placeholder: '— kies schooljaar —',
         });
@@ -53,23 +54,12 @@ export function askSchoolYear(activeYear, existingYears, ui) {
             toast('Kies een schooljaar.', 'error');
             return;
           }
-          closeModal();
           resolve(chosen);
+          closeModal();
         });
       },
-    );
-    overlay.addEventListener(
-      'click',
-      function handler(e) {
-        if (e.target === overlay) {
-          overlay.removeEventListener('click', handler);
-          resolve(null);
-        }
-      },
-      { once: true },
-    );
-    document
-      .getElementById('modal-close')
-      .addEventListener('click', () => resolve(null), { once: true });
+      // Closed any other way (Annuleren, ✕, Escape, backdrop): no year.
+      onClose: () => resolve(null),
+    });
   });
 }

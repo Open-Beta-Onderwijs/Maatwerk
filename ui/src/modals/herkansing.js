@@ -2,10 +2,13 @@
 
 import { wireSpinners, spinnerValue } from '../utils/spinners';
 import { formatNumber } from '../domain/format';
-import { showModal, closeModal, toast, escHtml } from '../app.js';
+import { openModal, closeModal, toast, escHtml } from '../app.js';
 import { showExamEditor } from './toets-edit.js';
 import { openExamOverviewModal } from './toets-overzicht.js';
 import { renderToetsen } from '../screens/toetsen.js';
+import { field, tickBox, toggleTick } from '../components/form';
+
+const PTA_TITLE = 'PTA: de toets hoort bij het Programma van Toetsing en Afsluiting';
 
 export async function openResitModal(parentId, year) {
   const all = await Store.getExams(year);
@@ -14,16 +17,22 @@ export async function openResitModal(parentId, year) {
   const resits = Store.getResitsSync(parentId, year);
   const nextAttempt = resits.length + 2; // attempt 1 is the original
 
-  showModal(
-    `
-    <h3 id="f-resit-title">${escHtml(parent.title)} — …</h3>
-    <div class="u-items-end u-gap-20 form-row">
+  openModal({
+    title: `${parent.title} — …`,
+    // Verder replaces it with the exam editor (step 2).
+    key: 'exam-edit',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-resit-next">Verder →</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
+    <div class="u-gap-20 form-row">
       <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
         <label>Beschrijving (bijv. INHAAL)</label>
         <input id="f-resit-desc" type="text" placeholder="INHAAL" autocomplete="off" />
       </div>
     </div>
-    <div class="u-items-end u-gap-20 u-mt-10 u-opacity-55 u-no-pointer form-row">
+    <div class="u-gap-20 u-mt-10 u-opacity-55 u-no-pointer form-row">
       <div class="u-flex-2 u-mb-0 form-group">
         <label>Jaarlaag</label>
         <div class="btn-toggle-group">
@@ -58,7 +67,7 @@ export async function openResitModal(parentId, year) {
           : ''
       }
     </div>
-    <div class="u-mt-10 u-gap-20 u-items-end form-row">
+    <div class="u-mt-10 u-gap-20 form-row">
       <div class="u-flex-1 u-min-w-160 form-group">
         <label>Opgave- &amp; Vraagstructuur</label>
         <div id="f-resit-struct-host" class="csel-host"></div>
@@ -80,13 +89,9 @@ export async function openResitModal(parentId, year) {
         </div>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-resit-next">Verder →</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
-      const titleEl = el.querySelector('#f-resit-title');
+    `,
+    onShow: (el) => {
+      const titleEl = el.querySelector('.dlg-title');
       const descInput = el.querySelector('#f-resit-desc');
       descInput.addEventListener('input', () => {
         const desc = descInput.value.trim();
@@ -141,7 +146,7 @@ export async function openResitModal(parentId, year) {
         showExamEditor(resitExam, false, year, () => renderToetsen(), false, true);
       });
     },
-  );
+  });
 }
 
 export async function openBestGradesOverviewModal(parentId, year) {
@@ -160,18 +165,22 @@ export async function openSummaryEditModal(parentId, year) {
   const resits = Store.getResitsSync(parentId, year);
   const isPta = parent.type === 'pta';
 
-  showModal(
-    `
-    <h3>Verzamelkaart bewerken: <em>${escHtml(parent.title)}</em></h3>
-    <div class="u-items-end u-gap-20 u-flex-wrap form-row">
+  openModal({
+    title: 'Verzamelkaart bewerken',
+    key: 'summary-edit',
+    subtitle: parent.title,
+    size: 'form',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-sum-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
+    <div class="u-gap-20 u-flex-wrap form-row">
       <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
         <label>Naam</label>
         <input id="f-sum-naam" type="text" value="${escHtml(parent.title)}" />
       </div>
-      <div class="u-flex-none u-mb-0 form-group">
-        <label>PTA</label>
-        <button type="button" class="pta-btn" id="f-sum-pta" data-checked="${isPta ? 'true' : 'false'}">✓</button>
-      </div>
+      ${field('PTA', tickBox('f-sum-pta', { checked: isPta, title: PTA_TITLE }), { grow: 'none', center: true, className: 'u-mb-0', for: 'f-sum-pta' })}
       <div class="u-flex-1-5 u-mb-0 form-group">
         <label>Periode</label>
         <div class="btn-toggle-group">
@@ -200,12 +209,8 @@ export async function openSummaryEditModal(parentId, year) {
         </div>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-sum-save">Opslaan</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       const ptaBtn = el.querySelector('#f-sum-pta');
       const wegingSEEl = el.querySelector('#f-sum-weging-se');
       const syncWegingSE = () => {
@@ -216,7 +221,7 @@ export async function openSummaryEditModal(parentId, year) {
         });
       };
       ptaBtn.addEventListener('click', () => {
-        ptaBtn.dataset.checked = String(ptaBtn.dataset.checked !== 'true');
+        toggleTick(ptaBtn);
         syncWegingSE();
       });
       el.querySelectorAll('.per-btn').forEach((btn) =>
@@ -273,6 +278,5 @@ export async function openSummaryEditModal(parentId, year) {
         renderToetsen();
       });
     },
-    'modal-md',
-  );
+  });
 }

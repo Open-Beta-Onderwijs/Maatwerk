@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { toast, showModal, closeModal, escHtml } from '../app.js';
+import {
+  toast,
+  openModal,
+  closeModal,
+  escHtml,
+  guardModalClose,
+  requestCloseModal,
+} from '../app.js';
 import { printName } from '../domain/print';
 import { GRADE_BAR } from '../domain/grade-colors';
 import { setBusy } from '../components/button';
@@ -78,16 +85,19 @@ export async function printOutput(outputId, name) {
 export function openRapportModal(examId, year) {
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
   if (!exam) return;
-  showModal(
-    `<h3 class="modal-title">Rapport — ${escHtml(exam.title)}</h3>
-     <div class="rapport-modal-content"></div>`,
-    (el) => showRapportPdf(el.querySelector('.rapport-modal-content'), exam, year),
-    'modal-pdf',
-    () => {
+  const dialog = openModal({
+    key: 'rapport',
+    title: `Rapport: ${exam.title}`,
+    subtitle: `Jaarlaag ${exam.jaarlaag} · ${year}`,
+    className: 'modal-pdf',
+    fixedHeight: true,
+    body: '<div class="rapport-modal-content"></div>',
+    onClose: () => {
       if (_printListener) window.removeEventListener('message', _printListener);
       _printListener = null;
     },
-  );
+  });
+  showRapportPdf(dialog.body.querySelector('.rapport-modal-content'), exam, year);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -295,84 +305,28 @@ export async function openRttiUitlegModal() {
 
   let activeTab = 0;
 
-  const tabButtons = tabs
-    .map(
-      (t, i) =>
-        `<button class="overview-tab${i === 0 ? ' selected' : ''}" data-tab-idx="${i}">${t.label}</button>`,
-    )
-    .join('');
-
-  const modalHtml = `
-    <h3 class="modal-title">Leerlingrapport RTTI uitleg en leeradvies</h3>
-    <div id="rtti-confirm-slot"></div>
-    <div class="overview-tab-bar rtti-uitleg-tab-bar" id="rtti-uitleg-tabs">${tabButtons}</div>
-    <div id="rtti-uitleg-tab-content"></div>
-    <div class="rtti-uitleg-footer">
+  let selectTab = null; // set in onShow; the dialog calls onTab on open
+  openModal({
+    title: 'Leerlingrapport RTTI uitleg en leeradvies',
+    key: 'rtti-uitleg',
+    size: 'lg',
+    fixedHeight: true,
+    tabs: tabs.map((t, i) => ({ id: String(i), label: t.label })),
+    onTab: (id) => selectTab?.(Number(id)),
+    body: '<div id="rtti-uitleg-tab-content"></div>',
+    footerHtml: `
       <button class="btn btn--secondary" id="btn-rtti-uitleg-cancel">Annuleren</button>
-      <button class="btn btn--primary" id="btn-rtti-uitleg-save">Opslaan</button>
-    </div>
-  `;
-
-  showModal(
-    modalHtml,
-    (el) => {
+      <button class="btn btn--primary" id="btn-rtti-uitleg-save">Opslaan</button>`,
+    onShow: (el) => {
       let _dirty = false;
 
       function markDirty() {
         _dirty = true;
       }
 
-      function showUnsavedConfirm() {
-        const slot = el.querySelector('#rtti-confirm-slot');
-        if (slot.querySelector('.rtti-unsaved-confirm')) return; // already showing
-        const bar = document.createElement('div');
-        bar.className = 'rtti-unsaved-confirm';
-        bar.innerHTML =
-          '<span>Er zijn niet-opgeslagen wijzigingen. Toch sluiten?</span>' +
-          '<div class="rtti-unsaved-actions">' +
-          '<button class="btn btn--secondary btn--sm" id="btn-rtti-confirm-stay">Blijven bewerken</button>' +
-          '<button class="btn btn--danger btn--sm" id="btn-rtti-confirm-discard">Toch sluiten</button>' +
-          '</div>';
-        slot.appendChild(bar);
-        document.getElementById('modal-box').scrollTop = 0;
-        bar.querySelector('#btn-rtti-confirm-stay').addEventListener('click', () => bar.remove());
-        bar.querySelector('#btn-rtti-confirm-discard').addEventListener('click', () => {
-          _dirty = false;
-          cleanupAndClose();
-        });
-      }
-
-      function tryClose() {
-        if (_dirty) {
-          showUnsavedConfirm();
-        } else {
-          cleanupAndClose();
-        }
-      }
-
-      // Intercept overlay click and modal-close X button using capture phase
-      const overlay = document.getElementById('modal-overlay');
-      const modalCloseBtn = document.getElementById('modal-close');
-
-      function onOverlayCapture(e) {
-        if (e.target === overlay) {
-          e.stopImmediatePropagation();
-          tryClose();
-        }
-      }
-      function onModalCloseBtnCapture(e) {
-        e.stopImmediatePropagation();
-        tryClose();
-      }
-
-      function cleanupAndClose() {
-        overlay.removeEventListener('click', onOverlayCapture, true);
-        modalCloseBtn.removeEventListener('click', onModalCloseBtnCapture, true);
-        closeModal();
-      }
-
-      overlay.addEventListener('click', onOverlayCapture, true);
-      modalCloseBtn.addEventListener('click', onModalCloseBtnCapture, true);
+      // Unsaved changes: the shared close guard (✕, Escape, backdrop and
+      // Annuleren all ask first; U14).
+      guardModalClose(() => _dirty);
 
       function renderTab(idx) {
         el.querySelector('#rtti-uitleg-tab-content').innerHTML = buildTabHtml(
@@ -460,18 +414,15 @@ export async function openRttiUitlegModal() {
         }
       }
 
-      el.querySelector('#rtti-uitleg-tabs').addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-tab-idx]');
-        if (!btn) return;
+      selectTab = (idx) => {
         readCurrentTabIntoData(activeTab);
-        activeTab = Number(btn.dataset.tabIdx);
-        el.querySelectorAll('.overview-tab').forEach((b) =>
-          b.classList.toggle('selected', b.dataset.tabIdx === String(activeTab)),
-        );
+        activeTab = idx;
         renderTab(activeTab);
-      });
+      };
 
-      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () => tryClose());
+      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () =>
+        requestCloseModal(),
+      );
 
       el.querySelector('#btn-rtti-uitleg-save').addEventListener('click', async () => {
         readCurrentTabIntoData(activeTab);
@@ -494,7 +445,7 @@ export async function openRttiUitlegModal() {
         if (failed.length === 0) {
           _dirty = false;
           toast('RTTI uitleg en leeradvies opgeslagen.', 'success');
-          cleanupAndClose();
+          closeModal();
         } else if (results.some((r) => r.status === 'rejected' && r.reason?.code === 'conflict')) {
           const names = failed.map((t) => `tabblad ${t.label}`).join(', ');
           toast(
@@ -510,6 +461,5 @@ export async function openRttiUitlegModal() {
 
       renderTab(0);
     },
-    'modal-xl',
-  );
+  });
 }

@@ -3,6 +3,9 @@
 @import './styles/tokens.css';
 @import './styles/buttons.css';
 @import './styles/controls.css';
+@import './styles/dialog.css';
+@import './styles/skeleton.css';
+@import './styles/forms.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -131,6 +134,16 @@ body::after {
   display: block;
 }
 
+/* Title row and filter bar of the teacher tabs stay in view (V-10, spec 3.3):
+   sticky under the top bar, on the page background, flush with its edges. */
+.screen-head {
+  position: sticky;
+  top: 50px; /* #topbar */
+  z-index: 50;
+  margin: -24px -24px 0;
+  padding: 24px 24px 0;
+  background: var(--bg);
+}
 .screen-header {
   display: flex;
   align-items: center;
@@ -177,13 +190,6 @@ body::after {
   align-items: center;
   gap: 8px;
   font-weight: 500;
-}
-.toolbar select {
-  padding: 5px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--surface);
 }
 .toolbar select:disabled {
   opacity: 0.5;
@@ -600,15 +606,9 @@ body::after {
 
 /* Inline text input — inherits size/style from field modifier class */
 .school-field-input {
+  /* An input on the 3.2 look (controls.css), shown already focused. */
   flex: 1;
-  padding: 3px 8px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--text);
-  outline: none;
-  background: var(--surface);
+  border-color: var(--accent);
 }
 
 .school-field-naam.school-field-input {
@@ -633,39 +633,6 @@ body::after {
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--surface-2);
-}
-
-/* PTA toggle button: checkmark-style, grey unchecked / blue checked */
-.pta-btn {
-  width: var(--h-control);
-  height: var(--h-control);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 400;
-  color: var(--disabled);
-  transition:
-    background 0.1s,
-    color 0.1s,
-    border-color 0.1s;
-  flex-shrink: 0;
-}
-.pta-btn[data-checked='true'] {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-  font-weight: 700;
-}
-.pta-btn:disabled[data-checked='true'] {
-  background: var(--disabled);
-  border-color: var(--disabled);
-  color: var(--surface);
-  cursor: not-allowed;
 }
 
 /* ── Number spinner: fixed widths (component in styles/controls.css) ─────── */
@@ -748,7 +715,7 @@ body::after {
 }
 .form-group label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -763,8 +730,10 @@ body::after {
   width: 100%;
   min-width: 0;
 }
+/* Fields in a row are aligned on their labels (spec 3.7, components/form.ts). */
 .form-row {
   display: flex;
+  align-items: flex-start;
   gap: 12px;
 }
 .form-actions {
@@ -822,10 +791,12 @@ body::after {
 }
 .questions-table input[type='text'],
 .questions-table input[type='number'] {
+  /* Dense table (step 13 decision): 26 px, like the selects next to them. */
   width: 100%;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
   font-size: 12px;
 }
 
@@ -910,57 +881,6 @@ body::after {
 }
 
 /* ── Modal ────────────────────────────────────────────────────────────────── */
-#modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-#modal-overlay.hidden {
-  display: none;
-}
-
-/* In-app dialogs (confirmDialog, showReloadNotice in app.js): centered card over
-   a dimmed backdrop, optional bold title, message, buttons right-aligned with
-   Annuleren (secondary) left of the action (primary, or solid red when destructive). */
-.app-dialog-backdrop {
-  position: fixed;
-  inset: 0;
-  background: var(--scrim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-.app-dialog {
-  background: var(--surface);
-  border-radius: var(--r-btn);
-  padding: 20px 24px;
-  width: min(440px, 90vw);
-  box-shadow: var(--shadow-modal);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.app-dialog-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-.app-dialog p {
-  margin: 0;
-  line-height: 1.5;
-  white-space: pre-line;
-}
-.app-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
 /* Background notices (e.g. a colleague added an exam), top right, stay until clicked */
 #bg-notices {
   position: fixed;
@@ -1073,68 +993,38 @@ body::after {
     transform: translateX(16px);
   }
 }
-#modal-box {
-  background: var(--surface);
-  border-radius: var(--r-btn);
-  padding: 28px;
-  width: 680px;
-  max-width: 95vw;
-  max-height: 88vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: var(--shadow-modal);
-}
-/* Forms whose rows hold several 36 px toggle groups (Nieuwe toets, verzamelkaart). */
-#modal-box.modal-md {
-  width: 760px;
-}
-#modal-box.modal-xl {
+/* Legacy size classes on the dialog component (styles/dialog.css): all open at
+   the fixed top; the ones with tabs or lazy content have a fixed height. */
+.dlg.modal-overview {
   width: 960px;
+  height: var(--dlg-max-h);
 }
-/* Exam overview: anchored to the top, so its tabs stay in place when switching
-   between tabs of different heights. */
-#modal-box.modal-overview {
-  width: 960px;
-  align-self: flex-start;
-  margin-top: 5vh;
-  max-height: 90vh;
-}
-#modal-box.modal-scores {
-  width: min(95vw, 1600px);
-  max-height: 94vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.dlg.modal-scores {
+  width: min(100%, 1600px);
+  height: var(--dlg-max-h);
 }
 /* Only the grids scroll, so the header bar (title, buttons, N-term) stays in view. */
-#modal-box.modal-scores #modal-content {
-  flex: 1 1 auto;
-  min-height: 0;
+.dlg.modal-scores .dlg-body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-#modal-box.modal-scores #sc-grid-container {
+.dlg.modal-scores #sc-grid-container {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
 }
-#modal-box.modal-profile {
-  width: 92vw;
-  max-width: 1400px;
-  max-height: 92vh;
+.dlg.modal-profile {
+  width: min(100%, 1400px);
+  height: var(--dlg-max-h);
 }
 /* Rapport PDF viewer opened from the Toetsen screen */
-#modal-box.modal-pdf {
-  width: min(95vw, 1100px);
-  height: 92vh;
-  max-height: 92vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.dlg.modal-pdf {
+  width: 1100px;
+  height: var(--dlg-max-h);
 }
-#modal-box.modal-pdf #modal-content {
-  flex: 1;
-  min-height: 0;
+.dlg.modal-pdf .dlg-body {
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -1302,62 +1192,13 @@ body::after {
 .og-result-bar {
   margin-bottom: 10px;
 }
-#modal-box h3 {
-  font-size: 17px;
-  margin-bottom: 16px;
-}
-#modal-box h4 {
+.dlg-body h4 {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin: 14px 0 8px;
-}
-#modal-close {
-  position: absolute;
-  top: 14px;
-  right: 16px;
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: var(--muted);
-}
-#modal-close:hover {
-  color: var(--text);
-}
-
-/* ── Exam overview tabs ───────────────────────────────────────────────────── */
-.overview-tab-bar {
-  display: flex;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 16px;
-}
-.overview-tab {
-  flex: 1;
-  padding: 7px 4px;
-  border: none;
-  border-bottom: 3px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: -2px;
-  transition: color 0.15s;
-  white-space: nowrap;
-}
-.overview-tab:hover {
-  color: var(--text);
-}
-.overview-tab:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.overview-tab.selected {
-  color: var(--accent-text);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
 }
 
 /* Charts inside modal */
@@ -1723,13 +1564,13 @@ code {
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  height: 30px;
-  padding: 0 10px;
+  height: var(--h-control);
+  padding: 0 12px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--text);
   text-align: left;
   transition:
@@ -1989,8 +1830,8 @@ code {
 /* Textarea inside form-group */
 .form-group textarea {
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
   font-size: 13px;
   background: var(--surface);
   box-sizing: border-box;
@@ -2056,6 +1897,10 @@ code {
 }
 
 /* ── Over Maatwerk ───────────────────────────────────────────────────────── */
+.about-modal h3 {
+  font-size: 17px;
+  margin: 16px 0 8px;
+}
 .about-modal p {
   margin: 0 0 8px;
   line-height: 1.45;
@@ -2453,13 +2298,6 @@ code {
 }
 
 /* ── RTTI uitleg / leeradvies modal ──────────────────────────────────────── */
-.rtti-uitleg-tab-bar {
-  flex-wrap: wrap;
-}
-.rtti-uitleg-tab-bar .overview-tab {
-  flex: 0 0 auto;
-  min-width: 36px;
-}
 .rtti-uitleg-section-header {
   display: flex;
   align-items: center;
@@ -2528,9 +2366,9 @@ code {
   min-height: 56px;
   font-size: 12px;
   padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
+  background: var(--surface);
   color: var(--text);
   font-family: inherit;
   box-sizing: border-box;
@@ -2598,38 +2436,6 @@ code {
   min-width: 72px;
   text-align: right;
 }
-.rtti-uitleg-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-#rtti-confirm-slot:not(:empty) {
-  margin-bottom: 12px;
-}
-.rtti-unsaved-confirm {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--warn-soft);
-  border: 1px solid var(--warn);
-  border-radius: var(--r-btn);
-  font-size: 13px;
-  color: var(--text);
-}
-.rtti-unsaved-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
 /* ── Disabled toggle button (greyed out, not interactive) ────────────────── */
 .tog-btn-disabled {
   opacity: 0.35;
@@ -2805,20 +2611,8 @@ td.grade-override-stale::after {
 .u-d-block {
   display: block !important;
 }
-.u-d-inline-block {
-  display: inline-block !important;
-}
 .u-items-center {
   align-items: center !important;
-}
-.u-items-end {
-  align-items: flex-end !important;
-}
-.u-items-start {
-  align-items: flex-start !important;
-}
-.u-justify-center {
-  justify-content: center !important;
 }
 .u-justify-end {
   justify-content: flex-end !important;
@@ -2867,9 +2661,6 @@ td.grade-override-stale::after {
 }
 .u-gap-20 {
   gap: 20px !important;
-}
-.u-grid-4x28 {
-  grid-template-columns: repeat(4, 28px) !important;
 }
 .u-bg-highlight {
   background: var(--accent-soft) !important;
@@ -2931,26 +2722,14 @@ td.grade-override-stale::after {
 .u-fs-13 {
   font-size: 13px !important;
 }
-.u-fs-14 {
-  font-size: 14px !important;
-}
 .u-fs-16 {
   font-size: 16px !important;
-}
-.u-fs-17 {
-  font-size: 17px !important;
 }
 .u-italic {
   font-style: italic !important;
 }
-.u-not-italic {
-  font-style: normal !important;
-}
 .u-fw-600 {
   font-weight: 600 !important;
-}
-.u-fw-normal {
-  font-weight: normal !important;
 }
 .u-uppercase {
   text-transform: uppercase !important;
@@ -2961,9 +2740,6 @@ td.grade-override-stale::after {
 .u-text-right {
   text-align: right !important;
 }
-.u-ellipsis {
-  text-overflow: ellipsis !important;
-}
 .u-nowrap {
   white-space: nowrap !important;
 }
@@ -2972,9 +2748,6 @@ td.grade-override-stale::after {
 }
 .u-relative {
   position: relative !important;
-}
-.u-overflow-hidden {
-  overflow: hidden !important;
 }
 .u-overflow-x-auto {
   overflow-x: auto !important;
@@ -3069,9 +2842,6 @@ td.grade-override-stale::after {
 .u-my-8-4 {
   margin: 8px 0 4px !important;
 }
-.u-bleed-28 {
-  margin: 0 -28px -28px !important;
-}
 .u-mb-0 {
   margin-bottom: 0 !important;
 }
@@ -3105,9 +2875,6 @@ td.grade-override-stale::after {
 .u-mt-10 {
   margin-top: 10px !important;
 }
-.u-mt-12 {
-  margin-top: 12px !important;
-}
 .u-mt-14 {
   margin-top: 14px !important;
 }
@@ -3129,12 +2896,6 @@ td.grade-override-stale::after {
 .u-p-panel {
   padding: 10px 12px 14px !important;
 }
-.u-p-bleed-28 {
-  padding: 16px 28px 28px !important;
-}
-.u-px-2 {
-  padding: 0 2px !important;
-}
 .u-px-6 {
   padding: 0 6px !important;
 }
@@ -3152,9 +2913,6 @@ td.grade-override-stale::after {
 }
 .u-p-4-6 {
   padding: 4px 6px !important;
-}
-.u-pr-30 {
-  padding-right: 30px !important;
 }
 
 /* Icon picker of the observatie modal (screens/observaties.js) */
@@ -3368,9 +3126,6 @@ td.grade-override-stale::after {
 }
 
 /* ── PIN login and account (Step 7b) ─────────────────────────────────────── */
-#modal-box.modal-narrow {
-  width: 420px;
-}
 .pin-input {
   font-size: 20px;
   letter-spacing: 0.3em;
@@ -3381,10 +3136,6 @@ td.grade-override-stale::after {
   font-size: 18px;
   text-transform: uppercase;
   width: 12em;
-}
-.pin-role {
-  color: var(--muted);
-  margin-top: -8px;
 }
 .pin-error {
   color: var(--danger);
@@ -3443,12 +3194,4 @@ td.grade-override-stale::after {
 .voorzitter-row {
   align-items: center;
   margin-bottom: 8px;
-}
-.voorzitter-row select {
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--surface);
 }

@@ -46,7 +46,7 @@ test('U6: the RTTI uitleg modal keeps teacher text as typed', async ({ page }) =
   await login(page);
   await page.locator('.nav-btn[data-screen="toetsen"]').click();
   await page.locator('#btn-toetsen-rtti-uitleg').click();
-  await page.locator('.rtti-uitleg-tab-bar button', { hasText: /^3$/ }).click();
+  await page.locator('.dlg-tabs [role="tab"]', { hasText: /^3$/ }).click();
   await expect(page.locator('textarea[data-uitleg="R"]')).toHaveValue(NASTY);
 });
 
@@ -97,7 +97,7 @@ test('U9: after a failed save the editor can still be closed, after confirming',
   await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
   await frame.locator('.cm-content').click();
   await page.keyboard.type('x');
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await frame.locator('#btn-app-title').click(); // save fails -> asks; cancelled: stays open
   await expect(dialog).toContainText('niet opgeslagen');
   await dialog.getByRole('button', { name: 'Annuleren' }).click();
@@ -156,7 +156,7 @@ test('D34: a group CSV import asks before overwriting an existing group', async 
   await page.locator('#f-csv-grp-import').click();
 
   // Old vs new per overwritten group: its students are removed (red rows).
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await expect(dialog).toContainText('3a nat');
   await expect(dialog.locator('tr.diff-removed')).toHaveCount(before.student_ids.length);
   await expect(dialog).not.toContainText('nieuwe groep');
@@ -313,7 +313,7 @@ test('B24: a question added after a deletion gets a new id', async ({ page }) =>
   await page.locator('.qi-del[data-qi="0"]').click();
   await page.locator('#f-addq').click();
   await page.locator('#f-esave').click();
-  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
   await expect(async () => {
     const exam = await readMockJson<{ questions: { id: string }[] }>(
       page,
@@ -340,8 +340,8 @@ test('U8: a resit description is shown as text in the group overview', async ({ 
   await login(page);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   await page.getByRole('button', { name: '3a nat', exact: true }).click();
-  const badges = page.locator('#modal-box .attempt-badge');
-  await expect(page.locator('#modal-box b.u8')).toHaveCount(0);
+  const badges = page.locator('.dlg .attempt-badge');
+  await expect(page.locator('.dlg b.u8')).toHaveCount(0);
   // In the fixture the resit is the best grade of some 3a students.
   await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
 });

@@ -117,7 +117,7 @@ export const VIEWS: View[] = [
     target: 'modal',
     open: async (p) => {
       await click('toetsen', '[data-action="exam-overview"]')(p);
-      await p.locator(`#modal-box [data-tab="${tab}"]`).click();
+      await p.locator(`.dlg [data-tab="${tab}"]`).click();
     },
   })),
   ...['cijferverloop', 'analyse'].map((tab): View => ({
@@ -126,7 +126,7 @@ export const VIEWS: View[] = [
     target: 'modal',
     open: async (p) => {
       await click('leerlingen', '[data-action="profile"]')(p);
-      await p.locator(`#modal-box [data-tab="${tab}"]`).click();
+      await p.locator(`.dlg [data-tab="${tab}"]`).click();
     },
   })),
   {
