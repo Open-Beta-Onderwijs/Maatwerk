@@ -365,3 +365,6 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   setting" failed on PR #8 (2026-11-05) at its first step: the mock preview still showed the
   initial page instead of "Goed" after 5 s; a rerun passed. Probably a slow runner; give that
   first wait a longer timeout or wait for the compile event instead of the text.
+  Again locally on 2026-11-05 (step 14, full suite with 8 workers), this time at its **last**
+  step: after the time-limit error the preview showed page " 1" instead of keeping "Goed".
+  Passed 6x in a row alone. Look at what the mock renders for `#traag` when it times out.

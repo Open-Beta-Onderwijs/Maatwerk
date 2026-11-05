@@ -181,7 +181,7 @@ test('a sectievoorzitter edits only the composition and teachers of the vak grou
   await expect(page.locator('.docent-toggle').first()).toBeEnabled();
   await expect(page.locator('[data-action="del-group"]')).toHaveCount(0);
   await page.locator('.docent-toggle').first().click();
-  await page.locator('#f-g-save').click();
+  await page.locator('.dlg [data-action="save"]').click();
   await expect(page.locator('.toast').last()).toHaveText('Groep opgeslagen.');
   const saved = await readMockJson<{ _meta: { updatedBy: string } }>(
     page,

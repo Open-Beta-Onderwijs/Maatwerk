@@ -3,6 +3,7 @@
 import {
   toast,
   showModal,
+  openModal,
   closeModal,
   escHtml,
   guardModalClose,
@@ -85,16 +86,19 @@ export async function printOutput(outputId, name) {
 export function openRapportModal(examId, year) {
   const exam = Store.getExamsSync(year).find((e) => e.id === examId);
   if (!exam) return;
-  showModal(
-    `<h3 class="modal-title">Rapport — ${escHtml(exam.title)}</h3>
-     <div class="rapport-modal-content"></div>`,
-    (el) => showRapportPdf(el.querySelector('.rapport-modal-content'), exam, year),
-    'modal-pdf',
-    () => {
+  const dialog = openModal({
+    key: 'rapport',
+    title: `Rapport: ${exam.title}`,
+    subtitle: `Jaarlaag ${exam.jaarlaag} · ${year}`,
+    className: 'modal-pdf',
+    fixedHeight: true,
+    body: '<div class="rapport-modal-content"></div>',
+    onClose: () => {
       if (_printListener) window.removeEventListener('message', _printListener);
       _printListener = null;
     },
-  );
+  });
+  showRapportPdf(dialog.body.querySelector('.rapport-modal-content'), exam, year);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

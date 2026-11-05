@@ -4,6 +4,7 @@
 @import './styles/buttons.css';
 @import './styles/controls.css';
 @import './styles/dialog.css';
+@import './styles/skeleton.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -132,6 +133,16 @@ body::after {
   display: block;
 }
 
+/* Title row and filter bar of the teacher tabs stay in view (V-10, spec 3.3):
+   sticky under the top bar, on the page background, flush with its edges. */
+.screen-head {
+  position: sticky;
+  top: 50px; /* #topbar */
+  z-index: 50;
+  margin: -24px -24px 0;
+  padding: 24px 24px 0;
+  background: var(--bg);
+}
 .screen-header {
   display: flex;
   align-items: center;

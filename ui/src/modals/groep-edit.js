@@ -3,6 +3,7 @@
 // ── Group add/edit & CSV import modals ────────────────────────────────────────
 import {
   showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -194,9 +195,18 @@ export async function openGroupModal(id) {
     </div>
   `;
 
-  showModal(
-    `
-    <h3>${id ? 'Groep bewerken' : 'Groep toevoegen'}</h3>
+  let save = null; // set below; the footer's Opslaan calls it
+  const dialog = openModal({
+    key: 'group-edit',
+    title: id ? 'Groep bewerken' : 'Groep toevoegen',
+    subtitle: id ? `${group.name} · ${year}` : year,
+    size: 'lg',
+    fixedHeight: isEdit,
+    footer: [
+      { label: 'Annuleren', variant: 'secondary', onClick: 'close' },
+      { label: 'Opslaan', variant: 'primary', id: 'save', onClick: () => save?.() },
+    ],
+    body: `
     ${fieldsHtml}
     ${
       !isEdit
@@ -215,217 +225,211 @@ export async function openGroupModal(id) {
           : ''
     }
     ${isEdit ? `<div class="u-mt-16 form-group">${studentsSection}</div>` : ''}
-    <div class="u-mt-16 form-actions">
-      <button class="btn btn--primary" id="f-g-save">Opslaan</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
   `,
-    (el) => {
-      // Someone else changed or removed this group while it is being edited.
-      if (id) {
-        onModalSync('group', async (ev) => {
-          if (ev.id !== id || ev.year !== year) return;
-          const who = await changedByName(ev);
-          if (!ev.after) {
-            showReloadNotice(`Deze groep is verwijderd door ${who}.`, () => {
-              closeModal();
-              renderGroepen();
-            });
-          } else {
-            showReloadNotice(
-              `Deze groep is gewijzigd door ${who}. Het venster wordt opnieuw geladen.`,
-              () => openGroupModal(id),
-            );
-          }
-        });
-      }
-
-      // Helper to refresh docent section
-      const updateDocentSection = () => {
-        const selectedSS = [...el.querySelectorAll('.ss-toggle.selected')].map((b) => b.dataset.ss);
-        const selectedDocenten = [...el.querySelectorAll('.docent-toggle.selected')].map(
-          (b) => b.dataset.docentId,
-        );
-        const selectedVak = el.querySelector('.vak-g-btn.selected')?.dataset.vak ?? null;
-        const docentContainer = el.querySelector('#f-g-docenten');
-        docentContainer.innerHTML = buildDocentHtml(selectedSS, selectedDocenten, selectedVak);
-        docentContainer.querySelectorAll('.docent-toggle').forEach((btn) => {
-          btn.addEventListener('click', () => btn.classList.toggle('selected'));
-        });
-      };
-
-      // Vak single-select + update docents
-      el.querySelectorAll('.vak-g-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          el.querySelectorAll('.vak-g-btn').forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          updateDocentSection();
-        });
+  });
+  {
+    const el = dialog.body;
+    // Someone else changed or removed this group while it is being edited.
+    if (id) {
+      onModalSync('group', async (ev) => {
+        if (ev.id !== id || ev.year !== year) return;
+        const who = await changedByName(ev);
+        if (!ev.after) {
+          showReloadNotice(`Deze groep is verwijderd door ${who}.`, () => {
+            closeModal();
+            renderGroepen();
+          });
+        } else {
+          showReloadNotice(
+            `Deze groep is gewijzigd door ${who}. Het venster wordt opnieuw geladen.`,
+            () => openGroupModal(id),
+          );
+        }
       });
+    }
 
-      // Jaarlaag single-select
-      el.querySelectorAll('.jl-toggle').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          el.querySelectorAll('.jl-toggle').forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-        });
-      });
-
-      // Schoolsoort multi-select + update docents
-      el.querySelectorAll('.ss-toggle').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          btn.classList.toggle('selected');
-          updateDocentSection();
-        });
-      });
-
-      // Initial docent toggle listeners
-      el.querySelectorAll('.docent-toggle').forEach((btn) => {
+    // Helper to refresh docent section
+    const updateDocentSection = () => {
+      const selectedSS = [...el.querySelectorAll('.ss-toggle.selected')].map((b) => b.dataset.ss);
+      const selectedDocenten = [...el.querySelectorAll('.docent-toggle.selected')].map(
+        (b) => b.dataset.docentId,
+      );
+      const selectedVak = el.querySelector('.vak-g-btn.selected')?.dataset.vak ?? null;
+      const docentContainer = el.querySelector('#f-g-docenten');
+      docentContainer.innerHTML = buildDocentHtml(selectedSS, selectedDocenten, selectedVak);
+      docentContainer.querySelectorAll('.docent-toggle').forEach((btn) => {
         btn.addEventListener('click', () => btn.classList.toggle('selected'));
       });
+    };
 
-      // Filter button: toggle showing only students from this group's jaarlaag
-      const filterBtn = el.querySelector('#f-g-jl-filter');
-      const applyFilter = (active) => {
-        el.querySelectorAll('tbody tr').forEach((row) => {
-          row.style.display =
-            !active || row.dataset.stamklasJl === String(group.jaarlaag) ? '' : 'none';
-        });
-      };
-      if (filterBtn) {
-        applyFilter(true);
-        filterBtn.addEventListener('click', () => {
-          const isActive = filterBtn.dataset.active === '1';
-          filterBtn.dataset.active = isActive ? '0' : '1';
-          filterBtn.classList.toggle('btn--primary', !isActive);
-          filterBtn.classList.toggle('btn--secondary', isActive);
-          applyFilter(!isActive);
-        });
-      }
-
-      // Conflict resolution: checking a box may uncheck others for the same student
-      if (isEdit) {
-        el.querySelector('tbody')?.addEventListener('change', (e) => {
-          if (e.target.type !== 'checkbox' || !e.target.checked) return;
-          const sid = e.target.dataset.studentId;
-          const sub = e.target.dataset.subcategory;
-          el.querySelectorAll(`tbody input[type="checkbox"][data-student-id="${sid}"]`).forEach(
-            (cb) => {
-              if (cb === e.target) return;
-              if (group.subject === 'wi') {
-                if (sub && cb.dataset.subcategory === sub) cb.checked = false;
-              } else {
-                cb.checked = false;
-              }
-            },
-          );
-        });
-      }
-
-      el.querySelector('#f-g-save').addEventListener('click', async () => {
-        const name = locked ? group.name : el.querySelector('#f-gname').value.trim();
-        if (!name) {
-          toast('Vul een naam in.', 'error');
-          return;
-        }
-
-        const jlSelected = el.querySelector('.jl-toggle.selected');
-        if (!jlSelected) {
-          toast('Selecteer een jaarlaag.', 'error');
-          return;
-        }
-        const jaarlaag = jlSelected.dataset.jl;
-
-        const schoolsoort = [...el.querySelectorAll('.ss-toggle.selected')].map(
-          (b) => b.dataset.ss,
-        );
-        if (schoolsoort.length === 0) {
-          toast('Selecteer minimaal één schoolsoort.', 'error');
-          return;
-        }
-
-        const docenten = [...el.querySelectorAll('.docent-toggle.selected')].map(
-          (b) => b.dataset.docentId,
-        );
-
-        const vakSelected = el.querySelector('.vak-g-btn.selected');
-        if (!vakSelected) {
-          toast('Selecteer een vak.', 'error');
-          return;
-        }
-        const resolvedSubject = vakSelected.dataset.vak;
-        const parsed = Store.parseGroupName(name, resolvedSubject);
-        if (resolvedSubject === 'wi' && !parsed.subcategory) {
-          toast(
-            'Kan de subcategorie niet afleiden uit de naam. Gebruik bijv. 4wisa1, 5wisb2 of 3wi1 voor onderbouw.',
-            'error',
-          );
-          return;
-        }
-
-        if (isEdit) {
-          const byGroup = {};
-          groupsInJaarlaag.forEach((g) => (byGroup[g.id] = []));
-          el.querySelectorAll('tbody input[type="checkbox"]:checked').forEach((cb) => {
-            if (byGroup[cb.dataset.groupId]) byGroup[cb.dataset.groupId].push(cb.dataset.studentId);
-          });
-
-          const allGroups = await Store.getGroups(year);
-          for (const g of groupsInJaarlaag) {
-            const existing = allGroups.find((ag) => ag.id === g.id);
-            if (!existing) continue;
-            const newIds = byGroup[g.id] ?? [];
-            const isTarget = g.id === id;
-            const nameChanged = isTarget && !locked && name !== existing.name;
-            const idsChanged =
-              [...existing.student_ids].sort((a, b) => a - b).join(',') !==
-              [...newIds].sort((a, b) => a - b).join(',');
-            const fieldsChanged =
-              isTarget &&
-              (JSON.stringify(existing.schoolsoort ?? []) !== JSON.stringify(schoolsoort) ||
-                JSON.stringify(existing.docenten ?? []) !== JSON.stringify(docenten) ||
-                (!locked && String(existing.jaarlaag) !== jaarlaag));
-            if (!idsChanged && !nameChanged && !fieldsChanged) continue;
-
-            let updated = { ...existing, student_ids: newIds };
-            if (isTarget) {
-              updated = { ...updated, schoolsoort, docenten };
-              if (!locked) {
-                updated = {
-                  ...updated,
-                  name,
-                  jaarlaag,
-                  subject: resolvedSubject,
-                  subcategory: parsed.subcategory ?? undefined,
-                };
-              }
-            }
-            await Store.upsertGroup(updated, year);
-          }
-        } else {
-          const gid = Store.makeGroupId();
-          await Store.upsertGroup(
-            {
-              id: gid,
-              name,
-              jaarlaag,
-              subject: resolvedSubject,
-              schoolsoort,
-              docenten,
-              subcategory: parsed.subcategory ?? undefined,
-              student_ids: [],
-            },
-            year,
-          );
-        }
-
-        closeModal();
-        toast('Groep opgeslagen.', 'success');
-        renderGroepen();
+    // Vak single-select + update docents
+    el.querySelectorAll('.vak-g-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        el.querySelectorAll('.vak-g-btn').forEach((b) => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        updateDocentSection();
       });
-    },
-    'modal-xl',
-  );
+    });
+
+    // Jaarlaag single-select
+    el.querySelectorAll('.jl-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        el.querySelectorAll('.jl-toggle').forEach((b) => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
+    });
+
+    // Schoolsoort multi-select + update docents
+    el.querySelectorAll('.ss-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('selected');
+        updateDocentSection();
+      });
+    });
+
+    // Initial docent toggle listeners
+    el.querySelectorAll('.docent-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => btn.classList.toggle('selected'));
+    });
+
+    // Filter button: toggle showing only students from this group's jaarlaag
+    const filterBtn = el.querySelector('#f-g-jl-filter');
+    const applyFilter = (active) => {
+      el.querySelectorAll('tbody tr').forEach((row) => {
+        row.style.display =
+          !active || row.dataset.stamklasJl === String(group.jaarlaag) ? '' : 'none';
+      });
+    };
+    if (filterBtn) {
+      applyFilter(true);
+      filterBtn.addEventListener('click', () => {
+        const isActive = filterBtn.dataset.active === '1';
+        filterBtn.dataset.active = isActive ? '0' : '1';
+        filterBtn.classList.toggle('btn--primary', !isActive);
+        filterBtn.classList.toggle('btn--secondary', isActive);
+        applyFilter(!isActive);
+      });
+    }
+
+    // Conflict resolution: checking a box may uncheck others for the same student
+    if (isEdit) {
+      el.querySelector('tbody')?.addEventListener('change', (e) => {
+        if (e.target.type !== 'checkbox' || !e.target.checked) return;
+        const sid = e.target.dataset.studentId;
+        const sub = e.target.dataset.subcategory;
+        el.querySelectorAll(`tbody input[type="checkbox"][data-student-id="${sid}"]`).forEach(
+          (cb) => {
+            if (cb === e.target) return;
+            if (group.subject === 'wi') {
+              if (sub && cb.dataset.subcategory === sub) cb.checked = false;
+            } else {
+              cb.checked = false;
+            }
+          },
+        );
+      });
+    }
+
+    save = async () => {
+      const name = locked ? group.name : el.querySelector('#f-gname').value.trim();
+      if (!name) {
+        toast('Vul een naam in.', 'error');
+        return;
+      }
+
+      const jlSelected = el.querySelector('.jl-toggle.selected');
+      if (!jlSelected) {
+        toast('Selecteer een jaarlaag.', 'error');
+        return;
+      }
+      const jaarlaag = jlSelected.dataset.jl;
+
+      const schoolsoort = [...el.querySelectorAll('.ss-toggle.selected')].map((b) => b.dataset.ss);
+      if (schoolsoort.length === 0) {
+        toast('Selecteer minimaal één schoolsoort.', 'error');
+        return;
+      }
+
+      const docenten = [...el.querySelectorAll('.docent-toggle.selected')].map(
+        (b) => b.dataset.docentId,
+      );
+
+      const vakSelected = el.querySelector('.vak-g-btn.selected');
+      if (!vakSelected) {
+        toast('Selecteer een vak.', 'error');
+        return;
+      }
+      const resolvedSubject = vakSelected.dataset.vak;
+      const parsed = Store.parseGroupName(name, resolvedSubject);
+      if (resolvedSubject === 'wi' && !parsed.subcategory) {
+        toast(
+          'Kan de subcategorie niet afleiden uit de naam. Gebruik bijv. 4wisa1, 5wisb2 of 3wi1 voor onderbouw.',
+          'error',
+        );
+        return;
+      }
+
+      if (isEdit) {
+        const byGroup = {};
+        groupsInJaarlaag.forEach((g) => (byGroup[g.id] = []));
+        el.querySelectorAll('tbody input[type="checkbox"]:checked').forEach((cb) => {
+          if (byGroup[cb.dataset.groupId]) byGroup[cb.dataset.groupId].push(cb.dataset.studentId);
+        });
+
+        const allGroups = await Store.getGroups(year);
+        for (const g of groupsInJaarlaag) {
+          const existing = allGroups.find((ag) => ag.id === g.id);
+          if (!existing) continue;
+          const newIds = byGroup[g.id] ?? [];
+          const isTarget = g.id === id;
+          const nameChanged = isTarget && !locked && name !== existing.name;
+          const idsChanged =
+            [...existing.student_ids].sort((a, b) => a - b).join(',') !==
+            [...newIds].sort((a, b) => a - b).join(',');
+          const fieldsChanged =
+            isTarget &&
+            (JSON.stringify(existing.schoolsoort ?? []) !== JSON.stringify(schoolsoort) ||
+              JSON.stringify(existing.docenten ?? []) !== JSON.stringify(docenten) ||
+              (!locked && String(existing.jaarlaag) !== jaarlaag));
+          if (!idsChanged && !nameChanged && !fieldsChanged) continue;
+
+          let updated = { ...existing, student_ids: newIds };
+          if (isTarget) {
+            updated = { ...updated, schoolsoort, docenten };
+            if (!locked) {
+              updated = {
+                ...updated,
+                name,
+                jaarlaag,
+                subject: resolvedSubject,
+                subcategory: parsed.subcategory ?? undefined,
+              };
+            }
+          }
+          await Store.upsertGroup(updated, year);
+        }
+      } else {
+        const gid = Store.makeGroupId();
+        await Store.upsertGroup(
+          {
+            id: gid,
+            name,
+            jaarlaag,
+            subject: resolvedSubject,
+            schoolsoort,
+            docenten,
+            subcategory: parsed.subcategory ?? undefined,
+            student_ids: [],
+          },
+          year,
+        );
+      }
+
+      dialog.close();
+      toast('Groep opgeslagen.', 'success');
+      renderGroepen();
+    };
+  }
 }
 
 export async function deleteGroup(id) {

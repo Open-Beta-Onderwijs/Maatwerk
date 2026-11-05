@@ -22,6 +22,9 @@ export type DialogSize = 'sm' | 'md' | 'form' | 'lg' | 'xl' | 'full';
 export interface DialogTab {
   id: string;
   label: string;
+  disabled?: boolean;
+  /** Tooltip (e.g. why the tab is disabled). */
+  title?: string;
 }
 
 export interface DialogButton {
@@ -74,6 +77,13 @@ export interface DialogOptions {
   bodyId?: string;
   /** Id for the dialog element (legacy `modal-box`). */
   dialogId?: string;
+  /** Extra classes on the body (e.g. `dlg-body--tinted`). */
+  bodyClass?: string;
+  /**
+   * Modals with the same key replace each other instead of stacking (a
+   * refresh, the legacy showModal). Used by app.js openModal.
+   */
+  key?: string;
 }
 
 const CLOSE_ICON =
@@ -159,7 +169,7 @@ export class Dialog {
             ? `<nav class="dlg-tabs" role="tablist">${opts.tabs
                 .map(
                   (t) =>
-                    `<button type="button" role="tab" class="dlg-tab" data-tab="${esc(t.id)}" aria-selected="false">${esc(t.label)}</button>`,
+                    `<button type="button" role="tab" class="dlg-tab" data-tab="${esc(t.id)}" aria-selected="false"${t.disabled ? ' disabled' : ''}${t.title ? ` title="${esc(t.title)}"` : ''}>${esc(t.label)}</button>`,
                 )
                 .join('')}</nav>`
             : ''
@@ -187,7 +197,7 @@ export class Dialog {
     }
 
     this.body = document.createElement('div');
-    this.body.className = 'dlg-body';
+    this.body.className = ['dlg-body', opts.bodyClass ?? ''].filter(Boolean).join(' ');
     if (opts.bodyId) this.body.id = opts.bodyId;
     if (typeof opts.body === 'string') this.body.innerHTML = opts.body;
     else if (opts.body) this.body.append(opts.body);
@@ -267,6 +277,10 @@ export class Dialog {
     if (this.opts.tabs?.length) {
       this.selectTab(this.opts.activeTab ?? this.opts.tabs[0]!.id);
     }
+  }
+
+  get key(): string | undefined {
+    return this.opts.key;
   }
 
   get isOpen(): boolean {

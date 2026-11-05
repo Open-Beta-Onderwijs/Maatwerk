@@ -177,8 +177,15 @@ export function modalOpen() {
   return _modals.length > 0;
 }
 
-/** Structured modal (see DialogOptions); stacks on whatever is open. */
+/**
+ * Structured modal (see DialogOptions in components/dialog.ts); stacks on
+ * whatever is open, except that it replaces a current modal with the same
+ * `key` (a refresh re-opens the modal in place).
+ */
 export function openModal(opts) {
+  const prev = currentModal();
+  // U15: the replaced modal closes properly (cleanups, charts, its onClose).
+  if (opts.key && prev?.key === opts.key) prev.close();
   const d = openDialog({
     ...opts,
     onClose: () => {
@@ -188,28 +195,26 @@ export function openModal(opts) {
     },
   });
   _modals.push(d);
+  // Before any measuring (charts): see src/legacy/style-data.ts.
+  applyStyleData(d.body);
   return d;
 }
 
 const LEGACY_SIZES = { 'modal-md': 'form', 'modal-xl': 'lg' };
 
 export function showModal(html, onShow, wide = false, onClose) {
-  const prev = currentModal();
-  // U15: the replaced modal closes properly (cleanups, charts, its onClose).
-  if (prev?.el.classList.contains('dlg--legacy')) prev.close();
   const size = wide === true ? 'lg' : (LEGACY_SIZES[wide] ?? 'md');
   const extra = typeof wide === 'string' && !LEGACY_SIZES[wide] ? ` ${wide}` : '';
   const d = openModal({
     body: html,
     size,
     className: `dlg--legacy${extra}`,
+    key: 'legacy',
     dialogId: 'modal-box',
     bodyId: 'modal-content',
     onClose,
   });
   d.el.querySelector('.dlg-close')?.setAttribute('id', 'modal-close');
-  // Before onShow, which may measure (charts): see src/legacy/style-data.ts.
-  applyStyleData(d.body);
   if (onShow) onShow(d.body);
   return d;
 }
