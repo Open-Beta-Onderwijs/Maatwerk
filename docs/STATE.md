@@ -1,13 +1,13 @@
 # State
 
-Last updated: 2026-11-05 (step 15 in progress) Branch: `step/15-shell` Last tags: `v0.5.0`, `step-14`, `v0.4.1`,
+Last updated: 2026-11-05 (step 15 done, 0.6.0) Branch: `main` Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`,
 `step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
 `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 15 (Shell, M).** Branch `step/15-shell` (from `main` `2688784`). Baseline green (cargo
-test, Vitest). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
+**Step 15 done** (merged, tagged `step-15`, version 0.6.0). **Next: step 16** (Platforms: macOS and
+Linux; L, 16a/16b). Step 15 was: branch `step/15-shell` (from `main` `2688784`). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
 decision 5.
 
 ## Step 15 progress
@@ -70,9 +70,10 @@ decision 5.
 9. **Done:** review (`docs/reviews/step-15.md`): 0 blockers, 2 majors (read-only messages and
    banner while running; read-only browsing), both fixed with tests; most minors and nits fixed,
    rest in `docs/backlog.md` "From Step 15".
-10. **Waiting for the user:** visual diff vs the step 14 baselines (every screen's top bar, the
-    login badges; new views `user-menu-*`). Then update baselines, merge `step/15-shell` into
-    `main` (merge commit), tag `step-15` and `v0.6.0`.
+10. **Done:** user decisions (2026-11-05): no login without a PIN on a read-only app (fine, rare);
+    a newer schema stops older apps at the start screen (fine, rare); tab icons are our own
+    drawings (checked against Lucide, THIRD_PARTY_LICENSES.md updated). Visual diff OK; local
+    baselines updated (117 views). Merged into `main`, tagged `step-15` and `v0.6.0`.
 
 ## Step 14a progress
 

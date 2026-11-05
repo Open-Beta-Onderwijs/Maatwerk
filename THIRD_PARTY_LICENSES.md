@@ -57,11 +57,11 @@ Step 3b (own score grid, ADR-0004); the npm licence check rejects it.
 
 ## Assets
 
-| Asset                                      | Source                                                                                      | Licence                                                                     |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| App icon (`src-tauri/icons/`)              | Generated from `overig/maatwerk_icon.png` in the reference repo                             | AGPL-3.0-or-later (author of the reference repo is the author of this repo) |
-| Logo and wordmark (`ui/src/assets/brand/`) | Phase 2 design (`docs/phase-2/design/assets/`), traced from the app icon; outlines, no font | AGPL-3.0-or-later                                                           |
-| Tab-bar icons (`ui/index.html`)            | Phase 2 design boards 1 and 12, drawn in the style of Lucide (lucide.dev)                   | AGPL-3.0-or-later; Lucide itself is ISC (Copyright (c) Lucide Contributors) |
+| Asset                                      | Source                                                                                                                                                                                                                                                | Licence                                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| App icon (`src-tauri/icons/`)              | Generated from `overig/maatwerk_icon.png` in the reference repo                                                                                                                                                                                       | AGPL-3.0-or-later (author of the reference repo is the author of this repo) |
+| Logo and wordmark (`ui/src/assets/brand/`) | Phase 2 design (`docs/phase-2/design/assets/`), traced from the app icon; outlines, no font                                                                                                                                                           | AGPL-3.0-or-later                                                           |
+| Tab-bar icons (`ui/index.html`)            | Own drawings from the phase 2 design boards 1 and 12 (24 px grid, round strokes); checked 2026-11-05 against Lucide's current `user`, `users`, `eye`, `puzzle`, `id-card`, `graduation-cap`, `shield-check` and `sliders-horizontal`: no shared paths | AGPL-3.0-or-later                                                           |
 
 ### Fonts
 
