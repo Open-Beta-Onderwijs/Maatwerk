@@ -361,3 +361,7 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   runs (local and CI) passed. Next time: rerun `cargo test --workspace` a few times with output
   kept (`> log 2>&1`) and look for `FAILED`; suspects are the timing-based watcher and snapshot
   tests (`watcher::tests`, `snapshots::tests`).
+- **Flaky e2e on CI:** `ui/e2e/editor.spec.ts` "a compile over the time limit reports the admin
+  setting" failed on PR #8 (2026-11-05) at its first step: the mock preview still showed the
+  initial page instead of "Goed" after 5 s; a rerun passed. Probably a slow runner; give that
+  first wait a longer timeout or wait for the compile event instead of the text.
