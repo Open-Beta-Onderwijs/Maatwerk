@@ -1,0 +1,181 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: toetsen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-card{transition:box-shadow .15s}
+.mw-card:hover{box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.mw-kids{transition:grid-template-rows .35s cubic-bezier(.2,.8,.2,1),opacity .25s}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; display: flex; flex-direction: column; background: #F5F6F8; color: #1B2230; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <header style="height: 56px; flex: none; display: flex; align-items: stretch; gap: 2px; padding: 0 20px 0 24px; background: #FFFFFF; border-bottom: 1px solid #E1E4EA">
+    <div style="display: flex; align-items: center; gap: 10px; margin-right: 26px">
+      <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50"></rect><polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon><polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon></svg>
+      <span aria-label="Maatwerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: .5px; color: #2E3E50">M<span style="font-size: 0.72em">AATWERK</span></span>
+    </div>
+    <span style="display: flex; align-items: center; padding: 0 14px; color: #5D6675">Leerlingen</span>
+    <span style="display: flex; align-items: center; padding: 0 14px; color: #5D6675">Groepen</span>
+    <span style="display: flex; align-items: center; padding: 0 14px; font-weight: 600; box-shadow: inset 0 -3px 0 {{a.text}}">Toetsen</span>
+    <span style="display: flex; align-items: center; padding: 0 14px; color: #5D6675">Observaties</span>
+    <span style="display: flex; align-items: center; padding: 0 14px; color: #5D6675">Opdrachten</span>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center"><span style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid {{a.fill}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px">MK</span></div>
+  </header>
+
+  <main style="flex: 1; min-height: 0; overflow-y: auto">
+    <div style="position: sticky; top: 0; z-index: 2; background: #F5F6F8">
+      <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 650; color: {{a.text}}">Toetsen</h1>
+        <div style="flex: 1"></div>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; color: #1B2230; font: inherit; font-weight: 600; cursor: pointer">RTTI uitleg / leeradvies</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; color: #1B2230; font: inherit; font-weight: 600; cursor: pointer">+ PO toevoegen</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{a.fill}}; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-weight: 600; cursor: pointer">+ Toets toevoegen</button>
+        <label style="display: flex; align-items: center; gap: 8px; color: #5D6675; font-size: 13px; margin-left: 6px">Schooljaar <select style="height: 36px; padding: 0 10px; border: 1px solid #C9CED8; border-radius: 8px; background: #FFFFFF; font: inherit"><option>2026-2027</option></select></label>
+      </div>
+      <div style="max-width: 1360px; margin: 0 auto; padding: 0 40px 14px; display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid #E1E4EA">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+          <button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #E1E4EA; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"></path></svg>{{f}}</button>
+        </sc-for>
+        <div style="flex: 1"></div>
+        <div style="display: flex; align-items: center; gap: 14px; font-size: 12px; color: #5D6675">
+          <sc-for list="{{legend}}" as="l" hint-placeholder-count="5"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 18px; height: 12px; border-radius: 3px; background: {{l.bg}}; border: 1.5px solid {{l.border}}; box-sizing: border-box"></span>{{l.label}}</span></sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width: 1360px; margin: 0 auto; padding: 4px 40px 48px">
+      <sc-for list="{{years}}" as="y" hint-placeholder-count="2">
+        <section style="margin-top: 22px; display: flex; flex-direction: column; gap: 10px">
+          <h2 style="margin: 0 0 2px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: {{a.text}}">{{y.title}}</h2>
+          <sc-for list="{{y.exams}}" as="e" hint-placeholder-count="3">
+            <div style="display: flex; flex-direction: column">
+              <article class="mw-card" style="display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <span style="font-size: 12px; font-weight: 700; color: {{e.ty.on}}; background: {{e.ty.bg}}; border: 1.5px solid {{e.ty.border}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.ty.shadow}}">{{e.code}}</span>
+                    <a href="#" style="font-weight: 650; font-size: 15px; color: {{e.titleColor}}; text-decoration: none; font-style: {{e.fs}}">{{e.name}}</a>
+                    <span style="font-size: 12px; color: #5D6675; padding: 1px 8px; border-radius: 999px; background: #EEF0F3">{{e.kind}}</span>
+                  </div>
+                  <span style="font-size: 13px; color: #5D6675">{{e.meta}}</span>
+                  <sc-if value="{{e.hasPoints}}" hint-placeholder-val="{{ true }}"><span style="font-size: 13px; color: #5D6675; font-variant-numeric: tabular-nums">{{e.points}}</span></sc-if>
+                  <span style="font-size: 13px; font-variant-numeric: tabular-nums; font-style: {{e.fs}}"><b style="color: {{e.meanColor}}">{{e.mean}}</b> <span style="color: #5D6675">± {{e.sd}} · {{e.fail}} onvoldoende{{e.statNote}}</span></span>
+                </div>
+                <sc-if value="{{e.hasKids}}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{e.toggle}}" aria-expanded="{{e.openAttr}}" style="height: 30px; padding: 0 10px; border-radius: 7px; border: 1px solid #E1E4EA; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: #1B2230">{{e.kidsLabel}}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{e.chev}}deg); transition: transform .25s"><path d="m6 9 6 6 6-6"></path></svg></button>
+                </sc-if>
+                <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Overzicht openen</button>
+                <button aria-label="Meer acties" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid #E1E4EA; background: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+              </article>
+              <sc-if value="{{e.hasKids}}" hint-placeholder-val="{{ false }}">
+                <div class="mw-kids" style="display: grid; grid-template-rows: {{e.rows}}; opacity: {{e.kidsOpacity}}">
+                  <div style="overflow: hidden">
+                    <div style="display: flex; flex-direction: column; gap: 8px; padding: 8px 0 2px 28px">
+                      <sc-for list="{{e.kids}}" as="k" hint-placeholder-count="3">
+                        <div style="display: flex; align-items: stretch; gap: 0">
+                          <div aria-hidden="true" style="width: 22px; flex: none; position: relative">
+                            <div style="position: absolute; left: 0; top: -10px; height: {{k.lineH}}; border-left: 2px solid #D5DAE1"></div>
+                            <div style="position: absolute; left: 0; top: 50%; width: 18px; border-top: 2px solid #D5DAE1"></div>
+                          </div>
+                          <article class="mw-card" style="flex: 1; display: flex; align-items: center; gap: 16px; padding: 10px 14px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 10px">
+                            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                              <div style="display: flex; align-items: center; gap: 10px">
+                                <span style="font-size: 12px; font-weight: 700; color: {{e.ty.on}}; background: {{e.ty.bg}}; border: 1.5px solid {{e.ty.border}}; padding: 1px 6px; border-radius: 5px">{{k.code}}</span>
+                                <span style="font-weight: 600">{{k.label}}</span>
+                                <span style="font-size: 12px; color: #5D6675">{{k.count}}</span>
+                                <sc-if value="{{k.locked}}" hint-placeholder-val="{{ false }}">
+                                  <span title="Observaties worden bij het aanmaken overgenomen van het origineel en kunnen niet los worden gewijzigd" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #5D6675; padding: 1px 8px; border-radius: 999px; border: 1px solid #E1E4EA"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Observaties van {{e.code}}</span>
+                                </sc-if>
+                              </div>
+                              <span style="font-size: 13px; color: #5D6675; font-variant-numeric: tabular-nums">{{k.points}}</span>
+                              <span style="font-size: 13px; font-variant-numeric: tabular-nums"><b style="color: {{k.meanColor}}">{{k.mean}}</b> <span style="color: #5D6675">± {{k.sd}} · {{k.fail}} onvoldoende</span></span>
+                            </div>
+                            <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Overzicht openen</button>
+                            <button aria-label="Meer acties" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid #E1E4EA; background: #FFFFFF; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+                          </article>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </section>
+      </sc-for>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rood&quot;,&quot;oranje&quot;,&quot;geel&quot;,&quot;groen&quot;,&quot;blauw&quot;,&quot;indigo&quot;,&quot;paars&quot;,&quot;turquoise&quot;,&quot;roze&quot;,&quot;grafiet&quot;],&quot;default&quot;:&quot;blauw&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { closed: {} }; }
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, t) { t = Math.max(0, Math.min(1, t)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+  fmt(g) { return g.toFixed(1).replace('.', ','); }
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E'], oranje: ['#C2540F', '#A8480C'], geel: ['#E5AE0B', '#7F5D00'], groen: ['#24804E', '#1F7045'], blauw: ['#2F6FD6', '#2560BF'], indigo: ['#4F46C8', '#4339B8'], paars: ['#8A3FC2', '#7A33B0'], turquoise: ['#0F7F86', '#0B6F75'], roze: ['#C2387A', '#AD2F6B'], grafiet: ['#4A5568', '#3D4757'] };
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const name = this.props.accent ?? 'blauw';
+    const ac = ACC[name], anti = ANTI[name];
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const a = { fill: ac[0], text: ac[1], on: onOf(ac[0]) };
+    const stripes = (c) => `repeating-linear-gradient(135deg, ${c} 0 4px, ${this.lerp(c, '#FFFFFF', c === '#E5AE0B' ? 0.6 : 0.5)} 4px 8px)`;
+    const sh = (c) => `0 0 2px ${this.lerp(c, '#000000', 0.4)}, 0 0 3px ${this.lerp(c, '#000000', 0.4)}`;
+    const TY = {
+      toets: { bg: ac[0], border: ac[0], on: onOf(ac[0]), shadow: 'none', kind: 'Toets' },
+      po: { bg: stripes(ac[0]), border: ac[0], on: onOf(ac[0]), shadow: onOf(ac[0]) === '#FFFFFF' ? sh(ac[0]) : 'none', kind: 'Praktische opdracht' },
+      se: { bg: anti, border: anti, on: onOf(anti), shadow: 'none', kind: 'SE-toets' },
+      sepo: { bg: stripes(anti), border: anti, on: onOf(anti), shadow: onOf(anti) === '#FFFFFF' ? sh(anti) : 'none', kind: 'SE praktische opdracht' },
+      diag: { bg: '#EEF0F3', border: '#9AA1AD', on: '#5D6675', shadow: 'none', kind: 'Diagnostisch' },
+    };
+    const gc = (g) => g < 5.5 ? '#B42318' : this.lerp('#8A6A00', '#1E7B3C', (g - 5.5) / 4);
+    const legend = ['toets', 'po', 'se', 'sepo', 'diag'].map((k) => ({ label: TY[k].kind, bg: TY[k].bg, border: TY[k].border }));
+    const D = [
+      { title: 'JAARLAAG 2', exams: [
+        ['201', 'Practicum Dichtheid', 'po', 'Gymnasium · Periode 1 · N-term 1,0 · Weging 1', '23p · T1: 19p · T2: 4p', 8.1, 1.3, '6%'],
+        ['202', 'Toets H1 Krachten', 'toets', 'Gymnasium · Periode 1 · N-term 1,0 · Weging 2', '38p · R: 8p · T1: 18p · T2: 9p · I: 3p', 7.4, 1.2, '9%'],
+        ['203', 'Diagnostische toets H2 Energie', 'diag', 'Gymnasium · Periode 2 · telt niet mee voor rapport of SE', '20p · R: 6p · T1: 10p · T2: 4p', 6.2, 1.6, '22%'],
+      ] },
+      { title: 'JAARLAAG 5', exams: [
+        ['501', 'PTA t.na-1 TW1', 'se', 'Gymnasium · Periode 1 · N-term 1,5 · Weging 3 · Weging SE 20', '', 6.4, 1.7, '30%', [
+          ['501', 'Origineel', '29 leerlingen', '41p · R: 3p · T1: 21p · T2: 17p', 6.4, 1.7, '31%', false],
+          ['501-I', 'Inhaal', '4 leerlingen', '36p · T1: 19p · T2: 11p · I: 6p', 6.8, 2.3, '25%', true],
+          ['501-H', 'Herkansing', '6 leerlingen', '41p · R: 3p · T1: 21p · T2: 17p', 6.1, 0.9, '17%', true],
+        ]],
+        ['502', 'PO Onderzoek valbeweging', 'sepo', 'Gymnasium · Periode 2 · Weging SE 10', 'rubric · 24p', 7.2, 1.0, '7%'],
+        ['503', 'Toets H3 Elektriciteit', 'toets', 'Gymnasium · Periode 2 · N-term 1,0 · Weging 2', '34p · R: 6p · T1: 14p · T2: 10p · I: 4p', 6.9, 1.4, '14%'],
+      ] },
+    ];
+    const years = D.map((y) => ({ title: y.title, exams: y.exams.map(([code, nm, type, meta, points, mean, sd, fail, kids]) => {
+      const diag = type === 'diag', open = !this.state.closed[code], has = !!kids;
+      return {
+        code, name: nm, ty: TY[type], kind: TY[type].kind, meta, points,
+        titleColor: diag ? '#5D6675' : a.text, fs: diag ? 'italic' : 'normal',
+        mean: this.fmt(mean), sd: this.fmt(sd), fail, meanColor: diag ? '#5D6675' : gc(mean), statNote: '', hasPoints: !!points,
+        hasKids: has, openAttr: open ? 'true' : 'false', chev: open ? 180 : 0, rows: open ? '1fr' : '0fr', kidsOpacity: open ? 1 : 0,
+        kidsLabel: has ? kids.length + ' pogingen' : '',
+        toggle: () => this.setState({ closed: { ...this.state.closed, [code]: open } }),
+        kids: has ? kids.map(([kc, label, count, kp, km, ks, kf, locked], i) => ({
+          code: kc, label, count, points: kp, mean: this.fmt(km), sd: this.fmt(ks), fail: kf, meanColor: gc(km), locked,
+          lineH: i === kids.length - 1 ? 'calc(50% + 10px)' : 'calc(100% + 18px)',
+        })) : [],
+      };
+    }) }));
+    return { a, legend, years, filters: ['Alle schoolsoorten', 'Alle jaarlagen', 'Alle toetsen'] };
+  }
+}
+</script>
+</body>
+</html>

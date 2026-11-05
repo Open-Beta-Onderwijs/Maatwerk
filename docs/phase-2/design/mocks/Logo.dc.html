@@ -1,0 +1,87 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: logo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; padding: 36px 48px; background: #F5F6F8; color: #5D6675; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; display: flex; flex-direction: column; gap: 20px">
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <span style="font-size: 18px; font-weight: 650; color: #2E3E50">Woordmerk: Archivo Black, tweede regel 20° schuin (gelijk aan de zijde van de A)</span>
+    <span style="line-height: 1.5">Links kleinkapitalen (hoogte 180 tegen 256 voor de M). Rechts kleine letters: x-hoogte 182, de stok van de k komt tot ongeveer de bovenkant van de M.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px">A · KLEINKAPITALEN (EERDER GEKOZEN)</span>
+        <div style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 14px; height: 330px; display: flex; align-items: center; justify-content: center">
+          <svg width="580" height="240" viewBox="70 220 1400 580" role="img" aria-label="Maatwerk">
+            <polygon fill="#2E3E50" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <polygon fill="#2E3E50" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <text x="700" y="494" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="#2E3E50">AAT</text>
+            <text transform="{{tfA}}" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="#2E3E50">ERK</text>
+          </svg>
+        </div>
+        <div style="background: #14171C; border-radius: 14px; height: 200px; display: flex; align-items: center; justify-content: center">
+          <svg width="400" height="166" viewBox="70 220 1400 580" role="img" aria-label="Maatwerk, donker thema">
+            <polygon fill="#E7EAF0" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <polygon fill="#E7EAF0" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <text x="700" y="494" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="#E7EAF0">AAT</text>
+            <text transform="{{tfA}}" font-family="'Archivo Black', sans-serif" font-size="262" letter-spacing="4" fill="#E7EAF0">ERK</text>
+          </svg>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .8px">B · KLEINE LETTERS</span>
+        <div style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 14px; height: 330px; display: flex; align-items: center; justify-content: center">
+          <svg width="580" height="240" viewBox="70 220 1400 580" role="img" aria-label="Maatwerk">
+            <polygon fill="#2E3E50" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <polygon fill="#2E3E50" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <text x="700" y="494" font-family="'Archivo Black', sans-serif" font-size="345" letter-spacing="2" fill="#2E3E50">aat</text>
+            <text transform="{{tfB}}" font-family="'Archivo Black', sans-serif" font-size="345" letter-spacing="2" fill="#2E3E50">erk</text>
+          </svg>
+        </div>
+        <div style="background: #14171C; border-radius: 14px; height: 200px; display: flex; align-items: center; justify-content: center">
+          <svg width="400" height="166" viewBox="70 220 1400 580" role="img" aria-label="Maatwerk, donker thema">
+            <polygon fill="#E7EAF0" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <polygon fill="#E7EAF0" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+            <text x="700" y="494" font-family="'Archivo Black', sans-serif" font-size="345" letter-spacing="2" fill="#E7EAF0">aat</text>
+            <text transform="{{tfB}}" font-family="'Archivo Black', sans-serif" font-size="345" letter-spacing="2" fill="#E7EAF0">erk</text>
+          </svg>
+        </div>
+      </div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 24px">
+    <svg width="72" height="72" viewBox="0 0 1024 1024" role="img" aria-label="Maatwerk-icoon">
+      <rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50"></rect>
+      <polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+      <polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon>
+    </svg>
+    <span>Icoon blijft zoals het is.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const t20 = Math.tan((20 * Math.PI) / 180);
+    const x0 = (h, lsb) => Math.round(676 + h + 26 - lsb - h * t20);
+    return {
+      tfA: `translate(${x0(262 * 0.688, 74 * 0.262)} 784) skewX(-20)`,
+      tfB: `translate(${x0(345 * 0.54, 36 * 0.345)} 784) skewX(-20)`,
+    };
+  }
+}
+</script>
+</body>
+</html>

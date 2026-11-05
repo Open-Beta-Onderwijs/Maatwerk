@@ -1,0 +1,224 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: opdracht-editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-tb{height:30px;min-width:30px;padding:0 7px;border:1px solid transparent;border-radius:6px;background:transparent;color:#1B2230;font:inherit;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.mw-tb:hover{background:#EEF0F3;border-color:#E1E4EA}
+.mw-rail{width:40px;height:40px;border-radius:12px;border:1px solid #E1E4EA;background:#FFFFFF;cursor:pointer;font:inherit;font-weight:750;font-size:13px;display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
+.mw-rail:hover{transform:translateX(-2px);box-shadow:0 4px 12px rgba(16,24,40,.12)}
+.mw-split{cursor:col-resize;touch-action:none}
+.mw-split:hover .mw-grip,.mw-split:active .mw-grip{background:#2560BF}
+.mw-spin{animation:mwspin .9s linear infinite;transform-origin:50% 50%}
+@keyframes mwspin{to{transform:rotate(360deg)}}
+.mw-chat{transition:width .4s cubic-bezier(.2,.8,.2,1)}
+</style>
+</helmet>
+<div style="width: 100%; height: 900px; display: flex; flex-direction: column; background: #F5F6F8; color: #1B2230; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden">
+
+  <header style="height: 52px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px 0 10px; background: #FFFFFF; border-bottom: 1px solid #E1E4EA">
+    <a href="#" style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 8px; border-radius: 8px; color: #2560BF; font-weight: 600; text-decoration: none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+      Terug naar opdrachten
+    </a>
+    <span style="width: 1px; height: 24px; background: #E1E4EA"></span>
+    <div style="display: flex; flex-direction: column; min-width: 0">
+      <span style="font-weight: 700; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">GFBA bovenbouw (+ significantie)</span>
+      <span style="font-size: 12px; color: #5D6675">Opdracht · Natuurkunde · gymnasium 4, 5, 6</span>
+    </div>
+    <div style="flex: 1"></div>
+    <div role="status" aria-live="polite" style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: {{status.bg}}; color: {{status.fg}}; font-size: 13px">
+      <sc-if value="{{compiling}}" hint-placeholder-val="{{ false }}"><svg class="mw-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9"></path></svg></sc-if>
+      <sc-if value="{{idle}}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></sc-if>
+      {{status.text}}
+    </div>
+    <button aria-label="Gebruikersmenu" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #2F6FD6; background: #FFFFFF; color: #1B2230; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer; padding: 0">MK</button>
+  </header>
+
+  <div data-mw-split-host="1" style="flex: 1; min-height: 0; display: flex">
+    <section aria-label="Editor" style="flex: 0 0 {{leftPct}}%; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF">
+      <div role="toolbar" aria-label="Opmaak" style="display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid #E1E4EA; background: #FFFFFF">
+        <button class="mw-tb" title="Vet" style="font-weight: 800">B</button>
+        <button class="mw-tb" title="Cursief" style="font-style: italic">I</button>
+        <button class="mw-tb" title="Onderstrepen" style="text-decoration: underline">U</button>
+        <button class="mw-tb" title="Meer opties">⋯</button>
+        <span style="width: 1px; height: 20px; background: #E1E4EA; margin: 0 4px"></span>
+        <button class="mw-tb" title="Opsomming">•≡</button>
+        <button class="mw-tb" title="Genummerde lijst">1≡</button>
+        <button class="mw-tb" title="Wiskundige formule">$x$</button>
+        <button class="mw-tb" title="Codeblok">&lt;/&gt;</button>
+        <button class="mw-tb" title="Verwijzing">@</button>
+        <span style="width: 1px; height: 20px; background: #E1E4EA; margin: 0 4px"></span>
+        <button class="mw-tb" title="Formule-blok"><span style="width: 12px; height: 12px; border-radius: 3px; background: #F6D96B"></span>Formule</button>
+        <button class="mw-tb" title="Voorbeeld-blok"><span style="width: 12px; height: 12px; border-radius: 3px; background: #A9C4EB"></span>Voorbeeld</button>
+        <button class="mw-tb" title="Context-blok"><span style="width: 12px; height: 12px; border-radius: 3px; background: #CFE6C8"></span>Context</button>
+        <button class="mw-tb" title="Belangrijk-blok"><span style="width: 12px; height: 12px; border-radius: 3px; background: #F2B8B5"></span>Belangrijk</button>
+        <span style="width: 1px; height: 20px; background: #E1E4EA; margin: 0 4px"></span>
+        <button class="mw-tb" title="Nieuwe opgave" style="color: #2560BF; font-weight: 600">+ Opgave</button>
+        <button class="mw-tb" title="Nieuwe vraag" style="color: #2560BF; font-weight: 600">+ Vraag</button>
+        <span style="width: 1px; height: 20px; background: #E1E4EA; margin: 0 4px"></span>
+        <button class="mw-tb" title="Figuur toevoegen">Figuur</button>
+        <button class="mw-tb" title="Nieuwe tabel">Tabel</button>
+        <button class="mw-tb" title="Nieuw grid">Grid</button>
+        <span style="width: 1px; height: 20px; background: #E1E4EA; margin: 0 4px"></span>
+        <button class="mw-tb" title="Wiskundige elementen">Wiskunde ▾</button>
+        <button class="mw-tb" title="Symbolen">Symbolen ▾</button>
+        <button class="mw-tb" title="Opmaak: pagina, kop, modi">Opmaak ▾</button>
+      </div>
+      <div role="tablist" aria-label="Bestanden" style="display: flex; align-items: flex-end; gap: 2px; padding: 8px 10px 0; background: #FAFBFC; border-bottom: 1px solid #E1E4EA">
+        <sc-for list="{{files}}" as="f" hint-placeholder-count="3">
+          <button role="tab" aria-selected="{{f.sel}}" onClick="{{f.pick}}" style="border: 1px solid {{f.border}}; border-bottom: 0; border-radius: 8px 8px 0 0; background: {{f.bg}}; padding: 7px 14px; font: inherit; font-size: 13px; color: {{f.color}}; cursor: pointer; margin-bottom: -1px; font-family: Consolas, 'Cascadia Mono', monospace">{{f.name}}</button>
+        </sc-for>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow: auto; display: flex; font-family: Consolas, 'Cascadia Mono', monospace; font-size: 13.5px; line-height: 22px">
+        <div aria-hidden="true" style="flex: none; padding: 10px 10px 10px 14px; text-align: right; color: #9AA1AD; background: #FAFBFC; border-right: 1px solid #EEF0F3; user-select: none">
+          <sc-for list="{{code}}" as="l" hint-placeholder-count="20"><div>{{l.n}}</div></sc-for>
+        </div>
+        <div style="flex: 1; padding: 10px 14px; white-space: pre; color: #1B2230">
+          <sc-for list="{{code}}" as="l" hint-placeholder-count="20"><div style="color: {{l.c}}; font-style: {{l.fs}}">{{l.t}}</div></sc-for>
+        </div>
+      </div>
+    </section>
+
+    <div class="mw-split" role="separator" aria-orientation="vertical" aria-label="Breedte editor en voorbeeld" aria-valuenow="{{leftPct}}" aria-valuemin="25" aria-valuemax="75" tabindex="0" onPointerDown="{{dragStart}}" onPointerMove="{{dragMove}}" onPointerUp="{{dragEnd}}" onDoubleClick="{{dragReset}}" style="flex: none; width: 10px; display: flex; align-items: center; justify-content: center; background: #EEF0F3; border-left: 1px solid #E1E4EA; border-right: 1px solid #E1E4EA">
+      <div class="mw-grip" style="width: 4px; height: 44px; border-radius: 4px; background: #B8BFCA; transition: background .15s"></div>
+    </div>
+
+    <section aria-label="Voorbeeld" style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: #E9ECF0">
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: #FFFFFF; border-bottom: 1px solid #E1E4EA">
+        <button class="mw-tb" aria-label="Uitzoomen" style="border-color: #E1E4EA">−</button>
+        <span style="min-width: 44px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums">91%</span>
+        <button class="mw-tb" aria-label="Inzoomen" style="border-color: #E1E4EA">+</button>
+        <button class="mw-tb" style="border-color: #E1E4EA">Paginabreedte</button>
+        <div style="flex: 1"></div>
+        <button style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid #F0C36D; background: #FFF6E0; color: #7A5300; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 21h20z"></path><path d="M12 10v5M12 18h.01"></path></svg>
+          Vragen: 18 · 1 p
+        </button>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow: auto; padding: 22px">
+        <div style="max-width: 640px; margin: 0 auto; background: #FFFFFF; box-shadow: 0 2px 10px rgba(16,24,40,.12); padding: 44px 48px; display: flex; flex-direction: column; gap: 14px; font-family: Georgia, 'Times New Roman', serif">
+          <div style="font-size: 22px; font-weight: 700">GFBA bovenbouw (+ significantie)</div>
+          <div style="background: #EEF0F3; border-radius: 4px; padding: 10px 12px; font-size: 12px; display: flex; justify-content: space-between"><b>Leerling Voornaam Achternaam</b><span>N.a.v. Voorbeeldtoets Toetsweek X</span></div>
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <sc-for list="{{textLines}}" as="w" hint-placeholder-count="6"><div style="height: 8px; border-radius: 4px; background: #D9DDE3; width: {{w}}%"></div></sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+            <div style="background: #FBEFC5; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 6px"><b style="font-size: 12px; color: #7A5300">Formule 1 (De GFBA-methode)</b><sc-for list="{{boxLines}}" as="w" hint-placeholder-count="8"><div style="height: 6px; border-radius: 3px; background: #E8D594; width: {{w}}%"></div></sc-for></div>
+            <div style="background: #DCE7F7; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 6px"><b style="font-size: 12px; color: #24497F">Voorbeeld 1</b><sc-for list="{{boxLines}}" as="w" hint-placeholder-count="8"><div style="height: 6px; border-radius: 3px; background: #B9CDEB; width: {{w}}%"></div></sc-for></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 7px">
+            <sc-for list="{{textLines}}" as="w" hint-placeholder-count="6"><div style="height: 8px; border-radius: 4px; background: #D9DDE3; width: {{w}}%"></div></sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="AI-assistent" class="mw-chat" style="flex: none; width: {{chatW}}px; overflow: hidden; background: #FFFFFF; border-left: 1px solid {{chatBorder}}">
+      <div style="width: 380px; height: 100%; display: flex; flex-direction: column">
+        <div style="height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 16px; border-bottom: 1px solid #E1E4EA">
+          <span style="width: 28px; height: 28px; border-radius: 8px; background: {{ai.color}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 12px">{{ai.mono}}</span>
+          <div style="flex: 1; display: flex; flex-direction: column">
+            <b>{{ai.name}}</b>
+            <span style="font-size: 12px; color: #5D6675">via de command line op deze computer</span>
+          </div>
+          <button aria-label="Chat sluiten" onClick="{{closeChat}}" style="width: 32px; height: 32px; border-radius: 7px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="flex: 1; min-height: 0; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="align-self: flex-end; max-width: 85%; background: #EAF1FC; border-radius: 12px 12px 4px 12px; padding: 10px 12px; line-height: 1.45">Maak opgave 3 iets moeilijker: voeg een vraag toe waarbij de leerling ook de significantie moet controleren.</div>
+          <div style="align-self: flex-start; max-width: 90%; background: #F5F6F8; border-radius: 12px 12px 12px 4px; padding: 10px 12px; line-height: 1.45; display: flex; flex-direction: column; gap: 8px">
+            <span>Ik heb aan opgave 3 een vraag 3c toegevoegd (2 punten): de leerling rekent de weerstand uit en rondt af op het juiste aantal significante cijfers.</span>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #E1E4EA; border-radius: 8px; background: #FFFFFF; font-size: 13px">
+              <span style="font-family: Consolas, monospace; color: #5D6675">opdracht.typ</span><span style="color: #1E7B3C; font-weight: 600">+14</span><span style="color: #B42318; font-weight: 600">−2</span>
+              <div style="flex: 1"></div>
+              <button style="height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">Bekijken</button>
+              <button style="height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">Toepassen</button>
+            </div>
+          </div>
+        </div>
+        <form style="flex: none; padding: 12px; border-top: 1px solid #E1E4EA; display: flex; gap: 8px; align-items: flex-end">
+          <textarea rows="2" placeholder="Vraag iets over deze opdracht…" aria-label="Bericht" style="flex: 1; resize: none; border: 1px solid #C9CED8; border-radius: 10px; padding: 9px 11px; font: inherit; line-height: 1.4"></textarea>
+          <button type="button" aria-label="Versturen" style="width: 40px; height: 40px; border-radius: 10px; border: 0; background: #2F6FD6; color: #FFFFFF; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </form>
+      </div>
+    </section>
+
+    <nav aria-label="AI-assistenten" style="flex: none; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 14px; background: #FAFBFC; border-left: 1px solid #E1E4EA">
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: .8px; color: #5D6675">AI</span>
+      <sc-for list="{{providers}}" as="p" hint-placeholder-count="6">
+        <button class="mw-rail" onClick="{{p.pick}}" title="{{p.name}}" aria-label="{{p.name}}" aria-pressed="{{p.sel}}" style="color: {{p.color}}; box-shadow: {{p.ring}}">{{p.mono}}</button>
+      </sc-for>
+    </nav>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { split: 0.5, file: 'opdracht.typ', ai: null, compiling: false }; }
+  componentDidMount() {
+    const cycle = () => { this.setState({ compiling: true }); this.t2 = setTimeout(() => this.setState({ compiling: false }), 1400); };
+    this.t1 = setInterval(cycle, 5000);
+  }
+  componentWillUnmount() { clearInterval(this.t1); clearTimeout(this.t2); }
+  renderVals() {
+    const P = [['Claude', 'Cl', '#C2540F'], ['ChatGPT', 'GP', '#1F7045'], ['Mistral', 'Mi', '#C93636'], ['Gemini', 'Ge', '#2560BF'], ['DeepSeek', 'DS', '#4339B8'], ['Copilot', 'Co', '#7A33B0']];
+    const ai = P.find((p) => p[0] === this.state.ai);
+    const providers = P.map(([name, mono, color]) => ({
+      name, mono, color, sel: this.state.ai === name ? 'true' : 'false',
+      ring: this.state.ai === name ? `0 0 0 2px #FFFFFF, 0 0 0 4px ${color}` : 'none',
+      pick: () => this.setState({ ai: this.state.ai === name ? null : name }),
+    }));
+    const files = ['opdracht.typ', 'main.typ', 'lib.typ'].map((name) => {
+      const on = this.state.file === name;
+      return { name, sel: on ? 'true' : 'false', bg: on ? '#FFFFFF' : 'transparent', border: on ? '#E1E4EA' : 'transparent', color: on ? '#1B2230' : '#5D6675', pick: () => this.setState({ file: name }) };
+    });
+    const K = '#7A33B0', S = '#1F7045', C = '#8A93A3', T = '#1B2230';
+    const raw = [
+      ['#import "lib.typ": *', K], ['', T], ['// Extra aanpassingen bovenop setup', C, 'italic'], ['#let setup_extra(body) = body', K], ['', T],
+      ['// Achtergrondinfo, theorie, context.', C, 'italic'], ['#let render_uitleg() = [', K],
+      ['  Bij natuurkunde en scheikunde moet je regelmatig', T], ['  een berekening doen om tot een antwoord te komen.', T], ['', T],
+      ['  #grid(', K], ['    columns: (1fr, 1fr),', T], ['    gutter: 1em,', T], ['    [', T],
+      ['      #formule_blok(name: "De GFBA-methode")[', S], ['        De GFBA-methode bestaat uit vier stappen:', T], ['        - Gevraagd / Gegevens', T], ['        - Formule', T], ['        - Berekening', T], ['        - Antwoord', T],
+      ['      ]', S], ['    ],', T], ['  )', K], [']', K],
+    ];
+    const code = raw.map(([t, c, fs], i) => ({ n: i + 1, t: t || ' ', c, fs: fs || 'normal' }));
+    const comp = this.state.compiling;
+    return {
+      providers, files, code,
+      ai: ai ? { name: ai[0], mono: ai[1], color: ai[2] } : { name: '', mono: '', color: '#000' },
+      chatW: ai ? 380 : 0, chatBorder: ai ? '#E1E4EA' : 'transparent',
+      closeChat: () => this.setState({ ai: null }),
+      leftPct: Math.round(this.state.split * 1000) / 10,
+      compiling: comp, idle: !comp,
+      status: comp ? { text: 'Compileren…', bg: '#EAF1FC', fg: '#2560BF' } : { text: 'Opgeslagen · PDF bijgewerkt', bg: '#EAF6EE', fg: '#1E7B3C' },
+      textLines: [100, 96, 100, 88, 100, 62],
+      boxLines: [92, 100, 84, 70, 96, 100, 60, 88],
+      dragStart: (e) => {
+        const host = e.currentTarget.parentElement;
+        e.currentTarget.setPointerCapture(e.pointerId);
+        this.drag = { x: e.clientX, split: this.state.split, w: host.getBoundingClientRect().width };
+      },
+      dragMove: (e) => {
+        if (!this.drag) return;
+        const s = this.drag.split + (e.clientX - this.drag.x) / this.drag.w;
+        this.setState({ split: Math.max(0.25, Math.min(0.75, s)) });
+      },
+      dragEnd: () => { this.drag = null; },
+      dragReset: () => this.setState({ split: 0.5 }),
+    };
+  }
+}
+</script>
+</body>
+</html>

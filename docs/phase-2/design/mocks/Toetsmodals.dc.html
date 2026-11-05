@@ -1,0 +1,230 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: toetsmodals</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.6px;color:#5D6675}
+.mw-in{height:36px;box-sizing:border-box;padding:0 12px;border:1px solid #C9CED8;border-radius:8px;background:#FFFFFF;font:inherit;font-size:14px;font-weight:400;letter-spacing:0;color:#1B2230}
+.mw-seg{display:inline-flex;border:1px solid #C9CED8;border-radius:8px;overflow:hidden;height:34px}
+.mw-seg button{min-width:34px;border:0;border-right:1px solid #E1E4EA;background:#FFFFFF;font:inherit;font-size:13px;letter-spacing:0;cursor:pointer;color:#1B2230;padding:0 8px}
+.mw-seg button:last-child{border-right:0}
+.mw-step{display:inline-flex;height:36px;border:1px solid #C9CED8;border-radius:8px;overflow:hidden}
+.mw-step button{width:32px;border:0;background:#F5F6F8;font:inherit;font-size:15px;cursor:pointer;color:#1B2230}
+.mw-step input{width:52px;border:0;border-left:1px solid #E1E4EA;border-right:1px solid #E1E4EA;text-align:center;font:inherit;font-size:14px;font-weight:400;letter-spacing:0;color:#1B2230}
+.mw-mini{display:inline-flex;gap:2px}
+.mw-mini button{min-width:26px;height:26px;padding:0 5px;box-sizing:border-box;border-radius:6px;border:1px solid #E1E4EA;display:inline-flex;align-items:center;justify-content:center;font:inherit;font-size:12px;cursor:pointer}
+.mw-q td{padding:5px 6px;border-bottom:1px solid #EEF0F3}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; overflow: hidden; background: #F5F6F8; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: #1B2230">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div>
+
+  <div role="tablist" aria-label="Mock kiezen" style="position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 4px; padding: 4px; background: #1B2230; border-radius: 10px">
+    <sc-for list="{{views}}" as="v" hint-placeholder-count="3">
+      <button role="tab" aria-selected="{{v.sel}}" onClick="{{v.pick}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: {{v.bg}}; color: {{v.fg}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">{{v.label}}</button>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{isNew}}" hint-placeholder-val="{{ true }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-nt" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 760px; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); display: flex; flex-direction: column">
+      <div style="padding: 20px 24px 0; display: flex; flex-direction: column; gap: 14px; border-bottom: 1px solid #E1E4EA">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <h2 id="mw-nt" style="margin: 0; flex: 1; font-size: 22px; color: #2560BF">Nieuwe toets</h2>
+          <button aria-label="Sluiten" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="display: flex; gap: 22px; font-size: 13px">
+          <span style="padding-bottom: 10px; box-shadow: inset 0 -3px 0 #2560BF; font-weight: 600">1 · Gegevens</span>
+          <span style="padding-bottom: 10px; color: #5D6675">2 · Vragen</span>
+        </div>
+      </div>
+      <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; gap: 16px; align-items: flex-end">
+          <label class="mw-lbl" style="flex: 1">NAAM<input class="mw-in" placeholder="PTA t.na-3 (H4, 9, 11, K3)"></label>
+          <div class="mw-lbl" style="align-items: center" title="PTA: telt mee voor het schoolexamen">PTA<button onClick="{{togglePta}}" role="checkbox" aria-checked="{{ptaAttr}}" aria-label="PTA: telt mee voor het schoolexamen" style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid {{pta.box}}; background: {{pta.boxBg}}; color: #FFFFFF; font: inherit; font-size: 22px; font-weight: 700; letter-spacing: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0">{{pta.tick}}</button></div>
+          <div class="mw-lbl" style="align-items: center" title="Diagnostisch: telt niet mee voor rapport of SE">D<button onClick="{{toggleDiag}}" role="checkbox" aria-checked="{{diagAttr}}" aria-label="Diagnostisch: telt niet mee voor rapport of SE" style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid {{dg.box}}; background: {{dg.boxBg}}; color: #FFFFFF; font: inherit; font-size: 22px; font-weight: 700; letter-spacing: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0">{{dg.tick}}</button></div>
+          <div class="mw-lbl" style="width: 110px">SCHOOLJAAR<span style="height: 36px; display: flex; align-items: center; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #1B2230">2026-2027</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">SCHOOLSOORT</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{types}}" as="st" hint-placeholder-count="7"><button aria-pressed="{{st.on}}" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{st.border}}; background: {{st.bg}}; color: {{st.color}}; font: inherit; font-size: 13px; font-weight: {{st.w}}; cursor: pointer">{{st.label}}</button></sc-for>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 16px 24px; align-items: end">
+          <div style="display: flex; align-items: flex-end">
+            <div class="mw-lbl">JAARLAAG<div class="mw-seg"><sc-for list="{{jl}}" as="j" hint-placeholder-count="6"><button aria-pressed="{{j.on}}" style="background: {{j.bg}}; color: {{j.fg}}; font-weight: {{j.w}}">{{j.n}}</button></sc-for></div></div>
+            <div style="flex: 1; display: flex; justify-content: center">
+              <div class="mw-lbl">PERIODE<div class="mw-seg"><sc-for list="{{per}}" as="j" hint-placeholder-count="5"><button aria-pressed="{{j.on}}" style="background: {{j.bg}}; color: {{j.fg}}; font-weight: {{j.w}}">{{j.n}}</button></sc-for></div></div>
+            </div>
+          </div>
+          <div class="mw-lbl" style="opacity: {{wOpacity}}">WEGING<span class="mw-step"><button aria-label="Lager" disabled="{{wDisabled}}">−</button><input value="{{wVal}}" aria-label="Weging" disabled="{{wDisabled}}"><button aria-label="Hoger" disabled="{{wDisabled}}">+</button></span></div>
+          <div class="mw-lbl" style="opacity: {{seOpacity}}">WEGING SE<span class="mw-step"><button aria-label="Lager" disabled="{{seDisabled}}">−</button><input value="{{seVal}}" aria-label="Weging SE" disabled="{{seDisabled}}"><button aria-label="Hoger" disabled="{{seDisabled}}">+</button></span></div>
+          <label class="mw-lbl">OPGAVE- EN VRAAGSTRUCTUUR<select class="mw-in"><option>I1 I2 II3 … (Romeins cijfer + volgnummer)</option></select></label>
+          <div class="mw-lbl">AANTAL VRAGEN<span class="mw-step"><button aria-label="Minder">−</button><input value="10" aria-label="Aantal vragen"><button aria-label="Meer">+</button></span></div>
+          <div class="mw-lbl">N-TERM<span class="mw-step"><button aria-label="Lager">−</button><input value="1,0" aria-label="N-term"><button aria-label="Hoger">+</button></span></div>
+        </div>
+        <sc-if value="{{diag}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 8px; background: #F5F6F8; color: #5D6675; font-size: 13px"><span style="font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 5px; border: 1.5px solid #9AA1AD; background: #EEF0F3">203</span>Diagnostische toets: telt niet mee voor rapport of SE. Weging staat op 0.</div>
+        </sc-if>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid #E1E4EA">
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Verder →</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isEdit}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-te" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 1060px; height: 864px; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); display: flex; flex-direction: column; overflow: hidden">
+      <div style="flex: none; padding: 20px 24px 16px; border-bottom: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: #C2540F; border: 1.5px solid #C2540F; padding: 1px 6px; border-radius: 5px">501</span>
+          <div style="flex: 1; display: flex; flex-direction: column">
+            <h2 id="mw-te" style="margin: 0; font-size: 22px; color: #2560BF">PTA t.na-1 TW1</h2>
+            <span style="font-size: 13px; color: #5D6675">Toets bewerken · Jaarlaag 5 · Gymnasium · 2026-2027</span>
+          </div>
+          <button aria-label="Sluiten" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: nowrap">
+          <label class="mw-lbl" style="flex: 1; min-width: 150px; max-width: 220px">NAAM<input class="mw-in" value="PTA t.na-1 TW1" style="width: 100%"></label>
+          <div class="mw-lbl" style="align-items: center" title="PTA: telt mee voor het schoolexamen">PTA<span role="checkbox" aria-checked="true" style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font-size: 22px; letter-spacing: 0; display: flex; align-items: center; justify-content: center">✓</span></div>
+          <div class="mw-lbl" style="align-items: center" title="Diagnostisch: telt niet mee voor rapport of SE">D<span role="checkbox" aria-checked="false" style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid #C9CED8; background: #FFFFFF"></span></div>
+          <div class="mw-lbl">PERIODE<div class="mw-seg"><button style="background: #2F6FD6; color: #FFFFFF; font-weight: 700">1</button><button>2</button><button>3</button><button>4</button><button>5</button></div></div>
+          <div class="mw-lbl">WEGING<span class="mw-step"><button>−</button><input value="3"><button>+</button></span></div>
+          <div class="mw-lbl">WEGING SE<span class="mw-step"><button>−</button><input value="20"><button>+</button></span></div>
+          <div class="mw-lbl">N-TERM<span class="mw-step"><button>−</button><input value="1,5"><button>+</button></span></div>
+        </div>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 24px">
+        <table class="mw-q" style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px">
+          <thead><tr>
+            <th style="position: sticky; top: 0; background: #FFFFFF; text-align: left; padding: 12px 6px 8px; border-bottom: 2px solid #E1E4EA; font-size: 12px; color: #5D6675; letter-spacing: .4px">OPGAVE</th>
+            <th style="position: sticky; top: 0; background: #FFFFFF; text-align: left; padding: 12px 6px 8px; border-bottom: 2px solid #E1E4EA; font-size: 12px; color: #5D6675">VR.</th>
+            <th style="position: sticky; top: 0; background: #FFFFFF; text-align: left; padding: 12px 6px 8px; border-bottom: 2px solid #E1E4EA; font-size: 12px; color: #5D6675">MAX PUNTEN</th>
+            <th style="position: sticky; top: 0; background: #FFFFFF; text-align: left; padding: 12px 6px 8px; border-bottom: 2px solid #E1E4EA; font-size: 12px; color: #5D6675">B / D</th>
+            <th style="position: sticky; top: 0; background: #FFFFFF; text-align: left; padding: 12px 6px 8px; border-bottom: 2px solid #E1E4EA; font-size: 12px; color: #5D6675">RTTI</th>
+            <th style="position: sticky; top: 0; background: #FFFFFF; border-bottom: 2px solid #E1E4EA"></th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{qrows}}" as="q" hint-placeholder-count="12">
+              <tr>
+                <td><span class="mw-mini"><sc-for list="{{q.op}}" as="o" hint-placeholder-count="10"><button style="background: {{o.bg}}; color: {{o.fg}}; border-color: {{o.bd}}; font-weight: {{o.w}}">{{o.l}}</button></sc-for></span></td>
+                <td style="font-weight: 700; color: #2560BF; width: 50px">{{q.code}}</td>
+                <td><span class="mw-mini"><sc-for list="{{q.pts}}" as="o" hint-placeholder-count="11"><button style="background: {{o.bg}}; color: {{o.fg}}; border-color: {{o.bd}}; font-weight: {{o.w}}">{{o.l}}</button></sc-for></span></td>
+                <td><select class="mw-in" style="height: 28px; font-size: 13px; padding: 0 6px"><option>{{q.kind}}</option></select></td>
+                <td><span class="mw-mini"><sc-for list="{{q.rt}}" as="o" hint-placeholder-count="4"><button style="min-width: 32px; background: {{o.bg}}; color: {{o.fg}}; border-color: {{o.bd}}; font-weight: {{o.w}}">{{o.l}}</button></sc-for></span></td>
+                <td style="text-align: right"><button aria-label="Vraag verwijderen" style="width: 28px; height: 28px; border-radius: 7px; border: 1px solid #E1E4EA; background: #FFFFFF; color: #B42318; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <button style="margin: 12px 0 20px; height: 32px; padding: 0 14px; border-radius: 7px; border: 1px dashed #C9CED8; background: #FFFFFF; color: #2560BF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">+ Vraag toevoegen</button>
+      </div>
+      <div style="flex: none; padding: 14px 24px; border-top: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">OBSERVATIES BIJ DEZE TOETS</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <sc-for list="{{obsChips}}" as="o" hint-placeholder-count="6"><button aria-pressed="{{o.on}}" style="height: 30px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font: inherit; font-size: 13px; font-weight: {{o.w}}; cursor: pointer; display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="font-size: 15px">{{o.ic}}</span>{{o.name}}</button></sc-for>
+        </div>
+      </div>
+      <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 24px 16px; border-top: 1px solid #E1E4EA">
+        <span style="flex: 1; font-size: 13px; color: #5D6675; font-variant-numeric: tabular-nums">{{summary}}</span>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isResit}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-rs" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 720px; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); display: flex; flex-direction: column">
+      <div style="padding: 20px 24px 16px; border-bottom: 1px solid #E1E4EA; display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; display: flex; flex-direction: column">
+          <h2 id="mw-rs" style="margin: 0; font-size: 22px; color: #2560BF">Nieuwe poging</h2>
+          <span style="font-size: 13px; color: #5D6675; display: inline-flex; align-items: center; gap: 8px">van <span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: repeating-linear-gradient(135deg, #2F6FD6 0 4px, #97B7EB 4px 8px); border: 1.5px solid #2F6FD6; padding: 0 5px; border-radius: 5px; text-shadow: 0 0 2px #1C4380">201</span> Practicum Dichtheid TW1</span>
+        </div>
+        <button aria-label="Sluiten" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      </div>
+      <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">SOORT POGING</span>
+          <div role="radiogroup" aria-label="Soort poging" style="display: flex; gap: 8px">
+            <sc-for list="{{kinds}}" as="k" hint-placeholder-count="3">
+              <button role="radio" aria-checked="{{k.on}}" onClick="{{k.pick}}" style="flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 14px; border-radius: 10px; border: 1.5px solid {{k.bd}}; background: {{k.bg}}; font: inherit; cursor: pointer; text-align: left; color: #1B2230"><b>{{k.label}}</b><span style="font-size: 12px; color: #5D6675">{{k.help}}</span></button>
+            </sc-for>
+          </div>
+        </div>
+        <label class="mw-lbl" style="opacity: {{descOpacity}}">BESCHRIJVING<input class="mw-in" value="{{resitLabel}}" disabled="{{descDisabled}}" placeholder="Eigen omschrijving" style="background: {{descBg}}"></label>
+        <div style="display: flex; gap: 28px; font-size: 13px; color: #5D6675; padding: 10px 14px; background: #F5F6F8; border-radius: 8px">
+          <span>Jaarlaag <b style="color: #1B2230">2</b></span><span>Periode <b style="color: #1B2230">1</b></span><span>Weging <b style="color: #1B2230">1</b></span><span>van het origineel</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 24px; align-items: end">
+          <label class="mw-lbl">OPGAVE- EN VRAAGSTRUCTUUR<select class="mw-in"><option>1, 2, 3, … (volgnummer)</option></select></label>
+          <div class="mw-lbl">AANTAL VRAGEN<span class="mw-step"><button>−</button><input value="8"><button>+</button></span></div>
+          <div class="mw-lbl">N-TERM<span class="mw-step"><button>−</button><input value="1,0"><button>+</button></span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid #E1E4EA; border-radius: 10px">
+          <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>Observaties worden overgenomen van 201</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{lockedObs}}" as="o" hint-placeholder-count="5"><span style="height: 26px; padding: 0 10px 0 4px; border-radius: 999px; background: #F5F6F8; color: #5D6675; font-size: 12px; display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="font-size: 14px">{{o.ic}}</span>{{o.name}}</span></sc-for>
+          </div>
+          <span style="font-size: 12px; color: #5D6675">Je wijzigt ze via het origineel; ze gelden dan voor alle pogingen.</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid #E1E4EA">
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Verder →</button>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { view: 'new', pta: false, diag: false, kind: 'Inhaal' }; }
+  renderVals() {
+    const V = [['new', 'Nieuwe toets'], ['edit', 'Toets bewerken'], ['resit', 'Inhaal / herkansing']];
+    const views = V.map(([k, label]) => ({ label, sel: this.state.view === k ? 'true' : 'false', bg: this.state.view === k ? '#FFFFFF' : 'transparent', fg: this.state.view === k ? '#1B2230' : '#C9CED8', pick: () => this.setState({ view: k }) }));
+    const { pta, diag } = this.state;
+    const box = (on) => ({ box: on ? '#2F6FD6' : '#C9CED8', boxBg: on ? '#2F6FD6' : '#FFFFFF', tick: on ? '✓' : '' });
+    const chip = (label, on) => ({ label, on: on ? 'true' : 'false', border: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', color: on ? '#2560BF' : '#1B2230', w: on ? 600 : 400 });
+    const seg = (n, on) => ({ n, on: on ? 'true' : 'false', bg: on ? '#2F6FD6' : '#FFFFFF', fg: on ? '#FFFFFF' : '#1B2230', w: on ? 700 : 400 });
+    const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    const QD = [[0, 3, 'T1'], [0, 4, 'T2'], [0, 3, 'R'], [0, 3, 'T1'], [0, 5, 'T2'], [0, 3, 'T1'], [1, 4, 'T2'], [2, 3, 'T1'], [2, 3, 'T1'], [2, 3, 'T1'], [3, 3, 'T1'], [3, 4, 'T2']];
+    const on = (l, sel) => ({ l, bg: sel ? '#2F6FD6' : '#F5F6F8', fg: sel ? '#FFFFFF' : '#1B2230', bd: sel ? '#2F6FD6' : '#E1E4EA', w: sel ? 700 : 400 });
+    const qrows = QD.map(([op, pts, rt], i) => ({
+      code: ROM[op] + (i + 1), kind: i === 11 ? 'Bonus' : 'Normaal',
+      op: ROM.map((l, k) => on(l, k === op)),
+      pts: Array.from({ length: 11 }, (_, k) => on(String(k), k === pts)),
+      rt: ['R', 'T1', 'T2', 'I'].map((l) => on(l, l === rt)),
+    }));
+    const OBS = [['📏', 'Eenheid vergeten', true], ['➗', 'Formule verkeerd omgeschreven', true], ['🔄', 'Meetwaarde verkeerd omgerekend', true], ['🧮', 'Rekenfout', true], ['🎯', 'Significantie antwoord verkeerd', true], ['📈', 'Grafiek: aslabels vergeten', false], ['❓', 'Grootheden door elkaar', false]];
+    const obsChips = OBS.map(([ic, name, sel]) => ({ ic, name, on: sel ? 'true' : 'false', bd: sel ? '#2F6FD6' : '#E1E4EA', bg: sel ? '#2F6FD614' : '#FFFFFF', fg: sel ? '#2560BF' : '#1B2230', w: sel ? 600 : 400 }));
+    const kinds = [['Inhaal', 'Leerling heeft de toets gemist'], ['Herkansing', 'Leerling maakt de toets opnieuw'], ['Anders', 'Eigen omschrijving']].map(([label, help]) => ({ label, help, on: this.state.kind === label ? 'true' : 'false', bd: this.state.kind === label ? '#2F6FD6' : '#E1E4EA', bg: this.state.kind === label ? '#2F6FD60F' : '#FFFFFF', pick: () => this.setState({ kind: label }) }));
+    return {
+      views, isNew: this.state.view === 'new', isEdit: this.state.view === 'edit', isResit: this.state.view === 'resit',
+      pta: box(pta), dg: box(diag), ptaAttr: pta ? 'true' : 'false', diagAttr: diag ? 'true' : 'false', diag,
+      togglePta: () => this.setState({ pta: !pta, diag: false }),
+      toggleDiag: () => this.setState({ diag: !diag, pta: false }),
+      wDisabled: diag ? true : undefined, wVal: diag ? '0' : '1', wOpacity: diag ? 0.45 : 1,
+      seDisabled: pta ? undefined : true, seVal: pta ? '1' : '—', seOpacity: pta ? 1 : 0.45,
+      types: ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'].map((l) => chip(l, l === 'Gymnasium')),
+      jl: [1, 2, 3, 4, 5, 6].map((n) => seg(n, n === 5)), per: [1, 2, 3, 4, 5].map((n) => seg(n, n === 1)),
+      qrows, obsChips, kinds,
+      summary: (() => { const tot = QD.reduce((s, q) => s + q[1], 0); return QD.length + ' vragen · ' + tot + ' punten · ' + ['R', 'T1', 'T2', 'I'].map((k) => { const p = QD.filter((q) => q[2] === k).reduce((s, q) => s + q[1], 0); return k + ': ' + p + ' (' + Math.round((100 * p) / tot) + '%)'; }).join(' · '); })(),
+      resitLabel: this.state.kind === 'Anders' ? '' : this.state.kind.toUpperCase(),
+      descDisabled: this.state.kind === 'Anders' ? undefined : true, descOpacity: this.state.kind === 'Anders' ? 1 : 0.6, descBg: this.state.kind === 'Anders' ? '#FFFFFF' : '#F5F6F8',
+      lockedObs: OBS.filter((o) => o[2]).map(([ic, name]) => ({ ic, name })),
+    };
+  }
+}
+</script>
+</body>
+</html>

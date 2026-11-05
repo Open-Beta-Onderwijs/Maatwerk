@@ -1,0 +1,371 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: fundament</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2F6FD6}a:hover{color:#1F55AD}
+.mw-tab:hover{opacity:1}
+.mw-card:hover{transform:translateY(-1px)}
+.mw-swap{display:grid}
+.mw-swap>*{grid-area:1/1}
+.mw-fa{animation:mwA 9s ease-in-out infinite}
+.mw-fb{opacity:0;animation:mwB 9s ease-in-out infinite}
+@keyframes mwA{0%,42%{opacity:1}50%,92%{opacity:0}100%{opacity:1}}
+@keyframes mwB{0%,42%{opacity:0}50%,92%{opacity:1}100%{opacity:0}}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; display: flex; flex-direction: column; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; background: {{t.bg}}; color: {{t.text}}; position: relative; overflow: hidden">
+
+  <header style="height: 56px; flex: none; display: flex; align-items: stretch; gap: 8px; padding: 0 20px 0 24px; background: {{t.headBg}}; border-bottom: 1px solid {{t.headBorder}}">
+    <div style="display: flex; align-items: center; gap: 10px; margin-right: 24px">
+      <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50" stroke="{{t.logoStroke}}" stroke-width="40"></rect><polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon><polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon></svg>
+      <span aria-label="Maatwerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: .5px; white-space: nowrap; color: {{t.logoInk}}">M<span style="font-size: 0.72em">AATWERK</span></span>
+    </div>
+    <nav aria-label="Hoofdmenu" style="display: flex; align-items: stretch; gap: 2px">
+      <sc-for list="{{tabs}}" as="tab" hint-placeholder-count="5">
+        <button class="mw-tab" onClick="{{tab.pick}}" aria-current="{{tab.current}}" style="display: flex; align-items: center; gap: 8px; padding: 0 14px; border: 0; background: transparent; cursor: pointer; font: inherit; font-size: 14px; font-weight: {{tab.weight}}; color: {{tab.color}}; box-shadow: inset 0 -3px 0 {{tab.bar}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: {{tab.iconColor}}">
+            <sc-if value="{{tab.isLeerlingen}}" hint-placeholder-val="{{ false }}"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></sc-if>
+            <sc-if value="{{tab.isGroepen}}" hint-placeholder-val="{{ false }}"><circle cx="9" cy="8" r="3.5"></circle><path d="M2 20.5a7 7 0 0 1 14 0"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18.5 14a7 7 0 0 1 3.5 6.5"></path></sc-if>
+            <sc-if value="{{tab.isToetsen}}" hint-placeholder-val="{{ false }}"><path d="M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h6"></path><path d="M14 2.5 19 7.5V11"></path><path d="M14 2.5v5h5"></path><path d="M8.5 11h5M8.5 14.5h3"></path><circle cx="17.5" cy="17.5" r="4.2"></circle><path d="M16.4 16.2h2.2l-1.5 3"></path></sc-if>
+            <sc-if value="{{tab.isObservaties}}" hint-placeholder-val="{{ false }}"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></sc-if>
+            <sc-if value="{{tab.isOpdrachten}}" hint-placeholder-val="{{ false }}"><path d="M9 3.5h3.5a2 2 0 1 1 4 0H20v5.5a2 2 0 1 0 0 4V20h-5.5a2 2 0 1 0-4 0H5v-5.5a2 2 0 1 1 0-4V3.5z"></path></sc-if>
+          </svg>
+          {{tab.label}}
+        </button>
+      </sc-for>
+    </nav>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center">
+      <button onClick="{{toggleMenu}}" aria-label="Gebruikersmenu" aria-expanded="{{menuOpen}}" style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid {{a.fill}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; padding: 0">MK</button>
+    </div>
+  </header>
+
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ true }}">
+    <div role="menu" aria-label="Gebruikersmenu" style="position: absolute; top: 60px; right: 16px; width: 280px; z-index: 10; background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; box-shadow: {{t.popShadow}}; padding: 8px; display: flex; flex-direction: column; gap: 2px">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 8px 8px 12px">
+        <div style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid {{a.fill}}; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px">MK</div>
+        <div style="display: flex; flex-direction: column">
+          <span style="font-weight: 600">Matthias Kortleven</span>
+          <span style="font-size: 12px; color: {{t.muted}}">Docent · Natuurkunde</span>
+        </div>
+      </div>
+      <div style="height: 1px; background: {{t.border}}; margin: 0 4px 6px"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 8px">
+        <span>Thema</span>
+        <div role="group" aria-label="Thema" style="display: flex; background: {{t.surface2}}; border-radius: 8px; padding: 3px; gap: 2px">
+          <button onClick="{{setLight}}" aria-pressed="{{isLight}}" style="border: 0; border-radius: 6px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; background: {{seg.lightBg}}; color: {{seg.lightFg}}; box-shadow: {{seg.lightShadow}}">Licht</button>
+          <button onClick="{{setDark}}" aria-pressed="{{isDark}}" style="border: 0; border-radius: 6px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; background: {{seg.darkBg}}; color: {{seg.darkFg}}; box-shadow: {{seg.darkShadow}}">Donker</button>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 6px 8px 10px">
+        <span>Accentkleur</span>
+        <div role="group" aria-label="Accentkleur" style="display: grid; grid-template-columns: repeat(7, 26px); gap: 8px">
+          <sc-for list="{{swatches}}" as="sw" hint-placeholder-count="7">
+            <button onClick="{{sw.pick}}" aria-label="{{sw.label}}" aria-pressed="{{sw.selected}}" style="width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer; background: {{sw.fill}}; box-shadow: {{sw.ring}}; padding: 0"></button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="height: 1px; background: {{t.border}}; margin: 2px 4px"></div>
+      <button role="menuitem" style="text-align: left; border: 0; background: transparent; color: {{t.text}}; font: inherit; padding: 9px 8px; border-radius: 6px; cursor: pointer">Foto wijzigen</button>
+      <button role="menuitem" style="text-align: left; border: 0; background: transparent; color: {{t.text}}; font: inherit; padding: 9px 8px; border-radius: 6px; cursor: pointer">Pincode wijzigen</button>
+      <div style="height: 1px; background: {{t.border}}; margin: 2px 4px"></div>
+      <button role="menuitem" style="text-align: left; border: 0; background: transparent; color: {{t.danger}}; font: inherit; padding: 9px 8px; border-radius: 6px; cursor: pointer">Uitloggen</button>
+    </div>
+  </sc-if>
+
+  <main style="flex: 1; overflow-y: auto; min-height: 0">
+    <div style="position: sticky; top: 0; z-index: 2; background: {{t.bg}}">
+      <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px 14px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -0.3px; color: {{a.title}}">{{screenTitle}}</h1>
+        <div style="flex: 1"></div>
+        <label style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; width: 220px; box-sizing: border-box; border: 1px solid {{t.border}}; border-radius: 8px; background: {{t.surface}}; color: {{t.muted}}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+          <input placeholder="Zoeken…" aria-label="Zoeken" style="border: 0; outline: 0; background: transparent; font: inherit; color: {{t.text}}; width: 100%">
+        </label>
+        <label style="display: flex; align-items: center; gap: 8px; color: {{t.muted}}; font-size: 13px">Schooljaar
+          <select style="height: 36px; padding: 0 10px; border: 1px solid {{t.border}}; border-radius: 8px; background: {{t.surface}}; color: {{t.text}}; font: inherit"><option>2026-2027</option></select>
+        </label>
+      </div>
+      <div style="max-width: 1360px; margin: 0 auto; padding: 0 40px 14px; display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid {{t.border}}">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+          <button style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid {{t.border}}; border-radius: 999px; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; cursor: pointer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"></path></svg>
+            {{f}}
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="max-width: 1360px; margin: 0 auto; padding: 8px 40px 48px">
+      <sc-if value="{{showLeerlingen}}" hint-placeholder-val="{{ true }}">
+        <sc-for list="{{years}}" as="yr" hint-placeholder-count="2">
+          <section style="margin-top: 22px">
+            <h2 style="margin: 0 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: {{a.title}}">{{yr.title}}</h2>
+            <sc-for list="{{yr.classes}}" as="cl" hint-placeholder-count="1">
+              <div style="margin: 14px 0 8px; font-size: 13px; color: {{t.muted}}; font-weight: 600">{{cl.name}}</div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px">
+                <sc-for list="{{cl.students}}" as="s" hint-placeholder-count="6">
+                  <a class="mw-card" href="#" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 10px; box-shadow: {{t.cardShadow}}; text-decoration: none; color: inherit; transition: transform .12s">
+                    <div style="display: flex; flex-direction: column; min-width: 0; flex: 1">
+                      <span style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{t.text}}">{{s.name}}</span>
+                      <span style="font-size: 12px; color: {{t.muted}}; font-variant-numeric: tabular-nums">{{s.nr}}</span>
+                    </div>
+                    <sc-if value="{{s.has}}" hint-placeholder-val="{{ true }}">
+                      <div role="img" aria-label="{{s.barsLabel}}" style="display: flex; align-items: flex-end; gap: 3px; height: 28px; flex: none">
+                        <sc-for list="{{s.bars}}" as="b" hint-placeholder-count="4"><div title="{{b.t}}" style="width: 7px; border-radius: 2px; height: {{b.h}}px; background: {{b.c}}"></div></sc-for>
+                      </div>
+                      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: none; min-width: 76px">
+                        <div title="Jaargemiddelde" style="display: flex; align-items: center; gap: 4px">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{s.trendLabel}}" style="color: {{s.trendColor}}; transform: rotate({{s.rot}}deg)"><path d="M4 12h15M13 6l6 6-6 6"></path></svg>
+                          <span style="font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; color: {{s.avgColor}}">{{s.avg}}</span>
+                        </div>
+                        <sc-if value="{{s.hasSe}}" hint-placeholder-val="{{ false }}">
+                          <div class="mw-swap" title="{{s.both}}" style="font-size: 12px; color: {{t.muted}}; font-variant-numeric: tabular-nums; justify-items: end">
+                            <span class="mw-fa">laatste <b style="color: {{s.lastColor}}">{{s.last}}</b></span>
+                            <span class="mw-fb">SE <b style="color: {{s.seColor}}">{{s.se}}</b></span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{s.noSe}}" hint-placeholder-val="{{ true }}">
+                          <span style="font-size: 12px; color: {{t.muted}}; font-variant-numeric: tabular-nums">laatste <b style="color: {{s.lastColor}}">{{s.last}}</b></span>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{s.none}}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size: 12px; color: {{t.muted}}; font-style: italic">Nog geen cijfers</span>
+                    </sc-if>
+                  </a>
+                </sc-for>
+              </div>
+            </sc-for>
+          </section>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{showGroepen}}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{groupYears}}" as="gy" hint-placeholder-count="2">
+          <section style="margin-top: 22px">
+            <h2 style="margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: {{a.title}}">{{gy.title}}</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px">
+              <sc-for list="{{gy.groups}}" as="g" hint-placeholder-count="4">
+                <a class="mw-card" href="#" style="display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; box-shadow: {{t.cardShadow}}; text-decoration: none; color: inherit; transition: transform .12s">
+                  <div style="display: flex; align-items: flex-start; gap: 12px">
+                    <div style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+                      <div style="display: flex; align-items: center; gap: 10px">
+                        <span style="font-weight: 700; font-size: 18px; line-height: 24px; color: {{a.title}}">{{g.name}}</span>
+                        <span style="font-size: 12px; line-height: 18px; padding: 1px 8px; border-radius: 999px; background: {{t.surface2}}; color: {{t.muted}}">{{g.type}}</span>
+                      </div>
+                      <span style="font-size: 13px; color: {{t.muted}}">{{g.teacher}} · {{g.count}} leerlingen</span>
+                    </div>
+                    <sc-if value="{{g.plain}}" hint-placeholder-val="{{ true }}">
+                      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; font-variant-numeric: tabular-nums">
+                        <span><b style="font-size: 17px; color: {{g.meanColor}}">{{g.mean}}</b> <span style="color: {{t.muted}}">± {{g.sd}}</span></span>
+                        <span style="font-size: 12px; color: {{g.failColor}}">{{g.fail}} onvoldoende</span>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{g.swapA}}" hint-placeholder-val="{{ false }}">
+                      <div class="mw-swap" title="{{g.both}}" style="flex: none; justify-items: end; font-variant-numeric: tabular-nums">
+                        <div class="mw-fa" style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px">
+                          <span><span style="font-size: 12px; font-weight: 700; color: {{t.muted}}">R</span> <b style="font-size: 17px; color: {{g.meanColor}}">{{g.mean}}</b> <span style="color: {{t.muted}}">± {{g.sd}}</span></span>
+                          <span style="font-size: 12px; color: {{g.failColor}}">{{g.fail}} onvoldoende</span>
+                        </div>
+                        <div class="mw-fb" style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px">
+                          <span><span style="font-size: 12px; font-weight: 700; color: {{t.muted}}">SE</span> <b style="font-size: 17px; color: {{g.seColor}}">{{g.se}}</b> <span style="color: {{t.muted}}">± {{g.seSd}}</span></span>
+                          <span style="font-size: 12px; color: {{g.seFailColor}}">{{g.seFail}} onvoldoende</span>
+                        </div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{g.inlineB}}" hint-placeholder-val="{{ false }}">
+                      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; font-variant-numeric: tabular-nums">
+                        <span style="white-space: nowrap"><span style="font-size: 12px; font-weight: 700; color: {{t.muted}}">SE</span> <b style="font-size: 17px; color: {{g.seColor}}">{{g.se}}</b> <span style="color: {{t.muted}}">± {{g.seSd}}</span> <span style="color: {{t.muted}}">·</span> <span style="font-size: 12px; font-weight: 700; color: {{t.muted}}">R</span> <b style="font-size: 17px; color: {{g.meanColor}}">{{g.mean}}</b> <span style="color: {{t.muted}}">± {{g.sd}}</span></span>
+                        <span style="font-size: 12px; color: {{g.failColor}}">{{g.fail}} onvoldoende</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: {{t.muted}}; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{g.names}}</p>
+                </a>
+              </sc-for>
+            </div>
+          </section>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{showOther}}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 48px 0; color: {{t.muted}}">Dit scherm komt in een volgende ronde. Klik op Leerlingen of Groepen.</p>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;licht&quot;,&quot;donker&quot;],&quot;default&quot;:&quot;licht&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rood&quot;,&quot;oranje&quot;,&quot;geel&quot;,&quot;groen&quot;,&quot;blauw&quot;,&quot;indigo&quot;,&quot;paars&quot;,&quot;koraal&quot;,&quot;koper&quot;,&quot;oker&quot;,&quot;mint&quot;,&quot;turquoise&quot;,&quot;leisteen&quot;,&quot;roze&quot;,&quot;bordeaux&quot;,&quot;bruin&quot;,&quot;olijf&quot;,&quot;bos&quot;,&quot;marine&quot;,&quot;zwart&quot;,&quot;magenta&quot;],&quot;default&quot;:&quot;blauw&quot;},&quot;header&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;licht&quot;,&quot;donker&quot;],&quot;default&quot;:&quot;licht&quot;},&quot;groepkaart&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;A: R en SE wisselen&quot;,&quot;B: SE en R naast elkaar&quot;],&quot;default&quot;:&quot;B: SE en R naast elkaar&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'Leerlingen', menuOpen: true, theme: null, accent: null }; }
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, t) {
+    t = Math.max(0, Math.min(1, t));
+    const A = this.hx(a), B = this.hx(b);
+    return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  }
+  fmt(g) { return g.toFixed(1).replace('.', ','); }
+  gradeColor(g, dark) {
+    if (g < 5.5) return dark ? '#FF8A80' : '#B42318';
+    return dark ? this.lerp('#E2BD45', '#6CCB8A', (g - 5.5) / 4) : this.lerp('#8A6A00', '#1E7B3C', (g - 5.5) / 4);
+  }
+  renderVals() {
+    const ACC = {
+      rood: { fill: '#C93636', text: '#C93636', dtext: '#D66868', on: '#FFFFFF' },
+      oranje: { fill: '#C2540F', text: '#C2540F', dtext: '#CE763F', on: '#FFFFFF' },
+      geel: { fill: '#E5AE0B', text: '#916E0A', dtext: '#E5AE0B', on: '#2A2000' },
+      groen: { fill: '#24804E', text: '#24804E', dtext: '#509971', on: '#FFFFFF' },
+      blauw: { fill: '#2F6FD6', text: '#2F6FD6', dtext: '#598CDE', on: '#FFFFFF' },
+      indigo: { fill: '#4F46C8', text: '#4F46C8', dtext: '#847ED8', on: '#FFFFFF' },
+      paars: { fill: '#8A3FC2', text: '#8A3FC2', dtext: '#AD79D4', on: '#FFFFFF' },
+      koraal: { fill: '#C8492F', text: '#C8492F', dtext: '#D36D59', on: '#FFFFFF' },
+      koper: { fill: '#AE611C', text: '#AE611C', dtext: '#BA793E', on: '#FFFFFF' },
+      oker: { fill: '#9A6A12', text: '#9A6A12', dtext: '#AE8841', on: '#FFFFFF' },
+      mint: { fill: '#13866E', text: '#13866E', dtext: '#369884', on: '#FFFFFF' },
+      turquoise: { fill: '#0F7F86', text: '#0F7F86', dtext: '#3F999E', on: '#FFFFFF' },
+      leisteen: { fill: '#4A5568', text: '#4A5568', dtext: '#B8C2D1', on: '#FFFFFF' },
+      roze: { fill: '#C2387A', text: '#C2387A', dtext: '#D16A9B', on: '#FFFFFF' },
+      bordeaux: { fill: '#8E2340', text: '#8E2340', dtext: '#BB7B8C', on: '#FFFFFF' },
+      bruin: { fill: '#8B5A2B', text: '#8B5A2B', dtext: '#A88360', on: '#FFFFFF' },
+      olijf: { fill: '#5A7A12', text: '#5A7A12', dtext: '#7B9541', on: '#FFFFFF' },
+      bos: { fill: '#1E5E3A', text: '#1E5E3A', dtext: '#6D967F', on: '#FFFFFF' },
+      marine: { fill: '#1F3A93', text: '#1F3A93', dtext: '#7989BE', on: '#FFFFFF' },
+      zwart: { fill: '#111418', text: '#111418', dtext: '#E7EAF0', on: '#FFFFFF' },
+      magenta: { fill: '#A3248F', text: '#A3248F', dtext: '#C371B6', on: '#FFFFFF' },
+    };
+    const order = ['rood', 'oranje', 'geel', 'groen', 'blauw', 'indigo', 'paars', 'koraal', 'koper', 'oker', 'mint', 'turquoise', 'leisteen', 'roze', 'bordeaux', 'bruin', 'olijf', 'bos', 'marine', 'zwart', 'magenta'];
+    const theme = this.state.theme ?? this.props.theme ?? 'licht';
+    const accent = this.state.accent ?? this.props.accent ?? 'blauw';
+    const headerStyle = this.props.header ?? 'licht';
+    const gVariant = (this.props.groepkaart ?? 'A').charAt(0);
+    const dark = theme === 'donker';
+    const acc = ACC[accent];
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', text: '#E7EAF0', muted: '#A3ABB8', spark: '#7E8796', danger: '#FF8A80', cardShadow: 'none', popShadow: '0 12px 32px rgba(0,0,0,.5)' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', text: '#1B2230', muted: '#5D6675', spark: '#9AA3B2', danger: '#B42318', cardShadow: '0 1px 2px rgba(16,24,40,.04)', popShadow: '0 12px 32px rgba(16,24,40,.16)' };
+    const darkHead = headerStyle === 'donker' || dark;
+    t.headBg = darkHead ? (dark ? '#0E1014' : '#1E2430') : t.surface;
+    t.headBorder = darkHead ? 'transparent' : t.border;
+    t.headStrong = darkHead ? '#FFFFFF' : t.text;
+    t.logoInk = darkHead ? '#FFFFFF' : '#2E3E50';
+    t.logoStroke = darkHead ? '#5B6B80' : 'none';
+    const a = { fill: acc.fill, on: acc.on, title: dark ? acc.dtext : acc.text };
+    const iconOnHead = darkHead ? acc.dtext : acc.text;
+
+    const tabNames = ['Leerlingen', 'Groepen', 'Toetsen', 'Observaties', 'Opdrachten'];
+    const tabs = tabNames.map((label) => {
+      const on = this.state.tab === label;
+      return {
+        label, current: on ? 'page' : 'false',
+        isLeerlingen: label === 'Leerlingen', isGroepen: label === 'Groepen', isToetsen: label === 'Toetsen', isObservaties: label === 'Observaties', isOpdrachten: label === 'Opdrachten',
+        weight: on ? 600 : 400,
+        color: on ? t.headStrong : (darkHead ? '#B4BCC8' : t.muted),
+        iconColor: on ? iconOnHead : 'currentColor',
+        bar: on ? (darkHead ? acc.fill : acc.text) : 'transparent',
+        pick: () => this.setState({ tab: label }),
+      };
+    });
+
+    const swatches = order.map((k) => ({
+      label: k.charAt(0).toUpperCase() + k.slice(1), fill: ACC[k].fill, selected: k === accent ? 'true' : 'false',
+      ring: k === accent ? `0 0 0 2px ${t.surface}, 0 0 0 4px ${ACC[k].fill}` : 'none',
+      pick: () => this.setState({ accent: k }),
+    }));
+    const segOn = { bg: t.surface, fg: t.text, sh: '0 1px 2px rgba(0,0,0,.15)' };
+    const seg = {
+      lightBg: dark ? 'transparent' : segOn.bg, lightFg: dark ? t.muted : segOn.fg, lightShadow: dark ? 'none' : segOn.sh,
+      darkBg: dark ? '#3A404B' : 'transparent', darkFg: dark ? t.text : t.muted, darkShadow: dark ? segOn.sh : 'none',
+    };
+
+    const raw = [
+      { title: 'Jaarlaag 2', classes: [{ name: '2A', se: false, students: [
+        ['Noor Bakker', '106101', [7.2, 6.8, 7.9, 8.4]], ['Daan Visser', '106102', [6.1, 5.4, 5.0, 4.6]],
+        ['Lotte Jansen', '106103', [8.8, 9.1, 8.6, 9.0]], ['Mehmet Yilmaz', '106104', [5.2, 6.0, 6.6, 7.4]],
+        ['Sanne de Vries', '106105', [7.5, 7.0, 7.3, 7.4]], ['Bram Smit', '106106', [6.9, 7.4, 6.2, 6.0]],
+        ['Yara El Idrissi', '106107', [4.8, 5.6, 6.1, 6.9]], ['Thijs Mulder', '106108', [8.1, 7.6, 7.9, 6.6]],
+        ['Fleur de Boer', '106109', [9.2, 8.9, 9.4, 9.6]], ['Ravi Sharma', '106110', []],
+      ] }] },
+      { title: 'Jaarlaag 5', classes: [{ name: '5A', se: true, students: [
+        ['Julia Hendriks', '105201', [6.4, 7.1, 6.9], 6.8], ['Sem Dijkstra', '105202', [5.1, 4.6, 5.8], 5.2],
+        ['Emma Kok', '105203', [7.8, 8.2, 8.9], 8.3], ['Luuk Peters', '105204', [6.0, 6.5, 4.3], 5.6],
+        ['Aisha Rahman', '105205', [8.4, 7.9, 8.1], 8.1], ['Finn van Dam', '105206', [7.0, 6.2, 6.6], 6.6],
+      ] }] },
+    ];
+    const y = (g) => 26 - ((g - 1) / 9) * 24;
+    const trend = (d) => {
+      if (d > 1) return { rot: -50, c: dark ? '#3DDC84' : '#0E9F4F', l: 'Sterk omhoog' };
+      if (d >= 0.5) return { rot: -25, c: dark ? '#86C99C' : '#4E8F63', l: 'Licht omhoog' };
+      if (d > -0.5) return { rot: 0, c: t.muted, l: 'Gelijk' };
+      if (d >= -1) return { rot: 25, c: dark ? '#E6A08F' : '#B4654F', l: 'Licht omlaag' };
+      return { rot: 50, c: dark ? '#FF6B5E' : '#D92D20', l: 'Sterk omlaag' };
+    };
+    const years = raw.map((yr) => ({ title: yr.title, classes: yr.classes.map((cl) => ({ name: cl.name, students: cl.students.map(([name, nr, gs, se]) => {
+      if (!gs.length) return { name, nr, has: false, none: true };
+      const avg = gs.reduce((s, g) => s + g, 0) / gs.length;
+      const last = gs[gs.length - 1];
+      const tr = trend(last - avg);
+      const step = 60 / Math.max(1, gs.length - 1);
+      const lc = this.gradeColor(last, dark);
+      const barC = (g) => g < 5.5 ? (dark ? '#F06A60' : '#E5584F') : (dark ? this.lerp('#D9B23E', '#4FBF78', (g - 5.5) / 4) : this.lerp('#F2C94C', '#4CAF6E', (g - 5.5) / 4));
+      return {
+        bars: gs.map((g, i) => ({ h: Math.round(4 + (g / 10) * 24), c: barC(g), t: 'Toets ' + (i + 1) + ': ' + this.fmt(g) })),
+        barsLabel: 'Cijfers: ' + gs.map((g) => this.fmt(g)).join(', '),
+        noSe: !cl.se, both: 'Laatste ' + this.fmt(last) + (se != null ? ' · SE ' + this.fmt(se) : ''),
+        name, nr, has: true, none: false,
+        last: this.fmt(last), lastColor: lc, lastBg: lc + (dark ? '26' : '18'),
+        avg: this.fmt(avg), avgColor: this.gradeColor(avg, dark),
+        hasSe: cl.se, se: se != null ? this.fmt(se) : '', seColor: se != null ? this.gradeColor(se, dark) : t.muted,
+        rot: tr.rot, trendColor: tr.c, trendLabel: 'Trend: ' + tr.l,
+        spark: gs.map((g, i) => `${(2 + i * step).toFixed(1)},${y(g).toFixed(1)}`).join(' '),
+        lx: 2 + (gs.length - 1) * step, ly: y(last), passY: y(5.5),
+      };
+    }) })) }));
+
+    const G = [
+      { title: 'Jaarlaag 2', groups: [
+        ['2A', 'Gymnasium', 'M. Kortleven', 23, 7.6, 1.4, '14%', null, 'Noor, Daan, Lotte, Mehmet, Sanne, Bram, Yara, Thijs, Fleur, Ravi, Anouk, Jesse, Mila, Sven, Iris, Ruben, Zoë, Lars, Hanna, Milan, Esmee, Tim, Nina'],
+        ['2B', 'Gymnasium', 'M. Kortleven', 24, 8.4, 1.3, '4%', null, 'Alma, Ceylin, Daan, Eline, Hamid, Jean, Juna, Kuzey, Laurens, Liam, Marko, Marwa, Morris, Olivier, Rafael, Ruben, Sebi, Sonia, Tibbe, Wietze, Zora, Bo, Kai, Lea'],
+        ['2C', 'Atheneum', 'H. Hofman', 25, 6.9, 1.6, '21%', null, 'Bent, Bernard, Dastan, Emma, Fien, Finn, Floor, Ibrahim, Jelte, Kasper, Lina, Louise, Marcus, Mouad, Naomi, Noah, Rayan, Robbe, Roux, Simon, Sophie, Yaël, Joep, Isa, Vera'],
+      ] },
+      { title: 'Jaarlaag 5', groups: [
+        ['5A', 'Gymnasium', 'T. van Westen', 18, 6.6, 1.5, '28%', [6.2, 1.3, '22%'], 'Julia, Sem, Emma, Luuk, Aisha, Finn, Jens, Merel, Olaf, Pien, Quinten, Roos, Stijn, Tess, Ugo, Vince, Wouter, Xander'],
+        ['5B', 'Atheneum', 'T. van Westen', 21, 7.1, 1.2, '10%', [6.9, 1.1, '5%'], 'Amira, Bas, Cas, Dewi, Elif, Femke, Gijs, Hidde, Ilse, Joris, Koen, Lieke, Max, Nora, Owen, Puck, Rik, Saar, Teun, Uma, Valerie'],
+      ] },
+    ];
+    const groupYears = G.map((gy) => ({ title: gy.title, groups: gy.groups.map(([name, type, teacher, count, mean, sd, fail, se, names]) => ({
+      name, type, teacher, count, mean: this.fmt(mean), sd: this.fmt(sd), meanColor: this.gradeColor(mean, dark),
+      fail, failColor: parseInt(fail, 10) >= 20 ? t.danger : t.muted,
+      plain: se == null, swapA: se != null && gVariant === 'A', inlineB: se != null && gVariant === 'B',
+      se: se ? this.fmt(se[0]) : '', seSd: se ? this.fmt(se[1]) : '', seFail: se ? se[2] : '',
+      seColor: se ? this.gradeColor(se[0], dark) : t.muted, seFailColor: se && parseInt(se[2], 10) >= 20 ? t.danger : t.muted,
+      both: se ? 'R ' + this.fmt(mean) + ' ± ' + this.fmt(sd) + ' · SE ' + this.fmt(se[0]) + ' ± ' + this.fmt(se[1]) : '', names,
+    })) }));
+
+    return {
+      t, a, tabs, swatches, seg, years, groupYears,
+      menuOpen: this.state.menuOpen,
+      isLight: dark ? 'false' : 'true', isDark: dark ? 'true' : 'false',
+      toggleMenu: () => this.setState({ menuOpen: !this.state.menuOpen }),
+      setLight: () => this.setState({ theme: 'licht' }), setDark: () => this.setState({ theme: 'donker' }),
+      screenTitle: this.state.tab,
+      showLeerlingen: this.state.tab === 'Leerlingen', showGroepen: this.state.tab === 'Groepen',
+      showOther: this.state.tab !== 'Leerlingen' && this.state.tab !== 'Groepen',
+      filters: this.state.tab === 'Groepen' ? ['Alle schoolsoorten', 'Alle jaarlagen', 'Alle groepen'] : ['Alle schoolsoorten', 'Alle jaarlagen', 'Alle leerlingen'],
+    };
+  }
+}
+</script>
+</body>
+</html>

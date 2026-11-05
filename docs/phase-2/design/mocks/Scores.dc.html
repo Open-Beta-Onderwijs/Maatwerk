@@ -1,0 +1,192 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: scores invoeren</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-t{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:13px}
+.mw-t td,.mw-t th{border-bottom:1px solid #EEF0F3;border-right:1px solid #EEF0F3;height:30px;padding:0;text-align:center}
+.mw-t tbody tr:hover td{filter:brightness(.97)}
+.mw-ib{width:32px;height:32px;border-radius:7px;border:1px solid #E1E4EA;background:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#1B2230}
+.mw-cb{width:16px;height:16px;accent-color:#2F6FD6;margin:0;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; overflow: hidden; background: #F5F6F8; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: #1B2230">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div>
+  <section role="dialog" aria-modal="true" aria-labelledby="mw-sc" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 1320px; height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); overflow: hidden">
+    <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 18px 20px 16px 26px; border-bottom: 1px solid #E1E4EA">
+      <h2 id="mw-sc" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; flex: 1; min-width: 0">
+        <span style="color: #5D6675; font-weight: 600">Scores invoeren</span>
+        <span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: repeating-linear-gradient(135deg, #2F6FD6 0 4px, #97B7EB 4px 8px); border: 1.5px solid #2F6FD6; padding: 1px 6px; border-radius: 5px; text-shadow: 0 0 2px #1C4380, 0 0 3px #1C4380">201</span>
+        <span style="color: #2560BF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Practicum Dichtheid TW1</span>
+      </h2>
+      <button class="mw-ib" aria-label="Help" title="Sneltoetsen en uitleg (klik of wijs aan)" style="font-weight: 700">?</button>
+      <button class="mw-ib" aria-label="Ongedaan maken" title="Ongedaan maken (Ctrl+Z)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg></button>
+      <button class="mw-ib" aria-label="Opnieuw" title="Opnieuw (Ctrl+Y)" disabled style="color: #9AA1AD; cursor: default"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H10a6 6 0 0 0 0 12h3"></path></svg></button>
+      <span style="width: 1px; height: 24px; background: #E1E4EA; margin: 0 4px"></span>
+      <label title="Een punt typen vult N in (niet gemaakt)" style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #C9CED8; border-radius: 7px; font-size: 13px; cursor: pointer"><input type="checkbox" checked class="mw-cb">. → N</label>
+      <button style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Toets bewerken</button>
+      <div style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #5D6675">N-term
+        <span style="display: inline-flex; height: 32px; border: 1px solid #C9CED8; border-radius: 7px; overflow: hidden">
+          <button aria-label="N-term lager" style="width: 30px; border: 0; background: #F5F6F8; cursor: pointer; font: inherit">−</button>
+          <input value="1,0" aria-label="N-term" style="width: 46px; border: 0; border-left: 1px solid #E1E4EA; border-right: 1px solid #E1E4EA; text-align: center; font: inherit; color: #1B2230">
+          <button aria-label="N-term hoger" style="width: 30px; border: 0; background: #F5F6F8; cursor: pointer; font: inherit">+</button>
+        </span>
+      </div>
+      <button aria-label="Sluiten" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+
+    <div style="flex: 1; min-height: 0; overflow: auto; padding: 0 26px 24px">
+      <div style="width: max-content; margin: 0 auto">
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+        <div style="position: sticky; left: 0; top: 0; z-index: 4; background: #FFFFFF; padding: 16px 0 8px; display: flex; align-items: baseline; gap: 12px">
+          <h3 style="margin: 0; font-size: 18px; color: #2560BF">{{g.name}}</h3>
+          <span style="font-size: 13px; color: #5D6675">{{g.count}} leerlingen · {{g.done}}</span>
+        </div>
+        <table class="mw-t" style="margin-bottom: 18px; border-left: 1px solid #E1E4EA; border-top: 1px solid #E1E4EA">
+          <thead>
+            <tr>
+              <th style="position: sticky; top: 50px; left: 0; z-index: 3; background: #F7F8FA; width: 70px; text-align: left; padding: 0 10px; height: 52px; vertical-align: bottom; padding-bottom: 6px">#</th>
+              <th style="position: sticky; top: 50px; left: 71px; z-index: 3; background: #F7F8FA; width: 190px; text-align: left; padding: 0 10px; vertical-align: bottom; padding-bottom: 6px; box-shadow: 2px 0 0 #E1E4EA">Naam</th>
+              <sc-for list="{{qs}}" as="q" hint-placeholder-count="8">
+                <th style="position: sticky; top: 50px; z-index: 2; background: #F7F8FA; width: 38px; vertical-align: bottom; padding-bottom: 6px">
+                  <div style="font-size: 10px; font-weight: 600; color: #5D6675; line-height: 1.2">{{q.tag}}<br>{{q.max}}p</div>
+                  <div style="font-weight: 700; margin-top: 2px">{{q.n}}</div>
+                </th>
+              </sc-for>
+      </div>
+              <th style="position: sticky; top: 50px; z-index: 2; background: #FFFFFF; width: 10px; border-bottom-color: transparent"></th>
+              <sc-for list="{{obs}}" as="o" hint-placeholder-count="5">
+                <th title="{{o.name}}" style="position: sticky; top: 50px; z-index: 2; background: #F7F8FA; width: 30px; vertical-align: bottom; padding-bottom: 6px"><span role="img" aria-label="{{o.name}}" style="font-size: 16px">{{o.ic}}</span></th>
+              </sc-for>
+              <th style="position: sticky; top: 50px; z-index: 2; background: #FFFFFF; width: 10px; border-bottom-color: transparent"></th>
+              <th style="position: sticky; top: 50px; z-index: 2; background: #F7F8FA; width: 72px; vertical-align: bottom; padding-bottom: 6px">Totaal</th>
+              <th style="position: sticky; top: 50px; z-index: 2; background: #F7F8FA; width: 60px; vertical-align: bottom; padding-bottom: 6px">Cijfer</th>
+              <th style="position: sticky; top: 50px; z-index: 2; background: #FFFFFF; width: 10px; border-bottom-color: transparent"></th>
+              <sc-for list="{{rtti}}" as="r" hint-placeholder-count="4">
+                <th style="position: sticky; top: 50px; z-index: 2; background: #F7F8FA; width: 50px; vertical-align: bottom; padding-bottom: 6px"><span style="display: inline-flex; align-items: center; gap: 4px"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{r.c}}"></span>{{r.k}}%</span></th>
+              </sc-for>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{g.rows}}" as="s" hint-placeholder-count="10">
+              <tr>
+                <td style="position: sticky; left: 0; z-index: 1; background: #FFFFFF; text-align: left; padding: 0 10px; color: #5D6675">{{s.nr}}</td>
+                <td style="position: sticky; left: 71px; z-index: 1; background: #FFFFFF; text-align: left; padding: 0 10px; white-space: nowrap; box-shadow: 2px 0 0 #E1E4EA"><a href="#" style="text-decoration: none; color: #1B2230; font-weight: 600">{{s.name}}</a></td>
+                <sc-for list="{{s.cells}}" as="c" hint-placeholder-count="8">
+                  <td style="background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.w}}; box-shadow: {{c.focus}}">{{c.v}}</td>
+                </sc-for>
+                <td style="border-bottom-color: transparent"></td>
+                <sc-for list="{{s.obs}}" as="o" hint-placeholder-count="5">
+                  <td><input type="checkbox" class="mw-cb" checked="{{o}}" aria-label="Observatie"></td>
+                </sc-for>
+                <td style="border-bottom-color: transparent"></td>
+                <td style="color: #5D6675">{{s.total}}</td>
+                <td style="background: {{s.gbg}}; font-weight: 700">{{s.gradeTxt}}</td>
+                <td style="border-bottom-color: transparent"></td>
+                <sc-for list="{{s.pcts}}" as="p" hint-placeholder-count="4">
+                  <td style="background: {{p.bg}}; color: {{p.fg}}; font-size: 12px">{{p.v}}</td>
+                </sc-for>
+              </tr>
+            </sc-for>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="position: sticky; left: 0; z-index: 1; background: #F7F8FA; text-align: left; padding: 0 10px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: #5D6675; box-shadow: 2px 0 0 #E1E4EA">GEMIDDELDE</td>
+              <sc-for list="{{g.qAvg}}" as="qa" hint-placeholder-count="8"><td style="background: #F7F8FA; color: #5D6675; font-size: 12px">{{qa}}</td></sc-for>
+              <td style="border-bottom-color: transparent"></td>
+              <sc-for list="{{g.obsCount}}" as="oc" hint-placeholder-count="5"><td style="background: #F7F8FA; color: #5D6675; font-size: 12px">{{oc}}</td></sc-for>
+              <td style="border-bottom-color: transparent"></td>
+              <td style="background: #F7F8FA; color: #5D6675">{{g.totAvg}}</td>
+              <td style="background: {{g.gbg}}; font-weight: 700">{{g.avg}}</td>
+              <td style="border-bottom-color: transparent"></td>
+              <sc-for list="{{g.pAvg}}" as="pa" hint-placeholder-count="4"><td style="background: #F7F8FA; color: #5D6675; font-size: 12px">{{pa}}</td></sc-for>
+            </tr>
+            <tr>
+              <td colspan="2" style="position: sticky; left: 0; z-index: 1; background: #F7F8FA; text-align: left; padding: 0 10px; font-size: 11px; font-weight: 700; letter-spacing: .8px; color: #5D6675; box-shadow: 2px 0 0 #E1E4EA">STANDAARDDEVIATIE</td>
+              <sc-for list="{{qs}}" as="q" hint-placeholder-count="8"><td style="background: #F7F8FA"></td></sc-for>
+              <td style="border-bottom-color: transparent"></td>
+              <sc-for list="{{obs}}" as="o" hint-placeholder-count="5"><td style="background: #F7F8FA"></td></sc-for>
+              <td style="border-bottom-color: transparent"></td>
+              <td style="background: #F7F8FA; color: #5D6675; font-size: 12px">± {{g.totSd}}</td>
+              <td style="background: #F7F8FA; color: #5D6675; font-size: 12px">± {{g.sd}}</td>
+              <td style="border-bottom-color: transparent"></td>
+              <sc-for list="{{rtti}}" as="r" hint-placeholder-count="4"><td style="background: #F7F8FA"></td></sc-for>
+            </tr>
+          </tfoot>
+        </table>
+      </sc-for>
+    </div>
+    <div style="flex: none; display: flex; align-items: center; gap: 18px; padding: 10px 26px; border-top: 1px solid #E1E4EA; background: #FAFBFC; font-size: 12px; color: #5D6675">
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: #DFF1E5"></span>volle punten</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: #FCF1CF"></span>deels</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: #FBE1DE"></span>0 punten</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 3px; background: #EEF0F3"></span>N = niet gemaakt</span>
+      <div style="flex: 1"></div>
+      <span style="color: #1E7B3C; font-weight: 600">● Alles opgeslagen</span>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, t) { t = Math.max(0, Math.min(1, t)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+  fmt(g) { return g.toFixed(1).replace('.', ','); }
+  renderVals() {
+    const Q = [['T1', 4], ['T1', 2], ['T1', 8], ['T1', 1], ['T1', 2], ['T2', 2], ['T1', 2], ['T2', 2]];
+    const qs = Q.map(([tag, max], i) => ({ tag, max, n: i + 1 }));
+    const obs = [['📏', 'Eenheid vergeten'], ['📈', 'Grafiek: aslabels vergeten'], ['📉', 'Grafiek: helling niet goed bepaald'], ['📐', 'Grafiek: verkeerde schaal'], ['🧪', 'Volume verkeerd berekend']].map(([ic, name]) => ({ ic, name }));
+    const rtti = [['R', '#3A9A4A'], ['T1', '#2A9FC4'], ['T2', '#E0922F'], ['I', '#D24A45']].map(([k, c]) => ({ k, c }));
+    const gc = (g) => g < 5.5 ? '#B42318' : this.lerp('#8A6A00', '#1E7B3C', (g - 5.5) / 4);
+    const gbg = (g) => g < 5.5 ? '#F7CFCA' : g < 7.5 ? this.lerp('#FBE7A6', '#E3EDB4', (g - 5.5) / 2) : this.lerp('#E3EDB4', '#C6E8CF', (g - 7.5) / 2);
+    const gb = (g) => g < 5.5 ? '#E5736B' : this.lerp('#F2C94C', '#5DB97B', (g - 5.5) / 4);
+    let seed = 7;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const NAMES = [['Noor Bakker', '106101'], ['Daan Visser', '106102'], ['Lotte Jansen', '106103'], ['Mehmet Yilmaz', '106104'], ['Sanne de Vries', '106105'], ['Bram Smit', '106106'], ['Yara El Idrissi', '106107'], ['Thijs Mulder', '106108'], ['Fleur de Boer', '106109'], ['Ravi Sharma', '106110'], ['Anouk Willems', '106111'], ['Jesse Bos', '106112'], ['Mila Hoekstra', '106113'], ['Sven Kuipers', '106114']];
+    const NAMES2 = [['Alma Verbeek', '106201'], ['Ceylin Aydın', '106202'], ['Daniël Post', '106203'], ['Eline Graaf', '106204'], ['Hamid Nouri', '106205'], ['Juna Peeters', '106206']];
+    const maxTot = Q.reduce((s, q) => s + q[1], 0);
+    const mean = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(xs.reduce((s, x) => s + (x - m) ** 2, 0) / xs.length); };
+    const pctCell = (p) => p == null ? { v: 'NVT', bg: '#FFFFFF', fg: '#9AA1AD' } : { v: p + '%', bg: p >= 80 ? '#DFF1E5' : p >= 55 ? '#FCF1CF' : '#FBE1DE', fg: '#1B2230' };
+    let focusDone = false;
+    const mk = (name, list) => {
+      const rows = list.map(([nm, nr], ri) => {
+        const sc = Q.map(([, max]) => { const r = rnd(); if (r < 0.04) return 'N'; return Math.min(max, Math.max(0, Math.round(max * (0.35 + rnd() * 0.75)))); });
+        const cells = sc.map((v, qi) => {
+          const max = Q[qi][1];
+          const focus = !focusDone && ri === 2 && qi === 2 ? (focusDone = true, 'inset 0 0 0 2px #2F6FD6') : 'none';
+          if (v === 'N') return { v: 'N', bg: '#EEF0F3', fg: '#5D6675', w: 600, focus };
+          return { v, bg: v === max ? '#DFF1E5' : v === 0 ? '#FBE1DE' : '#FCF1CF', fg: '#1B2230', w: 500, focus };
+        });
+        const tot = sc.reduce((s, v) => s + (v === 'N' ? 0 : v), 0);
+        const grade = Math.round((1 + 9 * tot / maxTot) * 10) / 10;
+        const t1 = Q.reduce((s, q, i) => s + (q[0] === 'T1' && sc[i] !== 'N' ? sc[i] : 0), 0), t1m = Q.reduce((s, q) => s + (q[0] === 'T1' ? q[1] : 0), 0);
+        const t2 = Q.reduce((s, q, i) => s + (q[0] === 'T2' && sc[i] !== 'N' ? sc[i] : 0), 0), t2m = Q.reduce((s, q) => s + (q[0] === 'T2' ? q[1] : 0), 0);
+        const ob = obs.map(() => rnd() < 0.3);
+        return { nr, name: nm, cells, sc, tot, grade, ob, obs: ob, total: tot + ' / ' + maxTot, gradeTxt: this.fmt(grade), gbg: gbg(grade), gc: gc(grade), gb: gb(grade), pcts: [pctCell(null), pctCell(Math.round(100 * t1 / t1m)), pctCell(Math.round(100 * t2 / t2m)), pctCell(null)], t1p: 100 * t1 / t1m, t2p: 100 * t2 / t2m };
+      });
+      const grades = rows.map((r) => r.grade), tots = rows.map((r) => r.tot), avg = mean(grades);
+      return {
+        name, count: rows.length, done: 'alle scores ingevuld', rows,
+        qAvg: Q.map((q, i) => this.fmt(mean(rows.map((r) => (r.sc[i] === 'N' ? 0 : r.sc[i]))))),
+        obsCount: obs.map((_, i) => rows.filter((r) => r.ob[i]).length),
+        totAvg: this.fmt(mean(tots)) + ' / ' + maxTot, totSd: this.fmt(sd(tots)),
+        avg: this.fmt(avg), sd: this.fmt(sd(grades)), gbg: gbg(avg), gc: gc(avg), gb: gb(avg),
+        pAvg: ['NVT', Math.round(mean(rows.map((r) => r.t1p))) + '%', Math.round(mean(rows.map((r) => r.t2p))) + '%', 'NVT'],
+      };
+    };
+    return { qs, obs, rtti, groups: [mk('2A', NAMES), mk('2B', NAMES2)] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: beheer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-card{transition:box-shadow .15s}
+.mw-card:hover{box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.mw-ib{width:32px;height:32px;border-radius:7px;border:1px solid #E1E4EA;background:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#1B2230}
+.mw-in{height:36px;box-sizing:border-box;padding:0 12px;border:1px solid #C9CED8;border-radius:8px;background:#FFFFFF;font:inherit;color:#1B2230}
+.mw-lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.6px;color:#5D6675}
+.mw-chip{height:30px;padding:0 12px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; display: flex; flex-direction: column; background: #F5F6F8; color: #1B2230; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden">
+
+  <header style="height: 56px; flex: none; display: flex; align-items: stretch; gap: 2px; padding: 0 20px 0 24px; background: #FFFFFF; border-bottom: 1px solid #E1E4EA">
+    <div style="display: flex; align-items: center; gap: 10px; margin-right: 22px">
+      <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50"></rect><polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon><polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon></svg>
+      <span aria-label="Maatwerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: .5px; color: #2E3E50">M<span style="font-size: 0.72em">AATWERK</span></span>
+    </div>
+    <nav aria-label="Hoofdmenu" style="display: flex; align-items: stretch; gap: 2px">
+      <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="7">
+        <button onClick="{{tb.pick}}" aria-current="{{tb.cur}}" style="display: flex; align-items: center; gap: 7px; padding: 0 12px; border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: {{tb.w}}; color: {{tb.color}}; box-shadow: inset 0 -3px 0 {{tb.bar}}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: {{tb.ic}}">
+            <sc-if value="{{tb.i0}}" hint-placeholder-val="{{ false }}"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></sc-if>
+            <sc-if value="{{tb.i1}}" hint-placeholder-val="{{ false }}"><circle cx="9" cy="8" r="3.5"></circle><path d="M2 20.5a7 7 0 0 1 14 0"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18.5 14a7 7 0 0 1 3.5 6.5"></path></sc-if>
+            <sc-if value="{{tb.i2}}" hint-placeholder-val="{{ false }}"><path d="M9 3.5h3.5a2 2 0 1 1 4 0H20v5.5a2 2 0 1 0 0 4V20h-5.5a2 2 0 1 0-4 0H5v-5.5a2 2 0 1 1 0-4V3.5z"></path></sc-if>
+            <sc-if value="{{tb.i3}}" hint-placeholder-val="{{ false }}"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="9" cy="11" r="2.5"></circle><path d="M5.5 16.5a3.5 3.5 0 0 1 7 0M15 10h3M15 13.5h3"></path></sc-if>
+            <sc-if value="{{tb.i4}}" hint-placeholder-val="{{ false }}"><path d="M2.5 9 12 4.5 21.5 9 12 13.5z"></path><path d="M6.5 11v5c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3v-5"></path><path d="M21.5 9v5"></path></sc-if>
+            <sc-if value="{{tb.i5}}" hint-placeholder-val="{{ false }}"><path d="M12 3 4.5 6v6c0 4.4 3.2 7.9 7.5 9 4.3-1.1 7.5-4.6 7.5-9V6z"></path><path d="m8.5 12 2.5 2.5 4.5-5"></path></sc-if>
+            <sc-if value="{{tb.i6}}" hint-placeholder-val="{{ false }}"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"></path><circle cx="15" cy="6" r="2"></circle><circle cx="9" cy="12" r="2"></circle><circle cx="17" cy="18" r="2"></circle></sc-if>
+          </svg>
+          {{tb.label}}
+        </button>
+      </sc-for>
+    </nav>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center"><span style="width: 38px; height: 38px; box-sizing: border-box; border-radius: 9px; border: 2.5px solid #C93636; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 11px">ADM</span></div>
+  </header>
+
+  <main style="flex: 1; min-height: 0; overflow-y: auto">
+    <div style="position: sticky; top: 0; z-index: 2; background: #F5F6F8; border-bottom: 1px solid {{headLine}}">
+      <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px 16px; display: flex; align-items: center; gap: 10px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 650; color: #2560BF">{{title}}</h1>
+        <div style="flex: 1"></div>
+        <sc-if value="{{isUsers}}" hint-placeholder-val="{{ true }}"><button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">+ Gebruiker toevoegen</button></sc-if>
+        <sc-if value="{{isSettings}}" hint-placeholder-val="{{ false }}"><button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button></sc-if>
+      </div>
+    </div>
+
+    <div style="max-width: 1360px; margin: 0 auto; padding: 6px 40px 48px">
+
+      <sc-if value="{{isUsers}}" hint-placeholder-val="{{ true }}">
+        <h2 style="margin: 16px 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #2560BF">BEHEERDER</h2>
+        <div class="mw-card" style="display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+          <span style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 12px; border: 3px solid #C93636; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 15px">ADM</span>
+          <div style="display: flex; flex-direction: column"><b>Administrator</b><span style="font-size: 13px; color: #5D6675">Natuurkunde, Biologie, Scheikunde, Wiskunde</span></div>
+        </div>
+
+        <h2 style="margin: 26px 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #2560BF">ACTIEVE GEBRUIKERS</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <sc-for list="{{users}}" as="u" hint-placeholder-count="3">
+            <div class="mw-card" style="display: flex; align-items: center; gap: 16px; padding: 12px 18px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+              <span style="width: 52px; height: 52px; box-sizing: border-box; border-radius: 50%; border: 3px solid {{u.ring}}; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: {{u.fs}}px">{{u.ini}}</span>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+                <div style="display: flex; align-items: center; gap: 10px"><b>{{u.name}}</b>
+                  <sc-if value="{{u.noPin}}" hint-placeholder-val="{{ false }}"><span title="Stelt die in bij de volgende aanmelding" style="font-size: 12px; padding: 1px 8px; border-radius: 999px; background: #FFF6E0; color: #7A5300; border: 1px solid #F0C36D">Nog geen pincode</span></sc-if>
+                </div>
+                <span style="font-size: 13px; color: #5D6675">{{u.vak}}</span>
+              </div>
+              <sc-if value="{{u.hasPin}}" hint-placeholder-val="{{ true }}"><button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Pincode resetten</button></sc-if>
+              <button class="mw-ib" aria-label="Bewerken" onClick="{{u.edit}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="m13.5 6.5 4 4"></path></svg></button>
+              <button class="mw-ib" aria-label="Deactiveren" title="Deactiveren" style="color: #B42318"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="m6 6 12 12"></path></svg></button>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="margin: 26px 0 6px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #2560BF">SECTIEVOORZITTERS</h2>
+        <p style="margin: 0 0 12px; color: #5D6675; font-size: 13px; line-height: 1.5; max-width: 760px">De sectievoorzitter van een vak wijzigt de leerlingen en docenten van de groepen van dat vak, en logt daarvoor in met de eigen pincode via de aparte badge "Sectievoorzitter".</p>
+        <div style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 6px 18px; max-width: 620px">
+          <sc-for list="{{sections}}" as="sv" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 16px; padding: 8px 0; border-top: 1px solid {{sv.line}}">
+              <span style="width: 140px; display: flex; align-items: center; gap: 8px"><span aria-hidden="true">{{sv.emo}}</span>{{sv.vak}}</span>
+              <select class="mw-in" aria-label="{{sv.vak}}" style="flex: 1"><option>{{sv.who}}</option></select>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isSchool}}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 16px; display: grid; grid-template-columns: 380px minmax(0, 1fr); background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; overflow: hidden">
+          <div style="background: #FAFBFC; border-right: 1px solid #E1E4EA; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+            <span style="align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">LOGO</span>
+            <div style="width: 300px; height: 170px; border-radius: 10px; border: 1.5px dashed #C9CED8; background: #FFFFFF; display: flex; align-items: center; justify-content: center; color: #5D6675">[schoollogo]</div>
+            <span style="font-size: 12px; color: #5D6675">Gebruikt in de rapporten. PNG of SVG.</span>
+            <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Logo wijzigen…</button>
+          </div>
+          <div style="padding: 24px 28px; display: flex; flex-direction: column; gap: 18px">
+            <sc-for list="{{schoolFields}}" as="sf" hint-placeholder-count="3">
+              <div style="display: flex; align-items: flex-start; gap: 12px">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+                  <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">{{sf.label}}</span>
+                  <span style="font-size: {{sf.size}}px; font-weight: {{sf.w}}; font-style: {{sf.fs}}">{{sf.value}}</span>
+                </div>
+                <button class="mw-ib" aria-label="{{sf.aria}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="m13.5 6.5 4 4"></path></svg></button>
+              </div>
+            </sc-for>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">SCHOOLSOORTEN</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                <sc-for list="{{types}}" as="st" hint-placeholder-count="7"><button class="mw-chip" aria-pressed="{{st.on}}" style="border: 1px solid {{st.border}}; background: {{st.bg}}; color: {{st.color}}; font-weight: {{st.w}}">{{st.label}}</button></sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">WATERMERK</span>
+              <div style="display: flex; align-items: center; gap: 14px">
+                <div style="width: 72px; height: 72px; border-radius: 10px; border: 1px solid #E1E4EA; background: #F5F6F8; display: flex; align-items: center; justify-content: center; color: #9AA1AD; font-size: 12px">SVG</div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 13px; color: #5D6675">Rechtsonder in de app; in het donkere thema geïnverteerd.</span>
+                  <button style="align-self: flex-start; height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Watermerk wijzigen…</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isCheck}}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 16px; display: flex; align-items: center; gap: 16px; max-width: 980px">
+          <p style="margin: 0; flex: 1; color: #5D6675; line-height: 1.5">Controleert alle bestanden in de gedeelde map: onleesbare bestanden, bestanden die buiten Maatwerk zijn gewijzigd, OneDrive-conflictkopieën en verwijzingen naar iets dat niet bestaat.</p>
+          <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer; white-space: nowrap">Opnieuw controleren</button>
+        </div>
+        <sc-if value="{{checkOk}}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 18px; max-width: 980px; display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: #FFFFFF; border: 1px solid #BFE3CB; border-radius: 12px">
+            <span style="width: 40px; height: 40px; border-radius: 50%; background: #EAF6EE; color: #1E7B3C; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span>
+            <div style="display: flex; flex-direction: column"><b>Geen fouten of waarschuwingen</b><span style="font-size: 13px; color: #5D6675">238 bestanden gecontroleerd · vandaag om 11:18</span></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{checkIssues}}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top: 18px; max-width: 980px; display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; gap: 10px; font-size: 13px; color: #5D6675">238 bestanden gecontroleerd · vandaag om 11:18 <span style="color: #B42318; font-weight: 600">1 fout</span> <span style="color: #7A5300; font-weight: 600">2 waarschuwingen</span></div>
+            <sc-for list="{{issues}}" as="is" hint-placeholder-count="3">
+              <div style="display: flex; align-items: flex-start; gap: 14px; padding: 14px 18px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+                <span style="flex: none; margin-top: 1px; font-size: 11px; font-weight: 700; letter-spacing: .5px; padding: 2px 8px; border-radius: 999px; background: {{is.bg}}; color: {{is.fg}}">{{is.kind}}</span>
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 3px">
+                  <span>{{is.msg}}</span>
+                  <span style="font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12px; color: #5D6675">{{is.path}}</span>
+                </div>
+                <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap">{{is.action}}</button>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{isSettings}}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 16px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 16px">
+            <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px">
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <h2 style="margin: 0; font-size: 16px">Snapshots</h2>
+                <p style="margin: 0; color: #5D6675; font-size: 13px; line-height: 1.5">Een snapshot is een zip van alle gegevens (zonder foto's en rapporten) in de map snapshots in de gegevensmap. Hij beschermt tegen per ongeluk gewiste of overschreven gegevens, niet tegen het verdwijnen van de hele gedeelde map: gebruik daarvoor ook de versiegeschiedenis van OneDrive.</p>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px">
+                <sc-for list="{{snapFields}}" as="sn" hint-placeholder-count="4">
+                  <label class="mw-lbl">{{sn.label}}
+                    <span style="display: flex; align-items: center; width: 200px; height: 36px; border: 1px solid #C9CED8; border-radius: 8px; background: #FFFFFF; overflow: hidden">
+                      <input value="{{sn.v}}" inputmode="numeric" aria-label="{{sn.label}}" style="flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 12px; font: inherit; font-size: 14px; font-weight: 400; color: #1B2230; letter-spacing: 0">
+                      <span style="padding: 0 12px; height: 100%; display: flex; align-items: center; background: #F5F6F8; border-left: 1px solid #E1E4EA; font-size: 13px; font-weight: 400; letter-spacing: 0">{{sn.unit}}</span>
+                    </span>
+                    <span style="font-weight: 400; letter-spacing: 0; font-size: 12px">{{sn.help}}</span>
+                  </label>
+                </sc-for>
+              </div>
+            </section>
+            <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px">
+              <h2 style="margin: 0; font-size: 16px">Editor</h2>
+              <label class="mw-lbl">TIJDSLIMIET VOOR HET COMPILEREN
+                <span style="display: flex; align-items: center; width: 200px; height: 36px; border: 1px solid #C9CED8; border-radius: 8px; background: #FFFFFF; overflow: hidden">
+                  <input value="30" inputmode="numeric" aria-label="Tijdslimiet" style="flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 12px; font: inherit; font-size: 14px; font-weight: 400; color: #1B2230; letter-spacing: 0">
+                  <span style="padding: 0 12px; height: 100%; display: flex; align-items: center; background: #F5F6F8; border-left: 1px solid #E1E4EA; font-size: 13px; font-weight: 400; letter-spacing: 0">seconden</span>
+                </span>
+                <span style="font-weight: 400; letter-spacing: 0; font-size: 12px; line-height: 1.5">Een opdracht die langer nodig heeft, wordt in de editor afgebroken met een melding. Standaard 30 seconden; geldt voor editors die daarna worden geopend.</span>
+              </label>
+            </section>
+          </div>
+          <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; align-items: center"><h2 style="margin: 0; font-size: 16px; flex: 1">Aanwezige snapshots</h2><a href="#" style="font-size: 13px; text-decoration: none; font-weight: 600">Map openen</a></div>
+            <sc-for list="{{snaps}}" as="s" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid #EEF0F3; font-variant-numeric: tabular-nums">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5D6675" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16v13H4z"></path><path d="M4 7l2-3h12l2 3M10 11h4"></path></svg>
+                <span style="flex: 1">{{s.d}}</span><span style="font-size: 12px; color: #5D6675">{{s.k}}</span>
+              </div>
+            </sc-for>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isOther}}" hint-placeholder-val="{{ false }}">
+        <p style="margin: 40px 0; color: #5D6675">Leerlingen, Groepen en Opdrachten zien er voor de beheerder uit als op bord 1 (leerlingen als lijst, zonder cijfers).</p>
+      </sc-if>
+    </div>
+  </main>
+
+  <sc-if value="{{editOpen}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" onClick="{{closeEdit}}" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div>
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-ue" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 720px; max-height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
+      <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 20px 24px 14px; border-bottom: 1px solid #E1E4EA">
+        <h2 id="mw-ue" style="margin: 0; flex: 1; font-size: 22px; color: #2560BF">Gebruiker bewerken</h2>
+        <button aria-label="Sluiten" onClick="{{closeEdit}}" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: grid; grid-template-columns: 2fr 1.2fr 2fr; gap: 12px">
+          <label class="mw-lbl">VOORNAAM<input class="mw-in" value="Matthias"></label>
+          <label class="mw-lbl">TUSSENVOEGSEL<input class="mw-in" placeholder="van"></label>
+          <label class="mw-lbl">ACHTERNAAM<input class="mw-in" value="Kortleven"></label>
+        </div>
+        <div style="display: flex; gap: 20px; align-items: flex-start">
+          <label class="mw-lbl">AFKORTING<input class="mw-in" value="KO" style="width: 120px"></label>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">KLEUR</span>
+            <div role="group" aria-label="Kleur badgerand" style="height: 36px; display: flex; align-items: center; justify-content: center; gap: 8px">
+              <sc-for list="{{rings}}" as="r" hint-placeholder-count="12"><button aria-label="{{r.c}}" aria-pressed="{{r.on}}" onClick="{{r.pick}}" style="width: 24px; height: 24px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: {{r.c}}; box-shadow: {{r.ring}}"></button></sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">SCHOOLSOORT</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{types}}" as="st" hint-placeholder-count="7"><button class="mw-chip" aria-pressed="{{st.on}}" style="border: 1px solid {{st.border}}; background: {{st.bg}}; color: {{st.color}}; font-weight: {{st.w}}">{{st.label}}</button></sc-for></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">VAKKEN</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{vakken}}" as="st" hint-placeholder-count="4"><button class="mw-chip" aria-pressed="{{st.on}}" style="border: 1px solid {{st.border}}; background: {{st.bg}}; color: {{st.color}}; font-weight: {{st.w}}">{{st.label}}</button></sc-for></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">PROFIELFOTO (OPTIONEEL)</span>
+          <div style="display: flex; gap: 18px; align-items: center">
+            <div aria-label="Uitsnede kiezen" style="position: relative; width: 300px; height: 190px; border-radius: 10px; overflow: hidden; background: linear-gradient(135deg, #9DB4C9, #C9B79C 55%, #7E8E6B)">
+              <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(16,24,40,.45); clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, 90px 20px, 90px 170px, 240px 170px, 240px 20px, 90px 20px)"></div>
+              <div style="position: absolute; left: 90px; top: 20px; width: 150px; height: 150px; box-sizing: border-box; border: 2px solid #FFFFFF; border-radius: 4px; cursor: move; box-shadow: 0 0 0 1px rgba(0,0,0,.2)">
+                <div style="position: absolute; inset: 0; border-radius: 50%; border: 1px dashed rgba(255,255,255,.8)"></div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; align-items: center">
+              <span style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid {{ringSel}}; background: linear-gradient(135deg, #B8B39A, #A7AF95); display: block"></span>
+              <span style="font-size: 12px; color: #5D6675">voorbeeld</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #5D6675; flex: 1">
+              <span>Sleep het vierkant om de uitsnede te kiezen; scroll om te zoomen. Elke afbeelding mag, ook als die niet vierkant is.</span>
+              <div style="display: flex; gap: 8px">
+                <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Andere foto…</button>
+                <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #B42318; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Verwijderen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: none; display: flex; justify-content: flex-end; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid #E1E4EA">
+        <button onClick="{{closeEdit}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button onClick="{{closeEdit}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"controle":{"editor":"enum","options":["geen meldingen","met meldingen"],"default":"geen meldingen"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { tab: 'Gebruikers', edit: false, ring: '#2F6FD6' }; }
+  renderVals() {
+    const T = ['Leerlingen', 'Groepen', 'Opdrachten', 'Gebruikers', 'School', 'Gegevenscontrole', 'Instellingen'];
+    const tab = this.state.tab;
+    const tabs = T.map((label, i) => {
+      const on = tab === label;
+      const r = { label, cur: on ? 'page' : 'false', w: on ? 600 : 400, color: on ? '#1B2230' : '#5D6675', ic: on ? '#2560BF' : 'currentColor', bar: on ? '#2560BF' : 'transparent', pick: () => this.setState({ tab: label, edit: false }) };
+      for (let k = 0; k < 7; k++) r['i' + k] = k === i;
+      return r;
+    });
+    const users = [
+      ['Matthias Kortleven', 'KO', '#2F6FD6', 'Natuurkunde', true],
+      ['Thijs van Westen', 'WESTH', '#3DBE4A', 'Natuurkunde', false],
+      ['Herman Hofman', 'HOF', '#E2C410', 'Natuurkunde', false],
+    ].map(([name, ini, ring, vak, pin]) => ({ name, ini, ring, vak, fs: ini.length > 3 ? 12 : 16, hasPin: pin, noPin: !pin, edit: () => this.setState({ edit: true }) }));
+    const sections = [['⚡', 'Natuurkunde', 'Matthias Kortleven'], ['🌱', 'Biologie', 'Geen'], ['⚗️', 'Scheikunde', 'Geen'], ['📐', 'Wiskunde', 'Geen']].map(([emo, vak, who], i) => ({ emo, vak, who, line: i ? '#EEF0F3' : 'transparent' }));
+    const chip = (label, on) => ({ label, on: on ? 'true' : 'false', border: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', color: on ? '#2560BF' : '#1B2230', w: on ? 600 : 400 });
+    const types = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'].map((l) => chip(l, l === 'Gymnasium'));
+    const vakken = ['Biologie', 'Natuurkunde', 'Scheikunde', 'Wiskunde'].map((l) => chip(l, l === 'Natuurkunde'));
+    const RC = ['#2F6FD6', '#3DBE4A', '#E2C410', '#E07A1F', '#C93636', '#C2387A', '#8A3FC2', '#4F46C8', '#0F7F86', '#8B5A2B', '#4A5568', '#1B2230'];
+    const rings = RC.map((c) => ({ c, on: this.state.ring === c ? 'true' : 'false', ring: this.state.ring === c ? `0 0 0 2px #FFFFFF, 0 0 0 4px ${c}` : 'none', pick: () => this.setState({ ring: c }) }));
+    const schoolFields = [
+      ['NAAM', 'Voorbeeld Gymnasium', 20, 700, 'normal'],
+      ['ONDERTITEL', 'Het gymnasium in de stad', 15, 400, 'normal'],
+      ['MOTTO', 'Een motto van de school', 15, 400, 'italic'],
+    ].map(([label, value, size, w, fs]) => ({ label, value, size, w, fs, aria: label.charAt(0) + label.slice(1).toLowerCase() + ' wijzigen' }));
+    const issues = [
+      { kind: 'FOUT', bg: '#FDECEA', fg: '#B42318', msg: 'Onleesbaar bestand: de JSON is afgebroken (mogelijk een onvolledige OneDrive-synchronisatie).', path: 'data/2026-2027/scores/nat/106052.json', action: 'Map openen' },
+      { kind: 'WAARSCHUWING', bg: '#FFF6E0', fg: '#7A5300', msg: 'OneDrive-conflictkopie gevonden naast het origineel.', path: 'data/observaties/obs-1756713600103-PC-DOCENT.json', action: 'Vergelijken' },
+      { kind: 'WAARSCHUWING', bg: '#FFF6E0', fg: '#7A5300', msg: 'Toets verwijst naar een observatie die niet meer bestaat.', path: 'data/2026-2027/exams/nat-pta-tna-1-tw1-2026.json', action: 'Toets openen' },
+    ];
+    const snapFields = [
+      { label: 'NIEUWE SNAPSHOT NA', v: '24', unit: 'uur', help: 'De eerste Maatwerk die daarna start, maakt op de achtergrond een snapshot.' },
+      { label: 'BEWAAR DAGELIJKSE', v: '7', unit: 'dagen', help: '' },
+      { label: 'BEWAAR WEKELIJKSE', v: '4', unit: 'weken', help: '' },
+      { label: 'BEWAAR MAANDELIJKSE', v: '12', unit: 'maanden', help: '' },
+    ];
+    const snaps = [{ d: '04-11-2026 11:18', k: 'dagelijks' }, { d: '03-11-2026 08:42', k: 'dagelijks' }, { d: '28-10-2026 09:05', k: 'wekelijks' }, { d: '01-10-2026 08:12', k: 'maandelijks' }];
+    const ok = (this.props.controle ?? 'geen meldingen') === 'geen meldingen';
+    return {
+      tabs, users, sections, types, vakken, rings, schoolFields, issues, snapFields, snaps,
+      title: tab, headLine: '#E1E4EA',
+      isUsers: tab === 'Gebruikers', isSchool: tab === 'School', isCheck: tab === 'Gegevenscontrole', isSettings: tab === 'Instellingen',
+      isOther: ['Leerlingen', 'Groepen', 'Opdrachten'].includes(tab),
+      checkOk: ok, checkIssues: !ok,
+      editOpen: this.state.edit && tab === 'Gebruikers', closeEdit: () => this.setState({ edit: false }), ringSel: this.state.ring,
+    };
+  }
+}
+</script>
+</body>
+</html>

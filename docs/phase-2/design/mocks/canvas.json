@@ -1,0 +1,188 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Editor.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "10 · Opdrachten-editor: header, terug-knop, sleepbare scheiding, AI-rail",
+      "w": 1440,
+      "x": 0,
+      "y": 5640
+    },
+    "Groepsoverzicht.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "3 · Groepsoverzicht: modal bovenaan, vaste header, placeholders, vijf tabs",
+      "w": 1440,
+      "x": 0,
+      "y": 2200
+    },
+    "Kaartvarianten.dc.html": {
+      "h": 620,
+      "title": "2 · Leerlingkaart: drie varianten",
+      "w": 1440,
+      "x": 0,
+      "y": 1080
+    },
+    "Knoppen.dc.html": {
+      "h": 880,
+      "title": "4 · Knoppen, invoervelden en toetssoorten, licht en donker",
+      "w": 1440,
+      "x": 1520,
+      "y": 2200
+    },
+    "Login.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "5 · Inlogscherm: vak kiezen, gebruiker kiezen, pincode in hetzelfde scherm",
+      "w": 1440,
+      "x": 0,
+      "y": 3520
+    },
+    "Logo.dc.html": {
+      "h": 900,
+      "title": "7 · Logo: woordmerk (gekozen: A, kleinkapitalen, ERK 20°)",
+      "w": 1440,
+      "x": 3040,
+      "y": 3520
+    },
+    "LogoB.dc.html": {
+      "h": 720,
+      "title": "9 · Logo B: kleine letters in zes lettertypes",
+      "w": 1440,
+      "x": 3040,
+      "y": 4540
+    },
+    "Main.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "1 · Fundament: tabbalk, gebruikersmenu (21 accentkleuren), thema, leerling- en groepskaarten",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Splash.dc.html": {
+      "h": 960,
+      "title": "6 · Splash screen tijdens het laden",
+      "w": 1440,
+      "x": 1520,
+      "y": 3520
+    },
+    "Tabbalk.dc.html": {
+      "h": 760,
+      "title": "8 · Tabbalk: varianten van het woord Maatwerk (gekozen: 4)",
+      "w": 1440,
+      "x": 4560,
+      "y": 3520
+    },
+    "Toetsen.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "11 · Toetsen: toetssoorten en pogingen gestapeld",
+      "w": 1440,
+      "x": 1520,
+      "y": 5640
+    },
+    "Beheer.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "12 · Beheer: tabbalk met 7 iconen, Gebruikers (+ bewerken met fotouitsnede), School, Gegevenscontrole, Instellingen",
+      "w": 1440,
+      "x": 0,
+      "y": 6960
+    },
+    "Scores.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "13 · Scores invoeren: vaste groepskop, kolomkoppen, nummer- en naamkolom",
+      "w": 1440,
+      "x": 1520,
+      "y": 6960
+    },
+    "Toetsmodals.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "14 · Toetsmodals: nieuwe toets (PTA/Diag), toets bewerken, inhaal/herkansing",
+      "w": 1440,
+      "x": 3040,
+      "y": 6960
+    },
+    "ObsOpdModals.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "15 · Observatie bewerken (iconenkiezer) en opdracht bewerken",
+      "w": 1440,
+      "x": 4560,
+      "y": 6960
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-04T10:50:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "r1": {
+      "kind": "title1",
+      "maxW": 1440,
+      "text": "Ronde 1: fundament en kaarten",
+      "w": 240,
+      "x": 0,
+      "y": -260
+    },
+    "r2": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Ronde 2: modals en knoppen",
+      "w": 240,
+      "x": 0,
+      "y": 1940
+    },
+    "r3": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "Ronde 3: inloggen, splash en logo",
+      "w": 240,
+      "x": 0,
+      "y": 3260
+    },
+    "r4": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Ronde 4: editor en toetsen",
+      "w": 240,
+      "x": 0,
+      "y": 5400
+    },
+    "r5": {
+      "kind": "title1",
+      "maxW": 5960,
+      "text": "Ronde 5: beheer, scores invoeren, toets-, observatie- en opdrachtmodals",
+      "x": 0,
+      "y": 6720
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Kaartvarianten.dc.html",
+    "Groepsoverzicht.dc.html",
+    "Knoppen.dc.html",
+    "Login.dc.html",
+    "Splash.dc.html",
+    "Logo.dc.html",
+    "Tabbalk.dc.html",
+    "LogoB.dc.html",
+    "Editor.dc.html",
+    "Toetsen.dc.html",
+    "Beheer.dc.html",
+    "Scores.dc.html",
+    "Toetsmodals.dc.html",
+    "ObsOpdModals.dc.html"
+  ],
+  "pages": [],
+  "title": "Maatwerk redesign"
+}

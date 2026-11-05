@@ -1,0 +1,301 @@
+# Maatwerk: phase 2 plan (steps 12-29)
+
+Phase 2 turns the intake in `ROADMAP.md` section 4 and the design in `docs/phase-2/design/` into
+steps that each fit one Claude Code session of at most 5 hours (**M**), or two sessions with a
+safe checkpoint in between (**L**, split into a and b). `PLAN.md` (phase 1, steps 0-11) is frozen
+history. `ROADMAP.md` keeps the item lists (F, B, V, R, X); this file decides the order.
+
+**Every session:** read this file sections 1-3, `docs/STATE.md`, then only the current step in
+section 4. For visual work also read the design spec sections the step names, and the mock files
+it lists. Do not read the whole roadmap or design spec.
+
+## 1. Decisions (user, 2026-11-04)
+
+| #   | Decision                                                                                                                                              | Source            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 1   | Grade, statistics and attempt logic move to `maatwerk-core` (Rust), one implementation for screens, rapport and CLI                                   | ROADMAP 7.1       |
+| 2   | Order: foundation first, then teacher-facing fixes, then the visual redesign per area, then the AI assistant                                          | user              |
+| 3   | Theme, accent and editor divider position are stored per user in `gebruikers/<id>.json`                                                               | ROADMAP 7.7       |
+| 4   | Every step is a 0.x release (next minor); 1.0 when this plan is done                                                                                  | ROADMAP 7.2       |
+| 5   | Before the first data-format change, `school.json` gets a minimum app version; older apps refuse to write                                             | ROADMAP 7.4       |
+| 6   | Diagnostic test = **D** box next to PTA (they exclude each other, D sets Weging to 0); a PO is its own kind with its own modal (F-20, designed later) | user, design 4.11 |
+| 7   | The design spec (`docs/phase-2/design/README.md`) is the source of truth for the look                                                                 | design pass       |
+
+Decided in step 12 (2026-11-04, `docs/adr/0010-phase-2-decisions.md`):
+
+| #   | Decision                                                                                                                                                  | Source       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 8   | Manual test on a copy of real data only for steps that touch data or numbers (15, 18, 19, 20)                                                             | ROADMAP 7.3  |
+| 9   | Old goldens stay as regression tests until a step intentionally changes that output; then the new output becomes the golden after the user's visual check | ROADMAP 7.5  |
+| 10  | AI assistant in step 28                                                                                                                                   | ROADMAP 7.6  |
+| 11  | Data v3 renames `fotos/` -> `afbeeldingen/` and `users/` -> `aanwezigheid/`                                                                               | ROADMAP 7.8  |
+| 12  | Trend arrow: best attempt of the most recent counted test minus the weighted year average (as on the rapport); diagnostic tests ignored                   | ROADMAP 7.9  |
+| 13  | Existing inhaal/herkansing tests get the original's observaties (copied, locked) in the v3 migration, shown as a before/after list first                  | ROADMAP 7.10 |
+| 14  | Exam fields: `kind: "toets" \| "po"` and `diagnostic: true/false`; PTA stays `type: "pta"`                                                                | ROADMAP 7.11 |
+| 15  | Active school year per user (F-21, quirk D7), stored with the theme                                                                                       | triage       |
+
+The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
+
+## 2. Working rules
+
+**Unchanged:** `PLAN.md` section 2 (session protocol 2.1, gate 2.2, review 2.3, git 2.4, hard
+rules 2.5, stop and ask 2.6) and `ROADMAP.md` section 2 (goldens as regression tests, quirks
+closed, `_reference/` is history, one area per step, data safety, a release per step).
+
+**Session budget (5 hours):**
+
+1. A session starts with `git status`, the baseline test run and reading this file and STATE
+   (target: under 15 minutes). It ends with the tree green, committed, and STATE updated.
+2. Sub-tasks are at most ~45 minutes each and end in a commit. The step lists them in order; if a
+   session runs out, the next one resumes at the first unfinished sub-task (STATE "Next action").
+3. Reserve the last ~45 minutes of the last session of a step for the gate, the reviewer
+   subagent (fresh context, `docs/reviews/step-NN.md`) and the release.
+4. If a step turns out bigger than its size, split it at a sub-task boundary (`step-NNa` tag),
+   note it here, and stop to report. Never cut tests or the review to fit the budget.
+5. Keep context small: subagents for broad reading, file ranges instead of whole files, never
+   paste big outputs. The mocks are large: read only the board the step names.
+
+**Per step, always:**
+
+- **JS to TS (R-05):** convert the files the step touches, split files over ~500 lines into
+  cohesive modules, and remove the area's compat-layer commands.
+- **Visual baselines:** update `npm run test:visual` only after the user has seen the diff; the
+  commit names the roadmap items.
+- **Numbers:** any change to a grade, average, SD, percentage or rapport output gets a
+  before/after table on the fixtures (`tools/fixtures`) and the user's OK before it is merged.
+- **Data:** any change to saved data gets a migration or an additive field, a fixture test, the
+  minimum-version guard, and a manual check on a copy of real data before the release.
+
+## 3. Status (keep up to date)
+
+| Step | Title                                                            | Size         | Release | Status |
+| ---- | ---------------------------------------------------------------- | ------------ | ------- | ------ |
+| 12   | Triage and open decisions                                        | S (user)     | -       | done   |
+| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | todo   |
+| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | todo   |
+| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | todo   |
+| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | todo   |
+| 17   | Rapport fixes                                                    | M            | 0.8     | todo   |
+| 18   | Data format v3                                                   | M            | 0.9     | todo   |
+| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | todo   |
+| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | todo   |
+| 21   | Score entry                                                      | M            | 0.12    | todo   |
+| 22   | Login and splash                                                 | M            | 0.13    | todo   |
+| 23   | Leerlingen and Groepen cards                                     | M            | 0.14    | todo   |
+| 24   | Beheer screens                                                   | M            | 0.15    | todo   |
+| 25   | Overviews and profile                                            | L (25a, 25b) | 0.16    | todo   |
+| 26   | Observaties and opdrachten                                       | M            | 0.17    | todo   |
+| 27   | Opdrachten-editor                                                | M            | 0.18    | todo   |
+| 28   | AI assistant                                                     | L (28a, 28b) | 0.19    | todo   |
+| 29   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
+
+## 4. Steps
+
+### Step 12: Triage and open decisions (S, user with Claude in chat)
+
+Goal: every intake item has a priority and a step; the open decisions are taken.
+
+- Fill in priority, size and area for each row in `ROADMAP.md` section 4, including the rest of
+  `docs/phase-2/inventory.md` sections 1 and 3 (quirks: fix, keep or drop).
+- Decide ROADMAP 7.3, 7.5, 7.6, 7.8-7.11 (see section 1). Record them in section 1 here and in
+  `docs/adr/0010-phase-2-decisions.md`.
+- Run `maatwerk-cli validate-data` on a copy of the real data folder and list the leftover
+  folders and files for X-07 (no deletions yet).
+- **Done when:** ROADMAP section 4 has no empty priority; section 1 here has no open item;
+  STATE points to step 13.
+
+### Step 13: Foundation a (M)
+
+Items: R-03 (start), V-01, V-06, F-18 (CSS only), R-01, B8. Design: spec sections 2 and 3.1-3.2;
+boards 1 and 4 (`Main.dc.html`, `Knoppen.dc.html`).
+
+1. `ui/src/styles/tokens.css`: neutrals, 21 accents (`html[data-accent]`), light and dark
+   (`html[data-theme]`), grade colours, radii, shadows, type scale. Theme and accent switchable
+   from a dev-only menu for now.
+2. One `formatGrade` / number format module (decimal comma, always one decimal: `7,0`) and one
+   grade-colour module; replace the ~10 copies (B8, R-01). Unit tests.
+3. Button component (primary, secondary, text, danger, icon; 36/30 px; focus, busy, disabled);
+   replace every button style, the PIN buttons included.
+4. Inputs, selects, steppers, segmented control, filter chips (active state), test-type badge
+   (V-11 component; only toets and SE until step 18).
+5. Remove the `u-*` utilities replaced so far; the rest go in later steps.
+
+Tests: unit (formats, colours); visual baselines in light/blue, dark, and yellow (contrast edge
+case). Stop and ask: visual diff before updating baselines.
+
+### Step 14: Foundation b (L)
+
+Items: R-02, V-08, V-09, V-10, U12, U14, U15, 8b m6. Design: spec 3.3, 3.4, 3.7-3.9; board 3.
+
+- **14a:** the dialog component (fixed top 64 px, optional fixed height, sticky header slot with
+  tabs, scrolling body, footer with the button rule, close guard, Escape, stacking); confirm and
+  alert dialogs on it; skeleton helpers (pill, line, block; reduced motion); sticky screen headers
+  on all five teacher tabs. Port three modals as the pattern (exam overview, rapport, group edit).
+- **14b:** port every other modal; form-row helper for the label-aligned layout (3.7) and tick
+  boxes (3.9); remove the old modal code and remaining `u-*` utilities in the touched files.
+
+Tests: e2e: every modal opens at the same top; Escape closes; stacked dialogs keep their close
+guard; a lazy modal does not change size while loading.
+
+### Step 15: Shell (M)
+
+Items: V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08 (avatar helper), U11, U13, U16, decision 5. Design: spec
+3.5, 3.6, 5; boards 1, 8, 12 (tab bar); `docs/phase-2/design/assets/`.
+
+1. **Minimum app version** in `school.json` (`minAppVersion`); an older app opens read-only with a
+   clear message. Test on fixtures; document in the runbook.
+2. Tab bar: logo assets, tab icons (Lucide paths, ISC, add to `THIRD_PARTY_LICENSES.md`), active
+   state; the admin's seven tabs with their icons.
+3. User menu dropdown (theme, 21 accent swatches, foto wijzigen placeholder, pincode wijzigen,
+   uitloggen).
+4. Theme, accent, active school year (F-21) and (later) editor split in `gebruikers/<id>.json`
+   (decisions 3 and 15): additive fields;
+   check that 0.3.x keeps unknown fields when it saves a user (if not, the version guard covers
+   it). Applied at login, before the first paint of the main screen.
+5. One avatar helper (photo or initials, ring colour, round or square) used everywhere.
+
+Tests: e2e theme/accent persist across logout and on a second "PC" (second data dir copy);
+version guard e2e.
+
+### Step 16: Platforms: macOS and Linux (L)
+
+Items: X-04 (old `PLAN.md` step 11), new: Linux. Placed right after the foundation and the shell,
+so every later visual step is checked on WebView2, WebKit (macOS) and WebKitGTK (Linux) through CI.
+
+- **16a macOS:** CI job and universal build (`universal-apple-darwin`); WebKit check of the score
+  grid, Chart.js, CodeMirror, pdf.js, the dialog component, sticky headers and the tab bar; a
+  **first-run "choose data folder"** stored in the local config (a `.app` cannot reliably keep
+  its data beside itself; also useful on Windows); fonts and emoji; signing and notarisation
+  decision with the user (Apple Developer account) or documented right-click > Open instructions.
+- **16b Linux:** CI job and build (AppImage and/or `.deb`); WebKitGTK check of the same list;
+  **case-sensitive paths**: tests for a Windows-made data folder with mixed case (path helpers,
+  migration, `validate-data`); document how the shared folder syncs without an official
+  OneDrive client (rclone or a third-party client), as a choice for the user.
+- From here on, the e2e and visual tests run on all three platforms in CI; visual baselines per
+  platform where rendering differs.
+
+Stop and ask: the signing decision; the Linux sync advice before it goes into the README.
+
+### Step 17: Rapport fixes (M)
+
+Items: B-06, B-07, F-13, F-04, T4, T7, T8, T10, T25 (per the step 12 triage). Area: Rapport.
+
+1. Failing tests first for each bug; then the fixes in `rapport.typ` / `domain/rapport.ts`.
+2. Duplex: when the leeradvies table reaches page 3, add an empty page 4.
+3. Score dots larger only when the exam has half points.
+4. Typst warnings shown in the rapport and generate modals.
+
+Stop and ask: the Typst golden diffs (PNG) for every changed rapport.
+
+### Step 18: Data format v3 (M)
+
+Items: X-07, D20, decisions 6, 11, 13, 14, F-12 (data part), F-14 (data part). Data safety rules
+apply in full. **Before the step:** the user runs `maatwerk-cli validate-data` on a copy of the real
+data folder and shares the list of leftover folders and files (no student data).
+
+1. `fotos/` -> `afbeeldingen/` (rapport mount `/data/afbeeldingen`), `users/` -> `aanwezigheid/`
+   test kind and diagnostic fields with defaults (`kind: "toets"`, `diagnostic: false`), the observaties-on-
+   resits field (copy at creation, locked), the opdracht link "score on question N below X".
+2. Migration v2 -> v3 in `maatwerk-core::migrate`, `validate-data` updated, leftover folders
+   listed and removed only after the user confirms. `schema_version` 3; `minAppVersion` raised.
+3. Fixtures and the migration fixture updated; the existing migration tests extended.
+
+Stop and ask: before running the migration on the copy of real data; before deleting leftovers.
+
+### Step 19: Domain logic in `maatwerk-core` (L)
+
+Items: R-04, B-02, B-03, B1-B8, B12-B19, B28-B31 (per triage), F-08 (trend helper), decision 7.9.
+
+- **19a:** port attempts (best attempt), grade calculation, averages (weighted, SE), SD,
+  percentages, RTTI statistics and the trend helper to `maatwerk-core` with unit tests on the
+  fixtures; Tauri commands and generated bindings; the CLI gets `stats` for checking. The UI
+  still uses its own code.
+- **19b:** switch every screen, the rapport and the score grid to the core; delete the four JS
+  implementations (B13); fix the B items as decided. Before/after tables for every number that
+  changes, user approval before the merge.
+
+### Step 20: Toetsen (L)
+
+Items: V-11, F-12, F-20 (button only, if the PO modal is designed by then), B-05, B-01 (check),
+D5 of the implementation plan. Design: spec 2.5, 4.7, 4.11; boards 11, 14.
+
+- **20a:** exam list (cards, badges, kind pills, legend, attempts tree open by default, lock pill);
+  Nieuwe toets (steps, PTA and D boxes, aligned grid) and Toets bewerken (one top row, sticky
+  question heading, solid segmented buttons, RTTI totals with percentages).
+- **20b:** Nieuwe poging modal (Soort poging cards, Beschrijving filled and locked; observaties
+  copied and locked); the summary overview shows observaties of resits (B-05).
+
+### Step 21: Score entry (M)
+
+Items: F-03, B4, B5, U5 (if not done in 19b), spec 4.10; board 13. Restyle, centred content,
+header row with **?** first, sticky group heading, column headings and # / Naam columns, grade
+cell colours, GEMIDDELDE and SD per group. Keyboard behaviour and saving unchanged
+(`score-grid.spec.ts` stays green).
+
+### Step 22: Login and splash (M)
+
+Items: V-04, F-06, F-19 (crop modal shared with step 24). Design: spec 4.1, 4.2; boards 5, 6.
+Splash inline in `index.html` (window background set in the Tauri config, no white flash); login
+states with the FLIP avatar animation, inline PIN (one or two fields), reverse on "Andere
+gebruiker", keyboard flow, reduced-motion fallback.
+
+### Step 23: Leerlingen and Groepen cards (M)
+
+Items: F-07, F-08 (UI), F-09, V-02. Design: spec 4.3, 4.4; board 1. Student cards (variant C, SE /
+laatste swap in CSS), group cards (variant B), admin keeps the list. Stop and ask: the numbers on
+the cards (before/after on fixtures).
+
+### Step 24: Beheer screens (M)
+
+Items: spec 4.9, F-02 (CSV example), F-19 (photo crop), D28, X-06 (if decided). Board 12.
+Gebruikers (card actions order, Gebruiker bewerken with Afkorting + Kleur swatches and the crop),
+School, Gegevenscontrole (findings as cards with actions), Instellingen (units, snapshot list),
+CSV import example.
+
+### Step 25: Overviews and profile (L)
+
+Items: F-10, F-11, B-05 (check), profile restyle, B15/B16 (if not done in 19b). Design: spec 4.5,
+4.6; board 3.
+
+- **25a:** group overview modal: five tabs over the year, lazy with skeletons, 30 px rows, sticky
+  `tfoot`, observaties "n (p%)".
+- **25b:** exam overview (SD row, sticky footer, type colours in charts) and the student profile
+  restyled on the dialog component.
+
+### Step 26: Observaties and opdrachten (M)
+
+Items: F-14 (UI), F-15, spec 4.12; board 15. Observatie bewerken with the icon picker (200+ emoji,
+categories, search); opdracht bewerken; opdrachten genereren with the new link type.
+
+### Step 27: Opdrachten-editor (M)
+
+Items: V-07, F-05, F-16, V-03, T19/T20 (if kept), U10. Design: spec 4.8; board 10. Header and back
+button, toolbar on top with dropdown groups, file tabs below it, status pill, draggable divider
+(saved per user), smooth preview sync.
+
+### Step 28: AI assistant (L)
+
+Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 option D.
+
+- **28a:** the CLI bridge: detect installed CLIs, run them with the opdracht as context in a
+  sandboxed temp folder, time limit, cancel; the result is a diff, never a direct write.
+- **28b:** the rail and chat panel (spec 4.8), Bekijken/Toepassen on the diff card, a setting to
+  turn it off; provider logos per their brand rules, recorded in `THIRD_PARTY_LICENSES.md`.
+
+### Step 29: Hardening, dependencies, 1.0 (M)
+
+Items: X-01 (Typst upgrade, golden diff with the user), X-02, X-05, the remaining R-05 files and
+compat layer, backlog cleanup, `/security-review`, whole-codebase review by a fresh reviewer,
+README and screenshots, release 1.0.
+
+## 5. Prompts for the user to paste
+
+**Start of phase 2 (after step 12)**
+
+> Read CLAUDE.md, PLAN-2.md sections 1-3 and docs/STATE.md, then do step 13. Stop before
+> updating the visual baselines and show me the diff.
+
+**Every later session**
+
+> Read PLAN-2.md sections 1-3 and docs/STATE.md, then continue with the next action. Stop at the
+> end of the step and report.
