@@ -223,14 +223,24 @@ impl DataDir {
 /// A path as the UI shows it: without the `\\?\` verbatim prefix that canonicalising adds on
 /// Windows.
 pub fn display_path(path: &Path) -> String {
-    let s = path.display().to_string();
+    without_verbatim_prefix(&path.display().to_string())
+}
+
+/// A path to hand to the OS shell (open with the default app): without the `\\?\` verbatim
+/// prefix, which ShellExecute does not reliably accept (0.4.1: "Windows cannot find
+/// '\\?\C:\...pdf'"). A path that is not valid Unicode is returned unchanged.
+pub fn os_path(path: &Path) -> PathBuf {
+    match path.to_str() {
+        Some(s) => PathBuf::from(without_verbatim_prefix(s)),
+        None => path.to_path_buf(),
+    }
+}
+
+fn without_verbatim_prefix(s: &str) -> String {
     if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
         return format!(r"\\{rest}");
     }
-    match s.strip_prefix(r"\\?\") {
-        Some(rest) => rest.to_owned(),
-        None => s,
-    }
+    s.strip_prefix(r"\\?\").unwrap_or(s).to_owned()
 }
 
 /// `YYYY-YYYY` year folder name (`main.js:126`).
@@ -255,6 +265,22 @@ mod tests {
             r"\\srv\share\data"
         );
         assert_eq!(display_path(Path::new("/home/a/data")), "/home/a/data");
+    }
+
+    #[test]
+    fn os_path_drops_the_verbatim_prefix() {
+        assert_eq!(
+            os_path(Path::new(r"\\?\C:\a b\x.pdf")),
+            Path::new(r"C:\a b\x.pdf")
+        );
+        assert_eq!(
+            os_path(Path::new(r"\\?\UNC\srv\share\x.pdf")),
+            Path::new(r"\\srv\share\x.pdf")
+        );
+        assert_eq!(
+            os_path(Path::new("/home/a/x.pdf")),
+            Path::new("/home/a/x.pdf")
+        );
     }
 
     #[test]
