@@ -79,3 +79,241 @@ html[data-theme='dark'] .segmented__opt[aria-pressed='true'] {
   grid-template-columns: repeat(7, 26px);
   gap: 8px;
 }
+
+/* ── Inputs, selects, textareas (3.2) ──────────────────────────────────────── */
+/* Zero specificity (:where), so any component class can still change them. */
+:where(
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']),
+  select,
+  textarea
+) {
+  height: var(--h-control);
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-body);
+}
+:where(select) {
+  padding: 0 8px 0 10px;
+}
+:where(textarea) {
+  height: auto;
+  padding: 8px 12px;
+  line-height: 1.45;
+}
+:where(
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']),
+  select,
+  textarea
+):focus {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-ring);
+  outline-offset: 0;
+}
+:where(input, select, textarea):disabled {
+  background: var(--surface-2);
+  color: var(--disabled);
+  cursor: not-allowed;
+}
+:where(input, textarea)::placeholder {
+  color: var(--disabled);
+}
+:where(input[type='checkbox'], input[type='radio'], input[type='range']) {
+  accent-color: var(--accent);
+}
+
+/* Dense tables (question editor): 30 px controls. */
+.questions-table select,
+.questions-table input:not([type='checkbox']) {
+  height: var(--h-control-sm);
+  font-size: var(--fs-secondary);
+}
+
+/* Search field in a screen header: 220 px, magnifier inside. */
+.search-input {
+  width: 220px;
+  padding-left: 34px;
+  background: var(--surface) var(--icon-search) no-repeat 11px center / 16px 16px;
+}
+
+/* ── Stepper (number field with − and +) ───────────────────────────────────── */
+.num-spinner {
+  display: flex;
+  align-items: stretch;
+  height: var(--h-control);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
+  overflow: hidden;
+  background: var(--surface);
+}
+.num-spinner:focus-within {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-ring);
+}
+.spin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  flex-shrink: 0;
+  border: none;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.spin-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.spin-btn:active {
+  background: var(--border-strong);
+}
+.spin-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.spin-minus {
+  border-right: 1px solid var(--border);
+}
+.spin-plus {
+  border-left: 1px solid var(--border);
+}
+.spin-val {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  padding: 0 2px;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.spin-val:focus {
+  outline: none;
+}
+
+/* ── Toggle buttons (choice groups: jaarlaag, periode, RTTI, points) ───────── */
+.tog-btn {
+  height: 26px;
+  min-width: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.tog-btn:hover {
+  background: var(--surface-2);
+}
+.tog-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.tog-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Filter chips (3.2) ────────────────────────────────────────────────────── */
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--h-chip);
+  max-width: 260px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.filter-btn:hover {
+  background: var(--surface-2);
+}
+.filter-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.filter-btn.filter-btn-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.filter-btn svg {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+.filter-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Test-type badge (2.5, V-11) ───────────────────────────────────────────── */
+/* toets = accent, SE = anti, PO = striped, diagnostic = grey outline. Until
+ * step 18 the data only knows toets and SE (exam.type "pta"). */
+.test-badge {
+  --tb: var(--accent);
+  --tb-on: var(--on-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border: 1.5px solid var(--tb);
+  border-radius: var(--r-badge);
+  background: var(--tb);
+  color: var(--tb-on);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+}
+.test-badge--se,
+.test-badge--se-po {
+  --tb: var(--anti);
+  --tb-on: var(--on-anti);
+}
+.test-badge--po,
+.test-badge--se-po {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--tb) 0 4px,
+    color-mix(in srgb, var(--tb) 50%, #fff) 4px 8px
+  );
+  text-shadow:
+    0 0 2px color-mix(in srgb, var(--tb) 60%, #000),
+    0 0 3px color-mix(in srgb, var(--tb) 60%, #000);
+}
+.test-badge--diagnostic {
+  border-color: var(--grade-diagnostic-border);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+/* Wiskunde A/B/C/D letter before the test code. */
+.test-badge--sub {
+  --tb: var(--text);
+  --tb-on: var(--surface);
+}

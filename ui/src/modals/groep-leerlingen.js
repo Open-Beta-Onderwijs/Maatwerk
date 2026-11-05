@@ -10,7 +10,7 @@ import {
   changedByName,
   modalRefresher,
 } from '../app.js';
-import { examTypeColor } from '../utils/colors.js';
+import { testBadgeClass } from '../domain/test-type';
 import { formatGrade } from '../domain/format';
 import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
 import { gradePillHtml } from '../utils/grades';
@@ -141,7 +141,7 @@ export async function openGroupStudentsModal(groupId, year) {
           .map(
             (f, fi) =>
               `<th class="u-text-right u-p-4-6 u-border-b-2">
-        <span class="volgnummer u-text-center u-mr-0" data-bg="${examTypeColor(f.original)}">${f.original.volgnummer}</span></th>
+        <span class="${testBadgeClass(f.original)}">${f.original.volgnummer}</span></th>
         <th class="gl-badge-th${fi === families.length - 1 ? ' u-border-r-light' : ''}"></th>`,
           )
           .join(''),

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { gradeBarColor, isFail } from '../domain/grade-colors';
+import { testBadgeClass } from '../domain/test-type';
 import { formatFixed, formatNumber, parseDecimalLoose } from '../domain/format';
 import { ICONS } from '../utils/icons.js';
 import {
@@ -282,10 +283,6 @@ export async function renderToetsenList() {
     return `${ssPrefix}${e.periode ? 'Periode ' + escHtml(String(e.periode)) + ' · ' : ''}N-term: ${formatNumber(e.n_term)} · Weging: ${formatNumber(e.weging ?? 1)}${e.type === 'pta' ? ` · Weging SE: ${formatNumber(e.weging_se ?? e.weging ?? 1)}` : ''}`;
   }
 
-  function typeColor(e) {
-    return e?.type === 'pta' ? '#d9534f' : e?.type === 'po' ? '#f0ad4e' : '#4A90D9';
-  }
-
   const SUBCATEGORY_LETTER = { wisa: 'A', wisb: 'B', wisc: 'C', wisd: 'D' };
   function wiSubBadge(e) {
     if (e.subject !== 'wi') return '';
@@ -293,7 +290,7 @@ export async function renderToetsenList() {
     if (!letter) return '';
     const jl = parseInt(e.jaarlaag, 10);
     if (jl < 4) return '';
-    return `<span class="u-bg-dark u-mr-0 volgnummer">${letter}</span> `;
+    return `<span class="test-badge test-badge--sub">${letter}</span> `;
   }
 
   function attemptBadge(e) {
@@ -314,7 +311,7 @@ export async function renderToetsenList() {
     return `
       <div class="card exam-attempt-card">
         <div class="card-main">
-          <strong>${wiSubBadge(e)}<span class="volgnummer" data-bg="${typeColor(e)}">${escHtml(attemptBadge(e))}</span> <button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+          <strong>${wiSubBadge(e)}<span class="${testBadgeClass(e)}">${escHtml(attemptBadge(e))}</span> <button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
           <span class="rtti-summary">${examSummaryLine(e)}</span>
           ${statsSpanHtml(e.id)}
         </div>
@@ -343,7 +340,7 @@ export async function renderToetsenList() {
       html += `
         <div class="card">
           <div class="card-main">
-            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" data-bg="${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="${testBadgeClass(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview" data-examid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
             <span class="muted">${metaLine(e)}</span>
             <span class="rtti-summary">${examSummaryLine(e)}</span>
             ${statsSpanHtml(e.id)}
@@ -360,7 +357,7 @@ export async function renderToetsenList() {
       html += `
         <div class="card exam-summary-card">
           <div class="card-main">
-            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="volgnummer" data-bg="${typeColor(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
+            <strong>${wiSubBadge(e)}${e.volgnummer ? `<span class="${testBadgeClass(e)}">${e.volgnummer}</span> ` : ''}<button class="u-align-middle student-name-btn exam-title-link" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">${escHtml(e.title)}</button>${warningSpanHtml(e.id)}</strong>
             <span class="muted">${metaLine(e)}</span>
             ${statsSpanHtml(e.id, true)}
           </div>

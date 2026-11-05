@@ -150,20 +150,6 @@ body::after {
   flex-wrap: wrap;
 }
 
-/* Search input */
-.search-input {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-btn);
-  font-size: 13px;
-  background: var(--surface);
-  width: 180px;
-}
-.search-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
 /* Inline label (year selects) */
 .toolbar-inline-label {
   display: flex;
@@ -172,13 +158,6 @@ body::after {
   font-size: 13px;
   font-weight: 500;
   color: var(--muted);
-}
-.toolbar-inline-label select {
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--surface);
 }
 
 /* Toolbar */
@@ -462,49 +441,11 @@ body::after {
   border-radius: 4px;
 }
 
-.volgnummer {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 0 6px;
-  height: 18px;
-  border-radius: 4px;
-  margin-right: 4px;
-  vertical-align: middle;
-  /* background overridden inline per exam type: blue=regular, red=pta, amber=po */
-}
-
 /* ── Toggle buttons ───────────────────────────────────────────────────────── */
 .btn-toggle-group {
   display: flex;
   flex-wrap: nowrap;
   gap: 2px;
-}
-.tog-btn {
-  padding: 3px 6px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text);
-  white-space: nowrap;
-  transition:
-    background 0.1s,
-    color 0.1s;
-}
-.tog-btn:hover {
-  background: var(--surface-hover);
-}
-.tog-btn.selected {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
 }
 
 /* Jaarlaag buttons: square 30×30 */
@@ -749,67 +690,15 @@ body::after {
   cursor: not-allowed;
 }
 
-/* ── Number spinner (replaces <input type="number">) ──────────────────────── */
-.num-spinner {
-  display: flex;
-  align-items: stretch;
-  height: 30px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-  box-sizing: border-box;
-  background: var(--surface);
-  transition: border-color 0.12s;
-}
-.num-spinner:focus-within {
-  border-color: var(--accent);
-}
-.spin-btn {
-  width: 28px;
-  flex-shrink: 0;
-  border: none;
-  background: var(--surface-2);
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1;
-  color: var(--muted);
-  transition: background 0.1s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.spin-btn:hover {
-  background: var(--surface-hover);
-}
-.spin-btn:active {
-  background: var(--border-strong);
-}
-.spin-minus {
-  border-right: 1px solid var(--border);
-}
-.spin-plus {
-  border-left: 1px solid var(--border);
-}
-.spin-val {
-  flex: 1;
-  border: none;
-  outline: none;
-  text-align: center;
-  font-size: 13px;
-  color: var(--text);
-  background: transparent;
-  min-width: 0;
-  padding: 0 2px;
-  font-family: inherit;
-}
+/* ── Number spinner: fixed widths (component in styles/controls.css) ─────── */
 /* Fixed width containers for narrow spinner fields */
 .spinner-wrap-sm {
   flex: none;
-  width: 108px;
+  width: 116px;
 }
 .spinner-wrap-xs {
   flex: none;
-  width: 90px;
+  width: 100px;
 }
 
 /* Section (Opgave) buttons in questions editor */
@@ -885,31 +774,6 @@ body::after {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
-}
-.form-group input,
-.form-group select {
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--surface);
-  box-sizing: border-box;
-}
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.form-group input:disabled,
-.form-group select:disabled {
-  background: var(--bg);
-  color: var(--muted);
-  cursor: not-allowed;
-}
-.form-group input::placeholder {
-  color: var(--disabled);
-  font-style: italic;
 }
 /* CustomSelect inside form-group stretches full width */
 .form-group .csel-host {
@@ -2483,45 +2347,6 @@ code {
 
 .filter-popover-wrap {
   position: relative;
-}
-
-.filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 30px;
-  width: 170px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition:
-    background 0.1s,
-    border-color 0.1s;
-}
-.filter-btn:hover {
-  background: var(--surface-hover);
-  border-color: var(--border-strong);
-}
-.filter-btn.filter-btn-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.filter-btn svg {
-  flex-shrink: 0;
-}
-.filter-btn-label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
 }
 
 .filter-popover {

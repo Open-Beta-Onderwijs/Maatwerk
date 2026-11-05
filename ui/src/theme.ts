@@ -124,3 +124,8 @@ export function installLook(dev: boolean): void {
     }
   });
 }
+
+/** The current value of a colour token, for canvases (Chart.js) that cannot use var(). */
+export function cssToken(name: string, root: HTMLElement = document.documentElement): string {
+  return getComputedStyle(root).getPropertyValue(name).trim();
+}

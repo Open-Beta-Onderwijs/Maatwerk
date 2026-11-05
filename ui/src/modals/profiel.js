@@ -10,7 +10,11 @@ import {
   showReloadNotice,
   modalRefresher,
 } from '../app.js';
-import { examTypeColor } from '../utils/colors.js';
+import { testKind, testKindToken } from '../domain/test-type';
+import { cssToken } from '../theme';
+
+// Chart bar colour of an exam: its test-type colour (design spec 2.5).
+const examTypeColor = (exam) => cssToken(testKindToken(testKind(exam)));
 import { formatGrade, parseDecimalLoose } from '../domain/format';
 import { computeExamStats } from '../screens/toetsen.js';
 import { leerlingenState } from '../screens/leerlingen.js';

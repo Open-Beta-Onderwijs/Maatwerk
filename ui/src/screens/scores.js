@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { examTypeColor } from '../utils/colors.js';
+import { testBadgeClass } from '../domain/test-type';
 import { gradeCellColor, rttiPctCellColor, sdCellColor } from '../domain/grade-colors';
 import { formatNumber, parseDecimalLoose } from '../domain/format';
 
@@ -9,7 +9,7 @@ const cellNumber = (v) => {
   const n = v === '' || v == null ? NaN : parseDecimalLoose(v);
   return Number.isFinite(n) ? n : null;
 };
-import { wireSpinners, spinnerValue } from '../utils/spinners.js';
+import { wireSpinners, spinnerValue } from '../utils/spinners';
 import {
   showModal,
   closeModal,
@@ -316,7 +316,7 @@ export async function openScoreModal(examId, year, deps) {
         <span class="u-nowrap">Scores invoeren voor</span>
         ${
           exam.volgnummer
-            ? `<span class="volgnummer u-mr-0 u-shrink-0" data-bg="${examTypeColor(exam)}">${escHtml(String(exam.volgnummer))}</span>`
+            ? `<span class="${testBadgeClass(exam)} u-shrink-0">${escHtml(String(exam.volgnummer))}</span>`
             : ''
         }
         <em class="u-min-w-0 u-overflow-hidden u-ellipsis u-nowrap">${escHtml(exam.title)}</em>

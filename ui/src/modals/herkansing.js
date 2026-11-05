@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { wireSpinners, spinnerValue } from '../utils/spinners.js';
+import { wireSpinners, spinnerValue } from '../utils/spinners';
 import { formatNumber } from '../domain/format';
 import { showModal, closeModal, toast, escHtml } from '../app.js';
 import { showExamEditor } from './toets-edit.js';

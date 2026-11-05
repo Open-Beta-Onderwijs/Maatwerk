@@ -26,7 +26,12 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    `components/button.ts` `setBusy`. All ~100 buttons converted (PIN dialogs included);
    `.btn-primary/-secondary/-sm/-danger/-link/-sm-icon` CSS removed. Dialog footer order
    (primary last) waits for the dialog component (step 14).
-4. Todo: inputs, selects, steppers, segmented, chips, test-type badge.
+4. **Done:** `controls.css`: inputs/selects/textareas as a zero-specificity (`:where`) base
+   (36 px, `--border-strong`, accent focus ring), search field 220 px with magnifier, stepper
+   (`.num-spinner`), toggle buttons (`.tog-btn`), filter chips (`.filter-btn`, active state),
+   test-type badge (`.test-badge`, `domain/test-type.ts`: toets = accent, SE = anti; PO and
+   diagnostic classes ready for step 20). `utils/colors.js` removed; `utils/spinners.js` ->
+   `.ts`; `theme.ts` `cssToken` for chart colours. Question-editor table keeps 30 px controls.
 5. Todo: remove replaced `u-*` utilities.
 
 Decisions to raise: zwart accent in dark theme uses a light fill (`#E7EAF0`, dark text), since
