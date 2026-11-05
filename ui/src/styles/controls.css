@@ -139,10 +139,12 @@ textarea:where(*)::placeholder {
   height: var(--h-control);
 }
 
-/* Dense tables (question editor): 30 px controls. */
+/* Dense tables (question editor): 26 px controls, as high as its toggles. */
 .questions-table select,
 .questions-table input:not([type='checkbox']) {
-  height: var(--h-control-sm);
+  height: 26px;
+  padding: 0 4px 0 8px;
+  border-radius: 6px;
   font-size: var(--fs-secondary);
 }
 table.questions-table .tog-btn {
