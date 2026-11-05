@@ -878,6 +878,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   user logs in (`initFilterBar`, `app.js:882-910`); the jaarlaag popovers avoid this with the
   `cloneNode` trick (`app.js:678-699, 748-768`).
 - Effect: after N logins one click runs N handlers (N `saveFilterState` writes, N re-renders).
+- **Fixed (Step 15):** every "Alles"/"Niets" button of the filter popovers (vak, schoolsoort, jaarlaag, jaarlaag-klas) gets one `onclick` handler that each build replaces; the `cloneNode` trick is gone. Test: `e2e/quirks.spec.ts` "U11" (failed with 3 writes per click after 3 logins).
 
 ### U12. CustomSelects created inside modals are never destroyed
 
@@ -895,6 +896,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
 - Effect: normally a few cheap reads (`students.json`, `observaties.json`, `<year>/exams.json`); but
   if a legacy file reappears (OneDrive restore), several teachers' PCs would migrate the shared
   folder concurrently with plain writes. Dead weight for the port.
+- **Superseded (checked in Step 15):** the reference's `migrate()` was never ported (`store.js`, ADR-0003 C2). A v1 folder is converted once, by the admin, through the Rust migration (`maatwerk-core::migrate`, the startup migration screen `screens/migration.ts`), with a backup; no client migrates on start. No dead code left.
 
 ### U14. RTTI uitleg modal bypasses the shared close/guard mechanism
 
@@ -925,6 +927,7 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   ids "numeric strings".
 - Why it matters: any id stored as a string breaks the strict-equality lookups; the port's typed
   model must pick one representation and normalise on read.
+- **Superseded (checked in Step 15):** the port stores and reads student ids as strings (C8): `domain/v2.ts` `decode` turns every id in `students.json` into a string, CSV import and the form use `normalStudentId` (a string), lists pass `dataset.id` (a string) to the profile, whose strict comparisons therefore hold. The remaining `String(a) === String(b)` comparisons in `scores.js` are harmless.
 
 ### U17. Smaller observations
 

@@ -45,7 +45,9 @@ export function reportUnexpected(
   kind: 'error' | 'rejection',
   reason: unknown,
 ): boolean {
-  if ((reason as { code?: unknown } | null)?.code === 'conflict') return false;
+  // Save conflicts and read-only refusals have their own message (app.js).
+  const code = (reason as { code?: unknown } | null)?.code;
+  if (code === 'conflict' || code === 'read_only') return false;
   const text = errorText(reason);
   if (IGNORED.some((re) => re.test(text))) return false;
   api.logUiError(`${kind}: ${redact(text)}`).catch(() => {});

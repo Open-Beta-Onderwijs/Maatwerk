@@ -79,9 +79,10 @@ export async function login(page: Page, subject = 'nat', userId = TEACHER): Prom
   await expect(page.locator('#topbar')).toBeVisible();
 }
 
-/** "Uitloggen" in the account modal behind the top-bar badge. */
+/** "Uitloggen" in the user menu behind the top-bar avatar (opened unless it is open). */
 export async function logout(page: Page): Promise<void> {
-  await page.locator('#user-badge-btn').click();
+  if (!(await page.locator('#user-menu').isVisible()))
+    await page.locator('#user-badge-btn').click();
   await page.locator('#acc-logout').click();
 }
 

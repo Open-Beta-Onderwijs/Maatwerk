@@ -366,3 +366,25 @@ fn a_deactivated_admin_cannot_use_a_recovery_code() {
     );
     assert!(auth.require_admin(&s).is_err());
 }
+
+/// Step 15: the teacher's `preferences` (theme, accent, active year; PLAN-2 decisions 3 and 15)
+/// and any other field a newer app adds survive every PIN write, which edits the JSON object.
+#[test]
+fn pin_writes_keep_preferences_and_unknown_fields() {
+    let (_t, s) = setup();
+    let prefs = json!({ "theme": "dark", "accent": "groen", "activeYear": "2025-2026" });
+    let mut u = user(&s, "gebr-1");
+    u["preferences"] = prefs.clone();
+    u["futureField"] = json!({ "x": 1 });
+    s.write_json(&user_path("gebr-1").unwrap(), &u, Expect::Any)
+        .unwrap();
+    let auth = Auth::new();
+    auth.set_first_pin(&s, "gebr-1", "12345", SystemTime::now())
+        .unwrap();
+    let later = Instant::now() + Duration::from_secs(5);
+    auth.change_pin(&s, "12345", "54321", later, SystemTime::now())
+        .unwrap();
+    let after = user(&s, "gebr-1");
+    assert_eq!(after["preferences"], prefs);
+    assert_eq!(after["futureField"], json!({ "x": 1 }));
+}

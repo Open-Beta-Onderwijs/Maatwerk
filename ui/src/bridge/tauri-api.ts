@@ -99,10 +99,11 @@ async function orElse<T, F>(call: Promise<Result<T>>, fallback: F): Promise<T | 
   return fallback;
 }
 
-/** `{ ok: false, reason }`: `conflict` and `locked` by code, else the message. */
+/** `{ ok: false, reason }`: `conflict`, `locked` and `read_only` by code, else the message. */
 function fsFailure(error: unknown): FsResult {
   const code = asCommandError(error)?.code;
-  if (code === 'conflict' || code === 'locked') return { ok: false, reason: code };
+  if (code === 'conflict' || code === 'locked' || code === 'read_only')
+    return { ok: false, reason: code };
   return { ok: false, reason: message(error) };
 }
 

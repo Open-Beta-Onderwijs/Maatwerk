@@ -232,6 +232,11 @@ fn project_file_status(
                 match storage.write_text(rel, file.bundled(), Expect::Hash(&hash)) {
                     Ok(new) => status(ProjectFileState::Updated, Some(bundled_version), Some(new)),
                     Err(Error::Conflict { .. }) => continue,
+                    // A read-only app (newer `minAppVersion`) leaves the old copy: the
+                    // opdracht still opens, and a newer app updates it.
+                    Err(Error::ReadOnly { .. }) => {
+                        status(ProjectFileState::Outdated, version, Some(hash))
+                    }
                     Err(e) => return Err(e),
                 }
             }
@@ -389,5 +394,35 @@ mod tests {
         assert!(check_project_files(&storage, "../x").is_err());
         assert_eq!(bundled_project_file("lib.typ"), Some(assets::LIB_TYP));
         assert_eq!(bundled_project_file("opdracht.typ"), None);
+    }
+
+    #[test]
+    fn a_read_only_app_reports_an_old_copy_as_outdated_and_leaves_it() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        create_opdracht_folder(&storage, "opdracht_1").unwrap();
+        let lib = RelPath::parse("opdrachten/opdracht_1/lib.typ").unwrap();
+        let lib_v1 = include_str!("../../tests/fixtures/project-files/lib-v1.typ");
+        storage
+            .write_text(&lib, lib_v1, crate::storage::Expect::Any)
+            .unwrap();
+        let school = RelPath::parse("school.json").unwrap();
+        storage
+            .write_json(
+                &school,
+                &serde_json::json!({ "minAppVersion": "99.0.0" }),
+                crate::storage::Expect::Any,
+            )
+            .unwrap();
+        storage.set_app_version("0.6.0");
+        let lib_state = check_project_files(&storage, "opdracht_1")
+            .unwrap()
+            .into_iter()
+            .find(|s| s.file == "lib.typ")
+            .unwrap();
+        assert_eq!(lib_state.state, ProjectFileState::Outdated);
+        assert_eq!(storage.read_text(&lib).unwrap().unwrap(), lib_v1);
     }
 }

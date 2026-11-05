@@ -6,6 +6,7 @@
 @import './styles/dialog.css';
 @import './styles/skeleton.css';
 @import './styles/forms.css';
+@import './styles/avatar.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -44,78 +45,87 @@ body::after {
   z-index: -1;
 }
 
-/* ── Top bar ──────────────────────────────────────────────────────────────── */
+/* ── Tab bar (spec 3.5, V-05, V-12) ─────────────────────────────────────── */
 #topbar {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--header-bg);
-  color: var(--header-text);
-  padding: 0 20px;
-  height: 50px;
+  align-items: stretch;
+  gap: 8px;
+  height: var(--topbar-h);
+  padding: 0 20px 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
-.app-title {
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.5px;
-  margin-right: 8px;
-  /* button resets — element is a disabled <button> for consistent vertical alignment */
-  font-family: inherit;
-  background: transparent;
-  border: none;
-  color: inherit;
-  cursor: pointer;
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
   padding: 0;
-  height: 50px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
-.app-title:disabled {
-  opacity: 1;
+.app-brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.brand-icon {
+  width: 28px;
+  height: 28px;
+}
+/* The wordmark: "M" full height, about 14 px high for the small caps (spec 3.5). */
+.brand-word {
+  height: 19px;
+  width: auto;
+}
+:root[data-theme='dark'] .theme-light-only,
+:root:not([data-theme='dark']) .theme-dark-only {
+  display: none;
 }
 #main-nav {
   display: flex;
+  align-items: stretch;
   gap: 2px;
   flex: 1;
+  min-width: 0;
 }
 .nav-btn {
-  background: transparent;
-  color: var(--header-muted);
-  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 0 14px;
-  height: 50px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
   cursor: pointer;
-  font-size: 13px;
-  font-family: inherit;
-  transition:
-    background 0.15s,
-    color 0.15s;
+}
+.nav-icon {
+  flex: none;
 }
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--header-text);
+  color: var(--text);
+}
+.nav-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .nav-btn.active {
-  background: var(--accent);
-  color: var(--on-accent);
-}
-.year-badge {
-  background: rgba(255, 255, 255, 0.15);
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.subject-badge {
-  background: var(--accent);
-  color: var(--on-accent);
-  padding: 3px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+  color: var(--text);
   font-weight: 600;
-  white-space: nowrap;
+  box-shadow: inset 0 -3px 0 var(--accent-text);
+}
+.nav-btn.active .nav-icon {
+  color: var(--accent-text);
+}
+#user-badge-btn {
+  align-self: center;
 }
 .hidden {
   display: none !important;
@@ -138,7 +148,7 @@ body::after {
    sticky under the top bar, on the page background, flush with its edges. */
 .screen-head {
   position: sticky;
-  top: 50px; /* #topbar */
+  top: var(--topbar-h);
   z-index: 50;
   margin: -24px -24px 0;
   padding: 24px 24px 0;
@@ -904,7 +914,7 @@ body::after {
   cursor: pointer;
   animation: bg-notice-in 0.25s ease-out;
 }
-.bg-notice .user-badge-mini {
+.bg-notice .bg-notice-avatar {
   cursor: inherit;
   margin-top: 2px;
 }
@@ -2031,34 +2041,16 @@ code {
   cursor: pointer;
   padding: 0;
 }
-.badge-initials {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 700;
-  background: var(--surface);
-  border: 3px solid var(--badge-color, #888);
-  color: var(--text);
+.user-badge .avatar {
   transition: transform 0.1s;
 }
-/* Shrink long abbreviations so they stay inside the badge */
-.badge-initials[data-len='4'] {
-  font-size: 0.95rem;
-}
-.badge-initials[data-len='5'] {
-  font-size: 0.8rem;
-}
-.badge-circle .badge-initials {
-  border-radius: 50%;
-}
-.badge-square .badge-initials {
-  border-radius: 8px;
-}
-.user-badge:hover .badge-initials {
+.user-badge:hover .avatar {
   transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-badge .avatar {
+    transition: none;
+  }
 }
 .badge-name {
   font-size: 0.72rem;
@@ -2068,40 +2060,6 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* ── Mini user badge in topbar ───────────────────────────────────────────── */
-.user-badge-mini {
-  width: 30px;
-  height: 30px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 2px solid var(--badge-color, #888);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-}
-.user-badge-mini.badge-circle {
-  border-radius: 50%;
-}
-.user-badge-mini.badge-square {
-  border-radius: 4px;
-}
-/* Shrink long abbreviations so they stay inside the badge */
-.user-badge-mini[data-len='4'] {
-  font-size: 0.56rem;
-}
-.user-badge-mini[data-len='5'] {
-  font-size: 0.46rem;
-  letter-spacing: -0.02em;
-}
-.user-badge-mini:hover {
-  opacity: 0.8;
 }
 
 /* ── Generic section header in card lists ────────────────────────────────── */
@@ -3156,12 +3114,6 @@ td.grade-override-stale::after {
   gap: 8px;
   align-items: center;
   margin: 8px 0;
-}
-.account-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 16px;
 }
 .badge-voorzitter-label {
   font-size: 11px;

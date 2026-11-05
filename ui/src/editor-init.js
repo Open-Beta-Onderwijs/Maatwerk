@@ -42,6 +42,7 @@ import {
 } from '@codemirror/language';
 import { Tag, tags } from '@lezer/highlight';
 import { applyStyleData } from './legacy/style-data';
+import { renderAvatar } from './components/avatar';
 import editorCmCss from './editor-cm.css?inline';
 import { blockFileDrops } from './utils/no-file-drop';
 import {
@@ -333,12 +334,18 @@ document.getElementById('btn-app-title').addEventListener('click', () => {
   closeAfterSave('editor-close');
 });
 
-// Render user badge from URL params (passed by modals/editor.js from the topbar DOM)
+// The user's avatar, as in the main window's top bar (B-08: photo or initials).
 const badgeBtn = document.getElementById('editor-badge-btn');
-badgeBtn.textContent = params.get('badgeInitials') ?? '?';
-badgeBtn.dataset.len = badgeBtn.textContent.length;
-badgeBtn.style.setProperty('--badge-color', params.get('badgeColor') ?? '#888');
-badgeBtn.classList.add(params.get('badgeShape') === 'square' ? 'badge-square' : 'badge-circle');
+postToParent('maatwerk-user-avatar')
+  .then((a) => {
+    if (!a) return;
+    badgeBtn.title = `${a.name}: terug naar het gebruikersmenu`;
+    // The photo comes with the answer (the iframe has no bridge of its own).
+    const user = { ...a.user, foto: a.photo ? `editor:${a.name}` : null };
+    const opts = { size: 30, ring: 'accent', square: a.square };
+    return renderAvatar(badgeBtn, user, opts, () => Promise.resolve(a.photo));
+  })
+  .catch((e) => console.warn('[editor] avatar', e));
 badgeBtn.addEventListener('click', () => {
   closeAfterSave('editor-logout');
 });

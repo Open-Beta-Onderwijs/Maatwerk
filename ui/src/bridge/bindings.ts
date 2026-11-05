@@ -262,6 +262,13 @@ export type DataFolderStatus = {
 	dataDir: string,
 	/**  `null` when the folder opened; else e.g. `unsupported_schema` or `io`. */
 	error: CommandError | null,
+	/**  This app's version. */
+	appVersion: string,
+	/**
+	 *  `minAppVersion` from `school.json` when it is newer than this app: the app may only read
+	 *  (PLAN-2 decision 5). Checked again on every write.
+	 */
+	readOnly: string | null,
 };
 
 export type DataIssue = {
@@ -394,7 +401,9 @@ export type EditorVragen = {
  *  the diagnostics as text), plus `internal` for failures of the shell itself (a crashed blocking
  *  task).
  */
-export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "needs_migration" | "migration_blocked" | "invalid_argument" | "io" | "typst" | "internal";
+export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "needs_migration" | "migration_blocked" | "invalid_argument" | 
+/**  `school.json` asks for a newer app (`minAppVersion`): writes are refused. */
+"read_only" | "io" | "typst" | "internal";
 
 /**  Structured context; only the fields that apply are set. */
 export type ErrorDetails = {
@@ -402,7 +411,10 @@ export type ErrorDetails = {
 	path?: string | null,
 	/**  `conflict`: the colleague who wrote the file, from `_meta.updatedBy`, when known. */
 	updatedBy?: string | null,
-	/**  `unsupported_schema`, `needs_migration`: the `schema_version` found. */
+	/**
+	 *  `unsupported_schema`, `needs_migration`: the `schema_version` found; `read_only`: the
+	 *  `minAppVersion` from `school.json`.
+	 */
 	found?: string | null,
 };
 

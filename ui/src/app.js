@@ -19,15 +19,41 @@ import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
-import { openAccountModal } from './screens/pin';
+import { changePinFlow, renewCodesFlow } from './screens/pin';
+import { closeUserMenu, toggleUserMenu } from './components/user-menu';
 import { renderInstellingen } from './screens/instellingen';
-import { clearBadgePhoto, loadBadgePhoto } from './utils/badges.js';
+import { avatarHtml, loadAvatarPhotos, renderAvatar } from './components/avatar';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
 import { afterPaint, perfSpan } from './utils/perf';
 import { alertDialog, confirmDialog, openDialog } from './components/dialog';
+import {
+  READ_ONLY_SAVE_TEXT,
+  isReadOnlyError,
+  noteReadOnly,
+  onReadOnly,
+} from './services/read-only';
+import { showReadOnlyBanner } from './components/read-only-banner';
+import { applyLook, baseLook, currentLook } from './theme';
+import {
+  filterBar,
+  filterGeneration,
+  initFilterBar,
+  resetFilterBar,
+  updateEigenLabel,
+} from './shell/filter-bar.js';
+export {
+  getAdminSubjectFilter,
+  getEigenOnly,
+  getJaarlagFilter,
+  getJaarlagKlasFilter,
+  getObservatieFilter,
+  getSchoolsoortFilter,
+  matchesJaarlaagFilter,
+  setObservatieFilterOptions,
+} from './shell/filter-bar.js';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -40,9 +66,12 @@ document.querySelectorAll('.nav-btn').forEach((btn) => {
 });
 
 export function navigateTo(name) {
-  document
-    .querySelectorAll('.nav-btn')
-    .forEach((b) => b.classList.toggle('active', b.dataset.screen === name));
+  document.querySelectorAll('.nav-btn').forEach((b) => {
+    const on = b.dataset.screen === name;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
   Object.values(screens).forEach((s) => s.classList.remove('active'));
   if (name === 'startup') {
     topbar.classList.add('hidden');
@@ -96,13 +125,12 @@ const KEPT_SCREENS = new Set([
   'gebruikers',
 ]);
 const _renderedAs = {}; // screen -> view key of its last render
-let _filterGeneration = 0;
 
 function viewKey() {
   const user = Store.getActiveUser();
   return JSON.stringify([
     Store.generation(),
-    _filterGeneration,
+    filterGeneration(),
     user?.id ?? null,
     Store.getActiveRole(),
     Store.getActiveSubject(),
@@ -113,7 +141,7 @@ function needsRender(name) {
   return !KEPT_SCREENS.has(name) || _renderedAs[name] !== viewKey();
 }
 
-function renderScreen(name) {
+export function renderScreen(name) {
   // Taken before rendering: a change while an async render runs renders again next visit.
   _renderedAs[name] = viewKey();
   switch (name) {
@@ -400,10 +428,29 @@ export function escHtml(str) {
 // ── CustomSelect instances (created once at init, reused every render) ─────────
 export const SEL = {}; // populated by initSelects(); exported as live object
 
+// F-21: the school year chosen on any screen is the teacher's active year, on
+// every screen and (saved in their user file) on every PC.
+function chooseYear(year) {
+  for (const sel of [SEL.studentYear, SEL.groupsYear, SEL.toetsenYear]) {
+    if (sel.getValue() !== year) sel.setValue(year);
+  }
+  leerlingenState.year = year;
+  if (Store.getActiveUser() && Store.getConfigSync().activeYear !== year) {
+    void Store.savePreferences({ activeYear: year });
+  }
+}
+
+/** After logout: the next teacher starts in their own active year. */
+function forgetYear() {
+  for (const sel of [SEL.studentYear, SEL.groupsYear, SEL.toetsenYear]) sel?.setValue(null);
+  leerlingenState.year = null;
+}
+
 function initSelects() {
   SEL.studentYear = new CustomSelect(document.getElementById('student-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       leerlingenState.year = v;
@@ -413,6 +460,7 @@ function initSelects() {
   SEL.groupsYear = new CustomSelect(document.getElementById('groups-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderGroepenForYear(v);
@@ -421,6 +469,7 @@ function initSelects() {
   SEL.toetsenYear = new CustomSelect(document.getElementById('toetsen-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       void Store.preloadScores(v).catch(() => {}); // before the statistics (Step 7c)
@@ -429,540 +478,25 @@ function initSelects() {
   });
 }
 
-// ── Admin vakken filter (popover, single-select) ──────────────────────────────
-let _adminSubjectFilter = null; // null = show all
-
-export function getAdminSubjectFilter() {
-  return _adminSubjectFilter;
-}
-
-const VAKKEN_OPTIONS = [
-  { code: 'bio', label: 'Biologie' },
-  { code: 'nat', label: 'Natuurkunde' },
-  { code: 'schk', label: 'Scheikunde' },
-  { code: 'wi', label: 'Wiskunde' },
-];
-
-function updateVakLabel() {
-  const found = VAKKEN_OPTIONS.find((v) => v.code === _adminSubjectFilter);
-  document.getElementById('lbl-filter-vak').textContent = found ? found.label : 'Alle vakken';
-  document.getElementById('btn-filter-vak').classList.toggle('filter-btn-active', !!found);
-}
-
-function buildVakkenPopover() {
-  const container = document.getElementById('pop-vak-toggles');
-  container.innerHTML = '';
-  for (const { code, label } of VAKKEN_OPTIONS) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (_adminSubjectFilter === code ? ' selected' : '');
-    btn.textContent = label;
-    btn.dataset.vakCode = code;
-    btn.addEventListener('click', () => {
-      _adminSubjectFilter = _adminSubjectFilter === code ? null : code;
-      container
-        .querySelectorAll('.filter-pop-toggle')
-        .forEach((b) => b.classList.toggle('selected', b.dataset.vakCode === _adminSubjectFilter));
-      updateVakLabel();
-      rebuildJaarlagPopover(_adminSubjectFilter);
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-  document.getElementById('pop-vak-alles').addEventListener('click', () => {
-    _adminSubjectFilter = null;
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateVakLabel();
-    rebuildJaarlagPopover(null);
-    rerenderActive();
-  });
-}
-
-document.getElementById('btn-filter-vak').addEventListener('click', (e) => {
-  e.stopPropagation();
-  closeAllPopovers('pop-vak');
-  document.getElementById('pop-vak').classList.toggle('hidden');
-});
-
-// ── Filter bar (schoolsoort + jaarlaag + eigen) ───────────────────────────────
-const filterBar = document.getElementById('filter-bar');
-
-// Filter state
-let _filterState = {
-  schoolsoorten: new Set(),
-  jaarlagen: new Set(),
-  jaarlagenKlas: new Set(),
-  eigenOnly: false,
-};
-let _activeUserId = null;
-
-// The jaarlaag options depend on current subject
-const WI_JAARLAG_OPTIONS = [
-  { key: 'OB', label: 'Onderbouw' },
-  { key: 'WisA', label: 'Wiskunde A' },
-  { key: 'WisB', label: 'Wiskunde B' },
-  { key: 'WisC', label: 'Wiskunde C' },
-  { key: 'WisD', label: 'Wiskunde D' },
-];
-const KLAS_JAARLAG_OPTIONS = [
-  { key: '1', label: 'Klas 1' },
-  { key: '2', label: 'Klas 2' },
-  { key: '3', label: 'Klas 3' },
-  { key: '4', label: 'Klas 4' },
-  { key: '5', label: 'Klas 5' },
-  { key: '6', label: 'Klas 6' },
-];
-
-export function getSchoolsoortFilter() {
-  return _filterState.schoolsoorten;
-}
-export function getJaarlagFilter() {
-  return _filterState.jaarlagen;
-}
-export function getJaarlagKlasFilter() {
-  return _filterState.jaarlagenKlas;
-}
-export function getEigenOnly() {
-  return _filterState.eigenOnly;
-}
-
-/**
- * True when an item with these jaarlagen passes the jaarlaag filter(s).
- * Items without jaarlagen always pass. For wiskunde the OB/WisX filter maps
- * to klas 1-3 / 4-6 and is combined with the Klas 1-6 filter.
- */
-export function matchesJaarlaagFilter(jaarlagen) {
-  const jls = (jaarlagen ?? []).map(String);
-  if (jls.length === 0) return true;
-  if (_jaarlagOptions !== WI_JAARLAG_OPTIONS) {
-    return jls.some((jl) => _filterState.jaarlagen.has(jl));
-  }
-  const allowed = new Set();
-  if (_filterState.jaarlagen.has('OB')) ['1', '2', '3'].forEach((k) => allowed.add(k));
-  if (['WisA', 'WisB', 'WisC', 'WisD'].some((k) => _filterState.jaarlagen.has(k))) {
-    ['4', '5', '6'].forEach((k) => allowed.add(k));
-  }
-  return jls.some((jl) => allowed.has(jl) && _filterState.jaarlagenKlas.has(jl));
-}
-
-// ── Label helpers ─────────────────────────────────────────────────────────────
-function schoolsoortLabel(selected, allOptions) {
-  if (selected.size === allOptions.length) return 'Alle schoolsoorten';
-  const arr = allOptions.filter((s) => selected.has(s));
-  if (arr.length === 0) return 'Geen schoolsoorten';
-  if (arr.length === 1) return arr[0];
-  if (arr.length === 2) return `${arr[0]} & ${arr[1]}`;
-  return `${arr[0]}, ${arr[1]} +${arr.length - 2}`;
-}
-
-function jaarlagLabel(selected, options) {
-  const allKeys = options.map((o) => o.key);
-  if (selected.size === allKeys.length && allKeys.every((k) => selected.has(k))) {
-    // All selected
-    if (options === WI_JAARLAG_OPTIONS) return 'Onder- & bovenbouw';
-    return 'Alle jaarlagen';
-  }
-  if (options === WI_JAARLAG_OPTIONS) {
-    const hasOB = selected.has('OB');
-    const wisKeys = ['WisA', 'WisB', 'WisC', 'WisD'];
-    const selWis = wisKeys.filter((k) => selected.has(k));
-    if (selected.size === 0) return 'Geen';
-    if (!hasOB && selWis.length === wisKeys.length) return 'Bovenbouw';
-    if (hasOB && selWis.length === 0) return 'Onderbouw';
-    const wisLetters = selWis.map((k) => k.replace('Wis', ''));
-    const wisStr = wisLetters.length === 0 ? '' : listLabel(wisLetters, 'Wis ');
-    if (hasOB && selWis.length > 0) return `OB & ${wisStr}`;
-    return wisStr;
-  }
-  // Klas 1-6
-  const klassen = [...selected].sort((a, b) => Number(a) - Number(b));
-  if (klassen.length === 0) return 'Geen klassen';
-  return 'Klas ' + listLabel(klassen);
-}
-
-function listLabel(items, prefix = '') {
-  if (items.length === 1) return prefix + items[0];
-  return prefix + items.slice(0, -1).join(', ') + ' & ' + items[items.length - 1];
-}
-
-const EIGEN_LABELS = {
-  leerlingen: { alle: 'Alle leerlingen', eigen: 'Eigen leerlingen' },
-  groepen: { alle: 'Alle groepen', eigen: 'Eigen groepen' },
-  toetsen: { alle: 'Alle toetsen', eigen: 'Eigen toetsen' },
-  observaties: { alle: 'Alle observaties', eigen: 'Observaties eigen groepen' },
-};
-
-function updateEigenLabel(screenName) {
-  const map = EIGEN_LABELS[screenName];
-  if (!map) return;
-  const lbl = _filterState.eigenOnly ? map.eigen : map.alle;
-  document.getElementById('lbl-filter-eigen').textContent = lbl;
-  document
-    .getElementById('btn-filter-eigen')
-    .classList.toggle('filter-btn-active', _filterState.eigenOnly);
-}
-
-// ── Popover open/close ────────────────────────────────────────────────────────
-const FILTER_POPOVER_IDS = ['pop-vak', 'pop-ss', 'pop-jl-klas', 'pop-jl', 'pop-obs'];
-
-function closeAllPopovers(except) {
-  FILTER_POPOVER_IDS.filter((id) => id !== except).forEach((id) =>
-    document.getElementById(id).classList.add('hidden'),
-  );
-}
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.filter-popover-wrap')) closeAllPopovers();
-});
-
-for (const [btnId, popId] of [
-  ['btn-filter-ss', 'pop-ss'],
-  ['btn-filter-jl-klas', 'pop-jl-klas'],
-  ['btn-filter-jl', 'pop-jl'],
-  ['btn-filter-obs', 'pop-obs'],
-]) {
-  document.getElementById(btnId).addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllPopovers(popId);
-    document.getElementById(popId).classList.toggle('hidden');
-  });
-}
-
-// ── Schoolsoort popover builder ───────────────────────────────────────────────
-let _schoolsoortOptions = []; // list of strings from school.json
-
-function buildSchoolsoortPopover(options, savedSelection) {
-  _schoolsoortOptions = options;
-  const selection = savedSelection ?? new Set(options);
-  _filterState.schoolsoorten = selection;
-
-  const container = document.getElementById('pop-ss-toggles');
-  container.innerHTML = '';
-  for (const ss of options) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (selection.has(ss) ? ' selected' : '');
-    btn.textContent = ss;
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-      if (btn.classList.contains('selected')) {
-        _filterState.schoolsoorten.add(ss);
-      } else {
-        _filterState.schoolsoorten.delete(ss);
-      }
-      updateSchoolsoortLabel();
-      persistFilters();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-
-  document.getElementById('pop-ss-alles').addEventListener('click', () => {
-    _filterState.schoolsoorten = new Set(_schoolsoortOptions);
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
-    updateSchoolsoortLabel();
-    persistFilters();
-    rerenderActive();
-  });
-  document.getElementById('pop-ss-niets').addEventListener('click', () => {
-    _filterState.schoolsoorten = new Set();
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateSchoolsoortLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  updateSchoolsoortLabel();
-}
-
-function updateSchoolsoortLabel() {
-  document.getElementById('lbl-filter-ss').textContent = schoolsoortLabel(
-    _filterState.schoolsoorten,
-    _schoolsoortOptions,
-  );
-}
-
-// ── Jaarlaag popover builder ──────────────────────────────────────────────────
-let _jaarlagOptions = KLAS_JAARLAG_OPTIONS;
-
-function rebuildJaarlagPopover(subject, savedSelection) {
-  _jaarlagOptions = subject === 'wi' ? WI_JAARLAG_OPTIONS : KLAS_JAARLAG_OPTIONS;
-  const allKeys = _jaarlagOptions.map((o) => o.key);
-  const selection = savedSelection ?? new Set(allKeys);
-  _filterState.jaarlagen = selection;
-
-  const container = document.getElementById('pop-jl-toggles');
-  container.innerHTML = '';
-  for (const { key, label } of _jaarlagOptions) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (selection.has(key) ? ' selected' : '');
-    btn.textContent = label;
-    btn.dataset.jlKey = key;
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-      if (btn.classList.contains('selected')) {
-        _filterState.jaarlagen.add(key);
-      } else {
-        _filterState.jaarlagen.delete(key);
-      }
-      updateJaarlagLabel();
-      persistFilters();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-
-  // Re-bind Alles/Niets (remove old listeners by replacing the elements)
-  const allesOld = document.getElementById('pop-jl-alles');
-  const allesNew = allesOld.cloneNode(true);
-  allesOld.replaceWith(allesNew);
-  allesNew.addEventListener('click', () => {
-    _filterState.jaarlagen = new Set(_jaarlagOptions.map((o) => o.key));
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
-    updateJaarlagLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  const nietsOld = document.getElementById('pop-jl-niets');
-  const nietsNew = nietsOld.cloneNode(true);
-  nietsOld.replaceWith(nietsNew);
-  nietsNew.addEventListener('click', () => {
-    _filterState.jaarlagen = new Set();
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateJaarlagLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  updateJaarlagLabel();
-
-  // Show/hide the Klas 1-6 popover (only for wiskunde)
-  const jlKlasWrap = document.getElementById('jl-klas-wrap');
-  const isWi = subject === 'wi';
-  jlKlasWrap.classList.toggle('hidden', !isWi);
-  if (isWi) {
-    buildJaarlagKlasPopover();
-  } else {
-    _filterState.jaarlagenKlas = new Set(KLAS_JAARLAG_OPTIONS.map((o) => o.key));
-  }
-}
-
-function updateJaarlagLabel() {
-  document.getElementById('lbl-filter-jl').textContent = jaarlagLabel(
-    _filterState.jaarlagen,
-    _jaarlagOptions,
-  );
-}
-
-// ── Jaarlaag-klas popover builder (wiskunde only, Klas 1–6) ──────────────────
-function buildJaarlagKlasPopover(savedSelection) {
-  const allKeys = KLAS_JAARLAG_OPTIONS.map((o) => o.key);
-  const selection = savedSelection ?? new Set(allKeys);
-  _filterState.jaarlagenKlas = selection;
-
-  const container = document.getElementById('pop-jl-klas-toggles');
-  container.innerHTML = '';
-  for (const { key, label } of KLAS_JAARLAG_OPTIONS) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (selection.has(key) ? ' selected' : '');
-    btn.textContent = label;
-    btn.dataset.jlklasKey = key;
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-      if (btn.classList.contains('selected')) {
-        _filterState.jaarlagenKlas.add(key);
-      } else {
-        _filterState.jaarlagenKlas.delete(key);
-      }
-      updateJaarlagKlasLabel();
-      persistFilters();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-
-  const allesOld = document.getElementById('pop-jl-klas-alles');
-  const allesNew = allesOld.cloneNode(true);
-  allesOld.replaceWith(allesNew);
-  allesNew.addEventListener('click', () => {
-    _filterState.jaarlagenKlas = new Set(KLAS_JAARLAG_OPTIONS.map((o) => o.key));
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
-    updateJaarlagKlasLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  const nietsOld = document.getElementById('pop-jl-klas-niets');
-  const nietsNew = nietsOld.cloneNode(true);
-  nietsOld.replaceWith(nietsNew);
-  nietsNew.addEventListener('click', () => {
-    _filterState.jaarlagenKlas = new Set();
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateJaarlagKlasLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  updateJaarlagKlasLabel();
-}
-
-function updateJaarlagKlasLabel() {
-  document.getElementById('lbl-filter-jl-klas').textContent = jaarlagLabel(
-    _filterState.jaarlagenKlas,
-    KLAS_JAARLAG_OPTIONS,
-  );
-}
-
-// ── Observatie popover (opdrachten only) ──────────────────────────────────────
-// Options are supplied by the opdrachten screen (observaties matching the current
-// schoolsoort/jaarlaag filters). The selection is kept across option changes so
-// that narrowing and widening the other filters does not lose it.
-let _obsFilter = null; // null = alle observaties (no filtering), else Set of obs ids
-let _obsFilterOptions = []; // [{ id, naam, icon }]
-
-/** Effective observatie filter: null (no filtering) or the selected ids among the current options. */
-export function getObservatieFilter() {
-  if (!_obsFilter) return null;
-  return new Set(_obsFilterOptions.map((o) => o.id).filter((id) => _obsFilter.has(id)));
-}
-
-export function setObservatieFilterOptions(options) {
-  const sameOptions =
-    options.length === _obsFilterOptions.length &&
-    options.every((o, i) => o.id === _obsFilterOptions[i].id);
-  _obsFilterOptions = options;
-  if (!sameOptions) buildObservatiePopover();
-  updateObservatieLabel();
-}
-
-function obsIsSelected(id) {
-  return !_obsFilter || _obsFilter.has(id);
-}
-
-function buildObservatiePopover() {
-  const container = document.getElementById('pop-obs-toggles');
-  container.innerHTML = '';
-  if (_obsFilterOptions.length === 0) {
-    container.innerHTML =
-      '<div class="filter-pop-empty">Geen observaties voor deze schoolsoort en jaarlagen.</div>';
-    return;
-  }
-  for (const obs of _obsFilterOptions) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (obsIsSelected(obs.id) ? ' selected' : '');
-    btn.textContent = `${obs.icon ?? ''} ${obs.naam ?? ''}`.trim();
-    btn.title = obs.naam ?? '';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!_obsFilter) _obsFilter = new Set(_obsFilterOptions.map((o) => o.id));
-      if (_obsFilter.has(obs.id)) _obsFilter.delete(obs.id);
-      else _obsFilter.add(obs.id);
-      // Everything selected again → back to "no filtering"
-      if (_obsFilterOptions.every((o) => _obsFilter.has(o.id))) _obsFilter = null;
-      btn.classList.toggle('selected', obsIsSelected(obs.id));
-      updateObservatieLabel();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-}
-
-function updateObservatieLabel() {
-  const sel = getObservatieFilter();
-  let label = 'Alle observaties';
-  if (sel && sel.size === 0) label = 'Geen observaties';
-  else if (sel && sel.size === 1) {
-    const obs = _obsFilterOptions.find((o) => sel.has(o.id));
-    label = `${obs.icon ?? ''} ${obs.naam ?? ''}`.trim();
-  } else if (sel) label = `${sel.size} observaties`;
-  document.getElementById('lbl-filter-obs').textContent = label;
-  document.getElementById('btn-filter-obs').classList.toggle('filter-btn-active', !!sel);
-}
-
-document.getElementById('pop-obs-alles').addEventListener('click', () => {
-  _obsFilter = null;
-  buildObservatiePopover();
-  updateObservatieLabel();
-  rerenderActive();
-});
-document.getElementById('pop-obs-niets').addEventListener('click', () => {
-  _obsFilter = new Set();
-  buildObservatiePopover();
-  updateObservatieLabel();
-  rerenderActive();
-});
-
-// ── Eigen toggle ──────────────────────────────────────────────────────────────
-document.getElementById('btn-filter-eigen').addEventListener('click', () => {
-  _filterState.eigenOnly = !_filterState.eigenOnly;
-  const active = document.querySelector('.screen.active');
-  const screenName = active?.id.replace('screen-', '') ?? 'leerlingen';
-  updateEigenLabel(screenName);
-  persistFilters();
-  rerenderActive();
-});
-
-// ── Persist & re-render helpers ───────────────────────────────────────────────
-function persistFilters() {
-  if (_activeUserId) Store.saveFilterState(_activeUserId, _filterState);
-}
-
-function rerenderActive() {
-  _filterGeneration++;
-  const active = document.querySelector('.screen.active');
-  if (active && active.id !== 'screen-startup') {
-    renderScreen(active.id.replace('screen-', ''));
-  }
-}
-
-// ── Init filter bar on login ──────────────────────────────────────────────────
-async function initFilterBar(user, subject) {
-  _activeUserId = user.id;
-  const school = Store.getSchoolSync();
-  const schoolSoorten = school.schoolsoort ?? [];
-  const saved = await Store.loadFilterState(user.id);
-
-  // Admin vakken popover (single-select, not persisted per-user — always starts at null)
-  if (user.isAdmin) {
-    _adminSubjectFilter = null;
-    buildVakkenPopover();
-    updateVakLabel();
-  }
-
-  // Schoolsoort popover
-  const savedSS = saved?.schoolsoorten ? new Set(saved.schoolsoorten) : null;
-  buildSchoolsoortPopover(schoolSoorten, savedSS);
-
-  // Jaarlaag popover (for admin: subject is null initially)
-  const savedJL = saved?.jaarlagen ? new Set(saved.jaarlagen) : null;
-  rebuildJaarlagPopover(user.isAdmin ? null : subject, savedJL);
-
-  // Jaarlaag klas popover (wi only) — re-apply saved selection on top of default
-  if (!user.isAdmin && subject === 'wi' && saved?.jaarlagenKlas) {
-    buildJaarlagKlasPopover(new Set(saved.jaarlagenKlas));
-  }
-
-  // Eigen
-  _filterState.eigenOnly = saved?.eigenOnly ?? false;
-}
-
 // ── User badge (topbar) ───────────────────────────────────────────────────────
 document.getElementById('btn-about').addEventListener('click', showAbout);
 
 const userBadgeBtn = document.getElementById('user-badge-btn');
+const readPhoto = (rel) => window.maatwerk.readPhotoAsDataUrl(rel);
 
 export async function showUserBadge(user, subject) {
   const role = Store.getActiveRole();
-  const shape = user.isAdmin || role ? 'badge-square' : 'badge-circle';
-  userBadgeBtn.className = `user-badge-mini ${shape}`;
-  userBadgeBtn.style.setProperty('--badge-color', user.kleur ?? '#888');
-  clearBadgePhoto(userBadgeBtn);
-  userBadgeBtn.textContent = user.afkorting || user.voornaam[0] || '?';
-  userBadgeBtn.dataset.len = userBadgeBtn.textContent.length;
-  userBadgeBtn.title = `${user.voornaam}${role ? ` (${roleLabel(role)})` : ''} — account en uitloggen`;
+  // Spec 3.6: 38 px, accent ring; square for the admin and a sectievoorzitter login.
+  userBadgeBtn.dataset.userId = user.id;
+  void renderAvatar(
+    userBadgeBtn,
+    user,
+    { size: 38, ring: 'accent', square: user.isAdmin || !!role },
+    readPhoto,
+  );
+  userBadgeBtn.title = `${Store.fullName(user)}${role ? ` (${roleLabel(role)})` : ''}: gebruikersmenu`;
+  userBadgeBtn.setAttribute('aria-label', 'Gebruikersmenu');
   userBadgeBtn.classList.remove('hidden');
-  // Only while this user is still the one shown (a slow read must not paint over the next).
-  const shownId = (userBadgeBtn.dataset.userId = user.id);
-  void loadBadgePhoto(userBadgeBtn, user.foto, () => userBadgeBtn.dataset.userId === shownId);
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
@@ -1013,27 +547,53 @@ function roleLabel(role) {
     : '';
 }
 
-// Step 7b: the badge opens the account modal (PIN wijzigen, uitloggen).
+/** The line under the name in the user menu (spec 3.6). */
+function menuSubtitle(user, role) {
+  if (role) return roleLabel(role);
+  if (user.isAdmin) return 'Beheerder';
+  const vak = Store.getActiveSubject();
+  return vak ? `Docent · ${Store.SUBJECT_DISPLAY[vak] ?? vak}` : 'Docent';
+}
+
+// F-17: the avatar opens the user menu (look, PIN, uitloggen).
 userBadgeBtn.addEventListener('click', () => {
   const user = Store.getActiveUser();
   if (!user) return;
-  openAccountModal(
+  const role = Store.getActiveRole();
+  const api = window.maatwerk;
+  const onUserChanged = (saved) => Store.cacheUser(saved);
+  toggleUserMenu({
+    anchor: userBadgeBtn,
     user,
-    roleLabel(Store.getActiveRole()),
-    window.maatwerk,
-    (saved) => Store.cacheUser(saved),
-    logOut,
-  );
+    name: Store.fullName(user),
+    subtitle: menuSubtitle(user, role),
+    square: user.isAdmin || !!role,
+    look: currentLook(),
+    // Applied at once; saved in the teacher's own file (F-18, decision 3).
+    onLook: (look) => {
+      applyLook(look);
+      void Store.savePreferences({ theme: look.theme, accent: look.accent });
+    },
+    onChangePin: () => void changePinFlow(api, onUserChanged),
+    onRenewCodes: user.isAdmin ? () => void renewCodesFlow(user, api, onUserChanged) : undefined,
+    onLogout: () => {
+      void api.logout().catch((e) => console.warn('[pin]', e));
+      logOut();
+    },
+    readPhoto,
+  });
 });
 
 function logOut() {
+  closeUserMenu();
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
-  clearBadgePhoto(userBadgeBtn);
+  userBadgeBtn.replaceChildren();
   delete userBadgeBtn.dataset.userId;
-  _adminSubjectFilter = null;
-  _activeUserId = null;
-  _obsFilter = null;
+  delete userBadgeBtn.dataset.avatarFoto;
+  forgetYear();
+  applyLook(baseLook());
+  resetFilterBar();
   navigateTo('startup');
 }
 
@@ -1055,6 +615,25 @@ window.addEventListener('unhandledrejection', async (e) => {
   persistentError(
     `Niet opgeslagen: dit is intussen${door} gewijzigd. Sluit het venster en open het opnieuw.`,
   );
+});
+
+// A save refused because school.json asks for a newer app (PLAN-2 decision 5).
+window.addEventListener('unhandledrejection', (e) => {
+  if (!isReadOnlyError(e.reason)) return;
+  e.preventDefault();
+  noteReadOnly();
+  persistentError(READ_ONLY_SAVE_TEXT);
+});
+
+// The banner, also when a colleague's newer app raised the minimum while this
+// app runs (review 15 M1): the start status has the versions.
+onReadOnly(async () => {
+  try {
+    const status = await window.maatwerk.dataFolderStatus();
+    showReadOnlyBanner(status.readOnly ?? '?', status.appVersion);
+  } catch (e) {
+    console.warn('[read-only]', e);
+  }
 });
 
 // ── Background changes (other teachers) ──────────────────────────────────────
@@ -1159,14 +738,12 @@ async function showExamAddedNotice(exam, year) {
   ]
     .filter(Boolean)
     .join(' · ');
-  const initials = creator ? creator.afkorting || creator.voornaam?.[0] || '?' : '?';
   const card = document.createElement('div');
   card.className = 'bg-notice';
   card.setAttribute('role', 'status');
   card.title = 'Klik om te sluiten';
   card.innerHTML = `
-    <span class="user-badge-mini ${creator?.isAdmin ? 'badge-square' : 'badge-circle'}"
-      data-len="${initials.length}" data-badge-color="${escHtml(creator?.kleur ?? '#888')}">${escHtml(initials)}</span>
+    ${avatarHtml(creator ?? {}, { size: 30, className: 'bg-notice-avatar' })}
     <div class="bg-notice-body">
       <div class="bg-notice-title">Nieuwe toets toegevoegd</div>
       <div class="bg-notice-exam">${escHtml(exam.title)}</div>
@@ -1176,6 +753,7 @@ async function showExamAddedNotice(exam, year) {
     <button class="bg-notice-close" aria-label="Melding sluiten">✕</button>`;
   card.addEventListener('click', () => card.remove());
   container.appendChild(card);
+  void loadAvatarPhotos(card, readPhoto);
 }
 
 Sync.start();
@@ -1201,6 +779,8 @@ async function init() {
     renderStartupError(container, status.dataDir, status.error, window.maatwerk);
     return;
   }
+  // An older app on data that needs a newer one: read-only, with a banner.
+  if (status.readOnly) noteReadOnly();
   applyWatermerk();
   initSelects();
   navigateTo('startup');

@@ -39,19 +39,8 @@ export async function openEditor(opdracht) {
   const overlay = document.getElementById('editor-overlay');
   const frame = document.getElementById('editor-frame');
 
-  // Read the current user badge state from the topbar so the editor can mirror it
-  const badgeBtn = document.getElementById('user-badge-btn');
-  const badgeInitials = badgeBtn?.textContent?.trim() ?? '?';
-  const badgeColor = badgeBtn?.style?.getPropertyValue('--badge-color') ?? '#888';
-  const badgeShape = badgeBtn?.classList?.contains('badge-square') ? 'square' : 'circle';
-
-  const params = new URLSearchParams({
-    id: opdracht.id,
-    naam: opdracht.naam,
-    badgeInitials,
-    badgeColor,
-    badgeShape,
-  });
+  // The user's avatar comes through 'maatwerk-user-avatar' (B-08: with the photo).
+  const params = new URLSearchParams({ id: opdracht.id, naam: opdracht.naam });
   frame.src = `editor.html?${params}`;
   overlay.classList.remove('hidden');
 
@@ -65,6 +54,27 @@ export async function openEditor(opdracht) {
   _unsubscribeUpdates = window.maatwerk.onEditorUpdate((update) => {
     frame.contentWindow?.postMessage({ type: 'maatwerk-editor-update', update }, '*');
   });
+}
+
+/** The logged-in user for the editor's avatar (B-08): the same as the top bar, with the photo. */
+async function userAvatar() {
+  const user = Store.getActiveUser();
+  if (!user) return null;
+  const photo = user.foto
+    ? await window.maatwerk.readPhotoAsDataUrl(user.foto).catch(() => null)
+    : null;
+  return {
+    user: {
+      voornaam: user.voornaam,
+      achternaam: user.achternaam,
+      afkorting: user.afkorting,
+      kleur: user.kleur,
+      isAdmin: user.isAdmin,
+    },
+    square: !!user.isAdmin || !!Store.getActiveRole(),
+    name: Store.fullName(user),
+    photo,
+  };
 }
 
 function closeEditor() {
@@ -190,6 +200,9 @@ function handleEditorMessage(evt, frame, opdracht) {
       break;
     case 'maatwerk-get-data-dir':
       answer(() => window.maatwerk.getDataDir());
+      break;
+    case 'maatwerk-user-avatar':
+      answer(userAvatar);
       break;
     case 'editor-close':
       closeEditor();

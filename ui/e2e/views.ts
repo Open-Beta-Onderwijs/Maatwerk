@@ -135,6 +135,16 @@ export const VIEWS: View[] = [
     target: 'page',
     open: click('toetsen', '[data-action="exam-menu"]'),
   },
+  // The user menu (F-17, spec 3.6): a dropdown under the avatar.
+  ...(['teacher', 'admin'] as const).map((user): View => ({
+    name: `user-menu-${user}`,
+    user,
+    target: 'page',
+    open: async (p) => {
+      await p.locator('#user-badge-btn').click();
+      await expect(p.locator('#user-menu')).toBeVisible();
+    },
+  })),
   {
     name: 'editor',
     user: 'teacher',

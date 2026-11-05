@@ -51,6 +51,8 @@ import {
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
+import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
+import { savedActiveYear, withPreferences } from './domain/preferences';
 import { timed } from './utils/perf';
 
 const Store = (() => {
@@ -129,6 +131,10 @@ const Store = (() => {
           changed();
           return next;
         }
+        if (result?.reason === READ_ONLY_CODE) {
+          noteReadOnly();
+          throw readOnlyError();
+        }
         if (result?.reason !== 'conflict') {
           throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
         }
@@ -158,6 +164,10 @@ const Store = (() => {
       return result.hash;
     }
     if (result?.reason === 'conflict') throw conflictError(null);
+    if (result?.reason === READ_ONLY_CODE) {
+      noteReadOnly();
+      throw readOnlyError();
+    }
     throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
   }
 
@@ -277,6 +287,32 @@ const Store = (() => {
     else users.push(user);
     if (_activeUser?.id === user.id) _activeUser = user;
     changed();
+  }
+
+  // The logged-in teacher's own settings (theme, accent, active year; F-18,
+  // F-21): merged into the latest user file on disk, without a rev check, so a
+  // change an admin made meanwhile is kept and nothing conflicts.
+  async function savePreferences(patch) {
+    const user = _activeUser;
+    if (!user?.id) return null;
+    // Applied at once, also when the save fails (the look is already on screen);
+    // a new active year makes the kept screens render again.
+    _activeUser = withPreferences(user, patch);
+    changed();
+    // Read-only (review 15 M2): looking around stays possible, nothing is saved.
+    if (isReadOnly()) return null;
+    try {
+      const saved = await update(`gebruikers/${user.id}.json`, (current, onDisk) => {
+        if (!onDisk) throw new Error(`gebruikers/${user.id}.json ontbreekt`);
+        // The id captured above: a logout during the write must not stamp the next user.
+        return stampMetaBy(withPreferences(current, patch), onDisk, user.id);
+      });
+      cacheUser(saved);
+      return saved;
+    } catch (e) {
+      if (e?.code === READ_ONLY_CODE) return null; // the banner says why
+      throw e;
+    }
   }
 
   // One file per user (C16): saving checks the rev the edit started from, so
@@ -427,10 +463,12 @@ const Store = (() => {
   }
 
   // ── Sync getters (safe after preload / loadYear / initSubject) ────────────
-  // The reference never writes `activeYear` (it falls back to the current school
-  // year); since Step 7a config.json exists with only `schema_version`, so the
-  // fallback also covers a missing key, not only a missing file.
+  // The active school year is the logged-in teacher's own (F-21, quirk D7,
+  // stored in their user file); else config.json's (the reference never wrote
+  // it), else the current school year.
   function withActiveYear(cfg) {
+    const own = savedActiveYear(_activeUser);
+    if (own) return { ...cfg, activeYear: own };
     return cfg?.activeYear ? cfg : { ...cfg, activeYear: currentSchoolYear() };
   }
   function getConfigSync() {
@@ -456,16 +494,6 @@ const Store = (() => {
   // ── Config ────────────────────────────────────────────────────────────────
   async function getConfig() {
     return withActiveYear(await load('config.json'));
-  }
-
-  async function setActiveYear(year) {
-    cache['config.json'] = await update(
-      'config.json',
-      // A missing config.json (still syncing) must not come back without schema_version
-      // (review 7a m4): every PC would then offer the migration.
-      (cfg) => Object.assign(cfg, { activeYear: year, schema_version: cfg.schema_version ?? 2 }),
-      () => ({}),
-    );
   }
 
   // currentSchoolYear: src/domain/ids.ts
@@ -1247,6 +1275,7 @@ const Store = (() => {
     isAdminActive,
     loadUsers,
     upsertUser,
+    savePreferences,
     cacheUser,
     forgetFile,
     loadSchool,
@@ -1262,7 +1291,6 @@ const Store = (() => {
     subjectFromGroupName,
     parseGroupName,
     getConfig,
-    setActiveYear,
     loadVersioned,
     saveVersioned,
     currentSchoolYear,
