@@ -5,6 +5,7 @@
 @import './styles/controls.css';
 @import './styles/dialog.css';
 @import './styles/skeleton.css';
+@import './styles/forms.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -189,13 +190,6 @@ body::after {
   align-items: center;
   gap: 8px;
   font-weight: 500;
-}
-.toolbar select {
-  padding: 5px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--surface);
 }
 .toolbar select:disabled {
   opacity: 0.5;
@@ -612,15 +606,9 @@ body::after {
 
 /* Inline text input — inherits size/style from field modifier class */
 .school-field-input {
+  /* An input on the 3.2 look (controls.css), shown already focused. */
   flex: 1;
-  padding: 3px 8px;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--text);
-  outline: none;
-  background: var(--surface);
+  border-color: var(--accent);
 }
 
 .school-field-naam.school-field-input {
@@ -645,39 +633,6 @@ body::after {
   border: 1px solid var(--border);
   border-radius: 4px;
   background: var(--surface-2);
-}
-
-/* PTA toggle button: checkmark-style, grey unchecked / blue checked */
-.pta-btn {
-  width: var(--h-control);
-  height: var(--h-control);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  font-weight: 400;
-  color: var(--disabled);
-  transition:
-    background 0.1s,
-    color 0.1s,
-    border-color 0.1s;
-  flex-shrink: 0;
-}
-.pta-btn[data-checked='true'] {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-  font-weight: 700;
-}
-.pta-btn:disabled[data-checked='true'] {
-  background: var(--disabled);
-  border-color: var(--disabled);
-  color: var(--surface);
-  cursor: not-allowed;
 }
 
 /* ── Number spinner: fixed widths (component in styles/controls.css) ─────── */
@@ -760,7 +715,7 @@ body::after {
 }
 .form-group label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -775,8 +730,10 @@ body::after {
   width: 100%;
   min-width: 0;
 }
+/* Fields in a row are aligned on their labels (spec 3.7, components/form.ts). */
 .form-row {
   display: flex;
+  align-items: flex-start;
   gap: 12px;
 }
 .form-actions {
@@ -834,10 +791,12 @@ body::after {
 }
 .questions-table input[type='text'],
 .questions-table input[type='number'] {
+  /* Dense table (step 13 decision): 26 px, like the selects next to them. */
   width: 100%;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
   font-size: 12px;
 }
 
@@ -1242,38 +1201,6 @@ body::after {
   margin: 14px 0 8px;
 }
 
-/* ── Exam overview tabs ───────────────────────────────────────────────────── */
-.overview-tab-bar {
-  display: flex;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 16px;
-}
-.overview-tab {
-  flex: 1;
-  padding: 7px 4px;
-  border: none;
-  border-bottom: 3px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: -2px;
-  transition: color 0.15s;
-  white-space: nowrap;
-}
-.overview-tab:hover {
-  color: var(--text);
-}
-.overview-tab:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.overview-tab.selected {
-  color: var(--accent-text);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
-}
-
 /* Charts inside modal */
 .chart-wrap {
   position: relative; /* required for Chart.js responsive sizing */
@@ -1637,13 +1564,13 @@ code {
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  height: 30px;
-  padding: 0 10px;
+  height: var(--h-control);
+  padding: 0 12px;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-body);
   color: var(--text);
   text-align: left;
   transition:
@@ -1903,8 +1830,8 @@ code {
 /* Textarea inside form-group */
 .form-group textarea {
   padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
   font-size: 13px;
   background: var(--surface);
   box-sizing: border-box;
@@ -2435,9 +2362,9 @@ code {
   min-height: 56px;
   font-size: 12px;
   padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-input);
+  background: var(--surface);
   color: var(--text);
   font-family: inherit;
   box-sizing: border-box;
@@ -2680,20 +2607,8 @@ td.grade-override-stale::after {
 .u-d-block {
   display: block !important;
 }
-.u-d-inline-block {
-  display: inline-block !important;
-}
 .u-items-center {
   align-items: center !important;
-}
-.u-items-end {
-  align-items: flex-end !important;
-}
-.u-items-start {
-  align-items: flex-start !important;
-}
-.u-justify-center {
-  justify-content: center !important;
 }
 .u-justify-end {
   justify-content: flex-end !important;
@@ -2742,9 +2657,6 @@ td.grade-override-stale::after {
 }
 .u-gap-20 {
   gap: 20px !important;
-}
-.u-grid-4x28 {
-  grid-template-columns: repeat(4, 28px) !important;
 }
 .u-bg-highlight {
   background: var(--accent-soft) !important;
@@ -2806,26 +2718,14 @@ td.grade-override-stale::after {
 .u-fs-13 {
   font-size: 13px !important;
 }
-.u-fs-14 {
-  font-size: 14px !important;
-}
 .u-fs-16 {
   font-size: 16px !important;
-}
-.u-fs-17 {
-  font-size: 17px !important;
 }
 .u-italic {
   font-style: italic !important;
 }
-.u-not-italic {
-  font-style: normal !important;
-}
 .u-fw-600 {
   font-weight: 600 !important;
-}
-.u-fw-normal {
-  font-weight: normal !important;
 }
 .u-uppercase {
   text-transform: uppercase !important;
@@ -2836,9 +2736,6 @@ td.grade-override-stale::after {
 .u-text-right {
   text-align: right !important;
 }
-.u-ellipsis {
-  text-overflow: ellipsis !important;
-}
 .u-nowrap {
   white-space: nowrap !important;
 }
@@ -2847,9 +2744,6 @@ td.grade-override-stale::after {
 }
 .u-relative {
   position: relative !important;
-}
-.u-overflow-hidden {
-  overflow: hidden !important;
 }
 .u-overflow-x-auto {
   overflow-x: auto !important;
@@ -2944,9 +2838,6 @@ td.grade-override-stale::after {
 .u-my-8-4 {
   margin: 8px 0 4px !important;
 }
-.u-bleed-28 {
-  margin: 0 -28px -28px !important;
-}
 .u-mb-0 {
   margin-bottom: 0 !important;
 }
@@ -2980,9 +2871,6 @@ td.grade-override-stale::after {
 .u-mt-10 {
   margin-top: 10px !important;
 }
-.u-mt-12 {
-  margin-top: 12px !important;
-}
 .u-mt-14 {
   margin-top: 14px !important;
 }
@@ -3004,12 +2892,6 @@ td.grade-override-stale::after {
 .u-p-panel {
   padding: 10px 12px 14px !important;
 }
-.u-p-bleed-28 {
-  padding: 16px 28px 28px !important;
-}
-.u-px-2 {
-  padding: 0 2px !important;
-}
 .u-px-6 {
   padding: 0 6px !important;
 }
@@ -3027,9 +2909,6 @@ td.grade-override-stale::after {
 }
 .u-p-4-6 {
   padding: 4px 6px !important;
-}
-.u-pr-30 {
-  padding-right: 30px !important;
 }
 
 /* Icon picker of the observatie modal (screens/observaties.js) */
@@ -3243,9 +3122,6 @@ td.grade-override-stale::after {
 }
 
 /* ── PIN login and account (Step 7b) ─────────────────────────────────────── */
-.dlg.modal-narrow {
-  width: 440px;
-}
 .pin-input {
   font-size: 20px;
   letter-spacing: 0.3em;
@@ -3314,12 +3190,4 @@ td.grade-override-stale::after {
 .voorzitter-row {
   align-items: center;
   margin-bottom: 8px;
-}
-.voorzitter-row select {
-  height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 13px;
-  background: var(--surface);
 }

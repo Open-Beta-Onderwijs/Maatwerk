@@ -72,7 +72,7 @@ export function openStudentModal(id) {
         <input id="f-sachter" type="text" />
       </div>
     </div>
-    <div class="u-items-end u-gap-20 form-row">
+    <div class="u-gap-20 form-row">
       <div class="u-flex-auto u-mb-0 form-group">
         <label>Jaarlaag</label>
         <div class="btn-toggle-group">${jaarlaagHtml}</div>

@@ -17,6 +17,11 @@ import {
 } from '../app.js';
 import { SEC_ROMAN, SEC_ALPHA2, renderToetsen } from '../screens/toetsen.js';
 import { nextQuestionId } from '../domain/ids';
+import { field, tickBox, toggleTick } from '../components/form';
+
+const PTA_TITLE = 'PTA: de toets hoort bij het Programma van Toetsing en Afsluiting';
+const LOCKED_TITLE =
+  'Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd.';
 
 export async function openExamModal(existingId, afterSave = null) {
   const cfg = await Store.getConfig();
@@ -37,22 +42,19 @@ export async function openExamModal(existingId, afterSave = null) {
         <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
       `,
       body: `
-      <div class="u-items-end u-gap-20 form-row">
+      <div class="u-gap-20 form-row">
         <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
           <label>Naam</label>
           <input id="f-etitle" type="text" placeholder="PTA t.na-3 (H4, 9, 11, K3)" />
         </div>
-        <div class="u-flex-none u-mb-0 form-group">
-          <label>PTA</label>
-          <button type="button" class="pta-btn" id="f-epta-btn" data-checked="false">✓</button>
-        </div>
+        ${field('PTA', tickBox('f-epta-btn', { title: PTA_TITLE }), { grow: 'none', center: true, className: 'u-mb-0' })}
         <div class="u-flex-1"></div>
         <div class="u-flex-none u-w-110 u-mb-0 form-group">
           <label>Schooljaar</label>
           <div id="f-exam-year-label" class="form-value u-fs-13 u-text-muted u-italic"></div>
         </div>
       </div>
-      <div class="u-items-end u-gap-20 u-mt-10 form-row">
+      <div class="u-gap-20 u-mt-10 form-row">
         <div class="u-flex-none u-mb-0 form-group">
           <label>Schoolsoort</label>
           <div class="btn-toggle-group">
@@ -79,7 +81,7 @@ export async function openExamModal(existingId, afterSave = null) {
             : ''
         }
       </div>
-      <div class="u-items-end u-gap-20 u-mt-10 form-row">
+      <div class="u-gap-20 u-mt-10 form-row">
         <div class="u-flex-2 u-mb-0 form-group">
           <label>Jaarlaag</label>
           <div class="btn-toggle-group">
@@ -113,7 +115,7 @@ export async function openExamModal(existingId, afterSave = null) {
           </div>
         </div>
       </div>
-      <div class="u-mt-10 u-gap-20 u-items-end form-row">
+      <div class="u-mt-10 u-gap-20 form-row">
         <div class="u-flex-1 u-min-w-160 form-group">
           <label>Opgave- &amp; Vraagstructuur</label>
           <div id="f-struct-host" class="csel-host"></div>
@@ -145,7 +147,7 @@ export async function openExamModal(existingId, afterSave = null) {
           wegingSEl.classList.toggle('spinner-disabled', ptaBtn.dataset.checked !== 'true');
         syncWegingSE();
         ptaBtn.addEventListener('click', () => {
-          ptaBtn.dataset.checked = String(ptaBtn.dataset.checked !== 'true');
+          toggleTick(ptaBtn);
           syncWegingSE();
         });
 
@@ -405,19 +407,21 @@ export function showExamEditor(
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     `,
     body: `
-    <div class="u-items-end u-gap-20 u-mb-10 u-flex-wrap form-row">
+    <div class="u-gap-20 u-mb-10 u-flex-wrap form-row">
       <div class="u-flex-2 u-min-w-0 u-mb-0 form-group">
         <label>Naam</label>
         <input id="f-etitle2" type="text" value="${escHtml(exam.title)}" />
       </div>
-      <div class="u-flex-none u-mb-0 form-group">
-        <label>PTA</label>
-        ${
-          lockTopFields
-            ? `<div class="u-cursor-not-allowed u-d-inline-block" title="Deze toetseigenschap kan alleen worden aangepast bij de verzamelkaart, voor alle toetsen tegelijkertijd."><button type="button" class="u-no-pointer pta-btn" id="f-epta-btn" data-checked="${exam.type === 'pta' ? 'true' : 'false'}" disabled>✓</button></div>`
-            : `<button type="button" class="pta-btn" id="f-epta-btn" data-checked="${exam.type === 'pta' ? 'true' : 'false'}">✓</button>`
-        }
-      </div>
+      ${field(
+        'PTA',
+        tickBox('f-epta-btn', {
+          checked: exam.type === 'pta',
+          disabled: lockTopFields,
+          title: lockTopFields ? LOCKED_TITLE : PTA_TITLE,
+          ariaLabel: 'PTA',
+        }),
+        { grow: 'none', center: true, className: 'u-mb-0' },
+      )}
       ${
         !isEdit
           ? `
@@ -529,7 +533,7 @@ export function showExamEditor(
           wegingSE2El.classList.toggle('spinner-disabled', ptaBtn2.dataset.checked !== 'true');
         syncWegingSE2();
         ptaBtn2.addEventListener('click', () => {
-          ptaBtn2.dataset.checked = String(ptaBtn2.dataset.checked !== 'true');
+          toggleTick(ptaBtn2);
           syncWegingSE2();
         });
       }

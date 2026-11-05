@@ -144,3 +144,32 @@ test('a profile opened from a group overview stacks on it; closing returns there
   await expect(page.locator('.dlg')).toHaveCount(1);
   await expect(topDialog(page).locator('.dlg-title')).toHaveText(title!);
 });
+
+test.describe('form rules (spec 3.7, 3.9)', () => {
+  for (const name of ['modal-toets-new', 'modal-toets-edit', 'modal-verzamelkaart']) {
+    test(`${name}: labels in a row share one top`, async ({ page }) => {
+      await openView(page, view(name));
+      const rows = topDialog(page).locator('.form-row');
+      for (let r = 0; r < (await rows.count()); r++) {
+        const labels = rows.nth(r).locator(':scope > .form-group > label');
+        const tops = new Set<number>();
+        for (let i = 0; i < (await labels.count()); i++) {
+          const box = await labels.nth(i).boundingBox();
+          if (box) tops.add(Math.round(box.y));
+        }
+        expect([...tops].length, `row ${r}`).toBeLessThanOrEqual(1);
+      }
+    });
+  }
+
+  test('the PTA tick box is 36×36 and toggles aria-pressed', async ({ page }) => {
+    await openView(page, view('modal-toets-new'));
+    const box = page.locator('#f-epta-btn');
+    expect(await box.boundingBox()).toMatchObject({ width: 36, height: 36 });
+    await expect(box).toHaveAttribute('aria-pressed', 'false');
+    await expect(box).toHaveAttribute('title', /Programma van Toetsing/);
+    await box.click();
+    await expect(box).toHaveAttribute('aria-pressed', 'true');
+    await expect(box).toHaveAttribute('data-checked', 'true');
+  });
+});

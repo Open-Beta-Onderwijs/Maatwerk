@@ -1,0 +1,76 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Form layout (components/form.ts, design spec 3.7) and tick boxes (3.9).
+   .form-row / .form-group / label are the base rules in style.css. */
+
+.form-field--none {
+  flex: none;
+}
+.form-field--fill {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.form-field--grow-1 {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.form-field--grow-2 {
+  flex: 2 1 0;
+  min-width: 0;
+}
+.form-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+/* A control narrower than its column, centred at the row's control height. */
+.form-field--center > .form-control {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--h-control);
+}
+
+/* ── Tick box: 36×36, radius 8; ticked = accent fill with a white ✓ 22 px ── */
+.tick-box {
+  width: var(--h-control);
+  height: var(--h-control);
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: transparent;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.1s,
+    border-color 0.1s;
+}
+.tick-box:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.tick-box:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.tick-box[data-checked='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.tick-box:disabled {
+  cursor: not-allowed;
+  background: var(--surface-2);
+}
+.tick-box:disabled[data-checked='true'] {
+  background: var(--disabled);
+  border-color: var(--disabled);
+  color: var(--surface);
+}

@@ -150,7 +150,7 @@ export async function openGroupModal(id) {
 
   const fieldsHtml = isEdit
     ? `
-    <div class="u-gap-20 u-items-start form-row">
+    <div class="u-gap-20 form-row">
       <div class="u-flex-1 u-min-w-0 form-group">
         <label>Naam (bijv. 6nat4 of 2anat)</label>
         <input id="f-gname" type="text" value="${escHtml(group.name)}" ${locked ? 'disabled' : ''} />
@@ -160,7 +160,7 @@ export async function openGroupModal(id) {
         <div class="vak-toggle-group vak-toggle-group--nowrap">${schoolsoortHtml}</div>
       </div>
     </div>
-    <div class="u-gap-20 u-items-start u-mt-4 form-row">
+    <div class="u-gap-20 u-mt-4 form-row">
       <div class="u-flex-auto u-mb-0 form-group">
         <label>Vak</label>
         <div class="btn-toggle-group">${vakHtml}</div>
