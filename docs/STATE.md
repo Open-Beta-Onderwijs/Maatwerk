@@ -40,8 +40,27 @@ decision 5.
    the "nieuwe toets" notice (30) and the editor (B-08: the editor asks the main window
    `maatwerk-user-avatar` for the user and photo). `utils/badges.js` and the `.badge-initials` /
    `.user-badge-mini` CSS are gone. e2e: 2 avatar tests.
-4. **Next:** user menu dropdown. 4. Look + active year per user. 5. Avatar helper. Then U11/U13/U16, the
-   e2e for persistence, gate, review, version 0.6.0.
+4. **Done** (`0b1d334`): user menu (F-17, spec 3.6), `components/user-menu.ts`: dropdown (280
+   px, not a dialog) under the avatar; name + "Docent · <vak>" / "Sectievoorzitter <vak>" /
+   "Beheerder"; Thema Licht/Donker; 21 accent swatches (7x3); Foto wijzigen (disabled, F-19
+   later); Pincode wijzigen; Nieuwe herstelcodes (admin); Uitloggen (danger). Escape, a click
+   outside or Tab out close it; focus back to the avatar. The account modal is gone (`pin.ts`
+   `changePinFlow`, `renewCodesFlow`); ids `#acc-pin`, `#acc-codes`, `#acc-logout` kept. Visual
+   views `user-menu-teacher`, `user-menu-admin`.
+5. **Done** (`0b1d334`): look and active year per user (decisions 3 and 15, F-18, F-21, D7).
+   Additive field `preferences: { theme, accent, activeYear }` in `gebruikers/<id>.json`
+   (`domain/preferences.ts`); `Store.savePreferences` merges into the latest file (no rev check,
+   so no conflict with an admin edit); `getConfigSync().activeYear` is the logged-in user's year,
+   else config.json's, else the current school year; choosing a year on any screen sets all
+   three selects and saves it; logout clears the selects and returns to the base look. The look
+   is applied at login before `initSubject` and the main screen (`theme.ts` `applyUserLook`;
+   `baseLook` = default, or the dev menu's choice in dev/mock builds). `Store.setActiveYear`
+   (shared config.json, never called) removed. 0.3.x keeps unknown user fields (the Gebruikers
+   form spreads the record, PIN commands edit the JSON object): Rust test
+   `pin_writes_keep_preferences_and_unknown_fields`. Tests: Vitest preferences + store merge; 5
+   e2e (menu, persist across logout, second PC with a seeded user file incl. active year, admin
+   edit kept, admin menu).
+6. **Next:** U11 (filter listeners), U13/U16 (verify superseded), then gate, review, 0.6.0.
 
 ## Step 14a progress
 
