@@ -300,8 +300,8 @@ export function confirmDialog(
         <p id="app-dialog-msg">${escHtml(message)}</p>
         ${detailsHtml ? `<div class="app-dialog-details">${detailsHtml}</div>` : ''}
         <div class="app-dialog-actions">
-          ${cancelLabel !== null ? `<button class="btn-secondary" data-answer="0">${escHtml(cancelLabel)}</button>` : ''}
-          <button class="${danger ? 'btn-danger' : 'btn-primary'}" data-answer="1">${escHtml(okLabel)}</button>
+          ${cancelLabel !== null ? `<button class="btn btn--secondary" data-answer="0">${escHtml(cancelLabel)}</button>` : ''}
+          <button class="btn ${danger ? 'btn--danger' : 'btn--primary'}" data-answer="1">${escHtml(okLabel)}</button>
         </div>
       </div>`;
     const done = (answer) => {
@@ -395,7 +395,7 @@ export function showReloadNotice(message, onOk) {
     <div class="app-dialog" role="alertdialog" aria-modal="true" aria-describedby="reload-notice-msg">
       <h4 class="app-dialog-title">Gewijzigd door een collega</h4>
       <p id="reload-notice-msg">${escHtml(message)}</p>
-      <div class="app-dialog-actions"><button class="btn-primary">OK</button></div>
+      <div class="app-dialog-actions"><button class="btn btn--primary">OK</button></div>
     </div>`;
   el.addEventListener('keydown', (e) => e.stopPropagation());
   const btn = el.querySelector('button');

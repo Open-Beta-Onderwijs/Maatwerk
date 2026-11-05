@@ -130,8 +130,8 @@ export async function openExamModal(existingId, afterSave = null) {
         </div>
       </div>
       <div class="form-actions">
-        <button class="btn-primary" id="f-e-next">Verder →</button>
-        <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+        <button class="btn btn--primary" id="f-e-next">Verder →</button>
+        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
       </div>
     `,
       (el) => {
@@ -471,7 +471,7 @@ export function showExamEditor(
         <tbody id="f-qbody"></tbody>
       </table>
     </div>
-    <button class="u-mt-8 btn-secondary" id="f-addq">+ Vraag toevoegen</button>
+    <button class="btn btn--secondary u-mt-8" id="f-addq">+ Vraag toevoegen</button>
     ${
       availableObs.length > 0
         ? `
@@ -491,8 +491,8 @@ export function showExamEditor(
         : ''
     }
     <div class="u-mt-14 form-actions">
-      <button class="btn-primary" id="f-esave">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-esave">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -592,7 +592,7 @@ export function showExamEditor(
                   .join('')}
               </div>
             </td>
-            <td><button class="btn-sm btn-danger qi-del" data-qi="${i}"${hasScores ? ' disabled title="Er zijn scores ingevoerd voor deze toets, bestaande vragen kunnen dus niet worden verwijderd."' : ''}>\u2715</button></td>
+            <td><button class="btn btn--icon btn--icon-danger qi-del" data-qi="${i}"${hasScores ? ' disabled title="Er zijn scores ingevoerd voor deze toets, bestaande vragen kunnen dus niet worden verwijderd."' : ''}>\u2715</button></td>
           </tr>`;
           })
           .join('');

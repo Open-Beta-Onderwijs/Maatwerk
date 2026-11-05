@@ -46,11 +46,11 @@ export function aboutHtml(version: string, build: string): string {
     </p>
     <p>Map met logbestanden: <span class="about-url about-logdir">Laden…</span></p>
     <div class="about-actions">
-      <button class="btn-secondary" data-about-action="open-logs">Map met logbestanden openen</button>
+      <button class="btn btn--secondary" data-about-action="open-logs">Map met logbestanden openen</button>
     </div>
     <div class="about-actions">
-      <button class="btn-secondary" data-about-text="licence">Licentietekst (AGPL-3.0)</button>
-      <button class="btn-secondary" data-about-text="notices">Licenties van derden</button>
+      <button class="btn btn--secondary" data-about-text="licence">Licentietekst (AGPL-3.0)</button>
+      <button class="btn btn--secondary" data-about-text="notices">Licenties van derden</button>
     </div>
     <pre class="about-text hidden" tabindex="0"></pre>
     </div>`;

@@ -56,14 +56,14 @@ export async function openOpdrachtenGenererenModal(examId, year) {
          </div>
          <div class="og-obs-list"></div>
          <div class="og-cijfer-list"></div>
-         <button type="button" class="btn-secondary btn-sm og-cijfer-add" data-action="og-cijfer-add">
+         <button type="button" class="btn btn--secondary btn--sm og-cijfer-add" data-action="og-cijfer-add">
            + Cijfer onder … toevoegen
          </button>
          <div class="og-section-head">
            <h4>Leerlingen</h4>
            <span class="og-student-toggles">
-             <button type="button" class="btn-link" data-action="og-all-on">Alles aan</button> ·
-             <button type="button" class="btn-link" data-action="og-all-off">Alles uit</button>
+             <button type="button" class="btn btn--text" data-action="og-all-on">Alles aan</button> ·
+             <button type="button" class="btn btn--text" data-action="og-all-off">Alles uit</button>
            </span>
          </div>
          <div class="og-student-list"><div class="rapport-spinner">Leerlingen worden geladen…</div></div>
@@ -73,13 +73,13 @@ export async function openOpdrachtenGenererenModal(examId, year) {
            <input type="checkbox" data-action="og-answers" checked /> Antwoorden meegeven
          </label>
          <span class="og-summary muted"></span>
-         <button type="button" class="btn-secondary" data-action="og-key">Antwoordsleutel</button>
-         <button type="button" class="btn-primary" data-action="og-generate">Genereren</button>
+         <button type="button" class="btn btn--secondary" data-action="og-key">Antwoordsleutel</button>
+         <button type="button" class="btn btn--primary" data-action="og-generate">Genereren</button>
        </div>
      </div>
      <div class="og-result" hidden>
        <div class="og-result-bar">
-         <button type="button" class="btn-secondary btn-sm" data-action="og-back">← Terug naar koppelingen</button>
+         <button type="button" class="btn btn--secondary btn--sm" data-action="og-back">← Terug naar koppelingen</button>
        </div>
        <div class="rapport-modal-content og-result-content"></div>
      </div>
@@ -148,7 +148,7 @@ function renderCijferList(el, state) {
               data-card="${escHtml(card.id)}" value="${fmtOnder(card.onder)}" aria-label="Cijfergrens" />
           </label>
           <span class="muted">${countLabel(nStudents)}</span>
-          <button type="button" class="btn-link og-cijfer-remove" data-action="og-cijfer-remove"
+          <button type="button" class="btn btn--text og-cijfer-remove" data-action="og-cijfer-remove"
             data-card="${escHtml(card.id)}" title="Verwijder deze cijfergrens">✕</button>
         </div>
         <div class="og-op-list">${items}</div>

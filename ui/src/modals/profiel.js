@@ -216,7 +216,7 @@ export async function openProfielModal(
         const next = idx < peers.length - 1 ? peers[idx + 1] : null;
         if (prev) {
           const pb = document.createElement('button');
-          pb.className = 'btn-secondary btn-sm';
+          pb.className = 'btn btn--secondary btn--sm';
           pb.textContent = `← Vorige (${Store.fullName(prev)})`;
           pb.addEventListener('click', () => {
             const tab = el.querySelector('.overview-tab.selected')?.dataset.tab ?? 'cijferverloop';
@@ -226,7 +226,7 @@ export async function openProfielModal(
         }
         if (next) {
           const nb = document.createElement('button');
-          nb.className = 'btn-secondary btn-sm';
+          nb.className = 'btn btn--secondary btn--sm';
           nb.textContent = `Volgende (${Store.fullName(next)}) →`;
           nb.addEventListener('click', () => {
             const tab = el.querySelector('.overview-tab.selected')?.dataset.tab ?? 'cijferverloop';

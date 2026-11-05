@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 @import './styles/tokens.css';
+@import './styles/buttons.css';
 @import './styles/controls.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
@@ -298,30 +299,9 @@ body::after {
   gap: 4px;
 }
 
-/* Small square icon-only buttons on exam cards */
-.btn-sm-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 26px !important;
-  padding: 0 !important;
-  font-size: 15px;
-  line-height: 1 !important;
-  flex-shrink: 0;
-}
-
 /* ⋮ action-menu button on exam cards */
-.exam-menu-btn {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-}
-.exam-menu-btn:hover,
 .exam-menu-btn.active {
-  color: var(--text);
-  background: var(--surface-hover);
+  background: var(--surface-2);
 }
 
 /* Floating action menu (appended to <body>, positioned by JS) */
@@ -378,14 +358,6 @@ body::after {
 /* Consistent-size buttons on exam cards */
 .exam-card-btn {
   min-width: 120px;
-  height: 26px !important;
-  padding: 4px 10px !important;
-  line-height: 1 !important;
-  white-space: nowrap;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
 }
 
 /* Single-row student card */
@@ -504,82 +476,6 @@ body::after {
   margin-right: 4px;
   vertical-align: middle;
   /* background overridden inline per exam type: blue=regular, red=pta, amber=po */
-}
-
-/* ── Buttons ──────────────────────────────────────────────────────────────── */
-.btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
-  border: none;
-  padding: 0 16px;
-  height: 32px;
-  border-radius: var(--r-btn);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: background 0.15s;
-  box-sizing: border-box;
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 0 16px;
-  height: 32px;
-  border-radius: var(--r-btn);
-  cursor: pointer;
-  font-size: 13px;
-  transition: background 0.15s;
-  box-sizing: border-box;
-}
-.btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.btn-secondary:hover {
-  background: var(--bg);
-}
-
-.btn-sm {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 4px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-}
-.btn-sm:hover {
-  background: var(--surface-hover);
-}
-.btn-danger {
-  color: var(--danger);
-  border-color: var(--danger);
-}
-.btn-danger:hover {
-  background: var(--danger-soft);
-}
-.btn-sm:disabled,
-.btn-danger:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.btn-sm.btn-primary {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--accent);
-}
-.btn-sm.btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
 }
 
 /* ── Toggle buttons ───────────────────────────────────────────────────────── */
@@ -1223,22 +1119,6 @@ body::after {
   gap: 8px;
   margin-top: 8px;
 }
-.app-dialog-actions .btn-danger {
-  background: var(--danger);
-  color: #fff;
-  border: 1px solid var(--danger);
-  padding: 0 16px;
-  height: 32px;
-  border-radius: var(--r-btn);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-}
-.app-dialog-actions .btn-danger:hover {
-  filter: brightness(0.92);
-  background: var(--danger);
-}
-
 /* Background notices (e.g. a colleague added an exam), top right, stay until clicked */
 #bg-notices {
   position: fixed;
@@ -1520,17 +1400,6 @@ body::after {
 .og-student-toggles {
   font-size: 12px;
   color: var(--muted);
-}
-.btn-link {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--accent-text);
-  font: inherit;
-  cursor: pointer;
-}
-.btn-link:hover {
-  text-decoration: underline;
 }
 .og-group-head {
   font-size: 11px;

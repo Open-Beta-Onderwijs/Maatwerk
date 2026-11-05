@@ -129,7 +129,7 @@ export async function openGroupModal(id) {
     studentsSection = `
       <div class="gst-label-row">
         <label>Leerlingen</label>
-        ${group.jaarlaag ? `<button type="button" id="f-g-jl-filter" class="btn-sm btn-primary" data-active="1">Alleen leerlingen van jaarlaag ${escHtml(String(group.jaarlaag))} tonen</button>` : ''}
+        ${group.jaarlaag ? `<button type="button" id="f-g-jl-filter" class="btn btn--primary btn--sm" data-active="1">Alleen leerlingen van jaarlaag ${escHtml(String(group.jaarlaag))} tonen</button>` : ''}
       </div>
       <div class="gst-scroll">
         <table class="gst-table">
@@ -217,8 +217,8 @@ export async function openGroupModal(id) {
     }
     ${isEdit ? `<div class="u-mt-16 form-group">${studentsSection}</div>` : ''}
     <div class="u-mt-16 form-actions">
-      <button class="btn-primary" id="f-g-save">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-g-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -298,8 +298,8 @@ export async function openGroupModal(id) {
         filterBtn.addEventListener('click', () => {
           const isActive = filterBtn.dataset.active === '1';
           filterBtn.dataset.active = isActive ? '0' : '1';
-          filterBtn.classList.toggle('btn-primary', !isActive);
-          filterBtn.classList.toggle('btn-secondary', isActive);
+          filterBtn.classList.toggle('btn--primary', !isActive);
+          filterBtn.classList.toggle('btn--secondary', isActive);
           applyFilter(!isActive);
         });
       }
@@ -535,8 +535,8 @@ export async function openGroupCSVImport() {
     </div>
     <div id="csv-grp-preview"></div>
     <div class="u-mt-12 form-actions">
-      <button class="btn-primary" id="f-csv-grp-import" disabled>Importeren</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-csv-grp-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -677,8 +677,8 @@ export async function openGroupAssignmentCSVImport() {
     </div>
     <div id="csv-assignment-preview"></div>
     <div class="u-mt-12 form-actions">
-      <button class="btn-primary" id="f-csv-assignment-import" disabled>Importeren</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-csv-assignment-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {

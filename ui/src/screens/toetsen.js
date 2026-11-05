@@ -307,7 +307,7 @@ export async function renderToetsenList() {
   }
 
   function menuBtnHtml(examId, kind) {
-    return `<button class="btn-sm btn-sm-icon exam-menu-btn" data-action="exam-menu" data-id="${escHtml(examId)}" data-kind="${kind}" title="Meer acties" aria-haspopup="menu" aria-expanded="false">${ICONS.dots}</button>`;
+    return `<button class="btn btn--icon exam-menu-btn" data-action="exam-menu" data-id="${escHtml(examId)}" data-kind="${kind}" title="Meer acties" aria-haspopup="menu" aria-expanded="false">${ICONS.dots}</button>`;
   }
 
   function attemptCardHtml(e) {
@@ -320,7 +320,7 @@ export async function renderToetsenList() {
         </div>
         <div class="card-actions">
           ${presenceSpanHtml(e.id)}
-          <button class="btn-sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
+          <button class="btn btn--secondary btn--sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
           <div class="card-vsep"></div>
           ${menuBtnHtml(e.id, 'attempt')}
         </div>
@@ -350,7 +350,7 @@ export async function renderToetsenList() {
           </div>
           <div class="card-actions">
             ${presenceSpanHtml(e.id)}
-            <button class="btn-sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
+            <button class="btn btn--secondary btn--sm exam-card-btn" data-action="exam-overview" data-examid="${escHtml(e.id)}">Overzicht openen</button>
             <div class="card-vsep"></div>
             ${menuBtnHtml(e.id, 'solo')}
           </div>
@@ -365,7 +365,7 @@ export async function renderToetsenList() {
             ${statsSpanHtml(e.id, true)}
           </div>
           <div class="card-actions">
-            <button class="btn-sm exam-card-btn" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">Overzicht openen</button>
+            <button class="btn btn--secondary btn--sm exam-card-btn" data-action="exam-overview-best" data-parentid="${escHtml(e.id)}">Overzicht openen</button>
             <div class="card-vsep"></div>
             ${menuBtnHtml(e.id, 'summary')}
           </div>

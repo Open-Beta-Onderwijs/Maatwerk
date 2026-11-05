@@ -88,8 +88,8 @@ export function openStudentModal(id) {
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-s-save">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-s-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     async (el) => {
@@ -216,8 +216,8 @@ export async function openStudentCSVImport() {
     </div>
     <div id="csv-preview"></div>
     <div class="u-mt-12 form-actions">
-      <button class="btn-primary" id="f-csv-import" disabled>Importeren</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-csv-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {

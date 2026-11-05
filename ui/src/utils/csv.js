@@ -35,8 +35,8 @@ export function askSchoolYear(activeYear, existingYears, ui) {
         <input id="f-import-year-custom" type="text" placeholder="2025-2026" />
       </div>
       <div class="form-actions">
-        <button class="btn-primary" id="f-year-ok">Verder</button>
-        <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+        <button class="btn btn--primary" id="f-year-ok">Verder</button>
+        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
       </div>
     `,
       (el) => {

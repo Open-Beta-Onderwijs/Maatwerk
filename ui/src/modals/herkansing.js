@@ -81,8 +81,8 @@ export async function openResitModal(parentId, year) {
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-resit-next">Verder →</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-resit-next">Verder →</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {
@@ -201,8 +201,8 @@ export async function openSummaryEditModal(parentId, year) {
       </div>
     </div>
     <div class="form-actions">
-      <button class="btn-primary" id="f-sum-save">Opslaan</button>
-      <button class="btn-secondary" data-close-modal="1">Annuleren</button>
+      <button class="btn btn--primary" id="f-sum-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     </div>
   `,
     (el) => {

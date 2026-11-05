@@ -21,7 +21,11 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    the copies in ~15 files; `utils/grades.js` -> `utils/grades.ts`; `utils/colors.js` keeps only
    `examTypeColor` until sub-task 4. Rounding paths unchanged (B8 note in `quirks.md`). The
    score grid stays light in dark mode (token island) until step 21.
-3. Todo: button component.
+3. **Done:** `ui/src/styles/buttons.css` (`.btn` + `--primary/--secondary/--text/--danger/
+--icon/--icon-danger/--sm`, focus ring, disabled, `aria-busy` spinner) and
+   `components/button.ts` `setBusy`. All ~100 buttons converted (PIN dialogs included);
+   `.btn-primary/-secondary/-sm/-danger/-link/-sm-icon` CSS removed. Dialog footer order
+   (primary last) waits for the dialog component (step 14).
 4. Todo: inputs, selects, steppers, segmented, chips, test-type badge.
 5. Todo: remove replaced `u-*` utilities.
 

@@ -1,0 +1,150 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Buttons (design spec 3.1, V-06): one component for the whole app.
+ *
+ *   <button class="btn btn--primary">          the one main action
+ *   <button class="btn btn--secondary">        other actions
+ *   <button class="btn btn--text">             cancel-like, navigation
+ *   <button class="btn btn--danger">           only inside a delete confirmation
+ *   <button class="btn btn--icon" aria-label>  row actions (32 x 32)
+ *   + btn--sm (30 px), btn--icon-danger (red icon)
+ *
+ * Busy: aria-busy="true" shows a spinner before the label (components/button.ts
+ * setBusy). Disabled: the disabled attribute. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--h-control);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.btn--sm {
+  height: var(--h-control-sm);
+  padding: 0 12px;
+  border-radius: var(--r-btn-sm);
+  font-size: var(--fs-secondary);
+}
+
+/* ── Variants ──────────────────────────────────────────────────────────────── */
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn--secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.btn--secondary:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.btn--text {
+  padding: 0 14px;
+  color: var(--accent-text);
+}
+.btn--text:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.btn--danger {
+  background: var(--danger-fill);
+  border-color: var(--danger-fill);
+  color: #ffffff;
+}
+.btn--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger-fill) 86%, #000);
+  border-color: color-mix(in srgb, var(--danger-fill) 86%, #000);
+}
+
+.btn--icon {
+  width: var(--s-icon-btn);
+  height: var(--s-icon-btn);
+  padding: 0;
+  border-color: var(--border);
+  border-radius: var(--r-btn-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 400;
+}
+.btn--icon:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+.btn--icon svg {
+  width: 16px;
+  height: 16px;
+}
+.btn--icon-danger {
+  color: var(--danger);
+}
+.btn--icon.btn--primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ── States ────────────────────────────────────────────────────────────────── */
+.btn:disabled:not([aria-busy='true']),
+.btn[aria-disabled='true'] {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--disabled);
+  cursor: not-allowed;
+}
+.btn--text:disabled {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn[aria-busy='true'] {
+  cursor: progress;
+}
+.btn[aria-busy='true']::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.9s linear infinite;
+}
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn[aria-busy='true']::before {
+    animation-duration: 2.4s;
+  }
+}

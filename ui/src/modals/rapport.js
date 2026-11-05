@@ -3,6 +3,7 @@
 import { toast, showModal, closeModal, escHtml } from '../app.js';
 import { printName } from '../domain/print';
 import { GRADE_BAR } from '../domain/grade-colors';
+import { setBusy } from '../components/button';
 import { defaultTabData, rttiExplFilePath } from '../domain/rapport';
 import { compileRapport } from '../services/rapport';
 
@@ -162,10 +163,10 @@ function buildTabHtml(data, tabs, activeTab) {
       .join('');
     return `
       <div class="rtti-copy-wrap">
-        <button class="btn btn-secondary btn-sm" data-copy-open="${block}">Kopi\u00ebren naar\u2026</button>
+        <button class="btn btn--secondary btn--sm" data-copy-open="${block}">Kopi\u00ebren naar\u2026</button>
         <div class="rtti-copy-popover hidden" data-copy-popover="${block}">
           <div class="rtti-copy-tab-grid">${targets}</div>
-          <button class="btn btn-primary btn-sm" data-copy-confirm="${block}">Kopi\u00ebren</button>
+          <button class="btn btn--primary btn--sm" data-copy-confirm="${block}">Kopi\u00ebren</button>
         </div>
       </div>`;
   }
@@ -307,8 +308,8 @@ export async function openRttiUitlegModal() {
     <div class="overview-tab-bar rtti-uitleg-tab-bar" id="rtti-uitleg-tabs">${tabButtons}</div>
     <div id="rtti-uitleg-tab-content"></div>
     <div class="rtti-uitleg-footer">
-      <button class="btn btn-secondary" id="btn-rtti-uitleg-cancel">Annuleren</button>
-      <button class="btn btn-primary" id="btn-rtti-uitleg-save">Opslaan</button>
+      <button class="btn btn--secondary" id="btn-rtti-uitleg-cancel">Annuleren</button>
+      <button class="btn btn--primary" id="btn-rtti-uitleg-save">Opslaan</button>
     </div>
   `;
 
@@ -329,8 +330,8 @@ export async function openRttiUitlegModal() {
         bar.innerHTML =
           '<span>Er zijn niet-opgeslagen wijzigingen. Toch sluiten?</span>' +
           '<div class="rtti-unsaved-actions">' +
-          '<button class="btn btn-secondary btn-sm" id="btn-rtti-confirm-stay">Blijven bewerken</button>' +
-          '<button class="btn btn-danger btn-sm" id="btn-rtti-confirm-discard">Toch sluiten</button>' +
+          '<button class="btn btn--secondary btn--sm" id="btn-rtti-confirm-stay">Blijven bewerken</button>' +
+          '<button class="btn btn--danger btn--sm" id="btn-rtti-confirm-discard">Toch sluiten</button>' +
           '</div>';
         slot.appendChild(bar);
         document.getElementById('modal-box').scrollTop = 0;
@@ -475,8 +476,7 @@ export async function openRttiUitlegModal() {
       el.querySelector('#btn-rtti-uitleg-save').addEventListener('click', async () => {
         readCurrentTabIntoData(activeTab);
         const saveBtn = el.querySelector('#btn-rtti-uitleg-save');
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Bezig\u2026';
+        setBusy(saveBtn, true);
         // Unchanged tabs whose file exists are skipped, so they cannot conflict.
         // A missing file is still written, as in the reference: the rapport
         // falls back from a missing variant file to the subject file.
@@ -489,8 +489,7 @@ export async function openRttiUitlegModal() {
             tabSaved[i] = json;
           }),
         );
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Opslaan';
+        setBusy(saveBtn, false);
         const failed = tabs.filter((_, i) => results[i].status === 'rejected');
         if (failed.length === 0) {
           _dirty = false;

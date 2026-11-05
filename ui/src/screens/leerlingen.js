@@ -178,8 +178,8 @@ export function renderStudentList({ staged = true } = {}) {
           isAdmin
             ? `
         <div class="card-actions">
-          <button class="btn-sm btn-sm-icon" data-action="edit-student" data-id="${escHtml(s.id)}" title="Leerling bewerken">${ICONS.pen}</button>
-          <button class="btn-sm btn-danger btn-sm-icon" data-action="del-student" data-id="${escHtml(s.id)}" title="Leerling verwijderen">${ICONS.trash}</button>
+          <button class="btn btn--icon" data-action="edit-student" data-id="${escHtml(s.id)}" title="Leerling bewerken">${ICONS.pen}</button>
+          <button class="btn btn--icon btn--icon-danger" data-action="del-student" data-id="${escHtml(s.id)}" title="Leerling verwijderen">${ICONS.trash}</button>
         </div>`
             : ''
         }

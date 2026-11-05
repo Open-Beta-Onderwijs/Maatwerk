@@ -323,9 +323,9 @@ export async function openScoreModal(examId, year, deps) {
         <div id="sc-presence" class="presence-badges"></div>
       </div>
       <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">
-        <button class="u-w-32 u-h-32 u-p-0 u-fs-16 btn-secondary" id="sc-undo" title="Ongedaan maken (Ctrl+Z)">&#x21B6;</button>
-        <button class="u-w-32 u-h-32 u-p-0 u-fs-16 btn-secondary" id="sc-redo" title="Opnieuw (Ctrl+Y)">&#x21B7;</button>
-        <button class="u-cursor-default u-text-subtle u-border-light btn-secondary" id="sc-help" disabled
+        <button class="btn btn--icon" id="sc-undo" title="Ongedaan maken (Ctrl+Z)">&#x21B6;</button>
+        <button class="btn btn--icon" id="sc-redo" title="Opnieuw (Ctrl+Y)">&#x21B7;</button>
+        <button class="btn btn--secondary u-cursor-default u-text-subtle u-border-light" id="sc-help" disabled
           title="Navigeer sneller door gebruik te maken van de numpad:&#10;0-9: Punten invullen&#10;Punt (.): N invullen (als '. → N' aangevinkt is)&#10;Enter: Bevestigen &amp; volgende veld&#10;/ of *: Vorige / volgende veld&#10;- of +: Vorige / volgende leerling&#10;F1, F2, …: Eerste, tweede, … observatie aan/uit voor de huidige leerling&#10;&#10;Cijfer overschrijven: typ een cijfer in de kolom Cijfer. Leegmaken (of rechtermuisklik) herstelt het berekende cijfer."
          >Help ?</button>
         <label class="sc-dot-toggle"
@@ -334,7 +334,7 @@ export async function openScoreModal(examId, year, deps) {
         </label>
       </div>
       <div class="u-d-flex u-items-center u-gap-8 u-shrink-0">
-        <button class="btn-secondary" id="sc-edit-exam">Toets bewerken</button>
+        <button class="btn btn--secondary" id="sc-edit-exam">Toets bewerken</button>
         <span class="toolbar-label">N-term:</span>
         <div class="num-spinner spinner-wrap-sm" id="sc-nterm"
           data-val="${exam.n_term ?? 1}" data-step="0.1" data-min="0" data-max="3">
