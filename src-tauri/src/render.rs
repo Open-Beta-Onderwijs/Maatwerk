@@ -288,9 +288,8 @@ pub async fn print_pdf(
             groep: name.groep,
             toets: name.toets,
         };
-        let rel = outputs::print_copy(storage, &pdf, &name, local_now())?;
-        let abs = storage.data_dir().resolve(&rel)?;
-        Ok((rel.as_str().to_owned(), abs))
+        let copy = outputs::print_copy(storage, &pdf, &name, local_now())?;
+        Ok((copy.rel.as_str().to_owned(), copy.path))
     })
     .await?;
     open_with_os(app, abs).await.map_err(|e| {
@@ -303,7 +302,9 @@ pub async fn print_pdf(
 }
 
 /// ShellExecute can block (file associations, a slow share): off the async runtime (m5).
+/// ShellExecute does not take `\\?\` paths, so the prefix goes (0.4.1).
 pub(crate) async fn open_with_os(app: AppHandle, path: std::path::PathBuf) -> Res<()> {
+    let path = maatwerk_core::paths::os_path(&path);
     tauri::async_runtime::spawn_blocking(move || {
         app.opener()
             .open_path(path.to_string_lossy(), None::<&str>)

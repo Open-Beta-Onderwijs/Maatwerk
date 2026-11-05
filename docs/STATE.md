@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `step-13`, `v0.4.0` (pushed),
+Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `v0.4.1`, `step-13`, `v0.4.0` (pushed),
 `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are
 local only)
 
@@ -9,6 +9,16 @@ local only)
 **Step 13 done** (merged, tagged `step-13`, version 0.4.0). **Next: step 14** (Foundation b:
 dialog component, placeholders, sticky, form rules; L, 14a/14b). Step 14 also takes the step 13
 backlog items m3/m4/n6 (`docs/backlog.md` "From Step 13").
+
+## Fix 0.4.1 (2026-11-05, user report)
+
+"Openen in PDF-viewer" in Opdrachten genereren / Rapport genereren wrote the PDF but Windows said
+it could not find `\\?\...\data\rapporten\...pdf` (user's screenshot, not committed: it shows a local path).
+Two causes: `print_pdf` resolved the copy's path against the data folder although the copy is
+written next to it since step 7a (C18), and the canonical `\\?\` prefix went to ShellExecute.
+`outputs::print_copy` now returns `PrintedCopy { rel, path }` (path in OS form,
+`paths::os_path`); `openable_path` and `open_with_os` strip the prefix too. Regression test
+`outputs::tests::printed_copy_path_is_the_written_file_in_os_form` (fails without the fix).
 
 ## Step 13 result
 

@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use time::OffsetDateTime;
 
-use crate::paths::{DataDir, RelPath, is_year_name};
+use crate::paths::{DataDir, RelPath, is_year_name, os_path};
 use crate::storage::Storage;
 use crate::{Error, Result};
 
@@ -138,7 +138,7 @@ pub fn shared_dir(storage: &Storage) -> Result<DataDir> {
 /// in the shared folder, which could hold files that run when opened.
 pub fn openable_path(storage: &Storage, outputs: &OutputStore, target: &str) -> Result<PathBuf> {
     if let Ok(path) = outputs.path(target) {
-        return Ok(path);
+        return Ok(os_path(&path));
     }
     let rel = RelPath::parse(target)?;
     let parts: Vec<&str> = rel.as_str().split('/').collect();
@@ -152,7 +152,7 @@ pub fn openable_path(storage: &Storage, outputs: &OutputStore, target: &str) -> 
     }
     let path = shared_dir(storage)?.resolve(&rel)?;
     if path.is_file() {
-        Ok(path)
+        Ok(os_path(&path))
     } else {
         Err(Error::NotFound {
             path: target.to_owned(),
@@ -228,15 +228,25 @@ pub fn clean_name_part(part: &str) -> String {
     cut.trim_end_matches([' ', '.']).to_owned()
 }
 
-/// Copies an output into `rapporten/<schooljaar>/` next to the data folder (C18) and returns the
-/// copy's path relative to that shared folder. A name already taken gets ` (2)`, ` (3)`, ...
-/// Never overwrites; outside the data folder, so the watcher does not see it.
+/// A printed copy (`print_copy`).
+#[derive(Debug, Clone)]
+pub struct PrintedCopy {
+    /// Relative to the shared folder (the parent of the data folder): `rapporten/<jaar>/<n>.pdf`.
+    pub rel: RelPath,
+    /// The file itself, as the OS shell takes it (no `\\?\` prefix): what "Openen" opens.
+    pub path: PathBuf,
+}
+
+/// Copies an output into `rapporten/<schooljaar>/` next to the data folder (C18). A name
+/// already taken gets ` (2)`, ` (3)`, ... Never overwrites; outside the data folder, so the
+/// watcher does not see it. Returns both paths, so a caller never resolves `rel` against the
+/// data folder (0.4.1: the app opened `data\rapporten\...`, which does not exist).
 pub fn print_copy(
     storage: &Storage,
     pdf: &[u8],
     name: &PrintName,
     now: OffsetDateTime,
-) -> Result<RelPath> {
+) -> Result<PrintedCopy> {
     if !is_year_name(&name.schooljaar) {
         return Err(Error::InvalidArgument {
             message: format!("not a school year: {:?}", name.schooljaar),
@@ -284,7 +294,10 @@ pub fn print_copy(
                     let _ = fs::remove_file(&path);
                     return Err(Error::io(rel.as_str(), e));
                 }
-                return Ok(rel);
+                return Ok(PrintedCopy {
+                    rel,
+                    path: os_path(&path),
+                });
             }
             Err(e) if e.kind() == io::ErrorKind::AlreadyExists && n < 1000 => continue,
             Err(e) => return Err(Error::io(rel.as_str(), e)),
@@ -382,12 +395,12 @@ mod tests {
             .with_hms(14, 32, 9)
             .unwrap()
             .assume_offset(time::UtcOffset::from_hms(1, 0, 0).unwrap());
-        let first = print_copy(&storage, b"%PDF-1", &name, now).unwrap();
+        let first = print_copy(&storage, b"%PDF-1", &name, now).unwrap().rel;
         assert_eq!(
             first.as_str(),
             "rapporten/2025-2026/2026-10-25 1432 Rapport nat 3a Voorbeeldtoets 1.pdf"
         );
-        let second = print_copy(&storage, b"%PDF-2", &name, now).unwrap();
+        let second = print_copy(&storage, b"%PDF-2", &name, now).unwrap().rel;
         assert_eq!(
             second.as_str(),
             "rapporten/2025-2026/2026-10-25 1432 Rapport nat 3a Voorbeeldtoets 1 (2).pdf"
@@ -404,7 +417,7 @@ mod tests {
             toets: "a/b".into(),
             ..name.clone()
         };
-        let rel = print_copy(&storage, b"%PDF", &no_group, now).unwrap();
+        let rel = print_copy(&storage, b"%PDF", &no_group, now).unwrap().rel;
         assert_eq!(
             rel.as_str(),
             "rapporten/2025-2026/2026-10-25 1432 Rapport nat a-b.pdf"
@@ -415,6 +428,45 @@ mod tests {
             ..name
         };
         assert!(print_copy(&storage, b"%PDF", &bad_year, now).is_err());
+    }
+
+    /// 0.4.1: "Openen in PDF-viewer" asked Windows to open `\\?\...\data\rapporten\...pdf`: the
+    /// copy's path resolved against the data folder (the copy is next to it, C18), with the
+    /// verbatim prefix that ShellExecute rejects.
+    #[test]
+    fn printed_copy_path_is_the_written_file_in_os_form() {
+        let tmp = tempfile::tempdir().unwrap();
+        let storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        let outputs = OutputStore::open(tmp.path().join("out")).unwrap();
+        let name = PrintName {
+            schooljaar: "2026-2027".into(),
+            soort: "Rapport".into(),
+            vak: "nat".into(),
+            groep: "5nat1".into(),
+            toets: "PTA t.na-1 TW1".into(),
+        };
+        let copy = print_copy(&storage, b"%PDF-x", &name, OffsetDateTime::UNIX_EPOCH).unwrap();
+
+        // The path to open is the file that was written...
+        assert_eq!(fs::read(&copy.path).unwrap(), b"%PDF-x");
+        assert!(copy.path.is_absolute());
+        // ...not inside the data folder...
+        let data = storage.data_dir().root();
+        assert!(!os_path(&copy.path).starts_with(os_path(data)));
+        // ...in the form the OS shell accepts...
+        assert!(!copy.path.to_string_lossy().starts_with(r"\\?\"));
+        // ...and the same file "Openen" (open_path) would open later.
+        assert_eq!(
+            openable_path(&storage, &outputs, copy.rel.as_str()).unwrap(),
+            copy.path
+        );
+        // Render outputs are handed over in the same form.
+        let id = outputs.put("rapport_preview.pdf", b"%PDF").unwrap();
+        let out = openable_path(&storage, &outputs, &id).unwrap();
+        assert!(!out.to_string_lossy().starts_with(r"\\?\"));
+        assert_eq!(fs::read(out).unwrap(), b"%PDF");
     }
 
     #[test]
@@ -430,7 +482,9 @@ mod tests {
             groep: "x".repeat(60),
             toets: "y".repeat(60),
         };
-        let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH).unwrap();
+        let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH)
+            .unwrap()
+            .rel;
         assert_eq!(rel.file_name().chars().count(), MAX_STEM + ".pdf".len());
     }
 
@@ -448,7 +502,9 @@ mod tests {
             soort: "Rapport".into(),
             ..PrintName::default()
         };
-        let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH).unwrap();
+        let rel = print_copy(&storage, b"%PDF", &name, OffsetDateTime::UNIX_EPOCH)
+            .unwrap()
+            .rel;
         assert!(openable_path(&storage, &outputs, rel.as_str()).is_ok());
         for (file, bytes) in [
             ("data/fotos/x.bat", &b"echo"[..]),
