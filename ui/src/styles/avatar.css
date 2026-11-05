@@ -1,0 +1,82 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* One avatar (components/avatar.ts; B-04, B-08, spec 3.6). Self-contained:
+   the editor iframe imports it without the app's tokens, hence the fallbacks. */
+.avatar {
+  --av: 38px;
+  position: relative;
+  box-sizing: border-box;
+  width: var(--av);
+  height: var(--av);
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 2px solid var(--badge-color, #888);
+  background: var(--surface, #fff);
+  color: var(--text, #1b2230);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: calc(var(--av) * 0.36);
+  line-height: 1;
+  white-space: nowrap;
+}
+.avatar--24 {
+  --av: 24px;
+  border-width: 2px;
+}
+.avatar--30 {
+  --av: 30px;
+}
+.avatar--38 {
+  --av: 38px;
+}
+.avatar--40 {
+  --av: 40px;
+}
+.avatar--56 {
+  --av: 56px;
+  border-width: 3px;
+}
+.avatar--round {
+  border-radius: 50%;
+}
+.avatar--square {
+  border-radius: calc(var(--av) * 0.22);
+}
+.avatar--ring-accent {
+  border-color: var(--accent, #2f6fd6);
+}
+.avatar--ring-none {
+  border-color: transparent;
+}
+/* Long abbreviations shrink to stay inside the ring. */
+.avatar[data-len='3'] {
+  font-size: calc(var(--av) * 0.3);
+}
+.avatar[data-len='4'] {
+  font-size: calc(var(--av) * 0.25);
+}
+.avatar[data-len='5'] {
+  font-size: calc(var(--av) * 0.21);
+  letter-spacing: -0.02em;
+}
+.avatar-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.avatar--photo .avatar-initials {
+  visibility: hidden;
+}
+button.avatar {
+  cursor: pointer;
+}
+button.avatar:focus-visible {
+  outline: 2px solid var(--accent, #2f6fd6);
+  outline-offset: 2px;
+}

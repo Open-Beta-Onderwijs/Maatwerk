@@ -517,6 +517,7 @@ async function renderPresence(el, examId, year) {
       return Presence.badgeHtml(o.user, o.status, `${name} ${what}`);
     })
     .join('');
+  void Presence.loadPhotos(host);
   const active = others.find((o) => o.status === 'active');
   remoteFlashColor = active?.user.kleur ?? REMOTE_FLASH_COLOR;
   const cursors = others

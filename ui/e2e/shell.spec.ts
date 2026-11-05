@@ -4,7 +4,7 @@
 // look per user. Every page load starts a fresh MockApi.
 
 import { expect, test } from '@playwright/test';
-import { YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
+import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
 
 const SCHOOL = 'school.json';
 
@@ -89,5 +89,41 @@ test.describe('tab bar (spec 3.5, V-05, V-12)', () => {
       'Instellingen',
     ]);
     await expect(visibleTabs(page).locator('svg.nav-icon')).toHaveCount(7);
+  });
+});
+
+test.describe('avatar (B-04, B-08)', () => {
+  // The fixture's nat teacher has a photo (fotos/...); the biology teacher does not.
+  test('the same photo on the login screen, in the top bar and in the editor', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.subject-card[data-subject="nat"]').click();
+    const loginBadge = page.locator(`.user-badge[data-user-id="${TEACHER}"] .avatar`);
+    await expect(loginBadge.locator('img.avatar-photo')).toBeVisible();
+    await expect(loginBadge).toHaveClass(/avatar--56/);
+    await expect(loginBadge).toHaveClass(/avatar--round/);
+
+    await login(page);
+    const top = page.locator('#user-badge-btn');
+    await expect(top.locator('img.avatar-photo')).toBeVisible();
+    await expect(top).toHaveClass(/avatar--38/);
+    await expect(top).toHaveCSS('width', '38px');
+    await expect(top).toHaveClass(/avatar--ring-accent/);
+
+    await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+    await page.locator('[data-action="open-editor"]').first().click();
+    const editorBadge = page.frameLocator('#editor-frame').locator('#editor-badge-btn');
+    await expect(editorBadge.locator('img.avatar-photo')).toBeVisible();
+    await expect(editorBadge).toHaveClass(/avatar--30/);
+  });
+
+  test('without a photo: initials; the admin is square', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.subject-card[data-subject="bio"]').click();
+    const avatars = page.locator('.user-badge .avatar');
+    await expect(avatars.first()).toBeVisible();
+    const admin = page.locator('.user-badge[data-user-id="admin"] .avatar');
+    await expect(admin).toHaveClass(/avatar--square/);
+    await expect(admin.locator('.avatar-initials')).toHaveText('ADM');
+    await expect(admin.locator('img')).toHaveCount(0);
   });
 });

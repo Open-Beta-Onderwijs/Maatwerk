@@ -31,7 +31,16 @@ decision 5.
    Opdrachten, Gebruikers, School, Gegevenscontrole, Instellingen. Sticky screen headers sit at
    `--topbar-h`. e2e: 2 tab-bar tests; the sticky test measures the bar. **Visual diff pending**
    (every screen's top bar changes).
-3. **Next:** user menu dropdown. 4. Look + active year per user. 5. Avatar helper. Then U11/U13/U16, the
+3. **Done (before 3, the menu needs it):** one avatar helper (B-04, B-08):
+   `components/avatar.ts` (`avatarHtml`, `renderAvatar`, `loadAvatarPhotos`, initials = afkorting
+   or first letters of first and last name; round, square for admin / sectievoorzitter; ring =
+   user colour, accent (top bar 38, editor 30) or none; photo as `<img>` over the initials, read
+   through a 30 s cache) + `styles/avatar.css` (also imported by `editor.css`). Used by the
+   login badges and Gebruikers (56), the top bar (38, accent ring), presence (30, with photo),
+   the "nieuwe toets" notice (30) and the editor (B-08: the editor asks the main window
+   `maatwerk-user-avatar` for the user and photo). `utils/badges.js` and the `.badge-initials` /
+   `.user-badge-mini` CSS are gone. e2e: 2 avatar tests.
+4. **Next:** user menu dropdown. 4. Look + active year per user. 5. Avatar helper. Then U11/U13/U16, the
    e2e for persistence, gate, review, version 0.6.0.
 
 ## Step 14a progress

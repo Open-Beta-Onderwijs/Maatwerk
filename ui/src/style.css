@@ -6,6 +6,7 @@
 @import './styles/dialog.css';
 @import './styles/skeleton.css';
 @import './styles/forms.css';
+@import './styles/avatar.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -913,7 +914,7 @@ body::after {
   cursor: pointer;
   animation: bg-notice-in 0.25s ease-out;
 }
-.bg-notice .user-badge-mini {
+.bg-notice .bg-notice-avatar {
   cursor: inherit;
   margin-top: 2px;
 }
@@ -2040,34 +2041,16 @@ code {
   cursor: pointer;
   padding: 0;
 }
-.badge-initials {
-  width: 56px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 700;
-  background: var(--surface);
-  border: 3px solid var(--badge-color, #888);
-  color: var(--text);
+.user-badge .avatar {
   transition: transform 0.1s;
 }
-/* Shrink long abbreviations so they stay inside the badge */
-.badge-initials[data-len='4'] {
-  font-size: 0.95rem;
-}
-.badge-initials[data-len='5'] {
-  font-size: 0.8rem;
-}
-.badge-circle .badge-initials {
-  border-radius: 50%;
-}
-.badge-square .badge-initials {
-  border-radius: 8px;
-}
-.user-badge:hover .badge-initials {
+.user-badge:hover .avatar {
   transform: scale(1.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-badge .avatar {
+    transition: none;
+  }
 }
 .badge-name {
   font-size: 0.72rem;
@@ -2077,40 +2060,6 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* ── Mini user badge in topbar ───────────────────────────────────────────── */
-.user-badge-mini {
-  width: 30px;
-  height: 30px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 2px solid var(--badge-color, #888);
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-}
-.user-badge-mini.badge-circle {
-  border-radius: 50%;
-}
-.user-badge-mini.badge-square {
-  border-radius: 4px;
-}
-/* Shrink long abbreviations so they stay inside the badge */
-.user-badge-mini[data-len='4'] {
-  font-size: 0.56rem;
-}
-.user-badge-mini[data-len='5'] {
-  font-size: 0.46rem;
-  letter-spacing: -0.02em;
-}
-.user-badge-mini:hover {
-  opacity: 0.8;
 }
 
 /* ── Generic section header in card lists ────────────────────────────────── */

@@ -169,6 +169,7 @@ async function fillExamPresence() {
           : '';
       })
       .join('');
+    void Presence.loadPhotos(span);
   });
 }
 Presence.onChange(fillExamPresence);

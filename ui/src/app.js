@@ -21,7 +21,7 @@ import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
 import { openAccountModal } from './screens/pin';
 import { renderInstellingen } from './screens/instellingen';
-import { clearBadgePhoto, loadBadgePhoto } from './utils/badges.js';
+import { avatarHtml, loadAvatarPhotos, renderAvatar } from './components/avatar';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
@@ -954,20 +954,21 @@ async function initFilterBar(user, subject) {
 document.getElementById('btn-about').addEventListener('click', showAbout);
 
 const userBadgeBtn = document.getElementById('user-badge-btn');
+const readPhoto = (rel) => window.maatwerk.readPhotoAsDataUrl(rel);
 
 export async function showUserBadge(user, subject) {
   const role = Store.getActiveRole();
-  const shape = user.isAdmin || role ? 'badge-square' : 'badge-circle';
-  userBadgeBtn.className = `user-badge-mini ${shape}`;
-  userBadgeBtn.style.setProperty('--badge-color', user.kleur ?? '#888');
-  clearBadgePhoto(userBadgeBtn);
-  userBadgeBtn.textContent = user.afkorting || user.voornaam[0] || '?';
-  userBadgeBtn.dataset.len = userBadgeBtn.textContent.length;
-  userBadgeBtn.title = `${user.voornaam}${role ? ` (${roleLabel(role)})` : ''} — account en uitloggen`;
+  // Spec 3.6: 38 px, accent ring; square for the admin and a sectievoorzitter login.
+  userBadgeBtn.dataset.userId = user.id;
+  void renderAvatar(
+    userBadgeBtn,
+    user,
+    { size: 38, ring: 'accent', square: user.isAdmin || !!role },
+    readPhoto,
+  );
+  userBadgeBtn.title = `${Store.fullName(user)}${role ? ` (${roleLabel(role)})` : ''}: gebruikersmenu`;
+  userBadgeBtn.setAttribute('aria-label', 'Gebruikersmenu');
   userBadgeBtn.classList.remove('hidden');
-  // Only while this user is still the one shown (a slow read must not paint over the next).
-  const shownId = (userBadgeBtn.dataset.userId = user.id);
-  void loadBadgePhoto(userBadgeBtn, user.foto, () => userBadgeBtn.dataset.userId === shownId);
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
@@ -1034,8 +1035,9 @@ userBadgeBtn.addEventListener('click', () => {
 function logOut() {
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
-  clearBadgePhoto(userBadgeBtn);
+  userBadgeBtn.replaceChildren();
   delete userBadgeBtn.dataset.userId;
+  delete userBadgeBtn.dataset.avatarFoto;
   _adminSubjectFilter = null;
   _activeUserId = null;
   _obsFilter = null;
@@ -1171,14 +1173,12 @@ async function showExamAddedNotice(exam, year) {
   ]
     .filter(Boolean)
     .join(' · ');
-  const initials = creator ? creator.afkorting || creator.voornaam?.[0] || '?' : '?';
   const card = document.createElement('div');
   card.className = 'bg-notice';
   card.setAttribute('role', 'status');
   card.title = 'Klik om te sluiten';
   card.innerHTML = `
-    <span class="user-badge-mini ${creator?.isAdmin ? 'badge-square' : 'badge-circle'}"
-      data-len="${initials.length}" data-badge-color="${escHtml(creator?.kleur ?? '#888')}">${escHtml(initials)}</span>
+    ${avatarHtml(creator ?? {}, { size: 30, className: 'bg-notice-avatar' })}
     <div class="bg-notice-body">
       <div class="bg-notice-title">Nieuwe toets toegevoegd</div>
       <div class="bg-notice-exam">${escHtml(exam.title)}</div>
@@ -1188,6 +1188,7 @@ async function showExamAddedNotice(exam, year) {
     <button class="bg-notice-close" aria-label="Melding sluiten">✕</button>`;
   card.addEventListener('click', () => card.remove());
   container.appendChild(card);
+  void loadAvatarPhotos(card, readPhoto);
 }
 
 Sync.start();

@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
+@import './styles/avatar.css';
+
 *,
 *::before,
 *::after {
@@ -95,43 +97,9 @@ body {
   white-space: nowrap;
 }
 
-/* ── User badge (mini) — mirrors .user-badge-mini in style.css ─────────── */
+/* The user's avatar: styles/avatar.css (B-08). */
 #editor-badge-btn {
-  width: 30px;
-  height: 30px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  border: 2px solid var(--badge-color, #888);
-  background: #fff;
-  color: #2c3e50;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-#editor-badge-btn.badge-circle {
-  border-radius: 50%;
-}
-
-#editor-badge-btn.badge-square {
-  border-radius: 4px;
-}
-
-/* Shrink long abbreviations so they stay inside the badge */
-#editor-badge-btn[data-len='4'] {
-  font-size: 0.56rem;
-}
-
-#editor-badge-btn[data-len='5'] {
-  font-size: 0.46rem;
-  letter-spacing: -0.02em;
-}
-
-#editor-badge-btn:hover {
-  opacity: 0.8;
+  margin-left: 8px;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────────── */

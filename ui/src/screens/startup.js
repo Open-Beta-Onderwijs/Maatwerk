@@ -4,7 +4,7 @@ import { escHtml, navigateTo, showUserBadge } from '../app.js';
 import { scoreSavesDone } from './scores.js';
 import { showAbout } from './about';
 import { pinLogin } from './pin';
-import { loadBadgePhoto } from '../utils/badges.js';
+import { avatarHtml, loadAvatarPhotos } from '../components/avatar';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Startup — two-step subject + user picker, then the PIN (Step 7b)
@@ -45,27 +45,20 @@ export async function renderStartup() {
   // The teacher's initials in a square badge; `data-voorzitter-id` (not
   // data-user-id) keeps the teacher's own badge the only one with their id.
   function renderVoorzitterBadge(user, subject) {
-    const initials = user.afkorting || (user.voornaam[0] ?? '') + (user.achternaam[0] ?? '');
-    const fotoAttr = user.foto ? ` data-foto="${escHtml(user.foto)}"` : '';
     return `
-      <button class="user-badge badge-square badge-voorzitter" data-voorzitter-id="${escHtml(user.id)}"
-              data-badge-color="${escHtml(user.kleur ?? '#888')}"${fotoAttr}
+      <button class="user-badge badge-voorzitter" data-voorzitter-id="${escHtml(user.id)}"
               title="${escHtml(voorzitterLabel(subject))}">
-        <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
+        ${avatarHtml(user, { size: 56, square: true })}
         <span class="badge-name">${escHtml(user.voornaam)}</span>
         <span class="badge-voorzitter-label">Sectievoorzitter</span>
       </button>`;
   }
 
   function renderBadge(user) {
-    const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
-    const initials = user.afkorting || (user.voornaam[0] ?? '') + (user.achternaam[0] ?? '');
     // U7: every user field is escaped (the reference inserted them raw).
-    const fotoAttr = user.foto ? ` data-foto="${escHtml(user.foto)}"` : '';
     return `
-      <button class="user-badge ${shape}" data-user-id="${escHtml(user.id)}"
-              data-badge-color="${escHtml(user.kleur ?? '#888')}"${fotoAttr}>
-        <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
+      <button class="user-badge" data-user-id="${escHtml(user.id)}">
+        ${avatarHtml(user, { size: 56 })}
         <span class="badge-name">${escHtml(user.voornaam)}</span>
       </button>`;
   }
@@ -120,12 +113,7 @@ export async function renderStartup() {
   }
 
   async function loadBadgePhotos() {
-    const badges = container.querySelectorAll('[data-foto]');
-    await Promise.all(
-      Array.from(badges).map((btn) =>
-        loadBadgePhoto(btn.querySelector('.badge-initials'), btn.dataset.foto),
-      ),
-    );
+    await loadAvatarPhotos(container, (rel) => window.maatwerk.readPhotoAsDataUrl(rel));
   }
 
   // The PIN first (Step 7b); then the session starts as before.

@@ -34,7 +34,7 @@ test('U7: the login screen shows teacher names as text', async ({ page }) => {
   await page.locator('.subject-card[data-subject="nat"]').click();
   const badge = page.locator(`.user-badge[data-user-id="${TEACHER}"]`);
   await expect(badge.locator('.badge-name')).toHaveText(NASTY);
-  await expect(badge.locator('.badge-initials')).toHaveText('<i>');
+  await expect(badge.locator('.avatar-initials')).toHaveText('<i>');
   await expect(badge.locator('b, i')).toHaveCount(0);
 });
 

@@ -17,7 +17,7 @@
  *   'idle'   — online, but no recent edit (orange)
  */
 import * as Sync from './sync.js';
-import { escHtml } from './app.js';
+import { avatarHtml, loadAvatarPhotos } from './components/avatar';
 
 const HEARTBEAT_MS = 15000;
 const CHANGE_WRITE_MS = 5000;
@@ -180,13 +180,16 @@ function notify() {
 
 // ── Display ────────────────────────────────────────────────────────────────
 
-/** Initials badge of a colleague with a green (active) or orange (idle) ring. */
+/** Loads the photos of the presence avatars under `root`. */
+export function loadPhotos(root) {
+  return loadAvatarPhotos(root, (rel) => window.maatwerk.readPhotoAsDataUrl(rel));
+}
+
+/** Avatar of a colleague with a green (active) or orange (idle) ring (photos: B-04). */
 export function badgeHtml(user, status, title) {
-  const initials = user.afkorting || user.voornaam?.[0] || '?';
-  const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
-  return (
-    `<span class="user-badge-mini ${shape} presence-badge presence-${status}" ` +
-    `data-len="${initials.length}" data-badge-color="${escHtml(user.kleur ?? '#888')}" ` +
-    `title="${escHtml(title)}">${escHtml(initials)}</span>`
-  );
+  return avatarHtml(user, {
+    size: 30,
+    className: `presence-badge presence-${status}`,
+    title,
+  });
 }
