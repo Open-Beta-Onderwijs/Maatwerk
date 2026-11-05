@@ -5,7 +5,17 @@
 // Every page load starts a fresh MockApi, so tests do not share data.
 
 import { expect, test, type Page } from '@playwright/test';
-import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
+import {
+  TEACHER,
+  YEAR,
+  enterPin,
+  examMenuItem,
+  login,
+  logout,
+  readMockJson,
+  seedFiles,
+  withMock,
+} from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
 
@@ -361,5 +371,31 @@ test('a migrated config.json without activeYear opens every tab on the current s
   ] as const) {
     await page.locator(`.nav-btn[data-screen="${screen}"]`).click();
     await expect(page.locator(`${select} .csel-trigger`)).toContainText('2025-2026');
+  }
+});
+
+test('U11: Alles/Niets in a filter popover act once, however often someone logged in', async ({
+  page,
+}) => {
+  await login(page);
+  for (let i = 0; i < 2; i++) {
+    await logout(page);
+    await page.locator('.subject-card[data-subject="nat"]').click();
+    await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
+    await enterPin(page);
+    await expect(page.locator('#topbar')).toBeVisible();
+  }
+  const writes = () =>
+    withMock(page, (m) => m.calls.filter((c) => c[0] === 'writeLocalSession').length);
+  for (const [open, popover, button] of [
+    ['#btn-filter-ss', '#pop-ss', '#pop-ss-niets'],
+    ['#btn-filter-ss', '#pop-ss', '#pop-ss-alles'],
+    ['#btn-filter-jl', '#pop-jl', '#pop-jl-niets'],
+  ]) {
+    if (await page.locator(popover).isHidden()) await page.locator(open).click();
+    const before = await writes();
+    await page.locator(button).click();
+    await page.waitForTimeout(300); // let every handler's write land
+    expect(await writes()).toBe(before + 1);
   }
 });

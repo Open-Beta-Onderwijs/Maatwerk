@@ -60,7 +60,9 @@ decision 5.
    `pin_writes_keep_preferences_and_unknown_fields`. Tests: Vitest preferences + store merge; 5
    e2e (menu, persist across logout, second PC with a seeded user file incl. active year, admin
    edit kept, admin menu).
-6. **Next:** U11 (filter listeners), U13/U16 (verify superseded), then gate, review, 0.6.0.
+6. **Done:** U11 fixed (`onclick` per Alles/Niets button; e2e fails without the fix), U13 and U16
+   checked: superseded (quirks.md).
+7. **Next:** version 0.6.0, gate, reviewer subagent, then the visual diff for the user.
 
 ## Step 14a progress
 

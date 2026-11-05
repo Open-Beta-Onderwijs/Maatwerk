@@ -496,13 +496,13 @@ function buildVakkenPopover() {
     });
     container.appendChild(btn);
   }
-  document.getElementById('pop-vak-alles').addEventListener('click', () => {
+  document.getElementById('pop-vak-alles').onclick = () => {
     _adminSubjectFilter = null;
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
     updateVakLabel();
     rebuildJaarlagPopover(null);
     rerenderActive();
-  });
+  };
 }
 
 document.getElementById('btn-filter-vak').addEventListener('click', (e) => {
@@ -683,20 +683,20 @@ function buildSchoolsoortPopover(options, savedSelection) {
     container.appendChild(btn);
   }
 
-  document.getElementById('pop-ss-alles').addEventListener('click', () => {
+  document.getElementById('pop-ss-alles').onclick = () => {
     _filterState.schoolsoorten = new Set(_schoolsoortOptions);
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
     updateSchoolsoortLabel();
     persistFilters();
     rerenderActive();
-  });
-  document.getElementById('pop-ss-niets').addEventListener('click', () => {
+  };
+  document.getElementById('pop-ss-niets').onclick = () => {
     _filterState.schoolsoorten = new Set();
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
     updateSchoolsoortLabel();
     persistFilters();
     rerenderActive();
-  });
+  };
 
   updateSchoolsoortLabel();
 }
@@ -738,28 +738,22 @@ function rebuildJaarlagPopover(subject, savedSelection) {
     container.appendChild(btn);
   }
 
-  // Re-bind Alles/Niets (remove old listeners by replacing the elements)
-  const allesOld = document.getElementById('pop-jl-alles');
-  const allesNew = allesOld.cloneNode(true);
-  allesOld.replaceWith(allesNew);
-  allesNew.addEventListener('click', () => {
+  // One handler per button, replaced on every build (U11: listeners piled up per login).
+  document.getElementById('pop-jl-alles').onclick = () => {
     _filterState.jaarlagen = new Set(_jaarlagOptions.map((o) => o.key));
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
     updateJaarlagLabel();
     persistFilters();
     rerenderActive();
-  });
+  };
 
-  const nietsOld = document.getElementById('pop-jl-niets');
-  const nietsNew = nietsOld.cloneNode(true);
-  nietsOld.replaceWith(nietsNew);
-  nietsNew.addEventListener('click', () => {
+  document.getElementById('pop-jl-niets').onclick = () => {
     _filterState.jaarlagen = new Set();
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
     updateJaarlagLabel();
     persistFilters();
     rerenderActive();
-  });
+  };
 
   updateJaarlagLabel();
 
@@ -808,27 +802,21 @@ function buildJaarlagKlasPopover(savedSelection) {
     container.appendChild(btn);
   }
 
-  const allesOld = document.getElementById('pop-jl-klas-alles');
-  const allesNew = allesOld.cloneNode(true);
-  allesOld.replaceWith(allesNew);
-  allesNew.addEventListener('click', () => {
+  document.getElementById('pop-jl-klas-alles').onclick = () => {
     _filterState.jaarlagenKlas = new Set(KLAS_JAARLAG_OPTIONS.map((o) => o.key));
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
     updateJaarlagKlasLabel();
     persistFilters();
     rerenderActive();
-  });
+  };
 
-  const nietsOld = document.getElementById('pop-jl-klas-niets');
-  const nietsNew = nietsOld.cloneNode(true);
-  nietsOld.replaceWith(nietsNew);
-  nietsNew.addEventListener('click', () => {
+  document.getElementById('pop-jl-klas-niets').onclick = () => {
     _filterState.jaarlagenKlas = new Set();
     container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
     updateJaarlagKlasLabel();
     persistFilters();
     rerenderActive();
-  });
+  };
 
   updateJaarlagKlasLabel();
 }
