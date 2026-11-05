@@ -32,7 +32,10 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    test-type badge (`.test-badge`, `domain/test-type.ts`: toets = accent, SE = anti; PO and
    diagnostic classes ready for step 20). `utils/colors.js` removed; `utils/spinners.js` ->
    `.ts`; `theme.ts` `cssToken` for chart colours. Question-editor table keeps 30 px controls.
-5. Todo: remove replaced `u-*` utilities.
+5. **Done:** 9 unused `u-*` utilities removed (`u-w-32`, `u-h-32`, `u-mr-0`, `u-bg-dark` freed
+   by this step; `u-align-bottom`, `u-border-b`, `u-p-3-6`, `u-text-left`, `u-tracking` already
+   dead). 119 remain for later steps.
+6. **Next:** visual diff to the user (stop), then gate, reviewer, release 0.4.0.
 
 Decisions to raise: zwart accent in dark theme uses a light fill (`#E7EAF0`, dark text), since
 `#111418` is invisible on the dark surface (spec silent). `editor.css`/`pdf-viewer.css` (own

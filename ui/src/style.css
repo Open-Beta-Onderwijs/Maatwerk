@@ -2884,9 +2884,6 @@ td.grade-override-stale::after {
 .u-grid-4x28 {
   grid-template-columns: repeat(4, 28px) !important;
 }
-.u-bg-dark {
-  background: #111 !important;
-}
 .u-bg-highlight {
   background: var(--accent-soft) !important;
 }
@@ -2898,9 +2895,6 @@ td.grade-override-stale::after {
 }
 .u-border {
   border: 1px solid var(--border) !important;
-}
-.u-border-b {
-  border-bottom: 1px solid var(--border) !important;
 }
 .u-border-b-2 {
   border-bottom: 2px solid var(--border) !important;
@@ -2971,17 +2965,11 @@ td.grade-override-stale::after {
 .u-fw-normal {
   font-weight: normal !important;
 }
-.u-tracking {
-  letter-spacing: 0.4px !important;
-}
 .u-uppercase {
   text-transform: uppercase !important;
 }
 .u-text-center {
   text-align: center !important;
-}
-.u-text-left {
-  text-align: left !important;
 }
 .u-text-right {
   text-align: right !important;
@@ -2994,9 +2982,6 @@ td.grade-override-stale::after {
 }
 .u-align-middle {
   vertical-align: middle !important;
-}
-.u-align-bottom {
-  vertical-align: bottom !important;
 }
 .u-relative {
   position: relative !important;
@@ -3018,9 +3003,6 @@ td.grade-override-stale::after {
 }
 .u-h-30 {
   height: 30px !important;
-}
-.u-h-32 {
-  height: 32px !important;
 }
 .u-h-36 {
   height: 36px !important;
@@ -3048,9 +3030,6 @@ td.grade-override-stale::after {
 }
 .u-w-30 {
   width: 30px !important;
-}
-.u-w-32 {
-  width: 32px !important;
 }
 .u-w-36 {
   width: 36px !important;
@@ -3124,9 +3103,6 @@ td.grade-override-stale::after {
 .u-mb-20 {
   margin-bottom: 20px !important;
 }
-.u-mr-0 {
-  margin-right: 0 !important;
-}
 .u-mr-5 {
   margin-right: 5px !important;
 }
@@ -3186,9 +3162,6 @@ td.grade-override-stale::after {
 }
 .u-p-3-4 {
   padding: 3px 4px !important;
-}
-.u-p-3-6 {
-  padding: 3px 6px !important;
 }
 .u-p-4-6 {
   padding: 4px 6px !important;
