@@ -1,14 +1,43 @@
 # State
 
-Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `v0.4.1`, `step-13`, `v0.4.0` (pushed),
-`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are
-local only)
+Last updated: 2026-11-05 (step 14a in progress) Branch: `step/14-foundation-b` Last tags: `v0.4.1`,
+`step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
+`v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 13 done** (merged, tagged `step-13`, version 0.4.0). **Next: step 14** (Foundation b:
-dialog component, placeholders, sticky, form rules; L, 14a/14b). Step 14 also takes the step 13
-backlog items m3/m4/n6 (`docs/backlog.md` "From Step 13").
+**Step 14 (Foundation b), session 14a.** Branch `step/14-foundation-b` (from `main` `766e4aa`).
+Baseline green (cargo test, Vitest). Step 14 also takes the step 13 backlog items m3/m4/n6
+(`docs/backlog.md` "From Step 13").
+
+## Step 14a progress
+
+1. **Done** (`5538f85`): `ui/src/components/dialog.ts` + `styles/dialog.css`: one dialog
+   component (fixed top 64 px, centred, max height `100vh - 96px`, `fixedHeight`; sticky header
+   with title/badge/subtitle/close/tabs; scrolling body; footer: right-aligned, primary last,
+   `align: 'start'` for a navigational action; busy state on async buttons; per-dialog close
+   guard and cleanups; stacking with one backdrop each; Escape on `window` in the bubble phase,
+   skipped when a control inside called `preventDefault()`). `app.js` `showModal`/`closeModal`/
+   `guardModalClose`/`onModalSync`/`onModalCleanup`/`modalRefresher`/`pushModalChart` act on the
+   current modal (top of the modals opened through `showModal`/`openModal`; confirms do not
+   count). `showModal` = legacy form (key `legacy`: replaces a legacy modal, stacks on a
+   structured one; keeps ids `modal-box`/`modal-content`/`modal-close`). `confirmDialog`,
+   `alertDialog`, `showReloadNotice` on the component. U15 (replaced modal runs its onClose),
+   U14 (RTTI uitleg uses the shared guard; its inline confirm bar is gone), U12 (closing a dialog
+   destroys its CustomSelects; `host._csel`), n8 (dev menu Escape). New behaviour: **Escape
+   closes modals** (through the guard); before, only ✕ and the backdrop did.
+2. **Done** (`a77cd39`): exam overview, rapport and group edit on `openModal` (structured header,
+   tabs via `onTab`, `fixedHeight`, group edit footer). `openModal({ key })` replaces a modal
+   with the same key (refresh in place). Skeleton helpers `components/skeleton.ts` +
+   `styles/skeleton.css` (not used yet; areas use them, V-09 "14 + areas"). Sticky `.screen-head`
+   (title row + filter row) on the five teacher tabs. `e2e/dialog.spec.ts` (34 tests).
+   R-05 call: the three ported modal files stay JS (only their open call changed; their area
+   steps 20/23/25 convert them), as with m7 in step 13.
+3. **Next:** visual diff for the user (every modal changed: top 64, radius 14, new close button;
+   exam overview/rapport/group edit have the new header). Then 14b.
+
+E2E: the editor test "a compile over the time limit" flaked once more under the full suite
+(backlog).
 
 ## Fix 0.4.1 (2026-11-05, user report)
 
