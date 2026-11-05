@@ -111,7 +111,9 @@ test.describe('sticky screen headers', () => {
         .poll(() => page.evaluate(() => document.scrollingElement!.scrollTop))
         .toBeGreaterThan(0);
       const box = await head.boundingBox();
-      expect(box?.y).toBe(50); // #topbar height
+      const bar = await page.locator('#topbar').boundingBox();
+      expect(bar?.height).toBe(56); // spec 3.5
+      expect(box?.y).toBe(bar!.height);
       await expect(head.locator('h2')).toBeInViewport();
     });
   }

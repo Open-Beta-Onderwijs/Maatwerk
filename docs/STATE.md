@@ -22,8 +22,16 @@ decision 5.
    "onverwacht" text), PIN dialogs too. Mock backend: `MOCK_APP_VERSION = '0.6.0'`, refuses
    writes like the backend. Tests: 5 storage tests on the v2 fixture, 3 unit, 4 Vitest, 3 e2e
    (`e2e/shell.spec.ts`). Runbook section 8.
-2. **Next:** tab bar (logo assets, Lucide icons, active state, admin's seven tabs).
-3. User menu dropdown. 4. Look + active year per user. 5. Avatar helper. Then U11/U13/U16, the
+2. **Done:** tab bar (spec 3.5, V-05, V-12). Header 56 px on `--surface` with a `--border` line
+   (`--topbar-h`; the `--header-*` tokens are gone); brand button (`#btn-about`) with icon +
+   wordmark from `ui/src/assets/brand/` (copies of the design assets without the C2PA metadata;
+   light/dark variants via `.theme-light-only`/`.theme-dark-only`); tab icons are the design
+   boards' own paths (Lucide style; THIRD_PARTY_LICENSES.md notes it); active tab: 600, icon in
+   `--accent-text`, 3 px underline, `aria-current="page"`. Admin: Leerlingen, Groepen,
+   Opdrachten, Gebruikers, School, Gegevenscontrole, Instellingen. Sticky screen headers sit at
+   `--topbar-h`. e2e: 2 tab-bar tests; the sticky test measures the bar. **Visual diff pending**
+   (every screen's top bar changes).
+3. **Next:** user menu dropdown. 4. Look + active year per user. 5. Avatar helper. Then U11/U13/U16, the
    e2e for persistence, gate, review, version 0.6.0.
 
 ## Step 14a progress

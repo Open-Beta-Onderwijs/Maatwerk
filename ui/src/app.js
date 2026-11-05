@@ -42,9 +42,12 @@ document.querySelectorAll('.nav-btn').forEach((btn) => {
 });
 
 export function navigateTo(name) {
-  document
-    .querySelectorAll('.nav-btn')
-    .forEach((b) => b.classList.toggle('active', b.dataset.screen === name));
+  document.querySelectorAll('.nav-btn').forEach((b) => {
+    const on = b.dataset.screen === name;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
   Object.values(screens).forEach((s) => s.classList.remove('active'));
   if (name === 'startup') {
     topbar.classList.add('hidden');
