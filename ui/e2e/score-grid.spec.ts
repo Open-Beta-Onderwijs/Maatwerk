@@ -258,7 +258,7 @@ test.describe('keyboard', () => {
     const id = await studentIdOf(page, 0);
     await select(page, 0, E.q1);
     await page.keyboard.type('3');
-    await page.locator('#modal-box .group-heading').first().click();
+    await page.locator('.dlg .group-heading').first().click();
     await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 3 });
   });
 
@@ -412,7 +412,7 @@ test.describe('undo, saving, colleagues', () => {
       await page.keyboard.press('Enter');
     }
     // Log in to another subject while the saves are still queued.
-    await page.locator('#modal-close').click();
+    await page.locator('.dlg-close').click();
     await logout(page);
     await page.locator('.subject-card[data-subject="schk"]').click();
     await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();

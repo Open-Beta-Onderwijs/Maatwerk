@@ -2,7 +2,6 @@
 
 import {
   toast,
-  showModal,
   openModal,
   closeModal,
   escHtml,
@@ -306,26 +305,18 @@ export async function openRttiUitlegModal() {
 
   let activeTab = 0;
 
-  const tabButtons = tabs
-    .map(
-      (t, i) =>
-        `<button class="overview-tab${i === 0 ? ' selected' : ''}" data-tab-idx="${i}">${t.label}</button>`,
-    )
-    .join('');
-
-  const modalHtml = `
-    <h3 class="modal-title">Leerlingrapport RTTI uitleg en leeradvies</h3>
-    <div class="overview-tab-bar rtti-uitleg-tab-bar" id="rtti-uitleg-tabs">${tabButtons}</div>
-    <div id="rtti-uitleg-tab-content"></div>
-    <div class="rtti-uitleg-footer">
+  let selectTab = null; // set in onShow; the dialog calls onTab on open
+  openModal({
+    title: 'Leerlingrapport RTTI uitleg en leeradvies',
+    size: 'lg',
+    fixedHeight: true,
+    tabs: tabs.map((t, i) => ({ id: String(i), label: t.label })),
+    onTab: (id) => selectTab?.(Number(id)),
+    body: '<div id="rtti-uitleg-tab-content"></div>',
+    footerHtml: `
       <button class="btn btn--secondary" id="btn-rtti-uitleg-cancel">Annuleren</button>
-      <button class="btn btn--primary" id="btn-rtti-uitleg-save">Opslaan</button>
-    </div>
-  `;
-
-  showModal(
-    modalHtml,
-    (el) => {
+      <button class="btn btn--primary" id="btn-rtti-uitleg-save">Opslaan</button>`,
+    onShow: (el) => {
       let _dirty = false;
 
       function markDirty() {
@@ -422,16 +413,11 @@ export async function openRttiUitlegModal() {
         }
       }
 
-      el.querySelector('#rtti-uitleg-tabs').addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-tab-idx]');
-        if (!btn) return;
+      selectTab = (idx) => {
         readCurrentTabIntoData(activeTab);
-        activeTab = Number(btn.dataset.tabIdx);
-        el.querySelectorAll('.overview-tab').forEach((b) =>
-          b.classList.toggle('selected', b.dataset.tabIdx === String(activeTab)),
-        );
+        activeTab = idx;
         renderTab(activeTab);
-      });
+      };
 
       el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () =>
         requestCloseModal(),
@@ -474,6 +460,5 @@ export async function openRttiUitlegModal() {
 
       renderTab(0);
     },
-    'modal-xl',
-  );
+  });
 }

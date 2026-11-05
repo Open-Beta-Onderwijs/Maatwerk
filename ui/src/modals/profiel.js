@@ -2,7 +2,7 @@
 
 // ── Student profile modal ─────────────────────────────────────────────────
 import {
-  showModal,
+  openModal,
   closeModal,
   escHtml,
   pushModalChart,
@@ -24,9 +24,9 @@ import { leerlingenState } from '../screens/leerlingen.js';
  * Keep an open profile up to date: new scores and exam edits refresh it
  * silently (on the same tab); a change to the student's own record needs a notice.
  */
-function watchProfile(el, { studentId, year, backFn, peers, activeTab }) {
-  const currentTab = () => el.querySelector('.overview-tab.selected')?.dataset.tab ?? activeTab;
-  const reopen = () => openProfielModal(studentId, backFn, peers, currentTab());
+function watchProfile(dialog, { studentId, year, peers, activeTab }) {
+  const currentTab = () => dialog.activeTab ?? activeTab;
+  const reopen = () => openProfielModal(studentId, peers, currentTab());
   const refresh = modalRefresher(reopen);
   onModalSync('scores', (ev) => {
     if (ev.id === String(studentId) && ev.subject === Store.getActiveSubject()) refresh();
@@ -50,12 +50,11 @@ function watchProfile(el, { studentId, year, backFn, peers, activeTab }) {
   });
 }
 
-export async function openProfielModal(
-  studentId,
-  backFn = null,
-  peers = null,
-  activeTab = 'cijferverloop',
-) {
+/**
+ * Opens a student's profile. From a group overview it stacks on top of it, so
+ * closing returns there; Vorige/Volgende (peers) replace it in place.
+ */
+export async function openProfielModal(studentId, peers = null, activeTab = 'cijferverloop') {
   const year = leerlingenState.year || Store.getConfigSync().activeYear;
   const students = await Store.getStudents(year);
   const student = students.find((s) => s.id === studentId);
@@ -66,14 +65,13 @@ export async function openProfielModal(
   // ─── NEW PROFILE MODAL ───────────────────────────────────────────────────
 
   if (history.length === 0) {
-    showModal(
-      `<h3>${escHtml(Store.fullName(student))}</h3><p class="hint">Nog geen scores voor deze leerling.</p>`,
-      (el) => {
-        watchProfile(el, { studentId, year, backFn, peers, activeTab });
-        if (backFn)
-          document.getElementById('modal-close').addEventListener('click', backFn, { once: true });
-      },
-    );
+    openModal({
+      key: 'profile',
+      title: Store.fullName(student),
+      subtitle: student.stamklas ?? '',
+      body: '<p class="hint">Nog geen scores voor deze leerling.</p>',
+      onShow: (_el, dialog) => watchProfile(dialog, { studentId, year, peers, activeTab }),
+    });
     return;
   }
 
@@ -135,18 +133,30 @@ export async function openProfielModal(
 
   const btnW = allYears.length > 3 ? '120px' : '150px'; // min-width of the year buttons
 
-  showModal(
-    `
-    <div class="u-px-2">
-      <div class="u-d-flex u-items-center u-gap-12 u-mb-12">
-        <h3 class="u-m-0 u-flex-none">${escHtml(Store.fullName(student))}</h3>
-        <div id="mc-prof-nav" class="u-flex-1 u-d-flex u-justify-center u-gap-6 u-flex-wrap"></div>
-      </div>
-      <div class="overview-tab-bar">
-        <button class="overview-tab${activeTab === 'cijferverloop' ? ' selected' : ''}" data-tab="cijferverloop">Cijferverloop</button>
-        <button class="overview-tab${activeTab === 'analyse' ? ' selected' : ''}" data-tab="analyse">Analyse</button>
-      </div>
-      <div class="u-bleed-28 u-p-bleed-28 u-bg-page">
+  // Vorige/Volgende through the list the profile was opened from (footer: the
+  // previous one left, the next one right).
+  const idx = peers && peers.length > 1 ? peers.findIndex((p) => p.id === studentId) : -1;
+  const prev = idx > 0 ? peers[idx - 1] : null;
+  const next = idx >= 0 && idx < peers.length - 1 ? peers[idx + 1] : null;
+  let switchTabRef = null; // set once the charts are set up; the dialog calls onTab on open
+  const dialog = openModal({
+    key: 'profile',
+    title: Store.fullName(student),
+    subtitle: student.stamklas ?? '',
+    className: 'modal-profile',
+    fixedHeight: true,
+    bodyClass: 'dlg-body--tinted',
+    tabs: [
+      { id: 'cijferverloop', label: 'Cijferverloop' },
+      { id: 'analyse', label: 'Analyse' },
+    ],
+    activeTab,
+    onTab: (id) => switchTabRef?.(id),
+    footerHtml: `
+      ${prev ? `<button class="btn btn--secondary" id="prof-prev" data-align="start">← Vorige (${escHtml(Store.fullName(prev))})</button>` : ''}
+      ${next ? `<button class="btn btn--secondary" id="prof-next">Volgende (${escHtml(Store.fullName(next))}) →</button>` : ''}`,
+    body: `
+      <div>
 
       <div class="tab-pane${activeTab === 'cijferverloop' ? '' : ' hidden'}" id="tab-cijferverloop">
         <div class="u-border u-rounded u-p-panel u-mb-16 u-bg-surface">
@@ -205,41 +215,20 @@ export async function openProfielModal(
             : ''
         }
       </div>
-
       </div>
-    </div>
     `,
-    (el) => {
-      watchProfile(el, { studentId, year, backFn, peers, activeTab });
-      if (backFn)
-        document.getElementById('modal-close').addEventListener('click', backFn, { once: true });
+  });
+  {
+    const el = dialog.el;
+    {
+      watchProfile(dialog, { studentId, year, peers, activeTab });
 
-      if (peers && peers.length > 1) {
-        const navEl = el.querySelector('#mc-prof-nav');
-        const idx = peers.findIndex((p) => p.id === studentId);
-        const prev = idx > 0 ? peers[idx - 1] : null;
-        const next = idx < peers.length - 1 ? peers[idx + 1] : null;
-        if (prev) {
-          const pb = document.createElement('button');
-          pb.className = 'btn btn--secondary btn--sm';
-          pb.textContent = `← Vorige (${Store.fullName(prev)})`;
-          pb.addEventListener('click', () => {
-            const tab = el.querySelector('.overview-tab.selected')?.dataset.tab ?? 'cijferverloop';
-            openProfielModal(prev.id, backFn, peers, tab);
-          });
-          navEl.appendChild(pb);
-        }
-        if (next) {
-          const nb = document.createElement('button');
-          nb.className = 'btn btn--secondary btn--sm';
-          nb.textContent = `Volgende (${Store.fullName(next)}) →`;
-          nb.addEventListener('click', () => {
-            const tab = el.querySelector('.overview-tab.selected')?.dataset.tab ?? 'cijferverloop';
-            openProfielModal(next.id, backFn, peers, tab);
-          });
-          navEl.appendChild(nb);
-        }
-      }
+      el.querySelector('#prof-prev')?.addEventListener('click', () =>
+        openProfielModal(prev.id, peers, dialog.activeTab),
+      );
+      el.querySelector('#prof-next')?.addEventListener('click', () =>
+        openProfielModal(next.id, peers, dialog.activeTab),
+      );
 
       requestAnimationFrame(
         () =>
@@ -1131,9 +1120,6 @@ export async function openProfielModal(
             // Tab switching
             const tabInited = new Set([activeTab]);
             function switchTab(name) {
-              el.querySelectorAll('.overview-tab').forEach((b) =>
-                b.classList.toggle('selected', b.dataset.tab === name),
-              );
               el.querySelectorAll('.tab-pane').forEach((p) =>
                 p.classList.toggle('hidden', p.id !== `tab-${name}`),
               );
@@ -1147,15 +1133,12 @@ export async function openProfielModal(
                 );
               }
             }
-            el.querySelectorAll('.overview-tab').forEach((btn) => {
-              btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-            });
+            switchTabRef = switchTab;
             // Initialize whichever tab is active first
             if (activeTab === 'analyse') initAnalyse();
             else initCijferverloop();
           }), // end inner rAF
       ); // end double-requestAnimationFrame
-    },
-    'modal-profile',
-  );
+    }
+  }
 }

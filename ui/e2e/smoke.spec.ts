@@ -59,7 +59,7 @@ test('boot, tabs, create exam, enter score, rapport', async ({ page }) => {
   await expect
     .poll(async () => (await readMockJson<ScoreFile>(page, scoreFile))?.scores?.[EXAM_ID])
     .toEqual({ q1: 1 });
-  await page.locator('#modal-close').click();
+  await page.locator('.dlg-close').click();
 
   // Rapport: the mock compiles a canned PDF that the PDF viewer renders.
   await examMenuItem(page, EXAM_ID, 'Rapport genereren');

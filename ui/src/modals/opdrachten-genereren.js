@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -43,8 +43,14 @@ export async function openOpdrachtenGenererenModal(examId, year) {
   };
   state.savedJson = couplingJson(state);
 
-  showModal(
-    `<h3 class="modal-title">Opdrachten genereren — ${escHtml(exam.title)}</h3>
+  openModal({
+    key: 'opdrachten-genereren',
+    title: 'Opdrachten genereren',
+    subtitle: exam.title,
+    className: 'modal-pdf',
+    fixedHeight: true,
+    // The settings view has its own footer row (it switches with the result view).
+    body: `
      <div class="og-root">
      <div class="og-settings">
        <div class="og-scroll">
@@ -84,12 +90,10 @@ export async function openOpdrachtenGenererenModal(examId, year) {
        <div class="rapport-modal-content og-result-content"></div>
      </div>
      </div>`,
-    // Everything works on .og-root: #modal-content itself is shared by all
-    // modals and stays in the DOM, so only og-root tells whether we're still open.
-    (el) => initModal(el.querySelector('.og-root'), state, year),
-    'modal-pdf',
-    () => saveCoupling(state, year),
-  );
+    // Everything works on .og-root; it leaves the DOM when the dialog closes.
+    onShow: (el) => initModal(el.querySelector('.og-root'), state, year),
+    onClose: () => saveCoupling(state, year),
+  });
 }
 
 // ── Rendering ──────────────────────────────────────────────────────────────────

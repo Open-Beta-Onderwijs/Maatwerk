@@ -65,6 +65,14 @@ export interface DialogOptions {
   /** Body content: HTML (the caller escapes every text in it) or a node. */
   body?: string | Node;
   footer?: DialogButton[];
+  /**
+   * Footer as button markup (the caller escapes every text in it): the
+   * buttons keep their ids and listeners and are arranged by the button rule.
+   * Mark a navigational action with `data-align="start"`.
+   */
+  footerHtml?: string;
+  /** Called with the dialog element (header, body and footer) right after opening. */
+  onShow?: (root: HTMLElement, dialog: Dialog) => void;
   /** alertdialog for confirms and notices. */
   role?: 'dialog' | 'alertdialog';
   /** false: no close button (confirms). */
@@ -73,15 +81,13 @@ export interface DialogOptions {
   backdropCloses?: boolean;
   /** Called once after the dialog has closed (also when replaced). */
   onClose?: () => void;
-  /** Id for the body element (legacy `modal-content`). */
-  bodyId?: string;
-  /** Id for the dialog element (legacy `modal-box`). */
+  /** Id for the dialog element. */
   dialogId?: string;
   /** Extra classes on the body (e.g. `dlg-body--tinted`). */
   bodyClass?: string;
   /**
    * Modals with the same key replace each other instead of stacking (a
-   * refresh, the legacy showModal). Used by app.js openModal.
+   * refresh, a next step). Used by app.js openModal.
    */
   key?: string;
 }
@@ -116,7 +122,7 @@ export class Dialog {
   readonly el: HTMLElement;
   readonly header: HTMLElement | null;
   readonly body: HTMLDivElement;
-  readonly footer: HTMLElement | null;
+  readonly footer: HTMLElement;
   /** Changes on every open/close, for async work that must not outlive the dialog. */
   readonly session: number;
 
@@ -198,27 +204,23 @@ export class Dialog {
 
     this.body = document.createElement('div');
     this.body.className = ['dlg-body', opts.bodyClass ?? ''].filter(Boolean).join(' ');
-    if (opts.bodyId) this.body.id = opts.bodyId;
     if (typeof opts.body === 'string') this.body.innerHTML = opts.body;
     else if (opts.body) this.body.append(opts.body);
     el.append(this.body);
 
+    const footer = document.createElement('footer');
+    footer.className = 'dlg-footer';
+    this.footer = footer;
+    el.append(footer);
     if (opts.footer?.length) {
-      const footer = document.createElement('footer');
-      footer.className = 'dlg-footer';
-      const start = opts.footer.filter((b) => b.align === 'start');
-      const end = opts.footer.filter((b) => b.align !== 'start');
-      // Spec 3.1: right-aligned, primary last.
-      end.sort((a, b) => Number(a.variant === 'primary') - Number(b.variant === 'primary'));
-      for (const b of start) footer.append(this.button(b));
-      const spacer = document.createElement('span');
-      spacer.className = 'dlg-footer-spacer';
-      footer.append(spacer);
-      for (const b of end) footer.append(this.button(b));
-      el.append(footer);
-      this.footer = footer;
+      for (const b of opts.footer) {
+        const btn = this.button(b);
+        if (b.align === 'start') btn.dataset.align = 'start';
+        footer.append(btn);
+      }
+      arrangeFooter(footer);
     } else {
-      this.footer = null;
+      this.setFooterHtml(opts.footerHtml ?? '');
     }
 
     if (opts.tabs?.length) {
@@ -267,6 +269,22 @@ export class Dialog {
       }
     });
     return btn;
+  }
+
+  /** Replace the footer buttons (multi-step dialogs); '' hides the footer. */
+  setFooterHtml(html: string): void {
+    this.footer.innerHTML = html;
+    arrangeFooter(this.footer);
+  }
+
+  /** Change the title and subtitle (multi-step dialogs). */
+  setTitle(title: string, subtitle?: string): void {
+    const t = this.header?.querySelector('.dlg-title');
+    if (t) t.textContent = title;
+    if (subtitle !== undefined) {
+      const sub = this.header?.querySelector('.dlg-subtitle');
+      if (sub) sub.textContent = subtitle;
+    }
   }
 
   /** Shown in the DOM, on top of the stack. Called by openDialog. */
@@ -364,9 +382,32 @@ export class Dialog {
   }
 }
 
+/**
+ * The button rule (spec 3.1): navigational actions (`data-align="start"`)
+ * left; the rest right-aligned with the primary action last. An empty footer
+ * is hidden.
+ */
+function arrangeFooter(footer: HTMLElement): void {
+  const btns = [...footer.querySelectorAll<HTMLElement>(':scope > button, :scope > a')];
+  footer.querySelectorAll(':scope > .dlg-footer-spacer').forEach((x) => x.remove());
+  const start = btns.filter((b) => b.dataset.align === 'start');
+  const end = btns.filter((b) => b.dataset.align !== 'start');
+  end.sort(
+    (a, b) =>
+      Number(a.classList.contains('btn--primary')) - Number(b.classList.contains('btn--primary')),
+  );
+  const spacer = document.createElement('span');
+  spacer.className = 'dlg-footer-spacer';
+  // Other children (a hint, a status text) stay between the groups.
+  const rest = [...footer.children].filter((c) => !btns.includes(c as HTMLElement));
+  footer.replaceChildren(...start, spacer, ...rest, ...end);
+  footer.hidden = btns.length === 0 && rest.length === 0;
+}
+
 export function openDialog(opts: DialogOptions): Dialog {
   const d = new Dialog(opts);
   d.mount();
+  opts.onShow?.(d.el, d);
   return d;
 }
 

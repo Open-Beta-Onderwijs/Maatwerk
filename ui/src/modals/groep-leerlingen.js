@@ -2,7 +2,7 @@
 
 // ── Group students modal ──────────────────────────────────────────────────────
 import {
-  showModal,
+  openModal,
   closeModal,
   escHtml,
   onModalSync,
@@ -250,10 +250,13 @@ export async function openGroupStudentsModal(groupId, year) {
     avgRowSummary +
     `</tr>`;
 
-  showModal(
-    `
-    <h3>${escHtml(group.name)}</h3>
-    <p class="u-mb-10 muted">${students.length} leerlingen &mdash; klik een naam om het leerlingprofiel te openen</p>
+  openModal({
+    title: group.name,
+    subtitle: `${students.length} leerlingen · klik een naam om het leerlingprofiel te openen`,
+    size: 'xl',
+    key: 'group-overview',
+    fixedHeight: true,
+    body: `
     <div class="u-overflow-x-auto">
       <table class="u-collapse u-w-full u-fs-13">
         <thead>
@@ -264,8 +267,8 @@ export async function openGroupStudentsModal(groupId, year) {
         <tfoot>${avgRow}</tfoot>
       </table>
     </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       // Background changes: new scores and exam edits refresh this overview
       // silently; changes to the group or its students need a notice.
       const reopen = () => openGroupStudentsModal(groupId, year);
@@ -303,14 +306,10 @@ export async function openGroupStudentsModal(groupId, year) {
 
       el.querySelectorAll('[data-action="open-student-from-group"]').forEach((b) =>
         b.addEventListener('click', () =>
-          openProfielModal(
-            b.dataset.id,
-            () => openGroupStudentsModal(b.dataset.groupid, b.dataset.year),
-            students,
-          ),
+          // Stacks on this overview: closing the profile returns here.
+          openProfielModal(b.dataset.id, students),
         ),
       );
     },
-    true,
-  ); // wide modal
+  }); // wide modal
 }

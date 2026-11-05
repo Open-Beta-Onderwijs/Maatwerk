@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -220,7 +220,6 @@ function openUserModal(user) {
   }).join('');
 
   const html = `
-    <h3>${escHtml(title)}</h3>
     <div class="form-row">
       <div class="u-flex-2 form-group">
         <label>Voornaam</label>
@@ -264,12 +263,19 @@ function openUserModal(user) {
       <input id="f-ufoto" type="file" accept="image/jpeg,image/png" />
       ${user?.foto ? `<span class="u-d-block u-mt-4 hint">Huidig: ${escHtml(user.foto)}</span>` : ''}
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>`;
+`;
 
-  showModal(html, (content) => {
+  openModal({
+    title,
+    size: 'form',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>`,
+    body: html,
+    onShow: (content) => userForm(content),
+  });
+
+  function userForm(content) {
     // Toggle schoolsoort buttons
     content.querySelectorAll('.ss-toggle').forEach((btn) => {
       btn.addEventListener('click', () => btn.classList.toggle('selected'));
@@ -351,5 +357,5 @@ function openUserModal(user) {
       toast(isNew ? `${voornaam} toegevoegd.` : `${voornaam} opgeslagen.`, 'success');
       await renderUserList();
     });
-  });
+  }
 }

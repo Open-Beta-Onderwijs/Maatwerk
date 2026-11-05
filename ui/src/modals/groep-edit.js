@@ -2,7 +2,6 @@
 
 // ── Group add/edit & CSV import modals ────────────────────────────────────────
 import {
-  showModal,
   openModal,
   closeModal,
   toast,
@@ -520,15 +519,20 @@ function groupOverwritesHtml(overwrites, students, users) {
 export async function openGroupCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
-  const ui = { showModal, closeModal, toast };
+  const ui = { openModal, closeModal, toast };
   const year = await askSchoolYear(cfg.activeYear, existingYears, ui);
   if (!year) return;
 
   const users = await Store.loadUsers();
 
-  showModal(
-    `
-    <h3>Groepen importeren — ${escHtml(year)}</h3>
+  openModal({
+    title: 'Groepen importeren',
+    subtitle: year,
+    footerHtml: `
+      <button class="btn btn--primary" id="f-csv-grp-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <p class="u-mb-12 muted">
       Verwachte kolommen: <code>Naam, Schoolsoort, Vak, Leerjaar, Docent</code>
     </p>
@@ -537,12 +541,8 @@ export async function openGroupCSVImport() {
       <input type="file" id="f-csv-groups" accept=".csv,.txt" />
     </div>
     <div id="csv-grp-preview"></div>
-    <div class="u-mt-12 form-actions">
-      <button class="btn btn--primary" id="f-csv-grp-import" disabled>Importeren</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       let toImport = null;
 
       el.querySelector('#f-csv-groups').addEventListener('change', async (e) => {
@@ -658,19 +658,24 @@ export async function openGroupCSVImport() {
         renderGroepen();
       });
     },
-  );
+  });
 }
 
 export async function openGroupAssignmentCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
-  const ui = { showModal, closeModal, toast };
+  const ui = { openModal, closeModal, toast };
   const year = await askSchoolYear(cfg.activeYear, existingYears, ui);
   if (!year) return;
 
-  showModal(
-    `
-    <h3>Groepsindeling importeren — ${escHtml(year)}</h3>
+  openModal({
+    title: 'Groepsindeling importeren',
+    subtitle: year,
+    footerHtml: `
+      <button class="btn btn--primary" id="f-csv-assignment-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <p class="u-mb-12 muted">
       Verwachte kolommen: <code>Naam, Leerlingnummer</code>
     </p>
@@ -679,12 +684,8 @@ export async function openGroupAssignmentCSVImport() {
       <input type="file" id="f-csv-assignment" accept=".csv,.txt" />
     </div>
     <div id="csv-assignment-preview"></div>
-    <div class="u-mt-12 form-actions">
-      <button class="btn btn--primary" id="f-csv-assignment-import" disabled>Importeren</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       let assignments = null;
 
       el.querySelector('#f-csv-assignment').addEventListener('change', async (e) => {
@@ -746,5 +747,5 @@ export async function openGroupAssignmentCSVImport() {
         renderGroepen();
       });
     },
-  );
+  });
 }

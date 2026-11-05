@@ -1233,11 +1233,6 @@ body::after {
 .og-result-bar {
   margin-bottom: 10px;
 }
-.dlg--legacy .dlg-body > h3,
-.dlg--legacy .dlg-body > .modal-title {
-  font-size: 17px;
-  margin-bottom: 16px;
-}
 .dlg-body h4 {
   font-size: 12px;
   font-weight: 600;
@@ -2372,13 +2367,6 @@ code {
 }
 
 /* ── RTTI uitleg / leeradvies modal ──────────────────────────────────────── */
-.rtti-uitleg-tab-bar {
-  flex-wrap: wrap;
-}
-.rtti-uitleg-tab-bar .overview-tab {
-  flex: 0 0 auto;
-  min-width: 36px;
-}
 .rtti-uitleg-section-header {
   display: flex;
   align-items: center;
@@ -2516,16 +2504,6 @@ code {
   white-space: nowrap;
   min-width: 72px;
   text-align: right;
-}
-.rtti-uitleg-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
 }
 /* ── Disabled toggle button (greyed out, not interactive) ────────────────── */
 .tog-btn-disabled {
@@ -3278,10 +3256,6 @@ td.grade-override-stale::after {
   font-size: 18px;
   text-transform: uppercase;
   width: 12em;
-}
-.pin-role {
-  color: var(--muted);
-  margin-top: -8px;
 }
 .pin-error {
   color: var(--danger);

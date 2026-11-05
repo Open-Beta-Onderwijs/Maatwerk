@@ -2,7 +2,7 @@
 
 import { wireSpinners, spinnerValue } from '../utils/spinners';
 import { formatNumber } from '../domain/format';
-import { showModal, closeModal, toast, escHtml } from '../app.js';
+import { openModal, closeModal, toast, escHtml } from '../app.js';
 import { showExamEditor } from './toets-edit.js';
 import { openExamOverviewModal } from './toets-overzicht.js';
 import { renderToetsen } from '../screens/toetsen.js';
@@ -14,9 +14,15 @@ export async function openResitModal(parentId, year) {
   const resits = Store.getResitsSync(parentId, year);
   const nextAttempt = resits.length + 2; // attempt 1 is the original
 
-  showModal(
-    `
-    <h3 id="f-resit-title">${escHtml(parent.title)} — …</h3>
+  openModal({
+    title: `${parent.title} — …`,
+    // Verder replaces it with the exam editor (step 2).
+    key: 'exam-edit',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-resit-next">Verder →</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <div class="u-items-end u-gap-20 form-row">
       <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
         <label>Beschrijving (bijv. INHAAL)</label>
@@ -80,13 +86,9 @@ export async function openResitModal(parentId, year) {
         </div>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-resit-next">Verder →</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
-      const titleEl = el.querySelector('#f-resit-title');
+    `,
+    onShow: (el) => {
+      const titleEl = el.querySelector('.dlg-title');
       const descInput = el.querySelector('#f-resit-desc');
       descInput.addEventListener('input', () => {
         const desc = descInput.value.trim();
@@ -141,7 +143,7 @@ export async function openResitModal(parentId, year) {
         showExamEditor(resitExam, false, year, () => renderToetsen(), false, true);
       });
     },
-  );
+  });
 }
 
 export async function openBestGradesOverviewModal(parentId, year) {
@@ -160,9 +162,15 @@ export async function openSummaryEditModal(parentId, year) {
   const resits = Store.getResitsSync(parentId, year);
   const isPta = parent.type === 'pta';
 
-  showModal(
-    `
-    <h3>Verzamelkaart bewerken: <em>${escHtml(parent.title)}</em></h3>
+  openModal({
+    title: 'Verzamelkaart bewerken',
+    subtitle: parent.title,
+    size: 'form',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-sum-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <div class="u-items-end u-gap-20 u-flex-wrap form-row">
       <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
         <label>Naam</label>
@@ -200,12 +208,8 @@ export async function openSummaryEditModal(parentId, year) {
         </div>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-sum-save">Opslaan</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       const ptaBtn = el.querySelector('#f-sum-pta');
       const wegingSEEl = el.querySelector('#f-sum-weging-se');
       const syncWegingSE = () => {
@@ -273,6 +277,5 @@ export async function openSummaryEditModal(parentId, year) {
         renderToetsen();
       });
     },
-    'modal-md',
-  );
+  });
 }

@@ -115,3 +115,32 @@ test.describe('sticky screen headers', () => {
     });
   }
 });
+
+for (const v of VIEWS.filter((x) => x.target === 'modal')) {
+  test(`${v.name}: footer has the primary action last`, async ({ page }) => {
+    await openView(page, v);
+    const buttons = topDialog(page).locator('.dlg-footer > button');
+    const n = await buttons.count();
+    const primaries = await topDialog(page).locator('.dlg-footer > .btn--primary').count();
+    if (n === 0 || primaries === 0) return;
+    expect(primaries).toBe(1);
+    await expect(buttons.nth(n - 1)).toHaveClass(/btn--primary/);
+  });
+}
+
+test('a profile opened from a group overview stacks on it; closing returns there', async ({
+  page,
+}) => {
+  await openView(page, view('modal-groep-leerlingen'));
+  const overview = topDialog(page);
+  const title = await overview.locator('.dlg-title').textContent();
+  await overview.locator('[data-action="open-student-from-group"]').first().click();
+  await expect(page.locator('.dlg')).toHaveCount(2);
+  await expect(topDialog(page).locator('[data-tab="analyse"]')).toBeVisible();
+  // Vorige/Volgende replace the profile, they do not stack.
+  await topDialog(page).locator('#prof-next').click();
+  await expect(page.locator('.dlg')).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.dlg')).toHaveCount(1);
+  await expect(topDialog(page).locator('.dlg-title')).toHaveText(title!);
+});

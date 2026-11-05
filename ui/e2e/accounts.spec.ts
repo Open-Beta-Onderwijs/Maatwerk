@@ -171,7 +171,7 @@ test('a sectievoorzitter edits only the composition and teachers of the vak grou
   const badge = page.locator(`.badge-voorzitter[data-voorzitter-id="${TEACHER}"]`);
   await expect(badge).toContainText('Sectievoorzitter');
   await badge.click();
-  await expect(page.locator('.pin-role')).toHaveText('Sectievoorzitter Natuurkunde');
+  await expect(page.locator('.dlg-subtitle')).toHaveText('Sectievoorzitter Natuurkunde');
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   const group = `3a-nat-${YEAR}`;

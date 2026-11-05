@@ -26,7 +26,7 @@ export async function openGrid(page: Page, examId: string): Promise<void> {
 
 /** The table of the g-th group grid in the modal (0 = first). */
 export function gridTable(page: Page, g = 0): Locator {
-  return page.locator('#modal-box .score-grid-table').nth(g);
+  return page.locator('.dlg .score-grid-table').nth(g);
 }
 
 /** Data and summary rows of a grid (header rows excluded). */

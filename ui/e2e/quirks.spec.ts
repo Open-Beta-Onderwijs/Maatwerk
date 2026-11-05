@@ -46,7 +46,7 @@ test('U6: the RTTI uitleg modal keeps teacher text as typed', async ({ page }) =
   await login(page);
   await page.locator('.nav-btn[data-screen="toetsen"]').click();
   await page.locator('#btn-toetsen-rtti-uitleg').click();
-  await page.locator('.rtti-uitleg-tab-bar button', { hasText: /^3$/ }).click();
+  await page.locator('.dlg-tabs [role="tab"]', { hasText: /^3$/ }).click();
   await expect(page.locator('textarea[data-uitleg="R"]')).toHaveValue(NASTY);
 });
 
@@ -340,8 +340,8 @@ test('U8: a resit description is shown as text in the group overview', async ({ 
   await login(page);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   await page.getByRole('button', { name: '3a nat', exact: true }).click();
-  const badges = page.locator('#modal-box .attempt-badge');
-  await expect(page.locator('#modal-box b.u8')).toHaveCount(0);
+  const badges = page.locator('.dlg .attempt-badge');
+  await expect(page.locator('.dlg b.u8')).toHaveCount(0);
   // In the fixture the resit is the best grade of some 3a students.
   await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
 });

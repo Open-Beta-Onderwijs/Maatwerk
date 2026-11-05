@@ -155,17 +155,15 @@ function renderScreen(name) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-// Every modal is a dialog (components/dialog.ts). The helpers below act on the
-// current modal: the top one opened through showModal() or openModal().
-// showModal() is the legacy form (free HTML with its own title and buttons);
-// it replaces a legacy modal on top and stacks on a structured one. openModal()
-// always stacks (ported modals: sticky header, tabs, footer).
+// Every modal is a dialog (components/dialog.ts), opened through openModal().
+// The helpers below act on the current modal: the top one opened that way
+// (confirms and notices do not count).
 
 /** Open the full-screen Typst editor for an assignment. Imported from modals/editor.js. */
 export { openEditor };
 export { confirmDialog, alertDialog };
 
-/** Modals opened through showModal/openModal, bottom first. */
+/** Modals opened through openModal, bottom first. */
 let _modals = [];
 
 function currentModal() {
@@ -182,7 +180,7 @@ export function modalOpen() {
  * whatever is open, except that it replaces a current modal with the same
  * `key` (a refresh re-opens the modal in place).
  */
-export function openModal(opts) {
+export function openModal({ onShow, ...opts }) {
   const prev = currentModal();
   // U15: the replaced modal closes properly (cleanups, charts, its onClose).
   if (opts.key && prev?.key === opts.key) prev.close();
@@ -196,26 +194,9 @@ export function openModal(opts) {
   });
   _modals.push(d);
   // Before any measuring (charts): see src/legacy/style-data.ts.
-  applyStyleData(d.body);
-  return d;
-}
-
-const LEGACY_SIZES = { 'modal-md': 'form', 'modal-xl': 'lg' };
-
-export function showModal(html, onShow, wide = false, onClose) {
-  const size = wide === true ? 'lg' : (LEGACY_SIZES[wide] ?? 'md');
-  const extra = typeof wide === 'string' && !LEGACY_SIZES[wide] ? ` ${wide}` : '';
-  const d = openModal({
-    body: html,
-    size,
-    className: `dlg--legacy${extra}`,
-    key: 'legacy',
-    dialogId: 'modal-box',
-    bodyId: 'modal-content',
-    onClose,
-  });
-  d.el.querySelector('.dlg-close')?.setAttribute('id', 'modal-close');
-  if (onShow) onShow(d.body);
+  applyStyleData(d.el);
+  // After the push, so guardModalClose/onModalSync inside act on this modal.
+  onShow?.(d.el, d);
   return d;
 }
 
@@ -296,7 +277,8 @@ export function modalSession() {
 /**
  * Returns a function that runs `reopen` (re-running the modal's open function)
  * at most once per `ms`, keeping the modal's scroll position. Does nothing if
- * the modal has been closed or replaced in the meantime. Used for modals that
+ * the modal has been closed or replaced in the meantime; waits while another
+ * modal is stacked on it. Used for modals that
  * only display data, so they can refresh silently.
  */
 export function modalRefresher(reopen, ms = 500) {
@@ -304,8 +286,14 @@ export function modalRefresher(reopen, ms = 500) {
   let timer = null;
   return () => {
     clearTimeout(timer);
-    timer = setTimeout(async () => {
-      if (!d?.isOpen || currentModal() !== d || document.getElementById('reload-notice')) return;
+    timer = setTimeout(async function run() {
+      if (!d?.isOpen) return;
+      // Covered by a stacked modal (a profile over a group overview) or a
+      // notice: try again once it is on top.
+      if (currentModal() !== d || document.getElementById('reload-notice')) {
+        timer = setTimeout(run, ms);
+        return;
+      }
       const y = d.body.scrollTop;
       await reopen();
       const now = currentModal();

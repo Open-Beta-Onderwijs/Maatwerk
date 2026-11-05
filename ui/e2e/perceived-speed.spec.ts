@@ -121,7 +121,7 @@ test('score modal: later groups are built after the first and get colleague chan
     [`${YEAR}/groups/kopie.json`]: { ...rest, id: 'kopie', name: `${rest.name} zz` },
   });
   await openGrid(page, EXAMS.empty);
-  const headings = page.locator('#modal-box .score-group-section .group-heading');
+  const headings = page.locator('.dlg .score-group-section .group-heading');
   await expect(headings.filter({ hasText: `${rest.name} zz` })).toHaveCount(1);
   const names = await headings.allTextContents();
   const g0 = names.indexOf(rest.name);

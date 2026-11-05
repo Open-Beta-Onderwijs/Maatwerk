@@ -5,7 +5,7 @@
 // the full licence texts. Not in the reference. Opened from the startup screen
 // and from the title in the top bar.
 
-import { escHtml, showModal, toast } from '../app.js';
+import { escHtml, openModal, toast } from '../app.js';
 import type { MaatwerkApi } from '../bridge/api';
 
 export const SOURCE_URL = 'https://github.com/Open-Beta-Onderwijs/Maatwerk';
@@ -20,7 +20,6 @@ const TEXTS = {
 export function aboutHtml(version: string, build: string): string {
   return `
     <div class="about-modal">
-    <h2>Over Maatwerk</h2>
     <p class="about-version"><strong>Maatwerk</strong> versie ${escHtml(version)} (build ${escHtml(build)})</p>
     <p>${escHtml(COPYRIGHT)}</p>
     <p>
@@ -57,7 +56,15 @@ export function aboutHtml(version: string, build: string): string {
 }
 
 export function showAbout(): void {
-  showModal(aboutHtml(__MAATWERK_VERSION__, __MAATWERK_BUILD__), (root: HTMLElement) => {
+  openModal({
+    title: 'Over Maatwerk',
+    body: aboutHtml(__MAATWERK_VERSION__, __MAATWERK_BUILD__),
+    onShow: (root: HTMLElement) => wireAbout(root),
+  });
+}
+
+function wireAbout(root: HTMLElement): void {
+  {
     const pre = root.querySelector<HTMLPreElement>('.about-text')!;
     root.querySelectorAll<HTMLButtonElement>('[data-about-text]').forEach((btn) =>
       btn.addEventListener('click', async () => {
@@ -73,7 +80,7 @@ export function showAbout(): void {
       }),
     );
     wireProblemReport(root, window.maatwerk);
-  });
+  }
 }
 
 /** "Probleem melden": the log folder on this PC and a button that opens it. */

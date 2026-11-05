@@ -192,7 +192,7 @@ export function renderStudentList({ staged = true } = {}) {
   container.onclick = (e) => {
     const b = e.target.closest('button[data-action]');
     if (!b || b.disabled || !container.contains(b)) return;
-    if (b.dataset.action === 'profile') openProfielModal(b.dataset.id, null, _peers);
+    if (b.dataset.action === 'profile') openProfielModal(b.dataset.id, _peers);
     else if (b.dataset.action === 'edit-student') openStudentModal(b.dataset.id);
     else if (b.dataset.action === 'del-student') deleteStudent(b.dataset.id);
   };

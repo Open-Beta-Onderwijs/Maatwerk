@@ -130,6 +130,7 @@
 
 .dlg-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-top: 14px;
 }
@@ -218,11 +219,6 @@
   margin: 0;
   line-height: 1.5;
   white-space: pre-line;
-}
-
-/* ── Legacy content (showModal): its own title and buttons in the body ── */
-.dlg--legacy .dlg-body {
-  padding: 28px;
 }
 
 @media (prefers-reduced-motion: no-preference) {

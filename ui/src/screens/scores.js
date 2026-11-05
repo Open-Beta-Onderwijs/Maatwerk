@@ -5,7 +5,7 @@ import { gradeCellColor, rttiPctCellColor, sdCellColor } from '../domain/grade-c
 import { formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
 import { wireSpinners, spinnerValue } from '../utils/spinners';
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   persistentError,
@@ -308,17 +308,20 @@ export async function openScoreModal(examId, year, deps) {
     return;
   }
 
-  showModal(
-    `
-    <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-pr-30 u-shrink-0">
-      <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0 u-fs-17 u-fw-600">
-        <span class="u-nowrap">Scores invoeren voor</span>
+  openModal({
+    title: 'Scores invoeren',
+    subtitle: exam.title,
+    className: 'modal-scores',
+    fixedHeight: true,
+    // The toolbar row stays in place: only the grids scroll (#sc-grid-container).
+    body: `
+    <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-shrink-0">
+      <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0">
         ${
           exam.volgnummer
             ? `<span class="${testBadgeClass(exam)} u-shrink-0">${escHtml(String(exam.volgnummer))}</span>`
             : ''
         }
-        <em class="u-min-w-0 u-overflow-hidden u-ellipsis u-nowrap">${escHtml(exam.title)}</em>
         <div id="sc-presence" class="presence-badges"></div>
       </div>
       <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">
@@ -345,7 +348,7 @@ export async function openScoreModal(examId, year, deps) {
     </div>
     <div id="sc-grid-container"></div>
   `,
-    async (el) => {
+    onShow: async (el) => {
       wireSpinners(el);
 
       const ntermSp = el.querySelector('#sc-nterm');
@@ -487,12 +490,11 @@ export async function openScoreModal(examId, year, deps) {
       renderPresence(el, examId, year);
       void afterPaint().then(endOpen); // no grid at all (no groups)
     },
-    'modal-scores',
     // The exam list shows statistics: redraw it only when something was saved.
-    () => {
+    onClose: () => {
       if (Store.generation() !== generationAtOpen) deps?.renderToetsenList?.();
     },
-  );
+  });
 }
 
 // Badges of colleagues in this score modal (green: entered scores in the last

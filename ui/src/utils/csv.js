@@ -11,17 +11,21 @@ export { decodeCsv, parseCSV } from '../domain/csv';
  *
  * @param {string}   activeYear
  * @param {string[]} existingYears
- * @param {{ showModal: Function, closeModal: Function, toast: Function }} ui
+ * @param {{ openModal: Function, closeModal: Function, toast: Function }} ui
  */
 export function askSchoolYear(activeYear, existingYears, ui) {
-  const { showModal, closeModal, toast } = ui;
+  const { openModal, closeModal, toast } = ui;
   return new Promise((resolve) => {
     const allYears = [...new Set([activeYear, ...existingYears])].sort((a, b) =>
       b.localeCompare(a),
     );
-    showModal(
-      `
-      <h3>Schooljaar kiezen</h3>
+    openModal({
+      title: 'Schooljaar kiezen',
+      size: 'sm',
+      footerHtml: `
+        <button class="btn btn--primary" id="f-year-ok">Verder</button>
+        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>`,
+      body: `
       <p class="muted u-mb-12">
         Voor welk schooljaar wil je deze gegevens importeren?
         Als het schooljaar al bestaat, worden de gegevens bijgewerkt.
@@ -34,12 +38,8 @@ export function askSchoolYear(activeYear, existingYears, ui) {
         <label>Of voer een schooljaar in</label>
         <input id="f-import-year-custom" type="text" placeholder="2025-2026" />
       </div>
-      <div class="form-actions">
-        <button class="btn btn--primary" id="f-year-ok">Verder</button>
-        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-      </div>
     `,
-      (el) => {
+      onShow: (el) => {
         const yearSel = new CustomSelect(el.querySelector('#f-import-year-host'), {
           placeholder: '— kies schooljaar —',
         });
@@ -57,9 +57,8 @@ export function askSchoolYear(activeYear, existingYears, ui) {
           closeModal();
         });
       },
-      false,
       // Closed any other way (Annuleren, ✕, Escape, backdrop): no year.
-      () => resolve(null),
-    );
+      onClose: () => resolve(null),
+    });
   });
 }

@@ -3,7 +3,7 @@
 import { wireSpinners, spinnerValue } from '../utils/spinners';
 import { formatNumber } from '../domain/format';
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -28,9 +28,15 @@ export async function openExamModal(existingId, afterSave = null) {
   const schoolSSFilter = schoolSS.length > 0;
 
   if (!existingId) {
-    showModal(
-      `
-      <h3>Nieuwe toets — stap 1 van 2</h3>
+    openModal({
+      title: 'Nieuwe toets — stap 1 van 2',
+      size: 'form',
+      key: 'exam-edit',
+      footerHtml: `
+        <button class="btn btn--primary" id="f-e-next">Verder →</button>
+        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+      `,
+      body: `
       <div class="u-items-end u-gap-20 form-row">
         <div class="u-flex-fill u-min-w-0 u-mb-0 form-group">
           <label>Naam</label>
@@ -129,12 +135,8 @@ export async function openExamModal(existingId, afterSave = null) {
           </div>
         </div>
       </div>
-      <div class="form-actions">
-        <button class="btn btn--primary" id="f-e-next">Verder →</button>
-        <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-      </div>
-    `,
-      (el) => {
+      `,
+      onShow: (el) => {
         el.querySelector('#f-exam-year-label').textContent = toetsYear;
 
         const ptaBtn = el.querySelector('#f-epta-btn');
@@ -280,8 +282,7 @@ export async function openExamModal(existingId, afterSave = null) {
           showExamEditor(exam, false, toetsYear, afterSave);
         });
       },
-      'modal-md',
-    );
+    });
   } else {
     const all = await Store.getExams(toetsYear);
     const exam = JSON.parse(JSON.stringify(all.find((e) => e.id === existingId)));
@@ -392,13 +393,18 @@ export function showExamEditor(
     })
     .sort((a, b) => (a.naam ?? '').localeCompare(b.naam ?? '', 'nl', { sensitivity: 'base' }));
 
-  showModal(
-    `
-    <h3>${
-      isEdit
-        ? `Toets bewerken: <em>${escHtml(exam.title)}</em> <span class="u-fw-normal u-fs-14 u-not-italic">(Jaarlaag ${escHtml(String(exam.jaarlaag))}, ${escHtml((exam.schoolsoort ?? []).join(' / ') || '—')}, ${escHtml(toetsYear)})</span>`
-        : `Nieuwe toets — stap 2 van 2: <em>${escHtml(exam.title)}</em>`
-    }</h3>
+  openModal({
+    title: isEdit ? 'Toets bewerken' : 'Nieuwe toets — stap 2 van 2',
+    subtitle: isEdit
+      ? `${exam.title} · Jaarlaag ${exam.jaarlaag} · ${(exam.schoolsoort ?? []).join(' / ') || '—'} · ${toetsYear}`
+      : exam.title,
+    size: 'lg',
+    key: 'exam-edit',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-esave">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <div class="u-items-end u-gap-20 u-mb-10 u-flex-wrap form-row">
       <div class="u-flex-2 u-min-w-0 u-mb-0 form-group">
         <label>Naam</label>
@@ -491,12 +497,8 @@ export function showExamEditor(
     </div>`
         : ''
     }
-    <div class="u-mt-14 form-actions">
-      <button class="btn btn--primary" id="f-esave">Opslaan</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       // Someone else changed or removed this exam while it is being edited
       // (saving would be refused anyway, so reload with their version).
       if (isEdit) {
@@ -741,8 +743,7 @@ export function showExamEditor(
       const initialForm = formSnapshot(el);
       guardModalClose(() => !isEdit || formSnapshot(el) !== initialForm);
     },
-    true,
-  );
+  });
 }
 
 export async function deleteExam(id) {

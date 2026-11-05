@@ -2,7 +2,7 @@
 
 import { ICONS } from '../utils/icons.js';
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -244,9 +244,13 @@ export async function openObsModal(existingId) {
       data-icon="${escHtml(p.icon)}"
       >${escHtml(p.icon)}</button>`;
 
-  showModal(
-    `
-    <h3>${isEdit ? 'Observatie bewerken' : 'Observatie toevoegen'}</h3>
+  openModal({
+    title: isEdit ? 'Observatie bewerken' : 'Observatie toevoegen',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-osave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <div class="form-group">
       <label>Naam</label>
       <input id="f-onam" type="text" value="${escHtml(obs.naam)}" placeholder="bijv. Eenheid vergeten" />
@@ -304,12 +308,8 @@ export async function openObsModal(existingId) {
           .join('')}
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-osave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       let selectedIcon = obs.icon;
       el.querySelector('#obs-icon-grid').addEventListener('click', (e) => {
         const btn = e.target.closest('.obs-icon-btn');
@@ -379,5 +379,5 @@ export async function openObsModal(existingId) {
       const initialForm = formSnapshot(el);
       guardModalClose(() => formSnapshot(el) !== initialForm);
     },
-  );
+  });
 }
