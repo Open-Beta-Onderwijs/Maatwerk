@@ -1,15 +1,35 @@
 # State
 
-Last updated: 2026-11-04 (phase 2 intake; cutover done) Branch: `main` Last tags:
+Last updated: 2026-11-05 (step 13 in progress) Branch: `step/13-foundation-a` Last tags:
 `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local
 only)
+
+## Step 13 (Foundation a) progress
+
+Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `PLAN-2.md` step 13:
+
+1. **Done:** tokens (`ui/src/styles/tokens.css`: neutrals light/dark, 21 accents, grade, RTTI,
+   type, radii, shadows, control sizes); `ui/src/domain/look.ts` + `ui/src/theme.ts` (dev/mock
+   only menu, Ctrl+Alt+T, `localStorage` `maatwerk.dev.look`); `style.css` colours mapped to
+   tokens (legacy `--primary`/`--radius`/`--shadow`/`--success` gone); `controls.css`
+   (segmented control, accent swatch). Visual spec runs every view in light/blauw, dark and
+   geel (`--dark`/`--geel` suffix). Pre-change baselines: 37/37 equal to `main`, copied to the
+   session scratchpad.
+2. Todo: `domain/format.ts` + grade colours module (B8, R-01).
+3. Todo: button component.
+4. Todo: inputs, selects, steppers, segmented, chips, test-type badge.
+5. Todo: remove replaced `u-*` utilities.
+
+Decisions to raise: zwart accent in dark theme uses a light fill (`#E7EAF0`, dark text), since
+`#111418` is invisible on the dark surface (spec silent). `editor.css`/`pdf-viewer.css` (own
+windows) keep their colours until step 27.
 
 ## Current step
 
 **Phase 2 (`PLAN-2.md`).** Cutover done by the user (2026-11). Intake in `ROADMAP.md` section 4;
 design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-29).
 Step 12 (triage) done 2026-11-04: decisions in `PLAN-2.md` section 1 and ADR-0010, triage in
-`ROADMAP.md` 4.6. **Next: step 13** (Foundation a). Before step 18 the user runs `validate-data`
+`ROADMAP.md` 4.6. Step 13 in progress (see above). Before step 18 the user runs `validate-data`
 on a copy of the real data folder.
 
 Earlier: **Step 10 "Cutover readiness" done**, merged into `main` and tagged `step-10`. Waiting for the

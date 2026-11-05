@@ -1,0 +1,81 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Controls (design spec 3.2): segmented control and the dev theme menu. */
+
+/* ── Segmented control ─────────────────────────────────────────────────────── */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-btn);
+  background: var(--surface-2);
+}
+.segmented__opt {
+  border: 0;
+  border-radius: 6px;
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-secondary);
+  cursor: pointer;
+}
+.segmented__opt:hover {
+  color: var(--text);
+}
+.segmented__opt[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+html[data-theme='dark'] .segmented__opt[aria-pressed='true'] {
+  background: #3a404b;
+}
+.segmented__opt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Accent swatch (user menu in step 15; dev menu now) ────────────────────── */
+.accent-swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.accent-swatch[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--accent);
+}
+.accent-swatch:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
+/* ── Dev-only theme menu (Ctrl+Alt+T in dev and mock builds) ───────────────── */
+.dev-look {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card-lg);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-popover);
+}
+.dev-look[hidden] {
+  display: none;
+}
+.dev-look__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 26px);
+  gap: 8px;
+}

@@ -1,0 +1,198 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Design tokens (phase 2 design spec, docs/phase-2/design/README.md section 2).
+ *
+ * Switched on <html> by data-theme="light|dark" and data-accent="<name>"
+ * (ui/src/theme.ts). Without attributes the app is light/blauw. Component CSS
+ * only uses these semantic names, never raw colours. */
+
+/* ── Neutrals (2.1), light ─────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --surface-hover: #e6e9ee;
+  --border: #e1e4ea;
+  --border-strong: #c9ced8;
+  --line: #eef0f3;
+  --text: #1b2230;
+  --muted: #5d6675;
+  --disabled: #9aa1ad;
+  --danger: #b42318;
+  --danger-fill: #c0362c;
+  --danger-soft: #fdecea;
+  --scrim: rgba(16, 24, 40, 0.42);
+  --brand: #2e3e50;
+
+  /* Header bar (until the tab bar redesign in step 15). */
+  --header-bg: #1e2430;
+  --header-text: #ffffff;
+  --header-muted: #b4bcc8;
+
+  /* Status fills (toasts, banners, sync state). */
+  --ok: #1e7b3c;
+  --ok-soft: #e3f3e8;
+  --warn: #8a6a00;
+  --warn-soft: #fdf3d3;
+  --info-soft: #e8f0fb;
+
+  /* Grade colours (2.3): text tokens follow the theme, bars do not. */
+  --grade-fail-text: #b42318;
+  --grade-pass-lo-text: #8a6a00;
+  --grade-pass-hi-text: #1e7b3c;
+  --grade-none-text: var(--disabled);
+  --grade-fail-bar: #e5736b;
+  --grade-pass-lo-bar: #f2c94c;
+  --grade-pass-hi-bar: #5db97b;
+  --grade-diagnostic-border: #9aa1ad;
+
+  /* RTTI (2.6), UI only; the rapport keeps its own colours. */
+  --rtti-r: #3a9a4a;
+  --rtti-t1: #2a9fc4;
+  --rtti-t2: #e0922f;
+  --rtti-i: #d24a45;
+
+  /* Type (2.7). */
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --font-code: Consolas, 'Cascadia Mono', monospace;
+  --fs-title: 24px;
+  --fs-modal-title: 22px;
+  --fs-body: 14px;
+  --fs-secondary: 13px;
+  --fs-caption: 12px;
+  --fs-section: 12px;
+
+  /* Radii (2.7). */
+  --r-btn: 8px;
+  --r-btn-sm: 7px;
+  --r-input: 8px;
+  --r-card: 10px;
+  --r-card-lg: 12px;
+  --r-modal: 14px;
+  --r-pill: 999px;
+  --r-badge: 5px;
+
+  /* Shadows (2.7). */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card-hover: 0 4px 14px rgba(16, 24, 40, 0.08);
+  --shadow-popover: 0 12px 32px rgba(16, 24, 40, 0.16);
+  --shadow-modal: 0 24px 64px rgba(16, 24, 40, 0.28);
+
+  /* Control sizes (3.1, 3.2). */
+  --h-control: 36px;
+  --h-control-sm: 30px;
+  --h-chip: 32px;
+  --s-icon-btn: 32px;
+
+  /* Accent: blauw unless data-accent says otherwise (2.2). */
+  --accent: #2f6fd6;
+  --accent-text-light: #2f6fd6;
+  --accent-text-dark: #598cde;
+  --on-accent: #ffffff;
+  --anti: #c2540f;
+  --on-anti: #ffffff;
+
+  --accent-text: var(--accent-text-light);
+  --accent-hover: color-mix(in srgb, var(--accent) 86%, #000);
+  --accent-soft: color-mix(in srgb, var(--accent) 8%, transparent);
+  --accent-ring: color-mix(in srgb, var(--accent) 20%, transparent);
+  --watermark-filter: none;
+  --watermark-opacity: 0.07;
+}
+
+/* ── Neutrals (2.1), dark ──────────────────────────────────────────────────── */
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #14171c;
+  --surface: #1d2128;
+  --surface-2: #272c35;
+  --surface-hover: #2e343e;
+  --border: #30363f;
+  --border-strong: #434a57;
+  --line: #262b33;
+  --text: #e7eaf0;
+  --muted: #a3abb8;
+  --disabled: #6b7380;
+  --danger: #ff8a80;
+  --danger-fill: #c0362c;
+  --danger-soft: #3a2222;
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  --header-bg: #0e1014;
+
+  --ok: #6ccb8a;
+  --ok-soft: #1f3327;
+  --warn: #e2bd45;
+  --warn-soft: #3a3220;
+  --info-soft: #222c3d;
+
+  --grade-fail-text: #ff8a80;
+  --grade-pass-lo-text: #e2bd45;
+  --grade-pass-hi-text: #6ccb8a;
+
+  --shadow-card: none;
+  --shadow-card-hover: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.6);
+
+  --accent-text: var(--accent-text-dark);
+  --accent-hover: color-mix(in srgb, var(--accent) 84%, #fff);
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --watermark-filter: invert(1);
+  --watermark-opacity: 0.05;
+}
+
+/* ── Accents (2.2): fill, text light, text dark, on-accent, anti ───────────── */
+/* prettier-ignore */
+html[data-accent='rood']      { --accent: #c93636; --accent-text-light: #c93636; --accent-text-dark: #d66868; --anti: #0f7f86; }
+/* prettier-ignore */
+html[data-accent='oranje']    { --accent: #c2540f; --accent-text-light: #c2540f; --accent-text-dark: #ce763f; --anti: #2f6fd6; }
+/* prettier-ignore */
+html[data-accent='geel']      { --accent: #e5ae0b; --accent-text-light: #916e0a; --accent-text-dark: #e5ae0b; --anti: #4f46c8; --on-accent: #2a2000; }
+/* prettier-ignore */
+html[data-accent='groen']     { --accent: #24804e; --accent-text-light: #24804e; --accent-text-dark: #509971; --anti: #c2387a; }
+/* prettier-ignore */
+html[data-accent='blauw']     { --accent: #2f6fd6; --accent-text-light: #2f6fd6; --accent-text-dark: #598cde; --anti: #c2540f; }
+/* prettier-ignore */
+html[data-accent='indigo']    { --accent: #4f46c8; --accent-text-light: #4f46c8; --accent-text-dark: #847ed8; --anti: #e5ae0b; --on-anti: #2a2000; }
+/* prettier-ignore */
+html[data-accent='paars']     { --accent: #8a3fc2; --accent-text-light: #8a3fc2; --accent-text-dark: #ad79d4; --anti: #5a7a12; }
+/* prettier-ignore */
+html[data-accent='koraal']    { --accent: #c8492f; --accent-text-light: #c8492f; --accent-text-dark: #d36d59; --anti: #1f3a93; }
+/* prettier-ignore */
+html[data-accent='koper']     { --accent: #ae611c; --accent-text-light: #ae611c; --accent-text-dark: #ba793e; --anti: #0f7f86; }
+/* prettier-ignore */
+html[data-accent='oker']      { --accent: #9a6a12; --accent-text-light: #9a6a12; --accent-text-dark: #ae8841; --anti: #4f46c8; }
+/* prettier-ignore */
+html[data-accent='mint']      { --accent: #13866e; --accent-text-light: #13866e; --accent-text-dark: #369884; --anti: #a3248f; }
+/* prettier-ignore */
+html[data-accent='turquoise'] { --accent: #0f7f86; --accent-text-light: #0f7f86; --accent-text-dark: #3f999e; --anti: #c93636; }
+/* prettier-ignore */
+html[data-accent='leisteen']  { --accent: #4a5568; --accent-text-light: #4a5568; --accent-text-dark: #b8c2d1; --anti: #c2540f; }
+/* prettier-ignore */
+html[data-accent='roze']      { --accent: #c2387a; --accent-text-light: #c2387a; --accent-text-dark: #d16a9b; --anti: #24804e; }
+/* prettier-ignore */
+html[data-accent='bordeaux']  { --accent: #8e2340; --accent-text-light: #8e2340; --accent-text-dark: #bb7b8c; --anti: #13866e; }
+/* prettier-ignore */
+html[data-accent='bruin']     { --accent: #8b5a2b; --accent-text-light: #8b5a2b; --accent-text-dark: #a88360; --anti: #1f3a93; }
+/* prettier-ignore */
+html[data-accent='olijf']     { --accent: #5a7a12; --accent-text-light: #5a7a12; --accent-text-dark: #7b9541; --anti: #8a3fc2; }
+/* prettier-ignore */
+html[data-accent='bos']       { --accent: #1e5e3a; --accent-text-light: #1e5e3a; --accent-text-dark: #6d967f; --anti: #a3248f; }
+/* prettier-ignore */
+html[data-accent='marine']    { --accent: #1f3a93; --accent-text-light: #1f3a93; --accent-text-dark: #7989be; --anti: #9a6a12; }
+/* prettier-ignore */
+html[data-accent='zwart']     { --accent: #111418; --accent-text-light: #111418; --accent-text-dark: #e7eaf0; --anti: #c2540f; }
+/* prettier-ignore */
+html[data-accent='magenta']   { --accent: #a3248f; --accent-text-light: #a3248f; --accent-text-dark: #c371b6; --anti: #13866e; }
+
+/* Black has no visible fill on the dark surface: its fill turns light there,
+ * with dark text, so primary buttons stay visible (spec 2.2 gives zwart's dark
+ * text as #E7EAF0). */
+html[data-theme='dark'][data-accent='zwart'] {
+  --accent: #e7eaf0;
+  --on-accent: #111418;
+}
