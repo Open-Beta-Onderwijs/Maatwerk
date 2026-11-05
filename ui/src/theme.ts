@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Theme and accent on <html data-theme data-accent> (design spec 2.1-2.2,
-// F-18). Until step 15 stores the choice per user, only dev and mock builds
-// can change it, through a small menu (Ctrl+Alt+T) that remembers the choice
-// in localStorage.
+// F-18). Each teacher's choice is stored in their user file (step 15,
+// domain/preferences.ts) and applied at login; the user menu changes it.
+// Before login (and after logout) the base look applies: light/blauw, or in
+// dev and mock builds the choice of a small dev menu (Ctrl+Alt+T, kept in
+// localStorage; the visual tests use it).
 
 import {
   ACCENTS,
@@ -14,6 +16,7 @@ import {
   type Accent,
   type Look,
 } from './domain/look';
+import { savedLook } from './domain/preferences';
 
 const DEV_KEY = 'maatwerk.dev.look';
 
@@ -110,8 +113,26 @@ function devMenu(): HTMLElement {
   return panel;
 }
 
+let devBuild = false;
+
+/** The look before login: the default, or the dev menu's choice in dev and mock builds. */
+export function baseLook(): Look {
+  return devBuild ? readDevLook() : normaliseLook(null);
+}
+
+/**
+ * The look of a teacher who logs in: their saved one, else the base look.
+ * Called before the main screen is shown, so it never flashes the old look.
+ */
+export function applyUserLook(user: unknown): Look {
+  const look = savedLook(user) ?? baseLook();
+  applyLook(look);
+  return look;
+}
+
 /** Sets the initial look; in dev and mock builds also installs the menu. */
 export function installLook(dev: boolean): void {
+  devBuild = dev;
   if (!dev) {
     applyLook(normaliseLook(null));
     return;

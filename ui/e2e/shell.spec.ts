@@ -4,7 +4,17 @@
 // look per user. Every page load starts a fresh MockApi.
 
 import { expect, test } from '@playwright/test';
-import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
+import {
+  TEACHER,
+  YEAR,
+  enterPin,
+  examMenuItem,
+  login,
+  logout,
+  readMockJson,
+  seedFiles,
+  withMock,
+} from './helpers';
 
 const SCHOOL = 'school.json';
 
@@ -125,5 +135,147 @@ test.describe('avatar (B-04, B-08)', () => {
     await expect(admin).toHaveClass(/avatar--square/);
     await expect(admin.locator('.avatar-initials')).toHaveText('ADM');
     await expect(admin.locator('img')).toHaveCount(0);
+  });
+});
+
+test.describe('user menu (F-17) and look per user (F-18, F-21)', () => {
+  const USER_FILE = `gebruikers/${TEACHER}.json`;
+  type User = { preferences?: Record<string, unknown> };
+  const html = (page: import('@playwright/test').Page) => page.locator('html');
+
+  async function openMenu(page: import('@playwright/test').Page) {
+    await page.locator('#user-badge-btn').click();
+    await expect(page.locator('#user-menu')).toBeVisible();
+  }
+
+  test('a dropdown under the avatar, not a dialog; Escape closes it', async ({ page }) => {
+    await login(page);
+    await openMenu(page);
+    const menu = page.locator('#user-menu');
+    await expect(page.locator('.dlg')).toHaveCount(0);
+    await expect(menu.locator('.user-menu__name')).toHaveText('Docent van Natuur');
+    await expect(menu.locator('.user-menu__role')).toHaveText('Docent · Natuurkunde');
+    await expect(menu.locator('.accent-swatch')).toHaveCount(21);
+    await expect(menu.locator('#acc-photo')).toBeDisabled();
+    await expect(menu.locator('#acc-codes')).toHaveCount(0); // admin only
+    await expect(page.locator('#user-badge-btn')).toHaveAttribute('aria-expanded', 'true');
+    const box = (await menu.boundingBox())!;
+    expect(box.width).toBe(280);
+    expect(box.y).toBeGreaterThanOrEqual(56);
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('#user-badge-btn')).toBeFocused();
+    // A click outside closes it too.
+    await openMenu(page);
+    await page.locator('h2').first().click();
+    await expect(menu).toHaveCount(0);
+  });
+
+  test('theme and accent apply at once and persist across logout', async ({ page }) => {
+    await login(page);
+    await openMenu(page);
+    await page.locator('#user-menu [data-theme-choice="dark"]').click();
+    await page.locator('#user-menu [data-accent-choice="groen"]').click();
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark');
+    await expect(html(page)).toHaveAttribute('data-accent', 'groen');
+    await expect(page.locator('#user-menu [data-accent-choice="groen"]')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(async () => {
+      const user = await readMockJson<User>(page, USER_FILE);
+      expect(user.preferences).toMatchObject({ theme: 'dark', accent: 'groen' });
+    }).toPass();
+
+    await logout(page);
+    // The login screen is in the base look again.
+    await expect(html(page)).toHaveAttribute('data-theme', 'light');
+    await expect(html(page)).toHaveAttribute('data-accent', 'blauw');
+    await page.locator('.subject-card[data-subject="nat"]').click();
+    await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
+    await enterPin(page);
+    await expect(page.locator('#topbar')).toBeVisible();
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark');
+    await expect(html(page)).toHaveAttribute('data-accent', 'groen');
+  });
+
+  test('the look and active year follow the teacher to a second PC', async ({ page }) => {
+    // PC 1: choose the look; its user file is what OneDrive brings to PC 2.
+    await login(page);
+    await openMenu(page);
+    await page.locator('#user-menu [data-theme-choice="dark"]').click();
+    await page.locator('#user-menu [data-accent-choice="marine"]').click();
+    await expect(async () => {
+      const u = await readMockJson<User>(page, USER_FILE);
+      expect(u.preferences?.accent).toBe('marine');
+    }).toPass();
+    const synced = await readMockJson<User>(page, USER_FILE);
+
+    // PC 2: a fresh app on a copy of the data with that user file.
+    await seedFiles(page, {
+      [USER_FILE]: { ...synced, preferences: { ...synced.preferences, activeYear: '2024-2025' } },
+    });
+    await page.goto('/');
+    await expect(html(page)).toHaveAttribute('data-theme', 'light'); // before login
+    await page.locator('.subject-card[data-subject="nat"]').click();
+    await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
+    await enterPin(page);
+    await expect(html(page)).toHaveAttribute('data-theme', 'dark');
+    await expect(html(page)).toHaveAttribute('data-accent', 'marine');
+    for (const [screen, select] of [
+      ['leerlingen', '#student-year-select'],
+      ['groepen', '#groups-year-select'],
+      ['toetsen', '#toetsen-year-select'],
+    ] as const) {
+      await page.locator(`.nav-btn[data-screen="${screen}"]`).click();
+      await expect(page.locator(`${select} .csel-trigger`)).toContainText('2024-2025');
+    }
+
+    // Choosing a year on one screen makes it the active year everywhere, and saves it.
+    await page.locator('#toetsen-year-select .csel-trigger').click();
+    await page.locator('#toetsen-year-select [data-value="2025-2026"]').click();
+    await page.locator('.nav-btn[data-screen="groepen"]').click();
+    await expect(page.locator('#groups-year-select .csel-trigger')).toContainText('2025-2026');
+    await expect(async () => {
+      const u = await readMockJson<User>(page, USER_FILE);
+      expect(u.preferences).toMatchObject({
+        theme: 'dark',
+        accent: 'marine',
+        activeYear: '2025-2026',
+      });
+    }).toPass();
+  });
+
+  test('an admin change to the user meanwhile is kept (merge, no conflict)', async ({ page }) => {
+    await login(page);
+    // An admin on another PC renames the teacher.
+    await withMock(
+      page,
+      (m, f) => {
+        const u = JSON.parse(m.peek(f) ?? '{}');
+        m.externalWrite(f, {
+          ...u,
+          afkorting: 'NAT',
+          _meta: { ...u._meta, rev: (u._meta?.rev ?? 0) + 1 },
+        });
+      },
+      USER_FILE,
+    );
+    await openMenu(page);
+    await page.locator('#user-menu [data-accent-choice="paars"]').click();
+    await expect(async () => {
+      const u = await readMockJson<User & { afkorting: string }>(page, USER_FILE);
+      expect(u.afkorting).toBe('NAT');
+      expect(u.preferences?.accent).toBe('paars');
+    }).toPass();
+    await expect(page.locator('.toast-persistent')).toHaveCount(0);
+  });
+
+  test('the admin menu has Nieuwe herstelcodes and says Beheerder', async ({ page }) => {
+    await login(page, 'nat', 'admin');
+    await openMenu(page);
+    await expect(page.locator('#user-menu .user-menu__role')).toHaveText('Beheerder');
+    await expect(page.locator('#acc-codes')).toBeVisible();
+    await expect(page.locator('#user-menu .avatar')).toHaveClass(/avatar--square/);
   });
 });

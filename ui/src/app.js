@@ -19,7 +19,8 @@ import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
-import { openAccountModal } from './screens/pin';
+import { changePinFlow, renewCodesFlow } from './screens/pin';
+import { closeUserMenu, toggleUserMenu } from './components/user-menu';
 import { renderInstellingen } from './screens/instellingen';
 import { avatarHtml, loadAvatarPhotos, renderAvatar } from './components/avatar';
 import * as Sync from './sync.js';
@@ -30,6 +31,7 @@ import { afterPaint, perfSpan } from './utils/perf';
 import { alertDialog, confirmDialog, openDialog } from './components/dialog';
 import { READ_ONLY_SAVE_TEXT, isReadOnlyError } from './services/read-only';
 import { showReadOnlyBanner } from './components/read-only-banner';
+import { applyLook, baseLook, currentLook } from './theme';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -405,10 +407,29 @@ export function escHtml(str) {
 // ── CustomSelect instances (created once at init, reused every render) ─────────
 export const SEL = {}; // populated by initSelects(); exported as live object
 
+// F-21: the school year chosen on any screen is the teacher's active year, on
+// every screen and (saved in their user file) on every PC.
+function chooseYear(year) {
+  for (const sel of [SEL.studentYear, SEL.groupsYear, SEL.toetsenYear]) {
+    if (sel.getValue() !== year) sel.setValue(year);
+  }
+  leerlingenState.year = year;
+  if (Store.getActiveUser() && Store.getConfigSync().activeYear !== year) {
+    void Store.savePreferences({ activeYear: year });
+  }
+}
+
+/** After logout: the next teacher starts in their own active year. */
+function forgetYear() {
+  for (const sel of [SEL.studentYear, SEL.groupsYear, SEL.toetsenYear]) sel?.setValue(null);
+  leerlingenState.year = null;
+}
+
 function initSelects() {
   SEL.studentYear = new CustomSelect(document.getElementById('student-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       leerlingenState.year = v;
@@ -418,6 +439,7 @@ function initSelects() {
   SEL.groupsYear = new CustomSelect(document.getElementById('groups-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderGroepenForYear(v);
@@ -426,6 +448,7 @@ function initSelects() {
   SEL.toetsenYear = new CustomSelect(document.getElementById('toetsen-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       void Store.preloadScores(v).catch(() => {}); // before the statistics (Step 7c)
@@ -1019,25 +1042,52 @@ function roleLabel(role) {
     : '';
 }
 
-// Step 7b: the badge opens the account modal (PIN wijzigen, uitloggen).
+/** The line under the name in the user menu (spec 3.6). */
+function menuSubtitle(user, role) {
+  if (role) return roleLabel(role);
+  if (user.isAdmin) return 'Beheerder';
+  const vak = Store.getActiveSubject();
+  return vak ? `Docent · ${Store.SUBJECT_DISPLAY[vak] ?? vak}` : 'Docent';
+}
+
+// F-17: the avatar opens the user menu (look, PIN, uitloggen).
 userBadgeBtn.addEventListener('click', () => {
   const user = Store.getActiveUser();
   if (!user) return;
-  openAccountModal(
+  const role = Store.getActiveRole();
+  const api = window.maatwerk;
+  const onUserChanged = (saved) => Store.cacheUser(saved);
+  toggleUserMenu({
+    anchor: userBadgeBtn,
     user,
-    roleLabel(Store.getActiveRole()),
-    window.maatwerk,
-    (saved) => Store.cacheUser(saved),
-    logOut,
-  );
+    name: Store.fullName(user),
+    subtitle: menuSubtitle(user, role),
+    square: user.isAdmin || !!role,
+    look: currentLook(),
+    // Applied at once; saved in the teacher's own file (F-18, decision 3).
+    onLook: (look) => {
+      applyLook(look);
+      void Store.savePreferences({ theme: look.theme, accent: look.accent });
+    },
+    onChangePin: () => void changePinFlow(api, onUserChanged),
+    onRenewCodes: user.isAdmin ? () => void renewCodesFlow(user, api, onUserChanged) : undefined,
+    onLogout: () => {
+      void api.logout().catch((e) => console.warn('[pin]', e));
+      logOut();
+    },
+    readPhoto,
+  });
 });
 
 function logOut() {
+  closeUserMenu();
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
   userBadgeBtn.replaceChildren();
   delete userBadgeBtn.dataset.userId;
   delete userBadgeBtn.dataset.avatarFoto;
+  forgetYear();
+  applyLook(baseLook());
   _adminSubjectFilter = null;
   _activeUserId = null;
   _obsFilter = null;

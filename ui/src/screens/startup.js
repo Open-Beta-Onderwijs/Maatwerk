@@ -4,6 +4,7 @@ import { escHtml, navigateTo, showUserBadge } from '../app.js';
 import { scoreSavesDone } from './scores.js';
 import { showAbout } from './about';
 import { pinLogin } from './pin';
+import { applyUserLook } from '../theme';
 import { avatarHtml, loadAvatarPhotos } from '../components/avatar';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -125,6 +126,8 @@ export async function renderStartup() {
     // Score saves still queued belong to the previous user (review 3b M1).
     await scoreSavesDone();
     Store.setActiveUser(fresh, role);
+    // The teacher's own look (F-18) before the main screen is shown.
+    applyUserLook(fresh);
     await Store.initSubject(selectedSubject);
     await Store.saveLastSession(selectedSubject, fresh.id);
     await showUserBadge(fresh, selectedSubject);

@@ -52,6 +52,7 @@ import {
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { READ_ONLY_CODE, readOnlyError } from './services/read-only';
+import { savedActiveYear, withPreferences } from './domain/preferences';
 import { timed } from './utils/perf';
 
 const Store = (() => {
@@ -282,6 +283,22 @@ const Store = (() => {
     changed();
   }
 
+  // The logged-in teacher's own settings (theme, accent, active year; F-18,
+  // F-21): merged into the latest user file on disk, without a rev check, so a
+  // change an admin made meanwhile is kept and nothing conflicts.
+  async function savePreferences(patch) {
+    const user = _activeUser;
+    if (!user?.id) return null;
+    // Applied at once, also when the save fails (the look is already on screen).
+    _activeUser = withPreferences(user, patch);
+    const saved = await update(`gebruikers/${user.id}.json`, (current, onDisk) => {
+      if (!onDisk) throw new Error(`gebruikers/${user.id}.json ontbreekt`);
+      return stampMeta(withPreferences(current, patch), onDisk);
+    });
+    cacheUser(saved);
+    return saved;
+  }
+
   // One file per user (C16): saving checks the rev the edit started from, so
   // two admins editing the same user no longer overwrite each other silently.
   async function upsertUser(user, baseRev = user._meta?.rev) {
@@ -430,10 +447,12 @@ const Store = (() => {
   }
 
   // ── Sync getters (safe after preload / loadYear / initSubject) ────────────
-  // The reference never writes `activeYear` (it falls back to the current school
-  // year); since Step 7a config.json exists with only `schema_version`, so the
-  // fallback also covers a missing key, not only a missing file.
+  // The active school year is the logged-in teacher's own (F-21, quirk D7,
+  // stored in their user file); else config.json's (the reference never wrote
+  // it), else the current school year.
   function withActiveYear(cfg) {
+    const own = savedActiveYear(_activeUser);
+    if (own) return { ...cfg, activeYear: own };
     return cfg?.activeYear ? cfg : { ...cfg, activeYear: currentSchoolYear() };
   }
   function getConfigSync() {
@@ -459,16 +478,6 @@ const Store = (() => {
   // ── Config ────────────────────────────────────────────────────────────────
   async function getConfig() {
     return withActiveYear(await load('config.json'));
-  }
-
-  async function setActiveYear(year) {
-    cache['config.json'] = await update(
-      'config.json',
-      // A missing config.json (still syncing) must not come back without schema_version
-      // (review 7a m4): every PC would then offer the migration.
-      (cfg) => Object.assign(cfg, { activeYear: year, schema_version: cfg.schema_version ?? 2 }),
-      () => ({}),
-    );
   }
 
   // currentSchoolYear: src/domain/ids.ts
@@ -1250,6 +1259,7 @@ const Store = (() => {
     isAdminActive,
     loadUsers,
     upsertUser,
+    savePreferences,
     cacheUser,
     forgetFile,
     loadSchool,
@@ -1265,7 +1275,6 @@ const Store = (() => {
     subjectFromGroupName,
     parseGroupName,
     getConfig,
-    setActiveYear,
     loadVersioned,
     saveVersioned,
     currentSchoolYear,

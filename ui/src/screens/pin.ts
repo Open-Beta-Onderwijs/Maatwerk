@@ -414,43 +414,25 @@ function renewCodesDialog(api: Api): Promise<PinCheck | null> {
  * The account modal behind the top-bar badge. `onUserChanged` gets the record
  * as written after a PIN change; `onLogout` runs after "Uitloggen".
  */
-export function openAccountModal(
-  user: PinUser,
-  roleLabel: string,
+/** "Pincode wijzigen" in the user menu (F-17). */
+export async function changePinFlow(
   api: Api,
   onUserChanged: (user: unknown) => void,
-  onLogout: () => void,
-): void {
-  const html = `
-    <div class="account-actions">
-      <button class="btn btn--secondary" id="acc-pin">Pincode wijzigen</button>
-      ${user.isAdmin ? `<button class="btn btn--secondary" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
-      <button class="btn btn--primary" id="acc-logout">Uitloggen</button>
-    </div>`;
-  openModal({
-    title: fullUserName(user),
-    subtitle: roleLabel,
-    size: 'sm',
-    key: 'account',
-    body: html,
-    onShow: (content: HTMLElement) => {
-      content.querySelector('#acc-logout')!.addEventListener('click', () => {
-        closeModal();
-        void api.logout().catch((e) => console.warn('[pin]', e));
-        onLogout();
-      });
-      content.querySelector('#acc-pin')!.addEventListener('click', async () => {
-        const check = await changePinDialog(api);
-        if (check?.user) {
-          onUserChanged(check.user);
-          toast('Pincode gewijzigd.', 'success');
-        }
-      });
-      content.querySelector('#acc-codes')?.addEventListener('click', async () => {
-        const check = await renewCodesDialog(api);
-        if (check?.user) onUserChanged(check.user);
-        if (check?.recoveryCodes) await showRecoveryCodes(user, check.recoveryCodes, api);
-      });
-    },
-  });
+): Promise<void> {
+  const check = await changePinDialog(api);
+  if (check?.user) {
+    onUserChanged(check.user);
+    toast('Pincode gewijzigd.', 'success');
+  }
+}
+
+/** "Nieuwe herstelcodes" in the admin's user menu. */
+export async function renewCodesFlow(
+  user: PinUser,
+  api: Api,
+  onUserChanged: (user: unknown) => void,
+): Promise<void> {
+  const check = await renewCodesDialog(api);
+  if (check?.user) onUserChanged(check.user);
+  if (check?.recoveryCodes) await showRecoveryCodes(user, check.recoveryCodes, api);
 }

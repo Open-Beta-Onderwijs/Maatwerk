@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // S38 / ADR-0003 C6: every JSON write of the Store is a compare-and-swap.
-// school.json and config.json are patched onto the latest version on disk; the
+// school.json and the user's preferences are patched onto the latest version on disk; the
 // RTTI template editor saves only over the version it loaded. "Another
 // instance" is a direct write on the MockApi between the Store's read and write.
 
@@ -108,22 +108,29 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
     expect((await Store.loadUsers!()).length).toBe(3);
   });
 
-  it('setActiveYear keeps other config fields written meanwhile', async () => {
+  it('savePreferences merges into the latest user file; the active year is per teacher', async () => {
+    const rel = 'gebruikers/gebr-1.json';
     const { Store, api, writes } = await session({
-      'config.json': JSON.stringify({ activeYear: '2024-2025' }),
+      'config.json': JSON.stringify({ activeYear: YEAR }),
+      [rel]: JSON.stringify({ id: 'gebr-1', voornaam: 'Jan', _meta: { rev: 1 } }),
     });
-    await Store.getConfig!();
-    await api.writeJson('config.json', { activeYear: '2024-2025', other: 1 });
+    const users = await Store.loadUsers!();
+    Store.setActiveUser!(users.find((u: { id: string }) => u.id === 'gebr-1'));
+    // An admin changes the user meanwhile (F-21: no conflict, the change is kept).
+    await api.writeJson(rel, { id: 'gebr-1', voornaam: 'Jan', afkorting: 'JN', _meta: { rev: 2 } });
     writes.mockClear();
-    await Store.setActiveYear!(YEAR);
-    // Review 7a m4: schema_version is (re)set too.
-    expect(await disk(api, 'config.json')).toEqual({
-      activeYear: YEAR,
-      other: 1,
-      schema_version: 2,
+    await Store.savePreferences!({ activeYear: '2024-2025', theme: 'dark' });
+    expect(await disk(api, rel)).toMatchObject({
+      afkorting: 'JN',
+      preferences: { activeYear: '2024-2025', theme: 'dark' },
+      _meta: { rev: 3 },
     });
-    expect((await Store.getConfig!()).activeYear).toBe(YEAR);
+    // D7: config.json is not written; the active year is this teacher's.
+    expect(writes.mock.calls.map((c) => c[0])).toEqual([rel]);
     expect(writes.mock.calls.every((c) => c[2]?.cas === true)).toBe(true);
+    expect(Store.getConfigSync!().activeYear).toBe('2024-2025');
+    Store.setActiveUser!(null);
+    expect(Store.getConfigSync!().activeYear).toBe(YEAR);
   });
 
   it('saveVersioned writes over the loaded version and conflicts after a foreign change', async () => {
