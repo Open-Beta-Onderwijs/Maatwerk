@@ -356,3 +356,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **n9:** theme test: cover the dark zwart override and the neutrals table.
 - RTTI chart colours still the old `#5cb85c/#5bc0de/#f0ad4e/#d9534f`; spec 2.6 tokens exist
   (`--rtti-*`), apply with the overview redesign (step 25).
+- **Possibly flaky Rust test:** on 2026-11-05 one local `cargo test --workspace` run (step 13
+  gate, PowerShell, other runs idle) exited 101; the failing test was not captured. Three later
+  runs (local and CI) passed. Next time: rerun `cargo test --workspace` a few times with output
+  kept (`> log 2>&1`) and look for `FAILED`; suspects are the timing-based watcher and snapshot
+  tests (`watcher::tests`, `snapshots::tests`).
