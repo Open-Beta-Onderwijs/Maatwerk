@@ -44,6 +44,11 @@ pub struct DataFolderStatus {
     pub data_dir: String,
     /// `null` when the folder opened; else e.g. `unsupported_schema` or `io`.
     pub error: Option<CommandError>,
+    /// This app's version.
+    pub app_version: String,
+    /// `minAppVersion` from `school.json` when it is newer than this app: the app may only read
+    /// (PLAN-2 decision 5). Checked again on every write.
+    pub read_only: Option<String>,
 }
 
 /// Managed Tauri state; cloned into blocking tasks. The core is opened on a background thread
@@ -192,10 +197,14 @@ impl Core {
             Ok(storage) => DataFolderStatus {
                 data_dir: display_path(storage.data_dir().root()),
                 error: None,
+                app_version: storage.app_version().to_owned(),
+                read_only: storage.read_only(),
             },
             Err(e) => DataFolderStatus {
                 data_dir: display_path(&self.data_dir),
                 error: Some(e.clone()),
+                app_version: maatwerk_core::app_version::APP_VERSION.to_owned(),
+                read_only: None,
             },
         }
     }

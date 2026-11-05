@@ -42,6 +42,7 @@ import type {
 import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
+import { requiredVersion } from '../../services/read-only';
 
 /** A snapshot of a data folder: file contents (text or base64) and folders. */
 export interface MockSeed {
@@ -50,6 +51,8 @@ export interface MockSeed {
 }
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
+/** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
+export const MOCK_APP_VERSION = '0.6.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -156,7 +159,12 @@ export class MockApi implements MaatwerkApi {
   private pdfUrls = new Map<string, string>();
   private pdfs = new Map<string, Uint8Array>();
   /** What `dataFolderStatus` reports; tests set an error to show the startup error screen. */
-  folderStatus: DataFolderStatus = { dataDir: MOCK_DATA_DIR, error: null };
+  folderStatus: DataFolderStatus = {
+    dataDir: MOCK_DATA_DIR,
+    error: null,
+    appVersion: MOCK_APP_VERSION,
+    readOnly: null,
+  };
   /** What `validateDataFolder` and `stampIssues` report; tests fill them. */
   dataCheck: DataCheck = { filesChecked: 0, issues: [] };
   stamps: StampIssue[] = [];
@@ -338,6 +346,7 @@ export class MockApi implements MaatwerkApi {
     if (this.writeDelayMs) await new Promise((res) => setTimeout(res, this.writeDelayMs));
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
+    if (this.readOnly()) return { ok: false, reason: 'read_only' };
     if (opts.cas) {
       const current = this.files.get(relPath);
       const currentHash = current ? await sha1(current) : null;
@@ -411,6 +420,7 @@ export class MockApi implements MaatwerkApi {
 
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
+    if (this.readOnly()) return { ok: false, reason: 'read_only' };
     this.files.delete(relPath);
     return { ok: true };
   }
@@ -621,6 +631,7 @@ export class MockApi implements MaatwerkApi {
 
   async savePhoto(relPath: string, base64Data: string): Promise<void> {
     this.record('savePhoto', [relPath, '<base64>']);
+    if (this.readOnly()) throw { code: 'read_only', message: 'read-only', details: {} };
     this.putFile(relPath, fromBase64(base64Data));
   }
 
@@ -726,7 +737,20 @@ export class MockApi implements MaatwerkApi {
 
   async dataFolderStatus(): Promise<DataFolderStatus> {
     this.record('dataFolderStatus', []);
-    return structuredClone(this.folderStatus);
+    const status = structuredClone(this.folderStatus);
+    if (!status.error) status.readOnly = this.readOnly();
+    return status;
+  }
+
+  /** `minAppVersion` of the mock `school.json` when it is newer than the app (as the backend). */
+  private readOnly(): string | null {
+    const text = this.readText('school.json');
+    if (text === null) return null;
+    try {
+      return requiredVersion(JSON.parse(text), this.folderStatus.appVersion);
+    } catch {
+      return null;
+    }
   }
 
   async restartApp(): Promise<void> {
@@ -783,6 +807,7 @@ export class MockApi implements MaatwerkApi {
   }
 
   private writeUser(userId: string, change: (u: UserRecord) => void): Value {
+    if (this.readOnly()) throw { code: 'read_only', message: 'read-only', details: {} };
     const onDisk = this.readUser(userId);
     const next = structuredClone(onDisk);
     change(next);

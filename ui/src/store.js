@@ -51,6 +51,7 @@ import {
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
+import { READ_ONLY_CODE, readOnlyError } from './services/read-only';
 import { timed } from './utils/perf';
 
 const Store = (() => {
@@ -129,6 +130,7 @@ const Store = (() => {
           changed();
           return next;
         }
+        if (result?.reason === READ_ONLY_CODE) throw readOnlyError();
         if (result?.reason !== 'conflict') {
           throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
         }
@@ -158,6 +160,7 @@ const Store = (() => {
       return result.hash;
     }
     if (result?.reason === 'conflict') throw conflictError(null);
+    if (result?.reason === READ_ONLY_CODE) throw readOnlyError();
     throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
   }
 

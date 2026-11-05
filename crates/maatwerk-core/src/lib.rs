@@ -4,6 +4,7 @@
 //!
 //! Modules follow ADR-0002 section 1; model and migrate are added in later steps.
 
+pub mod app_version;
 pub mod assets;
 pub mod assignment;
 pub mod auth;

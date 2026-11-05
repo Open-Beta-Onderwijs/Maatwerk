@@ -349,3 +349,15 @@ table.questions-table .rtti-btn {
   --tb: var(--text);
   --tb-on: var(--surface);
 }
+
+/* Read-only banner (minimum app version, PLAN-2 decision 5). */
+.read-only-banner {
+  margin: 0 0 16px;
+  padding: 10px 16px;
+  border: 1px solid var(--warn);
+  border-radius: var(--r-btn);
+  background: var(--warn-soft);
+  color: var(--text);
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+}

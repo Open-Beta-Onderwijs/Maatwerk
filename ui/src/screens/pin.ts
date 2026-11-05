@@ -15,6 +15,7 @@ import {
 } from '../app.js';
 import type { MaatwerkApi, PinCheck } from '../bridge/api';
 import { setBusy } from '../components/button';
+import { READ_ONLY_SAVE_TEXT, isReadOnlyError } from '../services/read-only';
 import type { Dialog, DialogOptions } from '../components/dialog';
 import {
   fullUserName,
@@ -85,6 +86,12 @@ function holdOff(button: HTMLButtonElement, box: HTMLElement, check: PinCheck, w
 }
 
 /** Runs `submit` on the button and on Enter in any input; errors go to the box. */
+/** The Dutch text for a failed PIN action (the backend's messages are Dutch, except read-only). */
+function errorMessage(e: unknown): string {
+  if (isReadOnlyError(e)) return READ_ONLY_SAVE_TEXT;
+  return e instanceof Error ? e.message : String(e);
+}
+
 function onSubmit(content: HTMLElement, button: HTMLButtonElement, submit: () => Promise<void>) {
   const run = async () => {
     if (button.disabled) return;
@@ -92,7 +99,7 @@ function onSubmit(content: HTMLElement, button: HTMLButtonElement, submit: () =>
     try {
       await submit();
     } catch (e) {
-      errorBox(content).textContent = e instanceof Error ? e.message : String(e);
+      errorBox(content).textContent = errorMessage(e);
     } finally {
       if (button.isConnected) {
         setBusy(button, false);
@@ -284,7 +291,7 @@ export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Pro
             const path = await api.saveTextAs('Maatwerk herstelcodes.txt', text);
             if (path) toast(`Opgeslagen: ${path}`, 'success');
           } catch (e) {
-            toast(e instanceof Error ? e.message : String(e), 'error');
+            toast(errorMessage(e), 'error');
           }
         });
         done.addEventListener('click', () => closeModal());
@@ -326,7 +333,7 @@ export async function pinLogin<U extends PinUser>(
       try {
         check = await setFirstPinDialog(user, api, roleLabel);
       } catch (e) {
-        toast(e instanceof Error ? e.message : String(e), 'error');
+        toast(errorMessage(e), 'error');
         // Set on another PC meanwhile: log in with that PIN instead. Other errors end here.
         if (String((e as Error)?.message).includes('al een pincode')) {
           hasPin = true;

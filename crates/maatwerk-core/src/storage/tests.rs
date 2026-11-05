@@ -943,3 +943,113 @@ fn n8_text_and_photo_writes_are_limited_to_their_folders() {
         assert!(check_photo_path(&rel(bad)).is_err(), "{bad}");
     }
 }
+
+// ── Minimum app version (PLAN-2 decision 5) ─────────────────────────────────
+
+fn copy_dir(from: &Path, to: &Path) {
+    fs::create_dir_all(to).unwrap();
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+/// The synthetic v2 fixture (`tests/fixtures/migrate/v2/data`) in a temp folder, opened as `app`.
+fn fixture_as(app: &str) -> (tempfile::TempDir, Storage) {
+    let tmp = tempfile::tempdir().unwrap();
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrate/v2/data");
+    copy_dir(&fixture, &tmp.path().join("data"));
+    let mut storage =
+        Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks")).unwrap();
+    storage.set_app_version(app);
+    (tmp, storage)
+}
+
+/// Sets `minAppVersion` the way a newer app would (a plain write, keeping every other field).
+fn set_min_version(s: &Storage, min: &str) {
+    let mut school = s.read_json(&rel("school.json")).unwrap().unwrap();
+    school["minAppVersion"] = json!(min);
+    put(
+        s,
+        "school.json",
+        serde_json::to_string_pretty(&school).unwrap().as_bytes(),
+    );
+}
+
+#[test]
+fn min_version_absent_writes_normally() {
+    let (_tmp, s) = fixture_as("0.6.0");
+    assert_eq!(s.read_only(), None);
+    s.write_json(&rel("instellingen.json"), &json!({ "a": 1 }), Expect::Any)
+        .unwrap();
+}
+
+#[test]
+fn min_version_newer_than_the_app_refuses_every_write_but_reads() {
+    let (_tmp, s) = fixture_as("0.6.0");
+    set_min_version(&s, "0.9.0");
+    assert_eq!(s.read_only(), Some("0.9.0".into()));
+
+    // Reads work: the teacher can still look at everything.
+    let school_before = disk(&s, "school.json");
+    assert!(s.read_json(&rel("school.json")).unwrap().is_some());
+    assert!(!s.list_years().is_empty());
+
+    let refused = |r: Result<()>| match r {
+        Err(Error::ReadOnly {
+            min_version,
+            app_version,
+        }) => assert_eq!(
+            (min_version.as_str(), app_version.as_str()),
+            ("0.9.0", "0.6.0")
+        ),
+        other => panic!("expected ReadOnly, got {other:?}"),
+    };
+    refused(
+        s.write_json(&rel("school.json"), &json!({ "naam": "x" }), Expect::Any)
+            .map(drop),
+    );
+    refused(s.write_text(&rel("notes.txt"), "x", Expect::Any).map(drop));
+    refused(s.write_bytes(&rel("a.bin"), b"x", Expect::Any));
+    refused(s.save_photo(&rel("fotos/x.png"), "aGk="));
+    refused(s.delete(&rel("school.json")));
+    assert_eq!(disk(&s, "school.json"), school_before);
+    assert!(!s.data_dir().resolve(&rel("notes.txt")).unwrap().exists());
+}
+
+#[test]
+fn min_version_equal_or_older_allows_writes() {
+    let (_tmp, s) = fixture_as("0.9.0");
+    set_min_version(&s, "0.9.0");
+    assert_eq!(s.read_only(), None);
+    s.write_json(&rel("instellingen.json"), &json!({ "a": 1 }), Expect::Any)
+        .unwrap();
+    let (_tmp, s) = fixture_as("0.10.0");
+    set_min_version(&s, "0.9.0");
+    s.delete(&rel("instellingen.json")).unwrap();
+}
+
+#[test]
+fn min_version_raised_while_running_takes_effect_on_the_next_write() {
+    let (_tmp, s) = fixture_as("0.6.0");
+    s.write_json(&rel("instellingen.json"), &json!({ "a": 1 }), Expect::Any)
+        .unwrap();
+    // A colleague's newer app migrates the folder and raises the minimum.
+    set_min_version(&s, "0.9.0");
+    assert!(matches!(
+        s.write_json(&rel("instellingen.json"), &json!({ "a": 2 }), Expect::Any),
+        Err(Error::ReadOnly { .. })
+    ));
+}
+
+#[test]
+fn min_version_corrupt_school_json_sets_no_limit() {
+    let (_tmp, s) = fixture_as("0.6.0");
+    put(&s, "school.json", b"{ not json");
+    assert_eq!(s.read_only(), None);
+}

@@ -28,6 +28,8 @@ import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
 import { afterPaint, perfSpan } from './utils/perf';
 import { alertDialog, confirmDialog, openDialog } from './components/dialog';
+import { READ_ONLY_SAVE_TEXT, isReadOnlyError } from './services/read-only';
+import { showReadOnlyBanner } from './components/read-only-banner';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -1057,6 +1059,13 @@ window.addEventListener('unhandledrejection', async (e) => {
   );
 });
 
+// A save refused because school.json asks for a newer app (PLAN-2 decision 5).
+window.addEventListener('unhandledrejection', (e) => {
+  if (!isReadOnlyError(e.reason)) return;
+  e.preventDefault();
+  persistentError(READ_ONLY_SAVE_TEXT);
+});
+
 // ── Background changes (other teachers) ──────────────────────────────────────
 // The visible list is redrawn when data it shows changes in the background.
 // Filters, the selected year and the scroll position are kept. While a modal or
@@ -1201,6 +1210,8 @@ async function init() {
     renderStartupError(container, status.dataDir, status.error, window.maatwerk);
     return;
   }
+  // An older app on data that needs a newer one: read-only, with a banner.
+  if (status.readOnly) showReadOnlyBanner(status.readOnly, status.appVersion);
   applyWatermerk();
   initSelects();
   navigateTo('startup');

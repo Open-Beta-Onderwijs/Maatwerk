@@ -112,6 +112,25 @@ the interval (Instellingen) writes one in the background.
   version history or recycle bin for the folder (OneDrive website, "Vorige versies herstellen"),
   or the migration backup from step 3.4.
 
+## 8. Minimum app version (from 0.6)
+
+`school.json` can name the oldest Maatwerk that may write the data folder:
+`"minAppVersion": "0.9.0"`. An older app (0.6 or later) still opens and shows everything, with
+the banner "Alleen lezen: deze gegevens zijn bijgewerkt voor Maatwerk 0.9.0 of nieuwer", and
+refuses every save ("Niet opgeslagen: deze versie van Maatwerk is te oud ..."). The check runs on
+every write, so a running older app becomes read-only as soon as the field arrives through
+OneDrive. Apps before 0.6 do not know the field: before the first data-format change (step 18)
+every PC must run at least 0.6.
+
+- **Who sets it:** the app that migrates the data to a new format (from step 18), in the same
+  write as the migration. Never by hand, except to lift it again in a rollback.
+- **Rollback** after a format change: restore the pre-migration backup (section 5); it has the old
+  `school.json` without the higher minimum.
+- **A teacher sees the banner:** give them the new exe (section 4). Their unsaved work is not
+  lost on screen; it was not written.
+- A value that is not a version (`"next"`, a number) also makes the app read-only; a missing or
+  empty field sets no limit.
+
 ## Log
 
 | Date       | Who                         | Backup zip (name and second place) | Check result                                     | Notes                                                                                                                                                                    |

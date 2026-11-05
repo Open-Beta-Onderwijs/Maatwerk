@@ -1,14 +1,30 @@
 # State
 
-Last updated: 2026-11-05 (step 14 done, 0.5.0) Branch: `main` Last tags: `v0.5.0`, `step-14`, `v0.4.1`,
+Last updated: 2026-11-05 (step 15 in progress) Branch: `step/15-shell` Last tags: `v0.5.0`, `step-14`, `v0.4.1`,
 `step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
 `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 14 done** (merged, tagged `step-14`, version 0.5.0). **Next: step 15** (Shell: tab bar,
-logo, user menu, theme per user, version guard; M). Step 14 deferrals: `docs/backlog.md` "From
-Step 14".
+**Step 15 (Shell, M).** Branch `step/15-shell` (from `main` `2688784`). Baseline green (cargo
+test, Vitest). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
+decision 5.
+
+## Step 15 progress
+
+1. **Done:** minimum app version (decision 5). `maatwerk-core::app_version` (parse, compare,
+   `required_version`); `Storage::read_only()` reads `school.json` `minAppVersion` on every call
+   and every file write or delete is refused with `Error::ReadOnly` (`read_only`; details.found =
+   the minimum); presence skips its writes when read-only. `dataFolderStatus` has `appVersion` and
+   `readOnly`. UI: `services/read-only.ts` (texts, version compare for the mock),
+   `components/read-only-banner.ts` (banner at the top of `#app`), Store throws `{code:
+'read_only'}`, app.js shows "Niet opgeslagen: deze versie van Maatwerk is te oud ..." (not the
+   "onverwacht" text), PIN dialogs too. Mock backend: `MOCK_APP_VERSION = '0.6.0'`, refuses
+   writes like the backend. Tests: 5 storage tests on the v2 fixture, 3 unit, 4 Vitest, 3 e2e
+   (`e2e/shell.spec.ts`). Runbook section 8.
+2. **Next:** tab bar (logo assets, Lucide icons, active state, admin's seven tabs).
+3. User menu dropdown. 4. Look + active year per user. 5. Avatar helper. Then U11/U13/U16, the
+   e2e for persistence, gate, review, version 0.6.0.
 
 ## Step 14a progress
 

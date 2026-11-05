@@ -22,6 +22,8 @@ pub enum ErrorCode {
     NeedsMigration,
     MigrationBlocked,
     InvalidArgument,
+    /// `school.json` asks for a newer app (`minAppVersion`): writes are refused.
+    ReadOnly,
     Io,
     Typst,
     Internal,
@@ -37,7 +39,8 @@ pub struct ErrorDetails {
     /// `conflict`: the colleague who wrote the file, from `_meta.updatedBy`, when known.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
-    /// `unsupported_schema`, `needs_migration`: the `schema_version` found.
+    /// `unsupported_schema`, `needs_migration`: the `schema_version` found; `read_only`: the
+    /// `minAppVersion` from `school.json`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub found: Option<String>,
 }
@@ -118,6 +121,13 @@ impl From<Error> for CommandError {
                 (ErrorCode::MigrationBlocked, ErrorDetails::default())
             }
             Error::InvalidArgument { .. } => (ErrorCode::InvalidArgument, ErrorDetails::default()),
+            Error::ReadOnly { min_version, .. } => (
+                ErrorCode::ReadOnly,
+                ErrorDetails {
+                    found: Some(min_version.clone()),
+                    ..ErrorDetails::default()
+                },
+            ),
             Error::Io { path: p, .. } => (ErrorCode::Io, path(p)),
         };
         CommandError {
@@ -156,6 +166,10 @@ mod tests {
             },
             Error::InvalidArgument {
                 message: "m".into(),
+            },
+            Error::ReadOnly {
+                min_version: "9.0.0".into(),
+                app_version: "0.6.0".into(),
             },
             Error::Io {
                 path: "a".into(),
