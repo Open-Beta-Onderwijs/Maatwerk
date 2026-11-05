@@ -54,6 +54,8 @@ export interface DialogOptions {
   /** Short text pill after the title (e.g. the school type). */
   badge?: string;
   subtitle?: string;
+  /** Subtitle as HTML (e.g. an exam badge before the exam name); the caller escapes every text. */
+  subtitleHtml?: string;
   /** Extra classes on the dialog element (legacy size classes, area styling). */
   className?: string;
   size?: DialogSize;
@@ -169,7 +171,11 @@ export class Dialog {
               <h2 class="dlg-title" id="${titleId}">${esc(opts.title)}</h2>
               ${opts.badge ? `<span class="dlg-badge">${esc(opts.badge)}</span>` : ''}
             </div>
-            ${opts.subtitle ? `<p class="dlg-subtitle">${esc(opts.subtitle)}</p>` : ''}
+            ${
+              opts.subtitleHtml || opts.subtitle
+                ? `<p class="dlg-subtitle">${opts.subtitleHtml ?? esc(opts.subtitle)}</p>`
+                : ''
+            }
           </div>
         </div>
         ${

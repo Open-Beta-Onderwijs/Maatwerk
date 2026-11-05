@@ -311,18 +311,18 @@ export async function openScoreModal(examId, year, deps) {
   openModal({
     title: 'Scores invoeren',
     key: 'scores',
-    subtitle: exam.title,
+    // The exam badge sits before the exam name, in the line under the title.
+    subtitleHtml: `${
+      exam.volgnummer
+        ? `<span class="${testBadgeClass(exam)}">${escHtml(String(exam.volgnummer))}</span>`
+        : ''
+    }<span>${escHtml(exam.title)}</span>`,
     className: 'modal-scores',
     fixedHeight: true,
     // The toolbar row stays in place: only the grids scroll (#sc-grid-container).
     body: `
     <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-shrink-0">
       <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0">
-        ${
-          exam.volgnummer
-            ? `<span class="${testBadgeClass(exam)} u-shrink-0">${escHtml(String(exam.volgnummer))}</span>`
-            : ''
-        }
         <div id="sc-presence" class="presence-badges"></div>
       </div>
       <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">

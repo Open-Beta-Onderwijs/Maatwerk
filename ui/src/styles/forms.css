@@ -44,7 +44,8 @@
   border: 1px solid var(--border-strong);
   border-radius: 8px;
   background: var(--surface);
-  color: transparent;
+  /* Unticked: a faint tick shows that it can be ticked. */
+  color: var(--border);
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
@@ -55,6 +56,9 @@
 }
 .tick-box:hover:not(:disabled) {
   border-color: var(--accent);
+}
+.tick-box:hover:not(:disabled):not([data-checked='true']) {
+  color: var(--border-strong);
 }
 .tick-box:focus-visible {
   outline: 2px solid var(--accent);

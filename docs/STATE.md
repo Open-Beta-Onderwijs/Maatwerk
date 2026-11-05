@@ -1,14 +1,14 @@
 # State
 
-Last updated: 2026-11-05 (step 14 done on its branch, waiting for the visual OK) Branch: `step/14-foundation-b` Last tags: `v0.4.1`,
+Last updated: 2026-11-05 (step 14 done, 0.5.0) Branch: `main` Last tags: `v0.5.0`, `step-14`, `v0.4.1`,
 `step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
 `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 14 (Foundation b), session 14b.** Branch `step/14-foundation-b` (from `main` `766e4aa`).
-Baseline green (cargo test, Vitest). Step 14 also takes the step 13 backlog items m3/m4/n6
-(`docs/backlog.md` "From Step 13").
+**Step 14 done** (merged, tagged `step-14`, version 0.5.0). **Next: step 15** (Shell: tab bar,
+logo, user menu, theme per user, version guard; M). Step 14 deferrals: `docs/backlog.md` "From
+Step 14".
 
 ## Step 14a progress
 
@@ -61,9 +61,10 @@ Baseline green (cargo test, Vitest). Step 14 also takes the step 13 backlog item
    with tests (`914fa57`); m1, m5, m6, n1, n7 fixed; rest in `docs/backlog.md` "From Step 14".
    Every modal now has a `key`. Empty footers hidden (`69cdf07`, seen in the visual diff).
    e2e: 193 tests green.
-5. **Waiting for the user:** visual diff vs the 14a baselines (75 of 111 views differ: every form
-   modal; screens with a year select or the sectievoorzitter selects, now 36 px). Then update
-   baselines, merge `step/14-foundation-b` into `main` (merge commit), tag `step-14` and `v0.5.0`.
+5. **Done:** user OK on the 14b visual diff (2026-11-05) with two remarks, both fixed: the exam
+   badge of Scores invoeren sits before the exam name in the subtitle line (`subtitleHtml` dialog
+   option), and an unticked tick box shows a faint tick (`--border`; `--border-strong` on hover).
+   Local baselines updated (111 views). Merged into `main`, tagged `step-14` and `v0.5.0`.
 
 E2E: the editor test "a compile over the time limit" flaked once more under the full suite
 (backlog).

@@ -95,6 +95,10 @@
   white-space: nowrap;
 }
 .dlg-subtitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin: 0;
   font-size: var(--fs-secondary);
   color: var(--muted);
