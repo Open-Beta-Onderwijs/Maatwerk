@@ -58,9 +58,17 @@ file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); im
    screen-groepen (`ERR_CONNECTION_REFUSED` once), accounts `#traag` (30 s timeout), dialog
    "opens at the fixed top" (measured mid-animation; now polled). Watch the first two; no CI
    retries added.
-7. Run `42230950159` (`a7…` baselines commit): all green; macOS and Linux compared against the
+7. Run `42230950159`: all green; macOS and Linux compared against the
    committed baselines; Windows wrote its 39 (2.7 MB, Segoe UI; checked by eye), committed.
-   Next: one run comparing on all three, then the gate and the step 16 review.
+   Run `42235274073`: Windows and Linux compared against the committed baselines (no new ones);
+   macOS got no runner ("not acquired", GitHub capacity), reruns with the next push.
+8. Review `docs/reviews/step-16.md` (fresh context): 0 blockers, 3 majors, 7 minors, 6 nits;
+   triage at its end. **M1** a missing chosen folder no longer becomes a new school
+   (`state::open_located`); **M2** (user decision 2026-11-06: keep the order) "Over Maatwerk"
+   shows the data folder with "Andere map kiezen…"; **M3** the dialog trap leaves a handled Tab
+   and `tabindex=-1` alone (G45 extended). Also m5 (lock folder `~/.cache` only), m6, n1-n3, n6
+   (`local-config.json` in the local, not roaming, app folder). Backlog: m1-m3, m7. Local: all
+   Rust tests, 434 e2e (Chromium + WebKit), lint, typecheck.
 
 ## Step 16a (done, tag `step-16a`)
 
