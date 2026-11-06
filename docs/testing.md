@@ -90,6 +90,26 @@ These make runs deterministic. Each is a choice about the environment, not about
 | `app.whenReady()` never resolves                                                  | No seeding, watcher or window during tests                                                                            |
 | Admin-only flows run after `Store.loadYear(year, null)`                           | The admin view loads all groups (group-assignment CSV import)                                                         |
 
+## WebKit (step 16a)
+
+`npm run test:e2e:webkit` runs the e2e suite in Playwright's WebKit build: the engine of
+WKWebView (macOS) and WebKitGTK (Linux), not the OS integration (menus, file dialogs, IPC). The
+tests differ from Chromium only where the engine or Playwright does:
+
+- A native `<select>` makes WebKit report a CSP `style-src-attr` violation (its own inner styles,
+  no sample). `watchErrors` ignores exactly that message on WebKit; the Chromium run still fails
+  on any inline style of the app.
+- Playwright cannot grant clipboard access on WebKit: `pasteText` / `copySelection`
+  (`e2e/grid-driver.ts`) fire the paste/copy event there, and use the real clipboard and keys on
+  Chromium.
+- `shadowRoot.getSelection()` is Chromium-only; SVG text is hit-tested per glyph (click with
+  `force`, the app maps the point); Playwright's scrolling does not reach into a
+  `content-visibility: auto` card (scroll with the element's own `scrollIntoView` first); a
+  navigation while the first page still imports `app.js` logs "Importing a module script failed."
+  (wait for the start screen first).
+- Timing: a full parallel run is slower than Chromium; poll timeouts that assume Chromium speed
+  may need more room (G52).
+
 ## Size budget
 
 | Area                     | Budget | Now    |
