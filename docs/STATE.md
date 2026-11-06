@@ -52,6 +52,12 @@ file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); im
    `maxDiffPixelRatio: 0.002`. A platform without a folder writes its baselines (warning) and
    uploads artifact `visual-<os>`; next: commit those from the first run (docs/testing.md
    "Visual baselines in CI").
+6. Run `42225808814` (`3056ce4`): Linux and macOS green and wrote their baselines (39 each;
+   3.6 MB Linux, 4.6 MB macOS; checked by eye: DejaVu on Linux, SF on macOS, charts fine),
+   committed. Windows failed twice on Chromium e2e flakes, each a different test: csp
+   screen-groepen (`ERR_CONNECTION_REFUSED` once), accounts `#traag` (30 s timeout), dialog
+   "opens at the fixed top" (measured mid-animation; now polled). Watch the first two; no CI
+   retries added. Windows baselines: from the next green Windows run.
 
 ## Step 16a (done, tag `step-16a`)
 
