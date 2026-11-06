@@ -57,7 +57,10 @@ file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); im
    committed. Windows failed twice on Chromium e2e flakes, each a different test: csp
    screen-groepen (`ERR_CONNECTION_REFUSED` once), accounts `#traag` (30 s timeout), dialog
    "opens at the fixed top" (measured mid-animation; now polled). Watch the first two; no CI
-   retries added. Windows baselines: from the next green Windows run.
+   retries added.
+7. Run `42230950159` (`a7…` baselines commit): all green; macOS and Linux compared against the
+   committed baselines; Windows wrote its 39 (2.7 MB, Segoe UI; checked by eye), committed.
+   Next: one run comparing on all three, then the gate and the step 16 review.
 
 ## Step 16a (done, tag `step-16a`)
 
