@@ -207,10 +207,11 @@ pub async fn accept_stamp(state: State<'_, Shared>, rel_path: String) -> Res<()>
 
 /// `local-config.json` in the app's config folder (beside `session.json`), local to this PC.
 pub(crate) fn local_config_path(app: &AppHandle) -> Res<PathBuf> {
+    // The local (not roaming) folder: the choice is for this PC only (review 16 n6).
     app.path()
-        .app_config_dir()
+        .app_local_data_dir()
         .map(|d| d.join(LOCAL_CONFIG_FILE))
-        .map_err(|e| CommandError::internal(format!("no app config folder: {e}")))
+        .map_err(|e| CommandError::internal(format!("no local app folder: {e}")))
 }
 
 /// Opens the folder dialog and stores the chosen data folder on this PC (step 16a); `null` if

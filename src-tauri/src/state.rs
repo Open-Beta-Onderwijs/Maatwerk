@@ -214,7 +214,6 @@ impl Core {
         self.storage.as_deref().map_err(Clone::clone)
     }
 
-    /// The data folder as configured (also when it could not be opened).
     /// Records why the data folder is where it is (for the status).
     pub fn located(mut self, source: Option<Source>) -> Core {
         self.source = source.map(DataFolderSource::from);
@@ -225,6 +224,7 @@ impl Core {
         self.source
     }
 
+    /// The data folder as configured (also when it could not be opened).
     pub fn data_dir(&self) -> &std::path::Path {
         &self.data_dir
     }
@@ -338,6 +338,30 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
+/// Opens the located data folder (setup, off the main thread). Nothing located: first run, the
+/// UI asks for the folder. A folder chosen on this PC must exist: creating it would start an
+/// empty school while OneDrive is signed out or a sync has not run yet (review 16 M1). The
+/// folder beside the program and `$MAATWERK_DATA_DIR` are created as before.
+pub fn open_located(
+    location: Option<Location>,
+    session_file: PathBuf,
+    output_dir: PathBuf,
+    on_changes: impl Fn(Vec<Change>) + Send + 'static,
+) -> Core {
+    let Some(Location { dir, source }) = location else {
+        let none = CommandError::no_data_folder();
+        return Core::failed(PathBuf::new(), session_file, output_dir, none);
+    };
+    if source == Source::Chosen && !dir.is_dir() {
+        tracing::warn!("the chosen data folder {} is missing", dir.display());
+        let missing = CommandError::from(maatwerk_core::Error::NotFound {
+            path: display_path(&dir),
+        });
+        return Core::failed(dir, session_file, output_dir, missing).located(Some(source));
+    }
+    Core::open(dir, session_file, output_dir, on_changes).located(Some(source))
+}
+
 /// This PC's name for the snapshot claim: `%COMPUTERNAME%` on Windows, the hostname on Linux,
 /// the computer name from System Settings on macOS (step 16b).
 fn machine_name() -> Option<String> {
@@ -393,6 +417,29 @@ mod tests {
     fn this_pc_has_a_name_on_every_platform() {
         let name = machine_name().expect("COMPUTERNAME, scutil or /proc hostname");
         assert_eq!(name, name.trim());
+    }
+
+    /// Review 16 M1: a folder chosen on this PC that is gone (OneDrive signed out, renamed, a
+    /// Linux sync not run yet) is an error to fix, never a new empty school.
+    #[test]
+    fn a_missing_chosen_folder_is_an_error_and_is_not_created() {
+        let tmp = tempfile::tempdir().unwrap();
+        let gone = tmp.path().join("OneDrive").join("Maatwerk");
+        let location = Location {
+            dir: gone.clone(),
+            source: Source::Chosen,
+        };
+        let core = open_located(
+            Some(location),
+            tmp.path().join("session.json"),
+            tmp.path().join("output"),
+            |_| {},
+        );
+        let status = core.data_folder_status();
+        assert_eq!(status.error.map(|e| e.code), Some(ErrorCode::NotFound));
+        assert_eq!(status.source, Some(DataFolderSource::Chosen));
+        assert!(!gone.exists(), "nothing created");
+        assert!(!tmp.path().join("OneDrive").exists());
     }
 
     #[test]

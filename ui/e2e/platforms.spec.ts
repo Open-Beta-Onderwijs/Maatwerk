@@ -86,3 +86,40 @@ test.describe('first run: choose the data folder', () => {
     await expect(alert.getByRole('button', { name: 'Andere map kiezen…' })).toHaveCount(0);
   });
 });
+
+// Review 16 M2 (user decision 2026-11-06): the folder in use is visible in "Over Maatwerk",
+// with "Andere map kiezen…" when this PC may change it.
+/** "Over Maatwerk" from the startup screen (no login: `login` would load a fresh MockApi). */
+async function openAbout(page: Page) {
+  await page.getByRole('button', { name: 'Over Maatwerk' }).first().click();
+  return page.getByRole('dialog', { name: 'Over Maatwerk' });
+}
+
+test.describe('Over Maatwerk: the data folder', () => {
+  test('shows the folder and changes it when this PC chose it', async ({ page }) => {
+    await startWith(page, {
+      ...FIRST_RUN,
+      dataDir: '/Users/docent/Downloads/leeg',
+      source: 'chosen',
+      error: null,
+    });
+    const dialog = await openAbout(page);
+    await expect(dialog.locator('.about-datadir')).toHaveText('/Users/docent/Downloads/leeg');
+    await expect(dialog).toContainText('Gekozen op deze computer.');
+    await pick(page, '/Users/docent/OneDrive/Maatwerk/data');
+    await dialog.getByRole('button', { name: 'Andere map kiezen…' }).click();
+    await expect(dialog.getByRole('status')).toHaveText(
+      'Gegevensmap: /Users/docent/OneDrive/Maatwerk/data. Maatwerk start opnieuw…',
+    );
+    const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
+    expect(calls).toEqual(expect.arrayContaining(['chooseDataFolder', 'restartApp']));
+  });
+
+  test('a folder set with MAATWERK_DATA_DIR cannot be changed there', async ({ page }) => {
+    await startWith(page, { ...FIRST_RUN, dataDir: 'D:/test/data', source: 'env', error: null });
+    const dialog = await openAbout(page);
+    await expect(dialog.locator('.about-datadir')).toHaveText('D:/test/data');
+    await expect(dialog).toContainText('Ingesteld met MAATWERK_DATA_DIR.');
+    await expect(dialog.getByRole('button', { name: 'Andere map kiezen…' })).toBeHidden();
+  });
+});

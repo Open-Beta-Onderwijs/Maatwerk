@@ -315,6 +315,15 @@ test.describe('keyboard', () => {
     await select(page, 0, H2.obs3);
     await page.keyboard.press('Tab');
     expect(await selected(page)).toEqual([1, H2.q1]);
+    // Review 16 M3: on a column the score screen leaves to the grid (Totaal), the grid moves
+    // on Tab; the dialog's focus trap must leave that Tab alone, so the keyboard stays in the
+    // grid and the next arrow key still moves.
+    await select(page, 0, H2.totaal);
+    await page.keyboard.press('Tab');
+    expect(await selected(page)).toEqual([0, H2.cijfer]);
+    expect(await page.evaluate(() => document.activeElement?.className)).toBe('score-grid');
+    await page.keyboard.press('ArrowDown');
+    expect(await selected(page)).toEqual([1, H2.cijfer]);
   });
 
   test('G46 Ctrl+Z / Ctrl+Y use the app history (U1)', async ({ page }) => {

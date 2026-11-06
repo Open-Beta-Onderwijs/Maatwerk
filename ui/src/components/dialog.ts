@@ -278,12 +278,17 @@ export class Dialog {
 
     // Tab and Shift+Tab stay inside the dialog.
     this.backdrop.addEventListener('keydown', (e) => {
-      if (e.key !== 'Tab' || !this.isTop) return;
+      // A Tab something inside already handled (the score grid moves its selection) stays
+      // where it is (review 16 M3).
+      if (e.key !== 'Tab' || !this.isTop || e.defaultPrevented) return;
       const focusable = [
         ...this.el.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         ),
-      ].filter((x) => !(x as HTMLButtonElement).disabled && x.offsetParent !== null);
+      ].filter(
+        // tabIndex -1: inactive dialog tabs, the grid's observatie boxes (not in the Tab order).
+        (x) => !(x as HTMLButtonElement).disabled && x.offsetParent !== null && x.tabIndex >= 0,
+      );
       if (!focusable.length) {
         e.preventDefault();
         this.el.focus();

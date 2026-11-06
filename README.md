@@ -88,10 +88,14 @@ them, as it does OneDrive's.
 - Where it is, in this order: `MAATWERK_DATA_DIR` (tests, a copy), the folder chosen on this PC,
   `data\` next to the exe if that exists. Otherwise the first start asks: choose the shared
   data folder (the one with `config.json`, or the folder that holds `data`), or an empty folder
-  for a new school. The choice is stored on this PC only
-  (`%APPDATA%
-l.openbetaonderwijs.maatwerk\local-config.json`). When the folder cannot be
-  opened later, the error screen offers "Andere map kiezen…".
+  for a new school. The choice is stored on this PC only, in `local-config.json` in the app's
+  local folder (Windows `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk`, macOS
+  `~/Library/Application Support/nl.openbetaonderwijs.maatwerk`, Linux
+  `~/.local/share/nl.openbetaonderwijs.maatwerk`). "Over Maatwerk" shows the folder in use and
+  offers "Andere map kiezen…" when it was chosen on this PC or lies beside the program; so does
+  the error screen when the folder cannot be opened. A chosen folder that is gone (OneDrive
+  signed out, renamed) is never created again: the error screen asks to check it or choose
+  another.
 - A folder from the old Electron app is converted once, after a backup; see
   `docs/cutover-runbook.md`.
 

@@ -26,8 +26,9 @@ pub(crate) const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 /// the same user on this PC; another user on the same PC has their own OneDrive copy anyway.
 ///
 /// Elsewhere also per user (step 16b): a shared `/tmp/maatwerk-locks` made by one user is not
-/// writable for the next, whose saves would then fail. Linux: `$XDG_RUNTIME_DIR` (private,
-/// cleared at logout), else `~/.cache`; macOS: `~/Library/Caches`.
+/// writable for the next, whose saves would then fail. Linux: `~/.cache` (`$XDG_CACHE_HOME`);
+/// not `$XDG_RUNTIME_DIR`, which a CLI run from cron or sudo lacks, so it would lock another
+/// file than the app (review 16 m5). macOS: `~/Library/Caches`.
 pub fn default_lock_dir() -> PathBuf {
     lock_dir_from(|name| std::env::var_os(name), std::env::temp_dir)
 }
@@ -45,8 +46,6 @@ fn lock_dir_from(
         if let Some(home) = home {
             return home.join("Library/Caches/maatwerk/locks");
         }
-    } else if let Some(run) = var("XDG_RUNTIME_DIR") {
-        return run.join("maatwerk-locks");
     } else if let Some(cache) = var("XDG_CACHE_HOME").or_else(|| home.map(|h| h.join(".cache"))) {
         return cache.join("maatwerk").join("locks");
     }
@@ -131,13 +130,13 @@ mod tests {
     fn the_lock_dir_is_per_user_on_every_platform() {
         let win = dir(&[("LOCALAPPDATA", "C:/Users/a/AppData/Local"), ("HOME", "/h")]);
         assert_eq!(win, Path::new("C:/Users/a/AppData/Local/maatwerk/locks"));
-        let run = dir(&[("XDG_RUNTIME_DIR", "/run/user/1000"), ("HOME", "/home/a")]);
+        // A desktop session and a cron job (no XDG_RUNTIME_DIR) use the same folder.
+        let session = dir(&[("XDG_RUNTIME_DIR", "/run/user/1000"), ("HOME", "/home/a")]);
         let home = dir(&[("HOME", "/home/a")]);
+        assert_eq!(session, home);
         if cfg!(target_os = "macos") {
-            assert_eq!(run, Path::new("/home/a/Library/Caches/maatwerk/locks"));
-            assert_eq!(home, run);
+            assert_eq!(home, Path::new("/home/a/Library/Caches/maatwerk/locks"));
         } else {
-            assert_eq!(run, Path::new("/run/user/1000/maatwerk-locks"));
             assert_eq!(home, Path::new("/home/a/.cache/maatwerk/locks"));
             let cache = dir(&[("XDG_CACHE_HOME", "/c"), ("HOME", "/home/a")]);
             assert_eq!(cache, Path::new("/c/maatwerk/locks"));

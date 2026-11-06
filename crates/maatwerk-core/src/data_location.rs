@@ -53,7 +53,10 @@ impl LocalConfig {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).map_err(io)?;
         }
-        let value = serde_json::to_value(self).expect("plain data serialises");
+        // A path that is not UTF-8 cannot be JSON ([`check_chosen`] refuses one).
+        let value = serde_json::to_value(self).map_err(|e| Error::InvalidArgument {
+            message: format!("{LOCAL_CONFIG_FILE}: {e}"),
+        })?;
         write_atomic(path, to_js_json(&value).as_bytes()).map_err(io)
     }
 }
@@ -147,6 +150,10 @@ pub fn check_chosen(picked: &Path) -> Result<PathBuf> {
     };
     if !picked.is_absolute() {
         return refuse("Kies een map op deze computer.");
+    }
+    if picked.to_str().is_none() {
+        // Stored as JSON text in the local config (review 16 n2; Linux allows any bytes).
+        return refuse("De naam van deze map bevat ongeldige tekens. Kies een andere map.");
     }
     if in_app_bundle(picked) {
         return refuse("Deze map hoort bij het programma zelf. Kies een andere map.");
@@ -311,6 +318,13 @@ mod tests {
 
         assert!(refused(&root.join("weg")).contains("bestaat niet"));
         assert!(refused(Path::new("relatief")).contains("op deze computer"));
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::unix::ffi::OsStrExt;
+            let odd = root.join(std::ffi::OsStr::from_bytes(b"map\xff"));
+            fs::create_dir(&odd).unwrap();
+            assert!(refused(&odd).contains("ongeldige tekens"));
+        }
         let bundle = root.join("Maatwerk.app/Contents/Resources");
         fs::create_dir_all(&bundle).unwrap();
         assert!(refused(&bundle).contains("programma zelf"));
