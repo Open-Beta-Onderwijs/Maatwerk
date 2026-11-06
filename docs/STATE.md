@@ -1,14 +1,32 @@
 # State
 
-Last updated: 2026-11-05 (step 15 done, 0.6.0) Branch: `main` Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`,
-`step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
-`v0.2.0-parity` (version tags are local only)
+Last updated: 2026-11-06 (step 16a in progress) Branch: `step/16-platforms` (from `main` `3319d3d`)
+Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed),
+`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags
+are local only)
 
 ## Current step
 
-**Step 15 done** (merged, tagged `step-15`, version 0.6.0). **Next: step 16** (Platforms: macOS and
-Linux; L, 16a/16b). Step 15 was: branch `step/15-shell` (from `main` `2688784`). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
-decision 5.
+**Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned
+macOS build + "Open anyway" instructions** (no Apple Developer account; ad-hoc signed for Apple
+Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge without the user).
+
+## Step 16a progress
+
+1. **Done** (`c91d467`): first-run "choose data folder". `maatwerk-core::data_location`
+   (`locate`: env > dev > chosen in `local-config.json` > `data/` beside the program if it
+   exists, never inside a `.app`; `check_chosen`: data folder, `<picked>/data`, or empty, else
+   refused in Dutch; `LocalConfig` keeps unknown fields). `paths::data_dir_location` removed.
+   App: `ErrorCode::NoDataFolder`, `DataFolderStatus.source`, command `choose_data_folder`
+   (folder dialog, `save_choice`, UI restarts). UI: `screens/choose-folder.ts` ("Kies de
+   gegevensmap"), "Andere map kiezen…" on the startup error screen for `chosen`/`besideApp`.
+   Tests: 4 core, 1 app, 4 Vitest, 3 e2e (`e2e/platforms.spec.ts`); manual M-START-8/9.
+   Behaviour change: a Windows exe without `data/` beside it asks instead of creating one.
+2. Next: font stacks for macOS/Linux (UI and editor CSS); emoji in the UI.
+3. Playwright WebKit project; run the e2e suite on WebKit, fix what breaks (score grid,
+   Chart.js, CodeMirror, pdf.js, dialog, sticky headers, tab bar).
+4. CI macOS job (tests, WebKit e2e, universal `.app`/`.dmg`, ad-hoc signed, artifact).
+5. Docs: README macOS install ("Open anyway"), release.md, decision note; gate; tag `step-16a`.
 
 ## Step 15 progress
 
