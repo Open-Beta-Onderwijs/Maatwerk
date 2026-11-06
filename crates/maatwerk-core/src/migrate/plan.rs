@@ -394,9 +394,11 @@ impl Planner<'_> {
                 Ok(bytes) => {
                     old_files.insert(typ_rel);
                     match String::from_utf8(bytes) {
-                        Ok(text) => text
-                            .replace(&format!("images/{id}/"), "images/")
-                            .into_bytes(),
+                        // Any case: Windows found `Images/{id}/` too (step 16b).
+                        Ok(text) => {
+                            replace_ignoring_ascii_case(&text, &format!("images/{id}/"), "images/")
+                                .into_bytes()
+                        }
                         Err(e) => {
                             self.warnings.push(format!(
                                 "opdrachten/{typ_file}: geen UTF-8; ongewijzigd gekopieerd"
@@ -733,4 +735,18 @@ fn free_name(path: &Path) -> PathBuf {
         .map(|n| path.with_file_name(format!("{stem} ({n}){ext}")))
         .find(|p| !p.exists())
         .expect("some free name")
+}
+
+/// `text` with every `needle` replaced by `with`, ignoring ASCII case.
+fn replace_ignoring_ascii_case(text: &str, needle: &str, with: &str) -> String {
+    let (lower, needle) = (text.to_ascii_lowercase(), needle.to_ascii_lowercase());
+    let mut out = String::with_capacity(text.len());
+    let mut last = 0;
+    for (i, _) in lower.match_indices(&needle) {
+        out.push_str(&text[last..i]);
+        out.push_str(with);
+        last = i + needle.len();
+    }
+    out.push_str(&text[last..]);
+    out
 }

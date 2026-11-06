@@ -315,6 +315,34 @@ fn a_newer_folder_is_refused_and_an_empty_one_just_gets_a_version() {
 }
 
 #[test]
+fn a_windows_made_folder_in_mixed_case_migrates() {
+    // Hand-typed `Images/<id>/` and a `.PNG` file: Windows found both, so must the migration.
+    let r = rig();
+    let old = r.data.join("opdrachten");
+    let typ = old.join("opdracht_1756713600200.typ");
+    let text = fs::read_to_string(&typ).unwrap().replace(
+        "images/opdracht_1756713600200/figuur.png",
+        "Images/opdracht_1756713600200/Figuur.PNG",
+    );
+    fs::write(&typ, text).unwrap();
+    let images = old.join("images/opdracht_1756713600200");
+    fs::rename(images.join("figuur.png"), images.join("tmp.png")).unwrap();
+    fs::rename(images.join("tmp.png"), images.join("Figuur.PNG")).unwrap();
+
+    migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let dir = r.data.join("opdrachten/opdracht_1756713600200");
+    let migrated = fs::read_to_string(dir.join("opdracht.typ")).unwrap();
+    assert!(migrated.contains("\"images/Figuur.PNG\""), "{migrated}");
+    assert!(dir.join("images/Figuur.PNG").is_file());
+    let report = crate::validate::validate(&r.data).unwrap();
+    assert!(
+        !report.issues.iter().any(|i| i.message.contains("Figuur")),
+        "{:?}",
+        report.issues
+    );
+}
+
+#[test]
 fn helper_rules() {
     assert!(plan::is_temp_name("x.json.4242.tmp"));
     assert!(plan::is_temp_name("x.json.4242-3.tmp"));

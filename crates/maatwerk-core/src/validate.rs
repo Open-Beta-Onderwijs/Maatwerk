@@ -378,8 +378,26 @@ fn check_references(
             let typ_rel = format!("opdrachten/{id}/opdracht.typ");
             let typ = fs::read_to_string(root.join(&typ_rel)).unwrap_or_default();
             for img in image_refs(&typ) {
-                if !files.contains(format!("opdrachten/{id}/{img}").as_str()) {
-                    out.missing(&typ_rel, format!("Afbeelding {img} ontbreekt"));
+                if files.contains(format!("opdrachten/{id}/{img}").as_str()) {
+                    continue;
+                }
+                let dir = root.join("opdrachten").join(id);
+                match crate::typst_svc::world::find_ignoring_case(&dir, img.split('/')) {
+                    // Maatwerk finds it on every platform (step 16b); other tools on Linux not.
+                    Some(real) => out.warn(
+                        IssueKind::Reference,
+                        &typ_rel,
+                        format!(
+                            "Afbeelding {img} heet anders gespeld: {}",
+                            real.strip_prefix(&dir)
+                                .unwrap_or(&real)
+                                .iter()
+                                .map(|p| p.to_string_lossy())
+                                .collect::<Vec<_>>()
+                                .join("/")
+                        ),
+                    ),
+                    None => out.missing(&typ_rel, format!("Afbeelding {img} ontbreekt")),
                 }
             }
         } else if rest.starts_with("groups/") {

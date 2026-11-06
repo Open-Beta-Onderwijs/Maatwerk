@@ -18,11 +18,19 @@ mixed case: path helpers, migration, `validate-data`); (3) backlog: lock dir, sn
 early log dir; (4) README Linux section + sync advice (STOP); (5) visual tests per platform in
 CI; (6) gate, review of step 16, report.
 
-1. In progress: `src-tauri/tauri.linux.conf.json` (appimage + deb, Education), `npm run
+1. **Done** (`7540d21`), CI result pending: `src-tauri/tauri.linux.conf.json` (appimage + deb, Education), `npm run
 build:linux`, CI job `linux` on ubuntu-24.04 (glibc 2.39+): npm test, WebKit e2e, clippy
    (the only lint of `cfg(not(windows))` code), cargo test, fixture migrate + validate,
    real-pdf, AppImage + .deb artifact `maatwerk-linux-x86_64`. `data_location::program_path`:
    `$APPIMAGE` counts as the program, so `data/` beside the AppImage works like beside the exe.
+
+2. **Done** (local, not pushed while CI run `42213080719` runs): case-sensitive paths (quirk
+   T32). Typst World: a missing mounted file is looked up ignoring case
+   (`world::find_ignoring_case`; ambiguous -> not found). Migration rewrites `images/<id>/` in
+   any ASCII case. `validate-data`: a case-only mismatch is a warning with the real name. The
+   whole workspace suite also passes with `TMP` in a case-sensitive folder on Windows (`fsutil
+file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); image import
+   already refuses case-only clashes.
 
 ## Step 16a (done, tag `step-16a`)
 

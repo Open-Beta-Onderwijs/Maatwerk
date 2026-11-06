@@ -741,6 +741,22 @@ Paths in this section are relative to `_reference/renderer/`.
   Tests: `setup_extra_with_body_applies_its_set_rules_to_the_whole_opdracht`,
   `setup_extra_without_body_keeps_the_old_behaviour`.
 
+### T32. Image references in other case work on Windows only
+
+- Where: reference opdracht `.typ` files are compiled from the Windows file system, which
+  ignores case: `image("images/Figuur.png")` finds `figuur.PNG`, and a hand-typed
+  `Images/<id>/` prefix still worked in v1. On Linux the same shared folder fails to compile.
+- **Port (step 16b):** the Typst World looks a missing mounted file up the Windows way
+  (`typst_svc::world::find_ignoring_case`: exact name first, else the one name differing only
+  in case; two such names, possible on Linux only, count as not found). The v1 -> v2 migration
+  rewrites `images/<id>/` in any ASCII case. `validate-data` reports such a reference as a
+  warning with the real name ("heet anders gespeld"), not as missing. No output change on
+  Windows. Tests: `a_name_in_other_case_is_found_like_on_windows`,
+  `a_windows_made_folder_in_mixed_case_migrates`,
+  `an_image_in_other_case_is_a_warning_with_the_real_name`; run case-sensitive on Windows with
+  `TMP` in a folder made case-sensitive (`fsutil file setCaseSensitiveInfo <dir> enable`), and
+  natively in the Linux CI job.
+
 ## U. UI
 
 Read from code only; "probable" means the code path is clear but not confirmed in the running app.

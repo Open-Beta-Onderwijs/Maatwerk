@@ -187,6 +187,31 @@ fn broken_references_are_listed() {
     assert_eq!(report.errors(), 1, "only the missing lib.typ is an error");
 }
 
+/// Renames in two steps, so a case-only rename also works on Windows.
+fn rename_case(from: &Path, to: &Path) {
+    let between = from.with_extension("rename-tmp");
+    fs::rename(from, &between).unwrap();
+    fs::rename(&between, to).unwrap();
+}
+
+#[test]
+fn an_image_in_other_case_is_a_warning_with_the_real_name() {
+    // A Windows-made folder: the opdracht says images/figuur.png, the file is Figuur.PNG.
+    let (_tmp, data) = copy();
+    let images = data.join("opdrachten/opdracht_1756713600200/images");
+    rename_case(&images.join("figuur.png"), &images.join("Figuur.PNG"));
+    let report = validate(&data).unwrap();
+    let typ = "opdrachten/opdracht_1756713600200/opdracht.typ";
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        typ,
+        "Afbeelding images/figuur.png heet anders gespeld: images/Figuur.PNG"
+    ));
+    assert!(!has(&report, IssueKind::Reference, typ, "ontbreekt"));
+    assert_eq!(report.errors(), 0);
+}
+
 #[test]
 fn corrupt_and_v1_shaped_content_is_reported() {
     let (_tmp, data) = copy();
