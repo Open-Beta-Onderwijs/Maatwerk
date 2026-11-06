@@ -35,12 +35,15 @@ Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge wit
 4. **Done** (`e800328`): CI job `macos` and `src-tauri/tauri.macos.conf.json` (app + dmg, ad-hoc
    `-`, macOS 12+), `npm run build:mac`; README "macOS" ("Toch openen"), release.md. Branch
    pushed; **CI result pending** (first run).
-5. **Paused here (2026-11-06, user).** Local gate green on `56f13f2`+ (fmt, clippy, cargo
-   test, 412 Vitest, 122 node tests, deny, licences, SPDX; e2e 215 Chromium, 215 WebKit).
-   Also done: `docs/testing.md` "WebKit (step 16a)", manual checks M-MAC-1..6.
-   **Resume:** `gh run view 42193879918` (first run with the macOS job, on `e800328`); fix what
-   it shows; then push the local docs commits (not pushed yet, so the run was not cancelled);
-   tag `step-16a`; stop and report.
+5. Local gate green on `56f13f2`+ (fmt, clippy, cargo test, 412 Vitest, 122 node tests, deny,
+   licences, SPDX; e2e 215 Chromium, 215 WebKit). Also `docs/testing.md` "WebKit (step 16a)",
+   manual checks M-MAC-1..6.
+6. First CI run with the macOS job (`42193879918`): 10 WebKit e2e failures on the macOS runner,
+   none on Windows. Two causes: the specs pressed `Control+A` / `Control+End` / Ctrl+click, which
+   are other actions on a Mac (now `ControlOrMeta`); and a real bug: WebKit on macOS skips
+   buttons on Tab, so the dialog focus trap never saw its last button focused and focus left the
+   dialog. The trap now moves focus itself (`ui/src/components/dialog.ts`). Then: CI green, tag
+   `step-16a`, stop and report.
 
 Backlog candidates (16b or later): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
 "onbekend"); `default_lock_dir` falls back to `temp_dir()` off Windows (per user on macOS,
