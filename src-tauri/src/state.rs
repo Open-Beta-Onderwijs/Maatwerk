@@ -285,7 +285,7 @@ impl Core {
             .name("snapshot".into())
             .spawn(move || {
                 let Ok(storage) = core.storage() else { return };
-                let who = std::env::var("COMPUTERNAME").unwrap_or_else(|_| "onbekend".into());
+                let who = machine_name().unwrap_or_else(|| "onbekend".into());
                 match maatwerk_core::snapshots::run_if_due(
                     storage,
                     maatwerk_core::typst_svc::local_now(),
@@ -338,6 +338,24 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
+/// This PC's name for the snapshot claim: `%COMPUTERNAME%` on Windows, the hostname on Linux,
+/// the computer name from System Settings on macOS (step 16b).
+fn machine_name() -> Option<String> {
+    let name = if cfg!(windows) {
+        std::env::var("COMPUTERNAME").ok()
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("scutil")
+            .args(["--get", "ComputerName"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+    } else {
+        std::fs::read_to_string("/proc/sys/kernel/hostname").ok()
+    };
+    name.map(|n| n.trim().to_owned()).filter(|n| !n.is_empty())
+}
+
 /// The data folder and why (`data_location::locate`): `$MAATWERK_DATA_DIR`, `data/` in the
 /// project folder for a debug build, the folder chosen on this PC (`local_config`), `data/`
 /// beside the exe if it exists; `None` on first run.
@@ -369,6 +387,12 @@ mod tests {
             tmp.join("output"),
             |_| {},
         )
+    }
+
+    #[test]
+    fn this_pc_has_a_name_on_every_platform() {
+        let name = machine_name().expect("COMPUTERNAME, scutil or /proc hostname");
+        assert_eq!(name, name.trim());
     }
 
     #[test]

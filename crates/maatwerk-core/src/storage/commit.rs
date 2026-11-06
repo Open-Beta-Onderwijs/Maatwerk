@@ -24,11 +24,33 @@ pub(crate) const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 /// Default folder for the lock files: per user, local, never synced. `%LOCALAPPDATA%` rather
 /// than `%TEMP%`, whose value a process can change (review 4a m2). Exclusion covers processes of
 /// the same user on this PC; another user on the same PC has their own OneDrive copy anyway.
+///
+/// Elsewhere also per user (step 16b): a shared `/tmp/maatwerk-locks` made by one user is not
+/// writable for the next, whose saves would then fail. Linux: `$XDG_RUNTIME_DIR` (private,
+/// cleared at logout), else `~/.cache`; macOS: `~/Library/Caches`.
 pub fn default_lock_dir() -> PathBuf {
-    match std::env::var_os("LOCALAPPDATA").filter(|v| !v.is_empty()) {
-        Some(local) => PathBuf::from(local).join("maatwerk").join("locks"),
-        None => std::env::temp_dir().join("maatwerk-locks"),
+    lock_dir_from(|name| std::env::var_os(name), std::env::temp_dir)
+}
+
+fn lock_dir_from(
+    var: impl Fn(&str) -> Option<std::ffi::OsString>,
+    temp: impl FnOnce() -> PathBuf,
+) -> PathBuf {
+    let var = |name: &str| var(name).filter(|v| !v.is_empty()).map(PathBuf::from);
+    if let Some(local) = var("LOCALAPPDATA") {
+        return local.join("maatwerk").join("locks");
     }
+    let home = var("HOME");
+    if cfg!(target_os = "macos") {
+        if let Some(home) = home {
+            return home.join("Library/Caches/maatwerk/locks");
+        }
+    } else if let Some(run) = var("XDG_RUNTIME_DIR") {
+        return run.join("maatwerk-locks");
+    } else if let Some(cache) = var("XDG_CACHE_HOME").or_else(|| home.map(|h| h.join(".cache"))) {
+        return cache.join("maatwerk").join("locks");
+    }
+    temp().join("maatwerk-locks")
 }
 
 pub(crate) struct CommitLock {
@@ -90,5 +112,40 @@ impl CommitLock {
                 Err(TryLockError::Error(e)) => return Err(Error::io(shown(), e)),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn dir(vars: &[(&str, &str)]) -> PathBuf {
+        let vars: HashMap<String, String> = vars
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
+        lock_dir_from(|n| vars.get(n).map(Into::into), || PathBuf::from("/tmp"))
+    }
+
+    #[test]
+    fn the_lock_dir_is_per_user_on_every_platform() {
+        let win = dir(&[("LOCALAPPDATA", "C:/Users/a/AppData/Local"), ("HOME", "/h")]);
+        assert_eq!(win, Path::new("C:/Users/a/AppData/Local/maatwerk/locks"));
+        let run = dir(&[("XDG_RUNTIME_DIR", "/run/user/1000"), ("HOME", "/home/a")]);
+        let home = dir(&[("HOME", "/home/a")]);
+        if cfg!(target_os = "macos") {
+            assert_eq!(run, Path::new("/home/a/Library/Caches/maatwerk/locks"));
+            assert_eq!(home, run);
+        } else {
+            assert_eq!(run, Path::new("/run/user/1000/maatwerk-locks"));
+            assert_eq!(home, Path::new("/home/a/.cache/maatwerk/locks"));
+            let cache = dir(&[("XDG_CACHE_HOME", "/c"), ("HOME", "/home/a")]);
+            assert_eq!(cache, Path::new("/c/maatwerk/locks"));
+        }
+        assert_eq!(
+            dir(&[("HOME", "")]),
+            Path::new("/tmp/maatwerk-locks"),
+            "last resort"
+        );
     }
 }

@@ -32,6 +32,12 @@ build:linux`, CI job `linux` on ubuntu-24.04 (glibc 2.39+): npm test, WebKit e2e
 file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); image import
    already refuses case-only clashes.
 
+3. **Done** (local): the 16a backlog. `default_lock_dir` is per user everywhere (a shared
+   `/tmp/maatwerk-locks` made by one Linux user blocked the next user's saves): Linux
+   `$XDG_RUNTIME_DIR`, else `~/.cache`; macOS `~/Library/Caches`. Snapshot `who`:
+   `machine_name()` (COMPUTERNAME / `scutil --get ComputerName` / `/proc/sys/kernel/hostname`).
+   `early_log_dir` mirrors Tauri's `app_log_dir` on macOS and Linux too.
+
 ## Step 16a (done, tag `step-16a`)
 
 **Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned
@@ -76,7 +82,7 @@ Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge wit
    ok; artifact `maatwerk-macos-universal` (.zip + .dmg, ~114 MB). Tagged `step-16a` (local).
    Next: step 16b (Linux). The step 16 review and the 0.7 release come after 16b.
 
-Backlog candidates (16b or later): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
+Backlog candidates (done in 16b item 3): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
 "onbekend"); `default_lock_dir` falls back to `temp_dir()` off Windows (per user on macOS,
 shared `/tmp` on Linux: 16b); `early_log_dir` is Windows-only.
 

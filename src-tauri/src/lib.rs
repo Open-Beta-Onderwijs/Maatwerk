@@ -196,11 +196,21 @@ fn init_logging(log_dir: Option<std::path::PathBuf>) {
 /// The log folder Tauri's `app_log_dir` resolves to, known before the app is built so that
 /// start failures are logged too (review 6 M1). Elsewhere logging starts in `setup`.
 fn early_log_dir(identifier: &str) -> Option<std::path::PathBuf> {
+    use std::path::PathBuf;
+    let var = |name: &str| {
+        std::env::var_os(name)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
+    // The folders Tauri's `app_log_dir` uses (step 16b: also off Windows).
     if cfg!(windows) {
-        std::env::var_os("LOCALAPPDATA")
-            .map(|dir| std::path::PathBuf::from(dir).join(identifier).join("logs"))
+        var("LOCALAPPDATA").map(|dir| dir.join(identifier).join("logs"))
+    } else if cfg!(target_os = "macos") {
+        var("HOME").map(|home| home.join("Library/Logs").join(identifier))
     } else {
-        None
+        var("XDG_DATA_HOME")
+            .or_else(|| var("HOME").map(|home| home.join(".local/share")))
+            .map(|dir| dir.join(identifier).join("logs"))
     }
 }
 
