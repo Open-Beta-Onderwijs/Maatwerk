@@ -4,8 +4,9 @@
 //! admin's data check (`validate-data`) and the integrity stamps (ADR-0003 C1, C19). Not
 //! reference methods.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
+use maatwerk_core::data_location::{self, LOCAL_CONFIG_FILE, LocalConfig};
 use maatwerk_core::integrity::StampState;
 use maatwerk_core::migrate::{self, Action};
 use maatwerk_core::paths::display_path;
@@ -13,11 +14,12 @@ use maatwerk_core::typst_svc::local_now;
 use maatwerk_core::validate::{self, IssueKind, Severity};
 use serde::Serialize;
 use specta::Type;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager, State, Window};
+use tauri_plugin_dialog::DialogExt;
 
 use crate::commands::{Res, blocking, rel};
 use crate::error::CommandError;
-use crate::state::Shared;
+use crate::state::{DataFolderSource, Shared};
 
 #[derive(Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -201,4 +203,90 @@ pub async fn accept_stamp(state: State<'_, Shared>, rel_path: String) -> Res<()>
         Ok(c.storage()?.accept_stamp(&rel)?)
     })
     .await
+}
+
+/// `local-config.json` in the app's config folder (beside `session.json`), local to this PC.
+pub(crate) fn local_config_path(app: &AppHandle) -> Res<PathBuf> {
+    app.path()
+        .app_config_dir()
+        .map(|d| d.join(LOCAL_CONFIG_FILE))
+        .map_err(|e| CommandError::internal(format!("no app config folder: {e}")))
+}
+
+/// Opens the folder dialog and stores the chosen data folder on this PC (step 16a); `null` if
+/// cancelled. The UI restarts the app afterwards. Refused when `$MAATWERK_DATA_DIR` or a dev
+/// build fixes the folder.
+#[tauri::command]
+#[specta::specta]
+pub async fn choose_data_folder(
+    state: State<'_, Shared>,
+    app: AppHandle,
+    window: Window,
+) -> Res<Option<String>> {
+    let source = blocking(state, |c| Ok(c.source())).await?;
+    if matches!(source, Some(DataFolderSource::Env | DataFolderSource::Dev)) {
+        return Err(maatwerk_core::Error::InvalidArgument {
+            message: "De gegevensmap ligt vast (MAATWERK_DATA_DIR of een ontwikkelversie)."
+                .to_owned(),
+        }
+        .into());
+    }
+    let config = local_config_path(&app)?;
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .set_title("Gegevensmap van Maatwerk kiezen")
+            .set_parent(&window)
+            .blocking_pick_folder()
+    })
+    .await
+    .map_err(|e| CommandError::internal(format!("dialog task failed: {e}")))?;
+    let Some(picked) = picked.and_then(|p| p.into_path().ok()) else {
+        return Ok(None);
+    };
+    let dir = tauri::async_runtime::spawn_blocking(move || save_choice(&config, &picked))
+        .await
+        .map_err(|e| CommandError::internal(format!("blocking task failed: {e}")))??;
+    Ok(Some(display_path(&dir)))
+}
+
+/// Checks the picked folder (`data_location::check_chosen`) and stores the data folder it
+/// stands for in the local config.
+pub(crate) fn save_choice(config: &Path, picked: &Path) -> Res<PathBuf> {
+    let dir = data_location::check_chosen(picked)?;
+    let mut local = LocalConfig::load(config);
+    local.data_dir = Some(dir.clone());
+    local.save(config)?;
+    tracing::info!("data folder chosen: {}", dir.display());
+    Ok(dir)
+}
+
+#[cfg(test)]
+mod choose_tests {
+    use super::*;
+    use crate::error::ErrorCode;
+
+    #[test]
+    fn a_choice_is_stored_and_a_wrong_folder_is_refused() {
+        let tmp = tempfile::tempdir().unwrap();
+        let config = tmp.path().join("cfg").join(LOCAL_CONFIG_FILE);
+        let shared = tmp.path().join("gedeeld");
+        std::fs::create_dir_all(shared.join("data").join("gebruikers")).unwrap();
+        assert_eq!(save_choice(&config, &shared).unwrap(), shared.join("data"));
+        assert_eq!(
+            LocalConfig::load(&config).data_dir,
+            Some(shared.join("data"))
+        );
+
+        let other = tmp.path().join("anders");
+        std::fs::create_dir_all(&other).unwrap();
+        std::fs::write(other.join("brief.txt"), b"").unwrap();
+        let err = save_choice(&config, &other).unwrap_err();
+        assert_eq!(err.code, ErrorCode::InvalidArgument);
+        assert_eq!(
+            LocalConfig::load(&config).data_dir,
+            Some(shared.join("data")),
+            "a refused folder keeps the earlier choice"
+        );
+    }
 }

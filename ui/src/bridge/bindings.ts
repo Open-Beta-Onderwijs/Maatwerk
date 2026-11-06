@@ -45,6 +45,12 @@ export const commands = {
 	 *  Goes through the normal exit (presence offline, watcher stopped; review 6 m1).
 	 */
 	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
+	/**
+	 *  Opens the folder dialog and stores the chosen data folder on this PC (step 16a); `null` if
+	 *  cancelled. The UI restarts the app afterwards. Refused when `$MAATWERK_DATA_DIR` or a dev
+	 *  build fixes the folder.
+	 */
+	chooseDataFolder: () => typedError<string | null, CommandError>(__TAURI_INVOKE("choose_data_folder")),
 	/**  UTF-8 text; `null` if missing. */
 	readTextFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_text_file", { relPath })),
 	/**  UTF-8 text with its hash; `null` if missing. */
@@ -257,6 +263,9 @@ export type DataCheck = {
 	issues: DataIssue[],
 };
 
+/**  [`data_location::Source`] for the UI. */
+export type DataFolderSource = "env" | "dev" | "chosen" | "besideApp";
+
 /**  What the UI checks first at start (review 4b m5): an unusable folder gets its own screen. */
 export type DataFolderStatus = {
 	dataDir: string,
@@ -269,6 +278,11 @@ export type DataFolderStatus = {
 	 *  (PLAN-2 decision 5). Checked again on every write.
 	 */
 	readOnly: string | null,
+	/**
+	 *  Why the folder is where it is; `null` on first run. The UI offers "Andere map kiezen"
+	 *  only for `chosen` and `besideApp` (and on first run).
+	 */
+	source: DataFolderSource | null,
 };
 
 export type DataIssue = {
@@ -403,7 +417,9 @@ export type EditorVragen = {
  */
 export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "needs_migration" | "migration_blocked" | "invalid_argument" | 
 /**  `school.json` asks for a newer app (`minAppVersion`): writes are refused. */
-"read_only" | "io" | "typst" | "internal";
+"read_only" | 
+/**  No data folder set, chosen or beside the program yet (first run, step 16a). */
+"no_data_folder" | "io" | "typst" | "internal";
 
 /**  Structured context; only the fields that apply are set. */
 export type ErrorDetails = {

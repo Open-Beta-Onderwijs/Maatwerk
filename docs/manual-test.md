@@ -32,6 +32,17 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
+- [ ] **M-START-8** First run (step 16a), on the **release** exe in an empty folder (no `data\`
+      beside it, `MAATWERK_DATA_DIR` unset, no `local-config.json` in
+      `%APPDATA%
+l.openbetaonderwijs.maatwerk`): the screen "Kies de gegevensmap". "Map
+      kiezen…" opens a folder dialog; Cancel changes nothing. A folder with other files (e.g.
+      Documenten) is refused with a Dutch reason. The shared folder holding `data\` is accepted:
+      "Gegevensmap: …\data. Maatwerk start opnieuw…", the app restarts on that folder and the
+      next start goes straight there. An empty folder is accepted and filled (admin account).
+- [ ] **M-START-9** Rename the chosen folder while the app is closed, start: "Maatwerk kan de
+      gegevensmap niet openen" with "Andere map kiezen…"; choose the renamed folder: the app
+      restarts on it. With `MAATWERK_DATA_DIR` set to a missing folder the button is not there.
 - [ ] **M-START-4** No WebView2 (simulated), on the **release** exe:
 
       ```powershell

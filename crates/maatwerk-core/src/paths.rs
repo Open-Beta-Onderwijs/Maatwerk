@@ -7,7 +7,6 @@
 //! into a filesystem path goes through [`DataDir::resolve`], which also rejects symlink and
 //! junction escapes. The reference joined paths unchecked (`ipc-api.md`, Conventions).
 
-use std::ffi::OsString;
 use std::fmt;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -16,22 +15,6 @@ use crate::error::{Error, Result};
 
 /// Environment variable that overrides the data folder location (tests, manual runs).
 pub const DATA_DIR_ENV: &str = "MAATWERK_DATA_DIR";
-
-/// Where the data folder lives: `$MAATWERK_DATA_DIR` if set, else `data/` in the project folder
-/// when running from a dev build, else `data/` next to the exe (the reference's `getAppDir`).
-pub fn data_dir_location(
-    env_override: Option<OsString>,
-    exe: &Path,
-    dev_project_dir: Option<&Path>,
-) -> PathBuf {
-    if let Some(dir) = env_override.filter(|d| !d.is_empty()) {
-        return PathBuf::from(dir);
-    }
-    if let Some(project) = dev_project_dir {
-        return project.join("data");
-    }
-    exe.parent().unwrap_or(Path::new(".")).join("data")
-}
 
 /// A validated relative path inside the data folder, stored with `/` separators.
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -338,23 +321,6 @@ mod tests {
         assert_eq!(p.file_name(), "Logo.PNG");
         assert_eq!(p.extension().as_deref(), Some("png"));
         assert_eq!(RelPath::parse(".hidden").unwrap().extension(), None);
-    }
-
-    #[test]
-    fn data_dir_location_order() {
-        let exe = Path::new("/apps/maatwerk/maatwerk.exe");
-        assert_eq!(
-            data_dir_location(Some("/tmp/d".into()), exe, Some(Path::new("/proj"))),
-            PathBuf::from("/tmp/d")
-        );
-        assert_eq!(
-            data_dir_location(Some("".into()), exe, Some(Path::new("/proj"))),
-            Path::new("/proj").join("data")
-        );
-        assert_eq!(
-            data_dir_location(None, exe, None),
-            Path::new("/apps/maatwerk").join("data")
-        );
     }
 
     #[test]

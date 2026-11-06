@@ -295,6 +295,7 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     },
     dataFolderStatus: () => orThrow(c.dataFolderStatus()),
     restartApp: () => c.restartApp(),
+    chooseDataFolder: () => orThrow(c.chooseDataFolder()),
     problemInfo: () => c.problemInfo(),
     openLogFolder: () => orThrow(c.openLogFolder()).then(() => undefined),
     logUiError: (message) => c.logUiError(message),

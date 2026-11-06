@@ -13,8 +13,9 @@ Maatwerk is one portable Windows exe, no installer.
 1. Download `maatwerk.exe` (and `maatwerk.exe.sha256`) from the release, or the CI artifact
    `maatwerk-windows-x64`. Check the checksum:
    `(Get-FileHash maatwerk.exe -Algorithm SHA256).Hash.ToLower()`.
-2. Put it in the shared folder of the school, next to the `data\` folder (on first start an
-   empty `data\` is created next to the exe).
+2. Put it in the shared folder of the school, next to the `data\` folder. Without a `data\`
+   folder beside it, the first start asks for the data folder ("Kies de gegevensmap"; see
+   below).
 3. Start it. It needs Microsoft Edge WebView2 (standard on Windows 10 and 11); without it,
    Maatwerk says so in a message box.
 
@@ -22,12 +23,18 @@ macOS is planned (`ROADMAP.md`, X-04).
 
 ## The data folder
 
-- `data\` next to the exe holds everything: school settings, users, groups, students, exams,
+- The data folder holds everything: school settings, users, groups, students, exams,
   scores, observaties, opdrachten (JSON files and Typst folders, format v2:
   `docs/reference/data-files-v2.md`). Printed PDFs go to `rapporten\` next to it.
 - Every teacher's app watches the folder and shows colleagues' changes; a save that would
   overwrite a colleague's newer change is refused with a message, never done silently.
-- To use a different folder (tests, a copy): set `MAATWERK_DATA_DIR` before starting.
+- Where it is, in this order: `MAATWERK_DATA_DIR` (tests, a copy), the folder chosen on this PC,
+  `data\` next to the exe if that exists. Otherwise the first start asks: choose the shared
+  data folder (the one with `config.json`, or the folder that holds `data`), or an empty folder
+  for a new school. The choice is stored on this PC only
+  (`%APPDATA%
+l.openbetaonderwijs.maatwerk\local-config.json`). When the folder cannot be
+  opened later, the error screen offers "Andere map kiezen…".
 - A folder from the old Electron app is converted once, after a backup; see
   `docs/cutover-runbook.md`.
 

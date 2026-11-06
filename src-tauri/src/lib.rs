@@ -80,6 +80,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::get_data_dir,
             commands::data_folder_status,
             commands::restart_app,
+            data::choose_data_folder,
             commands::read_text_file,
             commands::read_text_file_versioned,
             commands::write_text_file,
@@ -242,20 +243,35 @@ pub fn run() {
             let output_dir = app.path().app_cache_dir()?.join("output");
             let handle = app.handle().clone();
             let slot = Arc::new(state::CoreSlot::default());
-            let data_dir = state::data_dir();
+            let location = state::locate_data_dir(
+                &app.path()
+                    .app_config_dir()?
+                    .join(maatwerk_core::data_location::LOCAL_CONFIG_FILE),
+            );
+            let source = location.as_ref().map(|l| l.source);
+            let data_dir = location.map(|l| l.dir).unwrap_or_default();
             let (failed_dir, failed_session, failed_output) =
                 (data_dir.clone(), session_file.clone(), output_dir.clone());
             // Off the main thread (review 6 m6): commands wait for it on their blocking thread.
             slot.open_in_background(
                 move || {
+                    if source.is_none() {
+                        // First run (step 16a): the UI asks for the folder.
+                        let none = error::CommandError::no_data_folder();
+                        return state::Core::failed(data_dir, session_file, output_dir, none);
+                    }
                     state::Core::open(data_dir, session_file, output_dir, move |batch| {
                         let batch = batch.into_iter().map(DataChange::from).collect();
                         if let Err(e) = DataChanged(batch).emit(&handle) {
                             tracing::warn!("emitting data:changed failed: {e}");
                         }
                     })
+                    .located(source)
                 },
-                move |e| state::Core::failed(failed_dir, failed_session, failed_output, e),
+                move |e| {
+                    state::Core::failed(failed_dir, failed_session, failed_output, e)
+                        .located(source)
+                },
                 |core| core.start_snapshot(),
             );
             app.manage::<state::Shared>(slot);

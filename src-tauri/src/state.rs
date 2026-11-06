@@ -9,9 +9,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, PoisonError};
 
 use maatwerk_core::auth::Auth;
+use maatwerk_core::data_location::{self, Inputs, LocalConfig, Location, Source};
 use maatwerk_core::opdracht_images;
 use maatwerk_core::outputs::OutputStore;
-use maatwerk_core::paths::{DATA_DIR_ENV, data_dir_location, display_path};
+use maatwerk_core::paths::display_path;
 use maatwerk_core::presence::Presence;
 use maatwerk_core::storage::{LocalSession, Storage};
 use maatwerk_core::typst_svc::FontStore;
@@ -24,6 +25,8 @@ use crate::error::CommandError;
 pub struct Core {
     /// The data folder as configured, for the startup error screen when it cannot be opened.
     data_dir: PathBuf,
+    /// Why the data folder is where it is; `None` on first run.
+    source: Option<DataFolderSource>,
     /// `Err` when the data folder cannot be used (e.g. an unsupported `schema_version`, C1):
     /// every storage command then returns this error, so the UI can show it.
     storage: Result<Arc<Storage>, CommandError>,
@@ -49,6 +52,30 @@ pub struct DataFolderStatus {
     /// `minAppVersion` from `school.json` when it is newer than this app: the app may only read
     /// (PLAN-2 decision 5). Checked again on every write.
     pub read_only: Option<String>,
+    /// Why the folder is where it is; `null` on first run. The UI offers "Andere map kiezen"
+    /// only for `chosen` and `besideApp` (and on first run).
+    pub source: Option<DataFolderSource>,
+}
+
+/// [`data_location::Source`] for the UI.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum DataFolderSource {
+    Env,
+    Dev,
+    Chosen,
+    BesideApp,
+}
+
+impl From<Source> for DataFolderSource {
+    fn from(source: Source) -> DataFolderSource {
+        match source {
+            Source::Env => DataFolderSource::Env,
+            Source::Dev => DataFolderSource::Dev,
+            Source::Chosen => DataFolderSource::Chosen,
+            Source::BesideApp => DataFolderSource::BesideApp,
+        }
+    }
 }
 
 /// Managed Tauri state; cloned into blocking tasks. The core is opened on a background thread
@@ -172,6 +199,7 @@ impl Core {
     ) -> Core {
         Core {
             data_dir,
+            source: None,
             storage,
             presence: Presence::new(),
             session: LocalSession::new(session_file),
@@ -187,6 +215,16 @@ impl Core {
     }
 
     /// The data folder as configured (also when it could not be opened).
+    /// Records why the data folder is where it is (for the status).
+    pub fn located(mut self, source: Option<Source>) -> Core {
+        self.source = source.map(DataFolderSource::from);
+        self
+    }
+
+    pub fn source(&self) -> Option<DataFolderSource> {
+        self.source
+    }
+
     pub fn data_dir(&self) -> &std::path::Path {
         &self.data_dir
     }
@@ -199,12 +237,14 @@ impl Core {
                 error: None,
                 app_version: storage.app_version().to_owned(),
                 read_only: storage.read_only(),
+                source: self.source,
             },
             Err(e) => DataFolderStatus {
                 data_dir: display_path(&self.data_dir),
                 error: Some(e.clone()),
                 app_version: maatwerk_core::app_version::APP_VERSION.to_owned(),
                 read_only: None,
+                source: self.source,
             },
         }
     }
@@ -298,13 +338,20 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-/// The data folder: `$MAATWERK_DATA_DIR`, else `data/` in the project folder for a debug
-/// build, else `data/` next to the exe.
-pub fn data_dir() -> PathBuf {
+/// The data folder and why (`data_location::locate`): `$MAATWERK_DATA_DIR`, `data/` in the
+/// project folder for a debug build, the folder chosen on this PC (`local_config`), `data/`
+/// beside the exe if it exists; `None` on first run.
+pub fn locate_data_dir(local_config: &std::path::Path) -> Option<Location> {
     let exe = std::env::current_exe().unwrap_or_default();
     let project =
         cfg!(debug_assertions).then(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."));
-    data_dir_location(std::env::var_os(DATA_DIR_ENV), &exe, project.as_deref())
+    let config = LocalConfig::load(local_config);
+    data_location::locate(&Inputs {
+        env_override: data_location::env_override(),
+        dev_project_dir: project.as_deref(),
+        chosen: config.data_dir.as_deref(),
+        exe: &exe,
+    })
 }
 
 #[cfg(test)]

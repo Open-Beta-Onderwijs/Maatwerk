@@ -24,6 +24,8 @@ pub enum ErrorCode {
     InvalidArgument,
     /// `school.json` asks for a newer app (`minAppVersion`): writes are refused.
     ReadOnly,
+    /// No data folder set, chosen or beside the program yet (first run, step 16a).
+    NoDataFolder,
     Io,
     Typst,
     Internal,
@@ -61,6 +63,15 @@ impl CommandError {
         CommandError {
             code: ErrorCode::Internal,
             message,
+            details: ErrorDetails::default(),
+        }
+    }
+
+    /// First run: the teacher has to choose the data folder.
+    pub fn no_data_folder() -> CommandError {
+        CommandError {
+            code: ErrorCode::NoDataFolder,
+            message: "no data folder chosen yet".to_owned(),
             details: ErrorDetails::default(),
         }
     }

@@ -164,7 +164,11 @@ export class MockApi implements MaatwerkApi {
     error: null,
     appVersion: MOCK_APP_VERSION,
     readOnly: null,
+    source: 'besideApp',
   };
+  /** What the folder dialog of `chooseDataFolder` picks: a folder, `null` (cancelled) or a
+   *  refusal; tests set it. */
+  pickedFolder: string | null | { refused: string } = null;
   /** What `validateDataFolder` and `stampIssues` report; tests fill them. */
   dataCheck: DataCheck = { filesChecked: 0, issues: [] };
   stamps: StampIssue[] = [];
@@ -762,6 +766,15 @@ export class MockApi implements MaatwerkApi {
 
   async restartApp(): Promise<void> {
     this.record('restartApp', []);
+  }
+
+  async chooseDataFolder(): Promise<string | null> {
+    this.record('chooseDataFolder', []);
+    const picked = this.pickedFolder;
+    if (picked !== null && typeof picked === 'object') {
+      throw { code: 'invalid_argument', message: picked.refused, details: {} };
+    }
+    return picked;
   }
 
   async problemInfo(): Promise<ProblemInfo> {
