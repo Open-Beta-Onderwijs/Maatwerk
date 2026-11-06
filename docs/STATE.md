@@ -22,11 +22,24 @@ Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge wit
    gegevensmap"), "Andere map kiezen…" on the startup error screen for `chosen`/`besideApp`.
    Tests: 4 core, 1 app, 4 Vitest, 3 e2e (`e2e/platforms.spec.ts`); manual M-START-8/9.
    Behaviour change: a Windows exe without `data/` beside it asks instead of creating one.
-2. Next: font stacks for macOS/Linux (UI and editor CSS); emoji in the UI.
-3. Playwright WebKit project; run the e2e suite on WebKit, fix what breaks (score grid,
-   Chart.js, CodeMirror, pdf.js, dialog, sticky headers, tab bar).
-4. CI macOS job (tests, WebKit e2e, universal `.app`/`.dmg`, ad-hoc signed, artifact).
-5. Docs: README macOS install ("Open anyway"), release.md, decision note; gate; tag `step-16a`.
+2. **Done** (`f1a62f2`): font stacks fall back to system fonts (`system-ui`, `ui-monospace`,
+   Menlo, DejaVu Sans Mono); Windows keeps Segoe UI/Consolas first (no visual change). Emoji in
+   the UI: the OS font (Apple Color Emoji); Typst uses the bundled Noto as before.
+3. **Done** (`9a6a6e1`): Playwright project `webkit` (`npm run test:e2e:webkit`, runs on
+   Windows too after `npx playwright install webkit`): 215/215 locally (one timing flake per
+   full parallel run, a different test each time; editor preview tests under load). WebKit
+   findings, all test-side: native `<select>` -> CSP `style-src-attr` report (ignored on WebKit
+   in `watchErrors`), no clipboard permissions (`pasteText`/`copySelection`), Chromium-only
+   `shadowRoot.getSelection`, per-glyph SVG hit test, Playwright scroll vs `content-visibility`,
+   aborted module import on a second navigation. App fix: Cmd+Z / Cmd+Shift+Z / Cmd+Y undo.
+4. **Done** (`e800328`): CI job `macos` and `src-tauri/tauri.macos.conf.json` (app + dmg, ad-hoc
+   `-`, macOS 12+), `npm run build:mac`; README "macOS" ("Toch openen"), release.md. Branch
+   pushed; **CI result pending** (first run).
+5. Next: fix what the macOS CI run shows; gate; tag `step-16a`; stop and report.
+
+Backlog candidates (16b or later): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
+"onbekend"); `default_lock_dir` falls back to `temp_dir()` off Windows (per user on macOS,
+shared `/tmp` on Linux: 16b); `early_log_dir` is Windows-only.
 
 ## Step 15 progress
 
