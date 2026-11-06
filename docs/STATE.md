@@ -42,8 +42,14 @@ Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge wit
    none on Windows. Two causes: the specs pressed `Control+A` / `Control+End` / Ctrl+click, which
    are other actions on a Mac (now `ControlOrMeta`); and a real bug: WebKit on macOS skips
    buttons on Tab, so the dialog focus trap never saw its last button focused and focus left the
-   dialog. The trap now moves focus itself (`ui/src/components/dialog.ts`). Then: CI green, tag
-   `step-16a`, stop and report.
+   dialog. The trap now moves focus itself (`ui/src/components/dialog.ts`).
+7. Second run (`42205393394`): 2 editor e2e failures on macOS. setText's Delete + insert are two
+   edits and the slower runner compiled the empty text in between, so "the preview stays on
+   errors" kept an empty preview. Those steps now add ` #fout` / ` #traag` at the end (one edit).
+8. **Done.** Third run `42209047813` on `6d65139`: all three jobs green; macOS 214 WebKit e2e,
+   cargo test, real-pdf; `Maatwerk.app` universal (`lipo`: x86_64 arm64), `codesign --verify`
+   ok; artifact `maatwerk-macos-universal` (.zip + .dmg, ~114 MB). Tagged `step-16a` (local).
+   Next: step 16b (Linux). The step 16 review and the 0.7 release come after 16b.
 
 Backlog candidates (16b or later): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
 "onbekend"); `default_lock_dir` falls back to `temp_dir()` off Windows (per user on macOS,
