@@ -107,6 +107,9 @@ tests differ from Chromium only where the engine or Playwright does:
   `content-visibility: auto` card (scroll with the element's own `scrollIntoView` first); a
   navigation while the first page still imports `app.js` logs "Importing a module script failed."
   (wait for the start screen first).
+- On the macOS runner the specs press `ControlOrMeta` for select all, document end, undo and
+  Ctrl+click: `Control+A` / `Control+End` are other actions on a Mac. Tests of the Ctrl keys
+  themselves (G46) keep `Control`.
 - Timing: a full parallel run is slower than Chromium; poll timeouts that assume Chromium speed
   may need more room (G52).
 

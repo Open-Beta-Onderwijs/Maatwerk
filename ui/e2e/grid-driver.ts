@@ -122,7 +122,7 @@ export async function typeInto(
   if (text === '') {
     // Clear through the editor: F2 opens it, then select all and delete.
     await page.keyboard.press('F2');
-    await page.keyboard.press('Control+A');
+    await page.keyboard.press('ControlOrMeta+A');
     await page.keyboard.press('Backspace');
   } else {
     await page.keyboard.type(text);

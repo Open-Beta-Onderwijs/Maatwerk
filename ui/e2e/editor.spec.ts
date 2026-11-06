@@ -27,7 +27,7 @@ async function setText(page: Page, frame: FrameLocator, text: string): Promise<v
   // Delete through CodeMirror's keymap, then one input event (fast, no auto-closing
   // brackets). Typing over a multi-line selection natively makes Chrome insert styled spans,
   // which the strict CSP reports.
-  await page.keyboard.press('Control+A');
+  await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.press('Delete');
   await page.keyboard.insertText(text);
 }
@@ -40,7 +40,7 @@ test('the preview shows only the changed pages and keeps them on errors', async 
   const first = await frame.locator('.svg-page').first().getAttribute('data-hash');
 
   // Type at the end (no compile of an emptied text in between).
-  await page.keyboard.press('Control+End');
+  await page.keyboard.press('ControlOrMeta+End');
   await page.keyboard.type(', anders');
   await expect(frame.locator('.svg-page').nth(1)).toContainText('Tweede, anders');
   expect(await frame.locator('.svg-page').first().getAttribute('data-hash')).toBe(first);
@@ -98,7 +98,7 @@ test('the vragen panel lists labels, points and checks', async ({ page }) => {
 test('autocomplete, hover and Ctrl+click come from the session', async ({ page }) => {
   const { frame } = await openEditor(page);
   await setText(page, frame, '#let mijn-blok = 1\n\n#mijn-blok\n');
-  await page.keyboard.press('Control+End');
+  await page.keyboard.press('ControlOrMeta+End');
   await page.keyboard.type('#tab');
   const option = frame.locator('.cm-tooltip-autocomplete li', { hasText: 'table' });
   // A click, not Enter: results arrive on every keystroke and Enter could race the list.
@@ -112,7 +112,7 @@ test('autocomplete, hover and Ctrl+click come from the session', async ({ page }
   await frame
     .locator('.cm-line')
     .nth(2)
-    .click({ modifiers: ['Control'] });
+    .click({ modifiers: ['ControlOrMeta'] });
   await expect
     .poll(() =>
       frame.locator('.cm-content').evaluate(() => {
@@ -215,7 +215,7 @@ test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async (
 
   // Undo brings my version back; it is saved again.
   await frame.locator('.cm-content').click();
-  await page.keyboard.press('Control+Z');
+  await page.keyboard.press('ControlOrMeta+Z');
   await expect(frame.locator('.cm-content')).toContainText('mijn aanpassing');
   await expect
     .poll(() => withMock(page, (m, rel) => m.peek(rel), `opdrachten/${id}/lib.typ`))
@@ -252,7 +252,7 @@ test('lib.typ: a current copy edited in the editor offers Bekijk verschillen', a
   await frame.getByRole('button', { name: 'Sluiten' }).click();
 
   await frame.locator('.cm-content').click();
-  await page.keyboard.press('Control+End');
+  await page.keyboard.press('ControlOrMeta+End');
   await page.keyboard.insertText('// mijn regel\n');
   await banner.getByRole('button', { name: 'Bekijk verschillen' }).click();
   await expect(frame.locator('.diff-removed')).toHaveText('- // mijn regel');
