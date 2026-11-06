@@ -11,6 +11,7 @@
     "dev:mock": "npm run dev:mock -w ui",
     "build:exe": "tauri build --no-bundle",
     "build:mac": "tauri build --target universal-apple-darwin",
+    "build:linux": "tauri build",
     "build:ui": "npm run build -w ui",
     "bindings": "node tools/bindings.mjs",
     "notices": "node tools/notices/generate.mjs",

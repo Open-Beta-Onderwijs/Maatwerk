@@ -180,6 +180,17 @@ fn is_data_folder(dir: &Path) -> bool {
     dir.join("config.json").is_file() || dir.join("gebruikers").is_dir()
 }
 
+/// The program file the teacher sees, for [`Inputs::exe`]: an AppImage runs from a read-only
+/// mount (`/tmp/.mount_*`), so on Linux the AppImage file itself (`$APPIMAGE`, set by its
+/// runtime) when that is an absolute path, so `data/` beside the AppImage works like beside the
+/// Windows exe (step 16b).
+pub fn program_path(current_exe: PathBuf, appimage: Option<OsString>) -> PathBuf {
+    match appimage.map(PathBuf::from) {
+        Some(file) if cfg!(target_os = "linux") && file.is_absolute() => file,
+        _ => current_exe,
+    }
+}
+
 /// Reads `$MAATWERK_DATA_DIR`.
 pub fn env_override() -> Option<OsString> {
     std::env::var_os(DATA_DIR_ENV)
@@ -250,6 +261,23 @@ mod tests {
             "/Users/x/Maatwerk.application/data"
         )));
         assert!(!in_app_bundle(Path::new("C:/Apps/Maatwerk/maatwerk.exe")));
+    }
+
+    #[test]
+    fn an_appimage_counts_as_the_program_on_linux() {
+        let exe = PathBuf::from("/tmp/.mount_MaatwX/usr/bin/maatwerk");
+        let file = std::env::temp_dir().join("Maatwerk.AppImage");
+        let got = program_path(exe.clone(), Some(file.clone().into()));
+        assert_eq!(
+            got,
+            if cfg!(target_os = "linux") {
+                file
+            } else {
+                exe.clone()
+            }
+        );
+        assert_eq!(program_path(exe.clone(), Some("relatief".into())), exe);
+        assert_eq!(program_path(exe.clone(), None), exe);
     }
 
     #[test]

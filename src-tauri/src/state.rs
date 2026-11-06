@@ -342,7 +342,10 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
 /// project folder for a debug build, the folder chosen on this PC (`local_config`), `data/`
 /// beside the exe if it exists; `None` on first run.
 pub fn locate_data_dir(local_config: &std::path::Path) -> Option<Location> {
-    let exe = std::env::current_exe().unwrap_or_default();
+    let exe = data_location::program_path(
+        std::env::current_exe().unwrap_or_default(),
+        std::env::var_os("APPIMAGE"),
+    );
     let project =
         cfg!(debug_assertions).then(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."));
     let config = LocalConfig::load(local_config);

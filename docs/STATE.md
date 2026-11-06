@@ -1,17 +1,34 @@
 # State
 
-Last updated: 2026-11-06 (step 16a in progress) Branch: `step/16-platforms` (from `main` `3319d3d`)
-Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed),
+Last updated: 2026-11-06 (step 16b in progress) Branch: `step/16-platforms` (from `main` `3319d3d`)
+Last tags: `step-16a` (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed),
 `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags
 are local only)
 
 ## Current step
 
+**Step 16b** (Platforms: Linux). WebKitGTK, AppImage + `.deb`, case-sensitive paths, the Linux
+sync advice (**STOP: user approves it before it goes into the README**), the 16a backlog below,
+then visual baselines per platform in CI. Then the step 16 review and the 0.7 release.
+
+## Step 16b progress
+
+Plan: (1) CI job `linux` + packages; (2) case-sensitive path tests (Windows-made data folder in
+mixed case: path helpers, migration, `validate-data`); (3) backlog: lock dir, snapshot `who`,
+early log dir; (4) README Linux section + sync advice (STOP); (5) visual tests per platform in
+CI; (6) gate, review of step 16, report.
+
+1. In progress: `src-tauri/tauri.linux.conf.json` (appimage + deb, Education), `npm run
+build:linux`, CI job `linux` on ubuntu-24.04 (glibc 2.39+): npm test, WebKit e2e, clippy
+   (the only lint of `cfg(not(windows))` code), cargo test, fixture migrate + validate,
+   real-pdf, AppImage + .deb artifact `maatwerk-linux-x86_64`. `data_location::program_path`:
+   `$APPIMAGE` counts as the program, so `data/` beside the AppImage works like beside the exe.
+
+## Step 16a (done, tag `step-16a`)
+
 **Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned
 macOS build + "Open anyway" instructions** (no Apple Developer account; ad-hoc signed for Apple
 Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge without the user).
-
-## Step 16a progress
 
 1. **Done** (`c91d467`): first-run "choose data folder". `maatwerk-core::data_location`
    (`locate`: env > dev > chosen in `local-config.json` > `data/` beside the program if it

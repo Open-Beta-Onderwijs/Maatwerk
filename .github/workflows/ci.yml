@@ -161,3 +161,59 @@ jobs:
           name: maatwerk-macos-universal
           path: dist-mac/
           if-no-files-found: error
+
+  # Step 16b: WebKitGTK and the Linux packages (AppImage and .deb). Built on Ubuntu 24.04, so
+  # they need glibc 2.39+ (Ubuntu 24.04, Mint 22, Debian 13 or newer).
+  linux:
+    name: Build and test (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: WebKitGTK and the other Tauri build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev             libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev             build-essential file patchelf
+      - name: Rust toolchain (from rust-toolchain.toml)
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # The e2e suite on Playwright's WebKit for Linux (close to WebKitGTK; not the visual project).
+      - run: npx playwright install --with-deps webkit
+        working-directory: ui
+      - run: npm run test:e2e:webkit
+      - run: npm run build:ui
+      # Unix-only code paths (cfg(not(windows))) are only linted here.
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      # The migration on a case-sensitive file system.
+      - name: Migrate and validate the school fixture
+        run: |
+          node tools/fixtures/generate.mjs school "$RUNNER_TEMP/mig/shared/data"
+          cargo run -q -p maatwerk-cli -- migrate "$RUNNER_TEMP/mig/shared/data" --apply --backup-dir "$RUNNER_TEMP/mig/backups"
+          cargo run -q -p maatwerk-cli -- validate-data "$RUNNER_TEMP/mig/shared/data" > /dev/null
+      - run: npx playwright test --project=webkit real-pdf
+        working-directory: ui
+        env:
+          MAATWERK_REAL_PDF: '1'
+      - name: AppImage and .deb
+        run: npm run build:linux
+      - name: Checksums
+        run: |
+          set -euo pipefail
+          bundle=target/release/bundle
+          mkdir -p dist-linux
+          cp "$bundle"/appimage/*.AppImage dist-linux/Maatwerk-linux-x86_64.AppImage
+          cp "$bundle"/deb/*.deb dist-linux/maatwerk-linux-amd64.deb
+          dpkg-deb --info dist-linux/maatwerk-linux-amd64.deb
+          (cd dist-linux && sha256sum *.AppImage *.deb > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          cp LICENSE THIRD_PARTY_NOTICES.txt dist-linux/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: maatwerk-linux-x86_64
+          path: dist-linux/
+          if-no-files-found: error
