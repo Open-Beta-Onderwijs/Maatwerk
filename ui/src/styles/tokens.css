@@ -57,8 +57,9 @@ html[data-theme='dark'] .score-grid {
   --rtti-i: #d24a45;
 
   /* Type (2.7). */
-  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
-  --font-code: Consolas, 'Cascadia Mono', monospace;
+  --font-ui:
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; /* SF on macOS, the desktop font on Linux */
+  --font-code: Consolas, 'Cascadia Mono', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
   --fs-title: 24px;
   --fs-modal-title: 22px;
   --fs-body: 14px;
