@@ -38,6 +38,13 @@ file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); im
    `machine_name()` (COMPUTERNAME / `scutil --get ComputerName` / `/proc/sys/kernel/hostname`).
    `early_log_dir` mirrors Tauri's `app_log_dir` on macOS and Linux too.
 
+4. **Done** (local): README "Linux (from 0.7)" (`.deb`, AppImage + `libfuse2t64`, `data/` beside
+   the AppImage) and "Linux: the shared folder". **User decision (2026-11-06, STOP gate):**
+   OneDrive Client for Linux (abraunegg, `--monitor`) recommended, rclone bisync on a timer as
+   the alternative; `rclone mount` and GNOME Files' OneDrive marked unsuitable. validate test:
+   the clients' conflict copies are listed. `docs/release.md` Linux artifact, manual checks
+   M-LNX-1..6.
+
 ## Step 16a (done, tag `step-16a`)
 
 **Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned

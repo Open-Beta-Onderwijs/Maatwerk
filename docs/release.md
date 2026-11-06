@@ -33,6 +33,9 @@ manual checks the release notes promise (`docs/manual-test.md`).
    (the `.app`), `SHA256SUMS.txt`, `LICENSE`, `THIRD_PARTY_NOTICES.txt`. The app is universal
    (`lipo` shows `x86_64 arm64`) and ad-hoc signed, not notarised (user decision 2026-11-06):
    README "macOS" has the "Toch openen" steps.
+   The Linux job uploads `maatwerk-linux-x86_64`: `Maatwerk-linux-x86_64.AppImage`,
+   `maatwerk-linux-amd64.deb`, `SHA256SUMS.txt`, `LICENSE`, `THIRD_PARTY_NOTICES.txt` (built
+   on Ubuntu 24.04: glibc 2.39 or newer).
 
 ## 4. Publish (manual)
 
@@ -42,8 +45,9 @@ manual checks the release notes promise (`docs/manual-test.md`).
 2. Start it once on a copy of the data (`MAATWERK_DATA_DIR`), check "Over Maatwerk" shows the
    version and build.
    On a Mac: open the `.dmg`, drag the app to Applications, allow it once (README "macOS"),
-   check "Over Maatwerk" the same way.
-3. Create the GitHub release for the tag with the Windows and macOS files and short Dutch notes for teachers
+   check "Over Maatwerk" the same way. On Linux: `sha256sum -c SHA256SUMS.txt`, install the
+   `.deb` or start the AppImage (README "Linux"), the same check.
+3. Create the GitHub release for the tag with the Windows, macOS and Linux files and short Dutch notes for teachers
    (what changed, anything they must do). AGPL: the source link in the app must point at a
    public commit, so never publish an exe built from unpushed code.
 4. Distribute as in `docs/cutover-runbook.md` section 4: the exe in the shared folder next to

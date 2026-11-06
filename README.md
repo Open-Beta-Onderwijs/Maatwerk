@@ -41,7 +41,42 @@ On a Mac the function keys F1, F2, … (observaties in the score grid) need the 
 "Gebruik F1, F2 enz. als standaardfunctietoetsen" is on in Systeeminstellingen > Toetsenbord.
 Undo and redo are Cmd+Z and Cmd+Shift+Z.
 
-Linux is planned (`PLAN-2.md` step 16b).
+### Linux (from 0.7)
+
+Maatwerk for Linux is an AppImage and a `.deb` for x86-64 PCs with glibc 2.39 or newer (Ubuntu
+24.04, Linux Mint 22, Debian 13 or newer). Download them from the release (or the CI artifact
+`maatwerk-linux-x86_64`) and check them: `sha256sum -c SHA256SUMS.txt`.
+
+- **`.deb`** (Ubuntu, Mint, Debian): `sudo apt install ./maatwerk-linux-amd64.deb`. Maatwerk
+  is then in the app menu; updates are a new `.deb` installed the same way.
+- **AppImage** (any distribution): `chmod +x Maatwerk-linux-x86_64.AppImage`, then start it.
+  Ubuntu 24.04 and newer first need `sudo apt install libfuse2t64`. Like the Windows exe, an
+  AppImage uses a folder `data` beside it if there is one.
+
+On the first start Maatwerk asks for the data folder ("Kies de gegevensmap"): choose the local
+copy of the shared folder (below).
+
+#### Linux: the shared folder
+
+OneDrive has no official Linux client. Maatwerk needs a local copy of the shared folder that
+stays in sync, not a network mount: it watches the files for colleagues' changes and saves by
+writing a new file and renaming it.
+
+1. **Recommended: "OneDrive Client for Linux"** (<https://github.com/abraunegg/onedrive>, open
+   source). Sync only the shared folder (`sync_list`) and run it as a service, so it keeps
+   syncing while Maatwerk runs (`onedrive --monitor`; its documentation explains the systemd
+   service). For a folder another person shared with you, see its "shared folders" guide.
+2. **Alternative: rclone bisync** (<https://rclone.org/bisync/>, open source): a two-way sync
+   that runs every few minutes from a systemd timer or cron. It is not real-time, so a
+   colleague's change reaches you a few minutes later, and while both of you work on the same
+   file, the later sync makes a conflict copy.
+
+**Not suitable:** `rclone mount` and OneDrive in GNOME Files (Online Accounts). Both are network
+mounts without a local copy. Commercial clients (such as Insync) work like option 1; they have
+not been tested with Maatwerk.
+
+Conflict copies of either client are not read by Maatwerk; `maatwerk-cli validate-data` lists
+them, as it does OneDrive's.
 
 ## The data folder
 

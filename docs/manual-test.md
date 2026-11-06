@@ -278,6 +278,26 @@ the data in OneDrive or a local folder:
       in observaties show in colour; a printed rapport looks as on Windows (bundled fonts).
 - [ ] **M-MAC-6** Two machines (one Windows, one Mac) on the same OneDrive folder: M-SYNC-1..2.
 
+## Linux (M-LNX, step 16b)
+
+On a Linux PC (Ubuntu 24.04 or Mint 22), with the CI artifact `maatwerk-linux-x86_64`, on a
+local copy of the shared folder synced as in README "Linux: the shared folder":
+
+- [ ] **M-LNX-1** `.deb`: `sudo apt install ./maatwerk-linux-amd64.deb`; Maatwerk is in the
+      app menu with its icon and starts. "Over Maatwerk" shows the version.
+- [ ] **M-LNX-2** AppImage (after `sudo apt install libfuse2t64`): starts; with a folder `data`
+      beside the AppImage it opens that folder without asking, without one it asks "Kies de
+      gegevensmap" (M-START-8).
+- [ ] **M-LNX-3** The checks of M-MAC-3..5 with Ctrl instead of Cmd (score grid, charts, pdf.js,
+      editor, dialogs, tab bar, fonts and emoji; WebKitGTK).
+- [ ] **M-LNX-4** Two users on the same Linux PC each start Maatwerk on their own copy and save
+      a score (the lock folder is per user).
+- [ ] **M-LNX-5** One Windows PC and the Linux PC on the same shared folder (OneDrive Client for
+      Linux in `--monitor` mode): M-SYNC-1..2; a colleague's change arrives within the client's
+      sync interval.
+- [ ] **M-LNX-6** An opdracht made on Windows whose `.typ` names an image in other case
+      (`Figuur.png` for `figuur.PNG`) compiles on Linux (quirk T32).
+
 ## Shutdown (M-END)
 
 - [ ] **M-END-1** Closing the window ends the process (Task Manager) and marks the teacher offline
