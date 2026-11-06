@@ -9,10 +9,12 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   EXAMS,
   cell,
+  copySelection,
   header,
   headerTexts,
   isMarkedUnsaved,
   openGrid,
+  pasteText,
   rows,
   select,
   selected,
@@ -223,14 +225,12 @@ test.describe('observaties', () => {
     await expect(cell(page, 1, H2.q1)).toHaveText('1');
   });
 
-  test('G33 pasting into observatie cells saves them (U4)', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  test('G33 pasting into observatie cells saves them (U4)', async ({ page }) => {
     await openGrid(page, EXAMS.h2);
     const id = await studentIdOf(page, 0);
     const before = await storedObservations(page, id, EXAMS.h2);
     await select(page, 0, H2.obs1);
-    await page.evaluate((v) => navigator.clipboard.writeText(v), before.length ? '0' : '1');
-    await page.keyboard.press('Control+V');
+    await pasteText(page, before.length ? '0' : '1');
     await expect
       .poll(async () => (await storedObservations(page, id, EXAMS.h2)).length, { timeout: 2000 })
       .not.toBe(before.length);
@@ -333,6 +333,18 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Control+Shift+Z');
     await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 4 });
   });
+
+  test('G46 Cmd+Z / Cmd+Shift+Z undo and redo on macOS (step 16a)', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await typeInto(page, 0, E.q1, '4');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 4 });
+    await page.keyboard.press('Meta+Z');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({});
+    await expect(page.locator('#sc-redo')).toBeEnabled({ timeout: 2000 });
+    await page.keyboard.press('Meta+Shift+Z');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 4 });
+  });
 });
 
 test.describe('undo, saving, colleagues', () => {
@@ -381,8 +393,10 @@ test.describe('undo, saving, colleagues', () => {
     await page.keyboard.press('Enter');
     await page.keyboard.type('3');
     await page.keyboard.press('Enter');
+    // Three serial 300 ms writes; WebKit under a parallel run needs more than 2 s (step 16a:
+    // all three always arrived, none was dropped).
     await expect
-      .poll(() => storedScores(page, id, EXAMS.empty), { timeout: 2000 })
+      .poll(() => storedScores(page, id, EXAMS.empty), { timeout: 5000 })
       .toEqual({ q1: 1, q2: 2, q3: 3 });
   });
 
@@ -427,14 +441,12 @@ test.describe('undo, saving, colleagues', () => {
     expect(schk?.scores?.[EXAMS.empty]).toBeUndefined();
   });
 
-  test('G54 one value pasted into a range fills it; one undo step', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  test('G54 one value pasted into a range fills it; one undo step', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
     const id = await studentIdOf(page, 0);
-    await page.evaluate(() => navigator.clipboard.writeText('2'));
     await select(page, 0, E.q1);
     await cell(page, 0, E.q3).click({ modifiers: ['Shift'] });
-    await page.keyboard.press('Control+V');
+    await pasteText(page, '2');
     await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 2, q2: 2, q3: 2 });
     await page.locator('#sc-undo').click();
     await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({});
@@ -462,18 +474,15 @@ test.describe('undo, saving, colleagues', () => {
     await expect.poll(() => isMarkedUnsaved(page, 0, E.q1)).toBe(false);
   });
 
-  test('G54 copy and paste a range', async ({ page, context }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  test('G54 copy and paste a range', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
     const id1 = await studentIdOf(page, 1);
-    await page.evaluate(() => navigator.clipboard.writeText('1\t2\t3'));
     await select(page, 1, E.q1);
-    await page.keyboard.press('Control+V');
+    await pasteText(page, '1\t2\t3');
     await expect.poll(() => storedScores(page, id1, EXAMS.empty)).toEqual({ q1: 1, q2: 2, q3: 3 });
     await select(page, 1, E.q1);
     await cell(page, 1, E.q2).click({ modifiers: ['Shift'] });
-    await page.keyboard.press('Control+C');
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('1\t2');
+    expect(await copySelection(page)).toBe('1\t2');
   });
 
   test('G55 a colleague change updates the row and flashes it', async ({ page }) => {

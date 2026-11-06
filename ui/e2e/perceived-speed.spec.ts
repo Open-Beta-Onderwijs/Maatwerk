@@ -57,9 +57,18 @@ test('a screen keeps its DOM until its data or the filters change', async ({ pag
   expect(errors).toEqual([]);
 });
 
+/**
+ * Opens the app and waits for the start screen. WebKit logs "Importing a module script failed."
+ * when the next navigation (login) aborts a page that is still importing app.js.
+ */
+async function loadApp(page: Page): Promise<void> {
+  await page.goto('/');
+  await expect(page.locator('.subject-card').first()).toBeVisible();
+}
+
 // More students than the first batch of cards (60): the rest arrive in idle time.
 async function seedManyStudents(page: Page): Promise<StudentsFile> {
-  await page.goto('/');
+  await loadApp(page);
   const file = await readMockJson<StudentsFile>(page, STUDENTS);
   const base = file.students[0]!;
   const extra = Array.from({ length: 150 }, (_, i) => ({
@@ -80,7 +89,11 @@ test('a long student list renders completely and every card works', async ({ pag
   await screen(page, 'leerlingen');
   const cards = page.locator('#student-list .card');
   await expect(cards).toHaveCount(many.students.length);
-  await cards.last().locator('[data-action="profile"]').click();
+  const last = cards.last().locator('[data-action="profile"]');
+  // Playwright's scrolling on WebKit does not reach into a `content-visibility: auto` card;
+  // the browser's own scrollIntoView (as a user's scrolling) does.
+  await last.evaluate((b) => b.scrollIntoView({ block: 'center' }));
+  await last.click();
   await expect(page.locator('.dlg-backdrop')).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -109,7 +122,7 @@ test('score modal: later groups are built after the first and get colleague chan
 }) => {
   const errors = watchErrors(page);
   // A second group with the same students, sorted after the first.
-  await page.goto('/');
+  await loadApp(page);
   const group = await withMock(
     page,
     async (m, dir) => (await m.readAllJson(dir))[0],

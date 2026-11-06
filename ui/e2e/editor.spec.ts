@@ -116,9 +116,9 @@ test('autocomplete, hover and Ctrl+click come from the session', async ({ page }
   await expect
     .poll(() =>
       frame.locator('.cm-content').evaluate(() => {
-        const sel = (
-          document.getElementById('cm-container')!.shadowRoot as unknown as Document
-        ).getSelection();
+        // Chromium has getSelection() on a shadow root; WebKit only on the document.
+        const root = document.getElementById('cm-container')!.shadowRoot as unknown as Document;
+        const sel = root.getSelection ? root.getSelection() : document.getSelection();
         return sel?.toString();
       }),
     )
@@ -129,7 +129,9 @@ test('a click in the preview moves the cursor to that line', async ({ page }) =>
   const { frame } = await openEditor(page);
   await setText(page, frame, 'Regel een\nRegel twee\nRegel drie');
   await expect(frame.locator('.svg-page')).toContainText('Regel drie');
-  await frame.locator('.svg-page text', { hasText: 'Regel drie' }).click();
+  // force: WebKit hit-tests SVG text per glyph, so the centre (the space) hits the page
+  // background; the app maps the click point, not the target.
+  await frame.locator('.svg-page text', { hasText: 'Regel drie' }).click({ force: true });
   await expect
     .poll(() => withMock(page, (m) => m.calls.filter((c) => c[0] === 'editorJumpFromClick').length))
     .toBeGreaterThan(0);

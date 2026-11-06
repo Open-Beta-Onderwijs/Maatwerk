@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:e2e": "npm run build:mock && playwright test --project chromium",
+    "test:e2e:webkit": "npm run build:mock && playwright test --project webkit",
     "test:visual": "npm run build:mock && playwright test --project visual"
   },
   "dependencies": {

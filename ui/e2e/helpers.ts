@@ -11,10 +11,19 @@ export const YEAR = '2025-2026';
 export const PIN = '12345';
 
 /** Collects console errors and page errors of the page and its frames. */
+const WEBKIT_SELECT_CSP =
+  "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not " +
+  'appear in the style-src directive of the Content Security Policy.';
+
 export function watchErrors(page: Page): string[] {
   const errors: string[] = [];
+  const webkit = page.context().browser()?.browserType().name() === 'webkit';
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text());
+    if (m.type() !== 'error') return;
+    // Playwright's WebKit reports a style-src-attr violation for every native <select> (its own
+    // inner styles; no source sample). The app's code is checked for inline styles in Chromium.
+    if (webkit && m.text() === WEBKIT_SELECT_CSP) return;
+    errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(e.message));
   return errors;

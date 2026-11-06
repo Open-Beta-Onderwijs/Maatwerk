@@ -24,6 +24,45 @@ export async function openGrid(page: Page, examId: string): Promise<void> {
   await expect(gridTable(page)).toBeVisible();
 }
 
+/** True in Chromium, where Playwright can grant clipboard access; WebKit cannot (step 16). */
+function realClipboard(page: Page): boolean {
+  return page.context().browser()?.browserType().name() === 'chromium';
+}
+
+/**
+ * Pastes `text` into the selection as Ctrl+V does. Chromium goes through the real clipboard
+ * and the key; WebKit gets the `paste` event the key would fire.
+ */
+export async function pasteText(page: Page, text: string): Promise<void> {
+  if (realClipboard(page)) {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.evaluate((v) => navigator.clipboard.writeText(v), text);
+    await page.keyboard.press('Control+V');
+    return;
+  }
+  await page.evaluate((v) => {
+    const data = new DataTransfer();
+    data.setData('text/plain', v);
+    const event = new ClipboardEvent('paste', { clipboardData: data, bubbles: true });
+    (document.activeElement ?? document.body).dispatchEvent(event);
+  }, text);
+}
+
+/** Copies the selection as Ctrl+C does and returns the copied text. */
+export async function copySelection(page: Page): Promise<string> {
+  if (realClipboard(page)) {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.keyboard.press('Control+C');
+    return page.evaluate(() => navigator.clipboard.readText());
+  }
+  return page.evaluate(() => {
+    const data = new DataTransfer();
+    const event = new ClipboardEvent('copy', { clipboardData: data, bubbles: true });
+    (document.activeElement ?? document.body).dispatchEvent(event);
+    return data.getData('text/plain');
+  });
+}
+
 /** The table of the g-th group grid in the modal (0 = first). */
 export function gridTable(page: Page, g = 0): Locator {
   return page.locator('.dlg .score-grid-table').nth(g);

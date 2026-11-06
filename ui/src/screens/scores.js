@@ -384,11 +384,12 @@ export async function openScoreModal(examId, year, deps) {
         // While typing in a cell, Ctrl+Z undoes the typing (native text undo).
         if (e.target?.classList?.contains('score-grid-editor')) return;
         const key = e.key.toLowerCase(); // 'Z' with Shift or Caps Lock
-        if (e.ctrlKey && !e.shiftKey && key === 'z') {
+        const mod = e.ctrlKey || e.metaKey; // Cmd on macOS (step 16a)
+        if (mod && !e.shiftKey && key === 'z') {
           e.preventDefault();
           undoLast();
         }
-        if ((e.ctrlKey && key === 'y') || (e.ctrlKey && e.shiftKey && key === 'z')) {
+        if ((mod && key === 'y') || (mod && e.shiftKey && key === 'z')) {
           e.preventDefault();
           redoLast();
         }
