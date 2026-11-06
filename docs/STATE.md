@@ -70,6 +70,14 @@ file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); im
    (`local-config.json` in the local, not roaming, app folder). Backlog: m1-m3, m7. Local: all
    Rust tests, 434 e2e (Chromium + WebKit), lint, typecheck.
 
+9. Run `42242653611` failed on Linux: the n3 fix had written a literal backslash-n into the apt line
+   (fixed, `ci: real line continuations…`). Run `42246523588`: Windows and Linux green, visual
+   39/39 on both; macOS had no runner for the third time (GitHub capacity), only the macOS job
+   rerun. **Paused here (2026-11-06, user).** Resume: `gh run view 42246523588` (macOS job:
+   e2e, first comparison against the committed macOS baselines). Green: tag `step-16b`, stop and
+   report (merge to `main` and the 0.7 release only with the user). This STATE commit is local
+   (a push would cancel the rerun); push it with the tag.
+
 ## Step 16a (done, tag `step-16a`)
 
 **Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned
