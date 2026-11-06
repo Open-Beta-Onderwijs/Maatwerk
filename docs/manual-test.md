@@ -258,6 +258,26 @@ through OneDrive or a network share.
 - [ ] **M-MIG-5** Put a copy of a group file next to it as `<naam> (1).json`: the check lists it as
       "OneDrive-conflictkopie".
 
+## macOS (M-MAC, step 16a)
+
+On a Mac (macOS 12 or newer), with the CI artifact `maatwerk-macos-universal`, on a copy of
+the data in OneDrive or a local folder:
+
+- [ ] **M-MAC-1** Install as in README "macOS": the `.dmg`, drag to Programma's, "Toch openen"
+      once. The next start opens without a question. "Over Maatwerk" shows the version.
+- [ ] **M-MAC-2** First start: "Kies de gegevensmap" (M-START-8); choose the copy. The app
+      restarts on it; the next start goes straight there.
+- [ ] **M-MAC-3** Score grid: arrows, Enter, Tab, typing, Cmd+C / Cmd+V a range (also from
+      Numbers or Excel), Cmd+Z / Cmd+Shift+Z, fn+F1 toggles observatie 1. The sticky header
+      rows stay while scrolling.
+- [ ] **M-MAC-4** Charts (group overview, profile), the rapport preview (pdf.js: zoom with
+      pinch, print button), the opdracht editor (CodeMirror: typing, autocomplete, Cmd+click on
+      a name, the live preview, a click in the preview), dialogs (Escape, stacking), the tab bar
+      and the user menu (theme, accent) look and work as on Windows.
+- [ ] **M-MAC-5** Fonts: the UI uses the system font (SF), the editor a monospace font; emoji
+      in observaties show in colour; a printed rapport looks as on Windows (bundled fonts).
+- [ ] **M-MAC-6** Two machines (one Windows, one Mac) on the same OneDrive folder: M-SYNC-1..2.
+
 ## Shutdown (M-END)
 
 - [ ] **M-END-1** Closing the window ends the process (Task Manager) and marks the teacher offline
