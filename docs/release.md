@@ -29,6 +29,10 @@ manual checks the release notes promise (`docs/manual-test.md`).
 3. CI runs on the tag (`.github/workflows/ci.yml`, `tags: ['v*']`) and uploads the artifact
    `maatwerk-windows-x64`: `maatwerk.exe`, `maatwerk.exe.sha256`, `LICENSE`,
    `THIRD_PARTY_NOTICES.txt`. The exe's build string is `git describe` (`vX.Y.Z` on the tag).
+   The macOS job uploads `maatwerk-macos-universal`: `Maatwerk-macos-universal.dmg` and `.zip`
+   (the `.app`), `SHA256SUMS.txt`, `LICENSE`, `THIRD_PARTY_NOTICES.txt`. The app is universal
+   (`lipo` shows `x86_64 arm64`) and ad-hoc signed, not notarised (user decision 2026-11-06):
+   README "macOS" has the "Toch openen" steps.
 
 ## 4. Publish (manual)
 
@@ -37,7 +41,9 @@ manual checks the release notes promise (`docs/manual-test.md`).
    `maatwerk.exe.sha256`.
 2. Start it once on a copy of the data (`MAATWERK_DATA_DIR`), check "Over Maatwerk" shows the
    version and build.
-3. Create the GitHub release for the tag with the four files and short Dutch notes for teachers
+   On a Mac: open the `.dmg`, drag the app to Applications, allow it once (README "macOS"),
+   check "Over Maatwerk" the same way.
+3. Create the GitHub release for the tag with the Windows and macOS files and short Dutch notes for teachers
    (what changed, anything they must do). AGPL: the source link in the app must point at a
    public commit, so never publish an exe built from unpushed code.
 4. Distribute as in `docs/cutover-runbook.md` section 4: the exe in the shared folder next to

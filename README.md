@@ -19,7 +19,29 @@ Maatwerk is one portable Windows exe, no installer.
 3. Start it. It needs Microsoft Edge WebView2 (standard on Windows 10 and 11); without it,
    Maatwerk says so in a message box.
 
-macOS is planned (`ROADMAP.md`, X-04).
+### macOS (from 0.7)
+
+Maatwerk for macOS is one universal app (Apple Silicon and Intel, macOS 12 or newer). It is not
+signed with an Apple Developer ID, so macOS blocks the first start; it is safe to allow it once:
+
+1. Download `Maatwerk-macos-universal.dmg` from the release (or the CI artifact
+   `maatwerk-macos-universal`). Check it in Terminal: `shasum -a 256 Maatwerk-macos-universal.dmg`
+   equals the line in `SHA256SUMS.txt`.
+2. Open the `.dmg` and drag Maatwerk to Programma's (Applications). Do not start it from the
+   `.dmg`.
+3. Start Maatwerk. macOS says it cannot check the app: click **Gereed** (Done).
+4. Open Systeeminstellingen > Privacy en beveiliging, scroll to Beveiliging and click **Toch
+   openen** (Open Anyway) next to "Maatwerk", then **Toch openen** again and log in with your Mac
+   password. (macOS 14 and older: right-click Maatwerk in Programma's > Open > Open.)
+5. On the first start Maatwerk asks for the data folder ("Kies de gegevensmap"): choose the
+   shared folder in OneDrive (Finder > OneDrive). Keep that folder "Altijd behouden op dit
+   apparaat" (always keep on this device), so the files are there when Maatwerk reads them.
+
+On a Mac the function keys F1, F2, … (observaties in the score grid) need the fn key, unless
+"Gebruik F1, F2 enz. als standaardfunctietoetsen" is on in Systeeminstellingen > Toetsenbord.
+Undo and redo are Cmd+Z and Cmd+Shift+Z.
+
+Linux is planned (`PLAN-2.md` step 16b).
 
 ## The data folder
 

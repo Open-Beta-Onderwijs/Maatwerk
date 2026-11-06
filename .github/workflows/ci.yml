@@ -113,3 +113,51 @@ jobs:
             LICENSE
             THIRD_PARTY_NOTICES.txt
           if-no-files-found: error
+
+  # Step 16a (X-04): the WebKit engine and a universal macOS app. Unsigned (user decision
+  # 2026-11-06): ad-hoc signed so it runs on Apple Silicon; README "macOS" explains "Open anyway".
+  macos:
+    name: Build and test (macOS)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Rust toolchain (from rust-toolchain.toml) and both Mac targets
+        run: |
+          rustup toolchain install
+          rustup target add aarch64-apple-darwin x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # The e2e suite on Playwright's WebKit (close to WKWebView; not the visual project).
+      - run: npx playwright install webkit
+        working-directory: ui
+      - run: npm run test:e2e:webkit
+      - run: npm run build:ui
+      - run: cargo test --workspace
+      # A real compiled rapport (written by the typst_rapport tests) in pdf.js on WebKit.
+      - run: npx playwright test --project=webkit real-pdf
+        working-directory: ui
+        env:
+          MAATWERK_REAL_PDF: '1'
+      - name: Universal app (Maatwerk.app and .dmg)
+        run: npm run build:mac
+      - name: Zip the app, checksums
+        run: |
+          set -euo pipefail
+          bundle=target/universal-apple-darwin/release/bundle
+          mkdir -p dist-mac
+          ditto -c -k --keepParent "$bundle/macos/Maatwerk.app" dist-mac/Maatwerk-macos-universal.zip
+          cp "$bundle"/dmg/*.dmg dist-mac/Maatwerk-macos-universal.dmg
+          lipo -archs "$bundle/macos/Maatwerk.app/Contents/MacOS/maatwerk"
+          codesign --verify --verbose "$bundle/macos/Maatwerk.app"
+          (cd dist-mac && shasum -a 256 *.zip *.dmg > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          cp LICENSE THIRD_PARTY_NOTICES.txt dist-mac/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: maatwerk-macos-universal
+          path: dist-mac/
+          if-no-files-found: error
