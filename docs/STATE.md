@@ -1,14 +1,138 @@
 # State
 
-Last updated: 2026-11-05 (step 13 done, 0.4.0) Branch: `main` Last tags: `v0.4.1`, `step-13`, `v0.4.0` (pushed),
-`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are
-local only)
+Last updated: 2026-11-05 (step 15 done, 0.6.0) Branch: `main` Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`,
+`step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
+`v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 13 done** (merged, tagged `step-13`, version 0.4.0). **Next: step 14** (Foundation b:
-dialog component, placeholders, sticky, form rules; L, 14a/14b). Step 14 also takes the step 13
-backlog items m3/m4/n6 (`docs/backlog.md` "From Step 13").
+**Step 15 done** (merged, tagged `step-15`, version 0.6.0). **Next: step 16** (Platforms: macOS and
+Linux; L, 16a/16b). Step 15 was: branch `step/15-shell` (from `main` `2688784`). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
+decision 5.
+
+## Step 15 progress
+
+1. **Done:** minimum app version (decision 5). `maatwerk-core::app_version` (parse, compare,
+   `required_version`); `Storage::read_only()` reads `school.json` `minAppVersion` on every call
+   and every file write or delete is refused with `Error::ReadOnly` (`read_only`; details.found =
+   the minimum); presence skips its writes when read-only. `dataFolderStatus` has `appVersion` and
+   `readOnly`. UI: `services/read-only.ts` (texts, version compare for the mock),
+   `components/read-only-banner.ts` (banner at the top of `#app`), Store throws `{code:
+'read_only'}`, app.js shows "Niet opgeslagen: deze versie van Maatwerk is te oud ..." (not the
+   "onverwacht" text), PIN dialogs too. Mock backend: `MOCK_APP_VERSION = '0.6.0'`, refuses
+   writes like the backend. Tests: 5 storage tests on the v2 fixture, 3 unit, 4 Vitest, 3 e2e
+   (`e2e/shell.spec.ts`). Runbook section 8.
+2. **Done:** tab bar (spec 3.5, V-05, V-12). Header 56 px on `--surface` with a `--border` line
+   (`--topbar-h`; the `--header-*` tokens are gone); brand button (`#btn-about`) with icon +
+   wordmark from `ui/src/assets/brand/` (copies of the design assets without the C2PA metadata;
+   light/dark variants via `.theme-light-only`/`.theme-dark-only`); tab icons are the design
+   boards' own paths (Lucide style; THIRD_PARTY_LICENSES.md notes it); active tab: 600, icon in
+   `--accent-text`, 3 px underline, `aria-current="page"`. Admin: Leerlingen, Groepen,
+   Opdrachten, Gebruikers, School, Gegevenscontrole, Instellingen. Sticky screen headers sit at
+   `--topbar-h`. e2e: 2 tab-bar tests; the sticky test measures the bar. **Visual diff pending**
+   (every screen's top bar changes).
+3. **Done (before 3, the menu needs it):** one avatar helper (B-04, B-08):
+   `components/avatar.ts` (`avatarHtml`, `renderAvatar`, `loadAvatarPhotos`, initials = afkorting
+   or first letters of first and last name; round, square for admin / sectievoorzitter; ring =
+   user colour, accent (top bar 38, editor 30) or none; photo as `<img>` over the initials, read
+   through a 30 s cache) + `styles/avatar.css` (also imported by `editor.css`). Used by the
+   login badges and Gebruikers (56), the top bar (38, accent ring), presence (30, with photo),
+   the "nieuwe toets" notice (30) and the editor (B-08: the editor asks the main window
+   `maatwerk-user-avatar` for the user and photo). `utils/badges.js` and the `.badge-initials` /
+   `.user-badge-mini` CSS are gone. e2e: 2 avatar tests.
+4. **Done** (`0b1d334`): user menu (F-17, spec 3.6), `components/user-menu.ts`: dropdown (280
+   px, not a dialog) under the avatar; name + "Docent · <vak>" / "Sectievoorzitter <vak>" /
+   "Beheerder"; Thema Licht/Donker; 21 accent swatches (7x3); Foto wijzigen (disabled, F-19
+   later); Pincode wijzigen; Nieuwe herstelcodes (admin); Uitloggen (danger). Escape, a click
+   outside or Tab out close it; focus back to the avatar. The account modal is gone (`pin.ts`
+   `changePinFlow`, `renewCodesFlow`); ids `#acc-pin`, `#acc-codes`, `#acc-logout` kept. Visual
+   views `user-menu-teacher`, `user-menu-admin`.
+5. **Done** (`0b1d334`): look and active year per user (decisions 3 and 15, F-18, F-21, D7).
+   Additive field `preferences: { theme, accent, activeYear }` in `gebruikers/<id>.json`
+   (`domain/preferences.ts`); `Store.savePreferences` merges into the latest file (no rev check,
+   so no conflict with an admin edit); `getConfigSync().activeYear` is the logged-in user's year,
+   else config.json's, else the current school year; choosing a year on any screen sets all
+   three selects and saves it; logout clears the selects and returns to the base look. The look
+   is applied at login before `initSubject` and the main screen (`theme.ts` `applyUserLook`;
+   `baseLook` = default, or the dev menu's choice in dev/mock builds). `Store.setActiveYear`
+   (shared config.json, never called) removed. 0.3.x keeps unknown user fields (the Gebruikers
+   form spreads the record, PIN commands edit the JSON object): Rust test
+   `pin_writes_keep_preferences_and_unknown_fields`. Tests: Vitest preferences + store merge; 5
+   e2e (menu, persist across logout, second PC with a seeded user file incl. active year, admin
+   edit kept, admin menu).
+6. **Done:** U11 fixed (`onclick` per Alles/Niets button; e2e fails without the fix), U13 and U16
+   checked: superseded (quirks.md).
+7. **Done:** R-05 for the shell, partly: the filter bar (~470 lines) moved verbatim from `app.js`
+   to `shell/filter-bar.js` (app.js 1209 lines on `main` -> 789); app.js re-exports its getters. Both stay
+   JS until Store is typed (backlog "From Step 15").
+8. **Done:** version 0.6.0 (`22023dc`); gate green (`npm audit` with dev: the known
+   eslint -> minimatch advisory, dev-only, `--omit=dev` 0; see `docs/testing.md`).
+9. **Done:** review (`docs/reviews/step-15.md`): 0 blockers, 2 majors (read-only messages and
+   banner while running; read-only browsing), both fixed with tests; most minors and nits fixed,
+   rest in `docs/backlog.md` "From Step 15".
+10. **Done:** user decisions (2026-11-05): no login without a PIN on a read-only app (fine, rare);
+    a newer schema stops older apps at the start screen (fine, rare); tab icons are our own
+    drawings (checked against Lucide, THIRD_PARTY_LICENSES.md updated). Visual diff OK; local
+    baselines updated (117 views). Merged into `main`, tagged `step-15` and `v0.6.0`.
+
+## Step 14a progress
+
+1. **Done** (`5538f85`): `ui/src/components/dialog.ts` + `styles/dialog.css`: one dialog
+   component (fixed top 64 px, centred, max height `100vh - 96px`, `fixedHeight`; sticky header
+   with title/badge/subtitle/close/tabs; scrolling body; footer: right-aligned, primary last,
+   `align: 'start'` for a navigational action; busy state on async buttons; per-dialog close
+   guard and cleanups; stacking with one backdrop each; Escape on `window` in the bubble phase,
+   skipped when a control inside called `preventDefault()`). `app.js` `showModal`/`closeModal`/
+   `guardModalClose`/`onModalSync`/`onModalCleanup`/`modalRefresher`/`pushModalChart` act on the
+   current modal (top of the modals opened through `showModal`/`openModal`; confirms do not
+   count). `showModal` = legacy form (key `legacy`: replaces a legacy modal, stacks on a
+   structured one; keeps ids `modal-box`/`modal-content`/`modal-close`). `confirmDialog`,
+   `alertDialog`, `showReloadNotice` on the component. U15 (replaced modal runs its onClose),
+   U14 (RTTI uitleg uses the shared guard; its inline confirm bar is gone), U12 (closing a dialog
+   destroys its CustomSelects; `host._csel`), n8 (dev menu Escape). New behaviour: **Escape
+   closes modals** (through the guard); before, only ✕ and the backdrop did.
+2. **Done** (`a77cd39`): exam overview, rapport and group edit on `openModal` (structured header,
+   tabs via `onTab`, `fixedHeight`, group edit footer). `openModal({ key })` replaces a modal
+   with the same key (refresh in place). Skeleton helpers `components/skeleton.ts` +
+   `styles/skeleton.css` (not used yet; areas use them, V-09 "14 + areas"). Sticky `.screen-head`
+   (title row + filter row) on the five teacher tabs. `e2e/dialog.spec.ts` (34 tests).
+   R-05 call: the three ported modal files stay JS (only their open call changed; their area
+   steps 20/23/25 convert them), as with m7 in step 13.
+3. **Done:** user OK on the 14a visual diff (2026-11-05); local baselines updated.
+
+## Step 14b progress
+
+1. **Done** (`fa77dd1`): every modal on `openModal` (title/subtitle in the header,
+   `footerHtml` keeps the buttons' ids and listeners and arranges them; `onShow` gets the
+   whole dialog element). `showModal`, the legacy ids (`modal-box`/`modal-content`/
+   `modal-close`) and `dlg--legacy` are gone. Keys: `exam-edit` (new test step 1/2, inhaal ->
+   editor), `student-edit`, `group-edit`, `group-overview`, `profile`, `exam-overview`,
+   `rapport`, `opdrachten-genereren`. **Behaviour changes:** the profile stacks on the group
+   overview (closing returns there; `backFn` removed, Vorige/Volgende in the footer); the
+   account modal stays under "Pincode wijzigen"/"Nieuwe herstelcodes" (stacked);
+   `modalRefresher` waits while its modal is covered. PIN submit buttons use `setBusy` (n6).
+   Rule I applied: a danger/delete action is not in any footer yet (none of the forms has one).
+2. **Done** (`6728884`): `components/form.ts` (`field`, `formRow`, `tickBox`, `toggleTick`) +
+   `styles/forms.css`; form rows align on labels; PTA tick boxes; m4 (CustomSelect trigger and
+   inline selects/textareas on the 3.2 look, now 36 px; question table dense 26 px); m3 (school
+   field input on the base). 16 dead u-* removed (103 left: the rest live in the big modal
+   files and go with their area steps 20-25, as R-05/m7). Form markup is not rewritten to
+   `field()` everywhere: the CSS rule aligns every `.form-row`; the helper is used for the new
+   tick-box fields. Steppers lining up across rows (board 14) is step 20.
+3. **Done:** gate green (cargo fmt/clippy/test, lint, typecheck, 391 Vitest, licences, cargo
+   deny, SPDX, `npm audit --omit=dev` 0); version **0.5.0** (`4797c2d`).
+4. **Done:** review `docs/reviews/step-14.md`: 0 blockers, 3 majors (M1 covered modal got the
+   wrong reload notice, M2 focus stayed on the opener, M3 tabs not keyboard-reachable), all fixed
+   with tests (`914fa57`); m1, m5, m6, n1, n7 fixed; rest in `docs/backlog.md` "From Step 14".
+   Every modal now has a `key`. Empty footers hidden (`69cdf07`, seen in the visual diff).
+   e2e: 193 tests green.
+5. **Done:** user OK on the 14b visual diff (2026-11-05) with two remarks, both fixed: the exam
+   badge of Scores invoeren sits before the exam name in the subtitle line (`subtitleHtml` dialog
+   option), and an unticked tick box shows a faint tick (`--border`; `--border-strong` on hover).
+   Local baselines updated (111 views). Merged into `main`, tagged `step-14` and `v0.5.0`.
+
+E2E: the editor test "a compile over the time limit" flaked once more under the full suite
+(backlog).
 
 ## Fix 0.4.1 (2026-11-05, user report)
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -205,9 +205,14 @@ async function openOpdrachtenModal(existingId) {
     })
     .join('');
 
-  showModal(
-    `
-    <h3>${isEdit ? 'Opdracht bewerken' : 'Opdracht toevoegen'}</h3>
+  openModal({
+    title: isEdit ? 'Opdracht bewerken' : 'Opdracht toevoegen',
+    key: 'opdracht-edit',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-opsave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <div class="form-group">
       <label>Naam</label>
       <input id="f-opnam" type="text" value="${escHtml(data.naam)}" placeholder="bijv. Krachten analyseren" />
@@ -232,12 +237,8 @@ async function openOpdrachtenModal(existingId) {
       <label>Observaties</label>
       <div id="op-obs-group" class="u-d-flex u-flex-wrap u-gap-6 u-min-h-36 u-py-4"></div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-opsave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       function getSelectedSS() {
         return [...el.querySelectorAll('.ss-op-btn.selected')].map((b) => b.dataset.ss);
       }
@@ -378,5 +379,5 @@ async function openOpdrachtenModal(existingId) {
         renderOpdrachten();
       });
     },
-  );
+  });
 }

@@ -12,7 +12,7 @@ import { formatFixed, formatGrade, formatNumber, parseDecimalLoose } from '../do
 import { chartInk } from '../theme';
 import { gradeGroupIdx, GRADE_GROUP_LABELS, GRADE_GROUP_MIDPOINTS } from '../utils/grades';
 import {
-  showModal,
+  openModal,
   closeModal,
   escHtml,
   pushModalChart,
@@ -300,20 +300,30 @@ export async function openExamOverviewModal(
     return sections || '<p class="hint">Geen groepen gevonden voor deze toets.</p>';
   }
 
-  showModal(
-    `<h3>Overzicht: <em>${escHtml(exam.title)}</em>
-      <span class="u-fw-normal u-fs-13 u-not-italic"> — Jaarlaag ${escHtml(String(exam.jaarlaag))}, ${escHtml(year)}</span>
-    </h3>
+  const onlyIndividual =
+    'Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht.';
+  const tabs = [
+    { id: 'resultaten', label: 'Resultaten' },
+    { id: 'cijferverdeling', label: 'Cijferverdeling' },
+    { id: 'boxplots', label: 'Boxplot cijfers' },
+    { id: 'vraaganalyse', label: 'Vraaganalyse' },
+    { id: 'rtti-analyse', label: 'RTTI-analyse' },
+    { id: 'observaties', label: 'Observaties' },
+  ].map((t, i) => (isSummary && i >= 3 ? { ...t, disabled: true, title: onlyIndividual } : t));
+
+  let switchTabRef = null; // set by initOverview; the dialog calls onTab on open
+  const dialog = openModal({
+    key: 'exam-overview',
+    title: `Overzicht: ${exam.title}`,
+    subtitle: `Jaarlaag ${exam.jaarlaag} · ${year}`,
+    size: 'lg',
+    fixedHeight: true,
+    className: 'modal-overview',
+    bodyClass: 'dlg-body--tinted',
+    tabs,
+    activeTab: initialTab,
+    body: `
     <div class="u-mb-10">${summaryHtml}</div>
-    <div class="overview-tab-bar">
-      <button class="overview-tab selected" data-tab="resultaten">Resultaten</button>
-      <button class="overview-tab" data-tab="cijferverdeling">Cijferverdeling</button>
-      <button class="overview-tab" data-tab="boxplots">Boxplot cijfers</button>
-      <button class="overview-tab" data-tab="vraaganalyse"${isSummary ? ' disabled title="Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht."' : ''}>Vraaganalyse</button>
-      <button class="overview-tab" data-tab="rtti-analyse"${isSummary ? ' disabled title="Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht."' : ''}>RTTI-analyse</button>
-      <button class="overview-tab" data-tab="observaties"${isSummary ? ' disabled title="Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht."' : ''}>Observaties</button>
-    </div>
-    <div class="u-bleed-28 u-p-bleed-28 u-bg-page">
 
     <div class="tab-pane" id="tab-resultaten">
       ${resultatenHtml()}
@@ -415,498 +425,414 @@ export async function openExamOverviewModal(
       `
       }
     </div>
-    </div>
-
     `,
+    onTab: (id) => switchTabRef?.(id),
+  });
+  initOverview(dialog.body);
 
-    (el) => {
-      const qLabels = exam.questions.map((q) =>
-        q.section ? `${q.section}${q.number}` : String(q.number),
-      );
+  function initOverview(el) {
+    const qLabels = exam.questions.map((q) =>
+      q.section ? `${q.section}${q.number}` : String(q.number),
+    );
 
-      // ── Inline data-label plugins ─────────────────────────────────────────
-      // Shows count/value above vertical bars (skips zero or very short bars)
-      const dlAbove = {
-        id: '_dlAbove',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          chart.data.datasets.forEach((ds, i) => {
-            chart.getDatasetMeta(i).data.forEach((bar, j) => {
-              const v = ds.data[j];
-              if (v == null || v === 0) return;
-              if (bar.y >= bar.base - 12) return;
-              ctx.save();
-              ctx.fillStyle = chartInk().text;
-              ctx.font = 'bold 10px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(String(v), bar.x, bar.y - 1);
-              ctx.restore();
-            });
+    // ── Inline data-label plugins ─────────────────────────────────────────
+    // Shows count/value above vertical bars (skips zero or very short bars)
+    const dlAbove = {
+      id: '_dlAbove',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, i) => {
+          chart.getDatasetMeta(i).data.forEach((bar, j) => {
+            const v = ds.data[j];
+            if (v == null || v === 0) return;
+            if (bar.y >= bar.base - 12) return;
+            ctx.save();
+            ctx.fillStyle = chartInk().text;
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(String(v), bar.x, bar.y - 1);
+            ctx.restore();
           });
-        },
-      };
-
-      // Same as dlAbove but appends '%'
-      const dlAbovePct = {
-        id: '_dlAbovePct',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          chart.data.datasets.forEach((ds, i) => {
-            chart.getDatasetMeta(i).data.forEach((bar, j) => {
-              const v = ds.data[j];
-              if (v == null) return;
-              const isZero = v === 0;
-              if (!isZero && bar.y >= bar.base - 12) return;
-              ctx.save();
-              ctx.fillStyle = chartInk().text;
-              ctx.font = 'bold 10px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(v + '%', bar.x, isZero ? bar.base - 4 : bar.y - 1);
-              ctx.restore();
-            });
-          });
-        },
-      };
-
-      // NVT support: grey half-height bar + 'NVT' label; otherwise shows 'X%'
-      const NVT_CLR = '#c0c8d4';
-      const dlAbovePctNvt = {
-        id: '_dlAbovePctNvt',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          chart.data.datasets.forEach((ds, i) => {
-            chart.getDatasetMeta(i).data.forEach((bar, j) => {
-              const v = ds.data[j];
-              if (v == null) return;
-              const isNvt = ds.nvtArr?.[j] === true;
-              if (!isNvt && (v === 0 || bar.y >= bar.base - 12)) return;
-              ctx.save();
-              ctx.fillStyle = isNvt ? chartInk().disabled : chartInk().text;
-              ctx.font = 'bold 10px sans-serif';
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              ctx.fillText(isNvt ? 'NVT' : v + '%', bar.x, bar.y - 1);
-              ctx.restore();
-            });
-          });
-        },
-      };
-
-      // Shows 'X%' to the right of horizontal bars (skips very short bars)
-      const dlRight = {
-        id: '_dlRight',
-        afterDatasetsDraw(chart) {
-          const { ctx } = chart;
-          chart.data.datasets.forEach((ds, i) => {
-            chart.getDatasetMeta(i).data.forEach((bar, j) => {
-              const v = ds.data[j];
-              if (v == null) return;
-              if (bar.x <= bar.base + 8) return;
-              ctx.save();
-              ctx.fillStyle = chartInk().text;
-              ctx.font = '10px sans-serif';
-              ctx.textAlign = 'left';
-              ctx.textBaseline = 'middle';
-              ctx.fillText(v + '%', bar.x + 3, bar.y);
-              ctx.restore();
-            });
-          });
-        },
-      };
-
-      // Shared: nudges legend up so it doesn't overlap chart area
-      const lgUp = {
-        id: '_lgUp',
-        afterLayout(chart) {
-          const lg = chart.legend;
-          if (!lg) return;
-          lg.top -= 10;
-          lg.bottom -= 10;
-        },
-      };
-
-      // ── Histogram helpers ─────────────────────────────────────────────────
-      function makeHistBins(step, gradeArr) {
-        const start = step === 0.5 ? 1.0 : 0.5;
-        const count = step === 0.5 ? 18 : 10;
-        const bins = Array(count).fill(0);
-        for (const g of gradeArr) {
-          let i = Math.floor((g - start) / step);
-          if (g >= 10.0) i = count - 1;
-          bins[Math.max(0, Math.min(count - 1, i))]++;
-        }
-        const binLabels = bins.map((_, i) => {
-          const upper = Math.min(start + (i + 1) * step, 10.0);
-          const prefix = i === count - 1 ? '\u2264' : '<';
-          return prefix + formatFixed(upper);
         });
-        const passBinIndex = Math.round((5.5 - start) / step);
-        const barColors = bins.map((_, i) => gradeBarColor(start + (i + 0.5) * step));
-        return { data: bins, binLabels, barColors, passBinIndex };
-      }
+      },
+    };
 
-      function buildHistChart(canvas, bins, title) {
-        return new Chart(canvas, {
-          type: 'bar',
-          plugins: [dlAbove],
-          data: {
-            labels: bins.binLabels,
-            datasets: [
-              {
-                data: bins.data,
-                backgroundColor: bins.barColors,
-                borderRadius: 3,
-                borderSkipped: false,
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: title, font: { size: 13 }, padding: { bottom: 14 } },
-              annotation: {
-                annotations: {
-                  passLine: {
-                    type: 'line',
-                    xMin: bins.passBinIndex - 0.5,
-                    xMax: bins.passBinIndex - 0.5,
-                    borderColor: chartInk().muted,
-                    borderWidth: 2,
-                    borderDash: [4, 4],
-                  },
-                },
-              },
+    // Same as dlAbove but appends '%'
+    const dlAbovePct = {
+      id: '_dlAbovePct',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, i) => {
+          chart.getDatasetMeta(i).data.forEach((bar, j) => {
+            const v = ds.data[j];
+            if (v == null) return;
+            const isZero = v === 0;
+            if (!isZero && bar.y >= bar.base - 12) return;
+            ctx.save();
+            ctx.fillStyle = chartInk().text;
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(v + '%', bar.x, isZero ? bar.base - 4 : bar.y - 1);
+            ctx.restore();
+          });
+        });
+      },
+    };
+
+    // NVT support: grey half-height bar + 'NVT' label; otherwise shows 'X%'
+    const NVT_CLR = '#c0c8d4';
+    const dlAbovePctNvt = {
+      id: '_dlAbovePctNvt',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, i) => {
+          chart.getDatasetMeta(i).data.forEach((bar, j) => {
+            const v = ds.data[j];
+            if (v == null) return;
+            const isNvt = ds.nvtArr?.[j] === true;
+            if (!isNvt && (v === 0 || bar.y >= bar.base - 12)) return;
+            ctx.save();
+            ctx.fillStyle = isNvt ? chartInk().disabled : chartInk().text;
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(isNvt ? 'NVT' : v + '%', bar.x, bar.y - 1);
+            ctx.restore();
+          });
+        });
+      },
+    };
+
+    // Shows 'X%' to the right of horizontal bars (skips very short bars)
+    const dlRight = {
+      id: '_dlRight',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((ds, i) => {
+          chart.getDatasetMeta(i).data.forEach((bar, j) => {
+            const v = ds.data[j];
+            if (v == null) return;
+            if (bar.x <= bar.base + 8) return;
+            ctx.save();
+            ctx.fillStyle = chartInk().text;
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(v + '%', bar.x + 3, bar.y);
+            ctx.restore();
+          });
+        });
+      },
+    };
+
+    // Shared: nudges legend up so it doesn't overlap chart area
+    const lgUp = {
+      id: '_lgUp',
+      afterLayout(chart) {
+        const lg = chart.legend;
+        if (!lg) return;
+        lg.top -= 10;
+        lg.bottom -= 10;
+      },
+    };
+
+    // ── Histogram helpers ─────────────────────────────────────────────────
+    function makeHistBins(step, gradeArr) {
+      const start = step === 0.5 ? 1.0 : 0.5;
+      const count = step === 0.5 ? 18 : 10;
+      const bins = Array(count).fill(0);
+      for (const g of gradeArr) {
+        let i = Math.floor((g - start) / step);
+        if (g >= 10.0) i = count - 1;
+        bins[Math.max(0, Math.min(count - 1, i))]++;
+      }
+      const binLabels = bins.map((_, i) => {
+        const upper = Math.min(start + (i + 1) * step, 10.0);
+        const prefix = i === count - 1 ? '\u2264' : '<';
+        return prefix + formatFixed(upper);
+      });
+      const passBinIndex = Math.round((5.5 - start) / step);
+      const barColors = bins.map((_, i) => gradeBarColor(start + (i + 0.5) * step));
+      return { data: bins, binLabels, barColors, passBinIndex };
+    }
+
+    function buildHistChart(canvas, bins, title) {
+      return new Chart(canvas, {
+        type: 'bar',
+        plugins: [dlAbove],
+        data: {
+          labels: bins.binLabels,
+          datasets: [
+            {
+              data: bins.data,
+              backgroundColor: bins.barColors,
+              borderRadius: 3,
+              borderSkipped: false,
             },
-            scales: {
-              x: { ticks: { font: { size: 10 }, maxRotation: 0, minRotation: 0 } },
-              y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1, precision: 0 },
-                afterFit(s) {
-                  s.paddingTop = 35;
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: title, font: { size: 13 }, padding: { bottom: 14 } },
+            annotation: {
+              annotations: {
+                passLine: {
+                  type: 'line',
+                  xMin: bins.passBinIndex - 0.5,
+                  xMax: bins.passBinIndex - 0.5,
+                  borderColor: chartInk().muted,
+                  borderWidth: 2,
+                  borderDash: [4, 4],
                 },
               },
             },
           },
-        });
-      }
+          scales: {
+            x: { ticks: { font: { size: 10 }, maxRotation: 0, minRotation: 0 } },
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1, precision: 0 },
+              afterFit(s) {
+                s.paddingTop = 35;
+              },
+            },
+          },
+        },
+      });
+    }
 
-      // ── Boxplot helpers ───────────────────────────────────────────────────
-      function boxStats(vals) {
-        if (!vals || !vals.length) return null;
-        const s = [...vals].sort((a, b) => a - b);
-        const n = s.length;
-        return {
-          min: s[0],
-          max: s[n - 1],
-          q1: s[Math.floor(n * 0.25)],
-          median: s[Math.floor(n * 0.5)],
-          q3: s[Math.floor(n * 0.75)],
-        };
-      }
+    // ── Boxplot helpers ───────────────────────────────────────────────────
+    function boxStats(vals) {
+      if (!vals || !vals.length) return null;
+      const s = [...vals].sort((a, b) => a - b);
+      const n = s.length;
+      return {
+        min: s[0],
+        max: s[n - 1],
+        q1: s[Math.floor(n * 0.25)],
+        median: s[Math.floor(n * 0.5)],
+        q3: s[Math.floor(n * 0.75)],
+      };
+    }
 
-      function makeBoxPlugin(statsArr, colors) {
-        return {
-          id: '_box',
-          afterDatasetsDraw(chart) {
-            const { ctx } = chart;
-            const meta = chart.getDatasetMeta(0);
-            statsArr.forEach((stats, i) => {
-              if (!stats) return;
-              const bar = meta.data[i];
-              if (!bar) return;
-              const rawH = bar.height > 0 ? bar.height : chart.chartArea.height / statsArr.length;
-              const bh = Math.min(rawH * 0.55, 60);
-              const capH = bh * 0.35;
-              const xS = chart.scales.x;
-              const y = bar.y;
-              const xMin = xS.getPixelForValue(stats.min);
-              const xMax = xS.getPixelForValue(stats.max);
-              const xQ1 = xS.getPixelForValue(stats.q1);
-              const xQ3 = xS.getPixelForValue(stats.q3);
-              const xMed = xS.getPixelForValue(stats.median);
-              const color = colors[i] || '#4A90D9';
-              ctx.save();
-              ctx.strokeStyle = color;
-              ctx.fillStyle = color + '44';
-              ctx.lineWidth = 1.5;
-              // IQR box (horizontal)
-              ctx.fillRect(xQ1, y - bh / 2, xQ3 - xQ1, bh);
-              ctx.strokeRect(xQ1, y - bh / 2, xQ3 - xQ1, bh);
-              // Median line (vertical)
-              ctx.lineWidth = 2.5;
+    function makeBoxPlugin(statsArr, colors) {
+      return {
+        id: '_box',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          const meta = chart.getDatasetMeta(0);
+          statsArr.forEach((stats, i) => {
+            if (!stats) return;
+            const bar = meta.data[i];
+            if (!bar) return;
+            const rawH = bar.height > 0 ? bar.height : chart.chartArea.height / statsArr.length;
+            const bh = Math.min(rawH * 0.55, 60);
+            const capH = bh * 0.35;
+            const xS = chart.scales.x;
+            const y = bar.y;
+            const xMin = xS.getPixelForValue(stats.min);
+            const xMax = xS.getPixelForValue(stats.max);
+            const xQ1 = xS.getPixelForValue(stats.q1);
+            const xQ3 = xS.getPixelForValue(stats.q3);
+            const xMed = xS.getPixelForValue(stats.median);
+            const color = colors[i] || '#4A90D9';
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color + '44';
+            ctx.lineWidth = 1.5;
+            // IQR box (horizontal)
+            ctx.fillRect(xQ1, y - bh / 2, xQ3 - xQ1, bh);
+            ctx.strokeRect(xQ1, y - bh / 2, xQ3 - xQ1, bh);
+            // Median line (vertical)
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(xMed, y - bh / 2);
+            ctx.lineTo(xMed, y + bh / 2);
+            ctx.stroke();
+            // Whiskers (horizontal) + caps (vertical)
+            ctx.lineWidth = 1.5;
+            [
+              [xQ1, xMin],
+              [xQ3, xMax],
+            ].forEach(([from, to]) => {
               ctx.beginPath();
-              ctx.moveTo(xMed, y - bh / 2);
-              ctx.lineTo(xMed, y + bh / 2);
+              ctx.moveTo(from, y);
+              ctx.lineTo(to, y);
               ctx.stroke();
-              // Whiskers (horizontal) + caps (vertical)
-              ctx.lineWidth = 1.5;
-              [
-                [xQ1, xMin],
-                [xQ3, xMax],
-              ].forEach(([from, to]) => {
-                ctx.beginPath();
-                ctx.moveTo(from, y);
-                ctx.lineTo(to, y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(to, y - capH / 2);
-                ctx.lineTo(to, y + capH / 2);
-                ctx.stroke();
-              });
-              // Value labels above each key position
-              ctx.font = '9px sans-serif';
-              ctx.fillStyle = color;
-              ctx.textAlign = 'center';
-              ctx.textBaseline = 'bottom';
-              const yt = y - bh / 2 - 2;
-              [
-                [xMin, stats.min],
-                [xQ1, stats.q1],
-                [xMed, stats.median],
-                [xQ3, stats.q3],
-                [xMax, stats.max],
-              ].forEach(([xPos, val]) => ctx.fillText(formatFixed(val), xPos, yt));
-              ctx.restore();
+              ctx.beginPath();
+              ctx.moveTo(to, y - capH / 2);
+              ctx.lineTo(to, y + capH / 2);
+              ctx.stroke();
             });
-          },
-        };
-      }
-
-      function buildBoxChart(canvas, labels, gradeArrays, colors, title) {
-        const statsArr = gradeArrays.map(boxStats);
-        return new Chart(canvas, {
-          type: 'bar',
-          plugins: [makeBoxPlugin(statsArr, colors)],
-          data: {
-            labels,
-            datasets: [
-              {
-                data: statsArr.map((s) => (s ? s.median : null)),
-                backgroundColor: 'transparent',
-                borderColor: 'transparent',
-                borderWidth: 0,
-              },
-            ],
-          },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: !!title, text: title ?? '', font: { size: 13 } },
-              annotation: {},
-            },
-            scales: {
-              x: { min: 0, max: 11, ticks: { stepSize: 1 } },
-              y: {
-                ticks: { font: { size: 11 } },
-                afterFit(s) {
-                  s.paddingTop = 18;
-                },
-              },
-            },
-          },
-        });
-      }
-
-      // ── % correct chart helper ────────────────────────────────────────────
-      function buildQChart(canvas, pcts, title) {
-        const colors = pcts.map((p) => {
-          return pctBarColor(p);
-        });
-        return new Chart(canvas, {
-          type: 'bar',
-          plugins: [dlRight],
-          data: {
-            labels: qLabels,
-            datasets: [{ data: pcts, backgroundColor: colors, borderRadius: 3 }],
-          },
-          options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              title: { display: true, text: title, font: { size: 13 } },
-            },
-            scales: {
-              x: {
-                beginAtZero: true,
-                max: 100,
-                ticks: { callback: (v) => v + '%', font: { size: 10 } },
-                afterFit(s) {
-                  s.paddingRight = 35;
-                },
-              },
-              y: { ticks: { font: { size: 10 } } },
-            },
-          },
-        });
-      }
-
-      // ── Tab: Cijferverdeling ──────────────────────────────────────────────
-      function initCijferverdeling() {
-        if (!hasGrades) return;
-        let histChart = null;
-        function renderHistogram(step) {
-          if (histChart) {
-            histChart.destroy();
-            histChart = null;
-          }
-          const canvas = el.querySelector('#chart-hist');
-          if (!canvas) return;
-          histChart = buildHistChart(canvas, makeHistBins(step, grades), 'Cijferverdeling');
-          pushModalChart(histChart);
-        }
-        renderHistogram(0.5);
-        el.querySelectorAll('.hist-bin-btn').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            el.querySelectorAll('.hist-bin-btn').forEach((b) => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            renderHistogram(parseFloat(btn.dataset.bin));
+            // Value labels above each key position
+            ctx.font = '9px sans-serif';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            const yt = y - bh / 2 - 2;
+            [
+              [xMin, stats.min],
+              [xQ1, stats.q1],
+              [xMed, stats.median],
+              [xQ3, stats.q3],
+              [xMax, stats.max],
+            ].forEach(([xPos, val]) => ctx.fillText(formatFixed(val), xPos, yt));
+            ctx.restore();
           });
-        });
-        groupEntries.forEach((entry, i) => {
-          const canvas = el.querySelector(`#chart-hist-grp-${i}`);
-          if (!canvas || !entry.grades.length) return;
-          pushModalChart(buildHistChart(canvas, makeHistBins(1, entry.grades), entry.group.name));
-        });
-      }
+        },
+      };
+    }
 
-      // ── Tab: Boxplots ─────────────────────────────────────────────────────
-      function initBoxplots() {
-        if (!hasGrades) return;
-        const canvas = el.querySelector('#chart-box-combined');
-        if (!canvas) return;
-        const labels = ['Alle', ...groupEntries.map((e) => e.group.name)];
-        const gradeArrays = [grades, ...groupEntries.map((e) => e.grades)];
-        const colors = [
-          '#9e9e9e',
-          ...groupEntries.map((_, i) => GROUP_PALETTE[i % GROUP_PALETTE.length]),
-        ];
-        pushModalChart(buildBoxChart(canvas, labels, gradeArrays, colors, null));
-      }
-
-      // ── Tab: Vraaganalyse ─────────────────────────────────────────────────
-      function initVraaganalyse() {
-        if (!hasQStats) return;
-        const qPcts = qStats.map((s) =>
-          s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
-        );
-        const allCanvas = el.querySelector('#chart-q-all');
-        if (allCanvas)
-          pushModalChart(buildQChart(allCanvas, qPcts, '% correct \u2014 alle leerlingen'));
-        if (hasGroupData) {
-          const groupsCanvas = el.querySelector('#chart-q-groups');
-          if (groupsCanvas) {
-            pushModalChart(
-              new Chart(groupsCanvas, {
-                type: 'bar',
-                plugins: [dlRight],
-                data: {
-                  labels: qLabels,
-                  datasets: groupEntries.map((entry, i) => ({
-                    label: entry.group.name,
-                    data: entry.qStats.map((s) =>
-                      s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
-                    ),
-                    backgroundColor: GROUP_PALETTE[i % GROUP_PALETTE.length],
-                    borderRadius: 2,
-                  })),
-                },
-                options: {
-                  indexAxis: 'y',
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'top',
-                      labels: { font: { size: 11 }, boxWidth: 12, padding: 10 },
-                    },
-                    title: { display: true, text: '% correct per groep', font: { size: 13 } },
-                  },
-                  scales: {
-                    x: {
-                      beginAtZero: true,
-                      max: 100,
-                      ticks: { callback: (v) => v + '%', font: { size: 10 } },
-                      afterFit(s) {
-                        s.paddingRight = 35;
-                      },
-                    },
-                    y: { ticks: { font: { size: 10 } } },
-                  },
-                },
-              }),
-            );
-          }
-        }
-      }
-
-      // ── Tab: RTTI-analyse ─────────────────────────────────────────────────
-      function initRttiAnalyse() {
-        // generateLabels that always uses the dataset's intended color, ignoring per-bar NVT grey
-        const rttiGenLabels = (chart) =>
-          chart.data.datasets.map((ds, i) => ({
-            text: ds.label,
-            fillStyle: ds._legendColor,
-            strokeStyle: 'transparent',
-            lineWidth: 0,
-            borderRadius: 2,
-            hidden: !chart.isDatasetVisible(i),
-            datasetIndex: i,
-          }));
-
-        // Draws a thin 2 px coloured line at the baseline for bars with value === 0
-        const zeroBar = {
-          id: '_zeroBar',
-          afterDatasetsDraw(chart) {
-            const { ctx } = chart;
-            chart.data.datasets.forEach((ds, i) => {
-              const meta = chart.getDatasetMeta(i);
-              if (meta.hidden) return;
-              meta.data.forEach((bar, j) => {
-                if (ds.data[j] !== 0) return;
-                const color = Array.isArray(ds.backgroundColor)
-                  ? ds.backgroundColor[j]
-                  : ds.backgroundColor;
-                ctx.save();
-                ctx.fillStyle = color;
-                ctx.fillRect(bar.x - bar.width / 2, bar.base - 2, bar.width, 2);
-                ctx.restore();
-              });
-            });
+    function buildBoxChart(canvas, labels, gradeArrays, colors, title) {
+      const statsArr = gradeArrays.map(boxStats);
+      return new Chart(canvas, {
+        type: 'bar',
+        plugins: [makeBoxPlugin(statsArr, colors)],
+        data: {
+          labels,
+          datasets: [
+            {
+              data: statsArr.map((s) => (s ? s.median : null)),
+              backgroundColor: 'transparent',
+              borderColor: 'transparent',
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: !!title, text: title ?? '', font: { size: 13 } },
+            annotation: {},
           },
-        };
+          scales: {
+            x: { min: 0, max: 11, ticks: { stepSize: 1 } },
+            y: {
+              ticks: { font: { size: 11 } },
+              afterFit(s) {
+                s.paddingTop = 18;
+              },
+            },
+          },
+        },
+      });
+    }
 
-        // Chart 1: RTTI per cijfergroep (synchronous)
-        const rttiCanvas = el.querySelector('#chart-rtti');
-        if (rttiCanvas && hasRttiData) {
+    // ── % correct chart helper ────────────────────────────────────────────
+    function buildQChart(canvas, pcts, title) {
+      const colors = pcts.map((p) => {
+        return pctBarColor(p);
+      });
+      return new Chart(canvas, {
+        type: 'bar',
+        plugins: [dlRight],
+        data: {
+          labels: qLabels,
+          datasets: [{ data: pcts, backgroundColor: colors, borderRadius: 3 }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            title: { display: true, text: title, font: { size: 13 } },
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { callback: (v) => v + '%', font: { size: 10 } },
+              afterFit(s) {
+                s.paddingRight = 35;
+              },
+            },
+            y: { ticks: { font: { size: 10 } } },
+          },
+        },
+      });
+    }
+
+    // ── Tab: Cijferverdeling ──────────────────────────────────────────────
+    function initCijferverdeling() {
+      if (!hasGrades) return;
+      let histChart = null;
+      function renderHistogram(step) {
+        if (histChart) {
+          histChart.destroy();
+          histChart = null;
+        }
+        const canvas = el.querySelector('#chart-hist');
+        if (!canvas) return;
+        histChart = buildHistChart(canvas, makeHistBins(step, grades), 'Cijferverdeling');
+        pushModalChart(histChart);
+      }
+      renderHistogram(0.5);
+      el.querySelectorAll('.hist-bin-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          el.querySelectorAll('.hist-bin-btn').forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          renderHistogram(parseFloat(btn.dataset.bin));
+        });
+      });
+      groupEntries.forEach((entry, i) => {
+        const canvas = el.querySelector(`#chart-hist-grp-${i}`);
+        if (!canvas || !entry.grades.length) return;
+        pushModalChart(buildHistChart(canvas, makeHistBins(1, entry.grades), entry.group.name));
+      });
+    }
+
+    // ── Tab: Boxplots ─────────────────────────────────────────────────────
+    function initBoxplots() {
+      if (!hasGrades) return;
+      const canvas = el.querySelector('#chart-box-combined');
+      if (!canvas) return;
+      const labels = ['Alle', ...groupEntries.map((e) => e.group.name)];
+      const gradeArrays = [grades, ...groupEntries.map((e) => e.grades)];
+      const colors = [
+        '#9e9e9e',
+        ...groupEntries.map((_, i) => GROUP_PALETTE[i % GROUP_PALETTE.length]),
+      ];
+      pushModalChart(buildBoxChart(canvas, labels, gradeArrays, colors, null));
+    }
+
+    // ── Tab: Vraaganalyse ─────────────────────────────────────────────────
+    function initVraaganalyse() {
+      if (!hasQStats) return;
+      const qPcts = qStats.map((s) =>
+        s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
+      );
+      const allCanvas = el.querySelector('#chart-q-all');
+      if (allCanvas)
+        pushModalChart(buildQChart(allCanvas, qPcts, '% correct \u2014 alle leerlingen'));
+      if (hasGroupData) {
+        const groupsCanvas = el.querySelector('#chart-q-groups');
+        if (groupsCanvas) {
           pushModalChart(
-            new Chart(rttiCanvas, {
+            new Chart(groupsCanvas, {
               type: 'bar',
-              plugins: [dlAbovePct, lgUp, zeroBar],
+              plugins: [dlRight],
               data: {
-                labels: RTTI_CATS,
-                datasets: GRADE_GROUP_LABELS.map((label, gi) => ({
-                  label,
-                  data: RTTI_CATS.map((_, ci) => {
-                    const { scored, max } = rttiAccum[gi][ci];
-                    return max > 0 ? Math.round((scored / max) * 100) : null;
-                  }),
-                  backgroundColor:
-                    gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),
+                labels: qLabels,
+                datasets: groupEntries.map((entry, i) => ({
+                  label: entry.group.name,
+                  data: entry.qStats.map((s) =>
+                    s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
+                  ),
+                  backgroundColor: GROUP_PALETTE[i % GROUP_PALETTE.length],
                   borderRadius: 2,
                 })),
               },
               options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -915,299 +841,339 @@ export async function openExamOverviewModal(
                     position: 'top',
                     labels: { font: { size: 11 }, boxWidth: 12, padding: 10 },
                   },
-                  title: { display: true, text: 'RTTI-scores per cijfergroep', font: { size: 13 } },
-                },
-                scales: {
-                  x: { ticks: { font: { size: 12 } } },
-                  y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { callback: (v) => v + '%' },
-                    afterFit(s) {
-                      s.paddingTop = 35;
-                    },
-                  },
-                },
-              },
-            }),
-          );
-        }
-
-        // Chart 2: RTTI per groep (synchronous)
-        const rttiGroupsCanvas = el.querySelector('#chart-rtti-groups');
-        if (rttiGroupsCanvas && hasQStats) {
-          function rttiPctsFor(qStatsArr) {
-            return RTTI_CATS.map((cat) => {
-              let scored = 0,
-                max = 0;
-              exam.questions.forEach((q, qi) => {
-                if (q.rtti !== cat) return;
-                scored += qStatsArr[qi].totalScored;
-                max += qStatsArr[qi].totalMax;
-              });
-              return max > 0 ? Math.round((scored / max) * 100) : null;
-            });
-          }
-          const mkDs = (label, pcts, color) => ({
-            label,
-            data: pcts.map((v) => (v === null ? 50 : v)),
-            backgroundColor: pcts.map((v) => (v === null ? NVT_CLR : color)),
-            borderRadius: 2,
-            nvtArr: pcts.map((v) => v === null),
-            _legendColor: color,
-          });
-          const rttiColors = ['#5cb85c', '#5bc0de', '#f0ad4e', '#d9534f'];
-          const groupSources = [
-            { label: 'Alle', pcts: rttiPctsFor(qStats) },
-            ...groupEntries.map((entry) => ({
-              label: entry.group.name,
-              pcts: rttiPctsFor(entry.qStats),
-            })),
-          ];
-          pushModalChart(
-            new Chart(rttiGroupsCanvas, {
-              type: 'bar',
-              plugins: [dlAbovePctNvt, lgUp],
-              data: {
-                labels: groupSources.map((s) => s.label),
-                datasets: RTTI_CATS.map((cat, ci) =>
-                  mkDs(
-                    cat,
-                    groupSources.map((s) => s.pcts[ci]),
-                    rttiColors[ci],
-                  ),
-                ),
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                      font: { size: 11 },
-                      boxWidth: 12,
-                      padding: 10,
-                      generateLabels: rttiGenLabels,
-                    },
-                  },
-                  title: { display: true, text: 'RTTI-scores per groep', font: { size: 13 } },
-                },
-                scales: {
-                  x: { ticks: { font: { size: 12 } } },
-                  y: {
-                    beginAtZero: true,
-                    max: 100,
-                    ticks: { callback: (v) => v + '%' },
-                    afterFit(s) {
-                      s.paddingTop = 35;
-                    },
-                  },
-                },
-              },
-            }),
-          );
-        }
-
-        // Chart 3: RTTI comparison across exams in this year (async, uses cached scores)
-        (async () => {
-          const container = el.querySelector('#rtti-history-container');
-          if (!container) return;
-          const allExams = await Store.getExams(year);
-          const examRttiRows = [];
-          for (const ex of allExams.filter((ex) => String(ex.jaarlaag) === String(exam.jaarlaag))) {
-            const cats = RTTI_CATS.map(() => ({ scored: 0, max: 0 }));
-            for (const s of students) {
-              const rec = await Store.getStudentScores(s.id, year);
-              const exScores = rec?.scores?.[ex.id];
-              if (!exScores) continue;
-              for (const [ci, cat] of RTTI_CATS.entries()) {
-                for (const q of ex.questions.filter((q) => q.rtti === cat)) {
-                  const val = exScores[q.id];
-                  if (val == null || String(val).toUpperCase() === 'N') continue;
-                  const num = Number(val);
-                  if (isNaN(num) || num < 0) continue;
-                  cats[ci].scored += num;
-                  cats[ci].max += q.max_points;
-                }
-              }
-            }
-            const pcts = cats.map(({ scored, max }) =>
-              max > 0 ? Math.round((scored / max) * 100) : null,
-            );
-            if (pcts.some((p) => p !== null))
-              examRttiRows.push({ title: ex.title, id: ex.id, pcts });
-          }
-          if (!el.isConnected) return;
-          if (!examRttiRows.length) {
-            container.innerHTML = '<p class="hint">Geen data voor vergelijking.</p>';
-            return;
-          }
-          container.innerHTML =
-            '<div class="u-border u-rounded u-p-10 u-bg-surface"><div class="u-h-240 u-relative"><canvas id="chart-rtti-history"></canvas></div></div>';
-          const histCanvas = el.querySelector('#chart-rtti-history');
-          if (!histCanvas) return;
-          const RTTI_PALETTE = ['#5cb85c', '#5bc0de', '#f0ad4e', '#d9534f'];
-          pushModalChart(
-            new Chart(histCanvas, {
-              type: 'bar',
-              plugins: [dlAbovePctNvt, lgUp],
-              data: {
-                labels: examRttiRows.map((ex) => ex.title),
-                datasets: RTTI_CATS.map((cat, ci) => {
-                  const raw = examRttiRows.map((ex) => ex.pcts[ci]);
-                  return {
-                    label: cat,
-                    data: raw.map((v) => (v === null ? 50 : v)),
-                    backgroundColor: raw.map((v) => (v === null ? NVT_CLR : RTTI_PALETTE[ci])),
-                    borderRadius: 2,
-                    nvtArr: raw.map((v) => v === null),
-                    _legendColor: RTTI_PALETTE[ci],
-                  };
-                }),
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                      font: { size: 11 },
-                      boxWidth: 12,
-                      padding: 10,
-                      generateLabels: rttiGenLabels,
-                    },
-                  },
-                  title: { display: true, text: 'RTTI-scores per toets', font: { size: 13 } },
+                  title: { display: true, text: '% correct per groep', font: { size: 13 } },
                 },
                 scales: {
                   x: {
-                    ticks: {
-                      maxRotation: 30,
-                      color: (ctx) =>
-                        examRttiRows[ctx.index]?.id === exam.id ? '#4a90d9' : undefined,
-                      font: (ctx) => ({
-                        size: 11,
-                        weight: examRttiRows[ctx.index]?.id === exam.id ? 'bold' : 'normal',
-                      }),
-                    },
-                  },
-                  y: {
                     beginAtZero: true,
                     max: 100,
-                    ticks: { callback: (v) => v + '%' },
+                    ticks: { callback: (v) => v + '%', font: { size: 10 } },
                     afterFit(s) {
-                      s.paddingTop = 35;
+                      s.paddingRight = 35;
                     },
                   },
+                  y: { ticks: { font: { size: 10 } } },
                 },
               },
             }),
           );
-        })();
+        }
+      }
+    }
+
+    // ── Tab: RTTI-analyse ─────────────────────────────────────────────────
+    function initRttiAnalyse() {
+      // generateLabels that always uses the dataset's intended color, ignoring per-bar NVT grey
+      const rttiGenLabels = (chart) =>
+        chart.data.datasets.map((ds, i) => ({
+          text: ds.label,
+          fillStyle: ds._legendColor,
+          strokeStyle: 'transparent',
+          lineWidth: 0,
+          borderRadius: 2,
+          hidden: !chart.isDatasetVisible(i),
+          datasetIndex: i,
+        }));
+
+      // Draws a thin 2 px coloured line at the baseline for bars with value === 0
+      const zeroBar = {
+        id: '_zeroBar',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          chart.data.datasets.forEach((ds, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if (meta.hidden) return;
+            meta.data.forEach((bar, j) => {
+              if (ds.data[j] !== 0) return;
+              const color = Array.isArray(ds.backgroundColor)
+                ? ds.backgroundColor[j]
+                : ds.backgroundColor;
+              ctx.save();
+              ctx.fillStyle = color;
+              ctx.fillRect(bar.x - bar.width / 2, bar.base - 2, bar.width, 2);
+              ctx.restore();
+            });
+          });
+        },
+      };
+
+      // Chart 1: RTTI per cijfergroep (synchronous)
+      const rttiCanvas = el.querySelector('#chart-rtti');
+      if (rttiCanvas && hasRttiData) {
+        pushModalChart(
+          new Chart(rttiCanvas, {
+            type: 'bar',
+            plugins: [dlAbovePct, lgUp, zeroBar],
+            data: {
+              labels: RTTI_CATS,
+              datasets: GRADE_GROUP_LABELS.map((label, gi) => ({
+                label,
+                data: RTTI_CATS.map((_, ci) => {
+                  const { scored, max } = rttiAccum[gi][ci];
+                  return max > 0 ? Math.round((scored / max) * 100) : null;
+                }),
+                backgroundColor:
+                  gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),
+                borderRadius: 2,
+              })),
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: { font: { size: 11 }, boxWidth: 12, padding: 10 },
+                },
+                title: { display: true, text: 'RTTI-scores per cijfergroep', font: { size: 13 } },
+              },
+              scales: {
+                x: { ticks: { font: { size: 12 } } },
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: { callback: (v) => v + '%' },
+                  afterFit(s) {
+                    s.paddingTop = 35;
+                  },
+                },
+              },
+            },
+          }),
+        );
       }
 
-      // ── Tab: Observaties ──────────────────────────────────────────────────
-      function initObservaties() {
-        if (!hasObsData) return;
-        const obsLabels = examObsObjects.map((o) => `${o.icon} ${o.naam}`);
-        const obsCounts = examObsObjects.map((o) => obsAccum[o.id]?.count ?? 0);
-        const obsBarColors = examObsObjects.map((_, i) => GROUP_PALETTE[i % GROUP_PALETTE.length]);
-
-        // Chart 1: histogram
-        const histCanvas = el.querySelector('#chart-obs-hist');
-        if (histCanvas) {
-          pushModalChart(
-            new Chart(histCanvas, {
-              type: 'bar',
-              plugins: [dlAbove, lgUp],
-              data: {
-                labels: obsLabels,
-                datasets: [{ data: obsCounts, backgroundColor: obsBarColors, borderRadius: 3 }],
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { display: false },
-                  title: { display: true, text: 'Observaties', font: { size: 13 } },
-                },
-                scales: {
-                  x: { ticks: { font: { size: 11 }, maxRotation: 20 } },
-                  y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1, precision: 0 },
-                    afterFit(s) {
-                      s.paddingTop = 30;
-                    },
-                  },
-                },
-              },
-            }),
-          );
+      // Chart 2: RTTI per groep (synchronous)
+      const rttiGroupsCanvas = el.querySelector('#chart-rtti-groups');
+      if (rttiGroupsCanvas && hasQStats) {
+        function rttiPctsFor(qStatsArr) {
+          return RTTI_CATS.map((cat) => {
+            let scored = 0,
+              max = 0;
+            exam.questions.forEach((q, qi) => {
+              if (q.rtti !== cat) return;
+              scored += qStatsArr[qi].totalScored;
+              max += qStatsArr[qi].totalMax;
+            });
+            return max > 0 ? Math.round((scored / max) * 100) : null;
+          });
         }
+        const mkDs = (label, pcts, color) => ({
+          label,
+          data: pcts.map((v) => (v === null ? 50 : v)),
+          backgroundColor: pcts.map((v) => (v === null ? NVT_CLR : color)),
+          borderRadius: 2,
+          nvtArr: pcts.map((v) => v === null),
+          _legendColor: color,
+        });
+        const rttiColors = ['#5cb85c', '#5bc0de', '#f0ad4e', '#d9534f'];
+        const groupSources = [
+          { label: 'Alle', pcts: rttiPctsFor(qStats) },
+          ...groupEntries.map((entry) => ({
+            label: entry.group.name,
+            pcts: rttiPctsFor(entry.qStats),
+          })),
+        ];
+        pushModalChart(
+          new Chart(rttiGroupsCanvas, {
+            type: 'bar',
+            plugins: [dlAbovePctNvt, lgUp],
+            data: {
+              labels: groupSources.map((s) => s.label),
+              datasets: RTTI_CATS.map((cat, ci) =>
+                mkDs(
+                  cat,
+                  groupSources.map((s) => s.pcts[ci]),
+                  rttiColors[ci],
+                ),
+              ),
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    font: { size: 11 },
+                    boxWidth: 12,
+                    padding: 10,
+                    generateLabels: rttiGenLabels,
+                  },
+                },
+                title: { display: true, text: 'RTTI-scores per groep', font: { size: 13 } },
+              },
+              scales: {
+                x: { ticks: { font: { size: 12 } } },
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: { callback: (v) => v + '%' },
+                  afterFit(s) {
+                    s.paddingTop = 35;
+                  },
+                },
+              },
+            },
+          }),
+        );
+      }
 
-        // Chart 2: per group
-        if (hasGroupData) {
-          const grpCanvas = el.querySelector('#chart-obs-groups');
-          if (grpCanvas) {
-            pushModalChart(
-              new Chart(grpCanvas, {
-                type: 'bar',
-                plugins: [dlAbove, lgUp],
-                data: {
-                  labels: obsLabels,
-                  datasets: groupEntries.map((entry, i) => ({
-                    label: entry.group.name,
-                    data: examObsObjects.map((o) => obsAccum[o.id]?.byGroup[entry.group.id] ?? 0),
-                    backgroundColor: GROUP_PALETTE[i % GROUP_PALETTE.length],
-                    borderRadius: 2,
-                  })),
-                },
-                options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'top',
-                      labels: { font: { size: 11 }, boxWidth: 12, padding: 10 },
-                    },
-                    title: { display: true, text: 'Observaties per groep', font: { size: 13 } },
-                  },
-                  scales: {
-                    x: { ticks: { font: { size: 11 }, maxRotation: 20 } },
-                    y: {
-                      beginAtZero: true,
-                      ticks: { stepSize: 1, precision: 0 },
-                      afterFit(s) {
-                        s.paddingTop = 30;
-                      },
-                    },
-                  },
-                },
-              }),
-            );
+      // Chart 3: RTTI comparison across exams in this year (async, uses cached scores)
+      (async () => {
+        const container = el.querySelector('#rtti-history-container');
+        if (!container) return;
+        const allExams = await Store.getExams(year);
+        const examRttiRows = [];
+        for (const ex of allExams.filter((ex) => String(ex.jaarlaag) === String(exam.jaarlaag))) {
+          const cats = RTTI_CATS.map(() => ({ scored: 0, max: 0 }));
+          for (const s of students) {
+            const rec = await Store.getStudentScores(s.id, year);
+            const exScores = rec?.scores?.[ex.id];
+            if (!exScores) continue;
+            for (const [ci, cat] of RTTI_CATS.entries()) {
+              for (const q of ex.questions.filter((q) => q.rtti === cat)) {
+                const val = exScores[q.id];
+                if (val == null || String(val).toUpperCase() === 'N') continue;
+                const num = Number(val);
+                if (isNaN(num) || num < 0) continue;
+                cats[ci].scored += num;
+                cats[ci].max += q.max_points;
+              }
+            }
           }
+          const pcts = cats.map(({ scored, max }) =>
+            max > 0 ? Math.round((scored / max) * 100) : null,
+          );
+          if (pcts.some((p) => p !== null)) examRttiRows.push({ title: ex.title, id: ex.id, pcts });
         }
+        if (!el.isConnected) return;
+        if (!examRttiRows.length) {
+          container.innerHTML = '<p class="hint">Geen data voor vergelijking.</p>';
+          return;
+        }
+        container.innerHTML =
+          '<div class="u-border u-rounded u-p-10 u-bg-surface"><div class="u-h-240 u-relative"><canvas id="chart-rtti-history"></canvas></div></div>';
+        const histCanvas = el.querySelector('#chart-rtti-history');
+        if (!histCanvas) return;
+        const RTTI_PALETTE = ['#5cb85c', '#5bc0de', '#f0ad4e', '#d9534f'];
+        pushModalChart(
+          new Chart(histCanvas, {
+            type: 'bar',
+            plugins: [dlAbovePctNvt, lgUp],
+            data: {
+              labels: examRttiRows.map((ex) => ex.title),
+              datasets: RTTI_CATS.map((cat, ci) => {
+                const raw = examRttiRows.map((ex) => ex.pcts[ci]);
+                return {
+                  label: cat,
+                  data: raw.map((v) => (v === null ? 50 : v)),
+                  backgroundColor: raw.map((v) => (v === null ? NVT_CLR : RTTI_PALETTE[ci])),
+                  borderRadius: 2,
+                  nvtArr: raw.map((v) => v === null),
+                  _legendColor: RTTI_PALETTE[ci],
+                };
+              }),
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: {
+                    font: { size: 11 },
+                    boxWidth: 12,
+                    padding: 10,
+                    generateLabels: rttiGenLabels,
+                  },
+                },
+                title: { display: true, text: 'RTTI-scores per toets', font: { size: 13 } },
+              },
+              scales: {
+                x: {
+                  ticks: {
+                    maxRotation: 30,
+                    color: (ctx) =>
+                      examRttiRows[ctx.index]?.id === exam.id ? '#4a90d9' : undefined,
+                    font: (ctx) => ({
+                      size: 11,
+                      weight: examRttiRows[ctx.index]?.id === exam.id ? 'bold' : 'normal',
+                    }),
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: { callback: (v) => v + '%' },
+                  afterFit(s) {
+                    s.paddingTop = 35;
+                  },
+                },
+              },
+            },
+          }),
+        );
+      })();
+    }
 
-        // Chart 3: per cijfergroep (same structure as RTTI-per-cijfergroep)
-        const gradeCanvas = el.querySelector('#chart-obs-grades');
-        if (gradeCanvas) {
+    // ── Tab: Observaties ──────────────────────────────────────────────────
+    function initObservaties() {
+      if (!hasObsData) return;
+      const obsLabels = examObsObjects.map((o) => `${o.icon} ${o.naam}`);
+      const obsCounts = examObsObjects.map((o) => obsAccum[o.id]?.count ?? 0);
+      const obsBarColors = examObsObjects.map((_, i) => GROUP_PALETTE[i % GROUP_PALETTE.length]);
+
+      // Chart 1: histogram
+      const histCanvas = el.querySelector('#chart-obs-hist');
+      if (histCanvas) {
+        pushModalChart(
+          new Chart(histCanvas, {
+            type: 'bar',
+            plugins: [dlAbove, lgUp],
+            data: {
+              labels: obsLabels,
+              datasets: [{ data: obsCounts, backgroundColor: obsBarColors, borderRadius: 3 }],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Observaties', font: { size: 13 } },
+              },
+              scales: {
+                x: { ticks: { font: { size: 11 }, maxRotation: 20 } },
+                y: {
+                  beginAtZero: true,
+                  ticks: { stepSize: 1, precision: 0 },
+                  afterFit(s) {
+                    s.paddingTop = 30;
+                  },
+                },
+              },
+            },
+          }),
+        );
+      }
+
+      // Chart 2: per group
+      if (hasGroupData) {
+        const grpCanvas = el.querySelector('#chart-obs-groups');
+        if (grpCanvas) {
           pushModalChart(
-            new Chart(gradeCanvas, {
+            new Chart(grpCanvas, {
               type: 'bar',
               plugins: [dlAbove, lgUp],
               data: {
                 labels: obsLabels,
-                datasets: GRADE_GROUP_LABELS.map((label, gi) => ({
-                  label,
-                  data: examObsObjects.map((o) => obsAccum[o.id]?.byGradeGroup[gi] ?? 0),
-                  backgroundColor:
-                    gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),
+                datasets: groupEntries.map((entry, i) => ({
+                  label: entry.group.name,
+                  data: examObsObjects.map((o) => obsAccum[o.id]?.byGroup[entry.group.id] ?? 0),
+                  backgroundColor: GROUP_PALETTE[i % GROUP_PALETTE.length],
                   borderRadius: 2,
                 })),
               },
@@ -1220,7 +1186,7 @@ export async function openExamOverviewModal(
                     position: 'top',
                     labels: { font: { size: 11 }, boxWidth: 12, padding: 10 },
                   },
-                  title: { display: true, text: 'Observaties per cijfergroep', font: { size: 13 } },
+                  title: { display: true, text: 'Observaties per groep', font: { size: 13 } },
                 },
                 scales: {
                   x: { ticks: { font: { size: 11 }, maxRotation: 20 } },
@@ -1238,49 +1204,85 @@ export async function openExamOverviewModal(
         }
       }
 
-      // ── Tab switching ─────────────────────────────────────────────────────
-      const tabInited = new Set(['resultaten']);
-      function switchTab(name) {
-        el.querySelectorAll('.overview-tab').forEach((b) =>
-          b.classList.toggle('selected', b.dataset.tab === name),
+      // Chart 3: per cijfergroep (same structure as RTTI-per-cijfergroep)
+      const gradeCanvas = el.querySelector('#chart-obs-grades');
+      if (gradeCanvas) {
+        pushModalChart(
+          new Chart(gradeCanvas, {
+            type: 'bar',
+            plugins: [dlAbove, lgUp],
+            data: {
+              labels: obsLabels,
+              datasets: GRADE_GROUP_LABELS.map((label, gi) => ({
+                label,
+                data: examObsObjects.map((o) => obsAccum[o.id]?.byGradeGroup[gi] ?? 0),
+                backgroundColor:
+                  gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),
+                borderRadius: 2,
+              })),
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: { font: { size: 11 }, boxWidth: 12, padding: 10 },
+                },
+                title: { display: true, text: 'Observaties per cijfergroep', font: { size: 13 } },
+              },
+              scales: {
+                x: { ticks: { font: { size: 11 }, maxRotation: 20 } },
+                y: {
+                  beginAtZero: true,
+                  ticks: { stepSize: 1, precision: 0 },
+                  afterFit(s) {
+                    s.paddingTop = 30;
+                  },
+                },
+              },
+            },
+          }),
         );
-        el.querySelectorAll('.tab-pane').forEach((p) =>
-          p.classList.toggle('hidden', p.id !== `tab-${name}`),
-        );
-        if (!tabInited.has(name)) {
-          tabInited.add(name);
-          if (name === 'cijferverdeling') initCijferverdeling();
-          else if (name === 'boxplots') initBoxplots();
-          else if (name === 'vraaganalyse') initVraaganalyse();
-          else if (name === 'rtti-analyse') initRttiAnalyse();
-          else if (name === 'observaties') initObservaties();
-        }
       }
-      el.querySelectorAll('.overview-tab').forEach((btn) => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    }
+
+    // ── Tab switching ─────────────────────────────────────────────────────
+    const tabInited = new Set(['resultaten']);
+    function switchTab(name) {
+      el.querySelectorAll('.tab-pane').forEach((p) =>
+        p.classList.toggle('hidden', p.id !== `tab-${name}`),
+      );
+      if (!tabInited.has(name)) {
+        tabInited.add(name);
+        if (name === 'cijferverdeling') initCijferverdeling();
+        else if (name === 'boxplots') initBoxplots();
+        else if (name === 'vraaganalyse') initVraaganalyse();
+        else if (name === 'rtti-analyse') initRttiAnalyse();
+        else if (name === 'observaties') initObservaties();
+      }
+    }
+    switchTabRef = switchTab;
+
+    if (initialTab !== 'resultaten') switchTab(initialTab);
+
+    // Background changes: new scores or edits of this exam refresh the
+    // overview silently on the same tab. (The resit summary is computed by
+    // the caller, so it is not refreshed.)
+    if (!scoreOverride) {
+      const currentTab = () => dialog.activeTab ?? 'resultaten';
+      const refresh = modalRefresher(() =>
+        openExamOverviewModal(examId, year, null, isSummary, currentTab()),
+      );
+      onModalSync('scores', (ev) => {
+        if (ev.year === year && ev.subject === Store.getActiveSubject()) refresh();
       });
-
-      if (initialTab !== 'resultaten') switchTab(initialTab);
-
-      // Background changes: new scores or edits of this exam refresh the
-      // overview silently on the same tab. (The resit summary is computed by
-      // the caller, so it is not refreshed.)
-      if (!scoreOverride) {
-        const currentTab = () =>
-          el.querySelector('.overview-tab.selected')?.dataset.tab ?? 'resultaten';
-        const refresh = modalRefresher(() =>
-          openExamOverviewModal(examId, year, null, isSummary, currentTab()),
-        );
-        onModalSync('scores', (ev) => {
-          if (ev.year === year && ev.subject === Store.getActiveSubject()) refresh();
-        });
-        onModalSync('exam', (ev) => {
-          if (ev.id !== examId || ev.year !== year) return;
-          if (ev.after) refresh();
-          else showReloadNotice('Deze toets is verwijderd door een collega.', closeModal);
-        });
-      }
-    },
-    'modal-overview',
-  );
+      onModalSync('exam', (ev) => {
+        if (ev.id !== examId || ev.year !== year) return;
+        if (ev.after) refresh();
+        else showReloadNotice('Deze toets is verwijderd door een collega.', closeModal);
+      });
+    }
+  }
 }

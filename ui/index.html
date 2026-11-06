@@ -8,25 +8,214 @@
   </head>
   <body>
     <header id="topbar" class="hidden">
-      <button class="app-title" id="btn-about" title="Over Maatwerk">Maatwerk</button>
-      <nav id="main-nav">
-        <button class="nav-btn" data-screen="leerlingen">Leerlingen</button>
-        <button class="nav-btn" data-screen="groepen">Groepen</button>
-        <button class="nav-btn" data-screen="toetsen">Toetsen</button>
-        <button class="nav-btn" data-screen="observaties">Observaties</button>
-        <button class="nav-btn" data-screen="opdrachten">Opdrachten</button>
-        <button class="nav-btn hidden" data-screen="gebruikers">Gebruikers</button>
-        <button class="nav-btn hidden" data-screen="school">School</button>
-        <button class="nav-btn hidden" data-screen="gegevens">Gegevenscontrole</button>
-        <button class="nav-btn hidden" data-screen="instellingen">Instellingen</button>
+      <button class="app-brand" id="btn-about" title="Over Maatwerk" aria-label="Over Maatwerk">
+        <img
+          class="brand-icon theme-light-only"
+          src="./src/assets/brand/maatwerk-icon.svg"
+          alt=""
+          width="28"
+          height="28"
+        />
+        <img
+          class="brand-icon theme-dark-only"
+          src="./src/assets/brand/maatwerk-icon-dark.svg"
+          alt=""
+          width="28"
+          height="28"
+        />
+        <img
+          class="brand-word theme-light-only"
+          src="./src/assets/brand/maatwerk-tabbalk.svg"
+          alt=""
+        />
+        <img
+          class="brand-word theme-dark-only"
+          src="./src/assets/brand/maatwerk-tabbalk-dark.svg"
+          alt=""
+        />
+      </button>
+      <nav id="main-nav" aria-label="Hoofdmenu">
+        <button class="nav-btn" data-screen="leerlingen">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4.5 21a7.5 7.5 0 0 1 15 0" />
+          </svg>
+          <span>Leerlingen</span>
+        </button>
+        <button class="nav-btn" data-screen="groepen">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="9" cy="8" r="3.5" />
+            <path d="M2 20.5a7 7 0 0 1 14 0" />
+            <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8" />
+            <path d="M18.5 14a7 7 0 0 1 3.5 6.5" />
+          </svg>
+          <span>Groepen</span>
+        </button>
+        <button class="nav-btn" data-screen="toetsen">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h6" />
+            <path d="M14 2.5 19 7.5V11" />
+            <path d="M14 2.5v5h5" />
+            <path d="M8.5 11h5M8.5 14.5h3" />
+            <circle cx="17.5" cy="17.5" r="4.2" />
+            <path d="M16.4 16.2h2.2l-1.5 3" />
+          </svg>
+          <span>Toetsen</span>
+        </button>
+        <button class="nav-btn" data-screen="observaties">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          <span>Observaties</span>
+        </button>
+        <button class="nav-btn" data-screen="opdrachten">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M9 3.5h3.5a2 2 0 1 1 4 0H20v5.5a2 2 0 1 0 0 4V20h-5.5a2 2 0 1 0-4 0H5v-5.5a2 2 0 1 1 0-4V3.5z"
+            />
+          </svg>
+          <span>Opdrachten</span>
+        </button>
+        <button class="nav-btn hidden" data-screen="gebruikers">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <circle cx="9" cy="11" r="2.5" />
+            <path d="M5.5 16.5a3.5 3.5 0 0 1 7 0M15 10h3M15 13.5h3" />
+          </svg>
+          <span>Gebruikers</span>
+        </button>
+        <button class="nav-btn hidden" data-screen="school">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M2.5 9 12 4.5 21.5 9 12 13.5z" />
+            <path d="M6.5 11v5c0 1.6 2.5 3 5.5 3s5.5-1.4 5.5-3v-5" />
+            <path d="M21.5 9v5" />
+          </svg>
+          <span>School</span>
+        </button>
+        <button class="nav-btn hidden" data-screen="gegevens">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3 4.5 6v6c0 4.4 3.2 7.9 7.5 9 4.3-1.1 7.5-4.6 7.5-9V6z" />
+            <path d="m8.5 12 2.5 2.5 4.5-5" />
+          </svg>
+          <span>Gegevenscontrole</span>
+        </button>
+        <button class="nav-btn hidden" data-screen="instellingen">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" />
+            <circle cx="15" cy="6" r="2" />
+            <circle cx="9" cy="12" r="2" />
+            <circle cx="17" cy="18" r="2" />
+          </svg>
+          <span>Instellingen</span>
+        </button>
       </nav>
       <button
         id="user-badge-btn"
-        class="user-badge-mini badge-circle hidden"
-        data-badge-color="#888"
-      >
-        —
-      </button>
+        class="avatar avatar--38 avatar--round avatar--ring-accent hidden"
+        aria-label="Gebruikersmenu"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+      ></button>
     </header>
 
     <main id="app">
@@ -35,24 +224,168 @@
 
       <!-- Leerlingen -->
       <section id="screen-leerlingen" class="screen">
-        <div class="screen-header screen-header--h32">
-          <h2>Leerlingen</h2>
-          <div class="header-actions">
-            <button class="btn btn--secondary" id="btn-import-students">
-              &#8593; CSV importeren
-            </button>
-            <button class="btn btn--primary" id="btn-add-student">+ Leerling toevoegen</button>
-            <input id="student-search" type="search" placeholder="Zoeken…" class="search-input" />
-            <label class="toolbar-inline-label">Schooljaar:</label>
-            <div id="student-year-select" class="csel-host"></div>
+        <div class="screen-head">
+          <div class="screen-header screen-header--h32">
+            <h2>Leerlingen</h2>
+            <div class="header-actions">
+              <button class="btn btn--secondary" id="btn-import-students">
+                &#8593; CSV importeren
+              </button>
+              <button class="btn btn--primary" id="btn-add-student">+ Leerling toevoegen</button>
+              <input id="student-search" type="search" placeholder="Zoeken…" class="search-input" />
+              <label class="toolbar-inline-label">Schooljaar:</label>
+              <div id="student-year-select" class="csel-host"></div>
+            </div>
           </div>
-        </div>
-        <div class="filter-row" id="filter-row-leerlingen">
-          <!-- #filter-bar lives here initially and is moved between screens on navigation -->
-          <div id="filter-bar" class="filter-bar">
-            <!-- Admin-only: vakken selector -->
-            <div class="filter-popover-wrap hidden" id="admin-vak-wrap">
-              <button id="btn-filter-vak" class="filter-btn">
+          <div class="filter-row" id="filter-row-leerlingen">
+            <!-- #filter-bar lives here initially and is moved between screens on navigation -->
+            <div id="filter-bar" class="filter-bar">
+              <!-- Admin-only: vakken selector -->
+              <div class="filter-popover-wrap hidden" id="admin-vak-wrap">
+                <button id="btn-filter-vak" class="filter-btn">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                    />
+                  </svg>
+                  <span class="filter-btn-label" id="lbl-filter-vak">Alle vakken</span>
+                </button>
+                <div id="pop-vak" class="filter-popover hidden">
+                  <div id="pop-vak-toggles"></div>
+                  <hr />
+                  <div class="filter-popover-actions">
+                    <button class="filter-pop-alles" id="pop-vak-alles">Alles</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Schoolsoort filter -->
+              <div class="filter-popover-wrap">
+                <button id="btn-filter-ss" class="filter-btn">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                    />
+                  </svg>
+                  <span class="filter-btn-label" id="lbl-filter-ss">Alle schoolsoorten</span>
+                </button>
+                <div id="pop-ss" class="filter-popover hidden">
+                  <div id="pop-ss-toggles"></div>
+                  <hr />
+                  <div class="filter-popover-actions">
+                    <button class="filter-pop-alles" id="pop-ss-alles">Alles</button>
+                    <button class="filter-pop-niets" id="pop-ss-niets">Niets</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Jaarlaag klas filter (wiskunde only) -->
+              <div class="filter-popover-wrap hidden" id="jl-klas-wrap">
+                <button id="btn-filter-jl-klas" class="filter-btn">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                    />
+                  </svg>
+                  <span class="filter-btn-label" id="lbl-filter-jl-klas">Alle jaarlagen</span>
+                </button>
+                <div id="pop-jl-klas" class="filter-popover hidden">
+                  <div id="pop-jl-klas-toggles"></div>
+                  <hr />
+                  <div class="filter-popover-actions">
+                    <button class="filter-pop-alles" id="pop-jl-klas-alles">Alles</button>
+                    <button class="filter-pop-niets" id="pop-jl-klas-niets">Niets</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Jaarlaag filter -->
+              <div class="filter-popover-wrap">
+                <button id="btn-filter-jl" class="filter-btn">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                    />
+                  </svg>
+                  <span class="filter-btn-label" id="lbl-filter-jl">Alle jaarlagen</span>
+                </button>
+                <div id="pop-jl" class="filter-popover hidden">
+                  <div id="pop-jl-toggles"></div>
+                  <hr />
+                  <div class="filter-popover-actions">
+                    <button class="filter-pop-alles" id="pop-jl-alles">Alles</button>
+                    <button class="filter-pop-niets" id="pop-jl-niets">Niets</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Observatie filter (opdrachten only) -->
+              <div class="filter-popover-wrap filter-screen-hidden" id="obs-filter-wrap">
+                <button id="btn-filter-obs" class="filter-btn">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+                    />
+                  </svg>
+                  <span class="filter-btn-label" id="lbl-filter-obs">Alle observaties</span>
+                </button>
+                <div id="pop-obs" class="filter-popover hidden">
+                  <div id="pop-obs-toggles"></div>
+                  <hr />
+                  <div class="filter-popover-actions">
+                    <button class="filter-pop-alles" id="pop-obs-alles">Alles</button>
+                    <button class="filter-pop-niets" id="pop-obs-niets">Niets</button>
+                  </div>
+                </div>
+              </div>
+              <!-- Eigen/Alle toggle (teacher only) -->
+              <button id="btn-filter-eigen" class="filter-btn hidden">
                 <svg
                   width="14"
                   height="14"
@@ -68,151 +401,9 @@
                     d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
                   />
                 </svg>
-                <span class="filter-btn-label" id="lbl-filter-vak">Alle vakken</span>
+                <span class="filter-btn-label" id="lbl-filter-eigen">Alle leerlingen</span>
               </button>
-              <div id="pop-vak" class="filter-popover hidden">
-                <div id="pop-vak-toggles"></div>
-                <hr />
-                <div class="filter-popover-actions">
-                  <button class="filter-pop-alles" id="pop-vak-alles">Alles</button>
-                </div>
-              </div>
             </div>
-            <!-- Schoolsoort filter -->
-            <div class="filter-popover-wrap">
-              <button id="btn-filter-ss" class="filter-btn">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
-                  />
-                </svg>
-                <span class="filter-btn-label" id="lbl-filter-ss">Alle schoolsoorten</span>
-              </button>
-              <div id="pop-ss" class="filter-popover hidden">
-                <div id="pop-ss-toggles"></div>
-                <hr />
-                <div class="filter-popover-actions">
-                  <button class="filter-pop-alles" id="pop-ss-alles">Alles</button>
-                  <button class="filter-pop-niets" id="pop-ss-niets">Niets</button>
-                </div>
-              </div>
-            </div>
-            <!-- Jaarlaag klas filter (wiskunde only) -->
-            <div class="filter-popover-wrap hidden" id="jl-klas-wrap">
-              <button id="btn-filter-jl-klas" class="filter-btn">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
-                  />
-                </svg>
-                <span class="filter-btn-label" id="lbl-filter-jl-klas">Alle jaarlagen</span>
-              </button>
-              <div id="pop-jl-klas" class="filter-popover hidden">
-                <div id="pop-jl-klas-toggles"></div>
-                <hr />
-                <div class="filter-popover-actions">
-                  <button class="filter-pop-alles" id="pop-jl-klas-alles">Alles</button>
-                  <button class="filter-pop-niets" id="pop-jl-klas-niets">Niets</button>
-                </div>
-              </div>
-            </div>
-            <!-- Jaarlaag filter -->
-            <div class="filter-popover-wrap">
-              <button id="btn-filter-jl" class="filter-btn">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
-                  />
-                </svg>
-                <span class="filter-btn-label" id="lbl-filter-jl">Alle jaarlagen</span>
-              </button>
-              <div id="pop-jl" class="filter-popover hidden">
-                <div id="pop-jl-toggles"></div>
-                <hr />
-                <div class="filter-popover-actions">
-                  <button class="filter-pop-alles" id="pop-jl-alles">Alles</button>
-                  <button class="filter-pop-niets" id="pop-jl-niets">Niets</button>
-                </div>
-              </div>
-            </div>
-            <!-- Observatie filter (opdrachten only) -->
-            <div class="filter-popover-wrap filter-screen-hidden" id="obs-filter-wrap">
-              <button id="btn-filter-obs" class="filter-btn">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
-                  />
-                </svg>
-                <span class="filter-btn-label" id="lbl-filter-obs">Alle observaties</span>
-              </button>
-              <div id="pop-obs" class="filter-popover hidden">
-                <div id="pop-obs-toggles"></div>
-                <hr />
-                <div class="filter-popover-actions">
-                  <button class="filter-pop-alles" id="pop-obs-alles">Alles</button>
-                  <button class="filter-pop-niets" id="pop-obs-niets">Niets</button>
-                </div>
-              </div>
-            </div>
-            <!-- Eigen/Alle toggle (teacher only) -->
-            <button id="btn-filter-eigen" class="filter-btn hidden">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path
-                  d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
-                />
-              </svg>
-              <span class="filter-btn-label" id="lbl-filter-eigen">Alle leerlingen</span>
-            </button>
           </div>
         </div>
         <div id="student-list" class="card-list"></div>
@@ -220,62 +411,70 @@
 
       <!-- Groepen -->
       <section id="screen-groepen" class="screen">
-        <div class="screen-header screen-header--h32">
-          <h2>Groepen</h2>
-          <div class="header-actions">
-            <button class="btn btn--secondary" id="btn-import-groups">
-              &#8593; Groepen CSV importeren
-            </button>
-            <button class="btn btn--secondary" id="btn-import-group-assignment">
-              &#8593; Groepsindeling CSV importeren
-            </button>
-            <button class="btn btn--primary" id="btn-add-group">+ Groep toevoegen</button>
-            <label class="toolbar-inline-label">Schooljaar:</label>
-            <div id="groups-year-select" class="csel-host"></div>
+        <div class="screen-head">
+          <div class="screen-header screen-header--h32">
+            <h2>Groepen</h2>
+            <div class="header-actions">
+              <button class="btn btn--secondary" id="btn-import-groups">
+                &#8593; Groepen CSV importeren
+              </button>
+              <button class="btn btn--secondary" id="btn-import-group-assignment">
+                &#8593; Groepsindeling CSV importeren
+              </button>
+              <button class="btn btn--primary" id="btn-add-group">+ Groep toevoegen</button>
+              <label class="toolbar-inline-label">Schooljaar:</label>
+              <div id="groups-year-select" class="csel-host"></div>
+            </div>
           </div>
+          <div class="filter-row" id="filter-row-groepen"></div>
         </div>
-        <div class="filter-row" id="filter-row-groepen"></div>
         <div id="group-list" class="card-list"></div>
       </section>
 
       <!-- Toetsen -->
       <section id="screen-toetsen" class="screen">
-        <div class="screen-header screen-header--h32">
-          <h2>Toetsen</h2>
-          <div class="header-actions">
-            <button class="btn btn--primary" id="btn-add-exam">+ Toets toevoegen</button>
-            <button id="btn-toetsen-rtti-uitleg" class="btn btn--secondary u-nowrap">
-              RTTI uitleg / leeradvies
-            </button>
-            <label class="toolbar-inline-label">Schooljaar:</label>
-            <div id="toetsen-year-select" class="csel-host"></div>
+        <div class="screen-head">
+          <div class="screen-header screen-header--h32">
+            <h2>Toetsen</h2>
+            <div class="header-actions">
+              <button class="btn btn--primary" id="btn-add-exam">+ Toets toevoegen</button>
+              <button id="btn-toetsen-rtti-uitleg" class="btn btn--secondary u-nowrap">
+                RTTI uitleg / leeradvies
+              </button>
+              <label class="toolbar-inline-label">Schooljaar:</label>
+              <div id="toetsen-year-select" class="csel-host"></div>
+            </div>
           </div>
+          <div class="filter-row" id="filter-row-toetsen"></div>
         </div>
-        <div class="filter-row" id="filter-row-toetsen"></div>
         <div id="exam-list" class="card-list"></div>
       </section>
 
       <!-- Observaties -->
       <section id="screen-observaties" class="screen">
-        <div class="screen-header screen-header--h32">
-          <h2>Observaties</h2>
-          <div class="header-actions">
-            <button class="btn btn--primary" id="btn-add-obs">+ Observatie toevoegen</button>
+        <div class="screen-head">
+          <div class="screen-header screen-header--h32">
+            <h2>Observaties</h2>
+            <div class="header-actions">
+              <button class="btn btn--primary" id="btn-add-obs">+ Observatie toevoegen</button>
+            </div>
           </div>
+          <div class="filter-row" id="filter-row-observaties"></div>
         </div>
-        <div class="filter-row" id="filter-row-observaties"></div>
         <div id="obs-list" class="card-list"></div>
       </section>
 
       <!-- Opdrachten -->
       <section id="screen-opdrachten" class="screen">
-        <div class="screen-header screen-header--h32">
-          <h2>Opdrachten</h2>
-          <div class="header-actions">
-            <button class="btn btn--primary" id="btn-add-opdracht">+ Opdracht toevoegen</button>
+        <div class="screen-head">
+          <div class="screen-header screen-header--h32">
+            <h2>Opdrachten</h2>
+            <div class="header-actions">
+              <button class="btn btn--primary" id="btn-add-opdracht">+ Opdracht toevoegen</button>
+            </div>
           </div>
+          <div class="filter-row" id="filter-row-opdrachten"></div>
         </div>
-        <div class="filter-row" id="filter-row-opdrachten"></div>
         <div id="opdracht-list" class="card-list"></div>
       </section>
 
@@ -290,13 +489,6 @@
 
     <div id="editor-overlay" class="hidden">
       <iframe id="editor-frame" src="" allowfullscreen></iframe>
-    </div>
-
-    <div id="modal-overlay" class="hidden">
-      <div id="modal-box">
-        <button id="modal-close">&#x2715;</button>
-        <div id="modal-content"></div>
-      </div>
     </div>
 
     <div id="toast-container"></div>

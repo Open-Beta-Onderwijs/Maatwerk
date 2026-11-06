@@ -95,6 +95,10 @@ fn mark_offline(storage: &Storage, last: &mut Option<(String, Option<Value>)>, n
 }
 
 fn write(storage: &Storage, rel: &RelPath, state: &Value) {
+    // A read-only app (newer `minAppVersion`) shows no presence instead of a warning per beat.
+    if storage.read_only().is_some() {
+        return;
+    }
     if let Err(e) = storage.write_json(rel, state, Expect::Any) {
         tracing::warn!("presence write failed: {e}");
     }

@@ -5,7 +5,17 @@
 // Every page load starts a fresh MockApi, so tests do not share data.
 
 import { expect, test, type Page } from '@playwright/test';
-import { TEACHER, YEAR, examMenuItem, login, readMockJson, seedFiles, withMock } from './helpers';
+import {
+  TEACHER,
+  YEAR,
+  enterPin,
+  examMenuItem,
+  login,
+  logout,
+  readMockJson,
+  seedFiles,
+  withMock,
+} from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
 
@@ -34,7 +44,7 @@ test('U7: the login screen shows teacher names as text', async ({ page }) => {
   await page.locator('.subject-card[data-subject="nat"]').click();
   const badge = page.locator(`.user-badge[data-user-id="${TEACHER}"]`);
   await expect(badge.locator('.badge-name')).toHaveText(NASTY);
-  await expect(badge.locator('.badge-initials')).toHaveText('<i>');
+  await expect(badge.locator('.avatar-initials')).toHaveText('<i>');
   await expect(badge.locator('b, i')).toHaveCount(0);
 });
 
@@ -46,7 +56,7 @@ test('U6: the RTTI uitleg modal keeps teacher text as typed', async ({ page }) =
   await login(page);
   await page.locator('.nav-btn[data-screen="toetsen"]').click();
   await page.locator('#btn-toetsen-rtti-uitleg').click();
-  await page.locator('.rtti-uitleg-tab-bar button', { hasText: /^3$/ }).click();
+  await page.locator('.dlg-tabs [role="tab"]', { hasText: /^3$/ }).click();
   await expect(page.locator('textarea[data-uitleg="R"]')).toHaveValue(NASTY);
 });
 
@@ -97,7 +107,7 @@ test('U9: after a failed save the editor can still be closed, after confirming',
   await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
   await frame.locator('.cm-content').click();
   await page.keyboard.type('x');
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await frame.locator('#btn-app-title').click(); // save fails -> asks; cancelled: stays open
   await expect(dialog).toContainText('niet opgeslagen');
   await dialog.getByRole('button', { name: 'Annuleren' }).click();
@@ -156,7 +166,7 @@ test('D34: a group CSV import asks before overwriting an existing group', async 
   await page.locator('#f-csv-grp-import').click();
 
   // Old vs new per overwritten group: its students are removed (red rows).
-  const dialog = page.locator('.app-dialog');
+  const dialog = page.locator('.dlg--confirm');
   await expect(dialog).toContainText('3a nat');
   await expect(dialog.locator('tr.diff-removed')).toHaveCount(before.student_ids.length);
   await expect(dialog).not.toContainText('nieuwe groep');
@@ -313,7 +323,7 @@ test('B24: a question added after a deletion gets a new id', async ({ page }) =>
   await page.locator('.qi-del[data-qi="0"]').click();
   await page.locator('#f-addq').click();
   await page.locator('#f-esave').click();
-  await expect(page.locator('#modal-overlay')).toBeHidden();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
   await expect(async () => {
     const exam = await readMockJson<{ questions: { id: string }[] }>(
       page,
@@ -340,8 +350,8 @@ test('U8: a resit description is shown as text in the group overview', async ({ 
   await login(page);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   await page.getByRole('button', { name: '3a nat', exact: true }).click();
-  const badges = page.locator('#modal-box .attempt-badge');
-  await expect(page.locator('#modal-box b.u8')).toHaveCount(0);
+  const badges = page.locator('.dlg .attempt-badge');
+  await expect(page.locator('.dlg b.u8')).toHaveCount(0);
   // In the fixture the resit is the best grade of some 3a students.
   await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
 });
@@ -361,5 +371,31 @@ test('a migrated config.json without activeYear opens every tab on the current s
   ] as const) {
     await page.locator(`.nav-btn[data-screen="${screen}"]`).click();
     await expect(page.locator(`${select} .csel-trigger`)).toContainText('2025-2026');
+  }
+});
+
+test('U11: Alles/Niets in a filter popover act once, however often someone logged in', async ({
+  page,
+}) => {
+  await login(page);
+  for (let i = 0; i < 2; i++) {
+    await logout(page);
+    await page.locator('.subject-card[data-subject="nat"]').click();
+    await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
+    await enterPin(page);
+    await expect(page.locator('#topbar')).toBeVisible();
+  }
+  const writes = () =>
+    withMock(page, (m) => m.calls.filter((c) => c[0] === 'writeLocalSession').length);
+  for (const [open, popover, button] of [
+    ['#btn-filter-ss', '#pop-ss', '#pop-ss-niets'],
+    ['#btn-filter-ss', '#pop-ss', '#pop-ss-alles'],
+    ['#btn-filter-jl', '#pop-jl', '#pop-jl-niets'],
+  ] as const) {
+    if (await page.locator(popover).isHidden()) await page.locator(open).click();
+    const before = await writes();
+    await page.locator(button).click();
+    await page.waitForTimeout(300); // let every handler's write land
+    expect(await writes()).toBe(before + 1);
   }
 });

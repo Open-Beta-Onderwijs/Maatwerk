@@ -133,6 +133,8 @@ pub struct Storage {
     update_locks: Mutex<HashMap<RelPath, Arc<Mutex<()>>>>,
     /// JSON files read with a missing or wrong `_meta.hash` (C19), until written again.
     stamps: Mutex<BTreeMap<String, StampState>>,
+    /// Compared with `minAppVersion` in `school.json` ([`Storage::read_only`]).
+    app_version: String,
 }
 
 impl Storage {
@@ -151,6 +153,7 @@ impl Storage {
             observer: None,
             update_locks: Mutex::new(HashMap::new()),
             stamps: Mutex::new(BTreeMap::new()),
+            app_version: crate::app_version::APP_VERSION.to_owned(),
         };
         storage.check_schema()?;
         Ok(storage)
@@ -162,6 +165,36 @@ impl Storage {
 
     pub fn data_dir(&self) -> &DataDir {
         &self.dir
+    }
+
+    /// The version compared with `minAppVersion` (tests pretend to be an older or newer app).
+    pub fn set_app_version(&mut self, version: impl Into<String>) {
+        self.app_version = version.into();
+    }
+
+    pub fn app_version(&self) -> &str {
+        &self.app_version
+    }
+
+    /// `Some(minAppVersion)` when `school.json` asks for a newer app than this one (PLAN-2
+    /// decision 5): every write is then refused with [`Error::ReadOnly`]. Read on each call, so a
+    /// colleague's newer app raising the minimum takes effect without a restart. A missing,
+    /// unreadable or corrupt `school.json` sets no limit (it may still be syncing).
+    pub fn read_only(&self) -> Option<String> {
+        let rel = RelPath::parse("school.json").ok()?;
+        let bytes = self.read_bytes(&rel).ok()??;
+        let school: Value = serde_json::from_slice(&bytes).ok()?;
+        crate::app_version::required_version(&school, &self.app_version)
+    }
+
+    fn check_writable(&self) -> Result<()> {
+        match self.read_only() {
+            Some(min_version) => Err(Error::ReadOnly {
+                min_version,
+                app_version: self.app_version.clone(),
+            }),
+            None => Ok(()),
+        }
     }
 
     #[cfg(test)]
@@ -425,6 +458,7 @@ impl Storage {
         note: bool,
     ) -> Result<()> {
         let path = self.dir.resolve(rel)?;
+        self.check_writable()?;
         // The temp file is written before the commit lock, so the lock covers only the check
         // and the rename (plus its retries and fallback, which are part of the rename).
         let tmp = atomic::TempFile::write(&path, bytes).map_err(|e| Error::io(rel.as_str(), e))?;
@@ -460,6 +494,7 @@ impl Storage {
     /// Removes the file; a missing file is fine (S19). Reported to the watcher (S18).
     pub fn delete(&self, rel: &RelPath) -> Result<()> {
         let path = self.dir.resolve(rel)?;
+        self.check_writable()?;
         let _guard = self.commit.acquire()?;
         if let Some(observer) = &self.observer {
             observer.will_change(rel);
@@ -481,6 +516,7 @@ impl Storage {
     /// empty or locked.
     pub fn remove_empty_dir(&self, rel: &RelPath) -> Result<bool> {
         let path = self.dir.resolve(rel)?;
+        self.check_writable()?;
         match fs::remove_dir(&path) {
             Ok(()) => Ok(true),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),

@@ -29,10 +29,8 @@ html[data-theme='dark'] .score-grid {
   --scrim: rgba(16, 24, 40, 0.42);
   --brand: #2e3e50;
 
-  /* Header bar (until the tab bar redesign in step 15). */
-  --header-bg: #1e2430;
-  --header-text: #ffffff;
-  --header-muted: #b4bcc8;
+  /* Tab bar (spec 3.5). */
+  --topbar-h: 56px;
 
   /* Status fills (toasts, banners, sync state). */
   --ok: #1e7b3c;
@@ -123,8 +121,6 @@ html[data-theme='dark'] {
   --danger-fill: #c0362c;
   --danger-soft: #3a2222;
   --scrim: rgba(0, 0, 0, 0.55);
-
-  --header-bg: #0e1014;
 
   --ok: #6ccb8a;
   --ok-soft: #1f3327;

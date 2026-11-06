@@ -2,11 +2,10 @@
 
 // ── Student add/edit & CSV import modals ─────────────────────────────────────
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
-  overlayElement,
   onModalSync,
   showReloadNotice,
   confirmDialog,
@@ -40,9 +39,15 @@ export function openStudentModal(id) {
     return `<button type="button" class="tog-btn ss-s-toggle${disabled ? ' tog-btn-disabled' : ''}" data-ss="${ss}"${disabled ? ' disabled' : ''}>${ss}</button>`;
   }).join('');
 
-  showModal(
-    `
-    <h3>${id ? 'Leerling bewerken' : 'Leerling toevoegen'}</h3>
+  openModal({
+    title: id ? 'Leerling bewerken' : 'Leerling toevoegen',
+    key: 'student-edit',
+    size: 'form',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-s-save">Opslaan</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <div class="form-row">
       <div class="u-flex-1 form-group">
         <label>Leerlingnummer</label>
@@ -67,7 +72,7 @@ export function openStudentModal(id) {
         <input id="f-sachter" type="text" />
       </div>
     </div>
-    <div class="u-items-end u-gap-20 form-row">
+    <div class="u-gap-20 form-row">
       <div class="u-flex-auto u-mb-0 form-group">
         <label>Jaarlaag</label>
         <div class="btn-toggle-group">${jaarlaagHtml}</div>
@@ -87,12 +92,8 @@ export function openStudentModal(id) {
         <div id="f-syear-label" class="u-py-7 u-fs-13 u-text-muted u-italic"></div>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-s-save">Opslaan</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    async (el) => {
+    `,
+    onShow: async (el) => {
       const year = leerlingenState.year || Store.getConfigSync().activeYear;
       el.querySelector('#f-syear-label').textContent = year;
 
@@ -185,8 +186,7 @@ export function openStudentModal(id) {
         renderLeerlingen();
       });
     },
-    'modal-md',
-  );
+  });
 }
 
 export async function deleteStudent(id) {
@@ -201,13 +201,19 @@ export async function deleteStudent(id) {
 export async function openStudentCSVImport() {
   const cfg = await Store.getConfig();
   const existingYears = Store.listYearsSync();
-  const ui = { showModal, closeModal, toast, overlay: overlayElement };
+  const ui = { openModal, closeModal, toast };
   const year = await askSchoolYear(cfg.activeYear, existingYears, ui);
   if (!year) return;
 
-  showModal(
-    `
-    <h3>Leerlingen importeren — ${escHtml(year)}</h3>
+  openModal({
+    title: 'Leerlingen importeren',
+    key: 'student-import',
+    subtitle: year,
+    footerHtml: `
+      <button class="btn btn--primary" id="f-csv-import" disabled>Importeren</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
+    `,
+    body: `
     <p class="u-mb-12 muted">
       Verwachte kolommen: <code>Leerlingnummer, Voornaam, Tussenvoegsel, Achternaam, Geslacht, Stamklas, Jaarlaag, Schoolsoort</code>
     </p>
@@ -216,12 +222,8 @@ export async function openStudentCSVImport() {
       <input type="file" id="f-csv-students" accept=".csv,.txt" />
     </div>
     <div id="csv-preview"></div>
-    <div class="u-mt-12 form-actions">
-      <button class="btn btn--primary" id="f-csv-import" disabled>Importeren</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>
-  `,
-    (el) => {
+    `,
+    onShow: (el) => {
       let parsed = null;
       el.querySelector('#f-csv-students').addEventListener('change', async (e) => {
         const file = e.target.files[0];
@@ -261,5 +263,5 @@ export async function openStudentCSVImport() {
         renderLeerlingen();
       });
     },
-  );
+  });
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import {
-  showModal,
+  openModal,
   closeModal,
   toast,
   escHtml,
@@ -9,7 +9,7 @@ import {
   confirmDialog,
 } from '../app.js';
 import { ICONS } from '../utils/icons.js';
-import { loadBadgePhotosIn } from '../utils/badges.js';
+import { avatarHtml, forgetAvatarPhotos, loadAvatarPhotos } from '../components/avatar';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Gebruikers — admin-only user management, PIN reset and
@@ -53,17 +53,13 @@ async function renderUserList() {
   const adminUser = users.find((u) => u.isAdmin);
 
   function renderCard(user) {
-    const initials = user.afkorting || (user.voornaam[0] ?? '') + (user.achternaam[0] ?? '');
-    const shape = user.isAdmin ? 'badge-square' : 'badge-circle';
     const vakkenLabels = (user.vakken ?? []).map((v) => SUBJECT_LABEL[v] ?? v).join(', ') || '—';
     const name = [user.voornaam, user.tussenvoegsel, user.achternaam].filter(Boolean).join(' ');
 
     return `
       <div class="card gebruiker-card">
         <div class="gebruiker-card-left">
-          <div class="user-badge ${shape} u-no-pointer" data-badge-color="${escHtml(user.kleur ?? '#888')}"${user.foto ? ` data-foto="${escHtml(user.foto)}"` : ''}>
-            <span class="badge-initials" data-len="${initials.length}">${escHtml(initials)}</span>
-          </div>
+          ${avatarHtml(user, { size: 56 })}
         </div>
         <div class="gebruiker-card-body">
           <div class="gebruiker-card-name">${escHtml(name)}</div>
@@ -102,7 +98,7 @@ async function renderUserList() {
   }
 
   container.innerHTML = html;
-  void loadBadgePhotosIn(container);
+  void loadAvatarPhotos(container, (rel) => window.maatwerk.readPhotoAsDataUrl(rel));
 
   container.querySelectorAll('[data-action="reset-pin"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -220,7 +216,6 @@ function openUserModal(user) {
   }).join('');
 
   const html = `
-    <h3>${escHtml(title)}</h3>
     <div class="form-row">
       <div class="u-flex-2 form-group">
         <label>Voornaam</label>
@@ -264,12 +259,20 @@ function openUserModal(user) {
       <input id="f-ufoto" type="file" accept="image/jpeg,image/png" />
       ${user?.foto ? `<span class="u-d-block u-mt-4 hint">Huidig: ${escHtml(user.foto)}</span>` : ''}
     </div>
-    <div class="form-actions">
-      <button class="btn btn--primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    </div>`;
+`;
 
-  showModal(html, (content) => {
+  openModal({
+    title,
+    key: 'user-edit',
+    size: 'form',
+    footerHtml: `
+      <button class="btn btn--primary" id="f-u-save">${isNew ? 'Toevoegen' : 'Opslaan'}</button>
+      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>`,
+    body: html,
+    onShow: (content) => userForm(content),
+  });
+
+  function userForm(content) {
     // Toggle schoolsoort buttons
     content.querySelectorAll('.ss-toggle').forEach((btn) => {
       btn.addEventListener('click', () => btn.classList.toggle('selected'));
@@ -347,9 +350,10 @@ function openUserModal(user) {
 
       // C16: saved over the version this form was opened with.
       await Store.upsertUser(saved, user?._meta?.rev);
+      forgetAvatarPhotos(); // a new photo under the same name shows at once (review 15 m8)
       closeModal();
       toast(isNew ? `${voornaam} toegevoegd.` : `${voornaam} opgeslagen.`, 'success');
       await renderUserList();
     });
-  });
+  }
 }

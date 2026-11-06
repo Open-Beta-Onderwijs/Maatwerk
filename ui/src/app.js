@@ -19,14 +19,41 @@ import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
-import { openAccountModal } from './screens/pin';
+import { changePinFlow, renewCodesFlow } from './screens/pin';
+import { closeUserMenu, toggleUserMenu } from './components/user-menu';
 import { renderInstellingen } from './screens/instellingen';
-import { clearBadgePhoto, loadBadgePhoto } from './utils/badges.js';
+import { avatarHtml, loadAvatarPhotos, renderAvatar } from './components/avatar';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
 import { applyStyleData } from './legacy/style-data';
 import { showAbout } from './screens/about';
 import { afterPaint, perfSpan } from './utils/perf';
+import { alertDialog, confirmDialog, openDialog } from './components/dialog';
+import {
+  READ_ONLY_SAVE_TEXT,
+  isReadOnlyError,
+  noteReadOnly,
+  onReadOnly,
+} from './services/read-only';
+import { showReadOnlyBanner } from './components/read-only-banner';
+import { applyLook, baseLook, currentLook } from './theme';
+import {
+  filterBar,
+  filterGeneration,
+  initFilterBar,
+  resetFilterBar,
+  updateEigenLabel,
+} from './shell/filter-bar.js';
+export {
+  getAdminSubjectFilter,
+  getEigenOnly,
+  getJaarlagFilter,
+  getJaarlagKlasFilter,
+  getObservatieFilter,
+  getSchoolsoortFilter,
+  matchesJaarlaagFilter,
+  setObservatieFilterOptions,
+} from './shell/filter-bar.js';
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
@@ -39,9 +66,12 @@ document.querySelectorAll('.nav-btn').forEach((btn) => {
 });
 
 export function navigateTo(name) {
-  document
-    .querySelectorAll('.nav-btn')
-    .forEach((b) => b.classList.toggle('active', b.dataset.screen === name));
+  document.querySelectorAll('.nav-btn').forEach((b) => {
+    const on = b.dataset.screen === name;
+    b.classList.toggle('active', on);
+    if (on) b.setAttribute('aria-current', 'page');
+    else b.removeAttribute('aria-current');
+  });
   Object.values(screens).forEach((s) => s.classList.remove('active'));
   if (name === 'startup') {
     topbar.classList.add('hidden');
@@ -95,13 +125,12 @@ const KEPT_SCREENS = new Set([
   'gebruikers',
 ]);
 const _renderedAs = {}; // screen -> view key of its last render
-let _filterGeneration = 0;
 
 function viewKey() {
   const user = Store.getActiveUser();
   return JSON.stringify([
     Store.generation(),
-    _filterGeneration,
+    filterGeneration(),
     user?.id ?? null,
     Store.getActiveRole(),
     Store.getActiveSubject(),
@@ -112,7 +141,7 @@ function needsRender(name) {
   return !KEPT_SCREENS.has(name) || _renderedAs[name] !== viewKey();
 }
 
-function renderScreen(name) {
+export function renderScreen(name) {
   // Taken before rendering: a change while an async render runs renders again next visit.
   _renderedAs[name] = viewKey();
   switch (name) {
@@ -154,109 +183,83 @@ function renderScreen(name) {
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-const overlay = document.getElementById('modal-overlay');
-const modalBox = document.getElementById('modal-box');
-const modalContent = document.getElementById('modal-content');
-
-/** The overlay DOM node, exported for use in csv.js askSchoolYear calls. */
-export { overlay as overlayElement };
+// Every modal is a dialog (components/dialog.ts), opened through openModal().
+// The helpers below act on the current modal: the top one opened that way
+// (confirms and notices do not count).
 
 /** Open the full-screen Typst editor for an assignment. Imported from modals/editor.js. */
 export { openEditor };
+export { confirmDialog, alertDialog };
 
-let _modalCharts = [];
+/** Modals opened through openModal, bottom first. */
+let _modals = [];
 
-/** Register a Chart.js instance to be destroyed when the modal closes. */
-export function pushModalChart(chart) {
-  _modalCharts.push(chart);
+function currentModal() {
+  return _modals[_modals.length - 1] ?? null;
 }
 
-let _onCloseModal = null;
+/** True while any modal is open. */
+export function modalOpen() {
+  return _modals.length > 0;
+}
 
-function destroyModalCharts() {
-  _modalCharts.forEach((c) => {
-    try {
-      c.destroy();
-    } catch (_) {}
+/**
+ * Structured modal (see DialogOptions in components/dialog.ts); stacks on
+ * whatever is open, except that it replaces a current modal with the same
+ * `key` (a refresh re-opens the modal in place).
+ */
+export function openModal({ onShow, ...opts }) {
+  const prev = currentModal();
+  // U15: the replaced modal closes properly (cleanups, charts, its onClose).
+  if (opts.key && prev?.key === opts.key) prev.close();
+  const d = openDialog({
+    ...opts,
+    onClose: () => {
+      _modals = _modals.filter((m) => m !== d);
+      opts.onClose?.();
+      if (_screenRefreshPending && !_modals.length) scheduleScreenRefresh();
+      // The modal underneath is on top again: deliver what it missed.
+      queueMicrotask(flushHeldSync);
+    },
   });
-  _modalCharts = [];
+  _modals.push(d);
+  // Before any measuring (charts): see src/legacy/style-data.ts.
+  applyStyleData(d.el);
+  // After the push, so guardModalClose/onModalSync inside act on this modal.
+  onShow?.(d.el, d);
+  return d;
 }
 
-export function showModal(html, onShow, wide = false, onClose) {
-  _modalSession++;
-  _closeGuard = null;
-  clearModalSubs();
-  destroyModalCharts();
-  modalContent.innerHTML = html;
-  // Before onShow, which may measure (charts): see src/legacy/style-data.ts.
-  applyStyleData(modalContent);
-  modalBox.className = '';
-  if (wide === true) modalBox.classList.add('modal-xl');
-  else if (typeof wide === 'string') modalBox.classList.add(wide);
-  overlay.classList.remove('hidden');
-  _onCloseModal = onClose || null;
-  if (onShow) onShow(modalContent);
-}
-
+/** Close the current modal without its guard (after saving, Annuleren). */
 export function closeModal() {
-  _modalSession++;
-  _closeGuard = null;
-  clearModalSubs();
-  overlay.classList.add('hidden');
-  modalBox.className = '';
-  modalContent.innerHTML = '';
-  destroyModalCharts();
-  const cb = _onCloseModal;
-  _onCloseModal = null;
-  if (cb) cb();
-  if (_screenRefreshPending) scheduleScreenRefresh();
+  currentModal()?.close();
 }
 
-modalContent.addEventListener('click', (e) => {
-  if (e.target.closest('[data-close-modal]')) closeModal();
-});
-document.getElementById('modal-close').addEventListener('click', requestCloseModal);
-// Only a click that also started on the backdrop closes the modal, so selecting
-// text in a field and releasing the mouse outside the modal doesn't.
-let _overlayPress = false;
-overlay.addEventListener('mousedown', (e) => {
-  _overlayPress = e.target === overlay;
-});
-overlay.addEventListener('click', (e) => {
-  if (e.target === overlay && _overlayPress) requestCloseModal();
-  _overlayPress = false;
-});
+/** Close the current modal through its close guard (like ✕). */
+export function requestCloseModal() {
+  return currentModal()?.requestClose() ?? Promise.resolve(false);
+}
+
+/** Register a Chart.js instance to be destroyed when the current modal closes. */
+export function pushModalChart(chart) {
+  const d = currentModal();
+  const destroy = () => {
+    try {
+      chart.destroy();
+    } catch (_) {}
+  };
+  if (d) d.onCleanup(destroy);
+  else destroy();
+}
 
 // ── Unsaved changes ───────────────────────────────────────────────────────────
-// A modal with a form registers guardModalClose(isDirty); closing it with ✕ or a
-// click next to it then asks for confirmation while isDirty() is true. Annuleren
-// and closing after saving (closeModal()) are not guarded.
-let _closeGuard = null;
-let _closeGuardText = null;
+// A modal with a form registers guardModalClose(isDirty); closing it with ✕,
+// Escape or a click next to it then asks for confirmation while isDirty() is
+// true. Annuleren and closing after saving (closeModal()) are not guarded.
 
 /** `text`: optional `{ message, title, okLabel }` instead of the unsaved-changes question. */
 export function guardModalClose(isDirty, text = null) {
-  _closeGuard = isDirty;
-  _closeGuardText = text;
-}
-
-async function requestCloseModal() {
-  if (document.querySelector('.app-dialog-backdrop')) return;
-  if (_closeGuard?.()) {
-    const session = _modalSession;
-    const text = _closeGuardText ?? {
-      message: 'Weet je zeker dat je dit scherm wilt sluiten? Er zijn onopgeslagen wijzigingen.',
-      title: 'Onopgeslagen wijzigingen',
-      okLabel: 'Sluiten zonder opslaan',
-    };
-    const ok = await confirmDialog(text.message, {
-      title: text.title,
-      okLabel: text.okLabel,
-      danger: true,
-    });
-    if (!ok || session !== _modalSession) return;
-  }
-  closeModal();
+  currentModal()?.setGuard(isDirty, text);
 }
 
 /**
@@ -276,100 +279,72 @@ export function formSnapshot(root) {
   return JSON.stringify(parts);
 }
 
-// ── Dialogs ───────────────────────────────────────────────────────────────────
-/**
- * In-app replacement for window.confirm(). Never use the native alert/confirm/
- * prompt: they look out of place and, in Electron, leave text fields unable to
- * receive typed characters afterwards. Resolves true for the confirm button,
- * false for Annuleren, Escape or a click next to the dialog.
- * With cancelLabel: null it is a plain notice with one button (like alert()).
- * detailsHtml: optional scrollable block under the message; the caller escapes
- * every text in it.
- */
-export function confirmDialog(
-  message,
-  { title = '', okLabel = 'OK', cancelLabel = 'Annuleren', danger = false, detailsHtml = '' } = {},
-) {
-  return new Promise((resolve) => {
-    const prevFocus = document.activeElement;
-    const el = document.createElement('div');
-    el.className = 'app-dialog-backdrop';
-    el.innerHTML = `
-      <div class="app-dialog" role="alertdialog" aria-modal="true" aria-describedby="app-dialog-msg">
-        ${title ? `<h4 class="app-dialog-title">${escHtml(title)}</h4>` : ''}
-        <p id="app-dialog-msg">${escHtml(message)}</p>
-        ${detailsHtml ? `<div class="app-dialog-details">${detailsHtml}</div>` : ''}
-        <div class="app-dialog-actions">
-          ${cancelLabel !== null ? `<button class="btn btn--secondary" data-answer="0">${escHtml(cancelLabel)}</button>` : ''}
-          <button class="btn ${danger ? 'btn--danger' : 'btn--primary'}" data-answer="1">${escHtml(okLabel)}</button>
-        </div>
-      </div>`;
-    const done = (answer) => {
-      el.remove();
-      if (prevFocus?.isConnected) prevFocus.focus();
-      resolve(answer);
-    };
-    el.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-answer]');
-      if (btn) done(btn.dataset.answer === '1');
-      else if (e.target === el) done(false);
-    });
-    // Keys stay inside the dialog (the score grid listens on the document).
-    el.addEventListener('keydown', (e) => {
-      e.stopPropagation();
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        done(false);
-      } else if (e.key === 'Tab') {
-        e.preventDefault();
-        const btns = [...el.querySelectorAll('button')];
-        const i = btns.indexOf(document.activeElement);
-        btns[(i + (e.shiftKey ? -1 : 1) + btns.length) % btns.length].focus();
-      }
-    });
-    document.body.appendChild(el);
-    el.querySelector('[data-answer="1"]').focus();
-  });
-}
-
 // ── Background changes while a modal is open ──────────────────────────────────
 // Subscriptions made with onModalSync() end automatically when the modal closes
 // or is replaced by another one, so modals never react to changes after they
-// are gone. _modalSession changes on every open/close for the same reason.
-let _modalSubs = [];
-let _modalSession = 0;
+// are gone.
 
-function clearModalSubs() {
-  _modalSubs.forEach((off) => off());
-  _modalSubs = [];
+// Background changes for a modal that has another modal stacked on it (a
+// profile over a group overview) wait until it is on top again. Its handlers
+// may show a reload notice whose OK closes or re-opens "the current modal";
+// that must be this one, not the one on top of it (review 14 M1).
+const _heldSync = new Map(); // Dialog -> [() => void]
+
+function flushHeldSync() {
+  const top = currentModal();
+  const held = top && _heldSync.get(top);
+  if (!held) return;
+  _heldSync.delete(top);
+  held.forEach((run) => run());
 }
 
 /** Subscribe to background changes of `type` for as long as the current modal is open. */
 export function onModalSync(type, handler) {
-  _modalSubs.push(Sync.on(type, handler));
+  const d = currentModal();
+  if (!d) return;
+  const off = Sync.on(type, (ev) => {
+    if (!d.isOpen) return;
+    if (currentModal() === d) return handler(ev);
+    if (!_heldSync.has(d)) _heldSync.set(d, []);
+    _heldSync.get(d).push(() => handler(ev));
+  });
+  d.onCleanup(() => {
+    off();
+    _heldSync.delete(d);
+  });
 }
 
 /** Run fn when the current modal closes or is replaced by another one. */
 export function onModalCleanup(fn) {
-  _modalSubs.push(fn);
+  const d = currentModal();
+  if (d) d.onCleanup(fn);
+  else fn();
 }
 
 /**
  * Returns a function that runs `reopen` (re-running the modal's open function)
  * at most once per `ms`, keeping the modal's scroll position. Does nothing if
- * the modal has been closed or replaced in the meantime. Used for modals that
+ * the modal has been closed or replaced in the meantime; waits while another
+ * modal is stacked on it. Used for modals that
  * only display data, so they can refresh silently.
  */
 export function modalRefresher(reopen, ms = 500) {
-  const session = _modalSession;
+  const d = currentModal();
   let timer = null;
   return () => {
     clearTimeout(timer);
-    timer = setTimeout(async () => {
-      if (session !== _modalSession || document.getElementById('reload-notice')) return;
-      const y = modalBox.scrollTop;
+    timer = setTimeout(async function run() {
+      if (!d?.isOpen) return;
+      // Covered by a stacked modal (a profile over a group overview) or a
+      // notice: try again once it is on top.
+      if (currentModal() !== d || document.getElementById('reload-notice')) {
+        timer = setTimeout(run, ms);
+        return;
+      }
+      const y = d.body.scrollTop;
       await reopen();
-      modalBox.scrollTop = y;
+      const now = currentModal();
+      if (now) now.body.scrollTop = y;
     }, ms);
   };
 }
@@ -388,23 +363,31 @@ export async function changedByName(ev) {
  */
 export function showReloadNotice(message, onOk) {
   if (document.getElementById('reload-notice')) return;
-  const el = document.createElement('div');
-  el.id = 'reload-notice';
-  el.className = 'app-dialog-backdrop';
-  el.innerHTML = `
-    <div class="app-dialog" role="alertdialog" aria-modal="true" aria-describedby="reload-notice-msg">
-      <h4 class="app-dialog-title">Gewijzigd door een collega</h4>
-      <p id="reload-notice-msg">${escHtml(message)}</p>
-      <div class="app-dialog-actions"><button class="btn btn--primary">OK</button></div>
-    </div>`;
-  el.addEventListener('keydown', (e) => e.stopPropagation());
-  const btn = el.querySelector('button');
-  btn.addEventListener('click', async () => {
-    el.remove();
-    await onOk?.();
+  const d = openDialog({
+    role: 'alertdialog',
+    size: 'sm',
+    className: 'dlg--confirm',
+    dialogId: 'reload-notice',
+    closeButton: false,
+    backdropCloses: false,
+    dismissible: false, // only OK: the modal underneath must be reloaded first
+    body: `<h2 class="dlg-confirm-title">Gewijzigd door een collega</h2>
+      <p class="dlg-confirm-msg">${escHtml(message)}</p>`,
+    footer: [
+      {
+        label: 'OK',
+        variant: 'primary',
+        id: 'ok',
+        onClick: async (dlg) => {
+          dlg.close();
+          await onOk?.();
+        },
+      },
+    ],
   });
-  document.body.appendChild(el);
-  btn.focus();
+  // No Escape: the modal underneath must be reloaded first.
+  d.el.addEventListener('keydown', (e) => e.stopPropagation());
+  d.el.querySelector('[data-action="ok"]').focus();
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────
@@ -445,10 +428,29 @@ export function escHtml(str) {
 // ── CustomSelect instances (created once at init, reused every render) ─────────
 export const SEL = {}; // populated by initSelects(); exported as live object
 
+// F-21: the school year chosen on any screen is the teacher's active year, on
+// every screen and (saved in their user file) on every PC.
+function chooseYear(year) {
+  for (const sel of [SEL.studentYear, SEL.groupsYear, SEL.toetsenYear]) {
+    if (sel.getValue() !== year) sel.setValue(year);
+  }
+  leerlingenState.year = year;
+  if (Store.getActiveUser() && Store.getConfigSync().activeYear !== year) {
+    void Store.savePreferences({ activeYear: year });
+  }
+}
+
+/** After logout: the next teacher starts in their own active year. */
+function forgetYear() {
+  for (const sel of [SEL.studentYear, SEL.groupsYear, SEL.toetsenYear]) sel?.setValue(null);
+  leerlingenState.year = null;
+}
+
 function initSelects() {
   SEL.studentYear = new CustomSelect(document.getElementById('student-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       leerlingenState.year = v;
@@ -458,6 +460,7 @@ function initSelects() {
   SEL.groupsYear = new CustomSelect(document.getElementById('groups-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       renderGroepenForYear(v);
@@ -466,6 +469,7 @@ function initSelects() {
   SEL.toetsenYear = new CustomSelect(document.getElementById('toetsen-year-select'), {
     placeholder: '— kies schooljaar —',
     onChange: async (v) => {
+      chooseYear(v);
       void window.maatwerk.setWatchYear(v);
       await Store.loadYear(v);
       void Store.preloadScores(v).catch(() => {}); // before the statistics (Step 7c)
@@ -474,540 +478,25 @@ function initSelects() {
   });
 }
 
-// ── Admin vakken filter (popover, single-select) ──────────────────────────────
-let _adminSubjectFilter = null; // null = show all
-
-export function getAdminSubjectFilter() {
-  return _adminSubjectFilter;
-}
-
-const VAKKEN_OPTIONS = [
-  { code: 'bio', label: 'Biologie' },
-  { code: 'nat', label: 'Natuurkunde' },
-  { code: 'schk', label: 'Scheikunde' },
-  { code: 'wi', label: 'Wiskunde' },
-];
-
-function updateVakLabel() {
-  const found = VAKKEN_OPTIONS.find((v) => v.code === _adminSubjectFilter);
-  document.getElementById('lbl-filter-vak').textContent = found ? found.label : 'Alle vakken';
-  document.getElementById('btn-filter-vak').classList.toggle('filter-btn-active', !!found);
-}
-
-function buildVakkenPopover() {
-  const container = document.getElementById('pop-vak-toggles');
-  container.innerHTML = '';
-  for (const { code, label } of VAKKEN_OPTIONS) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (_adminSubjectFilter === code ? ' selected' : '');
-    btn.textContent = label;
-    btn.dataset.vakCode = code;
-    btn.addEventListener('click', () => {
-      _adminSubjectFilter = _adminSubjectFilter === code ? null : code;
-      container
-        .querySelectorAll('.filter-pop-toggle')
-        .forEach((b) => b.classList.toggle('selected', b.dataset.vakCode === _adminSubjectFilter));
-      updateVakLabel();
-      rebuildJaarlagPopover(_adminSubjectFilter);
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-  document.getElementById('pop-vak-alles').addEventListener('click', () => {
-    _adminSubjectFilter = null;
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateVakLabel();
-    rebuildJaarlagPopover(null);
-    rerenderActive();
-  });
-}
-
-document.getElementById('btn-filter-vak').addEventListener('click', (e) => {
-  e.stopPropagation();
-  closeAllPopovers('pop-vak');
-  document.getElementById('pop-vak').classList.toggle('hidden');
-});
-
-// ── Filter bar (schoolsoort + jaarlaag + eigen) ───────────────────────────────
-const filterBar = document.getElementById('filter-bar');
-
-// Filter state
-let _filterState = {
-  schoolsoorten: new Set(),
-  jaarlagen: new Set(),
-  jaarlagenKlas: new Set(),
-  eigenOnly: false,
-};
-let _activeUserId = null;
-
-// The jaarlaag options depend on current subject
-const WI_JAARLAG_OPTIONS = [
-  { key: 'OB', label: 'Onderbouw' },
-  { key: 'WisA', label: 'Wiskunde A' },
-  { key: 'WisB', label: 'Wiskunde B' },
-  { key: 'WisC', label: 'Wiskunde C' },
-  { key: 'WisD', label: 'Wiskunde D' },
-];
-const KLAS_JAARLAG_OPTIONS = [
-  { key: '1', label: 'Klas 1' },
-  { key: '2', label: 'Klas 2' },
-  { key: '3', label: 'Klas 3' },
-  { key: '4', label: 'Klas 4' },
-  { key: '5', label: 'Klas 5' },
-  { key: '6', label: 'Klas 6' },
-];
-
-export function getSchoolsoortFilter() {
-  return _filterState.schoolsoorten;
-}
-export function getJaarlagFilter() {
-  return _filterState.jaarlagen;
-}
-export function getJaarlagKlasFilter() {
-  return _filterState.jaarlagenKlas;
-}
-export function getEigenOnly() {
-  return _filterState.eigenOnly;
-}
-
-/**
- * True when an item with these jaarlagen passes the jaarlaag filter(s).
- * Items without jaarlagen always pass. For wiskunde the OB/WisX filter maps
- * to klas 1-3 / 4-6 and is combined with the Klas 1-6 filter.
- */
-export function matchesJaarlaagFilter(jaarlagen) {
-  const jls = (jaarlagen ?? []).map(String);
-  if (jls.length === 0) return true;
-  if (_jaarlagOptions !== WI_JAARLAG_OPTIONS) {
-    return jls.some((jl) => _filterState.jaarlagen.has(jl));
-  }
-  const allowed = new Set();
-  if (_filterState.jaarlagen.has('OB')) ['1', '2', '3'].forEach((k) => allowed.add(k));
-  if (['WisA', 'WisB', 'WisC', 'WisD'].some((k) => _filterState.jaarlagen.has(k))) {
-    ['4', '5', '6'].forEach((k) => allowed.add(k));
-  }
-  return jls.some((jl) => allowed.has(jl) && _filterState.jaarlagenKlas.has(jl));
-}
-
-// ── Label helpers ─────────────────────────────────────────────────────────────
-function schoolsoortLabel(selected, allOptions) {
-  if (selected.size === allOptions.length) return 'Alle schoolsoorten';
-  const arr = allOptions.filter((s) => selected.has(s));
-  if (arr.length === 0) return 'Geen schoolsoorten';
-  if (arr.length === 1) return arr[0];
-  if (arr.length === 2) return `${arr[0]} & ${arr[1]}`;
-  return `${arr[0]}, ${arr[1]} +${arr.length - 2}`;
-}
-
-function jaarlagLabel(selected, options) {
-  const allKeys = options.map((o) => o.key);
-  if (selected.size === allKeys.length && allKeys.every((k) => selected.has(k))) {
-    // All selected
-    if (options === WI_JAARLAG_OPTIONS) return 'Onder- & bovenbouw';
-    return 'Alle jaarlagen';
-  }
-  if (options === WI_JAARLAG_OPTIONS) {
-    const hasOB = selected.has('OB');
-    const wisKeys = ['WisA', 'WisB', 'WisC', 'WisD'];
-    const selWis = wisKeys.filter((k) => selected.has(k));
-    if (selected.size === 0) return 'Geen';
-    if (!hasOB && selWis.length === wisKeys.length) return 'Bovenbouw';
-    if (hasOB && selWis.length === 0) return 'Onderbouw';
-    const wisLetters = selWis.map((k) => k.replace('Wis', ''));
-    const wisStr = wisLetters.length === 0 ? '' : listLabel(wisLetters, 'Wis ');
-    if (hasOB && selWis.length > 0) return `OB & ${wisStr}`;
-    return wisStr;
-  }
-  // Klas 1-6
-  const klassen = [...selected].sort((a, b) => Number(a) - Number(b));
-  if (klassen.length === 0) return 'Geen klassen';
-  return 'Klas ' + listLabel(klassen);
-}
-
-function listLabel(items, prefix = '') {
-  if (items.length === 1) return prefix + items[0];
-  return prefix + items.slice(0, -1).join(', ') + ' & ' + items[items.length - 1];
-}
-
-const EIGEN_LABELS = {
-  leerlingen: { alle: 'Alle leerlingen', eigen: 'Eigen leerlingen' },
-  groepen: { alle: 'Alle groepen', eigen: 'Eigen groepen' },
-  toetsen: { alle: 'Alle toetsen', eigen: 'Eigen toetsen' },
-  observaties: { alle: 'Alle observaties', eigen: 'Observaties eigen groepen' },
-};
-
-function updateEigenLabel(screenName) {
-  const map = EIGEN_LABELS[screenName];
-  if (!map) return;
-  const lbl = _filterState.eigenOnly ? map.eigen : map.alle;
-  document.getElementById('lbl-filter-eigen').textContent = lbl;
-  document
-    .getElementById('btn-filter-eigen')
-    .classList.toggle('filter-btn-active', _filterState.eigenOnly);
-}
-
-// ── Popover open/close ────────────────────────────────────────────────────────
-const FILTER_POPOVER_IDS = ['pop-vak', 'pop-ss', 'pop-jl-klas', 'pop-jl', 'pop-obs'];
-
-function closeAllPopovers(except) {
-  FILTER_POPOVER_IDS.filter((id) => id !== except).forEach((id) =>
-    document.getElementById(id).classList.add('hidden'),
-  );
-}
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.filter-popover-wrap')) closeAllPopovers();
-});
-
-for (const [btnId, popId] of [
-  ['btn-filter-ss', 'pop-ss'],
-  ['btn-filter-jl-klas', 'pop-jl-klas'],
-  ['btn-filter-jl', 'pop-jl'],
-  ['btn-filter-obs', 'pop-obs'],
-]) {
-  document.getElementById(btnId).addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeAllPopovers(popId);
-    document.getElementById(popId).classList.toggle('hidden');
-  });
-}
-
-// ── Schoolsoort popover builder ───────────────────────────────────────────────
-let _schoolsoortOptions = []; // list of strings from school.json
-
-function buildSchoolsoortPopover(options, savedSelection) {
-  _schoolsoortOptions = options;
-  const selection = savedSelection ?? new Set(options);
-  _filterState.schoolsoorten = selection;
-
-  const container = document.getElementById('pop-ss-toggles');
-  container.innerHTML = '';
-  for (const ss of options) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (selection.has(ss) ? ' selected' : '');
-    btn.textContent = ss;
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-      if (btn.classList.contains('selected')) {
-        _filterState.schoolsoorten.add(ss);
-      } else {
-        _filterState.schoolsoorten.delete(ss);
-      }
-      updateSchoolsoortLabel();
-      persistFilters();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-
-  document.getElementById('pop-ss-alles').addEventListener('click', () => {
-    _filterState.schoolsoorten = new Set(_schoolsoortOptions);
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
-    updateSchoolsoortLabel();
-    persistFilters();
-    rerenderActive();
-  });
-  document.getElementById('pop-ss-niets').addEventListener('click', () => {
-    _filterState.schoolsoorten = new Set();
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateSchoolsoortLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  updateSchoolsoortLabel();
-}
-
-function updateSchoolsoortLabel() {
-  document.getElementById('lbl-filter-ss').textContent = schoolsoortLabel(
-    _filterState.schoolsoorten,
-    _schoolsoortOptions,
-  );
-}
-
-// ── Jaarlaag popover builder ──────────────────────────────────────────────────
-let _jaarlagOptions = KLAS_JAARLAG_OPTIONS;
-
-function rebuildJaarlagPopover(subject, savedSelection) {
-  _jaarlagOptions = subject === 'wi' ? WI_JAARLAG_OPTIONS : KLAS_JAARLAG_OPTIONS;
-  const allKeys = _jaarlagOptions.map((o) => o.key);
-  const selection = savedSelection ?? new Set(allKeys);
-  _filterState.jaarlagen = selection;
-
-  const container = document.getElementById('pop-jl-toggles');
-  container.innerHTML = '';
-  for (const { key, label } of _jaarlagOptions) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (selection.has(key) ? ' selected' : '');
-    btn.textContent = label;
-    btn.dataset.jlKey = key;
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-      if (btn.classList.contains('selected')) {
-        _filterState.jaarlagen.add(key);
-      } else {
-        _filterState.jaarlagen.delete(key);
-      }
-      updateJaarlagLabel();
-      persistFilters();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-
-  // Re-bind Alles/Niets (remove old listeners by replacing the elements)
-  const allesOld = document.getElementById('pop-jl-alles');
-  const allesNew = allesOld.cloneNode(true);
-  allesOld.replaceWith(allesNew);
-  allesNew.addEventListener('click', () => {
-    _filterState.jaarlagen = new Set(_jaarlagOptions.map((o) => o.key));
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
-    updateJaarlagLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  const nietsOld = document.getElementById('pop-jl-niets');
-  const nietsNew = nietsOld.cloneNode(true);
-  nietsOld.replaceWith(nietsNew);
-  nietsNew.addEventListener('click', () => {
-    _filterState.jaarlagen = new Set();
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateJaarlagLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  updateJaarlagLabel();
-
-  // Show/hide the Klas 1-6 popover (only for wiskunde)
-  const jlKlasWrap = document.getElementById('jl-klas-wrap');
-  const isWi = subject === 'wi';
-  jlKlasWrap.classList.toggle('hidden', !isWi);
-  if (isWi) {
-    buildJaarlagKlasPopover();
-  } else {
-    _filterState.jaarlagenKlas = new Set(KLAS_JAARLAG_OPTIONS.map((o) => o.key));
-  }
-}
-
-function updateJaarlagLabel() {
-  document.getElementById('lbl-filter-jl').textContent = jaarlagLabel(
-    _filterState.jaarlagen,
-    _jaarlagOptions,
-  );
-}
-
-// ── Jaarlaag-klas popover builder (wiskunde only, Klas 1–6) ──────────────────
-function buildJaarlagKlasPopover(savedSelection) {
-  const allKeys = KLAS_JAARLAG_OPTIONS.map((o) => o.key);
-  const selection = savedSelection ?? new Set(allKeys);
-  _filterState.jaarlagenKlas = selection;
-
-  const container = document.getElementById('pop-jl-klas-toggles');
-  container.innerHTML = '';
-  for (const { key, label } of KLAS_JAARLAG_OPTIONS) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (selection.has(key) ? ' selected' : '');
-    btn.textContent = label;
-    btn.dataset.jlklasKey = key;
-    btn.addEventListener('click', () => {
-      btn.classList.toggle('selected');
-      if (btn.classList.contains('selected')) {
-        _filterState.jaarlagenKlas.add(key);
-      } else {
-        _filterState.jaarlagenKlas.delete(key);
-      }
-      updateJaarlagKlasLabel();
-      persistFilters();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-
-  const allesOld = document.getElementById('pop-jl-klas-alles');
-  const allesNew = allesOld.cloneNode(true);
-  allesOld.replaceWith(allesNew);
-  allesNew.addEventListener('click', () => {
-    _filterState.jaarlagenKlas = new Set(KLAS_JAARLAG_OPTIONS.map((o) => o.key));
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.add('selected'));
-    updateJaarlagKlasLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  const nietsOld = document.getElementById('pop-jl-klas-niets');
-  const nietsNew = nietsOld.cloneNode(true);
-  nietsOld.replaceWith(nietsNew);
-  nietsNew.addEventListener('click', () => {
-    _filterState.jaarlagenKlas = new Set();
-    container.querySelectorAll('.filter-pop-toggle').forEach((b) => b.classList.remove('selected'));
-    updateJaarlagKlasLabel();
-    persistFilters();
-    rerenderActive();
-  });
-
-  updateJaarlagKlasLabel();
-}
-
-function updateJaarlagKlasLabel() {
-  document.getElementById('lbl-filter-jl-klas').textContent = jaarlagLabel(
-    _filterState.jaarlagenKlas,
-    KLAS_JAARLAG_OPTIONS,
-  );
-}
-
-// ── Observatie popover (opdrachten only) ──────────────────────────────────────
-// Options are supplied by the opdrachten screen (observaties matching the current
-// schoolsoort/jaarlaag filters). The selection is kept across option changes so
-// that narrowing and widening the other filters does not lose it.
-let _obsFilter = null; // null = alle observaties (no filtering), else Set of obs ids
-let _obsFilterOptions = []; // [{ id, naam, icon }]
-
-/** Effective observatie filter: null (no filtering) or the selected ids among the current options. */
-export function getObservatieFilter() {
-  if (!_obsFilter) return null;
-  return new Set(_obsFilterOptions.map((o) => o.id).filter((id) => _obsFilter.has(id)));
-}
-
-export function setObservatieFilterOptions(options) {
-  const sameOptions =
-    options.length === _obsFilterOptions.length &&
-    options.every((o, i) => o.id === _obsFilterOptions[i].id);
-  _obsFilterOptions = options;
-  if (!sameOptions) buildObservatiePopover();
-  updateObservatieLabel();
-}
-
-function obsIsSelected(id) {
-  return !_obsFilter || _obsFilter.has(id);
-}
-
-function buildObservatiePopover() {
-  const container = document.getElementById('pop-obs-toggles');
-  container.innerHTML = '';
-  if (_obsFilterOptions.length === 0) {
-    container.innerHTML =
-      '<div class="filter-pop-empty">Geen observaties voor deze schoolsoort en jaarlagen.</div>';
-    return;
-  }
-  for (const obs of _obsFilterOptions) {
-    const btn = document.createElement('button');
-    btn.className = 'filter-pop-toggle' + (obsIsSelected(obs.id) ? ' selected' : '');
-    btn.textContent = `${obs.icon ?? ''} ${obs.naam ?? ''}`.trim();
-    btn.title = obs.naam ?? '';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!_obsFilter) _obsFilter = new Set(_obsFilterOptions.map((o) => o.id));
-      if (_obsFilter.has(obs.id)) _obsFilter.delete(obs.id);
-      else _obsFilter.add(obs.id);
-      // Everything selected again → back to "no filtering"
-      if (_obsFilterOptions.every((o) => _obsFilter.has(o.id))) _obsFilter = null;
-      btn.classList.toggle('selected', obsIsSelected(obs.id));
-      updateObservatieLabel();
-      rerenderActive();
-    });
-    container.appendChild(btn);
-  }
-}
-
-function updateObservatieLabel() {
-  const sel = getObservatieFilter();
-  let label = 'Alle observaties';
-  if (sel && sel.size === 0) label = 'Geen observaties';
-  else if (sel && sel.size === 1) {
-    const obs = _obsFilterOptions.find((o) => sel.has(o.id));
-    label = `${obs.icon ?? ''} ${obs.naam ?? ''}`.trim();
-  } else if (sel) label = `${sel.size} observaties`;
-  document.getElementById('lbl-filter-obs').textContent = label;
-  document.getElementById('btn-filter-obs').classList.toggle('filter-btn-active', !!sel);
-}
-
-document.getElementById('pop-obs-alles').addEventListener('click', () => {
-  _obsFilter = null;
-  buildObservatiePopover();
-  updateObservatieLabel();
-  rerenderActive();
-});
-document.getElementById('pop-obs-niets').addEventListener('click', () => {
-  _obsFilter = new Set();
-  buildObservatiePopover();
-  updateObservatieLabel();
-  rerenderActive();
-});
-
-// ── Eigen toggle ──────────────────────────────────────────────────────────────
-document.getElementById('btn-filter-eigen').addEventListener('click', () => {
-  _filterState.eigenOnly = !_filterState.eigenOnly;
-  const active = document.querySelector('.screen.active');
-  const screenName = active?.id.replace('screen-', '') ?? 'leerlingen';
-  updateEigenLabel(screenName);
-  persistFilters();
-  rerenderActive();
-});
-
-// ── Persist & re-render helpers ───────────────────────────────────────────────
-function persistFilters() {
-  if (_activeUserId) Store.saveFilterState(_activeUserId, _filterState);
-}
-
-function rerenderActive() {
-  _filterGeneration++;
-  const active = document.querySelector('.screen.active');
-  if (active && active.id !== 'screen-startup') {
-    renderScreen(active.id.replace('screen-', ''));
-  }
-}
-
-// ── Init filter bar on login ──────────────────────────────────────────────────
-async function initFilterBar(user, subject) {
-  _activeUserId = user.id;
-  const school = Store.getSchoolSync();
-  const schoolSoorten = school.schoolsoort ?? [];
-  const saved = await Store.loadFilterState(user.id);
-
-  // Admin vakken popover (single-select, not persisted per-user — always starts at null)
-  if (user.isAdmin) {
-    _adminSubjectFilter = null;
-    buildVakkenPopover();
-    updateVakLabel();
-  }
-
-  // Schoolsoort popover
-  const savedSS = saved?.schoolsoorten ? new Set(saved.schoolsoorten) : null;
-  buildSchoolsoortPopover(schoolSoorten, savedSS);
-
-  // Jaarlaag popover (for admin: subject is null initially)
-  const savedJL = saved?.jaarlagen ? new Set(saved.jaarlagen) : null;
-  rebuildJaarlagPopover(user.isAdmin ? null : subject, savedJL);
-
-  // Jaarlaag klas popover (wi only) — re-apply saved selection on top of default
-  if (!user.isAdmin && subject === 'wi' && saved?.jaarlagenKlas) {
-    buildJaarlagKlasPopover(new Set(saved.jaarlagenKlas));
-  }
-
-  // Eigen
-  _filterState.eigenOnly = saved?.eigenOnly ?? false;
-}
-
 // ── User badge (topbar) ───────────────────────────────────────────────────────
 document.getElementById('btn-about').addEventListener('click', showAbout);
 
 const userBadgeBtn = document.getElementById('user-badge-btn');
+const readPhoto = (rel) => window.maatwerk.readPhotoAsDataUrl(rel);
 
 export async function showUserBadge(user, subject) {
   const role = Store.getActiveRole();
-  const shape = user.isAdmin || role ? 'badge-square' : 'badge-circle';
-  userBadgeBtn.className = `user-badge-mini ${shape}`;
-  userBadgeBtn.style.setProperty('--badge-color', user.kleur ?? '#888');
-  clearBadgePhoto(userBadgeBtn);
-  userBadgeBtn.textContent = user.afkorting || user.voornaam[0] || '?';
-  userBadgeBtn.dataset.len = userBadgeBtn.textContent.length;
-  userBadgeBtn.title = `${user.voornaam}${role ? ` (${roleLabel(role)})` : ''} — account en uitloggen`;
+  // Spec 3.6: 38 px, accent ring; square for the admin and a sectievoorzitter login.
+  userBadgeBtn.dataset.userId = user.id;
+  void renderAvatar(
+    userBadgeBtn,
+    user,
+    { size: 38, ring: 'accent', square: user.isAdmin || !!role },
+    readPhoto,
+  );
+  userBadgeBtn.title = `${Store.fullName(user)}${role ? ` (${roleLabel(role)})` : ''}: gebruikersmenu`;
+  userBadgeBtn.setAttribute('aria-label', 'Gebruikersmenu');
   userBadgeBtn.classList.remove('hidden');
-  // Only while this user is still the one shown (a slow read must not paint over the next).
-  const shownId = (userBadgeBtn.dataset.userId = user.id);
-  void loadBadgePhoto(userBadgeBtn, user.foto, () => userBadgeBtn.dataset.userId === shownId);
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
@@ -1058,27 +547,53 @@ function roleLabel(role) {
     : '';
 }
 
-// Step 7b: the badge opens the account modal (PIN wijzigen, uitloggen).
+/** The line under the name in the user menu (spec 3.6). */
+function menuSubtitle(user, role) {
+  if (role) return roleLabel(role);
+  if (user.isAdmin) return 'Beheerder';
+  const vak = Store.getActiveSubject();
+  return vak ? `Docent · ${Store.SUBJECT_DISPLAY[vak] ?? vak}` : 'Docent';
+}
+
+// F-17: the avatar opens the user menu (look, PIN, uitloggen).
 userBadgeBtn.addEventListener('click', () => {
   const user = Store.getActiveUser();
   if (!user) return;
-  openAccountModal(
+  const role = Store.getActiveRole();
+  const api = window.maatwerk;
+  const onUserChanged = (saved) => Store.cacheUser(saved);
+  toggleUserMenu({
+    anchor: userBadgeBtn,
     user,
-    roleLabel(Store.getActiveRole()),
-    window.maatwerk,
-    (saved) => Store.cacheUser(saved),
-    logOut,
-  );
+    name: Store.fullName(user),
+    subtitle: menuSubtitle(user, role),
+    square: user.isAdmin || !!role,
+    look: currentLook(),
+    // Applied at once; saved in the teacher's own file (F-18, decision 3).
+    onLook: (look) => {
+      applyLook(look);
+      void Store.savePreferences({ theme: look.theme, accent: look.accent });
+    },
+    onChangePin: () => void changePinFlow(api, onUserChanged),
+    onRenewCodes: user.isAdmin ? () => void renewCodesFlow(user, api, onUserChanged) : undefined,
+    onLogout: () => {
+      void api.logout().catch((e) => console.warn('[pin]', e));
+      logOut();
+    },
+    readPhoto,
+  });
 });
 
 function logOut() {
+  closeUserMenu();
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
-  clearBadgePhoto(userBadgeBtn);
+  userBadgeBtn.replaceChildren();
   delete userBadgeBtn.dataset.userId;
-  _adminSubjectFilter = null;
-  _activeUserId = null;
-  _obsFilter = null;
+  delete userBadgeBtn.dataset.avatarFoto;
+  forgetYear();
+  applyLook(baseLook());
+  resetFilterBar();
   navigateTo('startup');
 }
 
@@ -1100,6 +615,25 @@ window.addEventListener('unhandledrejection', async (e) => {
   persistentError(
     `Niet opgeslagen: dit is intussen${door} gewijzigd. Sluit het venster en open het opnieuw.`,
   );
+});
+
+// A save refused because school.json asks for a newer app (PLAN-2 decision 5).
+window.addEventListener('unhandledrejection', (e) => {
+  if (!isReadOnlyError(e.reason)) return;
+  e.preventDefault();
+  noteReadOnly();
+  persistentError(READ_ONLY_SAVE_TEXT);
+});
+
+// The banner, also when a colleague's newer app raised the minimum while this
+// app runs (review 15 M1): the start status has the versions.
+onReadOnly(async () => {
+  try {
+    const status = await window.maatwerk.dataFolderStatus();
+    showReadOnlyBanner(status.readOnly ?? '?', status.appVersion);
+  } catch (e) {
+    console.warn('[read-only]', e);
+  }
 });
 
 // ── Background changes (other teachers) ──────────────────────────────────────
@@ -1149,7 +683,7 @@ function scheduleScreenRefresh() {
 async function runScreenRefresh() {
   _screenRefreshTimer = null;
   if (!_screenRefreshPending) return;
-  if (!overlay.classList.contains('hidden')) return; // closeModal() picks it up
+  if (modalOpen()) return; // closing the last modal picks it up
   if (document.querySelector('.exam-menu')) {
     _screenRefreshTimer = setTimeout(runScreenRefresh, 2000);
     return;
@@ -1204,14 +738,12 @@ async function showExamAddedNotice(exam, year) {
   ]
     .filter(Boolean)
     .join(' · ');
-  const initials = creator ? creator.afkorting || creator.voornaam?.[0] || '?' : '?';
   const card = document.createElement('div');
   card.className = 'bg-notice';
   card.setAttribute('role', 'status');
   card.title = 'Klik om te sluiten';
   card.innerHTML = `
-    <span class="user-badge-mini ${creator?.isAdmin ? 'badge-square' : 'badge-circle'}"
-      data-len="${initials.length}" data-badge-color="${escHtml(creator?.kleur ?? '#888')}">${escHtml(initials)}</span>
+    ${avatarHtml(creator ?? {}, { size: 30, className: 'bg-notice-avatar' })}
     <div class="bg-notice-body">
       <div class="bg-notice-title">Nieuwe toets toegevoegd</div>
       <div class="bg-notice-exam">${escHtml(exam.title)}</div>
@@ -1221,6 +753,7 @@ async function showExamAddedNotice(exam, year) {
     <button class="bg-notice-close" aria-label="Melding sluiten">✕</button>`;
   card.addEventListener('click', () => card.remove());
   container.appendChild(card);
+  void loadAvatarPhotos(card, readPhoto);
 }
 
 Sync.start();
@@ -1246,6 +779,8 @@ async function init() {
     renderStartupError(container, status.dataDir, status.error, window.maatwerk);
     return;
   }
+  // An older app on data that needs a newer one: read-only, with a banner.
+  if (status.readOnly) noteReadOnly();
   applyWatermerk();
   initSelects();
   navigateTo('startup');

@@ -113,7 +113,7 @@ test('the admin resets a teacher PIN; the teacher chooses a new one', async ({ p
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="gebruikers"]').click();
   await page.locator(`[data-action="reset-pin"][data-id="${TEACHER}"]`).click();
-  await page.locator('.app-dialog [data-answer="1"]').click();
+  await page.locator('.dlg--confirm [data-action="ok"]').click();
   await expect(page.locator(`[data-action="reset-pin"][data-id="${TEACHER}"]`)).toHaveCount(0);
   const user = await readMockJson<User>(page, `gebruikers/${TEACHER}.json`);
   expect(user.pinHash).toBeUndefined();
@@ -171,7 +171,7 @@ test('a sectievoorzitter edits only the composition and teachers of the vak grou
   const badge = page.locator(`.badge-voorzitter[data-voorzitter-id="${TEACHER}"]`);
   await expect(badge).toContainText('Sectievoorzitter');
   await badge.click();
-  await expect(page.locator('.pin-role')).toHaveText('Sectievoorzitter Natuurkunde');
+  await expect(page.locator('.dlg-subtitle')).toHaveText('Sectievoorzitter Natuurkunde');
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   const group = `3a-nat-${YEAR}`;
@@ -181,7 +181,7 @@ test('a sectievoorzitter edits only the composition and teachers of the vak grou
   await expect(page.locator('.docent-toggle').first()).toBeEnabled();
   await expect(page.locator('[data-action="del-group"]')).toHaveCount(0);
   await page.locator('.docent-toggle').first().click();
-  await page.locator('#f-g-save').click();
+  await page.locator('.dlg [data-action="save"]').click();
   await expect(page.locator('.toast').last()).toHaveText('Groep opgeslagen.');
   const saved = await readMockJson<{ _meta: { updatedBy: string } }>(
     page,
@@ -275,8 +275,8 @@ test('a file changed outside Maatwerk is restored from a snapshot', async ({ pag
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="gegevens"]').click();
   await page.getByRole('button', { name: 'Herstellen uit snapshot' }).click();
-  await expect(page.locator('.app-dialog')).toContainText('30-10-2026 08:00');
-  await page.locator('.app-dialog [data-answer="1"]').click();
+  await expect(page.locator('.dlg--confirm')).toContainText('30-10-2026 08:00');
+  await page.locator('.dlg--confirm [data-action="ok"]').click();
   await expect(page.locator('.gegevens-summary')).toContainText('Geen fouten of waarschuwingen');
   const restored = await readMockJson<{ voornaam: string }>(page, file);
   expect(restored.voornaam).toBe('Terug');

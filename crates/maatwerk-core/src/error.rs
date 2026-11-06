@@ -51,6 +51,16 @@ pub enum Error {
     #[error("invalid argument: {message}")]
     InvalidArgument { message: String },
 
+    /// `school.json` asks for a newer app (`minAppVersion`, PLAN-2 decision 5): this app may
+    /// read the folder but not write it.
+    #[error(
+        "read-only: the data folder needs Maatwerk {min_version} or newer (this is {app_version})"
+    )]
+    ReadOnly {
+        min_version: String,
+        app_version: String,
+    },
+
     /// Any other I/O error.
     #[error("I/O error on {path}: {source}")]
     Io {
@@ -73,6 +83,7 @@ impl Error {
             Error::NeedsMigration { .. } => "needs_migration",
             Error::MigrationBlocked { .. } => "migration_blocked",
             Error::InvalidArgument { .. } => "invalid_argument",
+            Error::ReadOnly { .. } => "read_only",
             Error::Io { .. } => "io",
         }
     }
