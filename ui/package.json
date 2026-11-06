@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:e2e": "npm run build:mock && playwright test --project chromium",
     "test:e2e:webkit": "npm run build:mock && playwright test --project webkit",
-    "test:visual": "npm run build:mock && playwright test --project visual"
+    "test:visual": "npm run build:mock && playwright test --project visual",
+    "test:visual:ci": "npm run build:mock && playwright test visual"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",

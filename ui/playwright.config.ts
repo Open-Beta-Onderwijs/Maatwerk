@@ -6,6 +6,9 @@
 
 import { defineConfig, devices } from '@playwright/test';
 
+/** Committed baselines of the CI visual projects, one folder per project and OS. */
+const CI_BASELINES = '{testDir}/visual-baselines/{projectName}-{platform}/{arg}{ext}';
+
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
@@ -32,6 +35,20 @@ export default defineConfig({
     },
     // Local visual regression (npm run test:visual); not part of test:e2e or CI.
     { name: 'visual', testMatch: 'visual.spec.ts', use: { ...devices['Desktop Chrome'] } },
+    // CI visual regression (step 16b, user decision 2026-11-06): the light look of every view,
+    // baselines per CI platform committed in e2e/visual-baselines/ (docs/testing.md).
+    {
+      name: 'visual-ci-chromium',
+      testMatch: 'visual.spec.ts',
+      snapshotPathTemplate: CI_BASELINES,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'visual-ci-webkit',
+      testMatch: 'visual.spec.ts',
+      snapshotPathTemplate: CI_BASELINES,
+      use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
+    },
   ],
   webServer: {
     command: 'npx vite preview --outDir dist-mock --port 4173 --strictPort',

@@ -45,6 +45,14 @@ file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); im
    the clients' conflict copies are listed. `docs/release.md` Linux artifact, manual checks
    M-LNX-1..6.
 
+5. **Done** (local), baselines pending: visual tests in CI. **User decision (2026-11-06):** the
+   light look only, baselines per CI platform committed (`ui/e2e/visual-baselines/<project>-
+<platform>/`, ~2.5 MB each; local WebKit run: 39 views, ~50 s, stable). Projects
+   `visual-ci-chromium` (Windows job) and `visual-ci-webkit` (macOS, Linux), tolerance
+   `maxDiffPixelRatio: 0.002`. A platform without a folder writes its baselines (warning) and
+   uploads artifact `visual-<os>`; next: commit those from the first run (docs/testing.md
+   "Visual baselines in CI").
+
 ## Step 16a (done, tag `step-16a`)
 
 **Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned

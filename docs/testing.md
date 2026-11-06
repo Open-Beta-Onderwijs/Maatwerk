@@ -16,7 +16,8 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 | `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                                                                                      |
 | `npm run test:e2e`                                      | no                                        | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)                                                                 |
 | `npm run test:e2e:webkit`                               | no                                        | The same suite in Playwright's WebKit (CI on macOS; also runs on Windows after `npx playwright install webkit` in `ui/`)                            |
-| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 37 views; baseline is machine-specific, not committed                                                                |
+| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 39 views, three looks; baseline is machine-specific, not committed                                                   |
+| `npm run test:visual:ci -w ui -- --project visual-ci-…` | no                                        | CI, every job: the light look of every view against the committed baselines of that CI platform (`ui/e2e/visual-baselines/`)                        |
 | `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)                                                                 |
 | `npm run bindings`                                      | no                                        | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005); run it from PowerShell (Git Bash's `link` shadows MSVC's) |
 | `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data (format v1) in `data/` (refuses a non-empty folder), then the real app on it: it first offers the v2 conversion (M-MIG-1)   |
@@ -112,6 +113,22 @@ tests differ from Chromium only where the engine or Playwright does:
   themselves (G46) keep `Control`.
 - Timing: a full parallel run is slower than Chromium; poll timeouts that assume Chromium speed
   may need more room (G52).
+
+## Visual baselines in CI (step 16b)
+
+User decision 2026-11-06: CI compares the **light look** of every view (`e2e/views.ts`) per
+platform: `visual-ci-chromium` in the Windows job, `visual-ci-webkit` in the macOS and Linux
+jobs. The baselines are committed in `ui/e2e/visual-baselines/<project>-<platform>/` (~2.5 MB
+per platform), with `maxDiffPixelRatio: 0.002` for runner antialiasing. Dark and yellow stay
+in the local `visual` project (exact, not committed).
+
+- They come from CI only, never from a local machine (other fonts and antialiasing).
+- A platform without a baseline folder writes its baselines in that run (a warning, the step
+  passes) and uploads them as the artifact `visual-windows` / `visual-macos` / `visual-linux`:
+  copy `visual-baselines/` from it into `ui/e2e/` and commit.
+- An intended visual change: delete the affected folders (or files) and push; commit what the
+  next run writes, after looking at it. A failed comparison uploads the expected, actual and
+  diff images (`test-results/`) in the same artifact.
 
 ## Size budget
 

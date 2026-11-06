@@ -72,6 +72,28 @@ jobs:
       - run: npx playwright install chromium
         working-directory: ui
       - run: npm run test:e2e
+      # Visual baselines, light look (step 16b; docs/testing.md "Visual baselines in CI"). No
+      # baseline folder for this platform yet: write them, upload, commit the artifact.
+      - name: Visual comparison (visual-ci-chromium)
+        shell: bash
+        working-directory: ui
+        run: |
+          set -euo pipefail
+          dir="e2e/visual-baselines/visual-ci-chromium-$(node -p process.platform)"
+          if [ -d "$dir" ]; then
+            npx playwright test visual --project visual-ci-chromium
+          else
+            echo "::warning::No visual baselines in ui/$dir: writing them; commit the artifact visual-windows."
+            npx playwright test visual --project visual-ci-chromium --update-snapshots=all
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-windows
+          path: |
+            ui/e2e/visual-baselines/
+            ui/test-results/
+          if-no-files-found: ignore
       # tauri::generate_context! needs ui/dist to exist before clippy and test.
       - run: npm run build:ui
       # TauriApi is the only backend in the app bundle (Step 6b): no MockApi or its test hooks.
@@ -136,6 +158,28 @@ jobs:
       - run: npx playwright install webkit
         working-directory: ui
       - run: npm run test:e2e:webkit
+      # Visual baselines, light look (step 16b; docs/testing.md "Visual baselines in CI"). No
+      # baseline folder for this platform yet: write them, upload, commit the artifact.
+      - name: Visual comparison (visual-ci-webkit)
+        shell: bash
+        working-directory: ui
+        run: |
+          set -euo pipefail
+          dir="e2e/visual-baselines/visual-ci-webkit-$(node -p process.platform)"
+          if [ -d "$dir" ]; then
+            npx playwright test visual --project visual-ci-webkit
+          else
+            echo "::warning::No visual baselines in ui/$dir: writing them; commit the artifact visual-macos."
+            npx playwright test visual --project visual-ci-webkit --update-snapshots=all
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-macos
+          path: |
+            ui/e2e/visual-baselines/
+            ui/test-results/
+          if-no-files-found: ignore
       - run: npm run build:ui
       - run: cargo test --workspace
       # A real compiled rapport (written by the typst_rapport tests) in pdf.js on WebKit.
@@ -186,6 +230,28 @@ jobs:
       - run: npx playwright install --with-deps webkit
         working-directory: ui
       - run: npm run test:e2e:webkit
+      # Visual baselines, light look (step 16b; docs/testing.md "Visual baselines in CI"). No
+      # baseline folder for this platform yet: write them, upload, commit the artifact.
+      - name: Visual comparison (visual-ci-webkit)
+        shell: bash
+        working-directory: ui
+        run: |
+          set -euo pipefail
+          dir="e2e/visual-baselines/visual-ci-webkit-$(node -p process.platform)"
+          if [ -d "$dir" ]; then
+            npx playwright test visual --project visual-ci-webkit
+          else
+            echo "::warning::No visual baselines in ui/$dir: writing them; commit the artifact visual-linux."
+            npx playwright test visual --project visual-ci-webkit --update-snapshots=all
+          fi
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-linux
+          path: |
+            ui/e2e/visual-baselines/
+            ui/test-results/
+          if-no-files-found: ignore
       - run: npm run build:ui
       # Unix-only code paths (cfg(not(windows))) are only linted here.
       - run: cargo clippy --workspace --all-targets -- -D warnings

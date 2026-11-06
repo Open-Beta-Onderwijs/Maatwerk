@@ -2,11 +2,18 @@
 
 // Visual regression of every screen and modal on the mock build (tiny
 // fixture), for refactors that must not change the look (Step 3a: inline
-// styles -> CSS classes). Local tool (Playwright project "visual"), not run in
-// CI: the baseline images are machine-specific and not committed.
+// styles -> CSS classes).
+//
+// Local (project "visual", all three looks, exact): the baseline images are
+// machine-specific and not committed.
 //
 //   npm run test:visual -- --update-snapshots   # baseline before the change
 //   npm run test:visual                         # compare after the change
+//
+// CI (projects "visual-ci-chromium" / "visual-ci-webkit", step 16b): the light
+// look only, baselines per CI platform committed in e2e/visual-baselines/, a
+// small tolerance for runner antialiasing. New baselines come from the CI run
+// "update visual" (docs/testing.md), never from a local machine.
 
 import { expect, test } from '@playwright/test';
 import { VIEWS, openView } from './views';
@@ -26,7 +33,9 @@ const LOOKS = [
 
 for (const { suffix, look } of LOOKS) {
   for (const view of VIEWS) {
-    test(`${view.name}${suffix}`, async ({ page }) => {
+    test(`${view.name}${suffix}`, async ({ page }, info) => {
+      const ci = info.project.name.startsWith('visual-ci');
+      test.skip(ci && look !== null, 'CI compares the light look only');
       if (look)
         await page.addInitScript(
           (v) => localStorage.setItem('maatwerk.dev.look', v),
@@ -34,7 +43,9 @@ for (const { suffix, look } of LOOKS) {
         );
       await openView(page, view);
       await page.waitForTimeout(SETTLE);
-      const opts = { animations: 'disabled' as const, maxDiffPixels: 0 };
+      const opts = ci
+        ? { animations: 'disabled' as const, maxDiffPixelRatio: 0.002 }
+        : { animations: 'disabled' as const, maxDiffPixels: 0 };
       const file = `${view.name}${suffix}.png`;
       if (view.target === 'modal')
         await expect(page.locator('.dlg').last()).toHaveScreenshot(file, opts);
