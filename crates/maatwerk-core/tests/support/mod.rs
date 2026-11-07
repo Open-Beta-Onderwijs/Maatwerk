@@ -95,7 +95,10 @@ pub fn golden_page_count(case: &Value) -> usize {
 /// without whitespace (pdf.js inserts line breaks where Typst has none); the golden's `schema`
 /// lines come from the watermark SVG, which is an image in Typst's frames, so they are dropped.
 pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
-    if let Ok(why) = std::env::var("MAATWERK_BLESS") {
+    if let Ok(why) = std::env::var("MAATWERK_BLESS")
+        && std::env::var("MAATWERK_BLESS_IDS")
+            .is_ok_and(|ids| ids.split(',').any(|i| i.trim() == id))
+    {
         bless(id, case, doc, &why);
         return;
     }
@@ -155,9 +158,10 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
 }
 
 /// Makes Maatwerk's output the golden (PLAN-2 decision 9: only when a step changes that output
-/// on purpose, after the user's visual check): `MAATWERK_BLESS="<step and why>" cargo test`
-/// rewrites the case's `pdf` (sizes, text) and `png` entries and PNG files, and records why in
-/// `port`. The reference's call, wrappers and result stay as they were.
+/// on purpose, after the user's visual check): `MAATWERK_BLESS="<step and why>"
+/// MAATWERK_BLESS_IDS="<case>,<case>" cargo test` rewrites those cases' `pdf` (sizes, text) and
+/// `png` entries and PNG files, and records why in `port`; every other case is still compared.
+/// The reference harness skips a case with `port` (`regen-typst.mjs`). The reference's call, wrappers and result stay as they were.
 fn bless(id: &str, case: &Value, doc: &PagedDocument, why: &str) {
     use sha2::{Digest, Sha256};
     let ppi = case["reference"]["ppi"].as_f64().unwrap() as f32;
