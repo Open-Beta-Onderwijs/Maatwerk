@@ -15,6 +15,7 @@ describe('migration and data check texts', () => {
       moved: 2,
       deleted: 3,
       warnings: [],
+      notes: [],
       validation: {
         filesChecked: 10,
         issues: [{ severity: 'warning', kind: 'stray', path: 'x', message: 'm' }],

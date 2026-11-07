@@ -310,7 +310,7 @@ function openUserModal(user) {
               const base64 = ev.target.result.split(',')[1];
               const ext = file.name.endsWith('.png') ? 'png' : 'jpg';
               const userId = user?.id ?? `gebr-${Date.now()}`;
-              const relPath = `fotos/${userId}.${ext}`;
+              const relPath = `afbeeldingen/${userId}.${ext}`;
               try {
                 await window.maatwerk.savePhoto(relPath, base64);
                 resolve(relPath);

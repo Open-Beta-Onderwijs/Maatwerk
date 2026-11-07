@@ -188,13 +188,13 @@ test('4b m5: an unusable data folder shows the startup error screen', async ({ p
   await page.addInitScript(() => {
     (window as unknown as { __maatwerkMockFolderStatus: unknown }).__maatwerkMockFolderStatus = {
       dataDir: 'D:/OneDrive/Maatwerk/data',
-      error: { code: 'unsupported_schema', message: 'unsupported', details: { found: '3' } },
+      error: { code: 'unsupported_schema', message: 'unsupported', details: { found: '4' } },
     };
   });
   await page.goto('/');
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('Maatwerk kan de gegevensmap niet openen');
-  await expect(alert).toContainText('nieuwere versie van Maatwerk (schemaversie 3)');
+  await expect(alert).toContainText('nieuwere versie van Maatwerk (schemaversie 4)');
   await expect(alert).toContainText('D:/OneDrive/Maatwerk/data');
   await expect(page.locator('.subject-card')).toHaveCount(0);
   await page.getByRole('button', { name: 'Opnieuw proberen' }).click();
@@ -203,22 +203,28 @@ test('4b m5: an unusable data folder shows the startup error screen', async ({ p
   expect(calls).not.toContain('listYears');
 });
 
-test('C1: a v1 folder offers the one-time conversion, after a confirmation', async ({ page }) => {
+test('C1, step 18: an older folder offers the conversion, after a preview and a confirmation', async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     (window as unknown as { __maatwerkMockFolderStatus: unknown }).__maatwerkMockFolderStatus = {
       dataDir: 'D:/OneDrive/Maatwerk/data',
-      error: { code: 'needs_migration', message: 'needs migration', details: { found: '1' } },
+      error: { code: 'needs_migration', message: 'needs migration', details: { found: '2' } },
     };
   });
   await page.goto('/');
   const region = page.getByRole('region', { name: 'Gegevensmap omzetten' });
   await expect(region).toContainText('eenmalig worden omgezet');
   await expect(region).toContainText('D:/OneDrive/Maatwerk/data');
+  // Decision 13: the resits' observaties, before and after, before anything happens.
+  await expect(region.locator('.migration-preview')).toContainText(
+    'observaties vóór: geen; na: Rekenfout',
+  );
   const go = page.getByRole('button', { name: 'Omzetten' });
   await expect(go).toBeDisabled();
   await page.locator('#migration-confirm').check();
   await go.click();
-  await expect(region).toContainText('Gegevensmap omgezet van versie 1 naar 2.');
+  await expect(region).toContainText('Gegevensmap omgezet van versie 2 naar 3.');
   await expect(region).toContainText('Back-up:');
   // The report itemises the migration warnings and every check issue (cutover dry run: the
   // warnings were only counted before).
@@ -233,6 +239,10 @@ test('C1: a v1 folder offers the one-time conversion, after a confirmation', asy
   const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
   expect(calls).toEqual(expect.arrayContaining(['migrateDataFolder', 'restartApp']));
   expect(calls).not.toContain('listYears');
+  const runs = await withMock(page, (m) =>
+    m.calls.filter((c) => c[0] === 'migrateDataFolder').map((c) => c[1]),
+  );
+  expect(runs).toEqual([true, undefined]);
 });
 
 test('C17: a colleague saved the opdracht meanwhile: keep my text, choose what happens', async ({

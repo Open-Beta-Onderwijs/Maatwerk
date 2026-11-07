@@ -3234,7 +3234,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-app"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "maatwerk-core",
  "rfd",
@@ -3257,7 +3257,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-cli"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "maatwerk-core",
  "serde",
@@ -3268,7 +3268,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-core"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "argon2",
  "base64 0.23.1",

@@ -52,7 +52,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.6.0';
+export const MOCK_APP_VERSION = '0.9.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -174,14 +174,15 @@ export class MockApi implements MaatwerkApi {
   stamps: StampIssue[] = [];
   /** What `migrateDataFolder` returns; tests may replace it. */
   migration: MigrationResult = {
-    fromVersion: 1,
-    toVersion: 2,
+    fromVersion: 2,
+    toVersion: 3,
     applied: true,
     backup: 'C:\\Users\\docent\\AppData\\Local\\maatwerk\\backups\\maatwerk-backup-v1.zip',
     written: 12,
     moved: 1,
     deleted: 3,
     warnings: ['Groep 4H1: leerling 1002 stond er dubbel in; de eerste is gehouden.'],
+    notes: ['2025-2026 Toets 1 — HERKANSING (van Toets 1): observaties vóór: geen; na: Rekenfout'],
     validation: {
       filesChecked: 12,
       issues: [
@@ -221,7 +222,7 @@ export class MockApi implements MaatwerkApi {
     }
     for (const dir of seed.dirs) this.mkdir(dir);
     // seed_initial_data() in maatwerk-core
-    this.mkdir('fotos');
+    this.mkdir('afbeeldingen');
     this.mkdir('opdrachten');
   }
 
@@ -599,7 +600,7 @@ export class MockApi implements MaatwerkApi {
   // ── Presence, session, photos ─────────────────────────────────────────────
 
   private writePresence(userId: string, state: Record<string, unknown>): void {
-    this.putFile(`users/${userId}.json`, encoder.encode(JSON.stringify(state, null, 2)));
+    this.putFile(`aanwezigheid/${userId}.json`, encoder.encode(JSON.stringify(state, null, 2)));
   }
 
   async updatePresence(userId: string | null, state?: Record<string, unknown>): Promise<void> {
@@ -807,9 +808,11 @@ export class MockApi implements MaatwerkApi {
     this.uiErrors.push(message);
   }
 
-  async migrateDataFolder(): Promise<MigrationResult> {
-    this.record('migrateDataFolder', []);
-    return structuredClone(this.migration);
+  async migrateDataFolder(dryRun?: boolean): Promise<MigrationResult> {
+    this.record('migrateDataFolder', [dryRun]);
+    const result = structuredClone(this.migration);
+    if (!dryRun) return result;
+    return { ...result, applied: false, backup: null, validation: null, reportFile: null };
   }
 
   async validateDataFolder(): Promise<DataCheck> {

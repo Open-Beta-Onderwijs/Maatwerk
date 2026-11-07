@@ -62,7 +62,7 @@ describe('Store.generation', () => {
   it('grows on a colleague change to data, not on presence', async () => {
     await Store.preloadScores!(YEAR);
     let g = Store.generation!();
-    await Store.applyExternalChange!({ relPath: 'users/gebr-x.json', kind: 'modified' });
+    await Store.applyExternalChange!({ relPath: 'aanwezigheid/gebr-x.json', kind: 'modified' });
     expect(Store.generation!()).toBe(g);
     await Store.applyExternalChange!({
       relPath: `${YEAR}/scores/nat/1.json`,

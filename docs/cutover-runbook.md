@@ -105,8 +105,8 @@ the interval (Instellingen) writes one in the background.
   1. Everyone closes Maatwerk.
   2. Copy the snapshot zip you want out of `data\snapshots\` to a local folder.
   3. Rename the shared `data\` folder to `data-kapot-<date>` (keep it).
-  4. Create a new `data\` folder and unzip the snapshot into it. Copy `snapshots\` and `fotos\`
-     back from `data-kapot-<date>` (the zip has neither).
+  4. Create a new `data\` folder and unzip the snapshot into it. Copy `snapshots\` and
+     `afbeeldingen\` (`fotos\` before 0.9) back from `data-kapot-<date>` (the zip has neither).
   5. Start Maatwerk as admin and run Gegevenscontrole.
 - **The shared folder itself is gone or damaged** (the snapshots go with it): use OneDrive's
   version history or recycle bin for the folder (OneDrive website, "Vorige versies herstellen"),
@@ -128,7 +128,8 @@ first data-format change (step 18) every PC must run at least 0.6.
   write between them). Never by hand, except to lift it again in a rollback.
 - **A new `schema_version`** (in `config.json`) is a different guard: an app that does not know
   the schema stops at the start screen ("niet ondersteund") instead of opening read-only. Step 18
-  decides whether a newer schema with a `minAppVersion` should open read-only instead.
+  keeps that: a new schema may move files (v3 renamed `fotos/` and `users/`), so an older app
+  must not even read it. Apps 0.6-0.8 could not do otherwise anyway (they are already out).
 - **While `school.json` is missing or unreadable** (OneDrive still syncing it) the guard sets no
   limit; the migration must therefore write `school.json` first.
 - **A teacher without a PIN** cannot log in on a read-only app: choosing the first PIN is a
@@ -139,6 +140,25 @@ first data-format change (step 18) every PC must run at least 0.6.
   lost on screen; it was not written.
 - A value that is not a version string (`"next"`, any number such as `0.5`) also makes the app
   read-only; a missing, `null` or empty field sets no limit.
+
+## 9. Format v3 (0.9, step 18)
+
+Maatwerk 0.9 converts the folder from format v2 to v3 (`docs/reference/data-files-v3.md`):
+`fotos\` becomes `afbeeldingen\`, `users\` becomes `aanwezigheid\`, every toets gets `kind` and
+`diagnostic`, and every inhaal and herkansing gets the observaties of its original toets. After
+it, Maatwerk 0.8 and older stop at the start screen ("nieuwere versie"), so:
+
+1. Put the 0.9 exe in the shared folder next to `data\` and announce the moment (section 2).
+2. Everyone closes Maatwerk. The admin starts 0.9: the start screen offers "Deze gegevensmap
+   moet eenmalig worden omgezet" and first lists the observaties each inhaal and herkansing will
+   get (before and after). Same list: `maatwerk-cli migrate <data> --dry-run`.
+3. Tick the box, "Omzetten": a backup zip goes to the local app folder first (as in section
+   3.4), then the conversion and the check. Read the report (also next to the backup).
+4. Colleagues start 0.9. Rollback: section 5 with that backup and the 0.8 exe.
+
+Leftovers that format v3 does not use are listed by Gegevenscontrole / `validate-data`
+("Bestand dat Maatwerk niet gebruikt", "Overgebleven uit gegevensversie 2"). Nothing removes
+them automatically; remove them by hand after checking, or ask for help.
 
 ## Log
 

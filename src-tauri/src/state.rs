@@ -164,6 +164,11 @@ impl Core {
                 if let Err(e) = opdracht_images::remove_empty_dirs(&storage) {
                     tracing::warn!("removing empty image folders failed: {e}");
                 }
+                let stale =
+                    maatwerk_core::presence::prune_stale(&storage, std::time::SystemTime::now());
+                if stale > 0 {
+                    tracing::info!("removed {stale} stale presence files");
+                }
                 Arc::new(storage)
             })
             .map_err(|e| {

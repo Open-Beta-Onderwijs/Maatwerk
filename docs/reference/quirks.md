@@ -109,6 +109,7 @@ are relative to `_reference/` unless a section says otherwise.
 20. **D20 · Presence user switch race / unvalidated user id**
     - Where: `main.js:428-433`; `presence.js:71-77`
     - Evidence: `presence:update(null)` with no state; `userId` used directly in a file name. Files are never deleted.
+    - **Fixed (step 18):** the user id must be one file name (since step 4b), the previous user is marked offline first, and presence files whose `heartbeatAt` is over 30 days old (or missing) are removed at every start (`presence::prune_stale`); the folder is `aanwezigheid/` in format v3.
 
 21. **D21 · Concurrent previews clobber each other**
     - Where: `main.js:747-754`

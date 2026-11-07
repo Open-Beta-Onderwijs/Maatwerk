@@ -1,7 +1,7 @@
 # State
 
-Last updated: 2026-11-07 (steps 17 and 18 in one session, user request) Branch: `step/17-rapport-fixes`
-(from `main` `a62ea7e`)
+Last updated: 2026-11-07 (steps 17 and 18 in one session, user request) Branch: `step/18-data-v3`
+(from `step/17-rapport-fixes`, which is from `main` `a62ea7e`)
 Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
 (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
 `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
@@ -32,6 +32,33 @@ the first failure), which ROADMAP 4.6 puts in 17 but PLAN-2 does not list (asked
    rapport and opdrachten dialogs; bridge returns `warnings`; batch warnings name the opdracht,
    once per opdracht; mock `useRenderWarnings`; e2e `e2e/rapport.spec.ts` (3).
 3. **Done** (`9ea3bd9`): version 0.8.0.
+
+## Step 18 progress (Data format v3, 0.9)
+
+Branch `step/18-data-v3` on top of `step/17-rapport-fixes` (17 is not merged: its golden check is
+pending). Spec: `docs/reference/data-files-v3.md`; runbook section 9.
+
+1. **Done:** core. `migrate::v3` (new): `school.json` first (`minAppVersion` 0.9.0 when absent or
+   lower; logo/watermerk paths), `fotos/` -> `afbeeldingen/` (any case), `users/` removed (stale
+   presence), `gebruikers` foto paths, every exam `kind: "toets"`/`diagnostic: false` when
+   absent, resits `obs_ids` = original's + own (warning) and `obs_from_parent: true`, with a
+   before/after `notes` line per resit (decision 13). Changed entities: rev + 1, `updatedBy`
+   null. `migrate` chains v1 -> v2 -> v3 after one backup (`migrate_to` for tests; a v1 dry run
+   lists v2 only and says v3 follows). `CURRENT_VERSION` 3; v2 is `needs_migration`. Storage
+   `IMAGES_DIR`/`PRESENCE_DIR`; rapport mount `/data/afbeeldingen`; watcher/snapshots skip
+   `afbeeldingen/`. D20: `presence::prune_stale` (30 days) at every start. `validate-data`:
+   v3 exam fields, `opdrachtenVraag` (F-14 data part), leftover `fotos/`/`users/` named.
+   Fixtures: v1 fixture got two resits; `tests/fixtures/migrate/v2` regenerated (only those two
+   added); new golden `v3`. 11 new Rust tests.
+2. **Done:** app + UI. `migrate_data_folder(dryRun)`, `MigrationResult.notes`; the start screen
+   shows the resit list before the confirm; CLI prints it. UI paths (`afbeeldingen/`,
+   `aanwezigheid/`), `withExamDefaults` in `Store.upsertExam`, new resits copy the original's
+   observaties (F-12 data part; locking in the edit screen is step 20). `tools/fixtures/to-v2.mjs`
+   -> `to-current.mjs` (`filesToV3`, mock only; Store goldens stay on v2). Mock app version 0.9.0.
+   Version 0.9.0.
+3. **Not done, needs the user (STOP gates):** the `validate-data` list from a copy of the real
+   data (PLAN-2 "before the step"); running the migration on that copy; deleting leftovers. No
+   automatic leftover removal was built: the list decides (runbook section 9).
 
 ## Step 16 (done, tags `step-16b`, `step-16`)
 

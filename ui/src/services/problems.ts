@@ -35,7 +35,10 @@ export function errorText(reason: unknown): string {
 export function redact(text: string): string {
   return text
     .replace(/(scores[\\/][^\\/\s"'`]+[\\/])[^\\/\s"'`]+/g, '$1<leerling>')
-    .replace(/(fotos[\\/])[^\\/"'`\n]+?\.(png|jpe?g|gif|svg|webp)\b/gi, '$1<foto>');
+    .replace(
+      /((?:fotos|afbeeldingen)[\\/])[^\\/"'`\n]+?\.(png|jpe?g|gif|svg|webp)\b/gi,
+      '$1<foto>',
+    );
 }
 
 /** Logs `reason` and shows the message, unless it is noise or a save conflict. */

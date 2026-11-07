@@ -97,11 +97,12 @@ export const commands = {
 	/**  Deletes an opdracht folder; a folder OneDrive keeps locked is retried in the background. */
 	deleteOpdrachtFolder: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_folder", { opdrachtId })),
 	/**
-	 *  Migrates the data folder to v2 after zipping it to the local backup folder, then checks it.
-	 *  Only while the folder could not be opened because it needs the migration; the UI restarts
-	 *  the app afterwards.
+	 *  Migrates the data folder to the current format after zipping it to the local backup folder,
+	 *  then checks it. Only while the folder could not be opened because it needs the migration; the
+	 *  UI restarts the app afterwards. `dry_run`: only what would change, nothing written (the
+	 *  screen shows it before the admin confirms).
 	 */
-	migrateDataFolder: () => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder")),
+	migrateDataFolder: (dryRun: boolean | null) => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder", { dryRun })),
 	/**  `validate-data` on the open data folder (admin screen). */
 	validateDataFolder: () => typedError<DataCheck, CommandError>(__TAURI_INVOKE("validate_data_folder")),
 	/**  Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd"). */
@@ -461,6 +462,11 @@ export type MigrationResult = {
 	deleted: number,
 	/**  Dutch, for the admin. */
 	warnings: string[],
+	/**
+	 *  Dutch: the observaties each inhaal and herkansing gets, before and after (decision 13);
+	 *  shown before the admin confirms (dry run) and in the report.
+	 */
+	notes: string[],
 	/**  The check right after the migration. */
 	validation: DataCheck | null,
 	/**  The Dutch report next to the backup zip (`None` when it could not be written). */

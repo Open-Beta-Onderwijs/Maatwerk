@@ -14,6 +14,9 @@ export interface Question {
   [key: string]: unknown;
 }
 
+/** Format v3 (step 18, decision 14): a test or a practical assignment (PO). */
+export type ExamKind = 'toets' | 'po';
+
 export interface Exam {
   id: string;
   subject?: string;
@@ -24,6 +27,14 @@ export interface Exam {
   n_term?: number;
   questions: Question[];
   parent_id?: string;
+  /** Format v3; absent counts as `'toets'`. */
+  kind?: ExamKind;
+  /** Format v3: a diagnostic test counts for neither rapport nor SE (weging 0, never PTA). */
+  diagnostic?: boolean;
+  /** Format v3: an inhaal/herkansing with the original's observaties, locked (F-12). */
+  obs_from_parent?: boolean;
+  /** Format v3 (F-14): opdrachten for a score below `onder` on question `vraag`. */
+  opdrachtenVraag?: VraagCard[];
   attempt?: number;
   volgnummer?: number;
   obs_ids?: string[];
@@ -84,6 +95,21 @@ export interface Meta {
   createdAt: string | null;
   updatedBy: string | null;
   updatedAt: string;
+}
+
+/** Format v3 (F-14): "score on question `vraag` below `onder`" -> these opdrachten. */
+export interface VraagCard {
+  id: string;
+  /** A question id of the exam. */
+  vraag: string;
+  /** Points: a score that is a number below this matches. */
+  onder: number;
+  opdrachten?: string[];
+}
+
+/** The v3 defaults of an exam: `kind: 'toets'`, `diagnostic: false` when absent. */
+export function withExamDefaults<E extends Partial<Exam>>(exam: E): E {
+  return { ...exam, kind: exam.kind ?? 'toets', diagnostic: exam.diagnostic ?? false };
 }
 
 export interface CijferCard {

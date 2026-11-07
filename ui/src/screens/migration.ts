@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// The one-time conversion of a v1 data folder (ADR-0003 C1, Step 7a), offered
-// at start instead of the startup error screen when the folder needs it. The
-// admin confirms that nobody uses the old app any more; Maatwerk then zips the
-// whole folder to a local backup, converts it and checks the result
-// (docs/cutover-runbook.md).
+// The one-time conversion of an older data folder (v1: ADR-0003 C1, Step 7a;
+// v2 -> v3: step 18), offered at start instead of the startup error screen when
+// the folder needs it. First a dry run shows what changes in the content (the
+// observaties each inhaal and herkansing gets, decision 13). The admin confirms
+// that nobody uses the old app any more; Maatwerk then zips the whole folder to
+// a local backup, converts it and checks the result (docs/cutover-runbook.md).
 
 import type { MaatwerkApi, MigrationResult } from '../bridge/api';
 import { issueCounts, issueTable } from './gegevens';
@@ -38,6 +39,17 @@ export function migrationSummary(r: MigrationResult): string[] {
   return lines;
 }
 
+/** The content changes of a migration (`notes`) as a titled list, or null when there are none. */
+export function migrationNotes(r: MigrationResult, title: string): HTMLElement | null {
+  if (!r.notes.length) return null;
+  const wrap = el('div', 'migration-notes');
+  wrap.append(el('h4', 'migration-heading', title));
+  const list = el('ul', 'migration-warnings');
+  for (const n of r.notes) list.append(el('li', '', n));
+  wrap.append(list);
+  return wrap;
+}
+
 /** The report shown after the migration: summary, migration warnings, check issues. */
 export function migrationReport(r: MigrationResult): HTMLElement {
   const report = el('div', 'migration-done');
@@ -45,6 +57,8 @@ export function migrationReport(r: MigrationResult): HTMLElement {
   report.setAttribute('aria-label', 'Verslag van het omzetten');
   report.append(el('h3', 'migration-heading', 'Verslag van het omzetten'));
   for (const line of migrationSummary(r)) report.append(el('p', '', line));
+  const notes = migrationNotes(r, 'Observaties bij inhaal- en herkansingstoetsen');
+  if (notes) report.append(notes);
   if (r.warnings.length) {
     report.append(el('h4', 'migration-heading', 'Meldingen bij het omzetten'));
     const list = el('ul', 'migration-warnings');
@@ -94,6 +108,21 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
     folder.append(el('code', '', dataDir));
     box.append(folder);
   }
+  // The dry run: what the admin agrees to (decision 13). A failure here is not fatal; the
+  // migration itself refuses with the same reason.
+  const preview = el('div', 'migration-preview');
+  preview.setAttribute('aria-live', 'polite');
+  box.append(preview);
+  void api.migrateDataFolder(true).then(
+    (r) => {
+      const notes = migrationNotes(
+        r,
+        'Inhaal- en herkansingstoetsen krijgen de observaties van de oorspronkelijke toets',
+      );
+      if (notes) preview.append(notes);
+    },
+    () => {},
+  );
   const label = el('label', 'migration-confirm');
   const check = document.createElement('input');
   check.type = 'checkbox';

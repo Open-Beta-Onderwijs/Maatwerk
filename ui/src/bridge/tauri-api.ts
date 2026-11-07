@@ -304,7 +304,7 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     problemInfo: () => c.problemInfo(),
     openLogFolder: () => orThrow(c.openLogFolder()).then(() => undefined),
     logUiError: (message) => c.logUiError(message),
-    migrateDataFolder: () => orThrow(c.migrateDataFolder()),
+    migrateDataFolder: (dryRun) => orThrow(c.migrateDataFolder(dryRun ?? null)),
     validateDataFolder: () => orThrow(c.validateDataFolder()),
     stampIssues: () => orThrow(c.stampIssues()),
     async acceptStamp(relPath) {

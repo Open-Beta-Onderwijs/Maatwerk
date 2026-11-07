@@ -53,6 +53,7 @@ import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
+import { withExamDefaults } from './domain/types';
 import { timed } from './utils/perf';
 
 const Store = (() => {
@@ -629,7 +630,8 @@ const Store = (() => {
   async function upsertExam(exam, year) {
     const subj = exam.subject ?? _activeSubject;
     const { academic_year: _ay, ...clean } = exam;
-    const updated = { ...clean, subject: subj };
+    // Format v3 (step 18): every exam has `kind` and `diagnostic`.
+    const updated = withExamDefaults({ ...clean, subject: subj });
     const key = `${year}/exams/${subj}`;
     const arr = cache[key] ?? [];
     const i = arr.findIndex((e) => e.id === updated.id);
@@ -1092,7 +1094,7 @@ const Store = (() => {
     ['opdrachtTyp', /^opdrachten\/([^/]+)\/[^/]+\.typ$/],
     ['gebruikers', /^gebruikers\/([^/]+)\.json$/],
     ['school', /^school\.json$/],
-    ['presence', /^users\/([^/]+)\.json$/],
+    ['presence', /^aanwezigheid\/([^/]+)\.json$/],
   ];
 
   // Replace (or remove, when `item` is null) the entry with this id in every

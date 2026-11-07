@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 // Same codec the harness wrote the goldens with.
 import { capture, decode, encode } from '../../tests/reference-harness/golden.mjs';
-import { filesToV2 } from '../../tools/fixtures/to-v2.mjs';
+import { filesToV2 } from '../../tools/fixtures/to-current.mjs';
 
 export { decode, encode };
 
