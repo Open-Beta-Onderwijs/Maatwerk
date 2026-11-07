@@ -237,7 +237,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     // A golden that is now Maatwerk's own output (PLAN-2 decision 9, `port.blessed` in its
     // case.json) no longer equals the reference's: neither checked nor overwritten.
     const existing = path.join(dir, 'case.json');
-    const blessed = fs.existsSync(existing) && JSON.parse(fs.readFileSync(existing, 'utf8')).port?.blessed;
+    const blessed =
+      fs.existsSync(existing) && JSON.parse(fs.readFileSync(existing, 'utf8')).port?.blessed;
     if (blessed) {
       console.log(`port ${id} (${blessed})`);
       continue;
