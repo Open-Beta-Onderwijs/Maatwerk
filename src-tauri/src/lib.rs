@@ -80,6 +80,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::get_data_dir,
             commands::data_folder_status,
             commands::restart_app,
+            data::choose_data_folder,
             commands::read_text_file,
             commands::read_text_file_versioned,
             commands::write_text_file,
@@ -195,11 +196,21 @@ fn init_logging(log_dir: Option<std::path::PathBuf>) {
 /// The log folder Tauri's `app_log_dir` resolves to, known before the app is built so that
 /// start failures are logged too (review 6 M1). Elsewhere logging starts in `setup`.
 fn early_log_dir(identifier: &str) -> Option<std::path::PathBuf> {
+    use std::path::PathBuf;
+    let var = |name: &str| {
+        std::env::var_os(name)
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+    };
+    // The folders Tauri's `app_log_dir` uses (step 16b: also off Windows).
     if cfg!(windows) {
-        std::env::var_os("LOCALAPPDATA")
-            .map(|dir| std::path::PathBuf::from(dir).join(identifier).join("logs"))
+        var("LOCALAPPDATA").map(|dir| dir.join(identifier).join("logs"))
+    } else if cfg!(target_os = "macos") {
+        var("HOME").map(|home| home.join("Library/Logs").join(identifier))
     } else {
-        None
+        var("XDG_DATA_HOME")
+            .or_else(|| var("HOME").map(|home| home.join(".local/share")))
+            .map(|dir| dir.join(identifier).join("logs"))
     }
 }
 
@@ -242,20 +253,29 @@ pub fn run() {
             let output_dir = app.path().app_cache_dir()?.join("output");
             let handle = app.handle().clone();
             let slot = Arc::new(state::CoreSlot::default());
-            let data_dir = state::data_dir();
-            let (failed_dir, failed_session, failed_output) =
-                (data_dir.clone(), session_file.clone(), output_dir.clone());
+            // Where `data::local_config_path` looks: local, not roaming (review 16 n6).
+            let location = state::locate_data_dir(
+                &app.path()
+                    .app_local_data_dir()?
+                    .join(maatwerk_core::data_location::LOCAL_CONFIG_FILE),
+            );
+            let source = location.as_ref().map(|l| l.source);
+            let failed_dir = location.as_ref().map(|l| l.dir.clone()).unwrap_or_default();
+            let (failed_session, failed_output) = (session_file.clone(), output_dir.clone());
             // Off the main thread (review 6 m6): commands wait for it on their blocking thread.
             slot.open_in_background(
                 move || {
-                    state::Core::open(data_dir, session_file, output_dir, move |batch| {
+                    state::open_located(location, session_file, output_dir, move |batch| {
                         let batch = batch.into_iter().map(DataChange::from).collect();
                         if let Err(e) = DataChanged(batch).emit(&handle) {
                             tracing::warn!("emitting data:changed failed: {e}");
                         }
                     })
                 },
-                move |e| state::Core::failed(failed_dir, failed_session, failed_output, e),
+                move |e| {
+                    state::Core::failed(failed_dir, failed_session, failed_output, e)
+                        .located(source)
+                },
                 |core| core.start_snapshot(),
             );
             app.manage::<state::Shared>(slot);

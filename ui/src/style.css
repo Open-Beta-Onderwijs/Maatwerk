@@ -3013,6 +3013,21 @@ td.grade-override-stale::after {
   word-break: break-word;
 }
 
+/* ── First run: choose the data folder (step 16a) ─────────────────────────── */
+.startup-error.choose-folder {
+  border-left-color: var(--accent);
+}
+.choose-folder-status {
+  margin: 12px 0 0;
+  word-break: break-all;
+}
+.choose-folder-status:empty {
+  display: none;
+}
+.choose-folder-status.is-error {
+  color: var(--danger);
+}
+
 /* ── One-time conversion of a v1 folder (ADR-0003 C1) ────────────────────── */
 .startup-error.migration {
   border-left-color: var(--accent);

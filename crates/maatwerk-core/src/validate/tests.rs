@@ -107,14 +107,27 @@ fn conflict_copies_and_leftovers_are_strays() {
     for name in [
         "2025-2026/groups/3a-nat-2025-2026-LOKAAL12-PC.json",
         "2025-2026/groups/3a-nat-2025-2026 (1).json",
+        // The Linux sync clients of the README (step 16b): OneDrive Client for Linux, rclone.
+        "2025-2026/groups/3a-nat-2025-2026-lokaal12-safeBackup-0001.json",
+        "2025-2026/groups/3a-nat-2025-2026.json.conflict1",
         "school.json.4242-1.tmp",
     ] {
         fs::copy(data.join(group), data.join(name)).unwrap();
     }
     let report = validate(&data).unwrap();
+    assert!(
+        has(
+            &report,
+            IssueKind::Stray,
+            "2025-2026/groups/3a-nat-2025-2026.json.conflict1",
+            ""
+        ),
+        "listed, not read"
+    );
     for name in [
         "2025-2026/groups/3a-nat-2025-2026-LOKAAL12-PC.json",
         "2025-2026/groups/3a-nat-2025-2026 (1).json",
+        "2025-2026/groups/3a-nat-2025-2026-lokaal12-safeBackup-0001.json",
     ] {
         assert!(
             has(
@@ -185,6 +198,31 @@ fn broken_references_are_listed() {
         "toets nat-toets-1-2025-2026, die niet bestaat"
     ));
     assert_eq!(report.errors(), 1, "only the missing lib.typ is an error");
+}
+
+/// Renames in two steps, so a case-only rename also works on Windows.
+fn rename_case(from: &Path, to: &Path) {
+    let between = from.with_extension("rename-tmp");
+    fs::rename(from, &between).unwrap();
+    fs::rename(&between, to).unwrap();
+}
+
+#[test]
+fn an_image_in_other_case_is_a_warning_with_the_real_name() {
+    // A Windows-made folder: the opdracht says images/figuur.png, the file is Figuur.PNG.
+    let (_tmp, data) = copy();
+    let images = data.join("opdrachten/opdracht_1756713600200/images");
+    rename_case(&images.join("figuur.png"), &images.join("Figuur.PNG"));
+    let report = validate(&data).unwrap();
+    let typ = "opdrachten/opdracht_1756713600200/opdracht.typ";
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        typ,
+        "Afbeelding images/figuur.png heet anders gespeld: images/Figuur.PNG"
+    ));
+    assert!(!has(&report, IssueKind::Reference, typ, "ontbreekt"));
+    assert_eq!(report.errors(), 0);
 }
 
 #[test]

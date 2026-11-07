@@ -21,8 +21,9 @@ const view = (name: string) => {
 for (const v of VIEWS.filter((x) => x.target === 'modal')) {
   test(`${v.name} opens at the fixed top`, async ({ page }) => {
     await openView(page, v);
+    // Polled: a slow runner can measure the dialog while it still moves in (CI, step 16b).
+    await expect.poll(async () => (await topDialog(page).boundingBox())?.y).toBe(TOP);
     const box = await topDialog(page).boundingBox();
-    expect(box?.y).toBe(TOP);
     // Centred horizontally (1 px rounding).
     const vw = page.viewportSize()!.width;
     expect(Math.abs(box!.x + box!.width / 2 - vw / 2)).toBeLessThanOrEqual(1);

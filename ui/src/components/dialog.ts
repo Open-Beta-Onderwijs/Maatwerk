@@ -278,27 +278,39 @@ export class Dialog {
 
     // Tab and Shift+Tab stay inside the dialog.
     this.backdrop.addEventListener('keydown', (e) => {
-      if (e.key !== 'Tab' || !this.isTop) return;
+      // A Tab something inside already handled (the score grid moves its selection) stays
+      // where it is (review 16 M3).
+      if (e.key !== 'Tab' || !this.isTop || e.defaultPrevented) return;
       const focusable = [
         ...this.el.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         ),
-      ].filter((x) => !(x as HTMLButtonElement).disabled && x.offsetParent !== null);
+      ].filter(
+        // tabIndex -1: inactive dialog tabs, the grid's observatie boxes (not in the Tab order).
+        (x) => !(x as HTMLButtonElement).disabled && x.offsetParent !== null && x.tabIndex >= 0,
+      );
       if (!focusable.length) {
         e.preventDefault();
         this.el.focus();
         return;
       }
-      const first = focusable[0]!;
-      const last = focusable[focusable.length - 1]!;
+      // The dialog moves focus itself instead of leaving it to the browser: WebKit on macOS
+      // skips buttons on Tab (unless Full Keyboard Access is on), so the last button is never
+      // focused and focus would leave the dialog from the last field (step 16a).
+      e.preventDefault();
       const active = document.activeElement;
-      if (e.shiftKey && (active === first || !this.el.contains(active))) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && (active === last || !this.el.contains(active))) {
-        e.preventDefault();
-        first.focus();
+      const at = active instanceof HTMLElement ? focusable.indexOf(active) : -1;
+      let next: HTMLElement | undefined;
+      if (at >= 0) {
+        next = focusable[at + (e.shiftKey ? -1 : 1)];
+      } else if (active && this.el.contains(active)) {
+        // Focus on something the list leaves out (e.g. the dialog itself): the next or
+        // previous element in document order.
+        const after = (x: HTMLElement) =>
+          (active.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+        next = e.shiftKey ? focusable.filter((x) => !after(x)).pop() : focusable.find(after);
       }
+      (next ?? (e.shiftKey ? focusable[focusable.length - 1]! : focusable[0]!)).focus();
     });
 
     this.backdrop.append(el);

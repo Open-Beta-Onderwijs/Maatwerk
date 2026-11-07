@@ -32,6 +32,20 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       niet openen" with "nieuwere versie van Maatwerk (schemaversie 99)", the folder, and
       "Opnieuw proberen". Fix the file, click the button: the app restarts and opens normally.
       Same with a folder on a disconnected drive (I/O advice about OneDrive).
+- [ ] **M-START-8** First run (step 16a), on the **release** exe in an empty folder (no `data\`
+      beside it, `MAATWERK_DATA_DIR` unset, no `local-config.json` in
+      `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk`): the screen "Kies de gegevensmap". "Map
+      kiezen…" opens a folder dialog; Cancel changes nothing. A folder with other files (e.g.
+      Documenten) is refused with a Dutch reason. The shared folder holding `data\` is accepted:
+      "Gegevensmap: …\data. Maatwerk start opnieuw…", the app restarts on that folder and the
+      next start goes straight there. An empty folder is accepted and filled (admin account).
+- [ ] **M-START-9** Rename the chosen folder while the app is closed, start: "Maatwerk kan de
+      gegevensmap niet openen" with "Andere map kiezen…"; choose the renamed folder: the app
+      restarts on it. With `MAATWERK_DATA_DIR` set to a missing folder the button is not there.
+- [ ] **M-START-10** (review 16) "Over Maatwerk" shows the data folder and "Gekozen op deze
+      computer." with "Andere map kiezen…"; choosing another folder restarts on it. Rename the
+      chosen folder while Maatwerk is closed: the next start shows the error screen (not an
+      empty school) and nothing is created at the old place.
 - [ ] **M-START-4** No WebView2 (simulated), on the **release** exe:
 
       ```powershell
@@ -246,6 +260,46 @@ through OneDrive or a network share.
       removes the line. At the next admin login a notice says so before you look.
 - [ ] **M-MIG-5** Put a copy of a group file next to it as `<naam> (1).json`: the check lists it as
       "OneDrive-conflictkopie".
+
+## macOS (M-MAC, step 16a)
+
+On a Mac (macOS 12 or newer), with the CI artifact `maatwerk-macos-universal`, on a copy of
+the data in OneDrive or a local folder:
+
+- [ ] **M-MAC-1** Install as in README "macOS": the `.dmg`, drag to Programma's, "Toch openen"
+      once. The next start opens without a question. "Over Maatwerk" shows the version.
+- [ ] **M-MAC-2** First start: "Kies de gegevensmap" (M-START-8); choose the copy. The app
+      restarts on it; the next start goes straight there.
+- [ ] **M-MAC-3** Score grid: arrows, Enter, Tab, typing, Cmd+C / Cmd+V a range (also from
+      Numbers or Excel), Cmd+Z / Cmd+Shift+Z, fn+F1 toggles observatie 1. The sticky header
+      rows stay while scrolling.
+- [ ] **M-MAC-4** Charts (group overview, profile), the rapport preview (pdf.js: zoom with
+      pinch, print button), the opdracht editor (CodeMirror: typing, autocomplete, Cmd+click on
+      a name, the live preview, a click in the preview), dialogs (Escape, stacking), the tab bar
+      and the user menu (theme, accent) look and work as on Windows.
+- [ ] **M-MAC-5** Fonts: the UI uses the system font (SF), the editor a monospace font; emoji
+      in observaties show in colour; a printed rapport looks as on Windows (bundled fonts).
+- [ ] **M-MAC-6** Two machines (one Windows, one Mac) on the same OneDrive folder: M-SYNC-1..2.
+
+## Linux (M-LNX, step 16b)
+
+On a Linux PC (Ubuntu 24.04 or Mint 22), with the CI artifact `maatwerk-linux-x86_64`, on a
+local copy of the shared folder synced as in README "Linux: the shared folder":
+
+- [ ] **M-LNX-1** `.deb`: `sudo apt install ./maatwerk-linux-amd64.deb`; Maatwerk is in the
+      app menu with its icon and starts. "Over Maatwerk" shows the version.
+- [ ] **M-LNX-2** AppImage (after `sudo apt install libfuse2t64`): starts; with a folder `data`
+      beside the AppImage it opens that folder without asking, without one it asks "Kies de
+      gegevensmap" (M-START-8).
+- [ ] **M-LNX-3** The checks of M-MAC-3..5 with Ctrl instead of Cmd (score grid, charts, pdf.js,
+      editor, dialogs, tab bar, fonts and emoji; WebKitGTK).
+- [ ] **M-LNX-4** Two users on the same Linux PC each start Maatwerk on their own copy and save
+      a score (the lock folder is per user).
+- [ ] **M-LNX-5** One Windows PC and the Linux PC on the same shared folder (OneDrive Client for
+      Linux in `--monitor` mode): M-SYNC-1..2; a colleague's change arrives within the client's
+      sync interval.
+- [ ] **M-LNX-6** An opdracht made on Windows whose `.typ` names an image in other case
+      (`Figuur.png` for `figuur.PNG`) compiles on Linux (quirk T32).
 
 ## Shutdown (M-END)
 

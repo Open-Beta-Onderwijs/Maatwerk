@@ -8,6 +8,7 @@ pub mod app_version;
 pub mod assets;
 pub mod assignment;
 pub mod auth;
+pub mod data_location;
 pub mod error;
 pub mod integrity;
 pub mod jsonfmt;

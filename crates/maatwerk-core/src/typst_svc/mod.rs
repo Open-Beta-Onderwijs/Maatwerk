@@ -15,7 +15,7 @@ mod opdracht;
 mod project;
 mod rapport;
 mod vragen;
-mod world;
+pub(crate) mod world;
 
 pub use batch::{
     BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, JobWarning, batch_workers,

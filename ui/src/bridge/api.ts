@@ -240,6 +240,12 @@ export interface MaatwerkApi {
   dataFolderStatus(): Promise<DataFolderStatus>;
   /** "Opnieuw proberen" on the startup error screen: restarts the app. */
   restartApp(): Promise<void>;
+  /**
+   * First run / "Andere map kiezen…" (step 16a): the folder dialog; stores the data folder on
+   * this PC and resolves to it, `null` if cancelled. Rejects with `invalid_argument` (Dutch
+   * message) for a folder that is not a data folder and not empty.
+   */
+  chooseDataFolder(): Promise<string | null>;
   /** "Over Maatwerk > Probleem melden": the log folder on this PC and the version. */
   problemInfo(): Promise<ProblemInfo>;
   /** Opens the log folder; rejects when there is none or it cannot be opened. */

@@ -1,14 +1,130 @@
 # State
 
-Last updated: 2026-11-05 (step 15 done, 0.6.0) Branch: `main` Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`,
-`step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
-`v0.2.0-parity` (version tags are local only)
+Last updated: 2026-11-06 (step 16b in progress) Branch: `step/16-platforms` (from `main` `3319d3d`)
+Last tags: `step-16a` (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed),
+`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags
+are local only)
 
 ## Current step
 
-**Step 15 done** (merged, tagged `step-15`, version 0.6.0). **Next: step 16** (Platforms: macOS and
-Linux; L, 16a/16b). Step 15 was: branch `step/15-shell` (from `main` `2688784`). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
-decision 5.
+**Step 16b** (Platforms: Linux). WebKitGTK, AppImage + `.deb`, case-sensitive paths, the Linux
+sync advice (**STOP: user approves it before it goes into the README**), the 16a backlog below,
+then visual baselines per platform in CI. Then the step 16 review and the 0.7 release.
+
+## Step 16b progress
+
+Plan: (1) CI job `linux` + packages; (2) case-sensitive path tests (Windows-made data folder in
+mixed case: path helpers, migration, `validate-data`); (3) backlog: lock dir, snapshot `who`,
+early log dir; (4) README Linux section + sync advice (STOP); (5) visual tests per platform in
+CI; (6) gate, review of step 16, report.
+
+1. **Done** (`7540d21`), CI result pending: `src-tauri/tauri.linux.conf.json` (appimage + deb, Education), `npm run
+build:linux`, CI job `linux` on ubuntu-24.04 (glibc 2.39+): npm test, WebKit e2e, clippy
+   (the only lint of `cfg(not(windows))` code), cargo test, fixture migrate + validate,
+   real-pdf, AppImage + .deb artifact `maatwerk-linux-x86_64`. `data_location::program_path`:
+   `$APPIMAGE` counts as the program, so `data/` beside the AppImage works like beside the exe.
+
+2. **Done** (local, not pushed while CI run `42213080719` runs): case-sensitive paths (quirk
+   T32). Typst World: a missing mounted file is looked up ignoring case
+   (`world::find_ignoring_case`; ambiguous -> not found). Migration rewrites `images/<id>/` in
+   any ASCII case. `validate-data`: a case-only mismatch is a warning with the real name. The
+   whole workspace suite also passes with `TMP` in a case-sensitive folder on Windows (`fsutil
+file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); image import
+   already refuses case-only clashes.
+
+3. **Done** (local): the 16a backlog. `default_lock_dir` is per user everywhere (a shared
+   `/tmp/maatwerk-locks` made by one Linux user blocked the next user's saves): Linux
+   `$XDG_RUNTIME_DIR`, else `~/.cache`; macOS `~/Library/Caches`. Snapshot `who`:
+   `machine_name()` (COMPUTERNAME / `scutil --get ComputerName` / `/proc/sys/kernel/hostname`).
+   `early_log_dir` mirrors Tauri's `app_log_dir` on macOS and Linux too.
+
+4. **Done** (local): README "Linux (from 0.7)" (`.deb`, AppImage + `libfuse2t64`, `data/` beside
+   the AppImage) and "Linux: the shared folder". **User decision (2026-11-06, STOP gate):**
+   OneDrive Client for Linux (abraunegg, `--monitor`) recommended, rclone bisync on a timer as
+   the alternative; `rclone mount` and GNOME Files' OneDrive marked unsuitable. validate test:
+   the clients' conflict copies are listed. `docs/release.md` Linux artifact, manual checks
+   M-LNX-1..6.
+
+5. **Done** (local), baselines pending: visual tests in CI. **User decision (2026-11-06):** the
+   light look only, baselines per CI platform committed (`ui/e2e/visual-baselines/<project>-
+<platform>/`, ~2.5 MB each; local WebKit run: 39 views, ~50 s, stable). Projects
+   `visual-ci-chromium` (Windows job) and `visual-ci-webkit` (macOS, Linux), tolerance
+   `maxDiffPixelRatio: 0.002`. A platform without a folder writes its baselines (warning) and
+   uploads artifact `visual-<os>`; next: commit those from the first run (docs/testing.md
+   "Visual baselines in CI").
+6. Run `42225808814` (`3056ce4`): Linux and macOS green and wrote their baselines (39 each;
+   3.6 MB Linux, 4.6 MB macOS; checked by eye: DejaVu on Linux, SF on macOS, charts fine),
+   committed. Windows failed twice on Chromium e2e flakes, each a different test: csp
+   screen-groepen (`ERR_CONNECTION_REFUSED` once), accounts `#traag` (30 s timeout), dialog
+   "opens at the fixed top" (measured mid-animation; now polled). Watch the first two; no CI
+   retries added.
+7. Run `42230950159`: all green; macOS and Linux compared against the
+   committed baselines; Windows wrote its 39 (2.7 MB, Segoe UI; checked by eye), committed.
+   Run `42235274073`: Windows and Linux compared against the committed baselines (no new ones);
+   macOS got no runner ("not acquired", GitHub capacity), reruns with the next push.
+8. Review `docs/reviews/step-16.md` (fresh context): 0 blockers, 3 majors, 7 minors, 6 nits;
+   triage at its end. **M1** a missing chosen folder no longer becomes a new school
+   (`state::open_located`); **M2** (user decision 2026-11-06: keep the order) "Over Maatwerk"
+   shows the data folder with "Andere map kiezen…"; **M3** the dialog trap leaves a handled Tab
+   and `tabindex=-1` alone (G45 extended). Also m5 (lock folder `~/.cache` only), m6, n1-n3, n6
+   (`local-config.json` in the local, not roaming, app folder). Backlog: m1-m3, m7. Local: all
+   Rust tests, 434 e2e (Chromium + WebKit), lint, typecheck.
+
+9. Run `42242653611` failed on Linux: the n3 fix had written a literal backslash-n into the apt line
+   (fixed, `ci: real line continuations…`). Run `42246523588`: Windows and Linux green, visual
+   39/39 on both; macOS had no runner for the third time (GitHub capacity), only the macOS job
+   rerun. **Paused here (2026-11-06, user).** Resume: `gh run view 42246523588` (macOS job:
+   e2e, first comparison against the committed macOS baselines). Green: tag `step-16b`, stop and
+   report (merge to `main` and the 0.7 release only with the user). This STATE commit is local
+   (a push would cancel the rerun); push it with the tag.
+
+## Step 16a (done, tag `step-16a`)
+
+**Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned
+macOS build + "Open anyway" instructions** (no Apple Developer account; ad-hoc signed for Apple
+Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge without the user).
+
+1. **Done** (`c91d467`): first-run "choose data folder". `maatwerk-core::data_location`
+   (`locate`: env > dev > chosen in `local-config.json` > `data/` beside the program if it
+   exists, never inside a `.app`; `check_chosen`: data folder, `<picked>/data`, or empty, else
+   refused in Dutch; `LocalConfig` keeps unknown fields). `paths::data_dir_location` removed.
+   App: `ErrorCode::NoDataFolder`, `DataFolderStatus.source`, command `choose_data_folder`
+   (folder dialog, `save_choice`, UI restarts). UI: `screens/choose-folder.ts` ("Kies de
+   gegevensmap"), "Andere map kiezen…" on the startup error screen for `chosen`/`besideApp`.
+   Tests: 4 core, 1 app, 4 Vitest, 3 e2e (`e2e/platforms.spec.ts`); manual M-START-8/9.
+   Behaviour change: a Windows exe without `data/` beside it asks instead of creating one.
+2. **Done** (`f1a62f2`): font stacks fall back to system fonts (`system-ui`, `ui-monospace`,
+   Menlo, DejaVu Sans Mono); Windows keeps Segoe UI/Consolas first (no visual change). Emoji in
+   the UI: the OS font (Apple Color Emoji); Typst uses the bundled Noto as before.
+3. **Done** (`9a6a6e1`): Playwright project `webkit` (`npm run test:e2e:webkit`, runs on
+   Windows too after `npx playwright install webkit`): 215/215 locally (one timing flake per
+   full parallel run, a different test each time; editor preview tests under load). WebKit
+   findings, all test-side: native `<select>` -> CSP `style-src-attr` report (ignored on WebKit
+   in `watchErrors`), no clipboard permissions (`pasteText`/`copySelection`), Chromium-only
+   `shadowRoot.getSelection`, per-glyph SVG hit test, Playwright scroll vs `content-visibility`,
+   aborted module import on a second navigation. App fix: Cmd+Z / Cmd+Shift+Z / Cmd+Y undo.
+4. **Done** (`e800328`): CI job `macos` and `src-tauri/tauri.macos.conf.json` (app + dmg, ad-hoc
+   `-`, macOS 12+), `npm run build:mac`; README "macOS" ("Toch openen"), release.md. Branch
+   pushed; **CI result pending** (first run).
+5. Local gate green on `56f13f2`+ (fmt, clippy, cargo test, 412 Vitest, 122 node tests, deny,
+   licences, SPDX; e2e 215 Chromium, 215 WebKit). Also `docs/testing.md` "WebKit (step 16a)",
+   manual checks M-MAC-1..6.
+6. First CI run with the macOS job (`42193879918`): 10 WebKit e2e failures on the macOS runner,
+   none on Windows. Two causes: the specs pressed `Control+A` / `Control+End` / Ctrl+click, which
+   are other actions on a Mac (now `ControlOrMeta`); and a real bug: WebKit on macOS skips
+   buttons on Tab, so the dialog focus trap never saw its last button focused and focus left the
+   dialog. The trap now moves focus itself (`ui/src/components/dialog.ts`).
+7. Second run (`42205393394`): 2 editor e2e failures on macOS. setText's Delete + insert are two
+   edits and the slower runner compiled the empty text in between, so "the preview stays on
+   errors" kept an empty preview. Those steps now add ` #fout` / ` #traag` at the end (one edit).
+8. **Done.** Third run `42209047813` on `6d65139`: all three jobs green; macOS 214 WebKit e2e,
+   cargo test, real-pdf; `Maatwerk.app` universal (`lipo`: x86_64 arm64), `codesign --verify`
+   ok; artifact `maatwerk-macos-universal` (.zip + .dmg, ~114 MB). Tagged `step-16a` (local).
+   Next: step 16b (Linux). The step 16 review and the 0.7 release come after 16b.
+
+Backlog candidates (done in 16b item 3): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
+"onbekend"); `default_lock_dir` falls back to `temp_dir()` off Windows (per user on macOS,
+shared `/tmp` on Linux: 16b); `early_log_dir` is Windows-only.
 
 ## Step 15 progress
 
