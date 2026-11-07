@@ -3,7 +3,7 @@
 //! The rapport (path A of `typst-contract.md`): all students of one toets in one PDF.
 //!
 //! The World holds `/__maatwerk/main.typ` (entry), `/__maatwerk/rapport.typ` (template) and
-//! `/__maatwerk/data.json` (this request), and mounts only `/data/fotos` (the watermark, drawn only when it exists).
+//! `/__maatwerk/data.json` (this request), and mounts only `/data/afbeeldingen` (the watermark, drawn only when it exists).
 
 use std::sync::Arc;
 
@@ -16,6 +16,7 @@ use super::fonts::FontStore;
 use super::world::{INTERNAL_DIR, MaatwerkWorld, Mount, WorldSpec};
 use crate::assets;
 use crate::paths::DataDir;
+use crate::storage::IMAGES_DIR;
 
 /// The data the UI builds for the rapport (`ui/src/domain/rapport.ts`, `typst-contract.md` 2.1).
 /// Passed to the template unchanged as JSON; the template is the consumer of the field contract.
@@ -25,8 +26,9 @@ pub struct RapportData {
     pub students: serde_json::Value,
 }
 
-/// The school's watermark, relative to the data folder (`/data/fotos/...` in the template).
-const WATERMARK: &str = "fotos/school-watermerk.svg";
+/// The school's watermark, relative to the data folder (`/data/afbeeldingen/...` in the
+/// template; `fotos/` before format v3).
+const WATERMARK: &str = "afbeeldingen/school-watermerk.svg";
 
 /// What `rapport-main.typ` reads from `data.json`.
 #[derive(Serialize)]
@@ -63,7 +65,8 @@ pub fn rapport_world(
                 (file("data.json"), Bytes::new(json)),
             ],
             mounts: vec![
-                Mount::dir("/data/fotos", data_dir.root().join("fotos")).within(data_dir.root()),
+                Mount::dir("/data/afbeeldingen", data_dir.root().join(IMAGES_DIR))
+                    .within(data_dir.root()),
             ],
             inputs: None,
             now,

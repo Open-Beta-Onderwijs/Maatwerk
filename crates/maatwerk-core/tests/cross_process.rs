@@ -50,7 +50,7 @@ fn three_processes_lose_no_update() {
     std::fs::create_dir_all(tmp.path().join("data")).unwrap();
     std::fs::write(
         tmp.path().join("data/config.json"),
-        r#"{"schema_version": 2}"#,
+        r#"{"schema_version": 3}"#,
     )
     .unwrap();
     let exe = std::env::current_exe().unwrap();

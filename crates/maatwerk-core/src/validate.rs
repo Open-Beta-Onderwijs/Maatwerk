@@ -98,13 +98,13 @@ pub fn validate(root: &Path) -> Result<ValidationReport> {
     Ok(found.finish(version, files.len()))
 }
 
-/// Where a file belongs in the v2 layout.
+/// Where a file belongs in the v3 layout.
 enum Place<'a> {
     /// A JSON file Maatwerk owns; `id` = (field, expected value) when the path names it.
     Json(Option<(&'static str, &'a str)>),
     /// A file Maatwerk owns that is not JSON.
     Other,
-    /// Not checked at all (`fotos/`, `snapshots/`).
+    /// Not checked at all (`afbeeldingen/`, `snapshots/`).
     Ignored,
     Stray,
 }
@@ -113,9 +113,9 @@ fn place(rel: &str) -> Place<'_> {
     let parts: Vec<&str> = rel.split('/').collect();
     match parts.as_slice() {
         ["config.json"] | ["school.json"] | ["instellingen.json"] => Place::Json(None),
-        ["fotos", ..] | ["snapshots", ..] => Place::Ignored,
+        ["afbeeldingen", ..] | ["snapshots", ..] => Place::Ignored,
         ["gebruikers", f] | ["observaties", f] => named("id", f),
-        ["users", f] => named("userId", f),
+        ["aanwezigheid", f] => named("userId", f),
         ["opdrachten", id, "opdracht.json"] => Place::Json(Some(("id", id))),
         ["opdrachten", _, f] if f.ends_with(".typ") => Place::Other,
         ["opdrachten", _, "images", f] if is_image(f) => Place::Other,
@@ -129,6 +129,15 @@ fn place(rel: &str) -> Place<'_> {
         }
         _ => Place::Stray,
     }
+}
+
+/// A file in `fotos/` or `users/` (any case): the v2 names of `afbeeldingen/` and
+/// `aanwezigheid/`. An old app on the folder would write there again.
+fn v2_leftover(rel: &str) -> bool {
+    let first = rel.split('/').next().unwrap_or("");
+    rel.contains('/')
+        && (first.eq_ignore_ascii_case(migrate::V2_IMAGES)
+            || first.eq_ignore_ascii_case(migrate::V2_PRESENCE))
 }
 
 /// A JSON file named after the id in `field`.
@@ -188,6 +197,11 @@ fn check_file(root: &Path, rel: &str, files: &BTreeSet<&str>, out: &mut Found) -
                 }
                 None if rel.ends_with(".lock") || rel.ends_with(".tmp") => {
                     "Overgebleven tijdelijk bestand; mag weg".into()
+                }
+                None if v2_leftover(rel) => {
+                    "Overgebleven uit gegevensversie 2 (fotos/ heet nu afbeeldingen/, users/ \
+                     heet nu aanwezigheid/); mag weg na controle"
+                        .into()
                 }
                 None => "Bestand dat Maatwerk niet gebruikt".into(),
             };
@@ -428,6 +442,100 @@ fn check_references(
     }
 }
 
+/// Format v3 (step 18): `kind`, `diagnostic`, `obs_from_parent` and the question link of
+/// opdrachten (`opdrachtenVraag`, F-14).
+fn check_exam_v3(rel: &str, exam: &Value, out: &mut Found) {
+    match exam.get("kind") {
+        None => {}
+        Some(Value::String(k)) if k == "toets" || k == "po" => {}
+        Some(other) => out.error(
+            IssueKind::Shape,
+            rel,
+            format!("Soort toets {other} is niet \"toets\" of \"po\""),
+        ),
+    }
+    let diagnostic = match exam.get("diagnostic") {
+        None => false,
+        Some(Value::Bool(d)) => *d,
+        Some(other) => {
+            out.error(
+                IssueKind::Shape,
+                rel,
+                format!("diagnostic is {other}, geen true of false"),
+            );
+            false
+        }
+    };
+    if diagnostic && exam.get("type").and_then(Value::as_str) == Some("pta") {
+        out.error(
+            IssueKind::Shape,
+            rel,
+            "Een diagnostische toets kan geen PTA-toets zijn".into(),
+        );
+    }
+    if diagnostic
+        && ["weging", "weging_se"].iter().any(|k| {
+            exam.get(*k)
+                .and_then(Value::as_f64)
+                .is_some_and(|w| w != 0.0)
+        })
+    {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            "Een diagnostische toets telt niet mee, maar heeft een weging".into(),
+        );
+    }
+    if exam.get("obs_from_parent") == Some(&Value::Bool(true)) && exam.get("parent_id").is_none() {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            "Observaties van de oorspronkelijke toets, maar dit is geen inhaal of herkansing"
+                .into(),
+        );
+    }
+    let Some(cards) = exam.get("opdrachtenVraag") else {
+        return;
+    };
+    let questions: BTreeSet<&str> = exam
+        .get("questions")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|q| q.get("id")?.as_str())
+        .collect();
+    let Some(cards) = cards.as_array() else {
+        out.error(
+            IssueKind::Shape,
+            rel,
+            "opdrachtenVraag is geen lijst".into(),
+        );
+        return;
+    };
+    for card in cards {
+        let vraag = card.get("vraag").and_then(Value::as_str);
+        let onder = card.get("onder").and_then(Value::as_f64);
+        let ops = card.get("opdrachten").map(Value::is_array);
+        if card.get("id").and_then(Value::as_str).is_none() || onder.is_none() || ops == Some(false)
+        {
+            out.error(
+                IssueKind::Shape,
+                rel,
+                format!("opdrachtenVraag: onvolledige koppeling {card}"),
+            );
+        }
+        match vraag {
+            Some(v) if questions.contains(v) => {}
+            Some(v) => out.missing(rel, format!("opdrachtenVraag: vraag {v} bestaat niet")),
+            None => out.error(
+                IssueKind::Shape,
+                rel,
+                format!("opdrachtenVraag: koppeling zonder vraag {card}"),
+            ),
+        }
+    }
+}
+
 fn check_exam(
     rel: &str,
     exam: &Value,
@@ -461,6 +569,16 @@ fn check_exam(
             }
         }
     }
+    let vraag_cards = exam.get("opdrachtenVraag").and_then(Value::as_array);
+    for card in vraag_cards.into_iter().flatten() {
+        let ops = card.get("opdrachten").and_then(Value::as_array);
+        for op in ops.into_iter().flatten().filter_map(Value::as_str) {
+            if !opdrachten.contains(op) {
+                out.missing(rel, format!("Opdracht {op} (bij een vraag) bestaat niet"));
+            }
+        }
+    }
+    check_exam_v3(rel, exam, out);
     check_question_ids(rel, exam, out);
     let jaarlaag: u32 = exam
         .get("jaarlaag")

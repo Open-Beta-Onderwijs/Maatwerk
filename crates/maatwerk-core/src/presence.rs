@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Presence files `users/<userId>.json`: who is online and where (reference `main.js:398-436`,
-//! `presence:update`). Only this app writes the logged-in teacher's file; on logout, a user
-//! switch or quit it is marked offline so colleagues see them leave at once.
+//! Presence files `aanwezigheid/<userId>.json` (`users/` before format v3): who is online and
+//! where (reference `main.js:398-436`, `presence:update`). Only this app writes the logged-in
+//! teacher's file; on logout, a user switch or quit it is marked offline so colleagues see them
+//! leave at once. Files of teachers who have not been seen for 30 days are removed at start (D20:
+//! the reference never deleted one).
 //!
 //! The file is the teacher's own heartbeat, written every 15 s by the UI, so it is written
 //! without CAS (no one else writes it). Write errors are logged, not returned, as in the
@@ -15,7 +17,7 @@ use serde_json::{Map, Value};
 
 use crate::error::{Error, Result};
 use crate::paths::RelPath;
-use crate::storage::{Expect, Storage, iso_utc};
+use crate::storage::{Expect, PRESENCE_DIR, Storage, iso_utc};
 
 /// What this app last wrote: the user and their state (`None` if the UI sent none).
 #[derive(Default)]
@@ -104,14 +106,55 @@ fn write(storage: &Storage, rel: &RelPath, state: &Value) {
     }
 }
 
-/// `users/<userId>.json`; the id must be one file name (the reference did not check it).
+/// `aanwezigheid/<userId>.json`; the id must be one file name (the reference did not check it).
 fn presence_path(user_id: &str) -> Result<RelPath> {
     if user_id.contains(['/', '\\']) || user_id == "." || user_id == ".." {
         return Err(Error::InvalidArgument {
             message: format!("not a user id: {user_id:?}"),
         });
     }
-    RelPath::parse(&format!("users/{user_id}.json"))
+    RelPath::parse(&format!("{PRESENCE_DIR}/{user_id}.json"))
+}
+
+/// A presence file older than this is a teacher who left (or an account that is gone).
+const STALE_AFTER: std::time::Duration = std::time::Duration::from_secs(30 * 24 * 3600);
+
+/// D20: removes the presence files whose `heartbeatAt` is more than 30 days before `now`, or that
+/// have none. Every app does this at start; a file another app removed first is fine. Returns how
+/// many it removed.
+pub fn prune_stale(storage: &Storage, now: SystemTime) -> usize {
+    if storage.read_only().is_some() {
+        return 0;
+    }
+    let Ok(dir) = RelPath::parse(PRESENCE_DIR) else {
+        return 0;
+    };
+    let cutoff = iso_utc(now - STALE_AFTER);
+    let mut removed = 0;
+    for name in storage.list_dir(&dir, false).unwrap_or_default() {
+        let Some(rel) = name
+            .strip_suffix(".json")
+            .and_then(|id| presence_path(id).ok())
+        else {
+            continue;
+        };
+        // `iso_utc` strings of the same shape compare like the times they stand for.
+        let stale = match storage.read_json(&rel) {
+            Ok(Some(v)) => v
+                .get("heartbeatAt")
+                .and_then(Value::as_str)
+                .is_none_or(|at| at < cutoff.as_str()),
+            Ok(None) => false,
+            Err(_) => false, // half synced: leave it
+        };
+        if stale {
+            match storage.delete(&rel) {
+                Ok(()) => removed += 1,
+                Err(e) => tracing::warn!("removing stale presence {rel} failed: {e}"),
+            }
+        }
+    }
+    removed
 }
 
 #[cfg(test)]
@@ -130,7 +173,7 @@ mod tests {
     /// The file without its integrity stamp (C19).
     fn read(storage: &Storage, user: &str) -> Option<Value> {
         let mut v = storage
-            .read_json(&RelPath::parse(&format!("users/{user}.json")).unwrap())
+            .read_json(&RelPath::parse(&format!("aanwezigheid/{user}.json")).unwrap())
             .unwrap()?;
         v.as_object_mut()?.shift_remove("_meta");
         Some(v)
@@ -148,7 +191,7 @@ mod tests {
         p.update(&s, Some("jan"), Some(state("jan"))).unwrap();
         assert_eq!(read(&s, "jan"), Some(state("jan")));
         let text = s
-            .read_text(&RelPath::parse("users/jan.json").unwrap())
+            .read_text(&RelPath::parse("aanwezigheid/jan.json").unwrap())
             .unwrap()
             .unwrap();
         assert!(
@@ -216,7 +259,7 @@ mod tests {
         let (_d, _l, s) = storage();
         Presence::new().close(&s);
         assert!(
-            s.read_all_json(&RelPath::parse("users").unwrap())
+            s.read_all_json(&RelPath::parse("aanwezigheid").unwrap())
                 .unwrap()
                 .is_empty()
         );
@@ -230,7 +273,7 @@ mod tests {
         p.close(&s);
         assert_eq!(read(&s, "jan").unwrap()["online"], false);
         s.write_json(
-            &RelPath::parse("users/jan.json").unwrap(),
+            &RelPath::parse("aanwezigheid/jan.json").unwrap(),
             &json!({"online": true}),
             Expect::Any,
         )
@@ -248,6 +291,27 @@ mod tests {
         p.update(&s, Some(""), None).unwrap();
         let file = read(&s, "jan").unwrap();
         assert_eq!(file["online"], false);
+    }
+
+    #[test]
+    fn d20_stale_presence_files_are_removed_at_start() {
+        let (_d, _l, s) = storage();
+        let now = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_793_369_100);
+        let day = std::time::Duration::from_secs(24 * 3600);
+        let put = |user: &str, v: Value| {
+            s.write_json(&presence_path(user).unwrap(), &v, Expect::Any)
+                .unwrap();
+        };
+        put("vers", json!({ "heartbeatAt": iso_utc(now - day) }));
+        put("grens", json!({ "heartbeatAt": iso_utc(now - 29 * day) }));
+        put("oud", json!({ "heartbeatAt": iso_utc(now - 31 * day) }));
+        put("leeg", json!({ "userId": "leeg" }));
+        assert_eq!(prune_stale(&s, now), 2);
+        assert!(read(&s, "vers").is_some());
+        assert!(read(&s, "grens").is_some());
+        assert_eq!(read(&s, "oud"), None);
+        assert_eq!(read(&s, "leeg"), None);
+        assert_eq!(prune_stale(&s, now), 0, "a second app finds nothing left");
     }
 
     #[test]

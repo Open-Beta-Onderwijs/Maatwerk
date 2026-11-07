@@ -103,7 +103,7 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
-      # The v1 -> v2 migration on the large synthetic fixture must validate without errors.
+      # The v1 -> v3 migration (through v2) on the large synthetic fixture must validate without errors.
       - name: Migrate and validate the school fixture
         shell: bash
         run: |

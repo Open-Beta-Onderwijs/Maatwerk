@@ -33,7 +33,7 @@ const CLAIM_STALE: Duration = Duration::from_secs(30 * 60);
 const CLAIM_SETTLE: Duration = Duration::from_secs(45);
 /// Top-level folders never zipped: the snapshots themselves, photos (size: measure a real copy
 /// first, PLAN Step 7b), and leftovers the app does not use.
-const SKIPPED_DIRS: [&str; 5] = [DIR, "fotos", "rapporten", "bak", "temp"];
+const SKIPPED_DIRS: [&str; 6] = [DIR, "afbeeldingen", "fotos", "rapporten", "bak", "temp"];
 
 /// The snapshot part of `instellingen.json` (`snapshots: { intervalHours, daily, weekly,
 /// monthly }`). Missing or unusable values fall back to the defaults.

@@ -63,7 +63,7 @@
       dx: -0.5cm,
       dy: -0.5cm,
       box(width: 3.5cm, height: 3.5cm, clip: true)[
-        #image("/data/fotos/school-watermerk.svg", width: 3.5cm, height: 3.5cm, fit: "contain")
+        #image("/data/afbeeldingen/school-watermerk.svg", width: 3.5cm, height: 3.5cm, fit: "contain")
         #place(top + left, rect(width: 3.5cm, height: 3.5cm, fill: white.transparentize(20%)))
       ]
     ) },

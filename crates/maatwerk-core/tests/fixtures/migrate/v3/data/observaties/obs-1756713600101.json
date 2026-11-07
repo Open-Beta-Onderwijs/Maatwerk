@@ -1,0 +1,24 @@
+{
+  "id": "obs-1756713600101",
+  "naam": "Rekenfout",
+  "icon": "🧮",
+  "uitleg": "",
+  "leeradvies": "",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "subjects": [
+    "wisb"
+  ],
+  "jaarlagen": [
+    "4"
+  ],
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "9fa3ae253bbc0c07d11205eabb4767227b14b131bd659663f4b6ea6fa2c56985"
+  }
+}

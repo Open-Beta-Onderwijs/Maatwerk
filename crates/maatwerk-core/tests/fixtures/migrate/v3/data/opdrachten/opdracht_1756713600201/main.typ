@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// maatwerk-main 2
+// main.typ: entry point of an opdracht (ADR-0002 5a). It lays out the teacher's opdracht.typ with
+// lib.typ, as the generated wrapper of the old app did. Maatwerk passes the student header and
+// the mode as JSON in `sys.inputs` ("maatwerk-data"). Without it (plain `typst compile main.typ`
+// in the opdracht folder) the placeholder header and student mode are used.
+#import "lib.typ": setup, opdracht_header, antwoorden_header, antwoorden_lijst, antwoorden_omgekeerd
+#import "opdracht.typ": setup_extra, render_uitleg, render_opgaven
+
+#let _placeholder = (
+  // "student" or "answers" (the answer key).
+  mode: "student",
+  // Student mode: the answers upside down at the bottom.
+  include_answers: true,
+  header: (
+    title: "Titel",
+    student: "Leerling Voornaam Achternaam",
+    group: "Klas Z vak W",
+    exam: "Voorbeeldtoets Toetsweek X",
+    observaties: (
+      (
+        icon: "❌",
+        name: "Een voorbeeldobservatie met een behoorlijk lange naam, zodat deze twee regels beslaat in het voorbeeld",
+      ),
+    ),
+  ),
+)
+#let _input = json(bytes(sys.inputs.at("maatwerk-data", default: "{}")))
+#let data = _placeholder + _input
+#let header = _placeholder.header + _input.at("header", default: (:))
+
+#show: setup
+// `setup_extra(body)` is a show rule: its set and show rules apply to the whole opdracht. Files
+// made before main.typ 2 have `setup_extra()` without a parameter; that still works as before
+// (content only, its set rules end with it: quirk T31).
+#let _setup_extra_is_rule = read("opdracht.typ").contains(regex("(?m)^\\s*#let\\s+setup_extra\\s*\\(\\s*[^\\s)]"))
+#show: body => if _setup_extra_is_rule { setup_extra(body) } else { setup_extra(); body }
+
+#if data.mode == "answers" [
+  #antwoorden_header(title: header.title)
+
+  #place(hide[#render_uitleg() #render_opgaven()])
+  #antwoorden_lijst()
+] else [
+  #opdracht_header(
+    title: header.title,
+    student: header.student,
+    group: header.group,
+    exam_prefix: "N.a.v.",
+    exam: header.exam,
+    observaties: header.observaties,
+  )
+
+  #render_uitleg()
+
+  #pagebreak()
+
+  #render_opgaven()
+  #if data.include_answers { antwoorden_omgekeerd() }
+]

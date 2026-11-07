@@ -1,0 +1,24 @@
+{
+  "student_id": "1001",
+  "scores": {
+    "nat-toets-1-2025-2026": {
+      "q1": 2,
+      "q2": "N",
+      "q3": "abc"
+    }
+  },
+  "observations": {
+    "nat-toets-1-2025-2026": [
+      "obs-1756713600100"
+    ]
+  },
+  "overrides": {
+    "nat-toets-1-2025-2026": {
+      "cijfer": 7.5,
+      "berekend": 6.1
+    }
+  },
+  "_meta": {
+    "hash": "d6eaf440b8060494ba8fb71cf876f1027d223cd57178b5e89f7d0d213e04dba5"
+  }
+}

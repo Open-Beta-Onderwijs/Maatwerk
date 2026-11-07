@@ -178,7 +178,7 @@ fn retention_keeps_the_newest_per_day_week_and_month() {
 #[test]
 fn a_due_snapshot_is_written_once_and_holds_the_files() {
     let (_t, s) = setup();
-    put(&s, "config.json", br#"{"schema_version":2}"#);
+    put(&s, "config.json", br#"{"schema_version":3}"#);
     put(&s, "opdrachten/o1/opdracht.typ", b"= Hallo");
     let now = datetime!(2026-10-31 08:15 UTC);
     let out = run_if_due(&s, now, "PC-1").unwrap();

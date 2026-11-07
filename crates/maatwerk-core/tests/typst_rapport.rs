@@ -33,8 +33,12 @@ fn case_data(case: &Value) -> RapportData {
 fn data_dir(watermark: bool) -> (tempfile::TempDir, DataDir) {
     let tmp = tempfile::tempdir().unwrap();
     if watermark {
-        std::fs::create_dir_all(tmp.path().join("fotos")).unwrap();
-        std::fs::write(tmp.path().join("fotos/school-watermerk.svg"), WATERMARK_SVG).unwrap();
+        std::fs::create_dir_all(tmp.path().join("afbeeldingen")).unwrap();
+        std::fs::write(
+            tmp.path().join("afbeeldingen/school-watermerk.svg"),
+            WATERMARK_SVG,
+        )
+        .unwrap();
     }
     let dir = DataDir::open(tmp.path()).unwrap();
     (tmp, dir)
@@ -93,11 +97,15 @@ fn t4_a_rapport_without_watermark_compiles_without_one() {
 
 #[test]
 fn t4_the_watermark_is_found_in_other_case() {
-    // A data folder made on Windows may say `Fotos/School-Watermerk.svg` (T32).
+    // A data folder made on Windows may say `Afbeeldingen/School-Watermerk.svg` (T32).
     let case = load_case("rapport-one-student");
     let tmp = tempfile::tempdir().unwrap();
-    std::fs::create_dir_all(tmp.path().join("Fotos")).unwrap();
-    std::fs::write(tmp.path().join("Fotos/School-Watermerk.svg"), WATERMARK_SVG).unwrap();
+    std::fs::create_dir_all(tmp.path().join("Afbeeldingen")).unwrap();
+    std::fs::write(
+        tmp.path().join("Afbeeldingen/School-Watermerk.svg"),
+        WATERMARK_SVG,
+    )
+    .unwrap();
     let dir = DataDir::open(tmp.path()).unwrap();
     let doc = compile_document(&rapport_world(
         fonts(),
