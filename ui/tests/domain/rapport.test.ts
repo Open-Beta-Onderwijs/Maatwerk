@@ -145,8 +145,8 @@ describe('T10: an advice file without grenswaarden does not break the rapport', 
   });
   it('uses the default 40/70 limits for a missing category or a file without the field', () => {
     const advies = defaultTabData();
-    advies.leeradvies.R.laag = 'Laag.';
-    advies.leeradvies.T1.hoog = 'Hoog.';
+    advies.leeradvies.R!.laag = 'Laag.';
+    advies.leeradvies.T1!.hoog = 'Hoog.';
     const vragen = [vraag('R', 1, 5), vraag('T1', 4, 5)];
     for (const grenswaarden of [undefined, {}]) {
       const data = { ...advies, grenswaarden } as unknown as Parameters<
@@ -213,7 +213,10 @@ describe('rapport golden (compileRapport on the Store)', () => {
         studentData: structuredClone(studentData),
         examInfo: structuredClone(examInfo),
       });
-      return { success: true, pdfPath: 'captured' };
+      // The reference's result shape, which the golden pins (no `warnings`, F-04 is new).
+      return { success: true, pdfPath: 'captured' } as Awaited<
+        ReturnType<typeof session.api.renderRapportPdf>
+      >;
     };
   });
 

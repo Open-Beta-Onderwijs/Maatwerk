@@ -283,11 +283,12 @@ describe('TauriApi', () => {
   });
 
   it('renderRapportPdf normalises the payload (review 5a M1) and maps errors', async () => {
-    const f = fakeBackend(() => ({ pdfPath: '1-rapport_preview.pdf', warnings: [] }));
+    const f = fakeBackend(() => ({ pdfPath: '1-rapport_preview.pdf', warnings: ['w'] }));
     const students = [{ name: 'A', score: undefined, pct: Number.NaN }];
     expect(await f.api.renderRapportPdf('t1', students, { name: 'T' })).toEqual({
       success: true,
       pdfPath: '1-rapport_preview.pdf',
+      warnings: ['w'],
     });
     expect(f.calls[0]?.args).toEqual(['t1', [{ name: 'A', score: null, pct: 0 }], { name: 'T' }]);
     const bad = fakeBackend(() => err('typst', 'error: unknown variable'));
@@ -323,7 +324,7 @@ describe('TauriApi', () => {
     const r = await f.api.renderAssignmentBatch([{ key: 's1', opdrachtId: 'o' }], {
       duplex: true,
     });
-    expect(r).toEqual({ success: true, pdfPath: '2-opdrachten.pdf', pages: 3 });
+    expect(r).toEqual({ success: true, pdfPath: '2-opdrachten.pdf', pages: 3, warnings: [] });
     expect(f.calls[0]?.args).toEqual([
       [{ key: 's1', opdrachtId: 'o', label: null, header: null, mode: null }],
       { includeAnswers: null, duplex: true, outputName: null },

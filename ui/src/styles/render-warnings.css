@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Typst warnings above a generated PDF (F-04, components/render-warnings.ts). */
+.render-warnings {
+  flex: none;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--warn);
+  border-radius: 4px;
+  background: var(--warn-soft);
+  font-size: 13px;
+}
+.render-warnings summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.render-warnings pre {
+  max-height: 160px;
+  overflow: auto;
+  margin: 8px 0 0;
+  font-family: var(--font-code);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

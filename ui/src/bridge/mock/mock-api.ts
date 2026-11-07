@@ -650,6 +650,13 @@ export class MockApi implements MaatwerkApi {
     this.realPdf = fromBase64(base64);
   }
 
+  /** Typst warnings the next renders return (tests). */
+  private renderWarnings: string[] = [];
+
+  useRenderWarnings(warnings: string[]): void {
+    this.renderWarnings = [...warnings];
+  }
+
   private storePdf(name: string, pages: string[][]): string {
     const pdfPath = `C:\\Maatwerk-mock\\temp\\${name}`;
     this.pdfs.set(pdfPath, this.realPdf ?? cannedPdf(pages));
@@ -663,7 +670,7 @@ export class MockApi implements MaatwerkApi {
     examId: string,
     students: unknown[],
     examInfo: Record<string, unknown>,
-  ): Promise<RenderResult<{ pdfPath: string }>> {
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>> {
     this.record('renderRapportPdf', [examId, students, examInfo]);
     const title = String(examInfo?.name ?? examId); // payload field is name (domain/rapport.ts)
     const pages = students.map((s, i) => {
@@ -673,6 +680,7 @@ export class MockApi implements MaatwerkApi {
     return {
       success: true,
       pdfPath: this.storePdf('rapport_preview.pdf', pages.length ? pages : [['Rapport (mock)']]),
+      warnings: [...this.renderWarnings],
     };
   }
 
@@ -697,7 +705,7 @@ export class MockApi implements MaatwerkApi {
   async renderAssignmentBatch(
     jobs: BatchJob[],
     opts: BatchOptions = {},
-  ): Promise<RenderResult<{ pdfPath: string; pages: number }>> {
+  ): Promise<RenderResult<{ pdfPath: string; pages: number; warnings: string[] }>> {
     this.record('renderAssignmentBatch', [jobs, opts]);
     if (!Array.isArray(jobs) || jobs.length === 0)
       return { success: false, error: 'Er is niets om te genereren.' };
@@ -717,7 +725,12 @@ export class MockApi implements MaatwerkApi {
       ]);
       for (const cb of this.progressListeners) cb({ done: i + 1, total });
     }
-    return { success: true, pdfPath: this.storePdf(outputName, pages), pages: pages.length };
+    return {
+      success: true,
+      pdfPath: this.storePdf(outputName, pages),
+      pages: pages.length,
+      warnings: [...this.renderWarnings],
+    };
   }
 
   // ── Shell ─────────────────────────────────────────────────────────────────
