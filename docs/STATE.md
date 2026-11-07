@@ -8,6 +8,10 @@ Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `ma
 
 ## Current step
 
+**Next action:** the user's answers (golden check 17, T9/T23, F-14 location, real-data
+`validate-data` list), then the migration on a copy of real data, then merge 17 and 18 into
+`main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
+
 **User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
 commits; the gate, code review and security review only once, after step 18. Step 16: CI green
 (user), version 0.7.0, merged into local `main`, tagged `step-16b`, `step-16`, `v0.7.0`.
@@ -56,7 +60,14 @@ pending). Spec: `docs/reference/data-files-v3.md`; runbook section 9.
    observaties (F-12 data part; locking in the edit screen is step 20). `tools/fixtures/to-v2.mjs`
    -> `to-current.mjs` (`filesToV3`, mock only; Store goldens stay on v2). Mock app version 0.9.0.
    Version 0.9.0.
-3. **Not done, needs the user (STOP gates):** the `validate-data` list from a copy of the real
+3. **Done:** gate after step 18 (user: one gate for 17 and 18): fmt, clippy, all Rust tests,
+   420 Vitest, 123 node tests (incl. the Typst reference-freshness check), 220 Chromium e2e,
+   117 local visual views unchanged, lint, typecheck, SPDX, licences, cargo deny,
+   `npm audit --omit=dev` 0. Reviews (fresh context): `docs/reviews/step-17.md` (0/1/5/5),
+   `step-18.md` (0/1/8/6), `step-17-18-security.md` (0/1/5/5); both majors and most minors
+   fixed (`ee4b0ea` on step 17, merged into 18; `1b522c4`), rest in `docs/backlog.md`. Nothing
+   pushed; WebKit e2e and macOS/Linux CI not run for 17/18.
+4. **Not done, needs the user (STOP gates):** the `validate-data` list from a copy of the real
    data (PLAN-2 "before the step"); running the migration on that copy; deleting leftovers. No
    automatic leftover removal was built: the list decides (runbook section 9).
 
