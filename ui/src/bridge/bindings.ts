@@ -68,7 +68,7 @@ export const commands = {
 	writeLocalSession: (data: Value) => typedError<null, CommandError>(__TAURI_INVOKE("write_local_session", { data })),
 	/**  `data:<mime>;base64,...`; `null` if missing or unreadable. */
 	readPhotoAsDataUrl: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_photo_as_data_url", { relPath })),
-	/**  Only `fotos/<name>` (backlog n8). */
+	/**  Only `afbeeldingen/<name>` (backlog n8). */
 	savePhoto: (relPath: string, base64Data: string) => typedError<null, CommandError>(__TAURI_INVOKE("save_photo", { relPath, base64Data })),
 	/**
 	 *  The school year whose folder the watcher polls (ADR-0003 C7); `null`: `config.json`

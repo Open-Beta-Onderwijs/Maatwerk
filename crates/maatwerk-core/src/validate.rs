@@ -113,7 +113,9 @@ fn place(rel: &str) -> Place<'_> {
     let parts: Vec<&str> = rel.split('/').collect();
     match parts.as_slice() {
         ["config.json"] | ["school.json"] | ["instellingen.json"] => Place::Json(None),
-        ["afbeeldingen", ..] | ["snapshots", ..] => Place::Ignored,
+        ["snapshots", ..] => Place::Ignored,
+        // Any case: a Windows-made folder is in use (T32, review 18 m6).
+        [dir, ..] if dir.eq_ignore_ascii_case(crate::storage::IMAGES_DIR) => Place::Ignored,
         ["gebruikers", f] | ["observaties", f] => named("id", f),
         ["aanwezigheid", f] => named("userId", f),
         ["opdrachten", id, "opdracht.json"] => Place::Json(Some(("id", id))),

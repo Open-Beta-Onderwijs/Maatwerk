@@ -50,6 +50,32 @@ export function migrationNotes(r: MigrationResult, title: string): HTMLElement |
   return wrap;
 }
 
+/** What a dry run shows before the confirm: counts, warnings, the resits' observaties. */
+export function migrationPreview(r: MigrationResult): HTMLElement[] {
+  const out: HTMLElement[] = [
+    el(
+      'p',
+      'startup-error-detail',
+      `Van versie ${r.fromVersion} naar ${r.toVersion}: ${r.written} bestanden bijwerken, ` +
+        `${r.moved} verplaatsen, ${r.deleted} verwijderen (de verwijderde staan in de back-up).`,
+    ),
+  ];
+  if (r.warnings.length) {
+    const wrap = el('div', 'migration-notes');
+    wrap.append(el('h4', 'migration-heading', 'Let op'));
+    const list = el('ul', 'migration-warnings');
+    for (const w of r.warnings) list.append(el('li', '', w));
+    wrap.append(list);
+    out.push(wrap);
+  }
+  const notes = migrationNotes(
+    r,
+    'Inhaal- en herkansingstoetsen krijgen de observaties van de oorspronkelijke toets',
+  );
+  if (notes) out.push(notes);
+  return out;
+}
+
 /** The report shown after the migration: summary, migration warnings, check issues. */
 export function migrationReport(r: MigrationResult): HTMLElement {
   const report = el('div', 'migration-done');
@@ -108,21 +134,14 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
     folder.append(el('code', '', dataDir));
     box.append(folder);
   }
-  // The dry run: what the admin agrees to (decision 13). A failure here is not fatal; the
-  // migration itself refuses with the same reason.
+  // The dry run: what the admin agrees to (decision 13): how many files change, the warnings
+  // and each resit's observaties. "Omzetten" waits for it (review 18 m1). A failure here is
+  // not fatal; the migration itself refuses with the same reason.
   const preview = el('div', 'migration-preview');
   preview.setAttribute('aria-live', 'polite');
+  preview.append(el('p', 'startup-error-detail', 'Bezig met nagaan wat er verandert…'));
   box.append(preview);
-  void api.migrateDataFolder(true).then(
-    (r) => {
-      const notes = migrationNotes(
-        r,
-        'Inhaal- en herkansingstoetsen krijgen de observaties van de oorspronkelijke toets',
-      );
-      if (notes) preview.append(notes);
-    },
-    () => {},
-  );
+  let previewDone = false;
   const label = el('label', 'migration-confirm');
   const check = document.createElement('input');
   check.type = 'checkbox';
@@ -138,7 +157,26 @@ export function renderMigration(container: HTMLElement, dataDir: string, api: Ap
   status.setAttribute('aria-live', 'polite');
   const go = el('button', 'btn btn--primary migration-go', 'Omzetten') as HTMLButtonElement;
   go.disabled = true;
-  check.addEventListener('change', () => (go.disabled = !check.checked));
+  const update = () => (go.disabled = !check.checked || !previewDone);
+  check.addEventListener('change', update);
+  void api.migrateDataFolder(true).then(
+    (r) => {
+      preview.replaceChildren(...migrationPreview(r));
+      previewDone = true;
+      update();
+    },
+    (e) => {
+      preview.replaceChildren(
+        el(
+          'p',
+          'startup-error-detail',
+          `Niet na te gaan wat er verandert: ${asFolderError(e).message}`,
+        ),
+      );
+      previewDone = true;
+      update();
+    },
+  );
   go.addEventListener('click', async () => {
     go.disabled = true;
     check.disabled = true;

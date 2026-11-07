@@ -878,7 +878,10 @@ fn schema_version_c1() {
     fs::create_dir_all(data.join("2025-2026")).unwrap();
     needs("a year folder without config.json");
     fs::create_dir_all(data.join("gebruikers")).unwrap();
-    open().unwrap(); // v2 whose config.json has not synced yet
+    open().unwrap(); // v3 whose config.json has not synced yet
+    fs::create_dir_all(data.join("users")).unwrap();
+    needs("review 18 M1: v2 (users/) whose config.json has not synced yet");
+    fs::remove_dir(data.join("users")).unwrap();
     for v in ["4", "99", "\"1\"", "1.5"] {
         fs::write(
             data.join("config.json"),
@@ -1072,4 +1075,17 @@ fn min_version_corrupt_school_json_sets_no_limit() {
     let (_tmp, s) = fixture_as("0.6.0");
     put(&s, "school.json", b"{ not json");
     assert_eq!(s.read_only(), None);
+}
+
+#[test]
+fn review_18_m1_seeding_never_stamps_a_folder_that_has_data() {
+    let (_t, s) = setup();
+    s.write_json(
+        &rel("gebruikers/jan.json"),
+        &json!({"id": "jan"}),
+        Expect::Any,
+    )
+    .unwrap();
+    s.seed_initial_data().unwrap();
+    assert_eq!(s.read_json(&rel("config.json")).unwrap(), None);
 }

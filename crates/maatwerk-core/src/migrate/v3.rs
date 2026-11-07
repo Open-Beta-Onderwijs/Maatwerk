@@ -10,7 +10,7 @@
 //! - an inhaal or herkansing gets the original's observaties, locked (decision 13, F-12);
 //! - `school.json` gets `minAppVersion` 0.9.0 (decision 5).
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value};
 
@@ -40,14 +40,60 @@ impl Planner<'_> {
         dirs
     }
 
-    /// `fotos/` -> `afbeeldingen/`, every file below it with its relative path.
-    pub(super) fn images_v3(&mut self) {
+    /// Refuses when one of the folders the migration moves from, into or deletes in is a link
+    /// (symlink or junction): the plan works on plain paths and must not reach outside the data
+    /// folder (security review m1).
+    pub(super) fn refuse_linked_dirs(&mut self) {
+        let Ok(entries) = std::fs::read_dir(self.root) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let ours = [V2_IMAGES, V2_PRESENCE, IMAGES_DIR]
+                .iter()
+                .any(|d| name.eq_ignore_ascii_case(d));
+            if ours && entry.file_type().is_ok_and(|t| t.is_symlink()) {
+                self.blocked.push(format!(
+                    "{name}: is een koppeling naar een andere map; maak er een gewone map van"
+                ));
+            }
+        }
+    }
+
+    /// The `fotos/` files to move, `(from, to)` relative, and the names (the part after
+    /// `fotos/`) that stay where they are: a different file is already at the new place, or a
+    /// second `Fotos/` on a case-sensitive disk has the same name (review 18 m5). The paths in
+    /// the data that name a kept file are not rewritten (review 18 m4).
+    pub(super) fn image_moves(&mut self) -> (Vec<(String, String)>, BTreeSet<String>) {
+        let mut moves = Vec::new();
+        let mut kept = BTreeSet::new();
+        let mut taken = BTreeSet::new();
         for dir in self.top_dirs_like(V2_IMAGES) {
             for rel in self.below(&dir) {
-                let rest = &rel[dir.len() + 1..];
-                let to = self.path(&format!("{IMAGES_DIR}/{rest}"));
-                self.move_file(&rel, to, false);
+                let rest = rel[dir.len() + 1..].to_owned();
+                let to = format!("{IMAGES_DIR}/{rest}");
+                let target = self.path(&to);
+                let differs = target.exists()
+                    && std::fs::read(self.path(&rel)).ok() != std::fs::read(&target).ok();
+                if !taken.insert(rest.to_lowercase()) || differs {
+                    self.warnings.push(format!(
+                        "{rel}: niet verplaatst, {to} bestaat al met een andere inhoud; \
+                         vergelijk ze en ruim er één op"
+                    ));
+                    kept.insert(rest);
+                    continue;
+                }
+                moves.push((rel, to));
             }
+        }
+        (moves, kept)
+    }
+
+    /// `fotos/` -> `afbeeldingen/`, every file below it with its relative path.
+    pub(super) fn images_v3(&mut self, moves: Vec<(String, String)>) {
+        for (rel, to) in moves {
+            let to = self.path(&to);
+            self.move_file(&rel, to, false);
         }
     }
 
@@ -61,7 +107,8 @@ impl Planner<'_> {
     }
 
     /// Plans `rel` when `change` changed it: `_meta.rev` + 1, `updatedBy` null (the migration,
-    /// as in v2) and `updatedAt` now, `_meta` kept last. An unchanged file is not written, so a second run does nothing.
+    /// as in v2) and `updatedAt` now, `_meta` kept last. An unchanged file is not written, so a
+    /// second run does nothing.
     fn update_entity(&mut self, rel: &str, change: impl FnOnce(&mut Map<String, Value>)) {
         let Some(old) = self.read_object(rel) else {
             return;
@@ -87,20 +134,38 @@ impl Planner<'_> {
         self.write_json(rel, Value::Object(map));
     }
 
-    /// `school.json`: logo and watermark paths, and the minimum app version.
-    pub(super) fn school_v3(&mut self) {
+    /// `school.json`: logo and watermark paths, and the minimum app version. A folder that asks
+    /// for a newer (or an unknown) app is refused: this app is read-only there (review 18 m2).
+    pub(super) fn school_v3(&mut self, kept: &BTreeSet<String>) {
         if !self.exists("school.json") {
+            self.warnings.push(
+                "school.json ontbreekt (nog niet gesynchroniseerd?): minAppVersion is niet gezet"
+                    .into(),
+            );
+            return;
+        }
+        if let Some(school) = self.read_object("school.json")
+            && let Some(min) =
+                app_version::required_version(&Value::Object(school), app_version::APP_VERSION)
+        {
+            self.blocked.push(format!(
+                "school.json: deze gegevens vragen Maatwerk {min} of nieuwer; dit is {}",
+                app_version::APP_VERSION
+            ));
             return;
         }
         self.update_entity("school.json", |school| {
             for key in ["logo", "watermerk"] {
-                rename_image_ref(school, key);
+                rename_image_ref(school, key, kept);
             }
-            let current = school.get("minAppVersion").and_then(Value::as_str);
-            let lower = current.is_none_or(|v| {
-                app_version::compare(v, V3_MIN_APP_VERSION)
-                    .is_none_or(|o| o == std::cmp::Ordering::Less)
-            });
+            // Absent, empty or older (an unknown value was refused above).
+            let lower = match school.get("minAppVersion") {
+                Some(Value::String(v)) if !v.trim().is_empty() => {
+                    app_version::compare(v.trim(), V3_MIN_APP_VERSION)
+                        == Some(std::cmp::Ordering::Less)
+                }
+                _ => true,
+            };
             if lower {
                 school.insert("minAppVersion".into(), V3_MIN_APP_VERSION.into());
             }
@@ -108,9 +173,9 @@ impl Planner<'_> {
     }
 
     /// `gebruikers/<id>.json`: the photo path.
-    pub(super) fn gebruikers_v3(&mut self) {
+    pub(super) fn gebruikers_v3(&mut self, kept: &BTreeSet<String>) {
         for rel in self.children("gebruikers", ".json") {
-            self.update_entity(&rel, |user| rename_image_ref(user, "foto"));
+            self.update_entity(&rel, |user| rename_image_ref(user, "foto", kept));
         }
     }
 
@@ -176,10 +241,11 @@ impl Planner<'_> {
         for rel in exams.into_keys() {
             let obs = resit_obs.remove(&rel);
             self.update_entity(&rel, |exam| {
-                if !exam.contains_key("kind") {
+                // `null` counts as absent (review 18 n3).
+                if exam.get("kind").is_none_or(Value::is_null) {
                     exam.insert("kind".into(), "toets".into());
                 }
-                if !exam.contains_key("diagnostic") {
+                if exam.get("diagnostic").is_none_or(Value::is_null) {
                     exam.insert("diagnostic".into(), false.into());
                 }
                 if let Some(obs) = obs {
@@ -208,15 +274,16 @@ impl Planner<'_> {
     }
 }
 
-/// `fotos/x.png` (any case of `fotos`) -> `afbeeldingen/x.png` in `map[key]`.
-fn rename_image_ref(map: &mut Map<String, Value>, key: &str) {
+/// `fotos/x.png` (any case of `fotos`) -> `afbeeldingen/x.png` in `map[key]`, unless `x.png`
+/// stays in `fotos/` (`kept`).
+fn rename_image_ref(map: &mut Map<String, Value>, key: &str, kept: &BTreeSet<String>) {
     let Some(Value::String(path)) = map.get(key) else {
         return;
     };
     let Some((dir, rest)) = path.split_once('/') else {
         return;
     };
-    if dir.eq_ignore_ascii_case(V2_IMAGES) {
+    if dir.eq_ignore_ascii_case(V2_IMAGES) && !kept.contains(rest) {
         let new = format!("{IMAGES_DIR}/{rest}");
         map.insert(key.into(), Value::String(new));
     }
@@ -243,12 +310,14 @@ pub(crate) fn build(
     now: time::OffsetDateTime,
 ) -> crate::error::Result<super::plan::Plan> {
     let mut p = Planner::new(root, now)?;
+    p.refuse_linked_dirs();
+    let (moves, kept) = p.image_moves();
     // `minAppVersion` first (runbook section 8): an older app that is still open somewhere
     // becomes read-only before any other file changes.
-    p.school_v3();
-    p.images_v3();
+    p.school_v3(&kept);
+    p.images_v3(moves);
     p.presence_v3();
-    p.gebruikers_v3();
+    p.gebruikers_v3(&kept);
     let obs_names = p.observatie_names();
     for year in p.years() {
         p.exams_v3(&year, &obs_names);
@@ -263,7 +332,9 @@ pub(crate) fn remove_empty_dirs(root: &std::path::Path) {
     };
     for entry in entries.flatten() {
         let name = entry.file_name().to_string_lossy().into_owned();
-        if name.eq_ignore_ascii_case(V2_IMAGES) || name.eq_ignore_ascii_case(V2_PRESENCE) {
+        // A link is never followed (security review m1).
+        let dir = entry.file_type().is_ok_and(|t| t.is_dir());
+        if dir && (name.eq_ignore_ascii_case(V2_IMAGES) || name.eq_ignore_ascii_case(V2_PRESENCE)) {
             super::plan::remove_empty_tree(&entry.path());
         }
     }

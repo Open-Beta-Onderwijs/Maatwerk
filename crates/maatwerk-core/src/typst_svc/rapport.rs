@@ -31,6 +31,9 @@ pub struct RapportData {
 /// template; `fotos/` before format v3).
 const WATERMARK: &str = "afbeeldingen/school-watermerk.svg";
 
+/// A larger watermark file is left out of the rapport.
+const WATERMARK_MAX: u64 = 5 * 1024 * 1024;
+
 /// What `rapport-main.typ` reads from `data.json`.
 #[derive(Serialize)]
 struct Payload<'a> {
@@ -50,7 +53,10 @@ pub fn rapport_world(
     // without it). Looked up as the World does, so `Fotos/` from a Windows folder counts (T32).
     let watermark = super::world::find_ignoring_case(data_dir.root(), WATERMARK.split('/'))
         // Not through a link: the World refuses one, and the rapport would fail as before T4.
-        .is_some_and(|p| std::fs::symlink_metadata(p).is_ok_and(|m| m.is_file()));
+        // Nor a huge file, which only a broken or hostile upload makes (security review m4).
+        .is_some_and(|p| {
+            std::fs::symlink_metadata(p).is_ok_and(|m| m.is_file() && m.len() <= WATERMARK_MAX)
+        });
     let json =
         serde_json::to_vec(&Payload { data, watermark }).expect("JSON values always serialise");
     let file = |name: &str| format!("/{INTERNAL_DIR}/{name}");
@@ -67,8 +73,14 @@ pub fn rapport_world(
                 (file("data.json"), Bytes::new(json)),
             ],
             mounts: vec![
-                Mount::dir("/data/afbeeldingen", data_dir.root().join(IMAGES_DIR))
-                    .within(data_dir.root()),
+                // The folder as spelled on disk: a Windows-made `Afbeeldingen/` on Linux
+                // (security review n2).
+                Mount::dir(
+                    "/data/afbeeldingen",
+                    super::world::find_ignoring_case(data_dir.root(), [IMAGES_DIR])
+                        .unwrap_or_else(|| data_dir.root().join(IMAGES_DIR)),
+                )
+                .within(data_dir.root()),
             ],
             inputs: None,
             now,

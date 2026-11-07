@@ -399,3 +399,19 @@ fn step_18_v2_folders_left_in_a_v3_folder_are_named() {
     }
     assert_eq!(report.errors(), 0);
 }
+
+#[test]
+fn review_18_m6_a_windows_made_images_folder_is_in_use() {
+    let (_tmp, data) = copy();
+    fs::rename(data.join("afbeeldingen"), data.join("tmp")).unwrap();
+    fs::rename(data.join("tmp"), data.join("Afbeeldingen")).unwrap();
+    let report = validate(&data).unwrap();
+    assert!(
+        !report
+            .issues
+            .iter()
+            .any(|i| i.path.starts_with("Afbeeldingen/")),
+        "{:#?}",
+        report.issues
+    );
+}

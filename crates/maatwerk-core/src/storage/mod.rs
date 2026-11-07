@@ -215,8 +215,9 @@ impl Storage {
     }
 
     /// C1: the folder must be current (v3). An older one (v2, or v1: no `schema_version`, or no
-    /// `config.json` but v1 files) needs the migration; a newer version is refused. An unreadable `config.json` does
-    /// not block (it may still be syncing); a folder with nothing of v1 in it is new.
+    /// `config.json` but v1 files) needs the migration; a newer version is refused. An
+    /// unreadable `config.json` does not block (it may still be syncing); a folder with nothing
+    /// of v1 in it is new.
     pub fn check_schema(&self) -> Result<()> {
         let rel = RelPath::parse("config.json")?;
         let config = match self.read_json(&rel) {
@@ -225,9 +226,12 @@ impl Storage {
                 let root = self.dir.root();
                 let v1 = V1_MARKERS.iter().any(|m| root.join(m).exists())
                     || !self.list_years().is_empty();
-                // `gebruikers/` is v2: its `config.json` has not synced yet.
+                // `gebruikers/` is v2 or v3 whose `config.json` has not synced yet; `fotos/` or
+                // `users/` next to it is v2, which needs the migration (review 18 M1).
                 return if v1 && !root.join("gebruikers").is_dir() {
                     Err(Error::NeedsMigration { found: 1 })
+                } else if root.join("gebruikers").is_dir() && has_v2_dirs(root) {
+                    Err(Error::NeedsMigration { found: 2 })
                 } else {
                     Ok(())
                 };
@@ -566,16 +570,20 @@ impl Storage {
     /// `config.json` with `schema_version` and the admin account if there are no users yet, plus
     /// the `afbeeldingen/` and `opdrachten/` folders. `lib.typ` lives in each opdracht folder (C14).
     pub fn seed_initial_data(&self) -> Result<()> {
-        let config = RelPath::parse("config.json")?;
-        let version = serde_json::json!({ "schema_version": crate::migrate::CURRENT_VERSION });
-        match self.write_json(&config, &version, Expect::Missing) {
-            Ok(_) | Err(Error::Conflict { .. }) => {}
-            Err(e) => return Err(e),
-        }
         let has_users = self
             .list_dir(&RelPath::parse("gebruikers")?, false)?
             .iter()
             .any(|f| f.ends_with(".json"));
+        // Only a new folder gets a version: a folder with data whose `config.json` has not synced
+        // yet would otherwise be stamped current without its migration (review 18 M1).
+        if !has_users && self.list_years().is_empty() {
+            let config = RelPath::parse("config.json")?;
+            let version = serde_json::json!({ "schema_version": crate::migrate::CURRENT_VERSION });
+            match self.write_json(&config, &version, Expect::Missing) {
+                Ok(_) | Err(Error::Conflict { .. }) => {}
+                Err(e) => return Err(e),
+            }
+        }
         if !has_users {
             self.seed_admin()?;
         }
@@ -607,6 +615,18 @@ impl Storage {
             Err(e) => Err(e),
         }
     }
+}
+
+/// A top-level `fotos/` or `users/` (any case): the v2 names of `afbeeldingen/`, `aanwezigheid/`.
+fn has_v2_dirs(root: &std::path::Path) -> bool {
+    std::fs::read_dir(root).is_ok_and(|entries| {
+        entries.flatten().any(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            e.file_type().is_ok_and(|t| t.is_dir())
+                && (name.eq_ignore_ascii_case(crate::migrate::V2_IMAGES)
+                    || name.eq_ignore_ascii_case(crate::migrate::V2_PRESENCE))
+        })
+    })
 }
 
 fn parse_json(rel: &RelPath, bytes: &[u8]) -> Result<Value> {

@@ -578,3 +578,118 @@ fn a_dry_run_has_no_report_file() {
     assert_eq!(save_report(&report, None, "d", now()).unwrap(), None);
     assert!(report_text(&report, None, "d", now()).contains("(niet uitgevoerd)"));
 }
+
+#[test]
+fn review_18_m1_a_v2_folder_whose_config_has_not_synced_is_v2_and_migrates() {
+    let r = rig_from("v2");
+    fs::remove_file(r.data.join("config.json")).unwrap();
+    assert_eq!(folder_version(&r.data).unwrap(), 2);
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    assert_eq!((report.from_version, report.to_version), (2, 3));
+    assert_eq!(folder_version(&r.data).unwrap(), 3);
+    assert!(r.data.join("afbeeldingen/school-logo.png").is_file());
+}
+
+#[test]
+fn review_18_m2_a_folder_for_a_newer_or_unknown_app_is_not_migrated() {
+    for min in ["99.0.0", "next"] {
+        let r = rig_from("v2");
+        let path = r.data.join("school.json");
+        let mut school: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        school["minAppVersion"] = Value::from(min);
+        fs::write(&path, serde_json::to_vec_pretty(&school).unwrap()).unwrap();
+        let before = tree(&r.data);
+        let err = migrate(&r.data, Some(&r.backups), now()).unwrap_err();
+        assert_eq!(err.code(), "migration_blocked", "{min}");
+        assert!(err.to_string().contains(min), "{err}");
+        assert_eq!(tree(&r.data), before, "{min}: nothing changed");
+    }
+    // A lower one is raised; a higher one this app accepts is kept.
+    let r = rig_from("v2");
+    let path = r.data.join("school.json");
+    let mut school: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    school["minAppVersion"] = Value::from("0.6.0");
+    fs::write(&path, serde_json::to_vec_pretty(&school).unwrap()).unwrap();
+    migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let school: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    assert_eq!(school["minAppVersion"], "0.9.0");
+}
+
+#[test]
+fn review_18_m3_m4_a_different_file_at_the_new_place_stays_and_so_does_its_path() {
+    let r = rig_from("v2");
+    fs::create_dir_all(r.data.join("afbeeldingen")).unwrap();
+    fs::write(r.data.join("afbeeldingen/school-logo.png"), b"other").unwrap();
+    fs::remove_file(r.data.join("users/admin.json")).unwrap();
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let school: Value =
+        serde_json::from_slice(&fs::read(r.data.join("school.json")).unwrap()).unwrap();
+    assert_eq!(
+        school["logo"], "fotos/school-logo.png",
+        "still names the kept file"
+    );
+    assert!(r.data.join("fotos/school-logo.png").is_file());
+    assert_eq!(
+        fs::read(r.data.join("afbeeldingen/school-logo.png")).unwrap(),
+        b"other"
+    );
+    assert!(r.data.join("afbeeldingen/gebr-1756713600000.png").is_file());
+    let warnings = report.warnings.join("\n");
+    assert!(
+        warnings.contains("fotos/school-logo.png: niet verplaatst"),
+        "{warnings}"
+    );
+}
+
+#[test]
+fn review_18_m3_a_missing_school_json_is_reported() {
+    let r = rig_from("v2");
+    fs::remove_file(r.data.join("school.json")).unwrap();
+    let report = migrate(&r.data, None, now()).unwrap();
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("school.json ontbreekt")),
+        "{:?}",
+        report.warnings
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn review_18_m5_two_case_variants_of_fotos_do_not_overwrite_each_other() {
+    let r = rig_from("v2");
+    fs::create_dir_all(r.data.join("Fotos")).unwrap();
+    fs::write(r.data.join("Fotos/school-logo.png"), b"other").unwrap();
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("niet verplaatst")),
+        "{:?}",
+        report.warnings
+    );
+    assert!(r.data.join("afbeeldingen/school-logo.png").is_file());
+    let left = ["Fotos", "fotos"]
+        .iter()
+        .filter(|d| r.data.join(d).join("school-logo.png").is_file())
+        .count();
+    assert_eq!(left, 1, "one of the two stays");
+}
+
+#[cfg(unix)]
+#[test]
+fn security_m1_a_linked_images_folder_is_refused() {
+    let r = rig_from("v2");
+    let outside = r.shared.join("buiten");
+    fs::create_dir_all(&outside).unwrap();
+    std::os::unix::fs::symlink(&outside, r.data.join("afbeeldingen")).unwrap();
+    let err = migrate(&r.data, Some(&r.backups), now()).unwrap_err();
+    assert_eq!(err.code(), "migration_blocked");
+    assert!(
+        fs::read_dir(&outside).unwrap().next().is_none(),
+        "nothing written outside"
+    );
+}

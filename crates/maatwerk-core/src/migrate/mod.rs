@@ -73,12 +73,17 @@ pub enum Action {
     Delete,
 }
 
-/// `schema_version` of the folder: 1 when `config.json` or the field is missing.
+/// `schema_version` of the folder: 1 when `config.json` or the field is missing, except 2 for a
+/// folder without `config.json` that has `gebruikers/` (v2 or later; its `config.json` has not
+/// synced yet, review 18 M1: the v3 step then also writes it).
 pub fn folder_version(root: &Path) -> Result<u64> {
     let path = root.join("config.json");
     let bytes = match fs::read(&path) {
         Ok(b) => b,
-        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(1),
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            let v2 = root.join("gebruikers").is_dir() && !root.join("gebruikers.json").exists();
+            return Ok(if v2 { 2 } else { 1 });
+        }
         Err(e) => return Err(Error::io("config.json", e)),
     };
     let config: Value = serde_json::from_slice(&bytes).map_err(|e| Error::CorruptJson {

@@ -217,9 +217,10 @@ test('C1, step 18: an older folder offers the conversion, after a preview and a 
   await expect(region).toContainText('eenmalig worden omgezet');
   await expect(region).toContainText('D:/OneDrive/Maatwerk/data');
   // Decision 13: the resits' observaties, before and after, before anything happens.
-  await expect(region.locator('.migration-preview')).toContainText(
-    'observaties vóór: geen; na: Rekenfout',
-  );
+  const preview = region.locator('.migration-preview');
+  await expect(preview).toContainText('observaties vóór: geen; na: Rekenfout');
+  await expect(preview).toContainText('12 bestanden bijwerken, 1 verplaatsen, 3 verwijderen');
+  await expect(preview).toContainText('leerling 1002 stond er dubbel in');
   const go = page.getByRole('button', { name: 'Omzetten' });
   await expect(go).toBeDisabled();
   await page.locator('#migration-confirm').check();
