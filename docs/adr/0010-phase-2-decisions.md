@@ -24,7 +24,9 @@
    fields `kind: "toets" | "po"` and `diagnostic: bool` (PTA stays `type: "pta"`; diagnostic and
    PTA exclude each other; a diagnostic test has weging 0 and counts for neither rapport nor SE);
    observaties copied to resits and locked, also for existing resits; the opdracht link "score on
-   question N below X". Leftover folders are removed only after the user confirms.
+   question N below X" (`opdrachtenVraag` on the exam, not in `opdracht.json`; a score below X
+   or `N` matches, an empty score does not; user 2026-11-07). Leftover folders are removed only
+   after the user confirms.
 8. **Trend arrow:** best attempt of the most recent counted test minus the weighted year average
    (as on the rapport), diagnostic tests ignored; thresholds in the design spec 2.4.
 9. **AI assistant** in step 28, after the editor redesign.

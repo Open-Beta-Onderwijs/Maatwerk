@@ -267,7 +267,8 @@ Items: F-10, F-11, B-05 (check), profile restyle, B15/B16 (if not done in 19b). 
 ### Step 26: Observaties and opdrachten (M)
 
 Items: F-14 (UI), F-15, T23 (moved from step 17, user 2026-11-07), spec 4.12; board 15. Observatie bewerken with the icon picker (200+ emoji,
-categories, search); opdracht bewerken; opdrachten genereren with the new link type; the batch
+categories, search); opdracht bewerken; opdrachten genereren with the new link type (`opdrachtenVraag`: a score
+below X or `N` matches, an empty score not; data-files-v3); the batch
 reports every failed opdracht, not only the first (T23).
 
 ### Step 27: Opdrachten-editor (M)

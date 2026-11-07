@@ -34,12 +34,12 @@ when it is absent or lower (decision 5), so later additive changes can use the r
 
 ## Exams
 
-| Field             | Type              | Default   | Meaning                                                                                                                                                |
-| ----------------- | ----------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `kind`            | `"toets" \| "po"` | `"toets"` | A test or a practical assignment (decision 14; the PO modal is F-20)                                                                                   |
-| `diagnostic`      | `bool`            | `false`   | Counts for neither rapport nor SE: weging 0, never `type: "pta"` (decision 6)                                                                          |
-| `obs_from_parent` | `bool`            | absent    | An inhaal/herkansing (`parent_id`) whose `obs_ids` are the original's, locked (decision 13, F-12)                                                      |
-| `opdrachtenVraag` | `VraagCard[]`     | absent    | F-14: `{ id, vraag, onder, opdrachten: [opdrachtId] }`: a student whose score on question `vraag` is a number below `onder` points gets the opdrachten |
+| Field             | Type              | Default   | Meaning                                                                                                                                                  |
+| ----------------- | ----------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`            | `"toets" \| "po"` | `"toets"` | A test or a practical assignment (decision 14; the PO modal is F-20)                                                                                     |
+| `diagnostic`      | `bool`            | `false`   | Counts for neither rapport nor SE: weging 0, never `type: "pta"` (decision 6)                                                                            |
+| `obs_from_parent` | `bool`            | absent    | An inhaal/herkansing (`parent_id`) whose `obs_ids` are the original's, locked (decision 13, F-12)                                                        |
+| `opdrachtenVraag` | `VraagCard[]`     | absent    | F-14: `{ id, vraag, onder, opdrachten: [opdrachtId] }`: a student whose score on question `vraag` is below `onder` points, or `"N"`, gets the opdrachten |
 
 - The migration writes `kind` and `diagnostic` into every exam that lacks them; the app writes
   them on every save (`Store.upsertExam`). Readers treat an absent field as the default.
@@ -48,8 +48,11 @@ when it is absent or lower (decision 5), so later additive changes can use the r
   observaties before and after (`notes`; the start screen and `migrate --dry-run` show them before
   anything changes). The app copies the original's observaties when it creates a resit; locking
   them in the edit screen is step 20.
-- `opdrachtenVraag` is defined now (data part of F-14); the screen that sets it is step 26. `"N"`
-  and an empty score do not match.
+- `opdrachtenVraag` is defined now (data part of F-14); the screen that sets it is step 26.
+  Matching (user 2026-11-07): `onder: 2` matches 0, 1 and `"N"` (not attempted); an empty
+  score (not entered) never matches. The link is on the exam, not in `opdracht.json` (the
+  ROADMAP F-14 text): the question exists only in that exam, it sits next to `opdrachten` and
+  `opdrachtenCijfer`, and linking never rewrites a colleague's shared opdracht file.
 - A changed entity file gets `_meta.rev` + 1, `updatedBy: null`, `updatedAt` = migration time.
 
 ## `validate-data`

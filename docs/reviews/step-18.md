@@ -193,8 +193,9 @@ Checked and found correct:
   tracked.
 - **m6 fixed:** `afbeeldingen/` in any case is in use for `validate-data`.
 - **m7:** tests added for the above (the case-variant test runs on Linux only).
-- **m8 asked the user:** `opdrachtenVraag` is on the exam (the link names a question of that
-  exam, like `opdrachten` and `opdrachtenCijfer`), not in `opdracht.json` as ROADMAP F-14 says.
+- **m8 resolved (user 2026-11-07):** `opdrachtenVraag` stays on the exam (the link names a
+  question of that exam, like `opdrachten` and `opdrachtenCijfer`); recorded in ADR-0010 item 7,
+  ROADMAP F-14 and data-files-v3. The user also set the matching: `N` matches, empty does not.
 - **n1, n2, n3 fixed.** n4 kept (a file without `heartbeatAt` is not a presence file Maatwerk
   writes). n5 kept (mock only, tested). n6 kept: a v1 dry run says 1 -> 3 and adds the warning
   that the v3 step is not listed yet.

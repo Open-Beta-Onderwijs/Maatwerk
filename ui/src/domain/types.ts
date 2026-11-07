@@ -102,7 +102,7 @@ export interface VraagCard {
   id: string;
   /** A question id of the exam. */
   vraag: string;
-  /** Points: a score that is a number below this matches. */
+  /** Points: a score below this matches, and so does `N` (not attempted); an empty score not. */
   onder: number;
   opdrachten?: string[];
 }

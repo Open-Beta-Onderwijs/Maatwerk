@@ -9,11 +9,12 @@ Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `ma
 ## Current step
 
 **Next action:** the user tests the local exe (`target/release/maatwerk.exe`, 0.9.0) on a copy
-of the real data and answers F-14 (link on the exam or in `opdracht.json`); then merge 17 and
-18 into `main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
+of the real data; then merge 17 and 18 into `main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
 
 **User answers (2026-11-07):** golden check 17 approved (padding page with footer and
-watermark is fine). T9 moved to step 19b, T23 to step 26 (PLAN-2, ROADMAP 4.6).
+watermark is fine). T9 moved to step 19b, T23 to step 26 (PLAN-2, ROADMAP 4.6). F-14:
+`opdrachtenVraag` stays on the exam (ADR-0010 item 7); `onder: 2` matches 0, 1 and `N`, not an
+empty score (step 26 implements the matching).
 
 **User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
 commits; the gate, code review and security review only once, after step 18. Step 16: CI green
