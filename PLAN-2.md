@@ -204,15 +204,17 @@ Stop and ask: before running the migration on the copy of real data; before dele
 
 ### Step 19: Domain logic in `maatwerk-core` (L)
 
-Items: R-04, B-02, B-03, B1-B8, B12-B19, B28-B31 (per triage), F-08 (trend helper), decision 7.9.
+Items: R-04, B-02, B-03, B1-B8, B12-B19, B28-B31 (per triage), F-08 (trend helper), decision 7.9,
+T9 (moved from step 17, user 2026-11-07).
 
 - **19a:** port attempts (best attempt), grade calculation, averages (weighted, SE), SD,
   percentages, RTTI statistics and the trend helper to `maatwerk-core` with unit tests on the
   fixtures; Tauri commands and generated bindings; the CLI gets `stats` for checking. The UI
   still uses its own code.
 - **19b:** switch every screen, the rapport and the score grid to the core; delete the four JS
-  implementations (B13); fix the B items as decided. Before/after tables for every number that
-  changes, user approval before the merge.
+  implementations (B13); fix the B items as decided. T9: the histogram and ranking thresholds
+  and texts agree (the ranking moves to the core with the other rapport numbers). Before/after
+  tables for every number or text that changes, user approval before the merge.
 
 ### Step 20: Toetsen (L)
 
@@ -264,8 +266,9 @@ Items: F-10, F-11, B-05 (check), profile restyle, B15/B16 (if not done in 19b). 
 
 ### Step 26: Observaties and opdrachten (M)
 
-Items: F-14 (UI), F-15, spec 4.12; board 15. Observatie bewerken with the icon picker (200+ emoji,
-categories, search); opdracht bewerken; opdrachten genereren with the new link type.
+Items: F-14 (UI), F-15, T23 (moved from step 17, user 2026-11-07), spec 4.12; board 15. Observatie bewerken with the icon picker (200+ emoji,
+categories, search); opdracht bewerken; opdrachten genereren with the new link type; the batch
+reports every failed opdracht, not only the first (T23).
 
 ### Step 27: Opdrachten-editor (M)
 

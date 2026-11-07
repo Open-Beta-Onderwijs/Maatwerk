@@ -8,9 +8,12 @@ Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `ma
 
 ## Current step
 
-**Next action:** the user's answers (golden check 17, T9/T23, F-14 location, real-data
-`validate-data` list), then the migration on a copy of real data, then merge 17 and 18 into
-`main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
+**Next action:** the user tests the local exe (`target/release/maatwerk.exe`, 0.9.0) on a copy
+of the real data and answers F-14 (link on the exam or in `opdracht.json`); then merge 17 and
+18 into `main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
+
+**User answers (2026-11-07):** golden check 17 approved (padding page with footer and
+watermark is fine). T9 moved to step 19b, T23 to step 26 (PLAN-2, ROADMAP 4.6).
 
 **User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
 commits; the gate, code review and security review only once, after step 18. Step 16: CI green
@@ -19,8 +22,8 @@ commits; the gate, code review and security review only once, after step 18. Ste
 ## Step 17 progress (Rapport fixes, 0.8)
 
 Scope as PLAN-2 step 17: B-06, B-07, F-13, F-04, T4, T7, T8, T10, T25; plus T6 (the rapport's
-numbers, same lines as T7). Not done: T9 (histogram/ranking texts) and T23 (batch reports only
-the first failure), which ROADMAP 4.6 puts in 17 but PLAN-2 does not list (asked the user).
+numbers, same lines as T7). T9 (histogram/ranking texts) moved to step 19b and T23 (batch
+reports only the first failure) to step 26 (user 2026-11-07).
 
 1. **Done** (`f26d77f`): template fixes, failing tests first (`tests/typst_rapport.rs`, 9 new):
    T4 watermark only when `fotos/school-watermerk.svg` exists (any case; `data.json` field
@@ -30,8 +33,8 @@ the first failure), which ROADMAP 4.6 puts in 17 but PLAN-2 does not list (asked
    `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm; B-07
    dots 5.5 pt when any score or maximum has a fraction. Goldens `rapport-one-student`,
    `rapport-valid` blessed (`MAATWERK_BLESS="<why>" MAATWERK_BLESS_IDS=<ids> cargo test`, new in `tests/support`; case
-   field `port.blessed`): page 1 of each student changes, page 2 not. **STOP: user's visual
-   check pending** (before/after PNGs at 110 ppi were made in the session scratchpad).
+   field `port.blessed`): page 1 of each student changes, page 2 not. User approved the
+   before/after PNGs (2026-11-07).
 2. **Done** (`8010810`): F-04 `components/render-warnings.ts`: folded panel above the PDF in the
    rapport and opdrachten dialogs; bridge returns `warnings`; batch warnings name the opdracht,
    once per opdracht; mock `useRenderWarnings`; e2e `e2e/rapport.spec.ts` (3).

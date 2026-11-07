@@ -233,9 +233,10 @@ does it.
 | T4, T10 (rapport crashes on edge data)                     | Verify, fix                                                                | 17   |
 | T5, T6 (Typst values, float noise)                         | Fix (T6 visible); T5 keep unless it bites                                  | 17   |
 | T7 (fractional scores truncated in the scoretabel)         | Fix (visible wrong data)                                                   | 17   |
-| T8 (footer "/ 2"), T9 (histogram texts), T25 (lang)        | Fix                                                                        | 17   |
+| T8 (footer "/ 2"), T25 (lang)                              | Fix                                                                        | 17   |
+| T9 (histogram texts)                                       | Fix with the rapport numbers in the core (user 2026-11-07)                 | 19b  |
 | T19, T20                                                   | Keep (rare; editor warns)                                                  | -    |
-| T23 (batch reports only the first failure)                 | Fix                                                                        | 17   |
+| T23 (batch reports only the first failure)                 | Fix with the opdrachten-genereren rework (user 2026-11-07)                 | 26   |
 | T24 (merge drops PDF metadata)                             | Won't                                                                      | -    |
 | D4, D16, D17                                               | Verify                                                                     | 19   |
 | D7 (active year shared)                                    | Fix: per user (F-21)                                                       | 15   |
