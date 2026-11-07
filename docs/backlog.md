@@ -413,3 +413,8 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Review 15 n4-n6:** the version compare exists in Rust and in TS (the TS copy is used by the
   mock only); three HTML-escape helpers (`app.js`, `avatar.ts`, `user-menu.ts`) could share one
   `utils/html.ts`; presence reads `school.json` twice per heartbeat when read-only.
+
+## From Step 17 (review `docs/reviews/step-17.md`)
+
+- **Review 17 m2:** a blessed Typst golden keeps the reference's `call`/`result` but its `pdf`
+  text and PNGs are the port's; split into `reference.pdf` / `port.pdf` so both stay readable.

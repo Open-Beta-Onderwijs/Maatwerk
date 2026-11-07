@@ -3,7 +3,8 @@
 //! The rapport (path A of `typst-contract.md`): all students of one toets in one PDF.
 //!
 //! The World holds `/__maatwerk/main.typ` (entry), `/__maatwerk/rapport.typ` (template) and
-//! `/__maatwerk/data.json` (this request), and mounts only `/data/fotos` (the watermark, drawn only when it exists).
+//! `/__maatwerk/data.json` (this request), and mounts only `/data/fotos` (the watermark, drawn
+//! only when it exists).
 
 use std::sync::Arc;
 
@@ -46,7 +47,8 @@ pub fn rapport_world(
     // T4: the template draws the watermark only when the school has one (the reference failed
     // without it). Looked up as the World does, so `Fotos/` from a Windows folder counts (T32).
     let watermark = super::world::find_ignoring_case(data_dir.root(), WATERMARK.split('/'))
-        .is_some_and(|p| p.is_file());
+        // Not through a link: the World refuses one, and the rapport would fail as before T4.
+        .is_some_and(|p| std::fs::symlink_metadata(p).is_ok_and(|m| m.is_file()));
     let json =
         serde_json::to_vec(&Payload { data, watermark }).expect("JSON values always serialise");
     let file = |name: &str| format!("/{INTERNAL_DIR}/{name}");

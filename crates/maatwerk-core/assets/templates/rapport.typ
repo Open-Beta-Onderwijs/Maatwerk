@@ -2,7 +2,7 @@
 // rapport.typ — RTTI rapport template (the reference's rtti_export.typ)
 // Entry point: rapport-main.typ reads data.json (written by the Typst service) and calls
 // #show: setup  then  #render(exam_info, student_data)
-// exam_info : (name: string, global_max_points: int, n_term: float,
+// exam_info : (name: string, global_max_points: number (may have a fraction), n_term: float,
 //              uitleg_rtti: (R, T1, T2, I: string))
 // student_data : array of (
 //   name, student_nr, group, score, max_score, grade, grade_num (float or none),
@@ -708,7 +708,7 @@
 
     #v(8pt)
 
-    Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #calc.round(student.score / student.max_score * 100)% goed]. De N-term is N=#str(exam_info.n_term).replace(".", ","). Je cijfer is een *#student.grade*.
+    Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #calc.round(student.score / student.max_score * 100)% goed]. De N-term is N=#_num(exam_info.n_term). Je cijfer is een *#student.grade*.
     #if student.at("grade_overridden", default: false) [Dit cijfer is met de hand overschreven door de docent.]
 
     #v(4pt)

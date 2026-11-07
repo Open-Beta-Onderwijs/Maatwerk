@@ -25,7 +25,7 @@ the first failure), which ROADMAP 4.6 puts in 17 but PLAN-2 does not list (asked
    the last student padded via its end marker; T10 zero/fractional maxima, missing
    `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm; B-07
    dots 5.5 pt when any score or maximum has a fraction. Goldens `rapport-one-student`,
-   `rapport-valid` blessed (`MAATWERK_BLESS="<why>" cargo test`, new in `tests/support`; case
+   `rapport-valid` blessed (`MAATWERK_BLESS="<why>" MAATWERK_BLESS_IDS=<ids> cargo test`, new in `tests/support`; case
    field `port.blessed`): page 1 of each student changes, page 2 not. **STOP: user's visual
    check pending** (before/after PNGs at 110 ppi were made in the session scratchpad).
 2. **Done** (`8010810`): F-04 `components/render-warnings.ts`: folded panel above the PDF in the
