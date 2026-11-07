@@ -131,27 +131,30 @@
           595.28,
           841.89
         ],
-        "text": "schema\nToetsanalyse Natuurkunde Toets één leerling\n3 nat cluster — D'Angelo O'Neill (900001)\nJe hebt 10.5 / 16 punten behaald en had dus 66% goed. De N-term is N=1. Je cijfer is een 6,9.\nScoretabel\nVraag RTTI B / D Jij (●) 0 1 2 3 4 5 Gemiddeld (◇)\nI1 R 3 / 5 3.5 3,5 / 5 (70%)\nI2 T1 1 / 5 1.5 1,5 / 5 (30%)\nII3 T2 3 / 5 3.5 3,5 / 5 (70%)\nIII4 I 0 / 1 0.5 0,5 / 1 (50%)\nIII5 T2 Bonus 1 / 2 1.5 1,5 / 2 (75%)\nObservaties\nDe docent heeft bij jou geen observaties genoteerd voor deze toets.\nLeeradvies\nCat. Score Leeradvies\nR 3,5 / 5 (70%) —\nT1 1,5 / 5 (30%) Advies T1 laag.\nT2 3,5 / 5 (70%) —\n1 / 2 Natuurkunde Toets één leerling — D'Angelo O'Neill"
+        "text": "Toetsanalyse Natuurkunde Toets één leerling\n3 nat cluster — D'Angelo O'Neill (900001)\nJe hebt 10,5 / 16 punten behaald en had dus 66% goed. De N-term is N=1. Je cijfer is een \n6,9\n.\nScoretabel\nVraag\nRTTI\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\nGemiddeld (\n◇\n)\nI1\nR\n3,5 / 5\n3,5\n3,5 / 5 (70%)\nI2\nT1\n1,5 / 5\n1,5\n1,5 / 5 (30%)\nII3\nT2\n3,5 / 5\n3,5\n3,5 / 5 (70%)\nIII4\nI\n0,5 / 1\n0,5\n0,5 / 1 (50%)\nIII5\nT2\nBonus\n1,5 / 2\n1,5\n1,5 / 2 (75%)\nObservaties\nDe docent heeft bij jou geen observaties genoteerd voor deze toets.\nLeeradvies\nCat.\nScore\nLeeradvies\nR\n3,5 / 5 (70%)\n—\nT1\n1,5 / 5 (30%)\nAdvies T1 laag.\nT2\n3,5 / 5 (70%)\n—\n1 / 2\nNatuurkunde Toets één leerling — D'Angelo O'Neill"
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "schema\nUitleg RTTI-categorieën\nAfk. Categorie Beschrijving\nR Reproductie Uitleg R.\nT1 Training Uitleg T1.\nT2 Transfer Uitleg T2.\nI Inzicht Uitleg I.\nVerdeling RTTI deze toets\nR (31%)\nT1 (31%)\nT2 (31%)\nI (6%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n70%\nR\n30%\nT1\n70%\nT2\n50%\nI\n2 / 2 Natuurkunde Toets één leerling — D'Angelo O'Neill"
+        "text": "Uitleg RTTI-categorieën\nAfk.\nCategorie\nBeschrijving\nR\nReproductie\nUitleg R.\nT1\nTraining\nUitleg T1.\nT2\nTransfer\nUitleg T2.\nI\nInzicht\nUitleg I.\nVerdeling RTTI deze toets\nR (31%)\nT1 (31%)\nT2 (31%)\nI (6%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n70%\nR\n30%\nT1\n70%\nT2\n50%\nI\n2 / 2\nNatuurkunde Toets één leerling — D'Angelo O'Neill"
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "4dd2130cfcc2d4f0051ac2ba71834c690cb0e641a7417647e321bb41b262eea1",
-      "bytes": 20795
+      "sha256": "c00cb45f77fe39a91ff408e5cfe4280157b077498aba9d89ff62132f167c02ae",
+      "bytes": 21508
     },
     {
       "file": "p2.png",
       "sha256": "014a0825952c03787eac28553f55abbf70134bef003100e37f0e69f09f18479c",
       "bytes": 20712
     }
-  ]
+  ],
+  "port": {
+    "blessed": "step 17: Maatwerk output after B-06, B-07, F-13, T4, T6, T7, T8, T10, T25 (decimal comma, half points, larger dots, wider leeradvies score, footer page total, lang nl)"
+  }
 }

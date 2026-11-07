@@ -3,6 +3,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MockApi } from '../../src/bridge/mock/mock-api';
 import {
+  buildLeeradviesRows,
   defaultTabData,
   fmtNum,
   getScoreBracket,
@@ -127,6 +128,33 @@ describe('T27: the $ guard no longer breaks the rapport', () => {
 describe('T26: a non-numeric score does not break the rapport', () => {
   it('scoreDotColor(NaN) is grey, not #NaNNaNNaN', () => {
     expect(scoreDotColor(NaN, 4)).toBe('#b0b8c1');
+  });
+});
+
+describe('T10: an advice file without grenswaarden does not break the rapport', () => {
+  const vraag = (rtti: string, score: number, max: number) => ({
+    label: '1',
+    rtti,
+    kind: 'normal',
+    rtti_color: '',
+    score,
+    max,
+    class_avg: 0,
+    class_pct: 0,
+    dot_color: '',
+  });
+  it('uses the default 40/70 limits for a missing category or a file without the field', () => {
+    const advies = defaultTabData();
+    advies.leeradvies.R.laag = 'Laag.';
+    advies.leeradvies.T1.hoog = 'Hoog.';
+    const vragen = [vraag('R', 1, 5), vraag('T1', 4, 5)];
+    for (const grenswaarden of [undefined, {}]) {
+      const data = { ...advies, grenswaarden } as unknown as Parameters<
+        typeof buildLeeradviesRows
+      >[1];
+      const rows = buildLeeradviesRows(vragen, data, []);
+      expect(rows.map((r) => r.advies)).toEqual(['Laag.', 'Hoog.']);
+    }
   });
 });
 

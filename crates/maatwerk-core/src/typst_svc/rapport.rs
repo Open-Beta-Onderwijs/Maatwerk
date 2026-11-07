@@ -3,7 +3,7 @@
 //! The rapport (path A of `typst-contract.md`): all students of one toets in one PDF.
 //!
 //! The World holds `/__maatwerk/main.typ` (entry), `/__maatwerk/rapport.typ` (template) and
-//! `/__maatwerk/data.json` (this request), and mounts only `/data/fotos` (the watermark).
+//! `/__maatwerk/data.json` (this request), and mounts only `/data/fotos` (the watermark, drawn only when it exists).
 
 use std::sync::Arc;
 
@@ -25,6 +25,17 @@ pub struct RapportData {
     pub students: serde_json::Value,
 }
 
+/// The school's watermark, relative to the data folder (`/data/fotos/...` in the template).
+const WATERMARK: &str = "fotos/school-watermerk.svg";
+
+/// What `rapport-main.typ` reads from `data.json`.
+#[derive(Serialize)]
+struct Payload<'a> {
+    #[serde(flatten)]
+    data: &'a RapportData,
+    watermark: bool,
+}
+
 /// The sandboxed World for one rapport.
 pub fn rapport_world(
     fonts: Arc<FontStore>,
@@ -32,7 +43,12 @@ pub fn rapport_world(
     data_dir: &DataDir,
     now: OffsetDateTime,
 ) -> MaatwerkWorld {
-    let json = serde_json::to_vec(data).expect("JSON values always serialise");
+    // T4: the template draws the watermark only when the school has one (the reference failed
+    // without it). Looked up as the World does, so `Fotos/` from a Windows folder counts (T32).
+    let watermark = super::world::find_ignoring_case(data_dir.root(), WATERMARK.split('/'))
+        .is_some_and(|p| p.is_file());
+    let json =
+        serde_json::to_vec(&Payload { data, watermark }).expect("JSON values always serialise");
     let file = |name: &str| format!("/{INTERNAL_DIR}/{name}");
     MaatwerkWorld::new(
         fonts,

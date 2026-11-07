@@ -515,6 +515,7 @@ Paths in this section are relative to `_reference/renderer/`.
 - `rtti_export.typ:32` `image("/data/fotos/school-watermerk.svg")`.
 - Evidence: without the file, `error: file not found (searched at \\?\C:\…\data\fotos\school-watermerk.svg)` and exit 1 (verified). Uploading the watermark is optional in the UI (`screens/school.js`).
 - Why it matters: a school without a watermark cannot generate rapports at all.
+- **Fixed (step 17):** Maatwerk draws the watermark only when `fotos/school-watermerk.svg` exists (looked up ignoring case, as the World does); without it the rapport has no watermark.
 
 ### T5. `toTypst` turns `{}` into `()`, an array rather than a dictionary; keys are emitted raw
 
@@ -527,18 +528,21 @@ Paths in this section are relative to `_reference/renderer/`.
 - `main.js:561`; `rtti_export.typ:651` (`#student.score / #student.max_score`), `:136` (`#q.score` in the dot).
 - Evidence: the rapport text reads "Je hebt 7.5 / 12 punten" (verified), against the app-wide comma convention. JS `0.1+0.2`-style sums would print `0.30000000000000004`. NaN/Infinity silently become `0`, and `1e21` becomes `1e+21`.
 - Why it matters: parity requires reproducing these exact strings, not "fixing" them to commas.
+- **Fixed in the rapport (step 17):** numbers on the rapport use a decimal comma, at most two decimals and no `.0` (`_num` in `rapport.typ`): "Je hebt 10,5 / 16 punten", "1,5" in the dot.
 
 ### T7. Fractional question scores are truncated in the scoretabel
 
 - `rtti_export.typ:191` `str(int(q.score))`.
 - Evidence: Typst `int(1.5)` = 1 (verified: `#str(int(1.5))` → `1`). A half point shows as "1 / 3", while the dot inside the track shows `1.5`.
 - Why it matters: this is visible wrong data, and it is part of the spec output.
+- **Fixed (step 17):** the scoretabel shows `1,5 / 3`.
 
 ### T8. The rapport footer always says "/ 2"
 
 - `rtti_export.typ:41` `place(left, [#pg / 2])`.
 - Evidence: the total is hard-coded. A student whose first section overflows gets 3+ pages labelled `3 / 2`.
 - Why it matters: this is spec behaviour that golden tests must expect.
+- **Fixed (step 17):** the footer shows the student's own page count, rounded up to even because of the duplex padding (F-13): `3 / 4`.
 
 ### T9. Histogram and ranking: the comments, thresholds and texts disagree
 
@@ -551,6 +555,7 @@ Paths in this section are relative to `_reference/renderer/`.
 - `rtti_export.typ:651` divides by `student.max_score`. `:162` runs `range(0, global_max + 1)` with `global_max` from `rapport.js:242-244` = max `max_points`, including bonus/diag.
 - Evidence (code reading): `max_score == 0` (only bonus/diag questions) causes a division-by-zero compile error. A fractional `max_points` (e.g. 1.5) makes `range` fail on a float. `rapport.js:151` reads `adviesData.grenswaarden[cat]` without a fallback when a saved file lacks `grenswaarden`.
 - Why it matters: one bad exam config makes the rapport fail for the whole class.
+- **Fixed (step 17):** `max_score == 0` leaves out "en had dus …% goed"; the scoretabel scale runs to the largest maximum rounded up (at least 1); a missing `grenswaarden` uses the default 40/70 limits (`buildLeeradviesRows`).
 
 ### T11. Teacher markup is `eval`ed with only a `$`-count guard; `uitleg_rtti` has no guard at all
 
@@ -636,6 +641,7 @@ Paths in this section are relative to `_reference/renderer/`.
 - `rtti_export.typ:46` against `lib.typ:39`.
 - Evidence: the rapport uses English hyphenation and smart-quote rules, and is not justified. Any figure or reference supplements in the rapport would read "Figure".
 - Why it matters: parity, so do not "fix" it to nl.
+- **Fixed (step 17, ROADMAP 4.6):** the rapport sets `lang: "nl"` like the opdrachten. The text is not justified, so nothing is hyphenated; quotes follow Dutch rules.
 
 ### T26. One invalid typed score makes the whole rapport fail
 
