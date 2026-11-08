@@ -145,8 +145,8 @@
   "png": [
     {
       "file": "p1.png",
-      "sha256": "c00cb45f77fe39a91ff408e5cfe4280157b077498aba9d89ff62132f167c02ae",
-      "bytes": 21508
+      "sha256": "25f042fe404b7bdbb85d709a075b0db01e9bd6eacb8c5bd911e505d6f868b4de",
+      "bytes": 21518
     },
     {
       "file": "p2.png",
@@ -155,6 +155,6 @@
     }
   ],
   "port": {
-    "blessed": "step 17: Maatwerk output after B-06, B-07, F-13, T4, T6, T7, T8, T10, T25 (decimal comma, half points, larger dots, wider leeradvies score, footer page total, lang nl)"
+    "blessed": "step 17: leeradvies score column 3 cm -> 2,5 cm (user 2026-11-08)"
   }
 }

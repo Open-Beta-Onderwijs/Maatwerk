@@ -2606,8 +2606,8 @@
   "png": [
     {
       "file": "p01.png",
-      "sha256": "a3c6427fe829e6d5f0af5a7885d38e9b1a40289e99a169cd52d1d9b0afba7ae7",
-      "bytes": 35273
+      "sha256": "92b37081e869a0f158ec5c353a384937819246178ef46a4a129625af6e1ced84",
+      "bytes": 35277
     },
     {
       "file": "p02.png",
@@ -2616,8 +2616,8 @@
     },
     {
       "file": "p03.png",
-      "sha256": "9758918425d7c6457da9159357c3d64c245a66a5d8152396abad36cf2bc2285b",
-      "bytes": 34605
+      "sha256": "029c59b108b3130ea3366797183086d5ff1c3781d3ad202fea99939740185175",
+      "bytes": 34602
     },
     {
       "file": "p04.png",
@@ -2626,8 +2626,8 @@
     },
     {
       "file": "p05.png",
-      "sha256": "7055e953dc3454dfb28492f46a2ccc92d526197695f904af6348a2e0af3cf645",
-      "bytes": 31988
+      "sha256": "b07cd816bebeaf26a1a5bcf43171cf9c95edcb60cacb8b0adecb806f83788bda",
+      "bytes": 32003
     },
     {
       "file": "p06.png",
@@ -2636,8 +2636,8 @@
     },
     {
       "file": "p07.png",
-      "sha256": "74c17840b65a8128b851dc5a40650cdd0ccf802d5c8432b87b45d35a50e1abc1",
-      "bytes": 34128
+      "sha256": "14fa403e8630c286b9f2fa7d13b665b1994d90d6f990976ca778c505194c34c0",
+      "bytes": 34138
     },
     {
       "file": "p08.png",
@@ -2646,8 +2646,8 @@
     },
     {
       "file": "p09.png",
-      "sha256": "b26fffbbf577f42b7acd322fd0d40f4b9c3dfddc6307cace8d832e9a31e21257",
-      "bytes": 35897
+      "sha256": "d81adddd4d6ef540eb06c7e70636b5d201b23a95f5ce8031ef415ca78c7e9225",
+      "bytes": 35888
     },
     {
       "file": "p10.png",
@@ -2656,8 +2656,8 @@
     },
     {
       "file": "p11.png",
-      "sha256": "e26d42dc8d251db82d1bb8ad10d6bd4e7b51f9e45c9313953f009bb4828cbf0b",
-      "bytes": 35033
+      "sha256": "0766549016f94cd09841554ae96a252ae72b088f3d93e5ae7698b0ca804710b1",
+      "bytes": 35050
     },
     {
       "file": "p12.png",
@@ -2666,8 +2666,8 @@
     },
     {
       "file": "p13.png",
-      "sha256": "6f6020de4f9ba00e3238981a638cd8d0f41e9f2cf73b411a32906c19890ba512",
-      "bytes": 32569
+      "sha256": "62c9af640004da28ec8fd4ac9e85834b95283ce31991883fcebbdffd6e065d82",
+      "bytes": 32568
     },
     {
       "file": "p14.png",
@@ -2676,8 +2676,8 @@
     },
     {
       "file": "p15.png",
-      "sha256": "1fbdea440a989b908b4fb35af8ff54146200b11bed057d0ad64f8fa1011c1d23",
-      "bytes": 33558
+      "sha256": "bea4a3374ee3e06265344022083a2b0f483dfabb713b8aef7b21f3d6a646cac1",
+      "bytes": 33553
     },
     {
       "file": "p16.png",
@@ -2686,8 +2686,8 @@
     },
     {
       "file": "p17.png",
-      "sha256": "31a37ce344fcf6a020fd95cdc52abaf8f92567e1e4f2e2da26bdad1a8af39015",
-      "bytes": 35238
+      "sha256": "0431b31ab435d662c313e92999e755948ab5b90c761255bcdb0c4ed05af4d0b7",
+      "bytes": 35261
     },
     {
       "file": "p18.png",
@@ -2696,8 +2696,8 @@
     },
     {
       "file": "p19.png",
-      "sha256": "bac8bb7a53c683564cfce64acf19e5dc94159eb136330b8835312c986cb1fa1d",
-      "bytes": 37620
+      "sha256": "136907b47197c98455bc512a41ff515639949c60525bfe9a48b8a2917bc5ba7a",
+      "bytes": 37631
     },
     {
       "file": "p20.png",
@@ -2706,8 +2706,8 @@
     },
     {
       "file": "p21.png",
-      "sha256": "35edcf4f4ed55cddbf6fbef0e79e32c153e3a317325e4ad57e730c037af2c2e7",
-      "bytes": 33113
+      "sha256": "d7748e6409cfe660667f13a4f467380185d45f66bb4a1c9a195998c79aceaa92",
+      "bytes": 33134
     },
     {
       "file": "p22.png",
@@ -2716,6 +2716,6 @@
     }
   ],
   "port": {
-    "blessed": "step 17: Maatwerk output after B-06, B-07, F-13, T4, T6, T7, T8, T10, T25 (decimal comma, half points, larger dots, wider leeradvies score, footer page total, lang nl)"
+    "blessed": "step 17: leeradvies score column 3 cm -> 2,5 cm (user 2026-11-08)"
   }
 }
