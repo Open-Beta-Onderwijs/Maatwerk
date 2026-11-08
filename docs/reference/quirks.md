@@ -1017,3 +1017,16 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   deleted group stays on screen until a restart (the file is gone).
 - Found in the Step 6 manual test (`M-GRP-1`). Display only, no data change: fixed (both caches,
   as `upsertGroup` already does). Test: quirks.spec "M-GRP-1".
+
+## Fixed in step 19 (grade rules in the core)
+
+`docs/phase-2/step-19-grade-rules.md` section 6 has the user's decisions; the code is
+`crates/maatwerk-grades`. Fixed there: B1 (decision 4), B2 (5), B3 (kept on purpose, 4), B4 and U5
+(12), B5 (3), B6, B7 (2), B8 (3), B10 (4, 6), B11 (15; invalid values too, 5), B12 (15), B13 (8),
+B14 (17), B15 (7), B16 (12), B19, B31 (17), B28 (18), B29 (1: the min/max form, identical for n 0 to
+3 on 453,840 combinations), T9 (16). New, found in step 19: an exact half such as 8,65 could be
+computed just below and round down (3).
+
+Later steps: B17, B18, B20, B23, B30. Checked, not changed: **D4** (`locked` is still not retried),
+**D16** (`setExamNTerm` still bumps `rev`) and **D17** (`upsertExam` still merges over the cache).
+They concern saving, not numbers: nothing is lost, the teacher sees a conflict or an error.

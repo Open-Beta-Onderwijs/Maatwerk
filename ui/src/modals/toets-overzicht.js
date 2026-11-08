@@ -18,6 +18,7 @@ import {
   stats,
   studentGroup,
 } from '../domain/statistics';
+import { round0 } from '../domain/core';
 import { chartInk } from '../theme';
 import { gradeGroupIdx, GRADE_GROUP_LABELS, GRADE_GROUP_MIDPOINTS } from '../utils/grades';
 import {
@@ -768,7 +769,7 @@ export async function openExamOverviewModal(
     function initVraaganalyse() {
       if (!hasQStats) return;
       const qPcts = qStats.map((s) =>
-        s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
+        s.totalMax > 0 ? round0((s.totalScored / s.totalMax) * 100) : null,
       );
       const allCanvas = el.querySelector('#chart-q-all');
       if (allCanvas)
@@ -785,7 +786,7 @@ export async function openExamOverviewModal(
                 datasets: groupEntries.map((entry, i) => ({
                   label: entry.group.name,
                   data: entry.qStats.map((s) =>
-                    s.totalMax > 0 ? Math.round((s.totalScored / s.totalMax) * 100) : null,
+                    s.totalMax > 0 ? round0((s.totalScored / s.totalMax) * 100) : null,
                   ),
                   backgroundColor: GROUP_PALETTE[i % GROUP_PALETTE.length],
                   borderRadius: 2,
@@ -870,7 +871,7 @@ export async function openExamOverviewModal(
                 label,
                 data: RTTI_CATS.map((_, ci) => {
                   const { scored, max } = rttiAccum[gi][ci];
-                  return max > 0 ? Math.round((scored / max) * 100) : null;
+                  return max > 0 ? round0((scored / max) * 100) : null;
                 }),
                 backgroundColor:
                   gi === 0 ? GRADE_BAR.deepFail : gradeBarColor(GRADE_GROUP_MIDPOINTS[gi]),

@@ -7,6 +7,8 @@
 // student_data : array of (
 //   name, student_nr, group, score, max_score, grade, grade_num (float or none),
 //   grade_overridden (bool: grade overwritten by the teacher),
+//   grade_only (bool: an overwritten grade without scores: no question table or RTTI charts),
+//   ranking ("top10", "top20" or none), rtti_points (R, T1, T2, I: (scored, max)),
 //   vragen: array of (
 //     label, rtti, rtti_color, score (or none), max,
 //     class_avg, class_pct, dot_color
@@ -321,7 +323,7 @@
     [*Cat.*], [*Score*], [*Leeradvies*],
 
     ..rows.map(r => (
-      if r.cat == "R" or r.cat == "T1" or r.cat == "T2" {
+      if r.cat == "R" or r.cat == "T1" or r.cat == "T2" or r.cat == "I" {
         text(9pt)[#r.cat]
       } else {
         text(12pt)[#r.cat]
@@ -368,25 +370,16 @@
 
 // Aggregate scored and max points per RTTI category from the vragen array.
 // Returns an array of 4 tuples: (cat_label, color, fill, scored_pts, max_pts)
-#let rtti_summary(vragen) = {
-  let r_s = 0.0;  let r_m = 0.0
-  let t1_s = 0.0; let t1_m = 0.0
-  let t2_s = 0.0; let t2_m = 0.0
-  let i_s = 0.0;  let i_m = 0.0
-  for q in vragen {
-    if q.kind != "normal" { continue }
-    let sc = if q.score == none { 0.0 } else { float(q.score) }
-    let mx = float(q.max)
-    if q.rtti == "R"  { r_s  += sc; r_m  += mx }
-    if q.rtti == "T1" { t1_s += sc; t1_m += mx }
-    if q.rtti == "T2" { t2_s += sc; t2_m += mx }
-    if q.rtti == "I"  { i_s  += sc; i_m  += mx }
+#let rtti_summary(points) = {
+  let row(cat, color, fill) = {
+    let p = points.at(cat)
+    (cat, rgb(color), fill, float(p.scored), float(p.max))
   }
   (
-    ("R",  rgb("#5cb85c"), FILL_R,  r_s,  r_m),
-    ("T1", rgb("#5bc0de"), FILL_T1, t1_s, t1_m),
-    ("T2", rgb("#f0ad4e"), FILL_T2, t2_s, t2_m),
-    ("I",  rgb("#d9534f"), FILL_I,  i_s,  i_m),
+    row("R", "#5cb85c", FILL_R),
+    row("T1", "#5bc0de", FILL_T1),
+    row("T2", "#f0ad4e", FILL_T2),
+    row("I", "#d9534f", FILL_I),
   )
 }
 
@@ -540,12 +533,12 @@
 
 // ── Grade histogram ────────────────────────────────────────────────────────────
 // Shows a 12-bin histogram of all student grades for the exam, below the RTTI
-// charts on page 2. Skipped entirely when fewer than 3 grades are available.
+// charts on page 2. Skipped entirely when fewer than 10 grades are available.
 // The bin containing the current student's grade is highlighted in blue
 // crosshatch (only when grade ≥ 5,5). A congratulatory ranking message is
 // appended when the student falls in the top-third or top-two-thirds.
 
-#let grade_histogram(student_data, current_grade_num) = {
+#let grade_histogram(student_data, current_grade_num, ranking) = {
   let all_grades = student_data.map(s => s.grade_num).filter(g => g != none)
   if all_grades.len() < 10 { return }
 
@@ -672,19 +665,13 @@
   })
 
   // ── Ranking message ─────────────────────────────────────────────────────────
-  if current_grade_num != none {
-    let sorted_desc = all_grades.sorted().rev()
-    let n = sorted_desc.len()
-    let idx = sorted_desc.position(g => g == current_grade_num)
-    if idx != none {
-      if float(idx) < (float(n) / 10.0) - 0.99 {
-        v(4pt)
-        text(9pt)[Gefeliciteerd! Je resultaat hoort bij de beste 33% van de toetsresultaten! \u{1F451}]
-      } else if float(idx) < (float(n) * 2.0 / 10.0) - 0.99 {
-        v(4pt)
-        text(9pt)[Gefeliciteerd! Je resultaat hoort bij de beste 67% van de toetsresultaten! \u{1F948}]
-      }
-    }
+  // Who gets which line is decided in the core (decision 16).
+  if ranking == "top10" {
+    v(4pt)
+    text(9pt)[Gefeliciteerd! Je resultaat hoort bij de beste 10% van de toetsresultaten! \u{1F451}]
+  } else if ranking == "top20" {
+    v(4pt)
+    text(9pt)[Gefeliciteerd! Je resultaat hoort bij de beste 20% van de toetsresultaten! \u{1F948}]
   }
 }
 
@@ -709,28 +696,32 @@
 
     #v(8pt)
 
-    Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #calc.round(student.score / student.max_score * 100)% goed]. De N-term is N=#_num(exam_info.n_term). Je cijfer is een *#student.grade*.
+    #if student.at("grade_only", default: false) [Je cijfer is een *#student.grade*.] else [Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #calc.round(student.score / student.max_score * 100)% goed]. De N-term is N=#_num(exam_info.n_term). Je cijfer is een *#student.grade*.]
     #if student.at("grade_overridden", default: false) [Dit cijfer is met de hand overschreven door de docent.]
 
     #v(4pt)
     ]
-    lollipop_chart(vragen, exam_info.global_max_points, dots)
-    v(10pt)
+    if not student.at("grade_only", default: false) {
+      lollipop_chart(vragen, exam_info.global_max_points, dots)
+      v(10pt)
+    }
     obs_section(student.observaties)
     v(10pt)
     leeradvies_section(student.leeradvies_rows)
-    pagebreak()
-    rtti_uitleg_section(exam_info.uitleg_rtti)
-    v(18pt)
-    let totals = rtti_summary(vragen)
-    grid(
-      columns: (1fr, 1fr),
-      column-gutter: 0.5cm,
-      rtti_pie(totals),
-      rtti_bar(totals),
-    )
+    if not student.at("grade_only", default: false) {
+      pagebreak()
+      rtti_uitleg_section(exam_info.uitleg_rtti)
+      v(18pt)
+      let totals = rtti_summary(student.rtti_points)
+      grid(
+        columns: (1fr, 1fr),
+        column-gutter: 0.5cm,
+        rtti_pie(totals),
+        rtti_bar(totals),
+      )
+    }
     v(10pt)
-    grade_histogram(student_data, student.grade_num)
+    grade_histogram(student_data, student.grade_num, student.at("ranking", default: none))
     [#metadata(i) <rapport-student-end>]
     // F-13: every student starts on an odd page, so a duplex print gives each student their
     // own sheets: three pages get an empty fourth.

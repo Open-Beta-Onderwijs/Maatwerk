@@ -1063,10 +1063,7 @@ export function createGroupGrid(container, exam, students, gridData, year, obsAr
     if (!student) return;
     const prev = gridData.overrides[row];
     const calc = gridData.gradeInfo[row]?.calculatedGrade ?? null;
-    const next =
-      cijfer === null
-        ? undefined
-        : { cijfer, berekend: calc === null ? null : Math.round(calc * 10) / 10 };
+    const next = cijfer === null ? undefined : { cijfer, berekend: calc };
     const apply = (ov) => {
       gridData.overrides[row] = ov;
       refreshRow(row);

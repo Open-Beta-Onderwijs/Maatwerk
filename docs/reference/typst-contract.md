@@ -151,7 +151,7 @@ Imports (`rtti_export.typ:17-18`): `@preview/cetz:0.3.4` (`canvas`, `draw`) and 
 7. `pagebreak()`.
 8. **Uitleg RTTI-categorieën** (`:455-485`): rows R Reproductie / T1 Training / T2 Transfer / I Inzicht. Empty text gives `—`, otherwise `eval` markup with the same scope.
 9. Grid of two columns: **pie** "Verdeling RTTI deze toets" (share of max points per category, `kind == "normal"` only, start angle 90°, clockwise, legend with `pct%`) and **bar** "Jouw RTTI-scores" (score % per category; a category without points shows a gray bar labelled `NVT`). Fills are `tiling` hatches: R solid `#5cb85c`, T1 cyan with horizontal stripes, T2 orange with diagonal stripes, I red with a crosshatch.
-10. **Histogram** "Verdeling toetscijfers" (`:494-635`), only when **≥ 10** students have `grade_num`. It has 12 bins (`<4,5 … ≤10`), and the student's bin is blue-crosshatched when grade ≥ 5.5. A ranking line `Gefeliciteerd! … beste 33% … 👑` appears when `idx < n/10 - 0.99`, or `… beste 67% … 🥈` when `idx < 2n/10 - 0.99`.
+10. **Histogram** "Verdeling toetscijfers" (`:494-635`), only when **≥ 10** students have `grade_num`. It has 12 bins (`<4,5 … ≤10`), and the student's bin is blue-crosshatched when grade ≥ 5.5. The ranking line comes from the core (`ranking`: `top10` "beste 10%" 👑, `top20` "beste 20%" 🥈, step 19 decision 16; the reference said 33% and 67% for the same students).
 11. `pagebreak()` between students (not after the last one).
 
 Fonts actually embedded in a rapport PDF _(verified)_: SourceSerif4 Regular/Bold/It, STIXTwoMath, **LibertinusSerif-Bold** (Typst's embedded font, used as fallback for `●`/`◇` in the bold table header), and **SegoeUIEmoji** (system, for observatie icons and 👑/🥈).

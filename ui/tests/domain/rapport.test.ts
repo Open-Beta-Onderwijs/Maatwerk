@@ -13,7 +13,7 @@ import {
   scoreDotColor,
   subjectDisplayName,
 } from '../../src/domain/rapport';
-import type { Exam } from '../../src/domain/types';
+import type { Exam, ScoreRecord } from '../../src/domain/types';
 import { compileRapport, loadAdviesData, type RapportStore } from '../../src/services/rapport';
 import { goldenCase, inputOf, loadGolden, run } from '../golden';
 import { openStore, type StoreSession } from '../store-session';
@@ -28,6 +28,21 @@ const YEAR = '2025-2026';
  * category counts 0 points; in the golden that row read "NaN / 5 (NaN%)" and,
  * because NaN compares false, got the "hoog" advice.
  */
+function comparable(output: unknown): unknown {
+  // Numbers the decisions change (4, 5, 15) have their own tests below; the rest stays pinned.
+  const drop = new Set([
+    'class_avg',
+    'class_pct',
+    'leeradvies_rows',
+    'grade_only',
+    'ranking',
+    'rtti_points',
+    'dot_color',
+    'score',
+  ]);
+  return JSON.parse(JSON.stringify(output), (key, value) => (drop.has(key) ? undefined : value));
+}
+
 function withPortFixes(output: unknown): unknown {
   const T1_LAAG =
     '#text(fill: red, weight: "bold")[\\$-teken niet gesloten — controleer de tekst: ] T1 laag \\$a\\$ en \\$b.';
@@ -47,12 +62,15 @@ const expectCase = async (id: string, fn: (input: never) => unknown) => {
 };
 
 describe('rapport golden (domain)', () => {
-  it('getScoreBracket', () =>
-    expectCase(
-      'getScoreBracket',
-      ({ brackets, grenzen }: { brackets: [number, number][]; grenzen: never }) =>
-        brackets.map(([a, b]) => getScoreBracket(a, b, grenzen)),
-    ));
+  it('getScoreBracket', async () => {
+    const c = goldenCase(golden, 'getScoreBracket');
+    const { brackets, grenzen } = inputOf<{ brackets: [number, number][]; grenzen: never }>(c);
+    // Decision 15: from the whole percentage the student reads: 3,99/10 shows 40%, 6,99/10 70%.
+    const decided = [...(c.output as string[])];
+    decided[2] = 'midden';
+    decided[3] = 'hoog';
+    expect(brackets.map(([a, b]) => getScoreBracket(a, b, grenzen))).toEqual(decided);
+  });
 
   it('fmtNum', async () => {
     const c = goldenCase(golden, 'fmtNum');
@@ -138,27 +156,17 @@ describe('T26: a non-numeric score does not break the rapport', () => {
 });
 
 describe('T10: an advice file without grenswaarden does not break the rapport', () => {
-  const vraag = (rtti: string, score: number, max: number) => ({
-    label: '1',
-    rtti,
-    kind: 'normal',
-    rtti_color: '',
-    score,
-    max,
-    class_avg: 0,
-    class_pct: 0,
-    dot_color: '',
-  });
+  const none = { scored: 0, max: 0 };
   it('uses the default 40/70 limits for a missing category or a file without the field', () => {
     const advies = defaultTabData();
     advies.leeradvies.R!.laag = 'Laag.';
     advies.leeradvies.T1!.hoog = 'Hoog.';
-    const vragen = [vraag('R', 1, 5), vraag('T1', 4, 5)];
+    const totals = { R: { scored: 1, max: 5 }, T1: { scored: 4, max: 5 }, T2: none, I: none };
     for (const grenswaarden of [undefined, {}]) {
       const data = { ...advies, grenswaarden } as unknown as Parameters<
         typeof buildLeeradviesRows
       >[1];
-      const rows = buildLeeradviesRows(vragen, data, []);
+      const rows = buildLeeradviesRows(totals, data, []);
       expect(rows.map((r) => r.advies)).toEqual(['Laag.', 'Hoog.']);
     }
   });
@@ -235,9 +243,16 @@ describe('rapport golden (compileRapport on the Store)', () => {
       const { exam } = inputOf<{ exam: string }>(c);
       calls.length = 0;
       const result = await compileRapport(await examById(exam, 'nat'), YEAR, deps());
-      expect(await run(() => ({ result, renderRapportPdf: calls[0] ?? null }))).toEqual(
-        withPortFixes(c.output),
-      );
+      const actual = comparable(await run(() => ({ result, renderRapportPdf: calls[0] ?? null })));
+      // B10, decisions 4 and 6: these two got no rapport in the reference.
+      const added = ['Alleen Ennen', 'Alleen Override'];
+      const rendered = (actual as { renderRapportPdf: { studentData: { name: string }[] } })
+        .renderRapportPdf;
+      if (id === 'compileRapport-exam-jaarlaag-3') {
+        expect(rendered.studentData.map((s) => s.name)).toEqual(expect.arrayContaining(added));
+      }
+      rendered.studentData = rendered.studentData.filter((s) => !added.includes(s.name));
+      expect(actual).toEqual(comparable(withPortFixes(c.output)));
     });
   }
 
@@ -247,7 +262,90 @@ describe('rapport golden (compileRapport on the Store)', () => {
     await session.Store.initSubject!('wi');
     calls.length = 0;
     await compileRapport(await examById(inputOf<{ exam: string }>(c).exam, 'wi'), YEAR, deps());
-    expect(await run(() => calls[0] ?? null)).toEqual(c.output);
+    expect(comparable(await run(() => calls[0] ?? null))).toEqual(comparable(c.output));
+  });
+});
+
+describe('the rapport follows the grade decisions', () => {
+  const exam = {
+    id: 'e',
+    n_term: 1,
+    jaarlaag: '3',
+    questions: [
+      { id: 'q1', max_points: 10, rtti: 'R', section: 'I', number: 1 },
+      { id: 'q2', max_points: 20, rtti: 'I', section: 'I', number: 2 },
+    ],
+  } as unknown as Exam;
+  const student = (id: string, achternaam: string) => ({
+    id,
+    voornaam: 'A',
+    achternaam,
+    stamklas: '3a',
+  });
+
+  async function data(records: Record<string, ScoreRecord>, adviesData = defaultTabData()) {
+    const { buildRapportData } = await import('../../src/domain/rapport');
+    const students = Object.keys(records).map((id) => student(id, `L${id}`));
+    return buildRapportData({
+      exam,
+      students,
+      groups: [],
+      recordOf: (s) => records[s.id],
+      observaties: [],
+      adviesData,
+    }).studentData;
+  }
+
+  it('decision 4: N and invalid are 0 in the class average, empty is left out', async () => {
+    const [one] = await data({
+      '1': { scores: { e: { q1: 8, q2: 10 } } },
+      '2': { scores: { e: { q1: 'N' } } },
+      '3': { scores: { e: { q1: 12 } } },
+    });
+    expect(one!.vragen[0]).toMatchObject({ class_avg: 2.7, class_pct: 27 });
+    expect(one!.vragen[1]).toMatchObject({ class_avg: 10, class_pct: 50 });
+  });
+
+  it('decisions 4 and 6: only N or only an override also gets a rapport (B10)', async () => {
+    const rows = await data({
+      '1': { scores: { e: { q1: 'N', q2: 'N' } } },
+      '2': { overrides: { e: { cijfer: 7.5, berekend: null } } },
+      '3': { scores: { e: {} } },
+    });
+    expect(rows.map((r) => r.student_nr)).toEqual(['1', '2']);
+    expect(rows[0]).toMatchObject({ grade: '1,0', grade_only: false });
+    expect(rows[1]).toMatchObject({ grade: '7,5', grade_overridden: true, grade_only: true });
+    expect(rows[1]!.vragen).toEqual([]);
+  });
+
+  it('decision 15: an I row with its advice when the test has I questions (B11)', async () => {
+    const advies = defaultTabData();
+    advies.leeradvies.I!.midden = 'I midden.';
+    const [one] = await data({ '1': { scores: { e: { q1: 8, q2: 12 } } } }, advies);
+    expect(one!.leeradvies_rows.map((r) => r.cat)).toEqual(['R', 'I']);
+    expect(one!.leeradvies_rows[1]).toEqual({
+      cat: 'I',
+      score_str: '12 / 20 (60%)',
+      advies: 'I midden.',
+    });
+  });
+
+  it('decision 4: an empty question is left out of the advice totals', async () => {
+    const [one] = await data({ '1': { scores: { e: { q1: 8 } } } });
+    expect(one!.leeradvies_rows.map((r) => r.cat)).toEqual(['R']);
+    expect(one!.rtti_points.I).toEqual({ scored: 0, max: 0 });
+  });
+
+  it('decision 16: the ranking line, from 10 grades on', async () => {
+    const records: Record<string, ScoreRecord> = {};
+    for (let i = 0; i < 10; i++) {
+      records[String(i + 1)] = { overrides: { e: { cijfer: 10 - i * 0.5, berekend: null } } };
+    }
+    const lines = (await data(records)).map((r) => r.ranking);
+    expect(lines.filter((l) => l === 'top10')).toHaveLength(1);
+    expect(lines.filter((l) => l === 'top20')).toHaveLength(1);
+    delete records['10'];
+    expect((await data(records)).every((r) => r.ranking === null)).toBe(true);
   });
 });
 
@@ -262,7 +360,7 @@ describe('C8: rapport group lookup compares ids as strings', () => {
     const { studentData } = buildRapportData({
       exam,
       students: [{ id: 7 as unknown as string, voornaam: 'A', achternaam: 'B', stamklas: '3a' }], // v1 number
-      groups: [{ id: 'g', name: '3a nat', student_ids: ['7'] }],
+      groups: [{ id: 'g', name: '3a nat', jaarlaag: '3', student_ids: ['7'] }],
       recordOf: () => ({ scores: { e: { q1: 1 } } }),
       observaties: [],
       adviesData: defaultTabData(),

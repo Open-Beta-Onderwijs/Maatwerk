@@ -40,8 +40,9 @@ function decided(output: unknown): unknown {
 /** Without the points per category, which the reference did not return. */
 function comparable(result: unknown): unknown {
   if (result === null) return null;
-  const { rttiPoints: _points, ...rest } = result as { rttiPoints: unknown };
-  return rest;
+  const copy = { ...(result as { rttiPoints?: unknown }) };
+  delete copy.rttiPoints;
+  return copy;
 }
 
 describe('grades golden', () => {

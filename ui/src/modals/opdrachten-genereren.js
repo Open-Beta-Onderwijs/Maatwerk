@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { round1 } from '../domain/core';
 import {
   openModal,
   closeModal,
@@ -464,7 +465,7 @@ function initModal(el, state, year) {
           t.value = fmtOnder(card.onder);
           break;
         }
-        card.onder = Math.round(n * 10) / 10;
+        card.onder = round1(n);
         t.value = fmtOnder(card.onder);
         t.blur(); // lets the refresh re-render the card
         recompute(el, state, year);

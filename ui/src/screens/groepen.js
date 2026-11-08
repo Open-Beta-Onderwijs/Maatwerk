@@ -210,20 +210,6 @@ async function calcGroupGradeStats(group, year) {
   );
   if (exams.length === 0) return null;
 
-  const resitMap = {};
-  exams
-    .filter((e) => e.parent_id)
-    .forEach((e) => {
-      (resitMap[e.parent_id] ??= []).push(e);
-    });
-  const examFamilies = exams
-    .filter((e) => !e.parent_id)
-    .map((e) => ({
-      original: e,
-      resits: (resitMap[e.id] ?? []).sort((a, b) => (a.attempt ?? 1) - (b.attempt ?? 1)),
-    }));
-  if (examFamilies.length === 0) return null;
-
   const scoreMap = {};
   await Promise.all(
     students.map(async (s) => {

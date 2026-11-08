@@ -403,9 +403,7 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                 return;
               }
               const labels = filtered.map((r) => examLabel(r.exam));
-              const gradeData = filtered.map((r) =>
-                r.res.grade !== null ? Math.round(r.res.grade * 10) / 10 : null,
-              );
+              const gradeData = filtered.map((r) => r.res.grade);
               const barColors = filtered.map((r) => examTypeColor(r.exam));
               const yGroups = [];
               filtered.forEach((r, i) => {
@@ -507,9 +505,7 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                 }
                 const canvas = wrap.querySelector('canvas');
                 const labels = filtered.map((r) => examLabel(r.exam));
-                const studentGrades = filtered.map((r) =>
-                  r.res.grade !== null ? Math.round(r.res.grade * 10) / 10 : null,
-                );
+                const studentGrades = filtered.map((r) => r.res.grade);
                 const studentBarColors = filtered.map((r) => examTypeColor(r.exam));
                 const examAvgs = [],
                   examSds = [];

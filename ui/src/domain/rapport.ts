@@ -4,12 +4,14 @@
 // section 8, typst-contract.md section 2). Ported from modals/rapport.js;
 // pinned by tests/golden/logic/rapport.json, except the quirks fixed in the
 // port: T26 (non-numeric score), T27 (`$` guard) and B9 (wiskunde advice file).
+// The numbers come from the core (crates/maatwerk-grades, decisions 4, 5, 6, 15, 16, 17).
 
-import { formatCompact, formatGrade } from './format';
-import { calcResults, qKind } from './grades';
+import { round0 } from './core';
+import { formatCompact, formatGrade, formatNumber } from './format';
+import { calcResults, qKind, type RttiCategory, type RttiPoints } from './grades';
+import { adviceBracket, classQuestion, ranking, studentGroup } from './statistics';
 import { fullName, jaarlaagFromStamklas } from './ids';
 import {
-  sameId,
   type Exam,
   type Group,
   type Observatie,
@@ -81,24 +83,10 @@ export function assembleVragen(
   return exam.questions.map((q) => {
     const raw = questionScores?.[q.id];
     const num = isNotEntered(raw) ? NaN : Number(raw);
-    // T26: a score that is not a number counts as not entered: no points and a
-    // grey dot, like calcResults (BR 3.1). The reference produced NaN here.
-    const score = Number.isNaN(num) ? null : Math.max(0, num);
-
-    // Class average for this question across all participants
-    let sum = 0,
-      count = 0;
-    for (const qs of allQuestionScores) {
-      const v = qs[q.id];
-      if (isNotEntered(v)) continue;
-      const n = Number(v);
-      if (!isNaN(n)) {
-        sum += n;
-        count++;
-      }
-    }
-    const classAvg = count > 0 ? parseFloat((sum / count).toFixed(1)) : 0;
-    const classPct = q.max_points > 0 ? Math.round((classAvg / q.max_points) * 100) : 0;
+    // N, empty and invalid (text, negative, over the maximum) earn nothing: shown as "N / max"
+    // with a grey dot (T26, decisions 4 and 5).
+    const score = num >= 0 && num <= q.max_points ? num : null;
+    const { classAvg, classPct } = classQuestion(q, allQuestionScores);
 
     const label = q.section ? `${q.section}${q.number}` : String(q.number);
 
@@ -136,25 +124,6 @@ export function subjectDisplayName<S extends string | undefined>(subject: S): st
   return WI_SUB_DISPLAY[subject] ?? SUBJECT_DISPLAY[subject] ?? subject;
 }
 
-type Totals = Record<'R' | 'T1' | 'T2', { scored: number; max: number }>;
-
-/** Points per category R, T1, T2 over the normal questions (no I row, quirk B11). */
-export function calcCategoryTotals(vragen: Vraag[]): Totals {
-  const totals: Totals = {
-    R: { scored: 0, max: 0 },
-    T1: { scored: 0, max: 0 },
-    T2: { scored: 0, max: 0 },
-  };
-  for (const q of vragen) {
-    if (q.kind !== 'normal') continue;
-    const t = totals[q.rtti as keyof Totals];
-    if (!t) continue;
-    t.scored += q.score ?? 0;
-    t.max += q.max;
-  }
-  return totals;
-}
-
 export interface Grenzen {
   laag_midden: number;
   midden_hoog: number;
@@ -165,10 +134,7 @@ export function getScoreBracket(
   max: number,
   grenzen: Grenzen,
 ): 'laag' | 'midden' | 'hoog' {
-  const pct = (scored / max) * 100;
-  if (pct < grenzen.laag_midden) return 'laag';
-  if (pct < grenzen.midden_hoog) return 'midden';
-  return 'hoog';
+  return adviceBracket(scored, max, grenzen);
 }
 
 export function fmtNum(n: number): string {
@@ -229,20 +195,22 @@ export interface LeeradviesRow {
   advies: string;
 }
 
+/** The categories with an advice row: R, T1, T2 and I (B11, decision 15). */
+const ADVICE_CATS: RttiCategory[] = ['R', 'T1', 'T2', 'I'];
+
 export function buildLeeradviesRows(
-  vragen: Vraag[],
+  totals: RttiPoints,
   adviesData: AdviesData | null,
   observaties: RapportObservatie[],
 ): LeeradviesRow[] {
   const rows: LeeradviesRow[] = [];
-  const totals = calcCategoryTotals(vragen);
 
-  for (const cat of ['R', 'T1', 'T2'] as const) {
+  for (const cat of ADVICE_CATS) {
     const { scored, max } = totals[cat];
     if (max === 0) continue;
 
-    const pct = Math.round((scored / max) * 100);
-    const score_str = `${fmtNum(scored)} / ${max} (${pct}%)`;
+    const pct = round0((scored / max) * 100);
+    const score_str = `${fmtNum(scored)} / ${formatNumber(max)} (${pct}%)`;
 
     let advies = '—';
     if (adviesData) {
@@ -324,8 +292,8 @@ export interface RapportInput {
 
 /**
  * The students and exam info passed to renderRapportPdf (typst-contract.md
- * 2.1). Only students of the exam's jaarlaag (by stamklas) with at least one
- * entered score are included (quirk B10), sorted by group, then achternaam.
+ * 2.1). Students of the exam's jaarlaag (by stamklas) with any entry, `N` included, or an
+ * overwritten grade (B10, decisions 4 and 6), sorted by group, then achternaam.
  */
 export function buildRapportData({
   exam,
@@ -343,16 +311,17 @@ export function buildRapportData({
   const entries = inJaarlaag
     .map((s) => {
       const rec = recordOf(s);
-      const questionScores = rec?.scores?.[examId];
-      if (!questionScores) return null;
-      const hasEntry = Object.values(questionScores).some((v) => v !== null && v !== undefined);
-      if (!hasEntry) return null;
-      const { scored, normalMax, grade, overridden } = calcResults(
+      const questionScores = rec?.scores?.[examId] ?? {};
+      const override = rec?.overrides?.[examId];
+      const hasScores = Object.keys(questionScores).length > 0;
+      if (!hasScores && typeof override?.cijfer !== 'number') return null;
+      const { scored, normalMax, grade, overridden, rttiPoints } = calcResults(
         exam,
         questionScores,
-        rec?.overrides?.[examId],
+        override,
       );
-      const group = groups.find((g) => g.student_ids.some((id) => sameId(id, s.id)));
+      const groupId = studentGroup(s.id, exam, groups);
+      const group = groups.find((g) => g.id === groupId);
       const obsIds = rec?.observations?.[examId] ?? [];
       const obs = obsIds
         .map((id) => observaties.find((o) => o.id === id))
@@ -370,6 +339,8 @@ export function buildRapportData({
         normalMax,
         grade,
         overridden,
+        rttiPoints,
+        hasScores,
         questionScores,
         observaties: obs,
       };
@@ -382,7 +353,8 @@ export function buildRapportData({
     return (a.student.achternaam ?? '').localeCompare(b.student.achternaam ?? '', 'nl');
   });
 
-  const allQuestionScores = entries.map((e) => e.questionScores);
+  const allQuestionScores = entries.filter((e) => e.hasScores).map((e) => e.questionScores);
+  const allGrades = entries.flatMap((e) => (e.grade === null ? [] : [e.grade]));
   const globalMax = exam?.questions?.length
     ? Math.max(...exam.questions.map((q) => q.max_points))
     : 1;
@@ -396,11 +368,15 @@ export function buildRapportData({
       score: e.scored,
       max_score: e.normalMax,
       grade: formatGrade(e.grade),
-      grade_num: e.grade !== null ? Math.round(e.grade * 10) / 10 : null,
+      grade_num: e.grade,
       grade_overridden: e.overridden,
-      vragen,
+      // An overwritten grade without scores: no question table or RTTI charts (decision 6).
+      grade_only: !e.hasScores,
+      ranking: e.grade === null ? null : ranking(e.grade, allGrades),
+      rtti_points: e.rttiPoints,
+      vragen: e.hasScores ? vragen : [],
       observaties: e.observaties,
-      leeradvies_rows: buildLeeradviesRows(vragen, adviesData, e.observaties),
+      leeradvies_rows: buildLeeradviesRows(e.rttiPoints, adviesData, e.observaties),
     };
   });
 
