@@ -310,8 +310,9 @@
 
   set text(size: 9pt)
   table(
-    // B-06: the score ("12,5 / 20 (63%)") fits on one line; it wrapped at 2 cm.
-    columns: (1cm, 3cm, 1fr),
+    // B-06: the score ("12,5 / 20 (63%)") fits on one line; it wrapped at 2 cm. 2,5 cm (user,
+    // 2026-11-08): up to "99,5 / 99 (100%)" fits; a category of 100+ points wraps.
+    columns: (1cm, 2.5cm, 1fr),
     align:   (center + horizon, left + horizon, left + horizon),
     stroke:  (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none },
     fill:    (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") },
