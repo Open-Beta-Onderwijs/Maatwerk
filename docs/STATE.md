@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-07 (steps 17 and 18 in one session, user request) Branch: `step/18-data-v3`
+Last updated: 2026-11-08 (steps 17 and 18 merged into local `main`, PR open) Branch: `step/18-data-v3`
 (from `step/17-rapport-fixes`, which is from `main` `a62ea7e`)
 Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
 (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
@@ -8,8 +8,13 @@ Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `ma
 
 ## Current step
 
-**Next action:** the user tests the local exe (`target/release/maatwerk.exe`, 0.9.0) on a copy
-of the real data; then merge 17 and 18 into `main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
+**Next action:** CI on the PR `release/v0.9.0` -> `main` (steps 16, 17, 18); the user merges it.
+Then step 19.
+
+**User (2026-11-08):** the migration ran fine on a copy of the real data (local exe 0.9.0).
+Leeradvies score column 3 cm -> 2,5 cm (`16439a2`, goldens re-blessed; scores up to
+"99,5 / 99 (100%)" fit). Steps 17 and 18 merged into local `main`, tagged `step-17`,
+`v0.8.0`, `step-18`, `v0.9.0` (local); pushed as `release/v0.9.0` with a PR.
 
 **User answers (2026-11-07):** golden check 17 approved (padding page with footer and
 watermark is fine). T9 moved to step 19b, T23 to step 30 (PLAN-2, ROADMAP 4.6; renumbered 2026-11-08). F-14:
@@ -31,7 +36,7 @@ reports only the first failure) to step 30 (user 2026-11-07; renumbered 2026-11-
    `watermark`); T6/T7 `_num` (decimal comma, no truncation); T8 footer total = the student's
    own pages (metadata `<rapport-student-end>`); F-13 `pagebreak(to: "odd")` between students,
    the last student padded via its end marker; T10 zero/fractional maxima, missing
-   `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm; B-07
+   `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm (2,5 cm since 2026-11-08); B-07
    dots 5.5 pt when any score or maximum has a fraction. Goldens `rapport-one-student`,
    `rapport-valid` blessed (`MAATWERK_BLESS="<why>" MAATWERK_BLESS_IDS=<ids> cargo test`, new in `tests/support`; case
    field `port.blessed`): page 1 of each student changes, page 2 not. User approved the
