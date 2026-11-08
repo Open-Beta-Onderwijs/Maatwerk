@@ -34,11 +34,22 @@ pub fn year_average(exams: &[Exam], rec: &ScoreRecord) -> Option<f64> {
 pub fn se_average(history: &[HistoryEntry], exams: &[Exam]) -> Option<f64> {
     weighted(resolve_best_attempts(history).into_iter().filter_map(|i| {
         let entry = &history[i];
+        // The parent in the same school year: an id can occur in two years.
         let original = entry
             .exam
             .parent_id
             .as_deref()
-            .and_then(|parent| exams.iter().find(|e| e.id == parent))
+            .and_then(|parent| {
+                let mut parents = exams.iter().filter(|e| e.id == parent);
+                let first = parents.next()?;
+                let year = &entry.exam.academic_year;
+                Some(
+                    std::iter::once(first)
+                        .chain(parents)
+                        .find(|e| &e.academic_year == year)
+                        .unwrap_or(first),
+                )
+            })
             .unwrap_or(&entry.exam);
         original
             .is_pta()

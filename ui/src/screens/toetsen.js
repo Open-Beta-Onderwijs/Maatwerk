@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { clean } from '../domain/core';
 import { gradeBarColor } from '../domain/grade-colors';
 import { mean, stats } from '../domain/statistics';
 import { testBadgeClass } from '../domain/test-type';
@@ -71,9 +72,7 @@ export function renderToetsen() {
 
 export async function computeExamStats(year, exam) {
   const students = Store.getStudentsSync(year);
-  const normalMax = exam.questions
-    .filter((q) => qKind(q) === 'normal')
-    .reduce((s, q) => s + q.max_points, 0);
+  const { normalMax } = Store.calcResults(exam, {});
   const grades = [],
     points = [];
   for (const s of students) {
@@ -233,10 +232,12 @@ export async function renderToetsenList() {
   function rttiLine(e) {
     const cats = ['R', 'T1', 'T2', 'I']
       .map((c) => {
-        const pts = e.questions
-          .filter((q) => qKind(q) === 'normal' && q.rtti === c)
-          .reduce((s, q) => s + q.max_points, 0);
-        return pts > 0 ? `${c}: ${pts}p` : null;
+        const pts = clean(
+          e.questions
+            .filter((q) => qKind(q) === 'normal' && q.rtti === c)
+            .reduce((s, q) => s + q.max_points, 0),
+        );
+        return pts > 0 ? `${c}: ${formatNumber(pts)}p` : null;
       })
       .filter(Boolean)
       .join(' · ');
@@ -244,13 +245,9 @@ export async function renderToetsenList() {
   }
 
   function ptsTotalDisplay(e) {
-    const normalTotal = e.questions
-      .filter((q) => qKind(q) === 'normal')
-      .reduce((s, q) => s + q.max_points, 0);
-    const bonusTotal = e.questions
-      .filter((q) => qKind(q) === 'bonus')
-      .reduce((s, q) => s + q.max_points, 0);
-    return bonusTotal > 0 ? `${normalTotal}p (+${bonusTotal}p bonus)` : `${normalTotal}p`;
+    const { normalMax, bonusMax } = Store.calcResults(e, {});
+    const normal = formatNumber(normalMax);
+    return bonusMax > 0 ? `${normal}p (+${formatNumber(bonusMax)}p bonus)` : `${normal}p`;
   }
 
   function examSummaryLine(e) {

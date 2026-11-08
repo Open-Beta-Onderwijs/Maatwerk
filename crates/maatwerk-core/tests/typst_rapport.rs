@@ -25,16 +25,19 @@ fn case_data(case: &Value) -> RapportData {
     let args = decode(&case["call"]["args"]);
     let or = |v: &Value, default: Value| if v.is_null() { default } else { v.clone() };
     let mut students = or(&args[1], Value::Array(vec![]));
-    with_core_fields(&mut students);
+    let mut exam_info = or(&args[2], serde_json::json!({}));
+    with_core_fields(&mut students, &mut exam_info);
     RapportData {
         students,
-        exam_info: or(&args[2], serde_json::json!({})),
+        exam_info,
     }
 }
 
-/// The reference's data with what the app now adds from the core (decisions 15, 16): the RTTI
-/// points and the ranking line. In this data a question without a score is an `N`: 0 of its max.
-fn with_core_fields(students: &mut Value) {
+/// The reference's data with what the app now adds from the core (decisions 15, 16, 24): every
+/// number the template used to calculate. Here a question without a score is 0 of its max.
+fn with_core_fields(students: &mut Value, exam_info: &mut Value) {
+    use maatwerk_core::grades::rapport::{ranking, rapport_bin, rapport_bins};
+    use maatwerk_core::grades::round0;
     let Some(list) = students.as_array_mut() else {
         return;
     };
@@ -42,28 +45,60 @@ fn with_core_fields(students: &mut Value) {
         .iter()
         .filter_map(|s| s["grade_num"].as_f64())
         .collect();
+    if let Some(info) = exam_info.as_object_mut() {
+        info.insert(
+            "grade_bins".to_owned(),
+            serde_json::json!(rapport_bins(&grades)),
+        );
+    }
     for student in list {
         let Some(fields) = student.as_object_mut() else {
             continue;
         };
-        let mut points = serde_json::json!({
-            "R": {"scored": 0.0, "max": 0.0}, "T1": {"scored": 0.0, "max": 0.0},
-            "T2": {"scored": 0.0, "max": 0.0}, "I": {"scored": 0.0, "max": 0.0},
-        });
+        let mut sums = [
+            ("R", 0.0, 0.0),
+            ("T1", 0.0, 0.0),
+            ("T2", 0.0, 0.0),
+            ("I", 0.0, 0.0),
+        ];
         for q in fields["vragen"].as_array().into_iter().flatten() {
             if q["kind"] != "normal" {
                 continue;
             }
-            if let Some(cat) = q["rtti"].as_str().and_then(|c| points.get_mut(c)) {
-                let scored = cat["scored"].as_f64().unwrap() + q["score"].as_f64().unwrap_or(0.0);
-                let max = cat["max"].as_f64().unwrap() + q["max"].as_f64().unwrap_or(0.0);
-                *cat = serde_json::json!({"scored": scored, "max": max});
+            if let Some(cat) = sums.iter_mut().find(|c| q["rtti"] == c.0) {
+                cat.1 += q["score"].as_f64().unwrap_or(0.0);
+                cat.2 += q["max"].as_f64().unwrap_or(0.0);
             }
         }
-        fields.insert("rtti_points".to_owned(), points);
-        let line = fields["grade_num"]
-            .as_f64()
-            .and_then(|g| maatwerk_core::grades::rapport::ranking(g, &grades));
+        let total: f64 = sums.iter().map(|c| c.2).sum();
+        let mut points = serde_json::Map::new();
+        for (cat, scored, max) in sums {
+            let (pct, share) = if max > 0.0 {
+                (
+                    Some(round0(100.0 * scored / max)),
+                    Some(round0(100.0 * max / total)),
+                )
+            } else {
+                (None, None)
+            };
+            points.insert(
+                cat.to_owned(),
+                serde_json::json!({"scored": scored, "max": max, "pct": pct, "share": share}),
+            );
+        }
+        fields.insert("rtti_points".to_owned(), Value::Object(points));
+        let (score, max) = (fields["score"].as_f64(), fields["max_score"].as_f64());
+        let score_pct = score
+            .zip(max)
+            .filter(|(_, m)| *m > 0.0)
+            .map(|(s, m)| round0(100.0 * s / m));
+        fields.insert("score_pct".to_owned(), serde_json::json!(score_pct));
+        let grade = fields["grade_num"].as_f64();
+        fields.insert(
+            "grade_bin".to_owned(),
+            serde_json::json!(grade.map(rapport_bin)),
+        );
+        let line = grade.and_then(|g| ranking(g, &grades));
         fields.insert("ranking".to_owned(), serde_json::json!(line));
     }
 }
@@ -528,6 +563,17 @@ fn decision_6_an_override_without_scores_shows_only_the_grade() {
     assert!(!text.contains(&squash("punten behaald")), "{text}");
     assert!(!text.contains(&squash("Uitleg RTTI")), "{text}");
     assert_eq!(doc.pages.len() % 2, 0, "each student has whole sheets");
+}
+
+#[test]
+fn review_m2_the_template_prints_the_core_percentage() {
+    let data = one_student(|s| {
+        s.insert("score".into(), 23.into());
+        s.insert("max_score".into(), 40.into());
+        s.insert("score_pct".into(), 58.into());
+    });
+    let doc = compile(&data, true).unwrap().output;
+    assert!(squash(&all_text(&doc)).contains(&squash("had dus 58% goed")));
 }
 
 #[test]

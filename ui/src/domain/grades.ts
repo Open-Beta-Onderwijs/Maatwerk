@@ -6,9 +6,9 @@
 import { coreCall } from './core';
 import type { Exam, Override, Question, QuestionKind, QuestionScores, ScoreRecord } from './types';
 
-/** The kind of a question; absence means 'normal'. */
+/** The kind of a question; absent or unknown means 'normal' (decision 23). */
 export function qKind(q: Pick<Question, 'kind'>): QuestionKind {
-  return q.kind ?? 'normal';
+  return q.kind === 'bonus' || q.kind === 'diag' ? q.kind : 'normal';
 }
 
 /** RTTI percentage per category, or 'NVT' when the category has no points. */

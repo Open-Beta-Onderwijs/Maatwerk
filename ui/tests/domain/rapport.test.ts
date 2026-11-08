@@ -37,6 +37,9 @@ function comparable(output: unknown): unknown {
     'grade_only',
     'ranking',
     'rtti_points',
+    'score_pct',
+    'grade_bin',
+    'grade_bins',
     'dot_color',
     'score',
   ]);
@@ -330,10 +333,19 @@ describe('the rapport follows the grade decisions', () => {
     });
   });
 
-  it('decision 4: an empty question is left out of the advice totals', async () => {
+  it('decision 24: an empty question is 0 of its max on the rapport', async () => {
     const [one] = await data({ '1': { scores: { e: { q1: 8 } } } });
-    expect(one!.leeradvies_rows.map((r) => r.cat)).toEqual(['R']);
-    expect(one!.rtti_points.I).toEqual({ scored: 0, max: 0 });
+    expect(one!.leeradvies_rows.map((r) => [r.cat, r.score_str])).toEqual([
+      ['R', '8 / 10 (80%)'],
+      ['I', '0 / 20 (0%)'],
+    ]);
+    expect(one!.rtti_points.I).toMatchObject({ scored: 0, max: 20, pct: 0 });
+    expect(one!.rtti_points.R).toMatchObject({ share: 33 });
+  });
+
+  it('review M2: the percentage comes from the core, exact half-up', async () => {
+    const [one] = await data({ '1': { scores: { e: { q1: 10, q2: 13 } } } });
+    expect(one).toMatchObject({ score: 23, max_score: 30, score_pct: 77 });
   });
 
   it('decision 16: the ranking line, from 10 grades on', async () => {

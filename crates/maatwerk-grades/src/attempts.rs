@@ -113,11 +113,10 @@ fn compare_history(a: &HistoryEntry, b: &HistoryEntry) -> Ordering {
 /// then volgnummer). A family in which nothing has a grade keeps its earliest attempt, so the
 /// test stays visible in the student's list.
 pub fn resolve_best_attempts(history: &[HistoryEntry]) -> Vec<usize> {
+    // The school year too: an id can occur in two years, and those are different tests.
     let family_key = |e: &HistoryEntry| {
-        e.exam
-            .parent_id
-            .clone()
-            .unwrap_or_else(|| e.exam.id.clone())
+        let id = e.exam.parent_id.as_deref().unwrap_or(&e.exam.id);
+        format!("{}/{id}", e.exam.academic_year.as_deref().unwrap_or(""))
     };
     let mut keys: Vec<String> = Vec::new();
     for entry in history {
@@ -257,6 +256,15 @@ mod tests {
             .map(|i| history[i].exam.id.as_str())
             .collect();
         assert_eq!(ids, ["a-h", "c-h", "b"]);
+    }
+
+    #[test]
+    fn the_same_id_in_two_years_is_two_tests() {
+        let history = vec![
+            entry("x", None, 1, "2024-2025", 1, Some(4.0)),
+            entry("x", None, 1, "2025-2026", 1, Some(8.0)),
+        ];
+        assert_eq!(resolve_best_attempts(&history), vec![0, 1]);
     }
 
     #[test]

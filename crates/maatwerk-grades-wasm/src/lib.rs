@@ -115,7 +115,6 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             let (grade,): (f64,) = parse(args)?;
             json(g::grade_group(grade))
         }
-        "gradeGroupLabels" => json(g::stats::GRADE_GROUP_LABELS),
         "boxStats" => {
             let (values,): (Vec<f64>,) = parse(args)?;
             json(g::box_stats(&values))
@@ -136,6 +135,26 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             let (question, all): (Question, Vec<g::model::QuestionScores>) = parse(args)?;
             let refs: Vec<_> = all.iter().collect();
             json(g::rapport::class_question(&question, &refs))
+        }
+        "classQuestions" => {
+            let (questions, all): (Vec<Question>, Vec<g::model::QuestionScores>) = parse(args)?;
+            let refs: Vec<_> = all.iter().collect();
+            json(g::rapport::class_questions(&questions, &refs))
+        }
+        "rapportTotals" => {
+            let (exam, scores): (Exam, Option<_>) = parse(args)?;
+            json(g::rapport::rapport_totals(
+                &exam,
+                &scores.unwrap_or_default(),
+            ))
+        }
+        "rapportBins" => {
+            let (grades,): (Vec<f64>,) = parse(args)?;
+            json(g::rapport::rapport_bins(&grades))
+        }
+        "rapportBin" => {
+            let (grade,): (f64,) = parse(args)?;
+            json(g::rapport::rapport_bin(grade))
         }
         "adviceBracket" => {
             let (scored, max, limits): (f64, f64, Option<g::rapport::Grenzen>) = parse(args)?;
@@ -240,19 +259,35 @@ mod tests {
             ("statsOfAverages", json!([[5.0, 6.0]])),
             ("histogram", json!([[5.0], 0.5])),
             ("gradeGroup", json!([5.0])),
-            ("gradeGroupLabels", json!([])),
             ("boxStats", json!([[5.0]])),
             ("pooledRtti", json!([history])),
             ("rttiByGradeGroup", json!([attempt])),
             ("questionStats", json!([attempt])),
-            ("classQuestion", json!([question, [{"q1": 8}]])),
+            ("classQuestion", json!([question.clone(), [{"q1": 8}]])),
             ("adviceBracket", json!([5, 10, null])),
+            ("adviceBracket", json!([5, 10, {"laag_midden": "x"}])),
+            ("classQuestions", json!([[question], [{"q1": 8}]])),
+            ("rapportTotals", json!([exam(), {"q1": 8}])),
+            ("rapportBins", json!([[5.0]])),
+            ("rapportBin", json!([5.0])),
             ("ranking", json!([5.0, [5.0]])),
             ("studentGroup", json!(["1", exam(), []])),
             ("trend", json!([[exam()], null])),
         ] {
             run(name, args);
         }
+    }
+
+    #[test]
+    fn damaged_records_still_answer() {
+        // Review M8: these read in the reference, so one value must not stop a screen.
+        let rec = json!({"scores": {"e": 5}, "overrides": {"e": 6.5}});
+        assert_eq!(run("examResults", json!([rec, exam()])), Value::Null);
+        let no_id = json!({"id": "e", "questions": [{"max_points": 2, "rtti": "R"}]});
+        assert_eq!(
+            run("calcResults", json!([no_id, {}, null]))["normalMax"],
+            json!(2.0)
+        );
     }
 
     #[test]

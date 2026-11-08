@@ -17,13 +17,7 @@ import { chartInk, cssToken } from '../theme';
 const kindColor = (kind) => cssToken(testKindToken(kind));
 const examTypeColor = (exam) => kindColor(testKind(exam));
 import { formatGrade, parseDecimalLoose } from '../domain/format';
-import {
-  meanOfAverages,
-  pooledRtti,
-  rttiPercents,
-  seAverage,
-  yearAverage,
-} from '../domain/statistics';
+import { meanOfAverages, pooledRtti, rttiPercents, seAverage } from '../domain/statistics';
 import { computeExamStats } from '../screens/toetsen.js';
 import { leerlingenState } from '../screens/leerlingen.js';
 
@@ -635,9 +629,8 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                 // Student's own weighted averages per year
                 const studentYearAvgs = {};
                 for (const yr of allYears) {
-                  const examsInYear = Store.getExamsSync(yr);
                   const rec = await Store.getStudentScores(studentId, yr);
-                  studentYearAvgs[yr] = yearAverage(examsInYear, rec);
+                  studentYearAvgs[yr] = Store.studentYearAverage(rec, yr);
                 }
                 const allExams = Store.getAllExamsSync();
                 const studentPtaAvg = seAverage(history, allExams);
@@ -654,7 +647,6 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                   const peers = studentsInYear.filter(
                     (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === jl,
                   );
-                  const examsInYear = Store.getExamsSync(yr);
                   const peerAvgs = [];
                   for (const s of peers) {
                     // Use already-computed avg for the current student to avoid double loading
@@ -664,7 +656,7 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                       continue;
                     }
                     const rec = await Store.getStudentScores(s.id, yr);
-                    const avg = yearAverage(examsInYear, rec);
+                    const avg = Store.studentYearAverage(rec, yr);
                     if (avg !== null) peerAvgs.push(avg);
                   }
                   jlYearAvgs[yr] = meanOfAverages(peerAvgs);

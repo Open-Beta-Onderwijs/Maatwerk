@@ -86,8 +86,26 @@ export interface ClassQuestion {
   classPct: number;
 }
 
-export const classQuestion = (question: Question, all: QuestionScores[]): ClassQuestion =>
-  coreCall('classQuestion', question, all);
+/** The class's result per question, in order: one call for the whole rapport (review M7). */
+export const classQuestions = (questions: Question[], all: QuestionScores[]): ClassQuestion[] =>
+  coreCall('classQuestions', questions, all);
+
+export interface RapportCategory {
+  scored: number;
+  max: number;
+  pct: number | null;
+  share: number | null;
+}
+
+/** The rapport's RTTI numbers: an empty question is 0 of its max here (decision 24). */
+export const rapportTotals = (
+  exam: Pick<Exam, 'id' | 'kind' | 'questions'>,
+  scores: QuestionScores,
+): Record<RttiCategory, RapportCategory> => coreCall('rapportTotals', exam, scores);
+
+/** The rapport histogram's 12 counts; null below 10 grades. */
+export const rapportBins = (grades: number[]): number[] | null => coreCall('rapportBins', grades);
+export const rapportBin = (grade: number): number => coreCall('rapportBin', grade);
 
 export const adviceBracket = (
   scored: number,

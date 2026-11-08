@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ICONS } from '../utils/icons.js';
-import { statsOfAverages, yearAverage } from '../domain/statistics';
+import { statsOfAverages } from '../domain/statistics';
 import {
   escHtml,
   SEL,
@@ -204,11 +204,8 @@ async function calcGroupGradeStats(group, year) {
   const students = allStudents.filter((s) => group.student_ids.includes(s.id));
   if (students.length === 0) return null;
 
-  const allExams = await Store.getExams(year, subject);
-  const exams = allExams.filter(
-    (e) => String(e.jaarlaag) === String(group.jaarlaag) && e.volgnummer,
-  );
-  if (exams.length === 0) return null;
+  // All the students' tests of the year, whatever the group's jaarlaag (decision 25).
+  await Store.getExams(year, subject);
 
   const scoreMap = {};
   await Promise.all(
@@ -220,7 +217,9 @@ async function calcGroupGradeStats(group, year) {
 
   // Decision 21: mean, SD and % onvoldoende of the year averages as shown.
   return statsOfAverages(
-    students.map((s) => yearAverage(exams, scoreMap[s.id])).filter((g) => g !== null),
+    students
+      .map((s) => Store.studentYearAverage(scoreMap[s.id], year, subject))
+      .filter((g) => g !== null),
   );
 }
 

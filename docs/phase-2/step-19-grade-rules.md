@@ -180,3 +180,10 @@ Filled in as the user answers (2026-11-08).
     1; Gegevenscontrole lists it; the data is not rewritten.
 23. **An unknown question `kind` in a file:** counts as a normal question; Gegevenscontrole lists
     it; the data is not rewritten.
+24. **Empty on the rapport (found in review, M3):** the advice table and RTTI bars count an empty
+    question as 0 of its max, as the grade on that page does: `8, empty, empty` of 10 each is
+    `8 / 30 (27%)`, laag; an all-empty category is `0 / 30 (0%)`, laag. Grid and overview keep
+    leaving empty out (decision 4); the class average still skips it (decision 15).
+25. **The year's tests (found in review, M4):** every screen and the CLI use all tests of that vak
+    and school year that the student has a grade for, so one student has one year average. The
+    group overview's columns still show only the group's jaarlaag.

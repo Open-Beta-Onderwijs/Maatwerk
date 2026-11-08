@@ -1,13 +1,13 @@
 # State
 
-Last updated: 2026-11-08 (step 19a) Branch: `step/19-domain-core` (from local `main` `2542e41`)
+Last updated: 2026-11-08 (step 19b) Branch: `step/19-domain-core` (from local `main` `2542e41`)
 Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
 (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
 `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Next action:** 19b (below). Also open: the user merges PR #10 `release/v0.9.0` -> `main` (CI green on all jobs, 2026-11-08); step 19 branches from local
+**Next action:** the user: check the before/after table, the rapport pages and the visual diff, and run `maatwerk-cli stats` and the app on a copy of the real data (decision 8 of `PLAN-2.md`). After that OK: update the local visual baselines, CI baselines, merge, tag `step-19`, `v0.10.0`. Also open: the user merges PR #10 `release/v0.9.0` -> `main` (CI green on all jobs, 2026-11-08); step 19 branches from local
 `main`, which equals that PR's head.
 
 ## Step 19 progress (Domain logic, 0.10)
@@ -26,16 +26,12 @@ decisions: `docs/phase-2/step-19-grade-rules.md` section 6. **Never change a num
    `ui/vite/grades-wasm.ts` (cargo build once per Vite run, inlined as a base64 module);
    `ui/src/domain/core.ts` (top-level await, then synchronous `coreCall`, `round1`, ...); CSP
    `'wasm-unsafe-eval'`; wasm target in `rust-toolchain.toml`. Run npm from PowerShell: Vite now
-   runs cargo (Git Bash's `link` breaks build scripts). No screen uses the rules yet.
+   runs cargo (Git Bash's `link` breaks build scripts).
 
-**19b, to do:** switch the screens, rapport and score grid to the core, one area per commit; delete
-the JS copies (`domain/grades.ts`, `attempts.ts`, copies in `groepen.js`, `groep-leerlingen.js`,
-`profiel.js`, `toetsen.js`, `toets-overzicht.js`, `scoregrid.ts`, `isFail`, `gradeGroupIdx`,
-`makeHistBins`, `boxStats`); `formatGrade`/`formatFixed` on `round1`; `rapport.typ` ranking text
-and I row; Gegevenscontrole warnings for an unknown RTTI tag, a bad weging and an unknown question
-kind (decisions 18, 22, 23); check D4, D16, D17;
-measure the grid with the JSON calls (a batch call if needed); before/after table on the fixtures
-and the user's OK before the merge; manual check on a copy of real data (decision 8 of `PLAN-2.md`).
+4. **Done** (`7e4241d` and later): every screen, the score grid and the rapport on the core; the JS copies are gone. Gegevenscontrole warns about values the rules read past (decisions 18, 22, 23). D4, D16, D17 checked, unchanged (`quirks.md`). Grid speed: 0,07 ms per 40-question row, no batch call needed. Version 0.10.0. Golden `rapport-valid` p12, p14 re-blessed, pending the user's check.
+5. **Done:** review `docs/reviews/step-19.md` (0/8/10/8), triage at its end: all majors fixed. Two were the user's call: decisions 24 and 25.
+
+**Pending, needs the user:** visual diff of 10 views (light, dark, geel; baselines not updated); merge. CI visual baselines per platform change too (`docs/testing.md`). WebKit e2e and macOS/Linux CI have not run on this branch.
 
 **User (2026-11-08):** the migration ran fine on a copy of the real data (local exe 0.9.0).
 Leeradvies score column 3 cm -> 2,5 cm (`16439a2`, goldens re-blessed; scores up to

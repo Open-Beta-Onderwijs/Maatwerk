@@ -12,7 +12,7 @@ import {
 } from '../app.js';
 import { testBadgeClass } from '../domain/test-type';
 import { bestAttempt } from '../domain/attempts';
-import { mean, meanOfAverages, seAverage, yearAverage } from '../domain/statistics';
+import { mean, meanOfAverages, seAverage } from '../domain/statistics';
 import { gradePillHtml } from '../utils/grades';
 import { openProfielModal } from './profiel.js';
 
@@ -62,6 +62,8 @@ export async function openGroupStudentsModal(groupId, year) {
     const history = await Store.getStudentHistory(s.id);
     dossierAvgMap[s.id] = seAverage(history, Store.getAllExamsSync());
   }
+  // All the student's tests of the year, also without a column here (decision 25).
+  const yearAvgOf = (s) => Store.studentYearAverage(scoreMap[s.id], year);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function bestGradeForFamily(s, family) {
@@ -153,7 +155,7 @@ export async function openGroupStudentsModal(groupId, year) {
         .join('');
 
       // Weighted averages
-      const yearAvg = yearAverage(exams, scoreMap[s.id]);
+      const yearAvg = yearAvgOf(s);
       const dossierAvg = dossierAvgMap[s.id];
 
       const avgCells =
@@ -189,9 +191,7 @@ export async function openGroupStudentsModal(groupId, year) {
     .join('');
 
   // Decision 21: the means of the year and SE averages as shown.
-  const yearAvgOfAvgs = meanOfAverages(
-    students.map((s) => yearAverage(exams, scoreMap[s.id])).filter((g) => g !== null),
-  );
+  const yearAvgOfAvgs = meanOfAverages(students.map(yearAvgOf).filter((g) => g !== null));
   const seAvgOfAvgs = meanOfAverages(
     students.map((s) => dossierAvgMap[s.id]).filter((g) => g !== null),
   );

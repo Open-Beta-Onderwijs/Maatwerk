@@ -54,10 +54,19 @@ pub fn trend(exams: &[Exam], rec: &ScoreRecord) -> Option<Trend> {
         .filter(|family| family.head.weight() > 0.0)
         .filter_map(|family| {
             let grade = best_attempt(rec, &family.attempts)?.grade;
-            Some((family.head.volgnummer.unwrap_or(0.0), grade))
+            Some((
+                family.head.volgnummer.unwrap_or(0.0),
+                &family.head.id,
+                grade,
+            ))
         })
-        .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(Ordering::Equal))?
-        .1;
+        // On the same volgnummer the id decides, so the file order never does.
+        .max_by(|a, b| {
+            a.0.partial_cmp(&b.0)
+                .unwrap_or(Ordering::Equal)
+                .then(a.1.cmp(b.1))
+        })?
+        .2;
     let average = round1(year_average(exams, rec)?);
     let d = round1(last - average);
     Some(Trend {
@@ -140,6 +149,15 @@ mod tests {
         ];
         let t = trend(&exams, &record(&[("a", 6.0), ("b", 8.0)])).unwrap();
         assert_eq!(t.last, 8.0);
+    }
+
+    #[test]
+    fn a_tie_on_volgnummer_does_not_depend_on_the_file_order() {
+        let (a, b) = (exam("a", 1, 1.0), exam("b", 1, 1.0));
+        let rec = record(&[("a", 9.0), ("b", 5.0)]);
+        let first = trend(&[a.clone(), b.clone()], &rec).unwrap();
+        let second = trend(&[b, a], &rec).unwrap();
+        assert_eq!(first, second);
     }
 
     #[test]

@@ -3,12 +3,14 @@
 // Entry point: rapport-main.typ reads data.json (written by the Typst service) and calls
 // #show: setup  then  #render(exam_info, student_data)
 // exam_info : (name: string, global_max_points: number (may have a fraction), n_term: float,
-//              uitleg_rtti: (R, T1, T2, I: string))
+//              uitleg_rtti: (R, T1, T2, I: string), grade_bins: 12 counts or none)
+// Every number is calculated in the core (crates/maatwerk-grades); this template only draws it.
 // student_data : array of (
 //   name, student_nr, group, score, max_score, grade, grade_num (float or none),
 //   grade_overridden (bool: grade overwritten by the teacher),
 //   grade_only (bool: an overwritten grade without scores: no question table or RTTI charts),
-//   ranking ("top10", "top20" or none), rtti_points (R, T1, T2, I: (scored, max)),
+//   ranking ("top10", "top20" or none), score_pct (whole percent or none), grade_bin (or none),
+//   rtti_points (R, T1, T2, I: (scored, max, pct, share)),
 //   vragen: array of (
 //     label, rtti, rtti_color, score (or none), max,
 //     class_avg, class_pct, dot_color
@@ -384,7 +386,7 @@
 }
 
 // ── Pie chart: RTTI category distribution by max points ───────────────────────
-#let rtti_pie(totals) = {
+#let rtti_pie(totals, points) = {
   let total_max = totals.fold(0.0, (acc, t) => acc + t.at(4))
   if total_max == 0.0 { return [] }
 
@@ -430,7 +432,7 @@
       for t in totals {
         let (cat, color, fill, scored, maxpts) = t
         if maxpts <= 0.0 { continue }
-        let pct_int = int(calc.round(maxpts / total_max * 100))
+        let pct_int = int(points.at(cat).share)
         rect((5.6, ly - 0.22), (6.1, ly + 0.22), fill: fill, stroke: (paint: gray, thickness: 0.3pt))
         content((6.25, ly), text(8pt)[#cat (#pct_int%)], anchor: "west")
         ly -= 0.65
@@ -440,7 +442,7 @@
 }
 
 // ── Bar chart: student RTTI scores as percentage correct ──────────────────────
-#let rtti_bar(totals) = {
+#let rtti_bar(totals, points) = {
   align(center)[
     #text(9pt, style: "italic", fill: gray.darken(30%))[Jouw RTTI-scores]
     #v(4pt)
@@ -482,7 +484,7 @@
         } else {
           let pct     = scored / maxpts
           let bar_h   = pct * max_h
-          let pct_int = int(calc.round(pct * 100))
+          let pct_int = int(points.at(cat).pct)
           rect((x0, 0), (x1, bar_h), fill: fill, stroke: none)
           content(
             (cx, bar_h + 0.15),
@@ -536,45 +538,13 @@
 // charts on page 2. Skipped entirely when fewer than 10 grades are available.
 // The bin containing the current student's grade is highlighted in blue
 // crosshatch (only when grade ≥ 5,5). A congratulatory ranking message is
-// appended when the student falls in the top-third or top-two-thirds.
+// appended for the students the core ranks (decision 16).
 
-#let grade_histogram(student_data, current_grade_num, ranking) = {
-  let all_grades = student_data.map(s => s.grade_num).filter(g => g != none)
-  if all_grades.len() < 10 { return }
-
-  // ── Bin counts ──────────────────────────────────────────────────────────────
-  let bins = (
-    all_grades.filter(g => g < 4.5).len(),
-    all_grades.filter(g => g >= 4.5 and g < 5.0).len(),
-    all_grades.filter(g => g >= 5.0 and g < 5.5).len(),
-    all_grades.filter(g => g >= 5.5 and g < 6.0).len(),
-    all_grades.filter(g => g >= 6.0 and g < 6.5).len(),
-    all_grades.filter(g => g >= 6.5 and g < 7.0).len(),
-    all_grades.filter(g => g >= 7.0 and g < 7.5).len(),
-    all_grades.filter(g => g >= 7.5 and g < 8.0).len(),
-    all_grades.filter(g => g >= 8.0 and g < 8.5).len(),
-    all_grades.filter(g => g >= 8.5 and g < 9.0).len(),
-    all_grades.filter(g => g >= 9.0 and g < 9.5).len(),
-    all_grades.filter(g => g >= 9.5).len(),
-  )
+#let grade_histogram(bins, student_bin, current_grade_num, ranking) = {
+  if bins == none { return }
 
   let bin_labels = ("<4,5", "<5,0", "<5,5", "<6,0", "<6,5", "<7,0",
-                    "<7,5", "<8,0", "<8,5", "<9,0", "<9,5", "\u{2264}10")
-
-  // ── Which bin does the current student fall in? ─────────────────────────────
-  let student_bin = if current_grade_num == none { none }
-    else if current_grade_num < 4.5 { 0 }
-    else if current_grade_num < 5.0 { 1 }
-    else if current_grade_num < 5.5 { 2 }
-    else if current_grade_num < 6.0 { 3 }
-    else if current_grade_num < 6.5 { 4 }
-    else if current_grade_num < 7.0 { 5 }
-    else if current_grade_num < 7.5 { 6 }
-    else if current_grade_num < 8.0 { 7 }
-    else if current_grade_num < 8.5 { 8 }
-    else if current_grade_num < 9.0 { 9 }
-    else if current_grade_num < 9.5 { 10 }
-    else { 11 }
+                    "<7,5", "<8,0", "<8,5", "<9,0", "<9,5", "≤10")
 
   // ── Y-axis scaling ──────────────────────────────────────────────────────────
   let max_count = bins.fold(0, (a, b) => calc.max(a, b))
@@ -696,7 +666,7 @@
 
     #v(8pt)
 
-    #if student.at("grade_only", default: false) [Je cijfer is een *#student.grade*.] else [Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #calc.round(student.score / student.max_score * 100)% goed]. De N-term is N=#_num(exam_info.n_term). Je cijfer is een *#student.grade*.]
+    #if student.at("grade_only", default: false) [Je cijfer is een *#student.grade*.] else [Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #int(student.score_pct)% goed]. De N-term is N=#_num(exam_info.n_term). Je cijfer is een *#student.grade*.]
     #if student.at("grade_overridden", default: false) [Dit cijfer is met de hand overschreven door de docent.]
 
     #v(4pt)
@@ -716,12 +686,17 @@
       grid(
         columns: (1fr, 1fr),
         column-gutter: 0.5cm,
-        rtti_pie(totals),
-        rtti_bar(totals),
+        rtti_pie(totals, student.rtti_points),
+        rtti_bar(totals, student.rtti_points),
       )
     }
     v(10pt)
-    grade_histogram(student_data, student.grade_num, student.at("ranking", default: none))
+    grade_histogram(
+      exam_info.at("grade_bins", default: none),
+      student.at("grade_bin", default: none),
+      student.grade_num,
+      student.at("ranking", default: none),
+    )
     [#metadata(i) <rapport-student-end>]
     // F-13: every student starts on an odd page, so a duplex print gives each student their
     // own sheets: three pages get an empty fourth.

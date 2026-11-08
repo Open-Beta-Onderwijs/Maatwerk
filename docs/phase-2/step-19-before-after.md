@@ -78,3 +78,14 @@ advice levels and the I row (decision 15).
 
 The reference goldens change on two pages only, both the ranking line: `rapport-valid` p12 ("beste
 33%" becomes "beste 10%") and p14 ("beste 67%" becomes "beste 20%").
+
+## Also after the review
+
+- **Year average (decision 25):** the group card and group overview now count all of a student's
+  tests of the year, as the profile did. This fixture exaggerates it (students have scores on tests
+  of other jaarlagen): 500 of 634 students per vak differed between those screens before. In real
+  data it needs a grade outside the group's jaarlaag or a test without a volgnummer.
+- **Rapport (decision 24):** an empty question is 0 of its max in the advice table and bars again,
+  as in the old app; the pie shows the test, not what the student entered.
+- **An override set on an exact half:** a saved `berekend` of 8,6 where the calculation now gives 8,7
+  shows the "changed since" warning. True, and rare.

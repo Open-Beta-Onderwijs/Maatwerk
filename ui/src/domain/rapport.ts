@@ -8,8 +8,17 @@
 
 import { round0 } from './core';
 import { formatCompact, formatGrade, formatNumber } from './format';
-import { calcResults, qKind, type RttiCategory, type RttiPoints } from './grades';
-import { adviceBracket, classQuestion, ranking, studentGroup } from './statistics';
+import { calcResults, qKind, type RttiCategory } from './grades';
+import {
+  adviceBracket,
+  classQuestions,
+  ranking,
+  rapportBin,
+  rapportBins,
+  rapportTotals,
+  studentGroup,
+  type ClassQuestion,
+} from './statistics';
 import { fullName, jaarlaagFromStamklas } from './ids';
 import {
   type Exam,
@@ -72,21 +81,21 @@ const isNotEntered = (v: unknown) =>
   v === undefined || v === null || String(v).toUpperCase() === 'N';
 
 /**
- * The per-question data of one student. `allQuestionScores` holds the scores of
- * every participant, for the class averages.
+ * The per-question data of one student. `classResults` is the class's result per question,
+ * from `classQuestions`.
  */
 export function assembleVragen(
   exam: Pick<Exam, 'questions'>,
   questionScores: QuestionScores | undefined,
-  allQuestionScores: QuestionScores[],
+  classResults: ClassQuestion[],
 ): Vraag[] {
-  return exam.questions.map((q) => {
+  return exam.questions.map((q, i) => {
     const raw = questionScores?.[q.id];
     const num = isNotEntered(raw) ? NaN : Number(raw);
     // N, empty and invalid (text, negative, over the maximum) earn nothing: shown as "N / max"
     // with a grey dot (T26, decisions 4 and 5).
     const score = num >= 0 && num <= q.max_points ? num : null;
-    const { classAvg, classPct } = classQuestion(q, allQuestionScores);
+    const { classAvg, classPct } = classResults[i]!;
 
     const label = q.section ? `${q.section}${q.number}` : String(q.number);
 
@@ -199,7 +208,7 @@ export interface LeeradviesRow {
 const ADVICE_CATS: RttiCategory[] = ['R', 'T1', 'T2', 'I'];
 
 export function buildLeeradviesRows(
-  totals: RttiPoints,
+  totals: Record<RttiCategory, { scored: number; max: number }>,
   adviesData: AdviesData | null,
   observaties: RapportObservatie[],
 ): LeeradviesRow[] {
@@ -315,11 +324,7 @@ export function buildRapportData({
       const override = rec?.overrides?.[examId];
       const hasScores = Object.keys(questionScores).length > 0;
       if (!hasScores && typeof override?.cijfer !== 'number') return null;
-      const { scored, normalMax, grade, overridden, rttiPoints } = calcResults(
-        exam,
-        questionScores,
-        override,
-      );
+      const { scored, normalMax, grade, overridden } = calcResults(exam, questionScores, override);
       const groupId = studentGroup(s.id, exam, groups);
       const group = groups.find((g) => g.id === groupId);
       const obsIds = rec?.observations?.[examId] ?? [];
@@ -339,7 +344,6 @@ export function buildRapportData({
         normalMax,
         grade,
         overridden,
-        rttiPoints,
         hasScores,
         questionScores,
         observaties: obs,
@@ -355,12 +359,19 @@ export function buildRapportData({
 
   const allQuestionScores = entries.filter((e) => e.hasScores).map((e) => e.questionScores);
   const allGrades = entries.flatMap((e) => (e.grade === null ? [] : [e.grade]));
+  const classResults = classQuestions(exam.questions, allQuestionScores);
+  const noTotals = { scored: 0, max: 0 };
   const globalMax = exam?.questions?.length
     ? Math.max(...exam.questions.map((q) => q.max_points))
     : 1;
 
   const studentData = entries.map((e) => {
-    const vragen = assembleVragen(exam, e.questionScores, allQuestionScores);
+    const vragen = assembleVragen(exam, e.questionScores, classResults);
+    const totals = rapportTotals(exam, e.questionScores);
+    // An overwritten grade without scores has no advice per category (decision 6).
+    const adviceTotals = e.hasScores
+      ? totals
+      : { R: noTotals, T1: noTotals, T2: noTotals, I: noTotals };
     return {
       name: fullName(e.student),
       student_nr: String(e.student.id),
@@ -373,10 +384,12 @@ export function buildRapportData({
       // An overwritten grade without scores: no question table or RTTI charts (decision 6).
       grade_only: !e.hasScores,
       ranking: e.grade === null ? null : ranking(e.grade, allGrades),
-      rtti_points: e.rttiPoints,
+      rtti_points: totals,
+      score_pct: e.normalMax > 0 ? round0((e.scored / e.normalMax) * 100) : null,
+      grade_bin: e.grade === null ? null : rapportBin(e.grade),
       vragen: e.hasScores ? vragen : [],
       observaties: e.observaties,
-      leeradvies_rows: buildLeeradviesRows(e.rttiPoints, adviesData, e.observaties),
+      leeradvies_rows: buildLeeradviesRows(adviceTotals, adviesData, e.observaties),
     };
   });
 
@@ -385,6 +398,7 @@ export function buildRapportData({
     subject_display: subjectDisplayName(exam.subject),
     global_max_points: globalMax,
     n_term: exam?.n_term ?? 1,
+    grade_bins: rapportBins(allGrades),
     uitleg_rtti: {
       R: adviesData.uitleg?.R ?? '',
       T1: adviesData.uitleg?.T1 ?? '',

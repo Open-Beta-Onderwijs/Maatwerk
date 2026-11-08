@@ -426,3 +426,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Security n1:** `maatwerk-cli migrate` prints exam and observatie names raw; strip control
   characters. **n4:** validation messages embed whole JSON objects (`opdrachtenVraag`).
   **n5:** `prune_stale` reads every presence file whole at each start.
+
+## From Step 19
+
+- m6: send only the fields the rules read in each WebAssembly call (today's cost is acceptable; the rapport and grid were measured).
+- m8: a message when WebAssembly cannot start; today an empty window. Check the oldest supported macOS WebKit for `'wasm-unsafe-eval'`.
+- m9: tests of how the screens call the rules (the rules are tested; which arguments a screen passes is not).
+- n3, n6, n7 in `docs/reviews/step-19.md`.

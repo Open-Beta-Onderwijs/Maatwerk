@@ -62,7 +62,8 @@ describe('coreCall', () => {
   });
 
   it('passes the unicode label through', () => {
-    expect(coreCall<string[]>('gradeGroupLabels')[5]).toBe('≥8');
+    const accented = { id: 'é', questions: [{ id: 'é', max_points: 2, rtti: 'R' }] };
+    expect(coreCall<{ scored: number }>('calcResults', accented, { é: 1 }, null).scored).toBe(1);
   });
 
   it('survives many calls and big arguments', () => {

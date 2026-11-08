@@ -15,7 +15,8 @@ fn to_nanos(x: f64) -> i128 {
 
 /// `x` rounded half-up (towards +infinity) to `decimals` decimals, at most 9.
 fn round_to(x: f64, decimals: u32) -> f64 {
-    if !x.is_finite() {
+    // Far beyond any real score; billionths of it would not fit.
+    if !x.is_finite() || x.abs() > 1e15 {
         return x;
     }
     let scale = 10_i128.pow(decimals);
@@ -94,6 +95,7 @@ mod tests {
     fn non_finite_values_pass_through() {
         assert!(round1(f64::NAN).is_nan());
         assert_eq!(round1(f64::INFINITY), f64::INFINITY);
+        assert_eq!(round1(1e30), 1e30);
     }
 
     #[test]

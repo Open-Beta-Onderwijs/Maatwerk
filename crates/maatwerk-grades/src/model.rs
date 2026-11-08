@@ -8,6 +8,7 @@
 
 use std::collections::HashMap;
 
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
@@ -27,6 +28,30 @@ fn parse_number(s: &str) -> Option<f64> {
 
 fn opt_number<'de, D: Deserializer<'de>>(d: D) -> Result<Option<f64>, D::Error> {
     Ok(number_of(&Value::deserialize(d)?))
+}
+
+/// A weging: absent or `null` is `None`; present but not a number counts as 1 (decision 22).
+fn opt_weight<'de, D: Deserializer<'de>>(d: D) -> Result<Option<f64>, D::Error> {
+    let value = Value::deserialize(d)?;
+    Ok((!value.is_null()).then(|| number_of(&value).unwrap_or(1.0)))
+}
+
+/// A parent id; an empty one is no parent, as in the UI's `!e.parent_id`.
+fn opt_id<'de, D: Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
+    Ok(opt_text(d)?.filter(|id| !id.is_empty()))
+}
+
+/// A map whose values may be damaged: those entries are skipped, the rest still counts.
+fn tolerant_map<'de, D: Deserializer<'de>, T: DeserializeOwned>(
+    d: D,
+) -> Result<HashMap<String, T>, D::Error> {
+    let Value::Object(map) = Value::deserialize(d)? else {
+        return Ok(HashMap::new());
+    };
+    Ok(map
+        .into_iter()
+        .filter_map(|(k, v)| Some((k, serde_json::from_value(v).ok()?)))
+        .collect())
 }
 
 fn number<'de, D: Deserializer<'de>>(d: D) -> Result<f64, D::Error> {
@@ -77,7 +102,7 @@ pub enum QuestionKind {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Question {
-    #[serde(deserialize_with = "text")]
+    #[serde(default, deserialize_with = "text")]
     pub id: String,
     #[serde(default, deserialize_with = "number")]
     pub max_points: f64,
@@ -107,15 +132,15 @@ pub struct Exam {
     pub n_term: Option<f64>,
     #[serde(default, deserialize_with = "nullable")]
     pub questions: Vec<Question>,
-    #[serde(default, deserialize_with = "opt_text")]
+    #[serde(default, deserialize_with = "opt_id")]
     pub parent_id: Option<String>,
     #[serde(default, deserialize_with = "opt_number")]
     pub attempt: Option<f64>,
     #[serde(default, deserialize_with = "opt_number")]
     pub volgnummer: Option<f64>,
-    #[serde(default, deserialize_with = "opt_number")]
+    #[serde(default, deserialize_with = "opt_weight")]
     pub weging: Option<f64>,
-    #[serde(default, deserialize_with = "opt_number")]
+    #[serde(default, deserialize_with = "opt_weight")]
     pub weging_se: Option<f64>,
     /// `pta` or `regular`.
     #[serde(default, rename = "type", deserialize_with = "opt_text")]
@@ -208,9 +233,9 @@ pub struct Override {
 /// One student's score file for one vak and year.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct ScoreRecord {
-    #[serde(default, deserialize_with = "nullable")]
+    #[serde(default, deserialize_with = "tolerant_map")]
     pub scores: HashMap<String, QuestionScores>,
-    #[serde(default, deserialize_with = "nullable")]
+    #[serde(default, deserialize_with = "tolerant_map")]
     pub overrides: HashMap<String, Override>,
 }
 
@@ -266,6 +291,43 @@ mod tests {
         assert_eq!(exam(json!({"weging": 2})).weight_se(), 2.0);
         assert_eq!(exam(json!({"weging": 2, "weging_se": 3})).weight_se(), 3.0);
         assert_eq!(exam(json!({"weging": 2, "weging_se": 0})).weight_se(), 0.0);
+    }
+
+    #[test]
+    fn a_bad_weight_counts_as_one_not_as_the_other_weight() {
+        // Decision 22 (review M5).
+        let exam = |v| serde_json::from_value::<Exam>(v).unwrap();
+        assert_eq!(
+            exam(json!({"weging": 3, "weging_se": "x"})).weight_se(),
+            1.0
+        );
+        assert_eq!(exam(json!({"weging": "x"})).weight(), 1.0);
+        assert_eq!(
+            exam(json!({"weging": 3, "weging_se": null})).weight_se(),
+            3.0
+        );
+    }
+
+    #[test]
+    fn damaged_entries_are_skipped_not_fatal() {
+        // Review M8: these used to read, and one value must not take down a screen.
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "scores": {"bad": 5, "good": {"q1": 2}},
+            "overrides": {"bad": 6.5, "good": {"cijfer": 7.0}}
+        }))
+        .unwrap();
+        assert!(!rec.scores.contains_key("bad"));
+        assert!(rec.scores.contains_key("good"));
+        assert!(!rec.overrides.contains_key("bad"));
+        assert_eq!(rec.overrides["good"].cijfer, Some(7.0));
+        let q: Question = serde_json::from_value(json!({"max_points": 2, "rtti": "R"})).unwrap();
+        assert_eq!(q.id, "");
+    }
+
+    #[test]
+    fn an_empty_parent_id_is_no_parent() {
+        let exam: Exam = serde_json::from_value(json!({"parent_id": ""})).unwrap();
+        assert_eq!(exam.parent_id, None);
     }
 
     #[test]

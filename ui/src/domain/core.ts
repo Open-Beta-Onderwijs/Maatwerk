@@ -41,8 +41,9 @@ export function coreCall<T>(name: string, ...args: unknown[]): T {
   const packed = c.call(namePtr, nameLen, argsPtr, argsLen);
   c.dealloc(namePtr, nameLen);
   c.dealloc(argsPtr, argsLen);
-  const ptr = Number(packed >> 32n);
-  const len = Number(packed & 0xffffffffn);
+  const unsigned = BigInt.asUintN(64, packed);
+  const ptr = Number(unsigned >> 32n);
+  const len = Number(unsigned & 0xffffffffn);
   // Read after the call: the call can grow memory and detach any earlier view.
   const text = decoder.decode(new Uint8Array(c.memory.buffer, ptr, len));
   c.dealloc(ptr, len);

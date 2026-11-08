@@ -213,7 +213,7 @@ export async function openExamOverviewModal(
       const grade = d.overrideEntry?.grade ?? res?.grade ?? null;
 
       const totaal = hasScores
-        ? `${fmtNum(res.scored)} / ${res.normalMax}${res.hasBonus && res.scored > res.normalMax ? ' (+)' : ''}`
+        ? `${fmtNum(res.scored)} / ${fmtNum(res.normalMax)}${res.hasBonus && res.scored > res.normalMax ? ' (+)' : ''}`
         : '';
       const gradeTxt = grade !== null ? formatGrade(grade) : '';
       // Same badge as the Groepen overview: first letter of the resit's description.
