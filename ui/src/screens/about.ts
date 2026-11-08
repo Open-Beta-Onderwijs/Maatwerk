@@ -6,7 +6,9 @@
 // and from the title in the top bar.
 
 import { escHtml, openModal, toast } from '../app.js';
-import type { MaatwerkApi } from '../bridge/api';
+import type { DataFolderStatus, MaatwerkApi } from '../bridge/api';
+import { chooseAndRestart } from './choose-folder';
+import { canChooseOther } from './startup-error';
 
 export const SOURCE_URL = 'https://github.com/Open-Beta-Onderwijs/Maatwerk';
 export const COPYRIGHT = 'Copyright © 2026 Open Beta Onderwijs - Matthias Kortleven';
@@ -37,6 +39,13 @@ export function aboutHtml(version: string, build: string): string {
       Maatwerk bevat software, lettertypen en Typst-pakketten van derden, elk onder een eigen
       licentie (zie "Licenties van derden").
     </p>
+    <h3>Gegevensmap</h3>
+    <p>Map: <span class="about-url about-datadir">Laden…</span></p>
+    <p class="small muted about-datasource"></p>
+    <div class="about-actions">
+      <button class="btn btn--secondary hidden" data-about-action="choose-folder">Andere map kiezen…</button>
+    </div>
+    <p class="choose-folder-status" role="status"></p>
     <h3>Probleem melden</h3>
     <p>
       Ging er iets mis? Beschrijf wat je deed en wat er gebeurde, en stuur het logbestand van
@@ -81,6 +90,7 @@ function wireAbout(root: HTMLElement): void {
       }),
     );
     wireProblemReport(root, window.maatwerk);
+    wireDataFolder(root, window.maatwerk);
   }
 }
 
@@ -103,5 +113,44 @@ export function wireProblemReport(
   );
   open.addEventListener('click', () => {
     api.openLogFolder().catch(() => toast('De map kon niet worden geopend.', 'error'));
+  });
+}
+
+/** Where the data folder came from, for "Over Maatwerk" (review 16 M2). */
+export const SOURCE_TEXT: Record<DataFolderStatus['source'] & string, string> = {
+  env: 'Ingesteld met MAATWERK_DATA_DIR.',
+  dev: 'De projectmap (ontwikkelversie).',
+  chosen: 'Gekozen op deze computer.',
+  besideApp: 'De map data naast het programma.',
+};
+
+/**
+ * "Gegevensmap": the folder in use, why, and "Andere map kiezen…" where the startup error
+ * screen offers it too (a choice on this PC, or the folder beside the program). A wrong choice
+ * is then visible and can be undone without deleting files by hand (review 16 M2).
+ */
+export function wireDataFolder(
+  root: HTMLElement,
+  api: Pick<MaatwerkApi, 'dataFolderStatus' | 'chooseDataFolder' | 'restartApp'>,
+): void {
+  const dir = root.querySelector<HTMLElement>('.about-datadir')!;
+  const why = root.querySelector<HTMLElement>('.about-datasource')!;
+  const choose = root.querySelector<HTMLButtonElement>('[data-about-action="choose-folder"]')!;
+  const status = root.querySelector<HTMLElement>('.choose-folder-status')!;
+  api.dataFolderStatus().then(
+    (s) => {
+      dir.textContent = s.dataDir || 'onbekend';
+      why.textContent = s.source ? SOURCE_TEXT[s.source] : '';
+      choose.classList.toggle('hidden', !canChooseOther(s.source ?? undefined));
+    },
+    () => {
+      dir.textContent = 'onbekend';
+    },
+  );
+  choose.addEventListener('click', () => {
+    choose.disabled = true;
+    void chooseAndRestart(api, status).then((restarting) => {
+      if (!restarting) choose.disabled = false;
+    });
   });
 }

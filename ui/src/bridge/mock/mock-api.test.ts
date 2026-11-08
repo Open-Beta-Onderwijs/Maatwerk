@@ -22,7 +22,7 @@ describe('MockApi', () => {
     expect(await api.listYears()).toEqual(['2025-2026']);
     expect(await api.readJson('config.json')).toEqual({
       activeYear: '2025-2026',
-      schema_version: 2,
+      schema_version: 3,
     });
     expect(await api.readOpdrachten()).toHaveLength(7);
     const exams = await api.readAllJson('2025-2026/exams');
@@ -149,12 +149,12 @@ describe('MockApi', () => {
   it('presence: switching users marks the previous one offline', async () => {
     await api.updatePresence('u1', { online: true, scoreModal: 'e1' });
     await api.updatePresence('u2', { online: true });
-    expect(JSON.parse(api.peek('users/u1.json')!)).toMatchObject({
+    expect(JSON.parse(api.peek('aanwezigheid/u1.json')!)).toMatchObject({
       online: false,
       scoreModal: null,
     });
     await api.updatePresence(null);
-    expect(JSON.parse(api.peek('users/u2.json')!)).toMatchObject({ online: false });
+    expect(JSON.parse(api.peek('aanwezigheid/u2.json')!)).toMatchObject({ online: false });
   });
 
   it('batch render validates input and reports progress', async () => {

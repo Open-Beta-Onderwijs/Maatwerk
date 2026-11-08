@@ -413,3 +413,16 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Review 15 n4-n6:** the version compare exists in Rust and in TS (the TS copy is used by the
   mock only); three HTML-escape helpers (`app.js`, `avatar.ts`, `user-menu.ts`) could share one
   `utils/html.ts`; presence reads `school.json` twice per heartbeat when read-only.
+
+## From Step 17 (review `docs/reviews/step-17.md`)
+
+- **Review 17 m2:** a blessed Typst golden keeps the reference's `call`/`result` but its `pdf`
+  text and PNGs are the port's; split into `reference.pdf` / `port.pdf` so both stay readable.
+
+## From Step 18 (reviews `docs/reviews/step-18.md`, `step-17-18-security.md`)
+
+- **Security m4:** `applyWatermerk` (UI) reads the watermark whole at every start; a size cap
+  as in the rapport (5 MB). The migration reads each moved image whole (copy then delete).
+- **Security n1:** `maatwerk-cli migrate` prints exam and observatie names raw; strip control
+  characters. **n4:** validation messages embed whole JSON objects (`opdrachtenVraag`).
+  **n5:** `prune_stale` reads every presence file whole at each start.

@@ -13,6 +13,7 @@ import { GRADE_BAR } from '../domain/grade-colors';
 import { setBusy } from '../components/button';
 import { defaultTabData, rttiExplFilePath } from '../domain/rapport';
 import { compileRapport } from '../services/rapport';
+import { renderWarningsHtml } from '../components/render-warnings';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODAL: Rapport (opened from the Toetsen screen)
@@ -58,7 +59,7 @@ async function showRapportPdf(content, exam, year) {
   const pdfUrl = window.maatwerk.pdfUrl(result.pdfPath);
   const outputId = result.pdfPath;
   const viewerSrc = `pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}`;
-  content.innerHTML = `<iframe class="rapport-pdf-frame" src="${viewerSrc}"></iframe>`;
+  content.innerHTML = `${renderWarningsHtml(result.warnings)}<iframe class="rapport-pdf-frame" src="${viewerSrc}"></iframe>`;
 
   // The embedded PDF viewer's "Afdrukken" button (postMessage): a named copy in
   // rapporten/<schooljaar>/, opened in the system viewer (ADR-0002 section 9).

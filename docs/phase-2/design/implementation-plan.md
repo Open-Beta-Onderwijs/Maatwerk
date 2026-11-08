@@ -162,6 +162,14 @@ removed after load; visual baselines for the four login states.
    ones kept).
 2. Opdracht bewerken restyled, observaties as emoji chips, "Inhoud bewerken in de editor".
 
+## D9. Praktische opdrachten and rubrics (PLAN-2 steps 21-24)
+
+**Items:** F-20, F-22, F-23, spec 4.12 (toetstype) and 4.13; boards 15-18. The steps, data model
+and decisions are in `PLAN-2.md` (steps 21-24, decisions 16-25); this section only points the
+design: reuse the dialog, card, chip, segmented, stepper and grade-cell components; the level
+display and the slider-with-levels are new components (unit tests for the coverage and
+highlight logic).
+
 ## Order and sizes
 
 | Sub-step | ROADMAP step    | Size | Depends on                      |
@@ -174,6 +182,7 @@ removed after load; visual baselines for the four login states.
 | D6       | Opdrachten area | M    | D1, D2 (avatar)                 |
 | D7       | Scores area     | M    | D1                              |
 | D8       | Opdrachten area | S    | D1                              |
+| D9       | PLAN-2 21-24    | 3L+M | D1, step 19, step 20            |
 
 ## Prompt for Claude Code
 

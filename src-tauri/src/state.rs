@@ -9,9 +9,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, PoisonError};
 
 use maatwerk_core::auth::Auth;
+use maatwerk_core::data_location::{self, Inputs, LocalConfig, Location, Source};
 use maatwerk_core::opdracht_images;
 use maatwerk_core::outputs::OutputStore;
-use maatwerk_core::paths::{DATA_DIR_ENV, data_dir_location, display_path};
+use maatwerk_core::paths::display_path;
 use maatwerk_core::presence::Presence;
 use maatwerk_core::storage::{LocalSession, Storage};
 use maatwerk_core::typst_svc::FontStore;
@@ -24,6 +25,8 @@ use crate::error::CommandError;
 pub struct Core {
     /// The data folder as configured, for the startup error screen when it cannot be opened.
     data_dir: PathBuf,
+    /// Why the data folder is where it is; `None` on first run.
+    source: Option<DataFolderSource>,
     /// `Err` when the data folder cannot be used (e.g. an unsupported `schema_version`, C1):
     /// every storage command then returns this error, so the UI can show it.
     storage: Result<Arc<Storage>, CommandError>,
@@ -49,6 +52,30 @@ pub struct DataFolderStatus {
     /// `minAppVersion` from `school.json` when it is newer than this app: the app may only read
     /// (PLAN-2 decision 5). Checked again on every write.
     pub read_only: Option<String>,
+    /// Why the folder is where it is; `null` on first run. The UI offers "Andere map kiezen"
+    /// only for `chosen` and `besideApp` (and on first run).
+    pub source: Option<DataFolderSource>,
+}
+
+/// [`data_location::Source`] for the UI.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum DataFolderSource {
+    Env,
+    Dev,
+    Chosen,
+    BesideApp,
+}
+
+impl From<Source> for DataFolderSource {
+    fn from(source: Source) -> DataFolderSource {
+        match source {
+            Source::Env => DataFolderSource::Env,
+            Source::Dev => DataFolderSource::Dev,
+            Source::Chosen => DataFolderSource::Chosen,
+            Source::BesideApp => DataFolderSource::BesideApp,
+        }
+    }
 }
 
 /// Managed Tauri state; cloned into blocking tasks. The core is opened on a background thread
@@ -137,6 +164,11 @@ impl Core {
                 if let Err(e) = opdracht_images::remove_empty_dirs(&storage) {
                     tracing::warn!("removing empty image folders failed: {e}");
                 }
+                let stale =
+                    maatwerk_core::presence::prune_stale(&storage, std::time::SystemTime::now());
+                if stale > 0 {
+                    tracing::info!("removed {stale} stale presence files");
+                }
                 Arc::new(storage)
             })
             .map_err(|e| {
@@ -172,6 +204,7 @@ impl Core {
     ) -> Core {
         Core {
             data_dir,
+            source: None,
             storage,
             presence: Presence::new(),
             session: LocalSession::new(session_file),
@@ -184,6 +217,16 @@ impl Core {
 
     pub fn storage(&self) -> Result<&Storage, CommandError> {
         self.storage.as_deref().map_err(Clone::clone)
+    }
+
+    /// Records why the data folder is where it is (for the status).
+    pub fn located(mut self, source: Option<Source>) -> Core {
+        self.source = source.map(DataFolderSource::from);
+        self
+    }
+
+    pub fn source(&self) -> Option<DataFolderSource> {
+        self.source
     }
 
     /// The data folder as configured (also when it could not be opened).
@@ -199,12 +242,14 @@ impl Core {
                 error: None,
                 app_version: storage.app_version().to_owned(),
                 read_only: storage.read_only(),
+                source: self.source,
             },
             Err(e) => DataFolderStatus {
                 data_dir: display_path(&self.data_dir),
                 error: Some(e.clone()),
                 app_version: maatwerk_core::app_version::APP_VERSION.to_owned(),
                 read_only: None,
+                source: self.source,
             },
         }
     }
@@ -245,7 +290,7 @@ impl Core {
             .name("snapshot".into())
             .spawn(move || {
                 let Ok(storage) = core.storage() else { return };
-                let who = std::env::var("COMPUTERNAME").unwrap_or_else(|_| "onbekend".into());
+                let who = machine_name().unwrap_or_else(|| "onbekend".into());
                 match maatwerk_core::snapshots::run_if_due(
                     storage,
                     maatwerk_core::typst_svc::local_now(),
@@ -298,13 +343,65 @@ fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
-/// The data folder: `$MAATWERK_DATA_DIR`, else `data/` in the project folder for a debug
-/// build, else `data/` next to the exe.
-pub fn data_dir() -> PathBuf {
-    let exe = std::env::current_exe().unwrap_or_default();
+/// Opens the located data folder (setup, off the main thread). Nothing located: first run, the
+/// UI asks for the folder. A folder chosen on this PC must exist: creating it would start an
+/// empty school while OneDrive is signed out or a sync has not run yet (review 16 M1). The
+/// folder beside the program and `$MAATWERK_DATA_DIR` are created as before.
+pub fn open_located(
+    location: Option<Location>,
+    session_file: PathBuf,
+    output_dir: PathBuf,
+    on_changes: impl Fn(Vec<Change>) + Send + 'static,
+) -> Core {
+    let Some(Location { dir, source }) = location else {
+        let none = CommandError::no_data_folder();
+        return Core::failed(PathBuf::new(), session_file, output_dir, none);
+    };
+    if source == Source::Chosen && !dir.is_dir() {
+        tracing::warn!("the chosen data folder {} is missing", dir.display());
+        let missing = CommandError::from(maatwerk_core::Error::NotFound {
+            path: display_path(&dir),
+        });
+        return Core::failed(dir, session_file, output_dir, missing).located(Some(source));
+    }
+    Core::open(dir, session_file, output_dir, on_changes).located(Some(source))
+}
+
+/// This PC's name for the snapshot claim: `%COMPUTERNAME%` on Windows, the hostname on Linux,
+/// the computer name from System Settings on macOS (step 16b).
+fn machine_name() -> Option<String> {
+    let name = if cfg!(windows) {
+        std::env::var("COMPUTERNAME").ok()
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("scutil")
+            .args(["--get", "ComputerName"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+    } else {
+        std::fs::read_to_string("/proc/sys/kernel/hostname").ok()
+    };
+    name.map(|n| n.trim().to_owned()).filter(|n| !n.is_empty())
+}
+
+/// The data folder and why (`data_location::locate`): `$MAATWERK_DATA_DIR`, `data/` in the
+/// project folder for a debug build, the folder chosen on this PC (`local_config`), `data/`
+/// beside the exe if it exists; `None` on first run.
+pub fn locate_data_dir(local_config: &std::path::Path) -> Option<Location> {
+    let exe = data_location::program_path(
+        std::env::current_exe().unwrap_or_default(),
+        std::env::var_os("APPIMAGE"),
+    );
     let project =
         cfg!(debug_assertions).then(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."));
-    data_dir_location(std::env::var_os(DATA_DIR_ENV), &exe, project.as_deref())
+    let config = LocalConfig::load(local_config);
+    data_location::locate(&Inputs {
+        env_override: data_location::env_override(),
+        dev_project_dir: project.as_deref(),
+        chosen: config.data_dir.as_deref(),
+        exe: &exe,
+    })
 }
 
 #[cfg(test)]
@@ -319,6 +416,35 @@ mod tests {
             tmp.join("output"),
             |_| {},
         )
+    }
+
+    #[test]
+    fn this_pc_has_a_name_on_every_platform() {
+        let name = machine_name().expect("COMPUTERNAME, scutil or /proc hostname");
+        assert_eq!(name, name.trim());
+    }
+
+    /// Review 16 M1: a folder chosen on this PC that is gone (OneDrive signed out, renamed, a
+    /// Linux sync not run yet) is an error to fix, never a new empty school.
+    #[test]
+    fn a_missing_chosen_folder_is_an_error_and_is_not_created() {
+        let tmp = tempfile::tempdir().unwrap();
+        let gone = tmp.path().join("OneDrive").join("Maatwerk");
+        let location = Location {
+            dir: gone.clone(),
+            source: Source::Chosen,
+        };
+        let core = open_located(
+            Some(location),
+            tmp.path().join("session.json"),
+            tmp.path().join("output"),
+            |_| {},
+        );
+        let status = core.data_folder_status();
+        assert_eq!(status.error.map(|e| e.code), Some(ErrorCode::NotFound));
+        assert_eq!(status.source, Some(DataFolderSource::Chosen));
+        assert!(!gone.exists(), "nothing created");
+        assert!(!tmp.path().join("OneDrive").exists());
     }
 
     #[test]

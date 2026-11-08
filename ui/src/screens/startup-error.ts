@@ -5,6 +5,7 @@
 // in the reference (it started on whatever it could read).
 
 import type { DataFolderStatus, MaatwerkApi } from '../bridge/api';
+import { chooseAndRestart } from './choose-folder';
 
 /** The status error, or a rejection of the first reads (code `unknown` when it has none). */
 type FolderError = Omit<NonNullable<DataFolderStatus['error']>, 'code'> & { code: string };
@@ -55,12 +56,21 @@ export function asFolderError(e: unknown): FolderError {
   };
 }
 
-/** Replaces the startup screen's content with the message and a retry button. */
+/** The folder may be changed here only when this PC chose it or it is beside the program. */
+export function canChooseOther(source: DataFolderStatus['source'] | undefined): boolean {
+  return source === 'chosen' || source === 'besideApp';
+}
+
+/**
+ * Replaces the startup screen's content with the message and a retry button, and "Andere map
+ * kiezen…" when the folder may be changed (step 16a: e.g. OneDrive moved on this PC).
+ */
 export function renderStartupError(
   container: HTMLElement,
   dataDir: string,
   error: FolderError,
-  api: Pick<MaatwerkApi, 'restartApp'>,
+  api: Pick<MaatwerkApi, 'restartApp' | 'chooseDataFolder'>,
+  source?: DataFolderStatus['source'],
 ): void {
   const text = startupErrorText(error);
   const el = (tag: string, className: string, content = ''): HTMLElement => {
@@ -91,5 +101,17 @@ export function renderStartupError(
     });
   });
   box.append(retry);
+  if (canChooseOther(source)) {
+    const other = el('button', 'btn btn--secondary', 'Andere map kiezen…') as HTMLButtonElement;
+    const status = el('p', 'choose-folder-status');
+    status.setAttribute('role', 'status');
+    other.addEventListener('click', () => {
+      other.disabled = true;
+      void chooseAndRestart(api, status).then((restarting) => {
+        if (!restarting) other.disabled = false;
+      });
+    });
+    box.append(' ', other, status);
+  }
   container.replaceChildren(box);
 }

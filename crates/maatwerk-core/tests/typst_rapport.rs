@@ -12,7 +12,7 @@ use maatwerk_core::typst_svc::{
 use serde_json::Value;
 use support::{WATERMARK_SVG, assert_matches_golden, decode, fonts, frame_text, load_case};
 use time::OffsetDateTime;
-use typst::layout::PagedDocument;
+use typst::layout::{Frame, FrameItem, PagedDocument};
 
 /// 2026-01-01 00:00 UTC.
 fn fixed_now() -> OffsetDateTime {
@@ -33,8 +33,12 @@ fn case_data(case: &Value) -> RapportData {
 fn data_dir(watermark: bool) -> (tempfile::TempDir, DataDir) {
     let tmp = tempfile::tempdir().unwrap();
     if watermark {
-        std::fs::create_dir_all(tmp.path().join("fotos")).unwrap();
-        std::fs::write(tmp.path().join("fotos/school-watermerk.svg"), WATERMARK_SVG).unwrap();
+        std::fs::create_dir_all(tmp.path().join("afbeeldingen")).unwrap();
+        std::fs::write(
+            tmp.path().join("afbeeldingen/school-watermerk.svg"),
+            WATERMARK_SVG,
+        )
+        .unwrap();
     }
     let dir = DataDir::open(tmp.path()).unwrap();
     (tmp, dir)
@@ -71,20 +75,226 @@ fn rapport_valid_matches_the_golden() {
 }
 
 #[test]
-fn rapport_without_watermark_fails_on_the_missing_file() {
+fn t4_a_rapport_without_watermark_compiles_without_one() {
+    // The reference failed with "file not found (searched at …school-watermerk.svg)" (T4).
     let case = load_case("rapport-no-watermark");
     assert!(!case["result"]["success"].as_bool().unwrap());
-    let err = compile(&case_data(&case), false).unwrap_err();
-    let first = &err.diagnostics[0];
+    let data = case_data(&case);
+    let students = data.students.as_array().unwrap().len();
+    let doc = compile(&data, false)
+        .unwrap_or_else(|e| panic!("{}", e.to_text()))
+        .output;
+    assert_eq!(doc.pages.len(), 2 * students);
+    // No image on the page: the background is empty.
+    let mut images = 0;
+    count_images(&doc.pages[0].frame, &mut images);
+    assert_eq!(images, 0);
+    let with = compile(&data, true).unwrap().output;
+    let mut images = 0;
+    count_images(&with.pages[0].frame, &mut images);
+    assert_eq!(images, 1);
+}
+
+#[test]
+fn t4_the_watermark_is_found_in_other_case() {
+    // A data folder made on Windows may say `Afbeeldingen/School-Watermerk.svg` (T32).
+    let case = load_case("rapport-one-student");
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(tmp.path().join("Afbeeldingen")).unwrap();
+    std::fs::write(
+        tmp.path().join("Afbeeldingen/School-Watermerk.svg"),
+        WATERMARK_SVG,
+    )
+    .unwrap();
+    let dir = DataDir::open(tmp.path()).unwrap();
+    let doc = compile_document(&rapport_world(
+        fonts(),
+        &case_data(&case),
+        &dir,
+        fixed_now(),
+    ))
+    .unwrap_or_else(|e| panic!("{}", e.to_text()))
+    .output;
+    let mut images = 0;
+    count_images(&doc.pages[0].frame, &mut images);
+    assert_eq!(images, 1);
+}
+
+fn count_images(frame: &Frame, n: &mut usize) {
+    for (_, item) in frame.items() {
+        match item {
+            FrameItem::Group(g) => count_images(&g.frame, n),
+            FrameItem::Image(..) => *n += 1,
+            _ => {}
+        }
+    }
+}
+
+/// Every text item of a frame with its absolute baseline (pt).
+fn text_items(frame: &Frame, y0: f64, out: &mut Vec<(String, f64, String)>) {
+    for (pos, item) in frame.items() {
+        let y = y0 + pos.y.to_pt();
+        match item {
+            FrameItem::Group(g) => text_items(&g.frame, y + g.transform.ty.to_pt(), out),
+            FrameItem::Text(t) => out.push((t.text.to_string(), y, t.lang.as_str().to_owned())),
+            _ => {}
+        }
+    }
+}
+
+/// Diameters (pt) of the round shapes of a page between 5 and 15 pt: the score dots.
+fn dot_diameters(frame: &Frame, out: &mut Vec<f64>) {
+    for (_, item) in frame.items() {
+        match item {
+            FrameItem::Group(g) => dot_diameters(&g.frame, out),
+            FrameItem::Shape(shape, _) if shape.fill.is_some() => {
+                let size = shape.geometry.bbox_size();
+                let (w, h) = (size.x.to_pt(), size.y.to_pt());
+                if (w - h).abs() < 0.1 && (5.0..15.0).contains(&w) {
+                    out.push((w * 10.0).round() / 10.0);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+fn footer_numbers(doc: &PagedDocument) -> Vec<String> {
+    (0..doc.pages.len())
+        .map(|p| {
+            let mut items = Vec::new();
+            text_items(&doc.pages[p].frame, 0.0, &mut items);
+            let lowest = items.iter().map(|i| i.1).fold(f64::MIN, f64::max);
+            items
+                .iter()
+                .filter(|i| i.1 == lowest && i.0.contains('/'))
+                .map(|i| i.0.replace(' ', ""))
+                .collect::<Vec<_>>()
+                .join("")
+        })
+        .collect()
+}
+
+/// rapport-one-student with `n` observaties: about 25 push the first section onto a second page.
+fn with_observaties(mut data: RapportData, student: usize, n: usize) -> RapportData {
+    let obs: Vec<Value> = (0..n)
+        .map(|i| {
+            serde_json::json!({
+                "icon": "🧮", "naam": format!("Observatie {i}"),
+                "uitleg": "Een uitleg die een regel lang is.", "leeradvies": ""
+            })
+        })
+        .collect();
+    data.students[student]["observaties"] = Value::Array(obs);
+    data
+}
+
+#[test]
+fn t6_t7_half_points_show_with_a_decimal_comma() {
+    // The reference showed "3 / 5" in the score column (int(3.5)), "3.5" in the dot and
+    // "Je hebt 10.5 / 16 punten".
+    let case = load_case("rapport-one-student");
+    let doc = compile(&case_data(&case), true).unwrap().output;
+    let text = page_text(&doc, 0).replace(' ', "");
+    assert!(text.contains("Jehebt10,5/16punten"), "{text}");
+    assert!(text.contains("I1R3,5/53,53,5/5(70%)"), "{text}");
+    assert!(!text.contains("3.5"), "{text}");
+}
+
+#[test]
+fn t8_f13_the_footer_counts_the_students_own_pages_and_pads_to_even() {
+    let case = load_case("rapport-one-student");
+    let mut data = case_data(&case);
+    let second = data.students[0].clone();
+    data.students.as_array_mut().unwrap().push(second);
+    let data = with_observaties(data, 0, 30);
+    let doc = compile(&data, true)
+        .unwrap_or_else(|e| panic!("{}", e.to_text()))
+        .output;
     assert_eq!(
-        first.message,
-        "file not found (searched at /data/fotos/school-watermerk.svg)"
+        footer_numbers(&doc),
+        ["1/4", "2/4", "3/4", "4/4", "1/2", "2/2"],
+        "the first student has three pages and an empty fourth"
     );
-    assert_eq!(first.location.as_ref().unwrap().file, "rapport.typ");
-    let text = err.to_text();
-    assert!(text.starts_with("error: file not found"), "{text}");
-    assert!(text.contains("┌─ rapport.typ:"), "{text}");
-    assert!(!text.contains(":\\"), "no machine paths: {text}");
+    // The empty page has the footer only.
+    let blank = page_text(&doc, 3);
+    assert!(!blank.contains("Uitleg"), "{blank}");
+    assert!(page_text(&doc, 4).contains("Toetsanalyse"));
+}
+
+#[test]
+fn f13_the_last_student_is_padded_too() {
+    let case = load_case("rapport-one-student");
+    let data = with_observaties(case_data(&case), 0, 30);
+    let doc = compile(&data, true).unwrap().output;
+    assert_eq!(footer_numbers(&doc), ["1/4", "2/4", "3/4", "4/4"]);
+}
+
+#[test]
+fn t10_edge_case_maxima_do_not_break_the_rapport() {
+    let case = load_case("rapport-one-student");
+    // Only bonus/diag questions: max_score 0 (the reference divided by zero).
+    let mut data = case_data(&case);
+    data.students[0]["max_score"] = Value::from(0);
+    let doc = compile(&data, true)
+        .unwrap_or_else(|e| panic!("max_score 0: {}", e.to_text()))
+        .output;
+    assert!(page_text(&doc, 0).contains("punten behaald. De N-term"));
+    // A fractional or zero largest maximum (the reference's `range` failed on a float).
+    for max in [Value::from(1.5), Value::from(0)] {
+        let mut data = case_data(&case);
+        data.exam_info["global_max_points"] = max.clone();
+        compile(&data, true).unwrap_or_else(|e| panic!("global max {max}: {}", e.to_text()));
+    }
+}
+
+#[test]
+fn t25_the_rapport_is_dutch() {
+    let case = load_case("rapport-one-student");
+    let doc = compile(&case_data(&case), true).unwrap().output;
+    let mut items = Vec::new();
+    text_items(&doc.pages[0].frame, 0.0, &mut items);
+    assert!(items.iter().all(|i| i.2 == "nl"), "{items:?}");
+}
+
+#[test]
+fn b06_the_leeradvies_score_stays_on_one_line() {
+    let case = load_case("rapport-one-student");
+    let mut data = case_data(&case);
+    data.students[0]["leeradvies_rows"][0]["score_str"] = Value::from("12,5 / 20 (63%)");
+    let doc = compile(&data, true).unwrap().output;
+    let mut items = Vec::new();
+    text_items(&doc.pages[0].frame, 0.0, &mut items);
+    let y_of = |s: &str| {
+        items
+            .iter()
+            .find(|i| i.0.contains(s))
+            .unwrap_or_else(|| panic!("{s}: {items:?}"))
+            .1
+    };
+    assert_eq!(y_of("12,5"), y_of("(63%)"));
+}
+
+#[test]
+fn b07_score_dots_are_larger_only_when_the_exam_has_half_points() {
+    let case = load_case("rapport-one-student");
+    let diameters = |data: &RapportData| {
+        let doc = compile(data, true).unwrap().output;
+        let mut d = Vec::new();
+        dot_diameters(&doc.pages[0].frame, &mut d);
+        d.into_iter().fold(0.0, f64::max)
+    };
+    let half = case_data(&case);
+    let mut whole = case_data(&case);
+    for s in whole.students.as_array_mut().unwrap() {
+        for q in s["vragen"].as_array_mut().unwrap() {
+            if let Some(x) = q["score"].as_f64() {
+                q["score"] = Value::from(x.floor() as i64);
+            }
+        }
+    }
+    assert_eq!(diameters(&whole), 8.0, "4 pt radius as before");
+    assert_eq!(diameters(&half), 11.0, "5.5 pt radius with half points");
 }
 
 #[test]

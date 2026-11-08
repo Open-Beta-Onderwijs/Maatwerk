@@ -1,0 +1,17 @@
+{
+  "naam": "Synthetisch College",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "logo": "afbeeldingen/school-logo.png",
+  "minAppVersion": "0.9.0",
+  "_meta": {
+    "rev": 2,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "b9809f19643c55a3abd36be1efc0a7aedcd6b84e48714188be6eac5a2a67aa61"
+  }
+}

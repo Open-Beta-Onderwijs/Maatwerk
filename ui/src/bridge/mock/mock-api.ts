@@ -52,7 +52,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.6.0';
+export const MOCK_APP_VERSION = '0.9.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -164,20 +164,25 @@ export class MockApi implements MaatwerkApi {
     error: null,
     appVersion: MOCK_APP_VERSION,
     readOnly: null,
+    source: 'besideApp',
   };
+  /** What the folder dialog of `chooseDataFolder` picks: a folder, `null` (cancelled) or a
+   *  refusal; tests set it. */
+  pickedFolder: string | null | { refused: string } = null;
   /** What `validateDataFolder` and `stampIssues` report; tests fill them. */
   dataCheck: DataCheck = { filesChecked: 0, issues: [] };
   stamps: StampIssue[] = [];
   /** What `migrateDataFolder` returns; tests may replace it. */
   migration: MigrationResult = {
-    fromVersion: 1,
-    toVersion: 2,
+    fromVersion: 2,
+    toVersion: 3,
     applied: true,
     backup: 'C:\\Users\\docent\\AppData\\Local\\maatwerk\\backups\\maatwerk-backup-v1.zip',
     written: 12,
     moved: 1,
     deleted: 3,
     warnings: ['Groep 4H1: leerling 1002 stond er dubbel in; de eerste is gehouden.'],
+    notes: ['2025-2026 Toets 1 — HERKANSING (van Toets 1): observaties vóór: geen; na: Rekenfout'],
     validation: {
       filesChecked: 12,
       issues: [
@@ -217,7 +222,7 @@ export class MockApi implements MaatwerkApi {
     }
     for (const dir of seed.dirs) this.mkdir(dir);
     // seed_initial_data() in maatwerk-core
-    this.mkdir('fotos');
+    this.mkdir('afbeeldingen');
     this.mkdir('opdrachten');
   }
 
@@ -595,7 +600,7 @@ export class MockApi implements MaatwerkApi {
   // ── Presence, session, photos ─────────────────────────────────────────────
 
   private writePresence(userId: string, state: Record<string, unknown>): void {
-    this.putFile(`users/${userId}.json`, encoder.encode(JSON.stringify(state, null, 2)));
+    this.putFile(`aanwezigheid/${userId}.json`, encoder.encode(JSON.stringify(state, null, 2)));
   }
 
   async updatePresence(userId: string | null, state?: Record<string, unknown>): Promise<void> {
@@ -646,6 +651,13 @@ export class MockApi implements MaatwerkApi {
     this.realPdf = fromBase64(base64);
   }
 
+  /** Typst warnings the next renders return (tests). */
+  private renderWarnings: string[] = [];
+
+  useRenderWarnings(warnings: string[]): void {
+    this.renderWarnings = [...warnings];
+  }
+
   private storePdf(name: string, pages: string[][]): string {
     const pdfPath = `C:\\Maatwerk-mock\\temp\\${name}`;
     this.pdfs.set(pdfPath, this.realPdf ?? cannedPdf(pages));
@@ -659,7 +671,7 @@ export class MockApi implements MaatwerkApi {
     examId: string,
     students: unknown[],
     examInfo: Record<string, unknown>,
-  ): Promise<RenderResult<{ pdfPath: string }>> {
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>> {
     this.record('renderRapportPdf', [examId, students, examInfo]);
     const title = String(examInfo?.name ?? examId); // payload field is name (domain/rapport.ts)
     const pages = students.map((s, i) => {
@@ -669,6 +681,7 @@ export class MockApi implements MaatwerkApi {
     return {
       success: true,
       pdfPath: this.storePdf('rapport_preview.pdf', pages.length ? pages : [['Rapport (mock)']]),
+      warnings: [...this.renderWarnings],
     };
   }
 
@@ -693,7 +706,7 @@ export class MockApi implements MaatwerkApi {
   async renderAssignmentBatch(
     jobs: BatchJob[],
     opts: BatchOptions = {},
-  ): Promise<RenderResult<{ pdfPath: string; pages: number }>> {
+  ): Promise<RenderResult<{ pdfPath: string; pages: number; warnings: string[] }>> {
     this.record('renderAssignmentBatch', [jobs, opts]);
     if (!Array.isArray(jobs) || jobs.length === 0)
       return { success: false, error: 'Er is niets om te genereren.' };
@@ -713,7 +726,12 @@ export class MockApi implements MaatwerkApi {
       ]);
       for (const cb of this.progressListeners) cb({ done: i + 1, total });
     }
-    return { success: true, pdfPath: this.storePdf(outputName, pages), pages: pages.length };
+    return {
+      success: true,
+      pdfPath: this.storePdf(outputName, pages),
+      pages: pages.length,
+      warnings: [...this.renderWarnings],
+    };
   }
 
   // ── Shell ─────────────────────────────────────────────────────────────────
@@ -764,6 +782,15 @@ export class MockApi implements MaatwerkApi {
     this.record('restartApp', []);
   }
 
+  async chooseDataFolder(): Promise<string | null> {
+    this.record('chooseDataFolder', []);
+    const picked = this.pickedFolder;
+    if (picked !== null && typeof picked === 'object') {
+      throw { code: 'invalid_argument', message: picked.refused, details: {} };
+    }
+    return picked;
+  }
+
   async problemInfo(): Promise<ProblemInfo> {
     this.record('problemInfo', []);
     return { logDir: MOCK_LOG_DIR, version: '0.0.0-mock' };
@@ -781,9 +808,11 @@ export class MockApi implements MaatwerkApi {
     this.uiErrors.push(message);
   }
 
-  async migrateDataFolder(): Promise<MigrationResult> {
-    this.record('migrateDataFolder', []);
-    return structuredClone(this.migration);
+  async migrateDataFolder(dryRun?: boolean): Promise<MigrationResult> {
+    this.record('migrateDataFolder', [dryRun]);
+    const result = structuredClone(this.migration);
+    if (!dryRun) return result;
+    return { ...result, applied: false, backup: null, validation: null, reportFile: null };
   }
 
   async validateDataFolder(): Promise<DataCheck> {

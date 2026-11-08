@@ -27,6 +27,12 @@ use crate::integrity::{self, StampState};
 use crate::jsonfmt::to_js_json;
 use crate::paths::{DataDir, RelPath, is_year_name};
 
+/// Photos, the school logo and the watermark (format v3, step 18; `fotos/` in v2).
+pub const IMAGES_DIR: &str = "afbeeldingen";
+
+/// Presence files `<userId>.json`: who is online (format v3; `users/` in v2).
+pub const PRESENCE_DIR: &str = "aanwezigheid";
+
 /// Subject folders created per year (`main.js:141`).
 pub const SUBJECTS: [&str; 4] = ["nat", "bio", "schk", "wi"];
 
@@ -67,7 +73,8 @@ pub fn check_opdracht_typ_path(rel: &RelPath) -> Result<()> {
     require(ok, rel, "expected opdrachten/<id>/<name>.typ")
 }
 
-/// `fotos/<name>.<image ext>`: where the UI saves photos and logos (`fs:savePhoto`; backlog n8).
+/// `afbeeldingen/<name>.<image ext>`: where the UI saves photos and logos (`fs:savePhoto`;
+/// backlog n8; `fotos/` before format v3).
 /// Image types only, so the shared folder never receives a file that runs when opened (review
 /// 6a M1).
 pub fn check_photo_path(rel: &RelPath) -> Result<()> {
@@ -77,9 +84,14 @@ pub fn check_photo_path(rel: &RelPath) -> Result<()> {
     let ok = image
         && rel
             .as_str()
-            .strip_prefix("fotos/")
+            .strip_prefix(IMAGES_DIR)
+            .and_then(|r| r.strip_prefix('/'))
             .is_some_and(|name| !name.contains('/'));
-    require(ok, rel, "expected fotos/<name> with an image extension")
+    require(
+        ok,
+        rel,
+        "expected afbeeldingen/<name> with an image extension",
+    )
 }
 
 fn require(ok: bool, rel: &RelPath, reason: &'static str) -> Result<()> {
@@ -202,9 +214,10 @@ impl Storage {
         self.commit.timeout = timeout;
     }
 
-    /// C1: the folder must be v2. A v1 folder (no `schema_version`, or no `config.json` but v1
-    /// files) needs the migration; a newer version is refused. An unreadable `config.json` does
-    /// not block (it may still be syncing); a folder with nothing of v1 in it is new.
+    /// C1: the folder must be current (v3). An older one (v2, or v1: no `schema_version`, or no
+    /// `config.json` but v1 files) needs the migration; a newer version is refused. An
+    /// unreadable `config.json` does not block (it may still be syncing); a folder with nothing
+    /// of v1 in it is new.
     pub fn check_schema(&self) -> Result<()> {
         let rel = RelPath::parse("config.json")?;
         let config = match self.read_json(&rel) {
@@ -213,9 +226,12 @@ impl Storage {
                 let root = self.dir.root();
                 let v1 = V1_MARKERS.iter().any(|m| root.join(m).exists())
                     || !self.list_years().is_empty();
-                // `gebruikers/` is v2: its `config.json` has not synced yet.
+                // `gebruikers/` is v2 or v3 whose `config.json` has not synced yet; `fotos/` or
+                // `users/` next to it is v2, which needs the migration (review 18 M1).
                 return if v1 && !root.join("gebruikers").is_dir() {
                     Err(Error::NeedsMigration { found: 1 })
+                } else if root.join("gebruikers").is_dir() && has_v2_dirs(root) {
+                    Err(Error::NeedsMigration { found: 2 })
                 } else {
                     Ok(())
                 };
@@ -226,7 +242,9 @@ impl Storage {
             None | Some(Value::Null) => Err(Error::NeedsMigration { found: 1 }),
             Some(Value::Number(n)) => match n.as_u64() {
                 Some(v) if SUPPORTED_SCHEMA_VERSIONS.contains(&v) => Ok(()),
-                Some(v @ 0..=1) => Err(Error::NeedsMigration { found: v.max(1) }),
+                Some(v) if v < crate::migrate::CURRENT_VERSION => {
+                    Err(Error::NeedsMigration { found: v.max(1) })
+                }
                 _ => Err(Error::UnsupportedSchema {
                     found: n.to_string(),
                 }),
@@ -444,7 +462,7 @@ impl Storage {
     }
 
     /// Decodes base64 and writes the bytes (`fs:savePhoto`). Atomic, unlike the reference; not
-    /// reported to the watcher (`fotos/` is not watched).
+    /// reported to the watcher (`afbeeldingen/` is not watched).
     pub fn save_photo(&self, rel: &RelPath, base64_data: &str) -> Result<()> {
         let bytes = decode_base64_lenient(base64_data)?;
         self.commit_bytes(rel, &bytes, Expect::Any, false)
@@ -548,24 +566,28 @@ impl Storage {
         self.dir.resolve(&year_rel)
     }
 
-    /// First-run setup (`seedInitialData`, `main.js:965-1003`) in the v2 format: `config.json`
-    /// with `schema_version` and the admin account if there are no users yet, plus the `fotos/`
-    /// and `opdrachten/` folders. `lib.typ` lives in each opdracht folder (C14).
+    /// First-run setup (`seedInitialData`, `main.js:965-1003`) in the current format:
+    /// `config.json` with `schema_version` and the admin account if there are no users yet, plus
+    /// the `afbeeldingen/` and `opdrachten/` folders. `lib.typ` lives in each opdracht folder (C14).
     pub fn seed_initial_data(&self) -> Result<()> {
-        let config = RelPath::parse("config.json")?;
-        let version = serde_json::json!({ "schema_version": crate::migrate::CURRENT_VERSION });
-        match self.write_json(&config, &version, Expect::Missing) {
-            Ok(_) | Err(Error::Conflict { .. }) => {}
-            Err(e) => return Err(e),
-        }
         let has_users = self
             .list_dir(&RelPath::parse("gebruikers")?, false)?
             .iter()
             .any(|f| f.ends_with(".json"));
+        // Only a new folder gets a version: a folder with data whose `config.json` has not synced
+        // yet would otherwise be stamped current without its migration (review 18 M1).
+        if !has_users && self.list_years().is_empty() {
+            let config = RelPath::parse("config.json")?;
+            let version = serde_json::json!({ "schema_version": crate::migrate::CURRENT_VERSION });
+            match self.write_json(&config, &version, Expect::Missing) {
+                Ok(_) | Err(Error::Conflict { .. }) => {}
+                Err(e) => return Err(e),
+            }
+        }
         if !has_users {
             self.seed_admin()?;
         }
-        self.ensure_dir(&RelPath::parse("fotos")?)?;
+        self.ensure_dir(&RelPath::parse(IMAGES_DIR)?)?;
         self.ensure_dir(&RelPath::parse("opdrachten")?)?;
         Ok(())
     }
@@ -593,6 +615,18 @@ impl Storage {
             Err(e) => Err(e),
         }
     }
+}
+
+/// A top-level `fotos/` or `users/` (any case): the v2 names of `afbeeldingen/`, `aanwezigheid/`.
+fn has_v2_dirs(root: &std::path::Path) -> bool {
+    std::fs::read_dir(root).is_ok_and(|entries| {
+        entries.flatten().any(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            e.file_type().is_ok_and(|t| t.is_dir())
+                && (name.eq_ignore_ascii_case(crate::migrate::V2_IMAGES)
+                    || name.eq_ignore_ascii_case(crate::migrate::V2_PRESENCE))
+        })
+    })
 }
 
 fn parse_json(rel: &RelPath, bytes: &[u8]) -> Result<Value> {

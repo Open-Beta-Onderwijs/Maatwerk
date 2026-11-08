@@ -241,6 +241,12 @@ fn print_migration(report: &MigrationReport, verbose: bool) {
             }
         }
     }
+    if !report.notes.is_empty() {
+        println!("Observaties bij inhaal- en herkansingstoetsen (vóór en na):");
+        for n in &report.notes {
+            println!("  - {n}");
+        }
+    }
     if !report.warnings.is_empty() {
         println!("Let op:");
         for w in &report.warnings {

@@ -1,14 +1,199 @@
 # State
 
-Last updated: 2026-11-05 (step 15 done, 0.6.0) Branch: `main` Last tags: `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`,
-`step-13`, `v0.4.0` (pushed), `v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`,
-`v0.2.0-parity` (version tags are local only)
+Last updated: 2026-11-08 (steps 17 and 18 merged into local `main`, PR open) Branch: `step/18-data-v3`
+(from `step/17-rapport-fixes`, which is from `main` `a62ea7e`)
+Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
+(pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
+`step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 15 done** (merged, tagged `step-15`, version 0.6.0). **Next: step 16** (Platforms: macOS and
-Linux; L, 16a/16b). Step 15 was: branch `step/15-shell` (from `main` `2688784`). Items V-05, V-12, F-17, F-18 (persistence), F-21, B-04, B-08, U11, U13, U16,
-decision 5.
+**Next action:** CI on the PR `release/v0.9.0` -> `main` (steps 16, 17, 18); the user merges it.
+Then step 19.
+
+**User (2026-11-08):** the migration ran fine on a copy of the real data (local exe 0.9.0).
+Leeradvies score column 3 cm -> 2,5 cm (`16439a2`, goldens re-blessed; scores up to
+"99,5 / 99 (100%)" fit). Steps 17 and 18 merged into local `main`, tagged `step-17`,
+`v0.8.0`, `step-18`, `v0.9.0` (local); pushed as `release/v0.9.0` with a PR.
+
+**User answers (2026-11-07):** golden check 17 approved (padding page with footer and
+watermark is fine). T9 moved to step 19b, T23 to step 30 (PLAN-2, ROADMAP 4.6; renumbered 2026-11-08). F-14:
+`opdrachtenVraag` stays on the exam (ADR-0010 item 7); `onder: 2` matches 0, 1 and `N`, not an
+empty score (step 30 implements the matching).
+
+**User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
+commits; the gate, code review and security review only once, after step 18. Step 16: CI green
+(user), version 0.7.0, merged into local `main`, tagged `step-16b`, `step-16`, `v0.7.0`.
+
+## Step 17 progress (Rapport fixes, 0.8)
+
+Scope as PLAN-2 step 17: B-06, B-07, F-13, F-04, T4, T7, T8, T10, T25; plus T6 (the rapport's
+numbers, same lines as T7). T9 (histogram/ranking texts) moved to step 19b and T23 (batch
+reports only the first failure) to step 30 (user 2026-11-07; renumbered 2026-11-08).
+
+1. **Done** (`f26d77f`): template fixes, failing tests first (`tests/typst_rapport.rs`, 9 new):
+   T4 watermark only when `fotos/school-watermerk.svg` exists (any case; `data.json` field
+   `watermark`); T6/T7 `_num` (decimal comma, no truncation); T8 footer total = the student's
+   own pages (metadata `<rapport-student-end>`); F-13 `pagebreak(to: "odd")` between students,
+   the last student padded via its end marker; T10 zero/fractional maxima, missing
+   `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm (2,5 cm since 2026-11-08); B-07
+   dots 5.5 pt when any score or maximum has a fraction. Goldens `rapport-one-student`,
+   `rapport-valid` blessed (`MAATWERK_BLESS="<why>" MAATWERK_BLESS_IDS=<ids> cargo test`, new in `tests/support`; case
+   field `port.blessed`): page 1 of each student changes, page 2 not. User approved the
+   before/after PNGs (2026-11-07).
+2. **Done** (`8010810`): F-04 `components/render-warnings.ts`: folded panel above the PDF in the
+   rapport and opdrachten dialogs; bridge returns `warnings`; batch warnings name the opdracht,
+   once per opdracht; mock `useRenderWarnings`; e2e `e2e/rapport.spec.ts` (3).
+3. **Done** (`9ea3bd9`): version 0.8.0.
+
+## Step 18 progress (Data format v3, 0.9)
+
+Branch `step/18-data-v3` on top of `step/17-rapport-fixes` (17 is not merged: its golden check is
+pending). Spec: `docs/reference/data-files-v3.md`; runbook section 9.
+
+1. **Done:** core. `migrate::v3` (new): `school.json` first (`minAppVersion` 0.9.0 when absent or
+   lower; logo/watermerk paths), `fotos/` -> `afbeeldingen/` (any case), `users/` removed (stale
+   presence), `gebruikers` foto paths, every exam `kind: "toets"`/`diagnostic: false` when
+   absent, resits `obs_ids` = original's + own (warning) and `obs_from_parent: true`, with a
+   before/after `notes` line per resit (decision 13). Changed entities: rev + 1, `updatedBy`
+   null. `migrate` chains v1 -> v2 -> v3 after one backup (`migrate_to` for tests; a v1 dry run
+   lists v2 only and says v3 follows). `CURRENT_VERSION` 3; v2 is `needs_migration`. Storage
+   `IMAGES_DIR`/`PRESENCE_DIR`; rapport mount `/data/afbeeldingen`; watcher/snapshots skip
+   `afbeeldingen/`. D20: `presence::prune_stale` (30 days) at every start. `validate-data`:
+   v3 exam fields, `opdrachtenVraag` (F-14 data part), leftover `fotos/`/`users/` named.
+   Fixtures: v1 fixture got two resits; `tests/fixtures/migrate/v2` regenerated (only those two
+   added); new golden `v3`. 11 new Rust tests.
+2. **Done:** app + UI. `migrate_data_folder(dryRun)`, `MigrationResult.notes`; the start screen
+   shows the resit list before the confirm; CLI prints it. UI paths (`afbeeldingen/`,
+   `aanwezigheid/`), `withExamDefaults` in `Store.upsertExam`, new resits copy the original's
+   observaties (F-12 data part; locking in the edit screen is step 20). `tools/fixtures/to-v2.mjs`
+   -> `to-current.mjs` (`filesToV3`, mock only; Store goldens stay on v2). Mock app version 0.9.0.
+   Version 0.9.0.
+3. **Done:** gate after step 18 (user: one gate for 17 and 18): fmt, clippy, all Rust tests,
+   420 Vitest, 123 node tests (incl. the Typst reference-freshness check), 220 Chromium e2e,
+   117 local visual views unchanged, lint, typecheck, SPDX, licences, cargo deny,
+   `npm audit --omit=dev` 0. Reviews (fresh context): `docs/reviews/step-17.md` (0/1/5/5),
+   `step-18.md` (0/1/8/6), `step-17-18-security.md` (0/1/5/5); both majors and most minors
+   fixed (`ee4b0ea` on step 17, merged into 18; `1b522c4`), rest in `docs/backlog.md`. Nothing
+   pushed; WebKit e2e and macOS/Linux CI not run for 17/18.
+4. **Not done, needs the user (STOP gates):** the `validate-data` list from a copy of the real
+   data (PLAN-2 "before the step"); running the migration on that copy; deleting leftovers. No
+   automatic leftover removal was built: the list decides (runbook section 9).
+
+## Step 16 (done, tags `step-16b`, `step-16`)
+
+Plan: (1) CI job `linux` + packages; (2) case-sensitive path tests (Windows-made data folder in
+mixed case: path helpers, migration, `validate-data`); (3) backlog: lock dir, snapshot `who`,
+early log dir; (4) README Linux section + sync advice (STOP); (5) visual tests per platform in
+CI; (6) gate, review of step 16, report.
+
+1. **Done** (`7540d21`), CI result pending: `src-tauri/tauri.linux.conf.json` (appimage + deb, Education), `npm run
+build:linux`, CI job `linux` on ubuntu-24.04 (glibc 2.39+): npm test, WebKit e2e, clippy
+   (the only lint of `cfg(not(windows))` code), cargo test, fixture migrate + validate,
+   real-pdf, AppImage + .deb artifact `maatwerk-linux-x86_64`. `data_location::program_path`:
+   `$APPIMAGE` counts as the program, so `data/` beside the AppImage works like beside the exe.
+
+2. **Done** (local, not pushed while CI run `42213080719` runs): case-sensitive paths (quirk
+   T32). Typst World: a missing mounted file is looked up ignoring case
+   (`world::find_ignoring_case`; ambiguous -> not found). Migration rewrites `images/<id>/` in
+   any ASCII case. `validate-data`: a case-only mismatch is a warning with the real name. The
+   whole workspace suite also passes with `TMP` in a case-sensitive folder on Windows (`fsutil
+file setCaseSensitiveInfo`). Login lists `gebruikers/` (ids keep their case); image import
+   already refuses case-only clashes.
+
+3. **Done** (local): the 16a backlog. `default_lock_dir` is per user everywhere (a shared
+   `/tmp/maatwerk-locks` made by one Linux user blocked the next user's saves): Linux
+   `$XDG_RUNTIME_DIR`, else `~/.cache`; macOS `~/Library/Caches`. Snapshot `who`:
+   `machine_name()` (COMPUTERNAME / `scutil --get ComputerName` / `/proc/sys/kernel/hostname`).
+   `early_log_dir` mirrors Tauri's `app_log_dir` on macOS and Linux too.
+
+4. **Done** (local): README "Linux (from 0.7)" (`.deb`, AppImage + `libfuse2t64`, `data/` beside
+   the AppImage) and "Linux: the shared folder". **User decision (2026-11-06, STOP gate):**
+   OneDrive Client for Linux (abraunegg, `--monitor`) recommended, rclone bisync on a timer as
+   the alternative; `rclone mount` and GNOME Files' OneDrive marked unsuitable. validate test:
+   the clients' conflict copies are listed. `docs/release.md` Linux artifact, manual checks
+   M-LNX-1..6.
+
+5. **Done** (local), baselines pending: visual tests in CI. **User decision (2026-11-06):** the
+   light look only, baselines per CI platform committed (`ui/e2e/visual-baselines/<project>-
+<platform>/`, ~2.5 MB each; local WebKit run: 39 views, ~50 s, stable). Projects
+   `visual-ci-chromium` (Windows job) and `visual-ci-webkit` (macOS, Linux), tolerance
+   `maxDiffPixelRatio: 0.002`. A platform without a folder writes its baselines (warning) and
+   uploads artifact `visual-<os>`; next: commit those from the first run (docs/testing.md
+   "Visual baselines in CI").
+6. Run `42225808814` (`3056ce4`): Linux and macOS green and wrote their baselines (39 each;
+   3.6 MB Linux, 4.6 MB macOS; checked by eye: DejaVu on Linux, SF on macOS, charts fine),
+   committed. Windows failed twice on Chromium e2e flakes, each a different test: csp
+   screen-groepen (`ERR_CONNECTION_REFUSED` once), accounts `#traag` (30 s timeout), dialog
+   "opens at the fixed top" (measured mid-animation; now polled). Watch the first two; no CI
+   retries added.
+7. Run `42230950159`: all green; macOS and Linux compared against the
+   committed baselines; Windows wrote its 39 (2.7 MB, Segoe UI; checked by eye), committed.
+   Run `42235274073`: Windows and Linux compared against the committed baselines (no new ones);
+   macOS got no runner ("not acquired", GitHub capacity), reruns with the next push.
+8. Review `docs/reviews/step-16.md` (fresh context): 0 blockers, 3 majors, 7 minors, 6 nits;
+   triage at its end. **M1** a missing chosen folder no longer becomes a new school
+   (`state::open_located`); **M2** (user decision 2026-11-06: keep the order) "Over Maatwerk"
+   shows the data folder with "Andere map kiezen…"; **M3** the dialog trap leaves a handled Tab
+   and `tabindex=-1` alone (G45 extended). Also m5 (lock folder `~/.cache` only), m6, n1-n3, n6
+   (`local-config.json` in the local, not roaming, app folder). Backlog: m1-m3, m7. Local: all
+   Rust tests, 434 e2e (Chromium + WebKit), lint, typecheck.
+
+9. Run `42242653611` failed on Linux: the n3 fix had written a literal backslash-n into the apt line
+   (fixed, `ci: real line continuations…`). Run `42246523588`: Windows and Linux green, visual
+   39/39 on both; macOS had no runner for the third time (GitHub capacity), only the macOS job
+   rerun. **Paused here (2026-11-06, user).** Resume: `gh run view 42246523588` (macOS job:
+   e2e, first comparison against the committed macOS baselines). Green: tag `step-16b`, stop and
+   report (merge to `main` and the 0.7 release only with the user). This STATE commit is local
+   (a push would cancel the rerun); push it with the tag.
+
+## Step 16a (done, tag `step-16a`)
+
+**Step 16a** (Platforms: macOS; L, 16a/16b). Item X-04. User decisions (2026-11-06): **unsigned
+macOS build + "Open anyway" instructions** (no Apple Developer account; ad-hoc signed for Apple
+Silicon); pushing `step/16-platforms` for CI runs is fine (no tags, no merge without the user).
+
+1. **Done** (`c91d467`): first-run "choose data folder". `maatwerk-core::data_location`
+   (`locate`: env > dev > chosen in `local-config.json` > `data/` beside the program if it
+   exists, never inside a `.app`; `check_chosen`: data folder, `<picked>/data`, or empty, else
+   refused in Dutch; `LocalConfig` keeps unknown fields). `paths::data_dir_location` removed.
+   App: `ErrorCode::NoDataFolder`, `DataFolderStatus.source`, command `choose_data_folder`
+   (folder dialog, `save_choice`, UI restarts). UI: `screens/choose-folder.ts` ("Kies de
+   gegevensmap"), "Andere map kiezen…" on the startup error screen for `chosen`/`besideApp`.
+   Tests: 4 core, 1 app, 4 Vitest, 3 e2e (`e2e/platforms.spec.ts`); manual M-START-8/9.
+   Behaviour change: a Windows exe without `data/` beside it asks instead of creating one.
+2. **Done** (`f1a62f2`): font stacks fall back to system fonts (`system-ui`, `ui-monospace`,
+   Menlo, DejaVu Sans Mono); Windows keeps Segoe UI/Consolas first (no visual change). Emoji in
+   the UI: the OS font (Apple Color Emoji); Typst uses the bundled Noto as before.
+3. **Done** (`9a6a6e1`): Playwright project `webkit` (`npm run test:e2e:webkit`, runs on
+   Windows too after `npx playwright install webkit`): 215/215 locally (one timing flake per
+   full parallel run, a different test each time; editor preview tests under load). WebKit
+   findings, all test-side: native `<select>` -> CSP `style-src-attr` report (ignored on WebKit
+   in `watchErrors`), no clipboard permissions (`pasteText`/`copySelection`), Chromium-only
+   `shadowRoot.getSelection`, per-glyph SVG hit test, Playwright scroll vs `content-visibility`,
+   aborted module import on a second navigation. App fix: Cmd+Z / Cmd+Shift+Z / Cmd+Y undo.
+4. **Done** (`e800328`): CI job `macos` and `src-tauri/tauri.macos.conf.json` (app + dmg, ad-hoc
+   `-`, macOS 12+), `npm run build:mac`; README "macOS" ("Toch openen"), release.md. Branch
+   pushed; **CI result pending** (first run).
+5. Local gate green on `56f13f2`+ (fmt, clippy, cargo test, 412 Vitest, 122 node tests, deny,
+   licences, SPDX; e2e 215 Chromium, 215 WebKit). Also `docs/testing.md` "WebKit (step 16a)",
+   manual checks M-MAC-1..6.
+6. First CI run with the macOS job (`42193879918`): 10 WebKit e2e failures on the macOS runner,
+   none on Windows. Two causes: the specs pressed `Control+A` / `Control+End` / Ctrl+click, which
+   are other actions on a Mac (now `ControlOrMeta`); and a real bug: WebKit on macOS skips
+   buttons on Tab, so the dialog focus trap never saw its last button focused and focus left the
+   dialog. The trap now moves focus itself (`ui/src/components/dialog.ts`).
+7. Second run (`42205393394`): 2 editor e2e failures on macOS. setText's Delete + insert are two
+   edits and the slower runner compiled the empty text in between, so "the preview stays on
+   errors" kept an empty preview. Those steps now add ` #fout` / ` #traag` at the end (one edit).
+8. **Done.** Third run `42209047813` on `6d65139`: all three jobs green; macOS 214 WebKit e2e,
+   cargo test, real-pdf; `Maatwerk.app` universal (`lipo`: x86_64 arm64), `codesign --verify`
+   ok; artifact `maatwerk-macos-universal` (.zip + .dmg, ~114 MB). Tagged `step-16a` (local).
+   Next: step 16b (Linux). The step 16 review and the 0.7 release come after 16b.
+
+Backlog candidates (done in 16b item 3): the snapshot's `who` uses `COMPUTERNAME` (unset on macOS ->
+"onbekend"); `default_lock_dir` falls back to `temp_dir()` off Windows (per user on macOS,
+shared `/tmp` on Linux: 16b); `early_log_dir` is Windows-only.
 
 ## Step 15 progress
 
@@ -160,7 +345,7 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    (spec 2.3: text colours as theme-token mixes, bar colours hex, score-grid cell fills) replace
    the copies in ~15 files; `utils/grades.js` -> `utils/grades.ts`; `utils/colors.js` keeps only
    `examTypeColor` until sub-task 4. Rounding paths unchanged (B8 note in `quirks.md`). The
-   score grid stays light in dark mode (token island) until step 21.
+   score grid stays light in dark mode (token island) until step 25 (renumbered 2026-11-08).
 3. **Done:** `ui/src/styles/buttons.css` (`.btn` + `--primary/--secondary/--text/--danger/
 --icon/--icon-danger/--sm`, focus ring, disabled, `aria-busy` spinner) and
    `components/button.ts` `setBusy`. All ~100 buttons converted (PIN dialogs included);
@@ -186,7 +371,7 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
 
 User decisions (2026-11-05): zwart accent in dark theme keeps the light fill (`#E7EAF0`, dark
 text); B8 rounding unification stays in step 19. `editor.css`/`pdf-viewer.css` (own windows)
-keep their colours until step 27.
+keep their colours until step 31 (renumbered 2026-11-08).
 
 User review of the visual diff (2026-11-05), fixed: groep-edit Schoolsoort on one line; text in
 inputs had no left padding (the `* { padding: 0 }` reset beat the zero-specificity base; base is
@@ -199,7 +384,7 @@ verzamelkaart and Leerling bewerken.
 ## Phase 2 intake (earlier)
 
 **Phase 2 (`PLAN-2.md`).** Cutover done by the user (2026-11). Intake in `ROADMAP.md` section 4;
-design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-29).
+design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-33).
 Step 12 (triage) done 2026-11-04: decisions in `PLAN-2.md` section 1 and ADR-0010, triage in
 `ROADMAP.md` 4.6. Step 13 done 2026-11-05. Before step 18 the user runs `validate-data`
 on a copy of the real data folder.

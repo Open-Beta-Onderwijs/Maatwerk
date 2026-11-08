@@ -246,7 +246,10 @@ export function buildLeeradviesRows(
 
     let advies = '—';
     if (adviesData) {
-      const bracket = getScoreBracket(scored, max, adviesData.grenswaarden[cat]!);
+      // T10: a file without `grenswaarden` (or without this category) uses the defaults;
+      // the reference failed on it.
+      const grenzen = adviesData.grenswaarden?.[cat] ?? { laag_midden: 40, midden_hoog: 70 };
+      const bracket = getScoreBracket(scored, max, grenzen);
       const text = (adviesData.leeradvies[cat]?.[bracket] ?? '').trim();
       advies = text ? sanitizeTypstMarkup(text) : '—';
     }

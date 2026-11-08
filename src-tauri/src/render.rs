@@ -8,8 +8,8 @@
 use maatwerk_core::outputs::{self, PrintName};
 use maatwerk_core::paths::RelPath;
 use maatwerk_core::typst_svc::{
-    self, BatchError, BatchJob, BatchOptions, BatchProgress, Diagnostic, Mode, OpdrachtHeader,
-    OpdrachtInputs, RapportData, TypstProject, local_now,
+    self, BatchError, BatchJob, BatchOptions, BatchProgress, Diagnostic, JobWarning, Mode,
+    OpdrachtHeader, OpdrachtInputs, RapportData, TypstProject, local_now,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -94,9 +94,28 @@ pub struct PrintNameArg {
 }
 
 fn warning_texts(warnings: &[Diagnostic]) -> Vec<String> {
+    dedup(
+        warnings
+            .iter()
+            .map(|w| typst_svc::to_text(std::slice::from_ref(w))),
+    )
+}
+
+/// A batch's warnings with the opdracht they belong to (F-04: the dialog shows them), once per
+/// opdracht: the same opdracht for 30 students warns 30 times.
+fn job_warning_texts(warnings: &[JobWarning]) -> Vec<String> {
+    dedup(warnings.iter().map(|w| {
+        format!(
+            "Opdracht \"{}\":\n{}",
+            w.label,
+            typst_svc::to_text(std::slice::from_ref(&w.diagnostic))
+        )
+    }))
+}
+
+fn dedup(texts: impl IntoIterator<Item = String>) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
-    for w in warnings {
-        let text = typst_svc::to_text(std::slice::from_ref(w));
+    for text in texts {
         if !out.contains(&text) {
             out.push(text);
         }
@@ -231,11 +250,10 @@ pub async fn render_assignment_batch(
                 BatchError::Empty => invalid_argument(e.to_string()),
                 e => CommandError::typst(e.to_string()),
             })?;
-        let warnings: Vec<Diagnostic> = out.warnings.into_iter().map(|w| w.diagnostic).collect();
         Ok(RenderedBatch {
             pdf_path: c.outputs()?.put(&output_name, &out.merged.pdf)?,
             pages: u32::try_from(out.merged.pages).unwrap_or(u32::MAX),
-            warnings: warning_texts(&warnings),
+            warnings: job_warning_texts(&out.warnings),
         })
     })
     .await
@@ -336,5 +354,19 @@ mod tests {
     fn warnings_are_deduplicated() {
         let w = Diagnostic::error("tofu");
         assert_eq!(warning_texts(&[w.clone(), w]).len(), 1);
+    }
+
+    #[test]
+    fn batch_warnings_name_the_opdracht_once() {
+        let w = |index, label: &str| JobWarning {
+            index,
+            label: label.to_owned(),
+            diagnostic: Diagnostic::error("tofu"),
+        };
+        let texts = job_warning_texts(&[w(0, "Remweg"), w(1, "Remweg"), w(2, "Hefboom")]);
+        assert_eq!(texts.len(), 2, "{texts:?}");
+        assert!(texts[0].starts_with("Opdracht \"Remweg\":\n"), "{texts:?}");
+        assert!(texts[0].contains("tofu"), "{texts:?}");
+        assert!(texts[1].starts_with("Opdracht \"Hefboom\":"), "{texts:?}");
     }
 }

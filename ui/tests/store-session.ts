@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 import { MockApi, type MockSeed } from '../src/bridge/mock/mock-api';
 // The golden scenarios hold v1 folders (captured from the reference app); the
 // Store reads and writes format v2 (Step 7a).
-import { filesToV2 } from '../../tools/fixtures/to-v2.mjs';
+import { filesToV2 } from '../../tools/fixtures/to-current.mjs';
 
 /** The Store's public surface as the tests use it (it is untyped legacy JS). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

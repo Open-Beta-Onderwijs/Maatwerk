@@ -1,0 +1,56 @@
+{
+  "uitleg": {
+    "R": "R nat3",
+    "T1": "",
+    "T2": "",
+    "I": ""
+  },
+  "leeradvies": {
+    "R": {
+      "laag": "R laag nat3",
+      "midden": "",
+      "hoog": ""
+    },
+    "T1": {
+      "laag": "T1 laag nat3",
+      "midden": "",
+      "hoog": ""
+    },
+    "T2": {
+      "laag": "T2 laag nat3",
+      "midden": "",
+      "hoog": ""
+    },
+    "I": {
+      "laag": "I laag nat3",
+      "midden": "",
+      "hoog": ""
+    }
+  },
+  "grenswaarden": {
+    "R": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T1": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "T2": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    },
+    "I": {
+      "laag_midden": 40,
+      "midden_hoog": 70
+    }
+  },
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "a50f3ada445767bcf1b708e283381473513d0845b49f4cf1d52969e97a32fd9e"
+  }
+}

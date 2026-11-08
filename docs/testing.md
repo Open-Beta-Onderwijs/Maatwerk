@@ -15,7 +15,9 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 | `node tests/reference-harness/make-shims.mjs`           | yes                                       | Rewrites `tools/reference-shims/*.cjs` from the reference                                                                                           |
 | `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                                                                                      |
 | `npm run test:e2e`                                      | no                                        | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)                                                                 |
-| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 37 views; baseline is machine-specific, not committed                                                                |
+| `npm run test:e2e:webkit`                               | no                                        | The same suite in Playwright's WebKit (CI on macOS; also runs on Windows after `npx playwright install webkit` in `ui/`)                            |
+| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 39 views, three looks; baseline is machine-specific, not committed                                                   |
+| `npm run test:visual:ci -w ui -- --project visual-ci-…` | no                                        | CI, every job: the light look of every view against the committed baselines of that CI platform (`ui/e2e/visual-baselines/`)                        |
 | `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)                                                                 |
 | `npm run bindings`                                      | no                                        | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005); run it from PowerShell (Git Bash's `link` shadows MSVC's) |
 | `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data (format v1) in `data/` (refuses a non-empty folder), then the real app on it: it first offers the v2 conversion (M-MIG-1)   |
@@ -88,6 +90,45 @@ These make runs deterministic. Each is a choice about the environment, not about
 | `readdirSync` in `main.js` returns names in NTFS order (case-insensitive ordinal) | `fs:readAllJson` order decides e.g. which group a student gets (quirk B31); checked with `MAATWERK_READDIR_REVERSE=1` |
 | `app.whenReady()` never resolves                                                  | No seeding, watcher or window during tests                                                                            |
 | Admin-only flows run after `Store.loadYear(year, null)`                           | The admin view loads all groups (group-assignment CSV import)                                                         |
+
+## WebKit (step 16a)
+
+`npm run test:e2e:webkit` runs the e2e suite in Playwright's WebKit build: the engine of
+WKWebView (macOS) and WebKitGTK (Linux), not the OS integration (menus, file dialogs, IPC). The
+tests differ from Chromium only where the engine or Playwright does:
+
+- A native `<select>` makes WebKit report a CSP `style-src-attr` violation (its own inner styles,
+  no sample). `watchErrors` ignores exactly that message on WebKit; the Chromium run still fails
+  on any inline style of the app.
+- Playwright cannot grant clipboard access on WebKit: `pasteText` / `copySelection`
+  (`e2e/grid-driver.ts`) fire the paste/copy event there, and use the real clipboard and keys on
+  Chromium.
+- `shadowRoot.getSelection()` is Chromium-only; SVG text is hit-tested per glyph (click with
+  `force`, the app maps the point); Playwright's scrolling does not reach into a
+  `content-visibility: auto` card (scroll with the element's own `scrollIntoView` first); a
+  navigation while the first page still imports `app.js` logs "Importing a module script failed."
+  (wait for the start screen first).
+- On the macOS runner the specs press `ControlOrMeta` for select all, document end, undo and
+  Ctrl+click: `Control+A` / `Control+End` are other actions on a Mac. Tests of the Ctrl keys
+  themselves (G46) keep `Control`.
+- Timing: a full parallel run is slower than Chromium; poll timeouts that assume Chromium speed
+  may need more room (G52).
+
+## Visual baselines in CI (step 16b)
+
+User decision 2026-11-06: CI compares the **light look** of every view (`e2e/views.ts`) per
+platform: `visual-ci-chromium` in the Windows job, `visual-ci-webkit` in the macOS and Linux
+jobs. The baselines are committed in `ui/e2e/visual-baselines/<project>-<platform>/` (~2.5 MB
+per platform), with `maxDiffPixelRatio: 0.002` for runner antialiasing. Dark and yellow stay
+in the local `visual` project (exact, not committed).
+
+- They come from CI only, never from a local machine (other fonts and antialiasing).
+- A platform without a baseline folder writes its baselines in that run (a warning, the step
+  passes) and uploads them as the artifact `visual-windows` / `visual-macos` / `visual-linux`:
+  copy `visual-baselines/` from it into `ui/e2e/` and commit.
+- An intended visual change: delete the affected folders (or files) and push; commit what the
+  next run writes, after looking at it. A failed comparison uploads the expected, actual and
+  diff images (`test-results/`) in the same artifact.
 
 ## Size budget
 

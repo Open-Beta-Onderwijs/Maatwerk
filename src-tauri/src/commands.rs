@@ -300,7 +300,7 @@ pub async fn read_photo_as_data_url(
     .await
 }
 
-/// Only `fotos/<name>` (backlog n8).
+/// Only `afbeeldingen/<name>` (backlog n8).
 #[tauri::command]
 #[specta::specta]
 pub async fn save_photo(

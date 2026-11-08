@@ -190,7 +190,7 @@ fn s18_own_writes_and_deletes_are_noted() {
     s.write_text(&rel("opdrachten/x.typ"), "= Hi", Expect::Any)
         .unwrap();
     s.delete(&rel("gone.json")).unwrap();
-    s.save_photo(&rel("fotos/p.png"), "AAEC").unwrap();
+    s.save_photo(&rel("afbeeldingen/p.png"), "AAEC").unwrap();
     let _ = s.write_json(&rel("a.json"), &json!(2), Expect::Missing); // conflict: not noted
     assert_eq!(
         *notes.0.lock().unwrap(),
@@ -614,7 +614,7 @@ fn list_years_newest_first_dirs_only() {
         s.ensure_year(y).unwrap();
     }
     put(&s, "2026-2027", b"not a dir");
-    fs::create_dir_all(s.data_dir().root().join("fotos")).unwrap();
+    fs::create_dir_all(s.data_dir().root().join("afbeeldingen")).unwrap();
     fs::create_dir_all(s.data_dir().root().join("2025-26")).unwrap();
     assert_eq!(s.list_years(), vec!["2025-2026", "2024-2025", "2023-2024"]);
 }
@@ -737,39 +737,49 @@ fn text_files_round_trip_with_cas() {
 #[test]
 fn photos_as_data_urls() {
     let (_t, s) = setup();
-    assert_eq!(s.read_photo_data_url(&rel("fotos/none.png")).unwrap(), None);
-    s.save_photo(&rel("fotos/a.png"), "iVBO\nRw0K").unwrap();
     assert_eq!(
-        disk(&s, "fotos/a.png"),
+        s.read_photo_data_url(&rel("afbeeldingen/none.png"))
+            .unwrap(),
+        None
+    );
+    s.save_photo(&rel("afbeeldingen/a.png"), "iVBO\nRw0K")
+        .unwrap();
+    assert_eq!(
+        disk(&s, "afbeeldingen/a.png"),
         [0x89, b'P', b'N', b'G', 0x0d, 0x0a]
     );
     assert_eq!(
-        s.read_photo_data_url(&rel("fotos/a.png")).unwrap().unwrap(),
+        s.read_photo_data_url(&rel("afbeeldingen/a.png"))
+            .unwrap()
+            .unwrap(),
         "data:image/png;base64,iVBORw0K"
     );
-    s.save_photo(&rel("fotos/b.SVG"), "PHN2Zy8-").unwrap(); // url-safe, no padding
-    assert_eq!(disk(&s, "fotos/b.SVG"), b"<svg/>");
+    s.save_photo(&rel("afbeeldingen/b.SVG"), "PHN2Zy8-")
+        .unwrap(); // url-safe, no padding
+    assert_eq!(disk(&s, "afbeeldingen/b.SVG"), b"<svg/>");
     assert!(
-        s.read_photo_data_url(&rel("fotos/b.SVG"))
+        s.read_photo_data_url(&rel("afbeeldingen/b.SVG"))
             .unwrap()
             .unwrap()
             .starts_with("data:image/svg+xml;base64,")
     );
-    s.save_photo(&rel("fotos/c.bmp"), "AA==").unwrap();
+    s.save_photo(&rel("afbeeldingen/c.bmp"), "AA==").unwrap();
     assert!(
-        s.read_photo_data_url(&rel("fotos/c.bmp"))
+        s.read_photo_data_url(&rel("afbeeldingen/c.bmp"))
             .unwrap()
             .unwrap()
             .starts_with("data:image/jpeg;")
     );
     assert_eq!(
-        s.save_photo(&rel("fotos/d.png"), "!!!").unwrap_err().code(),
+        s.save_photo(&rel("afbeeldingen/d.png"), "!!!")
+            .unwrap_err()
+            .code(),
         "invalid_argument"
     );
 }
 
 #[test]
-fn seed_creates_a_v2_folder_with_the_admin_once() {
+fn seed_creates_a_v3_folder_with_the_admin_once() {
     let (_t, s) = setup();
     s.seed_initial_data().unwrap();
     let admin = s.read_json(&rel("gebruikers/admin.json")).unwrap().unwrap();
@@ -777,8 +787,8 @@ fn seed_creates_a_v2_folder_with_the_admin_once() {
     assert_eq!(admin["vakken"], json!(["nat", "bio", "schk", "wi"]));
     assert_eq!(admin["_meta"]["rev"], json!(1));
     let config = s.read_json(&rel("config.json")).unwrap().unwrap();
-    assert_eq!(config["schema_version"], json!(2));
-    assert!(s.data_dir().root().join("fotos").is_dir());
+    assert_eq!(config["schema_version"], json!(3));
+    assert!(s.data_dir().root().join("afbeeldingen").is_dir());
     assert!(s.data_dir().root().join("opdrachten").is_dir());
     assert!(s.stamp_issues().is_empty());
     // Another user but no admin file: nothing is added.
@@ -858,6 +868,8 @@ fn schema_version_c1() {
     fs::write(data.join("config.json"), "{\"schema_version\": 1}").unwrap();
     needs("version 1");
     fs::write(data.join("config.json"), "{\"schema_version\": 2}").unwrap();
+    needs("version 2 (step 18)");
+    fs::write(data.join("config.json"), "{\"schema_version\": 3}").unwrap();
     open().unwrap();
     fs::write(data.join("config.json"), "{\"half").unwrap();
     open().unwrap(); // unreadable (still syncing?) does not block
@@ -866,8 +878,11 @@ fn schema_version_c1() {
     fs::create_dir_all(data.join("2025-2026")).unwrap();
     needs("a year folder without config.json");
     fs::create_dir_all(data.join("gebruikers")).unwrap();
-    open().unwrap(); // v2 whose config.json has not synced yet
-    for v in ["3", "99", "\"1\"", "1.5"] {
+    open().unwrap(); // v3 whose config.json has not synced yet
+    fs::create_dir_all(data.join("users")).unwrap();
+    needs("review 18 M1: v2 (users/) whose config.json has not synced yet");
+    fs::remove_dir(data.join("users")).unwrap();
+    for v in ["4", "99", "\"1\"", "1.5"] {
         fs::write(
             data.join("config.json"),
             format!("{{\"schema_version\": {v}}}"),
@@ -930,15 +945,16 @@ fn n8_text_and_photo_writes_are_limited_to_their_folders() {
     ] {
         assert!(check_opdracht_typ_path(&rel(bad)).is_err(), "{bad}");
     }
-    assert!(check_photo_path(&rel("fotos/logo.png")).is_ok());
+    assert!(check_photo_path(&rel("afbeeldingen/logo.png")).is_ok());
     for bad in [
         "gebruikers.json",
-        "fotos/sub/a.png",
+        "afbeeldingen/sub/a.png",
         "fotos",
-        "opdrachten/fotos/a.png",
-        "fotos/x.bat",
-        "fotos/x.lnk",
-        "fotos/x",
+        "fotos/a.png",
+        "opdrachten/afbeeldingen/a.png",
+        "afbeeldingen/x.bat",
+        "afbeeldingen/x.lnk",
+        "afbeeldingen/x",
     ] {
         assert!(check_photo_path(&rel(bad)).is_err(), "{bad}");
     }
@@ -959,10 +975,10 @@ fn copy_dir(from: &Path, to: &Path) {
     }
 }
 
-/// The synthetic v2 fixture (`tests/fixtures/migrate/v2/data`) in a temp folder, opened as `app`.
+/// The synthetic v3 fixture (`tests/fixtures/migrate/v3/data`, `minAppVersion` 0.9.0) in a temp folder, opened as `app`.
 fn fixture_as(app: &str) -> (tempfile::TempDir, Storage) {
     let tmp = tempfile::tempdir().unwrap();
-    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrate/v2/data");
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrate/v3/data");
     copy_dir(&fixture, &tmp.path().join("data"));
     let mut storage =
         Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks")).unwrap();
@@ -984,6 +1000,13 @@ fn set_min_version(s: &Storage, min: &str) {
 #[test]
 fn min_version_absent_writes_normally() {
     let (_tmp, s) = fixture_as("0.6.0");
+    let mut school = s.read_json(&rel("school.json")).unwrap().unwrap();
+    school.as_object_mut().unwrap().remove("minAppVersion");
+    put(
+        &s,
+        "school.json",
+        serde_json::to_string_pretty(&school).unwrap().as_bytes(),
+    );
     assert_eq!(s.read_only(), None);
     s.write_json(&rel("instellingen.json"), &json!({ "a": 1 }), Expect::Any)
         .unwrap();
@@ -1016,7 +1039,7 @@ fn min_version_newer_than_the_app_refuses_every_write_but_reads() {
     );
     refused(s.write_text(&rel("notes.txt"), "x", Expect::Any).map(drop));
     refused(s.write_bytes(&rel("a.bin"), b"x", Expect::Any));
-    refused(s.save_photo(&rel("fotos/x.png"), "aGk="));
+    refused(s.save_photo(&rel("afbeeldingen/x.png"), "aGk="));
     refused(s.delete(&rel("school.json")));
     assert_eq!(disk(&s, "school.json"), school_before);
     assert!(!s.data_dir().resolve(&rel("notes.txt")).unwrap().exists());
@@ -1036,11 +1059,11 @@ fn min_version_equal_or_older_allows_writes() {
 
 #[test]
 fn min_version_raised_while_running_takes_effect_on_the_next_write() {
-    let (_tmp, s) = fixture_as("0.6.0");
+    let (_tmp, s) = fixture_as("0.9.0");
     s.write_json(&rel("instellingen.json"), &json!({ "a": 1 }), Expect::Any)
         .unwrap();
     // A colleague's newer app migrates the folder and raises the minimum.
-    set_min_version(&s, "0.9.0");
+    set_min_version(&s, "0.10.0");
     assert!(matches!(
         s.write_json(&rel("instellingen.json"), &json!({ "a": 2 }), Expect::Any),
         Err(Error::ReadOnly { .. })
@@ -1052,4 +1075,17 @@ fn min_version_corrupt_school_json_sets_no_limit() {
     let (_tmp, s) = fixture_as("0.6.0");
     put(&s, "school.json", b"{ not json");
     assert_eq!(s.read_only(), None);
+}
+
+#[test]
+fn review_18_m1_seeding_never_stamps_a_folder_that_has_data() {
+    let (_t, s) = setup();
+    s.write_json(
+        &rel("gebruikers/jan.json"),
+        &json!({"id": "jan"}),
+        Expect::Any,
+    )
+    .unwrap();
+    s.seed_initial_data().unwrap();
+    assert_eq!(s.read_json(&rel("config.json")).unwrap(), None);
 }

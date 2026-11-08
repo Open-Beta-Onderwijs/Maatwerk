@@ -2,7 +2,7 @@
 // rapport.typ — RTTI rapport template (the reference's rtti_export.typ)
 // Entry point: rapport-main.typ reads data.json (written by the Typst service) and calls
 // #show: setup  then  #render(exam_info, student_data)
-// exam_info : (name: string, global_max_points: int, n_term: float,
+// exam_info : (name: string, global_max_points: number (may have a fraction), n_term: float,
 //              uitleg_rtti: (R, T1, T2, I: string))
 // student_data : array of (
 //   name, student_nr, group, score, max_score, grade, grade_num (float or none),
@@ -40,33 +40,50 @@
   } else { s }
 }
 
-// Per-student footer state (updated at the start of each student in render)
-#let _footer_text = state("footer-text", "")
+// Numbers as the rest of the app shows them (quirks T6, T7): a decimal comma, at most two
+// decimals, no float noise, no ".0". The reference printed `7.5` and truncated `1.5` to `1`.
+#let _num(x) = {
+  if type(x) != int and type(x) != float { return str(x) }
+  let r = calc.round(float(x), digits: 2)
+  if r == calc.trunc(r) { str(int(r)) } else { str(r).replace(".", ",") }
+}
+#let _has_fraction(x) = type(x) == float and x != calc.trunc(x)
+
+// Per-student footer state (updated at the start of each student in render): the footer text
+// and the student's index, which finds the student's end marker for the page total (T8).
+#let _footer = state("rapport-footer", none)
 
 // ── Document setup ─────────────────────────────────────────────────────────────
-#let setup(body) = {
+#let setup(body, watermark: true) = {
   set page(
     margin: 2cm,
-    background: place(
+    // T4: without the school's watermark the rapport has none (the reference failed).
+    background: if watermark { place(
       bottom + right,
       dx: -0.5cm,
       dy: -0.5cm,
       box(width: 3.5cm, height: 3.5cm, clip: true)[
-        #image("/data/fotos/school-watermerk.svg", width: 3.5cm, height: 3.5cm, fit: "contain")
+        #image("/data/afbeeldingen/school-watermerk.svg", width: 3.5cm, height: 3.5cm, fit: "contain")
         #place(top + left, rect(width: 3.5cm, height: 3.5cm, fill: white.transparentize(20%)))
       ]
-    ),
+    ) },
     footer: context {
-      let txt = _footer_text.get()
-      if txt == "" { return }
+      let f = _footer.get()
+      if f == none { return }
       let pg = counter(page).get().first()
+      // T8: the student's own page count (the reference always printed "/ 2"), rounded up to
+      // even because a student with three pages gets an empty fourth (F-13, duplex).
+      let ends = query(<rapport-student-end>).filter(m => m.value == f.idx)
+      let last = if ends.len() > 0 { counter(page).at(ends.first().location()).first() } else { pg }
+      let total = calc.max(pg, calc.ceil(last / 2) * 2)
       set text(style: "italic", fill: gray.darken(20%), size: 8pt)
-      place(left, [#pg / 2])
-      align(center, txt)
+      place(left, [#pg / #total])
+      align(center, f.text)
     }
   )
   // Fonts ship in include/fonts (passed to Typst with --font-path).
-  set text(font: "Source Serif 4", size: 10.5pt)
+  // T25: Dutch, like the opdrachten (`lib.typ`): Dutch quotes and hyphenation rules.
+  set text(font: "Source Serif 4", size: 10.5pt, lang: "nl")
   show math.equation: set text(font: "STIX Two Math")
   set heading(numbering: none)
   show heading.where(level: 1): it => block(
@@ -99,6 +116,7 @@
 #let TRACK_H  = 0.5   // cm
 #let BL       = 0.25  // baseline y (vertical centre of canvas)
 #let R_STU    = 0.141 // 4 pt in cm  (1 pt ≈ 0.0353 cm)
+#let R_STU_HALF = 0.194 // 5.5 pt: room for "1,5" when the exam has half points (B-07)
 #let R_CLS    = 0.106 // 3 pt in cm
 #let OVERLAP  = 0.0   // distance below which class circle is raised
 
@@ -110,8 +128,18 @@
   s1.replace(".", ",")
 }
 
-#let lollipop_track(q, global_max) = {
-  let gm = float(global_max)
+// The score dots: larger only when the exam has half points (B-07), so "1,5" fits.
+#let _dots(half) = if half { (r: R_STU_HALF, size: 6.5pt) } else { (r: R_STU, size: 7pt) }
+
+// The scoretabel's scale: whole points from 0 to the largest question maximum, rounded up, so a
+// fractional or zero maximum does not break the rapport (T10).
+#let _scale_max(global_max) = {
+  let gm = if type(global_max) == int or type(global_max) == float { global_max } else { 1 }
+  calc.max(1, int(calc.ceil(gm)))
+}
+
+#let lollipop_track(q, global_max, dots) = {
+  let gm = float(_scale_max(global_max))
   let sx = if q.score == none { 0.0 } else { float(q.score) / gm * TRACK_W }
   let mx = float(q.max)  / gm * TRACK_W
   let ax = float(q.class_avg) / gm * TRACK_W
@@ -146,17 +174,17 @@
     // This makes it so all lines have a circle at (0,0), so they all line up in the end
     // Kind of hacky, but it works
     circle(
-      (0, BL), radius: R_STU,
+      (0, BL), radius: dots.r,
       fill: none, stroke: none,
     )
 
     // Student circle ● and score
     circle(
-      (sx, BL), radius: R_STU,
+      (sx, BL), radius: dots.r,
       fill: _color(q.dot_color), stroke: none,
     )
-    if q.score == none { content((sx, BL), text(white, 7pt)[0]) }
-    else { content((sx, BL), text(white, 7pt)[#q.score]) }
+    if q.score == none { content((sx, BL), text(white, dots.size)[0]) }
+    else { content((sx, BL), text(white, dots.size)[#_num(q.score)]) }
 
     // Class average diamond ◇  (raised if it would overlap the student circle)
     line(
@@ -169,7 +197,8 @@
   })
 }
 
-#let scale_track(global_max) = {
+#let scale_track(global_max, dots) = {
+  let gm = _scale_max(global_max)
   canvas(length: 1cm, {
     import draw: line, content, rect, circle
 
@@ -182,16 +211,16 @@
     )
 
     // Tick + label at every integer from 0 to global_max
-    for v in range(0, global_max + 1) {
-      let x = float(v) / float(global_max) * TRACK_W
+    for v in range(0, gm + 1) {
+      let x = float(v) / float(gm) * TRACK_W
       line((x, BL - 0.1), (x, BL + 0.1), stroke: gray)
-      circle((x, BL), radius: R_STU, fill: gray.darken(10%), stroke: none)
-      content((x, BL), text(white, 7pt)[#v])
+      circle((x, BL), radius: dots.r, fill: gray.darken(10%), stroke: none)
+      content((x, BL), text(white, dots.size)[#v])
     }
   })
 }
 
-#let lollipop_chart(vragen, global_max) = {
+#let lollipop_chart(vragen, global_max, dots) = {
   text(9pt, style: "italic", fill: gray.darken(30%))[Scoretabel]
 
   set text(size: 9pt)
@@ -204,16 +233,16 @@
     inset:   (x: 4pt, y: 0pt),
 
     // ── Header ──
-    [*Vraag*], [*RTTI*], [*B / D*], [*Jij (●)*], scale_track(global_max), [*Gemiddeld (◇)*],
+    [*Vraag*], [*RTTI*], [*B / D*], [*Jij (●)*], scale_track(global_max, dots), [*Gemiddeld (◇)*],
 
     // ── Data rows ──
     ..vragen.map(q => {
       let score_str = if q.score == none {
-        "N / " + str(q.max)
+        "N / " + _num(q.max)
       } else {
-        str(int(q.score)) + " / " + str(q.max)
+        _num(q.score) + " / " + _num(q.max)
       }
-      let avg_str = fmt1(q.class_avg) + " / " + str(q.max) + " (" + str(q.class_pct) + "%)"
+      let avg_str = fmt1(q.class_avg) + " / " + _num(q.max) + " (" + str(q.class_pct) + "%)"
       let is_special = q.kind == "bonus" or q.kind == "diag"
       let muted = rgb("#9aa0ab")
       let bd_label = if q.kind == "bonus" { "Bonus" } else if q.kind == "diag" { "Diag." } else { "" }
@@ -224,7 +253,7 @@
           text(fill: muted, style: "italic")[#q.rtti],
           text(fill: muted, style: "italic")[#bd_label],
           text(fill: muted, style: "italic")[#score_str],
-          lollipop_track(q, global_max),
+          lollipop_track(q, global_max, dots),
           text(fill: muted, style: "italic")[#avg_str],
         )
       } else {
@@ -233,7 +262,7 @@
           [#q.rtti],
           [],
           [#score_str],
-          lollipop_track(q, global_max),
+          lollipop_track(q, global_max, dots),
           [#avg_str],
         )
       }
@@ -281,7 +310,9 @@
 
   set text(size: 9pt)
   table(
-    columns: (1cm, 2cm, 1fr),
+    // B-06: the score ("12,5 / 20 (63%)") fits on one line; it wrapped at 2 cm. 2,5 cm (user,
+    // 2026-11-08): up to "99,5 / 99 (100%)" fits; a category of 100+ points wraps.
+    columns: (1cm, 2.5cm, 1fr),
     align:   (center + horizon, left + horizon, left + horizon),
     stroke:  (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none },
     fill:    (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") },
@@ -660,24 +691,30 @@
 // ── Render ─────────────────────────────────────────────────────────────────────
 #let render(exam_info, student_data) = {
   let n = student_data.len()
+  // B-07: one dot size for the whole exam, the larger one as soon as any score or maximum
+  // has a fraction.
+  let half = _has_fraction(exam_info.global_max_points) or student_data.any(s =>
+    s.vragen.any(q => _has_fraction(q.score) or _has_fraction(q.max)))
+  let dots = _dots(half)
   for (i, student) in student_data.enumerate() {
     let vragen = student.vragen.map(_guard_vraag)
     // Reset page counter to 1 and set footer text for this student
     counter(page).update(1)
-    _footer_text.update(
-      exam_info.subject_display + " " + exam_info.name + " \u{2014} " + student.name
-    )
+    _footer.update((
+      text: exam_info.subject_display + " " + exam_info.name + " \u{2014} " + student.name,
+      idx: i,
+    ))
     [= Toetsanalyse #exam_info.subject_display #exam_info.name
     == #student.group — #student.name (#student.student_nr)
 
     #v(8pt)
 
-    Je hebt #student.score / #student.max_score punten behaald en had dus #calc.round(student.score / student.max_score * 100)% goed. De N-term is N=#str(exam_info.n_term).replace(".", ","). Je cijfer is een *#student.grade*.
+    Je hebt #_num(student.score) / #_num(student.max_score) punten behaald#if student.max_score > 0 [ en had dus #calc.round(student.score / student.max_score * 100)% goed]. De N-term is N=#_num(exam_info.n_term). Je cijfer is een *#student.grade*.
     #if student.at("grade_overridden", default: false) [Dit cijfer is met de hand overschreven door de docent.]
 
     #v(4pt)
     ]
-    lollipop_chart(vragen, exam_info.global_max_points)
+    lollipop_chart(vragen, exam_info.global_max_points, dots)
     v(10pt)
     obs_section(student.observaties)
     v(10pt)
@@ -694,6 +731,16 @@
     )
     v(10pt)
     grade_histogram(student_data, student.grade_num)
-    if i < n - 1 { pagebreak() }
+    [#metadata(i) <rapport-student-end>]
+    // F-13: every student starts on an odd page, so a duplex print gives each student their
+    // own sheets: three pages get an empty fourth.
+    // The last student's padding asks where the end marker is: `here()` would be on the page
+    // after its own pagebreak.
+    if i < n - 1 { pagebreak(to: "odd") } else {
+      context {
+        let end = query(<rapport-student-end>).filter(m => m.value == i)
+        if end.len() > 0 and calc.odd(end.first().location().page()) { pagebreak() }
+      }
+    }
   }
 }

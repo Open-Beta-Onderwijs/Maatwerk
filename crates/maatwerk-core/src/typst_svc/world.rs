@@ -323,9 +323,18 @@ fn load_mounted(
     let rel = RelPath::parse(&rest.join("/")).map_err(|_| FileError::AccessDenied)?;
     let mut path = root.to_path_buf();
     path.extend(rel.as_str().split('/'));
-    let real = path
-        .canonicalize()
-        .map_err(|e| FileError::from_io(e, shown))?;
+    let real = match path.canonicalize() {
+        Ok(real) => real,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            match find_ignoring_case(root, rel.as_str().split('/')) {
+                Some(found) => found
+                    .canonicalize()
+                    .map_err(|e| FileError::from_io(e, shown))?,
+                None => return Err(FileError::from_io(e, shown)),
+            }
+        }
+        Err(e) => return Err(FileError::from_io(e, shown)),
+    };
     if !real.starts_with(root) {
         return Err(FileError::AccessDenied);
     }
@@ -335,6 +344,35 @@ fn load_mounted(
     let print = Fingerprint::of(&real).ok_or_else(|| FileError::NotFound(shown.into()))?;
     let data = std::fs::read(&real).map_err(|e| FileError::from_io(e, shown))?;
     Ok((Bytes::new(data), real, print))
+}
+
+/// `<root>/<parts>` looked up the way Windows and macOS do: each part by its exact name, else by
+/// the one name in its folder that differs only in case. An opdracht written on Windows that
+/// says `images/Figuur.png` for `figuur.PNG` then compiles on Linux too (step 16b). Two names
+/// that differ only in case (possible on Linux only) are ambiguous: `None`.
+pub(crate) fn find_ignoring_case<'a>(
+    root: &Path,
+    parts: impl IntoIterator<Item = &'a str>,
+) -> Option<PathBuf> {
+    let mut path = root.to_path_buf();
+    for part in parts {
+        let names: Vec<_> = std::fs::read_dir(&path)
+            .ok()?
+            .filter_map(|e| e.ok()?.file_name().into_string().ok())
+            .collect();
+        let name = if names.iter().any(|n| n == part) {
+            part.to_owned()
+        } else {
+            let lower = part.to_lowercase();
+            let mut same = names.into_iter().filter(|n| n.to_lowercase() == lower);
+            match (same.next(), same.next()) {
+                (Some(only), None) => only,
+                _ => return None,
+            }
+        };
+        path.push(name);
+    }
+    Some(path)
 }
 
 fn load_package(spec: &PackageSpec, parts: &[String], shown: PathBuf) -> FileResult<Bytes> {
@@ -544,6 +582,42 @@ mod tests {
             w.file(id("/elsewhere.typ")),
             Err(FileError::NotFound(_))
         ));
+    }
+
+    #[test]
+    fn a_name_in_other_case_is_found_like_on_windows() {
+        let dir = tempfile::tempdir().unwrap();
+        let images = dir.path().join("Images");
+        std::fs::create_dir_all(&images).unwrap();
+        std::fs::write(images.join("Figuur.PNG"), "png").unwrap();
+        let found = find_ignoring_case(dir.path(), ["images", "figuur.png"]).unwrap();
+        assert_eq!(found, images.join("Figuur.PNG"), "the real names");
+        assert_eq!(
+            find_ignoring_case(dir.path(), ["images", "anders.png"]),
+            None
+        );
+
+        let w = world(vec![Mount::dir("/o", dir.path())]);
+        assert_eq!(
+            w.file(id("/o/images/figuur.png")).unwrap().as_slice(),
+            b"png"
+        );
+
+        // Two names that differ only in case: only on a case-sensitive file system.
+        let exact = images.join("figuur.png");
+        if std::fs::write(&exact, "exact").is_ok()
+            && std::fs::read(images.join("Figuur.PNG")).unwrap() == b"png"
+        {
+            assert_eq!(
+                find_ignoring_case(dir.path(), ["Images", "figuur.png"]),
+                Some(exact)
+            );
+            assert_eq!(
+                find_ignoring_case(dir.path(), ["Images", "FIGUUR.png"]),
+                None,
+                "ambiguous"
+            );
+        }
     }
 
     #[test]

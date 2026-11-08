@@ -10,6 +10,7 @@
 import { renderStartup } from './screens/startup.js';
 import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderMigration } from './screens/migration';
+import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
 import { renderToetsen, renderToetsenList } from './screens/toetsen.js';
@@ -599,7 +600,7 @@ function logOut() {
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
 async function applyWatermerk() {
-  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('fotos/school-watermerk.svg');
+  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('afbeeldingen/school-watermerk.svg');
   if (dataUrl) document.documentElement.style.setProperty('--watermerk-url', `url("${dataUrl}")`);
 }
 
@@ -767,7 +768,12 @@ async function init() {
     status = await window.maatwerk.dataFolderStatus();
     if (!status.error) await Store.preload();
   } catch (e) {
-    status = { dataDir: status?.dataDir ?? '', error: asFolderError(e) };
+    status = { dataDir: status?.dataDir ?? '', source: status?.source, error: asFolderError(e) };
+  }
+  if (status.error?.code === 'no_data_folder') {
+    // First run on this PC (step 16a): choose the shared data folder.
+    renderChooseFolder(container, window.maatwerk);
+    return;
   }
   if (status.error?.code === 'needs_migration') {
     // A v1 folder: offer the one-time conversion (ADR-0003 C1).
@@ -776,7 +782,7 @@ async function init() {
   }
   if (status.error) {
     console.error('[startup]', status.error.code, status.error.message);
-    renderStartupError(container, status.dataDir, status.error, window.maatwerk);
+    renderStartupError(container, status.dataDir, status.error, window.maatwerk, status.source);
     return;
   }
   // An older app on data that needs a newer one: read-only, with a banner.

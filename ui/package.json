@@ -1,7 +1,7 @@
 {
   "name": "maatwerk-ui",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.9.0",
   "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.e2e.json",
     "test": "vitest run",
     "test:e2e": "npm run build:mock && playwright test --project chromium",
-    "test:visual": "npm run build:mock && playwright test --project visual"
+    "test:e2e:webkit": "npm run build:mock && playwright test --project webkit",
+    "test:visual": "npm run build:mock && playwright test --project visual",
+    "test:visual:ci": "npm run build:mock && playwright test visual"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.4",

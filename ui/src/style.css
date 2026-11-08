@@ -6,6 +6,7 @@
 @import './styles/dialog.css';
 @import './styles/skeleton.css';
 @import './styles/forms.css';
+@import './styles/render-warnings.css';
 @import './styles/avatar.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
@@ -3011,6 +3012,21 @@ td.grade-override-stale::after {
   font-size: 12px;
   color: var(--muted);
   word-break: break-word;
+}
+
+/* ── First run: choose the data folder (step 16a) ─────────────────────────── */
+.startup-error.choose-folder {
+  border-left-color: var(--accent);
+}
+.choose-folder-status {
+  margin: 12px 0 0;
+  word-break: break-all;
+}
+.choose-folder-status:empty {
+  display: none;
+}
+.choose-folder-status.is-error {
+  color: var(--danger);
 }
 
 /* ── One-time conversion of a v1 folder (ADR-0003 C1) ────────────────────── */

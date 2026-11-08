@@ -193,12 +193,13 @@ export interface MaatwerkApi {
 
   // ── Typst ─────────────────────────────────────────────────────────────────
   // `pdfPath` in the results is an output ID in the app (not a file path):
-  // pass it to pdfUrl, openPath or printPdf.
+  // pass it to pdfUrl, openPath or printPdf. `warnings` are Typst's warning
+  // texts (e.g. a character no font has); the dialogs show them (F-04).
   renderRapportPdf(
     examId: string,
     students: unknown[],
     examInfo: Record<string, unknown>,
-  ): Promise<RenderResult<{ pdfPath: string }>>;
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>>;
   renderAssignmentSvg(
     opdrachtId: string,
     title: string,
@@ -207,7 +208,7 @@ export interface MaatwerkApi {
   renderAssignmentBatch(
     jobs: BatchJob[],
     opts?: BatchOptions,
-  ): Promise<RenderResult<{ pdfPath: string; pages: number }>>;
+  ): Promise<RenderResult<{ pdfPath: string; pages: number; warnings: string[] }>>;
 
   // ── Shell ─────────────────────────────────────────────────────────────────
   /**
@@ -240,6 +241,12 @@ export interface MaatwerkApi {
   dataFolderStatus(): Promise<DataFolderStatus>;
   /** "Opnieuw proberen" on the startup error screen: restarts the app. */
   restartApp(): Promise<void>;
+  /**
+   * First run / "Andere map kiezen…" (step 16a): the folder dialog; stores the data folder on
+   * this PC and resolves to it, `null` if cancelled. Rejects with `invalid_argument` (Dutch
+   * message) for a folder that is not a data folder and not empty.
+   */
+  chooseDataFolder(): Promise<string | null>;
   /** "Over Maatwerk > Probleem melden": the log folder on this PC and the version. */
   problemInfo(): Promise<ProblemInfo>;
   /** Opens the log folder; rejects when there is none or it cannot be opened. */
@@ -247,7 +254,8 @@ export interface MaatwerkApi {
   /** Writes an error the UI did not handle to the log file (text and stack, no data). */
   logUiError(message: string): Promise<void>;
   /** v1 -> v2 after a backup, only while the folder needs it (startup screen). */
-  migrateDataFolder(): Promise<MigrationResult>;
+  /** `dryRun`: what would change, nothing written (shown before the admin confirms). */
+  migrateDataFolder(dryRun?: boolean): Promise<MigrationResult>;
   /** `validate-data` on the open folder (admin, "Gegevenscontrole"). */
   validateDataFolder(): Promise<DataCheck>;
   /** JSON files read with a missing or wrong stamp since start (C19). */

@@ -1,0 +1,57 @@
+{
+  "id": "nat-toets-1-2025-2026",
+  "subject": "nat",
+  "title": "Toets 1",
+  "jaarlaag": "3",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 0,
+  "periode": null,
+  "type": "regular",
+  "structureMode": "seq",
+  "volgnummer": 301,
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 2,
+      "rtti": "R"
+    },
+    {
+      "id": "q2",
+      "section": "I",
+      "number": 2,
+      "max_points": 2,
+      "rtti": "T1"
+    },
+    {
+      "id": "q3",
+      "section": "I",
+      "number": 3,
+      "max_points": 2.5,
+      "rtti": "I"
+    }
+  ],
+  "obs_ids": [
+    "obs-1756713600100"
+  ],
+  "opdrachten": {
+    "obs-1756713600100": [
+      "opdracht_1756713600200"
+    ]
+  },
+  "kind": "toets",
+  "diagnostic": false,
+  "_meta": {
+    "rev": 6,
+    "createdBy": "gebr-1756713600000",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "4875c8210e43e66cbe8aabd5b0fe8bf0c7d79078ca34d0fa323363b036c2323e"
+  }
+}

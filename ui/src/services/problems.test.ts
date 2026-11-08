@@ -44,6 +44,9 @@ describe('unexpected errors', () => {
       'Save failed for 2025-2026/scores/nat/<leerling>',
     );
     expect(redact('conflict on fotos/Jan de Vries.jpg')).toBe('conflict on fotos/<foto>');
+    expect(redact('conflict on afbeeldingen/Jan de Vries.jpg')).toBe(
+      'conflict on afbeeldingen/<foto>',
+    );
     expect(redact('io: C:\\data\\2025-2026\\scores\\nat\\99.json')).toBe(
       'io: C:\\data\\2025-2026\\scores\\nat\\<leerling>',
     );

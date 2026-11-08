@@ -39,8 +39,8 @@ iframe (`editor.html`) on a core live session.
 
 ## Data
 
-One shared `data/` folder (OneDrive) per school, JSON files, format v2
-(`docs/reference/data-files-v2.md`). Every write is a CAS on the file's hash; a colleague's
+One shared `data/` folder (OneDrive) per school, JSON files, format v3
+(`docs/reference/data-files-v3.md`, the changes on top of `data-files-v2.md`). Every write is a CAS on the file's hash; a colleague's
 change in between is a conflict, never a silent overwrite. Printed PDFs go to `rapporten/` next
 to `data/`; render outputs to the local cache; logs to
 `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs` (14 days, no student data).

@@ -26,8 +26,9 @@ async function setText(page: Page, frame: FrameLocator, text: string): Promise<v
   await frame.locator('.cm-content').click();
   // Delete through CodeMirror's keymap, then one input event (fast, no auto-closing
   // brackets). Typing over a multi-line selection natively makes Chrome insert styled spans,
-  // which the strict CSP reports.
-  await page.keyboard.press('Control+A');
+  // which the strict CSP reports. The text is empty in between and a slow runner may compile
+  // that: steps that check a kept preview add to the text instead (step 16a, macOS CI).
+  await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.press('Delete');
   await page.keyboard.insertText(text);
 }
@@ -40,19 +41,23 @@ test('the preview shows only the changed pages and keeps them on errors', async 
   const first = await frame.locator('.svg-page').first().getAttribute('data-hash');
 
   // Type at the end (no compile of an emptied text in between).
-  await page.keyboard.press('Control+End');
+  await page.keyboard.press('ControlOrMeta+End');
   await page.keyboard.type(', anders');
   await expect(frame.locator('.svg-page').nth(1)).toContainText('Tweede, anders');
   expect(await frame.locator('.svg-page').first().getAttribute('data-hash')).toBe(first);
   const sent = await withMock(page, (m) => m.editor.updates.at(-1)!.pages.map((p) => p.index));
   expect(sent).toEqual([1]);
 
-  // An error: diagnostics in the editor and the status bar, the preview stays.
-  await setText(page, frame, 'Eerste\n#pagebreak()\nTweede #fout');
+  // An error: diagnostics in the editor and the status bar, the preview stays. One edit at
+  // the end, so no other text is compiled in between.
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.insertText(' #fout');
   await expect(frame.locator('.cm-lintRange-error')).toHaveText('fout');
   await expect(frame.locator('#btn-render-error')).toHaveText('Fout bij renderen');
   await frame.locator('#btn-render-error').click();
-  await expect(frame.locator('#error-popover')).toContainText('opdracht.typ:3:9: unknown variable');
+  await expect(frame.locator('#error-popover')).toContainText(
+    'opdracht.typ:3:17: unknown variable',
+  );
   await expect(frame.locator('.svg-page')).toHaveCount(2);
   await expect(frame.locator('.svg-page').nth(1)).toContainText('Tweede, anders');
 
@@ -98,7 +103,7 @@ test('the vragen panel lists labels, points and checks', async ({ page }) => {
 test('autocomplete, hover and Ctrl+click come from the session', async ({ page }) => {
   const { frame } = await openEditor(page);
   await setText(page, frame, '#let mijn-blok = 1\n\n#mijn-blok\n');
-  await page.keyboard.press('Control+End');
+  await page.keyboard.press('ControlOrMeta+End');
   await page.keyboard.type('#tab');
   const option = frame.locator('.cm-tooltip-autocomplete li', { hasText: 'table' });
   // A click, not Enter: results arrive on every keystroke and Enter could race the list.
@@ -112,13 +117,13 @@ test('autocomplete, hover and Ctrl+click come from the session', async ({ page }
   await frame
     .locator('.cm-line')
     .nth(2)
-    .click({ modifiers: ['Control'] });
+    .click({ modifiers: ['ControlOrMeta'] });
   await expect
     .poll(() =>
       frame.locator('.cm-content').evaluate(() => {
-        const sel = (
-          document.getElementById('cm-container')!.shadowRoot as unknown as Document
-        ).getSelection();
+        // Chromium has getSelection() on a shadow root; WebKit only on the document.
+        const root = document.getElementById('cm-container')!.shadowRoot as unknown as Document;
+        const sel = root.getSelection ? root.getSelection() : document.getSelection();
         return sel?.toString();
       }),
     )
@@ -129,7 +134,9 @@ test('a click in the preview moves the cursor to that line', async ({ page }) =>
   const { frame } = await openEditor(page);
   await setText(page, frame, 'Regel een\nRegel twee\nRegel drie');
   await expect(frame.locator('.svg-page')).toContainText('Regel drie');
-  await frame.locator('.svg-page text', { hasText: 'Regel drie' }).click();
+  // force: WebKit hit-tests SVG text per glyph, so the centre (the space) hits the page
+  // background; the app maps the click point, not the target.
+  await frame.locator('.svg-page text', { hasText: 'Regel drie' }).click({ force: true });
   await expect
     .poll(() => withMock(page, (m) => m.calls.filter((c) => c[0] === 'editorJumpFromClick').length))
     .toBeGreaterThan(0);
@@ -140,7 +147,8 @@ test('a compile over the time limit reports the admin setting', async ({ page })
   const { frame } = await openEditor(page);
   await setText(page, frame, 'Goed');
   await expect(frame.locator('.svg-page')).toContainText('Goed');
-  await setText(page, frame, '#traag');
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.insertText(' #traag');
   await frame.locator('#btn-render-error').click();
   await expect(frame.locator('#error-popover')).toContainText(
     'Het compileren duurde langer dan 30 seconden',
@@ -213,7 +221,7 @@ test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async (
 
   // Undo brings my version back; it is saved again.
   await frame.locator('.cm-content').click();
-  await page.keyboard.press('Control+Z');
+  await page.keyboard.press('ControlOrMeta+Z');
   await expect(frame.locator('.cm-content')).toContainText('mijn aanpassing');
   await expect
     .poll(() => withMock(page, (m, rel) => m.peek(rel), `opdrachten/${id}/lib.typ`))
@@ -250,7 +258,7 @@ test('lib.typ: a current copy edited in the editor offers Bekijk verschillen', a
   await frame.getByRole('button', { name: 'Sluiten' }).click();
 
   await frame.locator('.cm-content').click();
-  await page.keyboard.press('Control+End');
+  await page.keyboard.press('ControlOrMeta+End');
   await page.keyboard.insertText('// mijn regel\n');
   await banner.getByRole('button', { name: 'Bekijk verschillen' }).click();
   await expect(frame.locator('.diff-removed')).toHaveText('- // mijn regel');
