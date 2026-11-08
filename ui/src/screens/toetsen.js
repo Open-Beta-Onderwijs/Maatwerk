@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { gradeBarColor, isFail } from '../domain/grade-colors';
+import { gradeBarColor } from '../domain/grade-colors';
+import { mean, stats } from '../domain/statistics';
 import { testBadgeClass } from '../domain/test-type';
 import { formatFixed, formatNumber, parseDecimalLoose } from '../domain/format';
 import { ICONS } from '../utils/icons.js';
@@ -84,18 +85,15 @@ export async function computeExamStats(year, exam) {
       if (Object.keys(rec.scores?.[exam.id] ?? {}).length) points.push(res.scored);
     }
   }
-  if (grades.length === 0) return null;
-  const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-  const sd = (arr, m) =>
-    arr.length < 2 ? 0 : Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
-  const mg = mean(grades),
-    mp = mean(points);
+  const st = stats(grades);
+  if (!st) return null;
+  const avgPts = mean(points);
   return {
-    n: grades.length,
-    avgPts: points.length ? formatFixed(mp) : '—',
-    avgG: formatFixed(mg),
-    sd: formatFixed(sd(grades, mg)),
-    fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
+    n: st.n,
+    avgPts: avgPts === null ? '—' : formatFixed(avgPts),
+    avgG: formatFixed(st.mean),
+    sd: formatFixed(st.sd),
+    fails: st.fails,
     normalMax,
   };
 }
@@ -126,18 +124,9 @@ export async function computeExamWarnings(year, exam) {
 
 export async function computeBestGradeStats(parentId, year) {
   const bestMap = await Store.computeBestGradeMap(parentId, year);
-  const grades = Object.values(bestMap)
-    .map((e) => e.grade)
-    .filter((g) => g !== null);
-  if (grades.length === 0) return null;
-  const mean = grades.reduce((a, b) => a + b, 0) / grades.length;
-  const sd = Math.sqrt(grades.reduce((s, g) => s + (g - mean) ** 2, 0) / grades.length);
-  return {
-    n: grades.length,
-    avgG: formatFixed(mean),
-    sd: formatFixed(sd),
-    fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
-  };
+  const st = stats(Object.values(bestMap).map((e) => e.grade));
+  if (!st) return null;
+  return { n: st.n, avgG: formatFixed(st.mean), sd: formatFixed(st.sd), fails: st.fails };
 }
 
 const SUBCATEGORY_TO_FILTER = {

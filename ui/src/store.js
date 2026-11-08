@@ -763,6 +763,14 @@ const Store = (() => {
     return results;
   }
 
+  // Every year's tests of a vak: the SE average takes a resit's weight from its original, which
+  // can be in another file than the student's own history (decision 10).
+  function getAllExamsSync(subject = _activeSubject) {
+    return listYearsSync().flatMap((year) =>
+      getExamsSync(year, subject).map((e) => ({ ...e, academic_year: year })),
+    );
+  }
+
   // RTTI calculations (calcResults, examResults, calcGrade): src/domain/grades.ts
 
   // examResults per (score record, exam), for the statistics on the list screens
@@ -1318,6 +1326,7 @@ const Store = (() => {
     getStudentScores,
     setScore,
     getStudentHistory,
+    getAllExamsSync,
     calcResults,
     examResults: examResultsMemo,
     calcGrade,

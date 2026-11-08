@@ -5,8 +5,8 @@
 // `Results.grade` has them: rounded to one decimal.
 
 import type { HistoryEntry } from './attempts';
-import { coreCall } from './core';
-import { recordFor, type Points, type RttiPoints } from './grades';
+import { coreCall, round0 } from './core';
+import { recordFor, type Points, type RttiCategory, type RttiPoints } from './grades';
 import type { Exam, Group, Question, QuestionScores, ScoreRecord } from './types';
 
 export interface Stats {
@@ -100,8 +100,22 @@ export const ranking = (grade: number, grades: number[]): 'top10' | 'top20' | nu
   coreCall('ranking', grade, grades);
 
 /** The id of the student's group for `exam` (decision 17); null when in no group. */
-export const studentGroup = (studentId: string, exam: Exam, groups: Group[]): string | null =>
-  coreCall('studentGroup', String(studentId), exam, groups);
+export function studentGroup(studentId: string, exam: Exam, groups: Group[]): string | null {
+  const id = String(studentId);
+  // Only the student's own groups, each with only this student: this runs per student.
+  const own = groups
+    .filter((g) => g.student_ids.some((s) => String(s) === id))
+    .map((g) => ({ ...g, student_ids: [id] }));
+  const { id: examId, subject, jaarlaag, schoolsoort } = exam;
+  return coreCall('studentGroup', id, { id: examId, subject, jaarlaag, schoolsoort }, own);
+}
+
+/** One whole percent per RTTI category; null when the category has nothing to measure. */
+export const rttiPercents = (points: RttiPoints, cats: RttiCategory[]): (number | null)[] =>
+  cats.map((cat) => {
+    const { scored, max } = points[cat];
+    return max > 0 ? round0((100 * scored) / max) : null;
+  });
 
 export type TrendLevel = 'strongUp' | 'slightUp' | 'level' | 'slightDown' | 'strongDown';
 

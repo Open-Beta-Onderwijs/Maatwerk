@@ -11,6 +11,8 @@ import {
   modalRefresher,
 } from '../app.js';
 import { testBadgeClass } from '../domain/test-type';
+import { bestAttempt } from '../domain/attempts';
+import { mean, meanOfAverages, seAverage, yearAverage } from '../domain/statistics';
 import { gradePillHtml } from '../utils/grades';
 import { openProfielModal } from './profiel.js';
 
@@ -54,47 +56,17 @@ export async function openGroupStudentsModal(groupId, year) {
     scoreMap[s.id] = rec;
   }
 
-  // Per-student dossier (SE) average from full history — mirrors openProfielModal
+  // Per-student dossier (SE) average from the full history (decision 10).
   const dossierAvgMap = {};
   for (const s of students) {
-    const history = Store.resolveBestAttempts(await Store.getStudentHistory(s.id));
-    const ptaResults = history.filter((h) => h.exam.type === 'pta');
-    let sumW = 0,
-      sumWG = 0;
-    for (const { exam, questionScores, override } of ptaResults) {
-      const res = Store.calcResults(exam, questionScores, override);
-      if (res.grade === null) continue;
-      const w = Number(exam.weging_se ?? exam.weging ?? 1);
-      sumW += w;
-      sumWG += w * res.grade;
-    }
-    dossierAvgMap[s.id] = sumW > 0 ? sumWG / sumW : null;
+    const history = await Store.getStudentHistory(s.id);
+    dossierAvgMap[s.id] = seAverage(history, Store.getAllExamsSync());
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
-  function studentGrade(s, exam) {
-    return Store.examResults(scoreMap[s.id], exam)?.grade ?? null;
-  }
-
   function bestGradeForFamily(s, family) {
-    const candidates = [family.original, ...family.resits]
-      .map((e) => ({ exam: e, grade: studentGrade(s, e) }))
-      .filter((x) => x.grade !== null);
-    if (candidates.length === 0) return { grade: null, exam: null };
-    return candidates.reduce((a, b) => (b.grade > a.grade ? b : a));
-  }
-
-  function calcWeightedAvg(pairs) {
-    // pairs: [{grade, weging}]
-    let sumW = 0,
-      sumWG = 0;
-    for (const { grade, weging } of pairs) {
-      if (grade === null) continue;
-      const w = Number(weging ?? 1);
-      sumW += w;
-      sumWG += w * grade;
-    }
-    return sumW > 0 ? sumWG / sumW : null;
+    const best = bestAttempt(scoreMap[s.id], [family.original, ...family.resits]);
+    return best ? { grade: best.grade, exam: best.exam } : { grade: null, exam: null };
   }
 
   // ── Group exams by Periode ─────────────────────────────────────────────────
@@ -181,11 +153,7 @@ export async function openGroupStudentsModal(groupId, year) {
         .join('');
 
       // Weighted averages
-      const yearPairs = examFamilies.map((f) => ({
-        grade: bestGradeForFamily(s, f).grade,
-        weging: f.original.weging,
-      }));
-      const yearAvg = calcWeightedAvg(yearPairs);
+      const yearAvg = yearAverage(exams, scoreMap[s.id]);
       const dossierAvg = dossierAvgMap[s.id];
 
       const avgCells =
@@ -208,7 +176,7 @@ export async function openGroupStudentsModal(groupId, year) {
           const grades = students
             .map((s) => bestGradeForFamily(s, f).grade)
             .filter((g) => g !== null);
-          const avg = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
+          const avg = mean(grades);
           const borderR = fi === families.length - 1 ? ' u-border-r-light' : '';
           return (
             `<td class="u-text-right u-p-3-4 u-bg-highlight">` +
@@ -220,20 +188,13 @@ export async function openGroupStudentsModal(groupId, year) {
     )
     .join('');
 
-  const yearAvgs = students
-    .map((s) => {
-      const pairs = examFamilies.map((f) => ({
-        grade: bestGradeForFamily(s, f).grade,
-        weging: f.original.weging,
-      }));
-      return calcWeightedAvg(pairs);
-    })
-    .filter((g) => g !== null);
-  const yearAvgOfAvgs =
-    yearAvgs.length > 0 ? yearAvgs.reduce((a, b) => a + b, 0) / yearAvgs.length : null;
-
-  const seAvgs = students.map((s) => dossierAvgMap[s.id]).filter((g) => g !== null);
-  const seAvgOfAvgs = seAvgs.length > 0 ? seAvgs.reduce((a, b) => a + b, 0) / seAvgs.length : null;
+  // Decision 21: the means of the year and SE averages as shown.
+  const yearAvgOfAvgs = meanOfAverages(
+    students.map((s) => yearAverage(exams, scoreMap[s.id])).filter((g) => g !== null),
+  );
+  const seAvgOfAvgs = meanOfAverages(
+    students.map((s) => dossierAvgMap[s.id]).filter((g) => g !== null),
+  );
 
   const avgRowSummary =
     `<td class="u-text-center u-p-3-4 u-bg-highlight u-border-l-2">${

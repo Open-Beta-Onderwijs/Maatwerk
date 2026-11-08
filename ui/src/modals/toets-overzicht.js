@@ -4,11 +4,20 @@ import {
   GRADE_BAR,
   gradeBarColor,
   gradeCellColor,
-  isFail,
   pctBarColor,
   rttiPctCellColor,
 } from '../domain/grade-colors';
 import { formatFixed, formatGrade, formatNumber, parseDecimalLoose } from '../domain/format';
+import {
+  boxStats,
+  histogram,
+  pooledRtti,
+  questionStats,
+  rttiByGradeGroup,
+  rttiPercents,
+  stats,
+  studentGroup,
+} from '../domain/statistics';
 import { chartInk } from '../theme';
 import { gradeGroupIdx, GRADE_GROUP_LABELS, GRADE_GROUP_MIDPOINTS } from '../utils/grades';
 import {
@@ -47,17 +56,24 @@ export async function openExamOverviewModal(
   const RTTI_CATS = ['R', 'T1', 'T2', 'I'];
   const students = Store.getStudentsSync(year);
   const grades = [];
-  const qStats = exam.questions.map((q) => ({ q, totalScored: 0, totalMax: 0 }));
+  // Every student's attempt, read with its own questions (decision 17, B14).
+  const attempts = [];
 
   const groups = Store.getGroupsSync(year);
-  const studentGroupMap = new Map();
-  for (const g of groups) {
-    for (const sid of g.student_ids) {
-      if (!studentGroupMap.has(String(sid))) studentGroupMap.set(String(sid), g);
-    }
-  }
+  const groupsById = new Map(groups.map((g) => [g.id, g]));
+  const groupOf = (s) => groupsById.get(studentGroup(s.id, exam, groups));
   const groupStatsMap = new Map();
-  const rttiAccum = Array.from({ length: 6 }, () => RTTI_CATS.map(() => ({ scored: 0, max: 0 })));
+
+  // The class's points per question of this exam, for the charts per question.
+  const qStatsOf = (list) => {
+    const byId = new Map(questionStats(list).map((s) => [s.question, s.points]));
+    return exam.questions.map((q) => ({
+      q,
+      totalScored: byId.get(q.id)?.scored ?? 0,
+      totalMax: byId.get(q.id)?.max ?? 0,
+    }));
+  };
+  const hasPoints = (list) => questionStats(list).some((s) => s.points.max > 0);
 
   const allObs = Store.getObservatiesSync();
   const examObsIds = exam.obs_ids ?? [];
@@ -81,7 +97,7 @@ export async function openExamOverviewModal(
     const gradeOverride = overrideEntry ? overrideEntry.override : rec?.overrides?.[exam.id];
     // Track observations even if no scores
     const studentObs = rec?.observations?.[exam.id] ?? [];
-    const grpForObs = studentGroupMap.get(String(s.id));
+    const grpForObs = groupOf(s);
     studentData.set(String(s.id), { examScores, studentObs, overrideEntry, gradeOverride });
     if ((!examScores || Object.keys(examScores).length === 0) && !gradeOverride) {
       for (const obsId of studentObs) {
@@ -94,62 +110,30 @@ export async function openExamOverviewModal(
     }
     examScores ??= {};
 
+    // The attempt that counts is read with its own questions, not the original's (B14).
+    const evalExam = overrideEntry?.exam ?? exam;
     const qs = {};
-    exam.questions.forEach((q) => {
+    evalExam.questions.forEach((q) => {
       const v = examScores[q.id];
       if (v !== undefined) qs[q.id] = v;
     });
-    // Use pre-computed grade from bestMap if available (correct attempt structure),
-    // otherwise compute against this exam's structure.
+    // Use pre-computed grade from bestMap if available, otherwise calculate it.
     let grade = overrideEntry?.grade ?? null;
     if (grade === null && (Object.keys(qs).length > 0 || gradeOverride)) {
-      const evalExam = overrideEntry?.exam ?? exam;
       const res = Store.calcResults(evalExam, qs, gradeOverride);
       if (res.grade !== null) grade = res.grade;
     }
-    if (grade !== null) {
-      grades.push(grade);
-      const ggi = gradeGroupIdx(grade);
-      for (const [ci, cat] of RTTI_CATS.entries()) {
-        for (const q of exam.questions.filter((q) => q.rtti === cat)) {
-          const val = examScores[q.id];
-          if (val == null || String(val).toUpperCase() === 'N') continue;
-          const num = Number(val);
-          if (isNaN(num) || num < 0) continue;
-          rttiAccum[ggi][ci].scored += num;
-          rttiAccum[ggi][ci].max += q.max_points;
-        }
-      }
-    }
+    if (grade !== null) grades.push(grade);
+    const attempt = { exam: evalExam, questionScores: qs, grade };
+    attempts.push(attempt);
 
-    for (const stat of qStats) {
-      const val = examScores[stat.q.id];
-      if (val == null || String(val).toUpperCase() === 'N') continue;
-      const num = Number(val);
-      if (isNaN(num) || num < 0) continue;
-      stat.totalScored += num;
-      stat.totalMax += stat.q.max_points;
-    }
-
-    const grp = studentGroupMap.get(String(s.id));
-    if (grp) {
-      if (!groupStatsMap.has(grp.id)) {
-        groupStatsMap.set(grp.id, {
-          group: grp,
-          grades: [],
-          qStats: exam.questions.map((q) => ({ q, totalScored: 0, totalMax: 0 })),
-        });
+    if (grpForObs) {
+      if (!groupStatsMap.has(grpForObs.id)) {
+        groupStatsMap.set(grpForObs.id, { group: grpForObs, grades: [], attempts: [] });
       }
-      const entry = groupStatsMap.get(grp.id);
+      const entry = groupStatsMap.get(grpForObs.id);
       if (grade !== null) entry.grades.push(grade);
-      for (const stat of entry.qStats) {
-        const val = examScores[stat.q.id];
-        if (val == null || String(val).toUpperCase() === 'N') continue;
-        const num = Number(val);
-        if (isNaN(num) || num < 0) continue;
-        stat.totalScored += num;
-        stat.totalMax += stat.q.max_points;
-      }
+      entry.attempts.push(attempt);
     }
 
     for (const obsId of studentObs) {
@@ -161,10 +145,13 @@ export async function openExamOverviewModal(
     }
   }
 
+  const qStats = qStatsOf(attempts);
+  const rttiAccum = rttiByGradeGroup(attempts).map((group) => RTTI_CATS.map((c) => group[c]));
   const hasGrades = grades.length > 0;
-  const hasQStats = qStats.some((s) => s.totalMax > 0);
+  const hasQStats = hasPoints(attempts);
   const groupEntries = [...groupStatsMap.values()]
-    .filter((e) => e.qStats.some((s) => s.totalMax > 0))
+    .filter((e) => hasPoints(e.attempts))
+    .map((e) => ({ ...e, qStats: qStatsOf(e.attempts) }))
     .sort((a, b) => a.group.name.localeCompare(b.group.name));
   const hasGroupData = groupEntries.length > 0;
   const hasRttiData = rttiAccum.some((grp) => grp.some((cat) => cat.max > 0));
@@ -172,12 +159,7 @@ export async function openExamOverviewModal(
 
   let summaryHtml = '<p class="u-m-0 hint">Nog geen scores ingevoerd.</p>';
   if (hasGrades) {
-    const mean = grades.reduce((a, b) => a + b, 0) / grades.length;
-    const sd =
-      grades.length < 2
-        ? 0
-        : Math.sqrt(grades.reduce((s, v) => s + (v - mean) ** 2, 0) / grades.length);
-    const fails = Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100);
+    const { mean, sd, fails } = stats(grades);
     const dot = `<svg width="10" height="10" viewBox="0 0 10 10" class="u-align-middle u-mx-3 u-shrink-0"><circle cx="5" cy="5" r="5" fill="${gradeBarColor(mean)}"/></svg>`;
     summaryHtml = `<span class="u-d-flex u-items-center u-flex-wrap u-gap-0 muted">${grades.length} leerlingen &nbsp;·&nbsp; ${dot} ${formatFixed(mean)} ± ${formatFixed(sd)} &nbsp;·&nbsp; ${fails}% onvoldoende</span>`;
   }
@@ -541,19 +523,10 @@ export async function openExamOverviewModal(
     // ── Histogram helpers ─────────────────────────────────────────────────
     function makeHistBins(step, gradeArr) {
       const start = step === 0.5 ? 1.0 : 0.5;
-      const count = step === 0.5 ? 18 : 10;
-      const bins = Array(count).fill(0);
-      for (const g of gradeArr) {
-        let i = Math.floor((g - start) / step);
-        if (g >= 10.0) i = count - 1;
-        bins[Math.max(0, Math.min(count - 1, i))]++;
-      }
-      const binLabels = bins.map((_, i) => {
-        const upper = Math.min(start + (i + 1) * step, 10.0);
-        const prefix = i === count - 1 ? '\u2264' : '<';
-        return prefix + formatFixed(upper);
-      });
-      const passBinIndex = Math.round((5.5 - start) / step);
+      const { bins, upper, passBin: passBinIndex } = histogram(gradeArr, step);
+      const binLabels = upper.map(
+        (bound, i) => (i === upper.length - 1 ? '\u2264' : '<') + formatFixed(bound),
+      );
       const barColors = bins.map((_, i) => gradeBarColor(start + (i + 0.5) * step));
       return { data: bins, binLabels, barColors, passBinIndex };
     }
@@ -607,19 +580,6 @@ export async function openExamOverviewModal(
     }
 
     // ── Boxplot helpers ───────────────────────────────────────────────────
-    function boxStats(vals) {
-      if (!vals || !vals.length) return null;
-      const s = [...vals].sort((a, b) => a - b);
-      const n = s.length;
-      return {
-        min: s[0],
-        max: s[n - 1],
-        q1: s[Math.floor(n * 0.25)],
-        median: s[Math.floor(n * 0.5)],
-        q3: s[Math.floor(n * 0.75)],
-      };
-    }
-
     function makeBoxPlugin(statsArr, colors) {
       return {
         id: '_box',
@@ -947,18 +907,7 @@ export async function openExamOverviewModal(
       // Chart 2: RTTI per groep (synchronous)
       const rttiGroupsCanvas = el.querySelector('#chart-rtti-groups');
       if (rttiGroupsCanvas && hasQStats) {
-        function rttiPctsFor(qStatsArr) {
-          return RTTI_CATS.map((cat) => {
-            let scored = 0,
-              max = 0;
-            exam.questions.forEach((q, qi) => {
-              if (q.rtti !== cat) return;
-              scored += qStatsArr[qi].totalScored;
-              max += qStatsArr[qi].totalMax;
-            });
-            return max > 0 ? Math.round((scored / max) * 100) : null;
-          });
-        }
+        const rttiPctsFor = (list) => rttiPercents(pooledRtti(list), RTTI_CATS);
         const mkDs = (label, pcts, color) => ({
           label,
           data: pcts.map((v) => (v === null ? 50 : v)),
@@ -969,10 +918,10 @@ export async function openExamOverviewModal(
         });
         const rttiColors = ['#5cb85c', '#5bc0de', '#f0ad4e', '#d9534f'];
         const groupSources = [
-          { label: 'Alle', pcts: rttiPctsFor(qStats) },
+          { label: 'Alle', pcts: rttiPctsFor(attempts) },
           ...groupEntries.map((entry) => ({
             label: entry.group.name,
-            pcts: rttiPctsFor(entry.qStats),
+            pcts: rttiPctsFor(entry.attempts),
           })),
         ];
         pushModalChart(
@@ -1028,25 +977,13 @@ export async function openExamOverviewModal(
         const allExams = await Store.getExams(year);
         const examRttiRows = [];
         for (const ex of allExams.filter((ex) => String(ex.jaarlaag) === String(exam.jaarlaag))) {
-          const cats = RTTI_CATS.map(() => ({ scored: 0, max: 0 }));
+          const entries = [];
           for (const s of students) {
             const rec = await Store.getStudentScores(s.id, year);
             const exScores = rec?.scores?.[ex.id];
-            if (!exScores) continue;
-            for (const [ci, cat] of RTTI_CATS.entries()) {
-              for (const q of ex.questions.filter((q) => q.rtti === cat)) {
-                const val = exScores[q.id];
-                if (val == null || String(val).toUpperCase() === 'N') continue;
-                const num = Number(val);
-                if (isNaN(num) || num < 0) continue;
-                cats[ci].scored += num;
-                cats[ci].max += q.max_points;
-              }
-            }
+            if (exScores) entries.push({ exam: ex, questionScores: exScores });
           }
-          const pcts = cats.map(({ scored, max }) =>
-            max > 0 ? Math.round((scored / max) * 100) : null,
-          );
+          const pcts = rttiPercents(pooledRtti(entries), RTTI_CATS);
           if (pcts.some((p) => p !== null)) examRttiRows.push({ title: ex.title, id: ex.id, pcts });
         }
         if (!el.isConnected) return;

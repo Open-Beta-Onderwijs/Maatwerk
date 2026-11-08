@@ -17,6 +17,13 @@ import { chartInk, cssToken } from '../theme';
 const kindColor = (kind) => cssToken(testKindToken(kind));
 const examTypeColor = (exam) => kindColor(testKind(exam));
 import { formatGrade, parseDecimalLoose } from '../domain/format';
+import {
+  meanOfAverages,
+  pooledRtti,
+  rttiPercents,
+  seAverage,
+  yearAverage,
+} from '../domain/statistics';
 import { computeExamStats } from '../screens/toetsen.js';
 import { leerlingenState } from '../screens/leerlingen.js';
 
@@ -629,58 +636,15 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                 const gemWrap = el.querySelector('#mc-gem-wrap');
                 if (!gemWrap) return;
 
-                // Helper: weighted average for a student's results in one year.
-                // Groups original exams with their resits; only the best grade per group counts once.
-                function yearAvg(examList, rec) {
-                  const resitsByParent = {};
-                  examList
-                    .filter((e) => e.parent_id)
-                    .forEach((e) => {
-                      (resitsByParent[e.parent_id] ??= []).push(e);
-                    });
-                  let sumW = 0,
-                    sumWG = 0;
-                  for (const e of examList) {
-                    if (e.parent_id) continue; // resits are handled together with their original
-                    const group = [e, ...(resitsByParent[e.id] ?? [])];
-                    let bestGrade = null;
-                    for (const attempt of group) {
-                      const res = Store.examResults(rec, attempt);
-                      if (!res) continue;
-                      if (res.grade !== null && (bestGrade === null || res.grade > bestGrade))
-                        bestGrade = res.grade;
-                    }
-                    if (bestGrade === null) continue;
-                    const w = Number(e.weging ?? 1);
-                    sumW += w;
-                    sumWG += w * bestGrade;
-                  }
-                  return sumW > 0 ? sumWG / sumW : null;
-                }
-
-                // Helper: PTA weighted average across full history for one student
-                function ptaAvg(hist) {
-                  let sumW = 0,
-                    sumWG = 0;
-                  for (const { exam, questionScores, override } of hist) {
-                    if (exam.type !== 'pta') continue;
-                    const res = Store.calcResults(exam, questionScores, override);
-                    if (res.grade === null) continue;
-                    const w = Number(exam.weging_se ?? exam.weging ?? 1);
-                    sumW += w;
-                    sumWG += w * res.grade;
-                  }
-                  return sumW > 0 ? sumWG / sumW : null;
-                }
-
                 // Student's own weighted averages per year
                 const studentYearAvgs = {};
                 for (const yr of allYears) {
                   const examsInYear = Store.getExamsSync(yr);
                   const rec = await Store.getStudentScores(studentId, yr);
-                  studentYearAvgs[yr] = yearAvg(examsInYear, rec);
+                  studentYearAvgs[yr] = yearAverage(examsInYear, rec);
                 }
-                const studentPtaAvg = ptaAvg(history);
+                const allExams = Store.getAllExamsSync();
+                const studentPtaAvg = seAverage(history, allExams);
 
                 // Jaarlaag averages per year
                 const jlYearAvgs = {};
@@ -704,32 +668,26 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                       continue;
                     }
                     const rec = await Store.getStudentScores(s.id, yr);
-                    const avg = yearAvg(examsInYear, rec);
+                    const avg = yearAverage(examsInYear, rec);
                     if (avg !== null) peerAvgs.push(avg);
                   }
-                  jlYearAvgs[yr] =
-                    peerAvgs.length > 0
-                      ? peerAvgs.reduce((a, b) => a + b, 0) / peerAvgs.length
-                      : null;
+                  jlYearAvgs[yr] = meanOfAverages(peerAvgs);
                 }
 
-                // Jaarlaag SE average (current jaarlaag, PTA weighted avg per student)
-                const seJl = String(jaarlaagByYear[allYears[allYears.length - 1]] ?? currentJl);
-                const studentsForSe = Store.getStudentsSync(year).filter(
+                // Jaarlaag SE average: the peers of the student's own last year (B16, decision 12).
+                const lastYear = allYears[allYears.length - 1];
+                const seJl = String(jaarlaagByYear[lastYear] ?? currentJl);
+                const studentsForSe = Store.getStudentsSync(lastYear).filter(
                   (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === seJl,
                 );
                 const peerPtaAvgs = [];
                 if (studentPtaAvg !== null) peerPtaAvgs.push(studentPtaAvg); // include current student
                 for (const s of studentsForSe) {
                   if (s.id === studentId) continue; // already added above
-                  const hist = Store.resolveBestAttempts(await Store.getStudentHistory(s.id));
-                  const avg = ptaAvg(hist);
+                  const avg = seAverage(await Store.getStudentHistory(s.id), allExams);
                   if (avg !== null) peerPtaAvgs.push(avg);
                 }
-                const jlPtaAvg =
-                  peerPtaAvgs.length > 0
-                    ? peerPtaAvgs.reduce((a, b) => a + b, 0) / peerPtaAvgs.length
-                    : null;
+                const jlPtaAvg = meanOfAverages(peerPtaAvgs);
 
                 if (!el.isConnected) return;
 
@@ -910,14 +868,13 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                     : allResults.filter((r) => r.exam.academic_year === selectedYear);
                 const canvas = el.querySelector('#mc-rtti-chart');
                 const rLabels = filtered.map((r) => examLabel(r.exam));
-                const avg = (cat) => {
-                  const vals = filtered
-                    .map((r) => (r.res[cat] === 'NVT' ? null : r.res[cat]))
-                    .filter((v) => v !== null);
-                  return vals.length
-                    ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
-                    : null;
-                };
+                // Gem.: pooled points over the best attempts (decision 7); the bars show every attempt.
+                const counting =
+                  selectedYear === 'se'
+                    ? history.filter((h) => h.exam.type === 'pta')
+                    : history.filter((h) => h.exam.academic_year === selectedYear);
+                const gem = pooledRtti(counting);
+                const avg = (cat) => rttiPercents(gem, [cat])[0];
                 const toVal = (v) => (v === 'NVT' ? 50 : v === null ? null : v);
                 const toClr = (v, c) => (v === 'NVT' ? NVT_CLR : c);
                 const labels = [...rLabels, 'Gem.'];
