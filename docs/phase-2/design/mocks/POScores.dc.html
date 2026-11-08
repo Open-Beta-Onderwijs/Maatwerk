@@ -1,0 +1,270 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: PO beoordelen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-t{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:13px}
+.mw-t td{border-bottom:1px solid #EEF0F3;border-right:1px solid #EEF0F3;height:30px;padding:0;text-align:center}
+.mw-row{cursor:pointer}
+.mw-row:hover td{background:#F5F8FD}
+.mw-ib{width:32px;height:32px;border-radius:7px;border:1px solid #E1E4EA;background:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#1B2230;padding:0}
+.mw-in{box-sizing:border-box;border:1px solid #C9CED8;border-radius:8px;background:#FFFFFF;font:inherit;color:#1B2230}
+input[type=range]{accent-color:#2F6FD6}
+.mw-lbl{font-size:12px;font-weight:700;letter-spacing:.6px;color:#5D6675}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; overflow: hidden; background: #F5F6F8; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: #1B2230">
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div>
+  <div role="tablist" aria-label="Mock kiezen" style="position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 4px; padding: 4px; background: #1B2230; border-radius: 10px">
+    <sc-for list="{{views}}" as="v" hint-placeholder-count="2"><button role="tab" aria-selected="{{v.sel}}" onClick="{{v.pick}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: {{v.bg}}; color: {{v.fg}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">{{v.label}}</button></sc-for>
+  </div>
+
+  <sc-if value="{{isTable}}" hint-placeholder-val="{{ true }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-ps" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 1320px; height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); overflow: hidden">
+      <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 18px 20px 16px 26px; border-bottom: 1px solid #E1E4EA">
+        <h2 id="mw-ps" style="margin: 0; display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; flex: 1">
+          <span style="color: #5D6675; font-weight: 600">Scores invoeren</span>
+          <span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: repeating-linear-gradient(135deg, #C2540F 0 4px, #E1AA87 4px 8px); border: 1.5px solid #C2540F; padding: 1px 6px; border-radius: 5px; text-shadow: 0 0 2px #74320A, 0 0 3px #74320A">502</span>
+          <span style="color: #2560BF">PO Onderzoek valbeweging</span>
+        </h2>
+        <button class="mw-ib" aria-label="Help" style="font-weight: 700">?</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600">Projectgroepen</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600">PO bewerken</button>
+        <button aria-label="Sluiten" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; font-size: 18px">✕</button>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow: auto; padding: 0 26px 24px">
+        <div style="width: max-content; margin: 0 auto">
+          <table class="mw-t" style="margin-top: 8px; border-left: 1px solid #E1E4EA; border-top: 1px solid #E1E4EA">
+            <thead>
+              <tr>
+                <th style="position: sticky; top: 0; z-index: 3; background: #F7F8FA; width: 70px; text-align: left; padding: 0 10px 8px; height: 120px; vertical-align: bottom; border-bottom: 1px solid #E1E4EA">#</th>
+                <th style="position: sticky; top: 0; z-index: 3; background: #F7F8FA; width: 190px; text-align: left; padding: 0 10px 8px; vertical-align: bottom; border-bottom: 1px solid #E1E4EA">Naam</th>
+                <th style="position: sticky; top: 0; z-index: 3; background: #F7F8FA; width: 48px; vertical-align: bottom; padding-bottom: 8px; border-bottom: 1px solid #E1E4EA; font-size: 12px">Klas</th>
+                <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+                  <th style="position: sticky; top: 0; z-index: 2; background: #F7F8FA; width: 46px; vertical-align: bottom; border-bottom: 1px solid #E1E4EA; padding: 0">
+                    <div style="height: 112px; position: relative">
+                      <span style="position: absolute; left: 50%; bottom: 10px; transform-origin: left bottom; transform: rotate(-55deg); white-space: nowrap; font-size: 12px; font-weight: 600; color: {{c.fg}}; font-style: {{c.fs}}">{{c.name}} <span style="color: #5D6675; font-weight: 400">({{c.max}})</span></span>
+                    </div>
+                  </th>
+                </sc-for>
+                <th style="position: sticky; top: 0; z-index: 2; background: #F7F8FA; width: 64px; vertical-align: bottom; padding-bottom: 8px; border-bottom: 1px solid #E1E4EA; font-size: 12px">Punten</th>
+                <th style="position: sticky; top: 0; z-index: 2; background: #F7F8FA; width: 62px; vertical-align: bottom; padding-bottom: 8px; border-bottom: 1px solid #E1E4EA; font-size: 12px">Groep ±</th>
+                <th style="position: sticky; top: 0; z-index: 2; background: #F7F8FA; width: 62px; vertical-align: bottom; padding-bottom: 8px; border-bottom: 1px solid #E1E4EA; font-size: 12px">Eigen ±</th>
+                <th style="position: sticky; top: 0; z-index: 2; background: #F7F8FA; width: 60px; vertical-align: bottom; padding-bottom: 8px; border-bottom: 1px solid #E1E4EA">Cijfer</th>
+              </tr>
+            </thead>
+            <sc-for list="{{pgs}}" as="g" hint-placeholder-count="4">
+              <tbody>
+                <tr>
+                  <td colspan="{{span}}" style="text-align: left; background: #FFFFFF; height: 40px; padding: 0 10px; border-right: 0">
+                    <div style="display: flex; align-items: center; gap: 10px">
+                      <b style="color: #2560BF">{{g.name}}</b>
+                      <span style="font-size: 12px; color: #5D6675">{{g.info}}</span>
+                      <sc-if value="{{g.canEdit}}" hint-placeholder-val="{{ true }}"><button onClick="{{g.open}}" style="height: 26px; padding: 0 10px; border-radius: 7px; border: 1px solid #2F6FD6; background: #2F6FD614; color: #2560BF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg>Beoordelen</button></sc-if>
+                      <sc-if value="{{g.status}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: {{g.statusColor}}">{{g.statusText}}</span></sc-if>
+                    </div>
+                  </td>
+                </tr>
+                <sc-for list="{{g.rows}}" as="s" hint-placeholder-count="3">
+                  <tr class="mw-row" onDoubleClick="{{g.open}}" title="Dubbelklik om de projectgroep te beoordelen">
+                    <td style="text-align: left; padding: 0 10px; color: #5D6675">{{s.nr}}</td>
+                    <td style="text-align: left; padding: 0 10px; white-space: nowrap; font-weight: 600">{{s.name}}</td>
+                    <td style="font-size: 12px; color: #5D6675">{{s.cls}}</td>
+                    <sc-for list="{{s.cells}}" as="c" hint-placeholder-count="4"><td style="background: {{c.bg}}; color: {{c.fg}}">{{c.v}}</td></sc-for>
+                    <td style="color: #5D6675">{{s.pts}}</td>
+                    <td style="color: {{s.gbColor}}">{{s.gb}}</td>
+                    <td style="color: {{s.ibColor}}" title="{{s.ibTitle}}">{{s.ib}}</td>
+                    <td style="background: {{s.gbg}}; font-weight: 700">{{s.grade}}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </sc-for>
+          </table>
+        </div>
+      </div>
+      <div style="flex: none; display: flex; align-items: center; gap: 18px; padding: 10px 26px; border-top: 1px solid #E1E4EA; background: #FAFBFC; font-size: 12px; color: #5D6675">
+        <span>Scores per categorie wijzig je via <b>Beoordelen</b> of door dubbel te klikken op een rij; ze gelden voor de hele projectgroep.</span>
+        <div style="flex: 1"></div>
+        <span style="color: #1E7B3C; font-weight: 600">● Alles opgeslagen</span>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isGrade}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-pb" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 1240px; height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); overflow: hidden">
+      <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px 24px; border-bottom: 1px solid #E1E4EA">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+          <h2 id="mw-pb" style="margin: 0; font-size: 22px; color: #2560BF">Valtoren beoordelen</h2>
+          <span style="font-size: 13px; color: #5D6675">PO Onderzoek valbeweging · Sem Dijkstra (5A), Emma Kok (5A), Bas Vos (5B)</span>
+        </div>
+        <span role="status" style="font-size: 12px; color: #1E7B3C; font-weight: 600">● Automatisch opgeslagen · 14:32</span>
+        <button aria-label="Sluiten" onClick="{{toTable}}" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; font-size: 18px; cursor: pointer">✕</button>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 14px; background: #FAFBFC">
+        <sc-for list="{{gcats}}" as="c" hint-placeholder-count="4">
+          <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px">
+            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+              <div style="display: flex; align-items: baseline; gap: 10px">
+                <b style="font-size: 16px">{{c.name}}</b>
+                <sc-if value="{{c.isBonus}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #EAF1FC; color: #2560BF">BONUS</span></sc-if>
+                <div style="flex: 1"></div>
+                <span style="font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums">{{c.v}}<span style="font-size: 13px; color: #5D6675; font-weight: 400"> / {{c.max}}</span></span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat({{c.n}}, minmax(0, 1fr)); gap: 8px">
+                <sc-for list="{{c.levels}}" as="lv" hint-placeholder-count="3">
+                  <div aria-current="{{lv.cur}}" style="border: 1.5px solid {{lv.bd}}; background: {{lv.bg}}; border-radius: 9px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; opacity: {{lv.op}}; transition: all .15s">
+                    <span style="font-size: 11px; font-weight: 700; color: {{lv.rangeFg}}">{{lv.range}}</span>
+                    <sc-if value="{{lv.hasTitle}}" hint-placeholder-val="{{ true }}"><b style="font-size: 13px">{{lv.title}}</b></sc-if>
+                    <span style="font-size: 12px; color: #5D6675; line-height: 1.4">{{lv.text}}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px">
+                <input type="range" min="0" max="{{c.max}}" step="1" value="{{c.v}}" onInput="{{c.set}}" aria-label="{{c.aria}}" style="width: 100%">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #5D6675; padding: 0 6px"><sc-for list="{{c.ticks}}" as="t" hint-placeholder-count="4"><span>{{t}}</span></sc-for></div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; border-left: 1px solid #EEF0F3; padding-left: 16px">
+              <span class="mw-lbl">OBSERVATIES</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap">
+                <sc-for list="{{c.obs}}" as="o" hint-placeholder-count="2"><button aria-pressed="{{o.on}}" onClick="{{o.toggle}}" style="height: 26px; padding: 0 10px 0 6px; border-radius: 999px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font: inherit; font-size: 12px; font-weight: {{o.w}}; cursor: pointer; display: inline-flex; align-items: center; gap: 5px"><span aria-hidden="true" style="font-size: 14px">{{o.e}}</span>{{o.n}}</button></sc-for>
+                <sc-if value="{{c.noObs}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #9AA1AD; font-style: italic">Geen observaties bij deze categorie</span></sc-if>
+              </div>
+              <textarea class="mw-in" rows="3" placeholder="Opmerking bij {{c.name}}" aria-label="Opmerking bij {{c.name}}" style="padding: 8px 10px; font-size: 13px; resize: vertical; line-height: 1.4">{{c.comment}}</textarea>
+            </div>
+          </section>
+        </sc-for>
+
+        <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+          <span class="mw-lbl">COMMENTAAR OP HET WERK ALS GEHEEL</span>
+          <textarea class="mw-in" rows="4" aria-label="Commentaar op het werk als geheel" style="padding: 9px 11px; font-size: 14px; line-height: 1.45; resize: vertical">Goed opgezet onderzoek met een duidelijke vraag. Let bij de conclusie op het aantal significante cijfers.</textarea>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span class="mw-lbl">BONUS / MALUS VOOR DE HELE PROJECTGROEP</span>
+            <sc-for list="{{groupAdj}}" as="a" hint-placeholder-count="1">
+              <div style="display: flex; gap: 8px; align-items: center"><input class="mw-in" value="{{a.label}}" aria-label="Omschrijving" style="flex: 1; height: 32px; padding: 0 10px; font-size: 13px"><input class="mw-in" value="{{a.v}}" aria-label="Cijferpunten" style="width: 64px; height: 32px; text-align: center; font-size: 13px; color: {{a.c}}; font-weight: 600"><button class="mw-ib" aria-label="Regel verwijderen" style="width: 30px; height: 30px; color: #5D6675">×</button></div>
+            </sc-for>
+            <button style="align-self: flex-start; height: 28px; padding: 0 12px; border-radius: 7px; border: 1px dashed #C9CED8; background: #FFFFFF; color: #2560BF; font: inherit; font-size: 12px; font-weight: 600">+ Regel</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span class="mw-lbl">BONUS / MALUS PER LEERLING</span>
+            <sc-for list="{{memberAdj}}" as="m" hint-placeholder-count="3">
+              <div style="display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px; align-items: center">
+                <span style="font-size: 13px; font-weight: 600">{{m.name}}</span>
+                <sc-if value="{{m.has}}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 8px; align-items: center"><input class="mw-in" value="{{m.label}}" aria-label="Omschrijving" style="flex: 1; height: 32px; padding: 0 10px; font-size: 13px"><input class="mw-in" value="{{m.v}}" aria-label="Cijferpunten" style="width: 64px; height: 32px; text-align: center; font-size: 13px; color: #B42318; font-weight: 600"><button class="mw-ib" aria-label="Regel verwijderen" style="width: 30px; height: 30px; color: #5D6675">×</button></div></sc-if>
+                <sc-if value="{{m.none}}" hint-placeholder-val="{{ true }}"><button style="justify-self: start; height: 28px; padding: 0 12px; border-radius: 7px; border: 1px dashed #C9CED8; background: #FFFFFF; color: #2560BF; font: inherit; font-size: 12px; font-weight: 600">+ Regel</button></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+      </div>
+      <div style="flex: none; padding: 10px 24px 14px; border-top: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 10px; background: #FFFFFF">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap">
+          <span class="mw-lbl" style="margin-right: 4px">ALGEMENE OBSERVATIES</span>
+          <sc-for list="{{genObs}}" as="o" hint-placeholder-count="3"><button aria-pressed="{{o.on}}" onClick="{{o.toggle}}" style="height: 28px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font: inherit; font-size: 13px; font-weight: {{o.w}}; cursor: pointer; display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="font-size: 15px">{{o.e}}</span>{{o.n}}</button></sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 14px; font-variant-numeric: tabular-nums">
+          <span style="font-size: 13px; color: #5D6675">Punten <b style="color: #1B2230">{{pts}}</b> / 17 → projectgroep <b style="color: #1B2230">{{groupGrade}}</b></span>
+          <sc-for list="{{memberGrades}}" as="m" hint-placeholder-count="3"><span style="font-size: 13px; padding: 3px 10px; border-radius: 7px; background: {{m.bg}}">{{m.name}} <b>{{m.grade}}</b></span></sc-for>
+          <div style="flex: 1"></div>
+          <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600">← Vorige</button>
+          <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600">Volgende →</button>
+          <button onClick="{{toTable}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Klaar</button>
+        </div>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { view: 'table', v: [2, 6, 4, 2], obs: { 'c0-0': false, 'c1-0': true, 'c2-0': true, g0: true, g1: false, g2: false } };
+  }
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, t) { t = Math.max(0, Math.min(1, t)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+  fmt(g) { return g.toFixed(1).replace('.', ','); }
+  sgn(x) { return (x > 0 ? '+' : x < 0 ? '−' : '') + this.fmt(Math.abs(x)); }
+  renderVals() {
+    const C = [
+      { name: 'Introductie', max: 3, kind: 'Normaal', obs: [['❓', 'Onderzoeksvraag onduidelijk']], levels: [[0, 1, 'Matige introductie', 'Achtergrondinformatie ontbreekt, onderzoeksvraag vaag.'], [2, 2, 'Redelijk', 'Onderzoeksvraag duidelijk, achtergrond beperkt.'], [3, 3, 'Goed', 'Heldere onderzoeksvraag met relevante achtergrond.']] },
+      { name: 'Theorie', max: 8, kind: 'Normaal', obs: [['➗', 'Formule verkeerd omgeschreven']], levels: [[0, 3, 'Matig', 'Theorie ontbreekt grotendeels of bevat fouten.'], [2, 5, 'Voldoende', 'Belangrijkste formules genoemd, niet toegepast.'], [4, 7, 'Goed', 'Formules toegepast op de eigen proef.'], [6, 8, 'Uitstekend', 'Theorie verbonden met de resultaten.']] },
+      { name: 'Figuren', max: 6, kind: 'Normaal', obs: [['📈', 'Grafiek: aslabels vergeten']], levels: [[0, 2, '', 'Figuren ontbreken of zijn onleesbaar.'], [3, 4, '', 'Figuren aanwezig, assen niet volledig.'], [5, 6, '', 'Figuren volledig, met eenheden en bijschrift.']] },
+      { name: 'Originaliteit', max: 4, kind: 'Bonus', obs: [], levels: [[0, 1, 'Standaard', 'Voert de proef uit zoals beschreven.'], [2, 4, 'Eigen inbreng', 'Eigen variant of extra meting.']] },
+    ];
+    const MAX = 17;
+    const grade = (p) => Math.max(1, Math.min(10, Math.round((10 * p / MAX) * 10) / 10));
+    const clamp = (g) => Math.max(1, Math.min(10, Math.round(g * 10) / 10));
+    const gbg = (g) => g < 5.5 ? '#F7CFCA' : g < 7.5 ? this.lerp('#FBE7A6', '#E3EDB4', (g - 5.5) / 2) : this.lerp('#E3EDB4', '#C6E8CF', (g - 7.5) / 2);
+    const views = [['table', 'Scores invoeren'], ['grade', 'Projectgroep beoordelen']].map(([k, label]) => ({ label, sel: this.state.view === k ? 'true' : 'false', bg: this.state.view === k ? '#FFFFFF' : 'transparent', fg: this.state.view === k ? '#1B2230' : '#C9CED8', pick: () => this.setState({ view: k }) }));
+    const cats = C.map((c) => ({ name: c.name, max: c.max, fg: c.kind === 'Bonus' ? '#2560BF' : '#1B2230', fs: 'normal' }));
+    const cellBg = (v, max) => v === max ? '#DFF1E5' : v === 0 ? '#FBE1DE' : '#FCF1CF';
+    const PG = [
+      ['Projectgroep 1', [['105201', 'Julia Hendriks', '5A', 0], ['105209', 'Amira Haddou', '5B', 0]], [3, 7, 5, 1], 0, 'Beoordeeld'],
+      ['Valtoren', [['105202', 'Sem Dijkstra', '5A', -0.5], ['105203', 'Emma Kok', '5A', 0], ['105210', 'Bas Vos', '5B', 0]], this.state.v, -0.5, 'Bezig'],
+      ['Projectgroep 3', [['105204', 'Luuk Peters', '5A', 0]], null, 0, 'Nog niet beoordeeld'],
+    ];
+    const span = 3 + C.length + 4;
+    const pgs = PG.map(([name, mem, sc, gadj, st], gi) => {
+      const pts = sc ? sc.reduce((s, x) => s + x, 0) : null;
+      return {
+        name, canEdit: true, info: mem.length + (mem.length === 1 ? ' leerling' : ' leerlingen'), status: true, statusText: st,
+        statusColor: st === 'Beoordeeld' ? '#1E7B3C' : st === 'Bezig' ? '#7A5300' : '#5D6675',
+        open: () => this.setState({ view: 'grade' }),
+        rows: mem.map(([nr, n, cls, iadj]) => {
+          const g = sc ? clamp(grade(pts) + gadj + iadj) : null;
+          return {
+            nr, name: n, cls,
+            cells: C.map((c, i) => sc ? { v: sc[i], bg: cellBg(sc[i], c.max), fg: '#1B2230' } : { v: '—', bg: '#FFFFFF', fg: '#9AA1AD' }),
+            pts: sc ? pts + ' / ' + MAX : '—',
+            gb: gadj ? this.sgn(gadj) : '', gbColor: gadj < 0 ? '#B42318' : '#1E7B3C',
+            ib: iadj ? this.sgn(iadj) : '', ibColor: iadj < 0 ? '#B42318' : '#1E7B3C', ibTitle: iadj ? 'Niet meegewerkt aan de metingen' : '',
+            grade: g == null ? '—' : this.fmt(g), gbg: g == null ? '#FFFFFF' : gbg(g),
+          };
+        }),
+      };
+    });
+    const ob = this.state.obs;
+    const tog = (k) => () => this.setState({ obs: { ...ob, [k]: !ob[k] } });
+    const chip = (on) => ({ bd: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', fg: on ? '#2560BF' : '#1B2230', w: on ? 600 : 400, on: on ? 'true' : 'false' });
+    const COMMENTS = ['', 'Formules goed gekozen; de afleiding van g uit de helling ontbreekt.', 'Grafiek 2 mist eenheden op de y-as.', ''];
+    const gcats = C.map((c, ci) => {
+      const v = this.state.v[ci];
+      return {
+        name: c.name, max: c.max, v, n: c.levels.length, isBonus: c.kind === 'Bonus', aria: c.name + ': score', comment: COMMENTS[ci],
+        set: (e) => { const vs = [...this.state.v]; vs[ci] = parseInt(e.target.value, 10); this.setState({ v: vs }); },
+        ticks: Array.from({ length: c.max + 1 }, (_, i) => String(i)),
+        levels: c.levels.map(([a, b, t, x]) => { const on = a <= v && v <= b; return { range: a === b ? String(a) : a + '–' + b, title: t, hasTitle: !!t, text: x, cur: on ? 'true' : 'false', bd: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD60F' : '#FFFFFF', rangeFg: on ? '#2560BF' : '#5D6675', op: on ? 1 : 0.6 }; }),
+        obs: c.obs.map(([e, n], oi) => ({ e, n, ...chip(!!ob['c' + ci + '-' + oi]), toggle: tog('c' + ci + '-' + oi) })), noObs: c.obs.length === 0,
+      };
+    });
+    const pts = this.state.v.reduce((s, x) => s + x, 0);
+    const gg = clamp(grade(pts) - 0.5);
+    const members = [['Sem Dijkstra', -0.5, 'Niet meegewerkt aan de metingen'], ['Emma Kok', 0, ''], ['Bas Vos', 0, '']];
+    const G = [['📏', 'Eenheid vergeten'], ['🎯', 'Significantie antwoord verkeerd'], ['🧮', 'Rekenfout']];
+    return {
+      views, cats, pgs, span, gcats, pts,
+      isTable: this.state.view === 'table', isGrade: this.state.view === 'grade', toTable: () => this.setState({ view: 'table' }),
+      groupGrade: this.fmt(gg),
+      groupAdj: [{ label: 'Te laat ingeleverd', v: '−0,5', c: '#B42318' }],
+      memberAdj: members.map(([name, v, label]) => ({ name, has: !!v, none: !v, v: v ? this.sgn(v) : '', label })),
+      memberGrades: members.map(([name, v]) => { const g = clamp(gg + v); return { name: name.split(' ')[0], grade: this.fmt(g), bg: gbg(g) }; }),
+      genObs: G.map(([e, n], i) => ({ e, n, ...chip(!!ob['g' + i]), toggle: tog('g' + i) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

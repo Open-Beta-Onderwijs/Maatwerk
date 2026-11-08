@@ -1,0 +1,199 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: praktische opdracht</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.6px;color:#5D6675}
+.mw-in{height:36px;box-sizing:border-box;padding:0 12px;border:1px solid #C9CED8;border-radius:8px;background:#FFFFFF;font:inherit;font-size:14px;font-weight:400;letter-spacing:0;color:#1B2230}
+.mw-seg{display:inline-flex;border:1px solid #C9CED8;border-radius:8px;overflow:hidden;height:34px}
+.mw-seg span{min-width:34px;border-right:1px solid #E1E4EA;display:inline-flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:0;padding:0 8px}
+.mw-seg span:last-child{border-right:0}
+.mw-step{display:inline-flex;height:36px;border:1px solid #C9CED8;border-radius:8px;overflow:hidden}
+.mw-step span{width:32px;background:#F5F6F8;display:inline-flex;align-items:center;justify-content:center;font-size:15px;color:#1B2230}
+.mw-step b{width:52px;border-left:1px solid #E1E4EA;border-right:1px solid #E1E4EA;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:400;letter-spacing:0;color:#1B2230}
+.mw-card{transition:box-shadow .15s}
+.mw-card:hover{box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.mw-stu{cursor:pointer}
+.mw-stu:hover{background:#EAF1FC}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; overflow: hidden; background: #F5F6F8; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: #1B2230">
+  <div role="tablist" aria-label="Mock kiezen" style="position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; gap: 4px; padding: 4px; background: #1B2230; border-radius: 10px">
+    <sc-for list="{{views}}" as="v" hint-placeholder-count="3"><button role="tab" aria-selected="{{v.sel}}" onClick="{{v.pick}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: {{v.bg}}; color: {{v.fg}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">{{v.label}}</button></sc-for>
+  </div>
+
+  <div style="max-width: 1360px; margin: 0 auto; padding: 64px 40px 40px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 650; color: #2560BF">Toetsen</h1>
+      <div style="flex: 1"></div>
+      <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600">RTTI uitleg / leeradvies</button>
+      <button onClick="{{openStep1}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">+ PO toevoegen</button>
+      <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600">+ Toets toevoegen</button>
+    </div>
+    <h2 style="margin: 6px 0 2px; font-size: 12px; font-weight: 700; letter-spacing: 1px; color: #2560BF">JAARLAAG 5</h2>
+    <sc-for list="{{cards}}" as="e" hint-placeholder-count="3">
+      <article class="mw-card" style="display: flex; align-items: center; gap: 16px; padding: 14px 16px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+          <div style="display: flex; align-items: center; gap: 10px">
+            <span style="font-size: 12px; font-weight: 700; color: #FFFFFF; background: {{e.bg}}; border: 1.5px solid {{e.c}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{e.sh}}">{{e.code}}</span>
+            <a href="#" style="font-weight: 650; font-size: 15px; color: #2560BF; text-decoration: none">{{e.name}}</a>
+            <span style="font-size: 12px; color: #5D6675; padding: 1px 8px; border-radius: 999px; background: #EEF0F3">{{e.kind}}</span>
+          </div>
+          <span style="font-size: 13px; color: #5D6675">{{e.meta}}</span>
+          <span style="font-size: 13px; color: #5D6675; font-variant-numeric: tabular-nums">{{e.line}}</span>
+          <span style="font-size: 13px; font-variant-numeric: tabular-nums"><b style="color: {{e.mc}}">{{e.mean}}</b> <span style="color: #5D6675">± {{e.sd}} · {{e.fail}} onvoldoende</span></span>
+        </div>
+        <button style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600">Overzicht openen</button>
+        <button aria-label="Meer acties" style="width: 32px; height: 32px; border-radius: 7px; border: 1px solid #E1E4EA; background: #FFFFFF; display: inline-flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+      </article>
+    </sc-for>
+    <p style="margin: 8px 0 0; color: #5D6675; font-size: 13px">Het ⋮-menu van een PO heeft dezelfde items als bij een toets: Scores invoeren, Rapport genereren, Opdrachten genereren, Nieuwe poging (alleen herkansing), Bewerken, Verwijderen.</p>
+  </div>
+
+  <sc-if value="{{modal}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div>
+  </sc-if>
+
+  <sc-if value="{{isStep1}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-p1" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 760px; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); display: flex; flex-direction: column">
+      <div style="padding: 20px 24px 0; display: flex; flex-direction: column; gap: 14px; border-bottom: 1px solid #E1E4EA">
+        <div style="display: flex; align-items: center; gap: 12px"><h2 id="mw-p1" style="margin: 0; flex: 1; font-size: 22px; color: #2560BF">Nieuwe praktische opdracht</h2><button aria-label="Sluiten" onClick="{{toList}}" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer">✕</button></div>
+        <div style="display: flex; gap: 22px; font-size: 13px"><span style="padding-bottom: 10px; box-shadow: inset 0 -3px 0 #2560BF; font-weight: 600">1 · Gegevens</span><span style="padding-bottom: 10px; color: #5D6675">2 · Projectgroepen</span></div>
+      </div>
+      <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 18px">
+        <div style="display: flex; gap: 16px; align-items: flex-start">
+          <label class="mw-lbl" style="flex: 1">NAAM<input class="mw-in" value="PO Onderzoek valbeweging"></label>
+          <div class="mw-lbl" style="align-items: center" title="PTA: telt mee voor het schoolexamen">PTA<span style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; background: #2F6FD6; color: #FFFFFF; font-size: 22px; letter-spacing: 0; display: flex; align-items: center; justify-content: center">✓</span></div>
+          <div class="mw-lbl" style="align-items: center" title="Diagnostisch: telt niet mee voor rapport of SE">D<span style="width: 36px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid #C9CED8"></span></div>
+          <div class="mw-lbl" style="width: 110px">SCHOOLJAAR<span style="height: 36px; display: flex; align-items: center; font-size: 14px; font-weight: 400; letter-spacing: 0; color: #1B2230">2026-2027</span></div>
+        </div>
+        <div class="mw-lbl">SCHOOLSOORT<div style="display: flex; gap: 6px"><span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #E1E4EA; font-size: 13px; font-weight: 400; letter-spacing: 0; color: #1B2230; display: inline-flex; align-items: center">Havo</span><span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #E1E4EA; font-size: 13px; font-weight: 400; letter-spacing: 0; color: #1B2230; display: inline-flex; align-items: center">Vwo</span><span style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid #2F6FD6; background: #2F6FD614; color: #2560BF; font-size: 13px; font-weight: 600; letter-spacing: 0; display: inline-flex; align-items: center">Gymnasium</span></div></div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px 24px; align-items: end">
+          <div style="display: flex; align-items: flex-end">
+            <div class="mw-lbl">JAARLAAG<div class="mw-seg"><span>1</span><span>2</span><span>3</span><span>4</span><span style="background: #2F6FD6; color: #FFFFFF; font-weight: 700">5</span><span>6</span></div></div>
+            <div style="flex: 1; display: flex; justify-content: center"><div class="mw-lbl">PERIODE<div class="mw-seg"><span>1</span><span style="background: #2F6FD6; color: #FFFFFF; font-weight: 700">2</span><span>3</span><span>4</span><span>5</span></div></div></div>
+          </div>
+          <div class="mw-lbl">WEGING<span class="mw-step"><span>−</span><b>2</b><span>+</span></span></div>
+          <div class="mw-lbl">WEGING SE<span class="mw-step"><span>−</span><b>10</b><span>+</span></span></div>
+          <label class="mw-lbl" style="min-width: 0">RUBRIC
+            <select class="mw-in" style="width: 100%; min-width: 0"><option>Onderzoeksverslag natuurkunde (17 + 4 bonus)</option></select>
+          </label>
+          <div class="mw-lbl" style="grid-column: 2 / 4; align-self: end"><span style="height: 36px; display: flex; align-items: center; font-weight: 400; letter-spacing: 0; font-size: 12px; line-height: 1.35">Alleen rubrics voor Gymnasium · Natuurkunde · jaarlaag 5</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid #E1E4EA; border-radius: 10px; background: #FAFBFC">
+          <div style="display: flex; gap: 6px; flex-wrap: wrap"><sc-for list="{{rubCats}}" as="c" hint-placeholder-count="4"><span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: {{c.bg}}; color: {{c.fg}}">{{c.l}}</span></sc-for></div>
+          <span style="font-size: 13px; color: #5D6675">Cijfer = 10 × punten ÷ 17, minimaal 1,0 en hoogstens 10,0. Bonuspunten tellen mee in de punten, niet in het maximum.</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid #E1E4EA">
+        <button onClick="{{toList}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button onClick="{{openStep2}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Verder →</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isStep2}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-p2" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 1180px; height: 864px; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); display: flex; flex-direction: column; overflow: hidden">
+      <div style="flex: none; padding: 20px 24px 0; display: flex; flex-direction: column; gap: 14px; border-bottom: 1px solid #E1E4EA">
+        <div style="display: flex; align-items: center; gap: 12px"><h2 id="mw-p2" style="margin: 0; flex: 1; font-size: 22px; color: #2560BF">Nieuwe praktische opdracht</h2><button aria-label="Sluiten" onClick="{{toList}}" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer">✕</button></div>
+        <div style="display: flex; gap: 22px; font-size: 13px"><span style="padding-bottom: 10px; color: #5D6675">1 · Gegevens</span><span style="padding-bottom: 10px; box-shadow: inset 0 -3px 0 #2560BF; font-weight: 600">2 · Projectgroepen</span></div>
+      </div>
+      <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: 330px minmax(0, 1fr)">
+        <aside aria-label="Niet ingedeeld" style="border-right: 1px solid #E1E4EA; background: #FAFBFC; display: flex; flex-direction: column; min-height: 0">
+          <div style="padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; align-items: baseline; gap: 8px"><b>Niet ingedeeld</b><span style="font-size: 13px; color: #5D6675">{{freeCount}} leerlingen</span></div>
+            <span style="font-size: 12px; color: #5D6675">Uit de klassen van Natuurkunde · Gymnasium · jaarlaag 5. Klik een leerling om hem aan <b style="color: #2560BF">{{activeName}}</b> toe te voegen.</span>
+            <div style="display: flex; gap: 4px"><sc-for list="{{classFilter}}" as="cf" hint-placeholder-count="3"><span style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid {{cf.bd}}; background: {{cf.bg}}; color: {{cf.fg}}; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center">{{cf.l}}</span></sc-for></div>
+          </div>
+          <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 8px 12px">
+            <sc-for list="{{free}}" as="s" hint-placeholder-count="10">
+              <button class="mw-stu" onClick="{{s.add}}" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border: 0; border-radius: 7px; background: transparent; font: inherit; color: #1B2230; text-align: left">
+                <span style="flex: 1">{{s.name}}</span><span style="font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 5px; background: #EEF0F3; color: #5D6675">{{s.cls}}</span><span aria-hidden="true" style="color: #2560BF; font-weight: 700">+</span>
+              </button>
+            </sc-for>
+          </div>
+        </aside>
+        <div style="overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="font-size: 13px; color: #5D6675; flex: 1">{{groupCount}} projectgroepen · leerlingen uit verschillende klassen mogen samen</span>
+            <button style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600">Willekeurig indelen…</button>
+            <button onClick="{{addGroup}}" style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">+ Projectgroep</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+            <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+              <div onClick="{{g.activate}}" style="border: {{g.bw}} solid {{g.bd}}; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #FFFFFF; cursor: pointer; min-height: 120px">
+                <div style="display: flex; align-items: center; gap: 8px">
+                  <input class="mw-in" value="{{g.name}}" aria-label="Naam projectgroep" style="height: 30px; font-size: 13px; font-weight: 600; flex: 1">
+                  <span style="font-size: 12px; color: #5D6675">{{g.n}}</span>
+                </div>
+                <sc-for list="{{g.members}}" as="m" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 13px"><span style="flex: 1">{{m.name}}</span><span style="font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 5px; background: #EEF0F3; color: #5D6675">{{m.cls}}</span><button aria-label="Uit projectgroep halen" onClick="{{m.remove}}" style="width: 22px; height: 22px; border: 0; border-radius: 5px; background: transparent; color: #5D6675; cursor: pointer">×</button></div>
+                </sc-for>
+                <sc-if value="{{g.empty}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; color: #9AA1AD; font-style: italic">Klik links leerlingen aan of sleep ze hierheen</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 12px 24px 16px; border-top: 1px solid #E1E4EA">
+        <button onClick="{{openStep1}}" style="height: 36px; padding: 0 12px 0 6px; border-radius: 8px; border: 1px solid transparent; background: transparent; color: #2560BF; font: inherit; font-weight: 600; cursor: pointer">← Gegevens</button>
+        <span style="flex: 1; font-size: 13px; color: {{freeColor}}">{{freeNote}}</span>
+        <button onClick="{{toList}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button onClick="{{toList}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const S = [['Julia Hendriks', '5A'], ['Sem Dijkstra', '5A'], ['Emma Kok', '5A'], ['Luuk Peters', '5A'], ['Aisha Rahman', '5A'], ['Finn van Dam', '5A'], ['Jens Mol', '5A'], ['Merel Smits', '5A'], ['Amira Haddou', '5B'], ['Bas Vos', '5B'], ['Cas Ruiter', '5B'], ['Dewi Kramer', '5B'], ['Elif Aksoy', '5B'], ['Femke Wit', '5B'], ['Gijs Prins', '5B'], ['Hidde Kok', '5B']];
+    this.state = { view: 'list', active: 0, students: S, groups: [{ name: 'Projectgroep 1', m: [0, 8] }, { name: 'Valtoren', m: [1, 2, 9] }, { name: 'Projectgroep 3', m: [3] }] };
+  }
+  renderVals() {
+    const V = [['list', 'Toetsen met PO'], ['s1', 'PO toevoegen · 1'], ['s2', 'PO toevoegen · 2']];
+    const views = V.map(([k, label]) => ({ label, sel: this.state.view === k ? 'true' : 'false', bg: this.state.view === k ? '#FFFFFF' : 'transparent', fg: this.state.view === k ? '#1B2230' : '#C9CED8', pick: () => this.setState({ view: k }) }));
+    const stripes = (c, l) => `repeating-linear-gradient(135deg, ${c} 0 4px, ${l} 4px 8px)`;
+    const cards = [
+      { code: '501', name: 'PTA t.na-1 TW1', kind: 'SE-toets', c: '#C2540F', bg: '#C2540F', sh: 'none', meta: 'Gymnasium · Periode 1 · N-term 1,5 · Weging 3 · Weging SE 20', line: '41p · R: 3p · T1: 21p · T2: 17p', mean: '6,4', sd: '1,7', fail: '30%', mc: '#8A6A00' },
+      { code: '502', name: 'PO Onderzoek valbeweging', kind: 'SE praktische opdracht', c: '#C2540F', bg: stripes('#C2540F', '#E1AA87'), sh: '0 0 2px #74320A, 0 0 3px #74320A', meta: 'Gymnasium · Periode 2 · Weging 2 · Weging SE 10 · 9 projectgroepen', line: 'Rubric Onderzoeksverslag natuurkunde · 4 categorieën · 17 punten · bonus 4', mean: '7,2', sd: '1,0', fail: '7%', mc: '#467A2D' },
+      { code: '503', name: 'PO Poster elektriciteit', kind: 'Praktische opdracht', c: '#2F6FD6', bg: stripes('#2F6FD6', '#97B7EB'), sh: '0 0 2px #1C4380, 0 0 3px #1C4380', meta: 'Gymnasium · Periode 2 · Weging 1 · 12 projectgroepen', line: 'Rubric Poster · 3 categorieën · 18 punten', mean: '7,8', sd: '0,8', fail: '0%', mc: '#3B7F35' },
+    ];
+    const S = this.state.students, G = this.state.groups;
+    const used = new Set(G.flatMap((g) => g.m));
+    const add = (i) => () => { const gs = G.map((g, k) => (k === this.state.active ? { ...g, m: [...g.m, i] } : g)); this.setState({ groups: gs }); };
+    const free = S.map(([name, cls], i) => ({ name, cls, i })).filter((s) => !used.has(s.i)).map((s) => ({ ...s, add: add(s.i) }));
+    const groups = G.map((g, k) => ({
+      name: g.name, n: g.m.length + (g.m.length === 1 ? ' ll' : ' lln'), empty: g.m.length === 0,
+      bd: k === this.state.active ? '#2F6FD6' : '#E1E4EA', bw: k === this.state.active ? '2px' : '1px',
+      activate: () => this.setState({ active: k }),
+      members: g.m.map((i) => ({ name: S[i][0], cls: S[i][1], remove: (e) => { e.stopPropagation(); this.setState({ groups: G.map((x, j) => (j === k ? { ...x, m: x.m.filter((y) => y !== i) } : x)) }); } })),
+    }));
+    const v = this.state.view;
+    return {
+      views, cards, free, groups, freeCount: free.length, groupCount: G.length,
+      activeName: G[this.state.active] ? G[this.state.active].name : '',
+      classFilter: [['Alle', true], ['5A', false], ['5B', false]].map(([l, on]) => ({ l, bd: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', fg: on ? '#2560BF' : '#1B2230' })),
+      freeNote: free.length ? free.length + ' leerlingen nog niet ingedeeld: zij krijgen pas een cijfer als ze in een projectgroep zitten.' : 'Iedereen is ingedeeld.',
+      freeColor: free.length ? '#7A5300' : '#1E7B3C',
+      addGroup: () => this.setState({ groups: [...G, { name: 'Projectgroep ' + (G.length + 1), m: [] }], active: G.length }),
+      rubCats: [['Introductie 3', false], ['Theorie 8', false], ['Figuren 6', false], ['Originaliteit 4 · bonus', true]].map(([l, b]) => ({ l, bg: b ? '#EAF1FC' : '#EEF0F3', fg: b ? '#2560BF' : '#1B2230' })),
+      modal: v !== 'list', isStep1: v === 's1', isStep2: v === 's2',
+      toList: () => this.setState({ view: 'list' }), openStep1: () => this.setState({ view: 's1' }), openStep2: () => this.setState({ view: 's2' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

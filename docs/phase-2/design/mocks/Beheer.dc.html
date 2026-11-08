@@ -214,8 +214,8 @@ a{color:#2560BF}a:hover{color:#1F55AD}
   </main>
 
   <sc-if value="{{editOpen}}" hint-placeholder-val="{{ false }}">
-    <div aria-hidden="true" onClick="{{closeEdit}}" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div>
-    <section role="dialog" aria-modal="true" aria-labelledby="mw-ue" style="position: absolute; top: 64px; left: 50%; transform: translateX(-50%); width: 720px; max-height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
+    <div aria-hidden="true" onClick="{{closeEdit}}" style="position: absolute; inset: 0; z-index: 10; background: rgba(16,24,40,.42)"></div>
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-ue" style="position: absolute; z-index: 11; top: 64px; left: 50%; transform: translateX(-50%); width: 720px; max-height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
       <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 20px 24px 14px; border-bottom: 1px solid #E1E4EA">
         <h2 id="mw-ue" style="margin: 0; flex: 1; font-size: 22px; color: #2560BF">Gebruiker bewerken</h2>
         <button aria-label="Sluiten" onClick="{{closeEdit}}" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>

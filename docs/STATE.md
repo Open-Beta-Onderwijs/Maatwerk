@@ -12,9 +12,9 @@ Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `ma
 of the real data; then merge 17 and 18 into `main` (tags `step-17`, `v0.8.0`, `step-18`, `v0.9.0`).
 
 **User answers (2026-11-07):** golden check 17 approved (padding page with footer and
-watermark is fine). T9 moved to step 19b, T23 to step 26 (PLAN-2, ROADMAP 4.6). F-14:
+watermark is fine). T9 moved to step 19b, T23 to step 30 (PLAN-2, ROADMAP 4.6; renumbered 2026-11-08). F-14:
 `opdrachtenVraag` stays on the exam (ADR-0010 item 7); `onder: 2` matches 0, 1 and `N`, not an
-empty score (step 26 implements the matching).
+empty score (step 30 implements the matching).
 
 **User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
 commits; the gate, code review and security review only once, after step 18. Step 16: CI green
@@ -24,7 +24,7 @@ commits; the gate, code review and security review only once, after step 18. Ste
 
 Scope as PLAN-2 step 17: B-06, B-07, F-13, F-04, T4, T7, T8, T10, T25; plus T6 (the rapport's
 numbers, same lines as T7). T9 (histogram/ranking texts) moved to step 19b and T23 (batch
-reports only the first failure) to step 26 (user 2026-11-07).
+reports only the first failure) to step 30 (user 2026-11-07; renumbered 2026-11-08).
 
 1. **Done** (`f26d77f`): template fixes, failing tests first (`tests/typst_rapport.rs`, 9 new):
    T4 watermark only when `fotos/school-watermerk.svg` exists (any case; `data.json` field
@@ -340,7 +340,7 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    (spec 2.3: text colours as theme-token mixes, bar colours hex, score-grid cell fills) replace
    the copies in ~15 files; `utils/grades.js` -> `utils/grades.ts`; `utils/colors.js` keeps only
    `examTypeColor` until sub-task 4. Rounding paths unchanged (B8 note in `quirks.md`). The
-   score grid stays light in dark mode (token island) until step 21.
+   score grid stays light in dark mode (token island) until step 25 (renumbered 2026-11-08).
 3. **Done:** `ui/src/styles/buttons.css` (`.btn` + `--primary/--secondary/--text/--danger/
 --icon/--icon-danger/--sm`, focus ring, disabled, `aria-busy` spinner) and
    `components/button.ts` `setBusy`. All ~100 buttons converted (PIN dialogs included);
@@ -366,7 +366,7 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
 
 User decisions (2026-11-05): zwart accent in dark theme keeps the light fill (`#E7EAF0`, dark
 text); B8 rounding unification stays in step 19. `editor.css`/`pdf-viewer.css` (own windows)
-keep their colours until step 27.
+keep their colours until step 31 (renumbered 2026-11-08).
 
 User review of the visual diff (2026-11-05), fixed: groep-edit Schoolsoort on one line; text in
 inputs had no left padding (the `* { padding: 0 }` reset beat the zero-specificity base; base is
@@ -379,7 +379,7 @@ verzamelkaart and Leerling bewerken.
 ## Phase 2 intake (earlier)
 
 **Phase 2 (`PLAN-2.md`).** Cutover done by the user (2026-11). Intake in `ROADMAP.md` section 4;
-design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-29).
+design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-33).
 Step 12 (triage) done 2026-11-04: decisions in `PLAN-2.md` section 1 and ADR-0010, triage in
 `ROADMAP.md` 4.6. Step 13 done 2026-11-05. Before step 18 the user runs `validate-data`
 on a copy of the real data folder.
