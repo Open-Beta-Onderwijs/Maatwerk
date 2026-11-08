@@ -54,7 +54,13 @@ describe('rapport golden (domain)', () => {
         brackets.map(([a, b]) => getScoreBracket(a, b, grenzen)),
     ));
 
-  it('fmtNum', () => expectCase('fmtNum', ({ nums }: { nums: number[] }) => nums.map(fmtNum)));
+  it('fmtNum', async () => {
+    const c = goldenCase(golden, 'fmtNum');
+    const { nums } = inputOf<{ nums: number[] }>(c);
+    // Decision 3: an exact half rounds up; the reference showed 2,05 as 2,0.
+    const decided = (c.output as string[]).map((s, i) => (nums[i] === 2.05 ? '2,1' : s));
+    expect(await run(() => nums.map(fmtNum))).toEqual(decided);
+  });
 
   it('subjectDisplayName', () =>
     expectCase('subjectDisplayName', ({ subjects }: { subjects: (string | undefined)[] }) =>

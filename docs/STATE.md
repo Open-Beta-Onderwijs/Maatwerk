@@ -24,7 +24,7 @@ decisions: `docs/phase-2/step-19-grade-rules.md` section 6. **Never change a num
 3. **Done:** `maatwerk_core::grades`, CLI `stats` (read-only; student numbers only);
    `crates/maatwerk-grades-wasm` (JSON `dispatch`, tiny `abi.rs`, no new dependencies);
    `ui/vite/grades-wasm.ts` (cargo build once per Vite run, inlined as a base64 module);
-   `ui/src/domain/core.ts` (`initCore` at start, then synchronous `coreCall`, `round1`, ...); CSP
+   `ui/src/domain/core.ts` (top-level await, then synchronous `coreCall`, `round1`, ...); CSP
    `'wasm-unsafe-eval'`; wasm target in `rust-toolchain.toml`. Run npm from PowerShell: Vite now
    runs cargo (Git Bash's `link` breaks build scripts). No screen uses the rules yet.
 

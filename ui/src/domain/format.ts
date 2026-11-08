@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Number formatting for the UI (R-01, quirk B8): decimal comma everywhere.
-//
-// Two rounding paths exist on purpose, as before this module: `formatGrade`
-// rounds the product (`Math.round(x * 10) / 10`), `formatFixed` uses
-// `toFixed`, which rounds the binary value. They can differ at x.x5 (quirk
-// B8). Unifying them changes shown numbers, so it waits for step 19 (domain
-// logic in maatwerk-core) with a before/after table; until then every caller
-// keeps the path it had.
+// Number formatting for the UI (R-01): decimal comma everywhere. One rounding: exact half-up, in
+// the core (decision 3, quirk B8).
+
+import { round0, round1 } from './core';
 
 /** Shown for a missing grade. */
 export const NO_GRADE = '—';
@@ -16,20 +12,16 @@ function comma(s: string): string {
   return s.replace('.', ',');
 }
 
-/**
- * A grade: one decimal, always (`7,0`), comma; `—` when there is none.
- * Rounds `Math.round(g * 10) / 10` (the grade-system rounding).
- */
+/** A grade: one decimal, always (`7,0`), comma; `—` when there is none. */
 export function formatGrade(g: number | null | undefined): string {
   if (g === null || g === undefined || !Number.isFinite(g)) return NO_GRADE;
-  return comma((Math.round(g * 10) / 10).toFixed(1));
+  return comma(round1(g).toFixed(1));
 }
 
-/**
- * A statistic (mean, SD, percentage bound) with a fixed number of decimals,
- * rounded by `toFixed`, comma.
- */
+/** A statistic (mean, SD, a percentage or a limit) with a fixed number of decimals, comma. */
 export function formatFixed(x: number, digits = 1): string {
+  if (digits === 1) return comma(round1(x).toFixed(1));
+  if (digits === 0) return round0(x).toFixed(0);
   return comma(x.toFixed(digits));
 }
 
