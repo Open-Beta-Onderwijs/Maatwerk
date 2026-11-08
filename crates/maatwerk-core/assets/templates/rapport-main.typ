@@ -6,5 +6,5 @@
 
 #let data = json("data.json")
 
-#show: setup
+#show: setup.with(watermark: data.at("watermark", default: true))
 #render(data.exam_info, data.students)

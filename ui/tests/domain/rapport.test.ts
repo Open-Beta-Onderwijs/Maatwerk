@@ -3,6 +3,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { MockApi } from '../../src/bridge/mock/mock-api';
 import {
+  buildLeeradviesRows,
   defaultTabData,
   fmtNum,
   getScoreBracket,
@@ -130,6 +131,33 @@ describe('T26: a non-numeric score does not break the rapport', () => {
   });
 });
 
+describe('T10: an advice file without grenswaarden does not break the rapport', () => {
+  const vraag = (rtti: string, score: number, max: number) => ({
+    label: '1',
+    rtti,
+    kind: 'normal',
+    rtti_color: '',
+    score,
+    max,
+    class_avg: 0,
+    class_pct: 0,
+    dot_color: '',
+  });
+  it('uses the default 40/70 limits for a missing category or a file without the field', () => {
+    const advies = defaultTabData();
+    advies.leeradvies.R!.laag = 'Laag.';
+    advies.leeradvies.T1!.hoog = 'Hoog.';
+    const vragen = [vraag('R', 1, 5), vraag('T1', 4, 5)];
+    for (const grenswaarden of [undefined, {}]) {
+      const data = { ...advies, grenswaarden } as unknown as Parameters<
+        typeof buildLeeradviesRows
+      >[1];
+      const rows = buildLeeradviesRows(vragen, data, []);
+      expect(rows.map((r) => r.advies)).toEqual(['Laag.', 'Hoog.']);
+    }
+  });
+});
+
 describe('B9: bovenbouw wiskunde reads the advice file the editor writes', () => {
   // C11: `templates/rtti/<key>_<jaar>.json` (was `.../rtti_expl_adv_<key>_<jaar>.json`).
   const file = (key: string) => `templates/rtti/${key}.json`;
@@ -185,7 +213,10 @@ describe('rapport golden (compileRapport on the Store)', () => {
         studentData: structuredClone(studentData),
         examInfo: structuredClone(examInfo),
       });
-      return { success: true, pdfPath: 'captured' };
+      // The reference's result shape, which the golden pins (no `warnings`, F-04 is new).
+      return { success: true, pdfPath: 'captured' } as Awaited<
+        ReturnType<typeof session.api.renderRapportPdf>
+      >;
     };
   });
 

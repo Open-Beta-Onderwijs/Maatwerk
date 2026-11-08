@@ -6,6 +6,7 @@
 @import './styles/dialog.css';
 @import './styles/skeleton.css';
 @import './styles/forms.css';
+@import './styles/render-warnings.css';
 @import './styles/avatar.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */

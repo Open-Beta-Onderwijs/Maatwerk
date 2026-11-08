@@ -74,8 +74,8 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done   |
 | 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done   |
 | 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done   |
-| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | todo   |
-| 17   | Rapport fixes                                                    | M            | 0.8     | todo   |
+| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done   |
+| 17   | Rapport fixes                                                    | M            | 0.8     | done   |
 | 18   | Data format v3                                                   | M            | 0.9     | todo   |
 | 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | todo   |
 | 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | todo   |

@@ -1,17 +1,39 @@
 # State
 
-Last updated: 2026-11-06 (step 16b in progress) Branch: `step/16-platforms` (from `main` `3319d3d`)
-Last tags: `step-16a` (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed),
-`v0.3.2`, `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags
-are local only)
+Last updated: 2026-11-07 (steps 17 and 18 in one session, user request) Branch: `step/17-rapport-fixes`
+(from `main` `a62ea7e`)
+Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
+(pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
+`step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Step 16b** (Platforms: Linux). WebKitGTK, AppImage + `.deb`, case-sensitive paths, the Linux
-sync advice (**STOP: user approves it before it goes into the README**), the 16a backlog below,
-then visual baselines per platform in CI. Then the step 16 review and the 0.7 release.
+**User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
+commits; the gate, code review and security review only once, after step 18. Step 16: CI green
+(user), version 0.7.0, merged into local `main`, tagged `step-16b`, `step-16`, `v0.7.0`.
 
-## Step 16b progress
+## Step 17 progress (Rapport fixes, 0.8)
+
+Scope as PLAN-2 step 17: B-06, B-07, F-13, F-04, T4, T7, T8, T10, T25; plus T6 (the rapport's
+numbers, same lines as T7). Not done: T9 (histogram/ranking texts) and T23 (batch reports only
+the first failure), which ROADMAP 4.6 puts in 17 but PLAN-2 does not list (asked the user).
+
+1. **Done** (`f26d77f`): template fixes, failing tests first (`tests/typst_rapport.rs`, 9 new):
+   T4 watermark only when `fotos/school-watermerk.svg` exists (any case; `data.json` field
+   `watermark`); T6/T7 `_num` (decimal comma, no truncation); T8 footer total = the student's
+   own pages (metadata `<rapport-student-end>`); F-13 `pagebreak(to: "odd")` between students,
+   the last student padded via its end marker; T10 zero/fractional maxima, missing
+   `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm; B-07
+   dots 5.5 pt when any score or maximum has a fraction. Goldens `rapport-one-student`,
+   `rapport-valid` blessed (`MAATWERK_BLESS="<why>" MAATWERK_BLESS_IDS=<ids> cargo test`, new in `tests/support`; case
+   field `port.blessed`): page 1 of each student changes, page 2 not. **STOP: user's visual
+   check pending** (before/after PNGs at 110 ppi were made in the session scratchpad).
+2. **Done** (`8010810`): F-04 `components/render-warnings.ts`: folded panel above the PDF in the
+   rapport and opdrachten dialogs; bridge returns `warnings`; batch warnings name the opdracht,
+   once per opdracht; mock `useRenderWarnings`; e2e `e2e/rapport.spec.ts` (3).
+3. **Done** (`9ea3bd9`): version 0.8.0.
+
+## Step 16 (done, tags `step-16b`, `step-16`)
 
 Plan: (1) CI job `linux` + packages; (2) case-sensitive path tests (Windows-made data folder in
 mixed case: path helpers, migration, `validate-data`); (3) backlog: lock dir, snapshot `who`,

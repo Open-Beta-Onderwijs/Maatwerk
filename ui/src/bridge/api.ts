@@ -193,12 +193,13 @@ export interface MaatwerkApi {
 
   // ── Typst ─────────────────────────────────────────────────────────────────
   // `pdfPath` in the results is an output ID in the app (not a file path):
-  // pass it to pdfUrl, openPath or printPdf.
+  // pass it to pdfUrl, openPath or printPdf. `warnings` are Typst's warning
+  // texts (e.g. a character no font has); the dialogs show them (F-04).
   renderRapportPdf(
     examId: string,
     students: unknown[],
     examInfo: Record<string, unknown>,
-  ): Promise<RenderResult<{ pdfPath: string }>>;
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>>;
   renderAssignmentSvg(
     opdrachtId: string,
     title: string,
@@ -207,7 +208,7 @@ export interface MaatwerkApi {
   renderAssignmentBatch(
     jobs: BatchJob[],
     opts?: BatchOptions,
-  ): Promise<RenderResult<{ pdfPath: string; pages: number }>>;
+  ): Promise<RenderResult<{ pdfPath: string; pages: number; warnings: string[] }>>;
 
   // ── Shell ─────────────────────────────────────────────────────────────────
   /**

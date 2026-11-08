@@ -135,6 +135,7 @@ Imports (`rtti_export.typ:17-18`): `@preview/cetz:0.3.4` (`canvas`, `draw`) and 
 
 - `page`: A4 by default, `margin: 2cm`. The **background** is a 3.5×3.5 cm box at bottom-right (`dx: -0.5cm, dy: -0.5cm`) with `image("/data/fotos/school-watermerk.svg", fit: "contain")` under a white 20%-transparent rect. **The file is required**: if it is missing, the compile fails _(verified)_.
 - **footer**: italic 8pt `gray.darken(20%)`. Left: `"#pg / 2"`, where the total `2` is **hard-coded**. Centre: `_footer_text` state = `subject_display + " " + name + " — " + student.name`. No footer appears while the state is `""`.
+- **Changed in step 17** (the port, not the reference): the watermark is drawn only when the file exists (`data.json` field `watermark`, T4); the footer total is the student's own page count (T8); every student starts on an odd page, so a student with 3 pages gets an empty 4th (F-13, duplex); numbers use a decimal comma (T6, T7); `lang: "nl"` (T25); the leeradvies score column is 3 cm (B-06); score dots are 5.5 pt instead of 4 pt when any score or maximum of the exam has a fraction (B-07); a zero or fractional maximum no longer fails (T10).
 - `text(font: "Source Serif 4", size: 10.5pt)`. **No `lang`** is set, so the default is `en`. Math uses `STIX Two Math`.
 - Headings: level 1 is 13pt bold `#1a5276` with `below: 4pt`. Level 2 is 11pt regular `#1a5276` with `above 2pt, below 6pt`.
 - In math, regex `[0-9]+[.,][0-9]+` is rewritten to use a comma with `h(0pt)` (no math comma spacing).

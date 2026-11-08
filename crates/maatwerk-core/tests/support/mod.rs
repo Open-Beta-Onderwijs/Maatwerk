@@ -72,6 +72,17 @@ pub fn frame_text(frame: &Frame, out: &mut String) {
     }
 }
 
+/// The text items of a frame in content order, one per entry (a blessed golden's text).
+fn frame_lines(frame: &Frame, out: &mut Vec<String>) {
+    for (_, item) in frame.items() {
+        match item {
+            FrameItem::Group(group) => frame_lines(&group.frame, out),
+            FrameItem::Text(text) => out.push(text.text.to_string()),
+            _ => {}
+        }
+    }
+}
+
 /// Page count of a golden: its PDF, or its SVG pages (path C has no PDF).
 pub fn golden_page_count(case: &Value) -> usize {
     match case["pdf"]["pages"].as_array() {
@@ -84,6 +95,13 @@ pub fn golden_page_count(case: &Value) -> usize {
 /// without whitespace (pdf.js inserts line breaks where Typst has none); the golden's `schema`
 /// lines come from the watermark SVG, which is an image in Typst's frames, so they are dropped.
 pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
+    if let Ok(why) = std::env::var("MAATWERK_BLESS")
+        && std::env::var("MAATWERK_BLESS_IDS")
+            .is_ok_and(|ids| ids.split(',').any(|i| i.trim() == id))
+    {
+        bless(id, case, doc, &why);
+        return;
+    }
     assert_eq!(doc.pages.len(), golden_page_count(case), "{id}: page count");
     let ppi = case["reference"]["ppi"].as_f64().unwrap() as f32;
     let out_dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
@@ -137,6 +155,49 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
             out_dir.display()
         );
     }
+}
+
+/// Makes Maatwerk's output the golden (PLAN-2 decision 9: only when a step changes that output
+/// on purpose, after the user's visual check): `MAATWERK_BLESS="<step and why>"
+/// MAATWERK_BLESS_IDS="<case>,<case>" cargo test` rewrites those cases' `pdf` (sizes, text) and
+/// `png` entries and PNG files, and records why in `port`; every other case is still compared.
+/// The reference harness skips a case with `port` (`regen-typst.mjs`). The reference's call, wrappers and result stay as they were.
+fn bless(id: &str, case: &Value, doc: &PagedDocument, why: &str) {
+    use sha2::{Digest, Sha256};
+    let ppi = case["reference"]["ppi"].as_f64().unwrap() as f32;
+    let dir = golden_dir(id);
+    let width = if doc.pages.len() > 9 { 2 } else { 1 };
+    for old in case["png"].as_array().into_iter().flatten() {
+        let _ = std::fs::remove_file(dir.join(old["file"].as_str().unwrap()));
+    }
+    let mut pages = Vec::new();
+    let mut pngs = Vec::new();
+    for (i, page) in doc.pages.iter().enumerate() {
+        let mut items = Vec::new();
+        frame_lines(&page.frame, &mut items);
+        let text = items.join("\n");
+        let size = page.frame.size();
+        let round = |x: f64| (x * 100.0).round() / 100.0;
+        pages.push(serde_json::json!({
+            "size": [round(size.x.to_pt()), round(size.y.to_pt())],
+            "text": text,
+        }));
+        let file = format!("p{:0width$}.png", i + 1);
+        let bytes = typst_render::render(page, ppi / 72.0).encode_png().unwrap();
+        std::fs::write(dir.join(&file), &bytes).unwrap();
+        let sha: String = Sha256::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        pngs.push(serde_json::json!({ "file": file, "sha256": sha, "bytes": bytes.len() }));
+    }
+    let mut case = case.clone();
+    case["port"] = serde_json::json!({ "blessed": why });
+    case["pdf"] = serde_json::json!({ "pageCount": doc.pages.len(), "pages": pages });
+    case["png"] = Value::Array(pngs);
+    let mut json = serde_json::to_string_pretty(&case).unwrap();
+    json.push('\n');
+    std::fs::write(dir.join("case.json"), json).unwrap();
 }
 
 /// Per-channel tolerance of a golden: 0, except where a JPEG photo is drawn. JPEGs differ by up

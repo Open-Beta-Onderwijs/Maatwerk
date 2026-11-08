@@ -13,6 +13,7 @@ import {
 import { printName } from '../domain/print';
 import { formatFixed, parseDecimal } from '../domain/format';
 import { printOutput } from './rapport.js';
+import { renderWarningsHtml } from '../components/render-warnings';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MODAL: Opdrachten genereren (opened from an exam card on the Toetsen screen)
@@ -411,7 +412,7 @@ async function generate(el, state, year, kind) {
 
   // Every run gets a new output ID, so pdfUrl() returns a fresh URL.
   const pdfUrl = window.maatwerk.pdfUrl(res.pdfPath);
-  content.innerHTML = `<iframe class="rapport-pdf-frame" src="pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}"></iframe>`;
+  content.innerHTML = `${renderWarningsHtml(res.warnings)}<iframe class="rapport-pdf-frame" src="pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}"></iframe>`;
   state.printPath = res.pdfPath;
   state.printName = printName(
     kind === 'key' ? 'Antwoordsleutel' : 'Opdrachten',
