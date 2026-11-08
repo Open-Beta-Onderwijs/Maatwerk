@@ -54,6 +54,10 @@ a{color:#2560BF}a:hover{color:#1F55AD}
               <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">JAARLAGEN</span>
               <div style="display: flex; gap: 6px"><sc-for list="{{jl}}" as="st" hint-placeholder-count="6"><button aria-pressed="{{st.on}}" style="width: 34px; height: 30px; border-radius: 8px; border: 1px solid {{st.border}}; background: {{st.bg}}; color: {{st.color}}; font: inherit; font-size: 13px; font-weight: {{st.w}}; cursor: pointer">{{st.label}}</button></sc-for></div>
             </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span title="Voor welk soort toets deze observatie in de lijsten verschijnt" style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">TOETSTYPE</span>
+              <div role="group" aria-label="Toetstype" style="display: flex; gap: 6px"><sc-for list="{{kinds}}" as="st" hint-placeholder-count="2"><button aria-pressed="{{st.on}}" onClick="{{st.pick}}" style="height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid {{st.border}}; background: {{st.bg}}; color: {{st.color}}; font: inherit; font-size: 13px; font-weight: {{st.w}}; cursor: pointer">{{st.label}}</button></sc-for></div>
+            </div>
           </div>
         </div>
         <aside aria-label="Icoon kiezen" style="border-left: 1px solid #E1E4EA; background: #FAFBFC; display: flex; flex-direction: column; min-height: 0">
@@ -126,7 +130,7 @@ a{color:#2560BF}a:hover{color:#1F55AD}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
 class Component extends DCLogic {
-  constructor(p) { super(p); this.state = { view: 'obs', cat: 'Alle', emoji: '🎯' }; }
+  constructor(p) { super(p); this.state = { view: 'obs', cat: 'Alle', emoji: '🎯', kinds: { Toets: true, PO: false } }; }
   renderVals() {
     const views = [['obs', 'Observatie bewerken'], ['opd', 'Opdracht bewerken']].map(([k, label]) => ({ label, sel: this.state.view === k ? 'true' : 'false', bg: this.state.view === k ? '#FFFFFF' : 'transparent', fg: this.state.view === k ? '#1B2230' : '#C9CED8', pick: () => this.setState({ view: k }) }));
     const E = {
@@ -149,6 +153,7 @@ class Component extends DCLogic {
       types: ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'].map((l) => chip(l, l === 'Gymnasium')),
       vakken: ['Biologie', 'Natuurkunde', 'Scheikunde', 'Wiskunde'].map((l) => chip(l, l === 'Natuurkunde' || l === 'Scheikunde')),
       jl: [1, 2, 3, 4, 5, 6].map((n) => chip(String(n), n >= 4)),
+      kinds: ['Toets', 'PO'].map((k) => ({ ...chip(k, this.state.kinds[k]), pick: () => { const nk = { ...this.state.kinds, [k]: !this.state.kinds[k] }; if (!nk.Toets && !nk.PO) return; this.setState({ kinds: nk }); } })),
       jlOpd: [1, 2, 3, 4, 5, 6].map((n) => chip(String(n), n >= 4)),
       obsChips: OBS.map(([e, name, on]) => ({ e, name, on: on ? 'true' : 'false', bd: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', fg: on ? '#2560BF' : '#1B2230', w: on ? 600 : 400 })),
     };

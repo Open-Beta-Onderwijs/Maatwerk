@@ -1,0 +1,35 @@
+{
+  "id": "toets-herkansing-1",
+  "subject": "nat",
+  "title": "Toets 1 — HERKANSING",
+  "jaarlaag": "3",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 0,
+  "periode": null,
+  "type": "regular",
+  "structureMode": "seq",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 2,
+      "rtti": "T1"
+    }
+  ],
+  "obs_ids": [],
+  "description": "HERKANSING",
+  "attempt": 2,
+  "parent_id": "nat-toets-1-2025-2026",
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1756713600000",
+    "createdAt": "2025-10-01T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600000",
+    "updatedAt": "2025-10-01T08:00:00.000Z"
+  }
+}

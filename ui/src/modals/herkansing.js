@@ -134,7 +134,10 @@ export async function openResitModal(parentId, year) {
           parent_id: parent.id,
           n_term: nterm,
           structureMode,
-          obs_ids: [],
+          // F-12 (data, step 18): the original's observaties, locked; the edit screen keeps
+          // them from step 20 on.
+          obs_ids: [...(parent.obs_ids ?? [])],
+          obs_from_parent: true,
           questions: Array.from({ length: count }, (_, i) => ({
             id: `q${i + 1}`,
             section: 'I',

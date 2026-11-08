@@ -600,7 +600,7 @@ function logOut() {
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
 async function applyWatermerk() {
-  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('fotos/school-watermerk.svg');
+  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('afbeeldingen/school-watermerk.svg');
   if (dataUrl) document.documentElement.style.setProperty('--watermerk-url', `url("${dataUrl}")`);
 }
 

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Migration tests on the synthetic v1 fixture `tests/fixtures/migrate/v1` (no real data). The
-//! expected result is `tests/fixtures/migrate/v2`; `MAATWERK_UPDATE_GOLDEN=1` rewrites it.
+//! expected results are `tests/fixtures/migrate/v2` (v1 -> v2 only) and `v3` (the whole way, and
+//! from `v2`); `MAATWERK_UPDATE_GOLDEN=1` rewrites them.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -31,10 +32,15 @@ struct Rig {
 }
 
 fn rig() -> Rig {
+    rig_from("v1")
+}
+
+/// A shared folder holding the fixture `name` (`v1`: `data/` only; `v2`: also `rapporten/`).
+fn rig_from(name: &str) -> Rig {
     let tmp = TempDir::new().unwrap();
     let shared = tmp.path().join("shared");
     let data = shared.join("data");
-    copy_tree(&fixtures().join("v1/data"), &data);
+    copy_tree(&fixtures().join(name), &shared);
     let backups = tmp.path().join("backups");
     Rig {
         _tmp: tmp,
@@ -87,7 +93,11 @@ fn update_golden() -> bool {
 }
 
 fn check_against_golden(r: &Rig) {
-    let golden = fixtures().join("v2");
+    check_against(r, "v3");
+}
+
+fn check_against(r: &Rig, name: &str) {
+    let golden = fixtures().join(name);
     if update_golden() {
         let _ = fs::remove_dir_all(&golden);
         copy_tree(&r.shared, &golden);
@@ -99,10 +109,10 @@ fn check_against_golden(r: &Rig) {
 #[test]
 fn v1_fixture_migrates_to_the_expected_v2_tree() {
     let r = rig();
-    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let report = migrate_to(&r.data, Some(&r.backups), now(), 2).unwrap();
     assert!(report.applied);
     assert_eq!((report.from_version, report.to_version), (1, 2));
-    check_against_golden(&r);
+    check_against(&r, "v2");
     assert_eq!(folder_version(&r.data).unwrap(), 2);
 
     let warnings = report.warnings.join("\n");
@@ -113,6 +123,153 @@ fn v1_fixture_migrates_to_the_expected_v2_tree() {
     ] {
         assert!(warnings.contains(expected), "{expected:?} in\n{warnings}");
     }
+}
+
+#[test]
+fn v1_fixture_migrates_through_v2_to_the_expected_v3_tree() {
+    let r = rig();
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    assert!(report.applied);
+    assert_eq!((report.from_version, report.to_version), (1, 3));
+    check_against_golden(&r);
+    assert_eq!(folder_version(&r.data).unwrap(), 3);
+    assert_eq!(report.notes.len(), 2, "{:?}", report.notes);
+}
+
+#[test]
+fn v2_fixture_migrates_to_the_same_v3_tree() {
+    let r = rig_from("v2");
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    assert!(report.applied);
+    assert_eq!((report.from_version, report.to_version), (2, 3));
+    check_against_golden(&r);
+    let zip = PathBuf::from(report.backup.unwrap());
+    assert!(
+        zip.to_string_lossy().contains("maatwerk-backup-v2 "),
+        "{zip:?}"
+    );
+}
+
+#[test]
+fn v3_content_follows_the_spec() {
+    let r = rig_from("v2");
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let read = |rel: &str| -> Value {
+        serde_json::from_slice(&fs::read(r.data.join(rel)).unwrap()).unwrap()
+    };
+    // X-07b: fotos/ -> afbeeldingen/, with the paths in the data.
+    assert!(!r.data.join("fotos").exists());
+    assert!(r.data.join("afbeeldingen/school-logo.png").is_file());
+    assert!(r.data.join("afbeeldingen/gebr-1756713600000.png").is_file());
+    let school = read("school.json");
+    assert_eq!(school["logo"], "afbeeldingen/school-logo.png");
+    assert_eq!(school["minAppVersion"], "0.9.0");
+    assert_eq!(school["_meta"]["rev"], 2, "rev + 1 for a changed entity");
+    assert_eq!(school["_meta"]["updatedAt"], "2026-10-30T14:05:00.000Z");
+    assert_eq!(
+        read("gebruikers/gebr-1756713600000.json")["foto"],
+        "afbeeldingen/gebr-1756713600000.png"
+    );
+    let admin = read("gebruikers/admin.json");
+    assert_eq!(admin["foto"], Value::Null);
+    // X-07c, D20: the stale presence files are gone, nothing moved.
+    assert!(!r.data.join("users").exists());
+    assert!(!r.data.join("aanwezigheid").exists());
+    assert!(
+        report
+            .changes
+            .iter()
+            .any(|c| c.action == Action::Delete && c.path == "users/admin.json")
+    );
+    // Decision 14: every exam has the new fields; existing ones are kept.
+    let exam = read("2025-2026/exams/nat-toets-1-2025-2026.json");
+    assert_eq!(exam["kind"], "toets");
+    assert_eq!(exam["diagnostic"], false);
+    let keys: Vec<&String> = exam.as_object().unwrap().keys().collect();
+    assert_eq!(keys.last().unwrap().as_str(), "_meta", "_meta stays last");
+    // Decision 13, F-12: resits get the original's observaties, locked.
+    let herkansing = read("2025-2026/exams/toets-herkansing-1.json");
+    assert_eq!(
+        herkansing["obs_ids"],
+        serde_json::json!(["obs-1756713600100"])
+    );
+    assert_eq!(herkansing["obs_from_parent"], true);
+    let inhaal = read("2025-2026/exams/toets-inhaal-1.json");
+    assert_eq!(
+        inhaal["obs_ids"],
+        serde_json::json!(["obs-1756713600100", "obs-1756713600101"]),
+        "its own observatie stays, after the original's"
+    );
+    assert_eq!(
+        report.notes,
+        [
+            "2025-2026 Toets 1 — HERKANSING (van Toets 1): observaties vóór: geen; na: \
+             Eenheden vergeten",
+            "2025-2026 Toets 1 — INHAAL (van Toets 1): observaties vóór: Rekenfout; na: \
+             Eenheden vergeten, Rekenfout",
+        ]
+    );
+    let warnings = report.warnings.join("\n");
+    assert!(
+        warnings.contains("Toets 1 — INHAAL: had eigen observaties (Rekenfout)"),
+        "{warnings}"
+    );
+    assert_eq!(read("config.json")["schema_version"], 3);
+    // The migrated folder is clean apart from the fixture's strays.
+    let check = crate::validate::validate(&r.data).unwrap();
+    let errors: Vec<_> = check
+        .issues
+        .iter()
+        .filter(|i| i.severity == crate::validate::Severity::Error)
+        .collect();
+    assert!(errors.is_empty(), "{errors:?}");
+}
+
+#[test]
+fn a_v2_dry_run_lists_the_resits_before_anything_changes() {
+    let r = rig_from("v2");
+    let before = tree(&r.data);
+    let report = migrate(&r.data, None, now()).unwrap();
+    assert!(!report.applied);
+    assert_eq!(tree(&r.data), before);
+    assert_eq!(report.notes.len(), 2);
+    assert_eq!(
+        report.changes[0].path, "school.json",
+        "minAppVersion is the first write (runbook section 8)"
+    );
+    assert!(report.changes.iter().any(|c| c.action == Action::Move
+        && c.path == "fotos/school-logo.png"
+        && c.to.as_deref() == Some("afbeeldingen/school-logo.png")));
+    assert_eq!(report.changes.last().unwrap().path, "config.json");
+    let text = report_text(&report, None, "d", now());
+    assert!(
+        text.contains("Observaties bij inhaal- en herkansingstoetsen (2):"),
+        "{text}"
+    );
+}
+
+#[test]
+fn an_interrupted_v3_run_continues_to_the_same_result() {
+    for stop_after in [1, 3, 5, 8] {
+        let r = rig_from("v2");
+        let plan = v3::build(&r.data, now()).unwrap();
+        assert!(plan.ops.len() > stop_after, "{} ops", plan.ops.len());
+        for op in plan.ops.iter().take(stop_after) {
+            op.apply(&r.data).unwrap();
+        }
+        assert_eq!(folder_version(&r.data).unwrap(), 2, "config.json goes last");
+        migrate(&r.data, Some(&r.backups), now()).unwrap();
+        check_against_golden(&r);
+    }
+}
+
+#[test]
+fn a_windows_made_v2_folder_in_mixed_case_migrates() {
+    let r = rig_from("v2");
+    fs::rename(r.data.join("fotos"), r.data.join("Fotos")).unwrap();
+    fs::rename(r.data.join("users"), r.data.join("Users")).unwrap();
+    migrate(&r.data, Some(&r.backups), now()).unwrap();
+    check_against_golden(&r);
 }
 
 #[test]
@@ -132,7 +289,7 @@ fn every_json_file_maatwerk_owns_is_stamped_after_migration() {
 #[test]
 fn v2_content_follows_the_spec() {
     let r = rig();
-    migrate(&r.data, Some(&r.backups), now()).unwrap();
+    migrate_to(&r.data, Some(&r.backups), now(), 2).unwrap();
     let read = |rel: &str| -> Value {
         serde_json::from_slice(&fs::read(r.data.join(rel)).unwrap()).unwrap()
     };
@@ -209,6 +366,11 @@ fn a_dry_run_changes_nothing_and_lists_the_plan() {
         && c.to.as_deref()
             == Some("../rapporten/2025-2026/2025-09-02 0800 rapport nat 3a nat Toets 1.pdf")));
     assert_eq!(report.changes.last().unwrap().path, "config.json");
+    assert!(
+        report.warnings.last().unwrap().contains("versie 3"),
+        "the v3 step is announced: {:?}",
+        report.warnings
+    );
 }
 
 #[test]
@@ -302,7 +464,7 @@ fn a_corrupt_file_blocks() {
 #[test]
 fn a_newer_folder_is_refused_and_an_empty_one_just_gets_a_version() {
     let r = rig();
-    fs::write(r.data.join("config.json"), r#"{"schema_version":3}"#).unwrap();
+    fs::write(r.data.join("config.json"), r#"{"schema_version":4}"#).unwrap();
     let err = migrate(&r.data, Some(&r.backups), now()).unwrap_err();
     assert_eq!(err.code(), "unsupported_schema");
 
@@ -311,7 +473,7 @@ fn a_newer_folder_is_refused_and_an_empty_one_just_gets_a_version() {
     fs::create_dir_all(&data).unwrap();
     let report = migrate(&data, Some(&tmp.path().join("b")), now()).unwrap();
     assert!(report.applied);
-    assert_eq!(folder_version(&data).unwrap(), 2);
+    assert_eq!(folder_version(&data).unwrap(), 3);
 }
 
 #[test]
@@ -415,4 +577,119 @@ fn a_dry_run_has_no_report_file() {
     let report = migrate(&r.data, None, now()).unwrap();
     assert_eq!(save_report(&report, None, "d", now()).unwrap(), None);
     assert!(report_text(&report, None, "d", now()).contains("(niet uitgevoerd)"));
+}
+
+#[test]
+fn review_18_m1_a_v2_folder_whose_config_has_not_synced_is_v2_and_migrates() {
+    let r = rig_from("v2");
+    fs::remove_file(r.data.join("config.json")).unwrap();
+    assert_eq!(folder_version(&r.data).unwrap(), 2);
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    assert_eq!((report.from_version, report.to_version), (2, 3));
+    assert_eq!(folder_version(&r.data).unwrap(), 3);
+    assert!(r.data.join("afbeeldingen/school-logo.png").is_file());
+}
+
+#[test]
+fn review_18_m2_a_folder_for_a_newer_or_unknown_app_is_not_migrated() {
+    for min in ["99.0.0", "next"] {
+        let r = rig_from("v2");
+        let path = r.data.join("school.json");
+        let mut school: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        school["minAppVersion"] = Value::from(min);
+        fs::write(&path, serde_json::to_vec_pretty(&school).unwrap()).unwrap();
+        let before = tree(&r.data);
+        let err = migrate(&r.data, Some(&r.backups), now()).unwrap_err();
+        assert_eq!(err.code(), "migration_blocked", "{min}");
+        assert!(err.to_string().contains(min), "{err}");
+        assert_eq!(tree(&r.data), before, "{min}: nothing changed");
+    }
+    // A lower one is raised; a higher one this app accepts is kept.
+    let r = rig_from("v2");
+    let path = r.data.join("school.json");
+    let mut school: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    school["minAppVersion"] = Value::from("0.6.0");
+    fs::write(&path, serde_json::to_vec_pretty(&school).unwrap()).unwrap();
+    migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let school: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    assert_eq!(school["minAppVersion"], "0.9.0");
+}
+
+#[test]
+fn review_18_m3_m4_a_different_file_at_the_new_place_stays_and_so_does_its_path() {
+    let r = rig_from("v2");
+    fs::create_dir_all(r.data.join("afbeeldingen")).unwrap();
+    fs::write(r.data.join("afbeeldingen/school-logo.png"), b"other").unwrap();
+    fs::remove_file(r.data.join("users/admin.json")).unwrap();
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    let school: Value =
+        serde_json::from_slice(&fs::read(r.data.join("school.json")).unwrap()).unwrap();
+    assert_eq!(
+        school["logo"], "fotos/school-logo.png",
+        "still names the kept file"
+    );
+    assert!(r.data.join("fotos/school-logo.png").is_file());
+    assert_eq!(
+        fs::read(r.data.join("afbeeldingen/school-logo.png")).unwrap(),
+        b"other"
+    );
+    assert!(r.data.join("afbeeldingen/gebr-1756713600000.png").is_file());
+    let warnings = report.warnings.join("\n");
+    assert!(
+        warnings.contains("fotos/school-logo.png: niet verplaatst"),
+        "{warnings}"
+    );
+}
+
+#[test]
+fn review_18_m3_a_missing_school_json_is_reported() {
+    let r = rig_from("v2");
+    fs::remove_file(r.data.join("school.json")).unwrap();
+    let report = migrate(&r.data, None, now()).unwrap();
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("school.json ontbreekt")),
+        "{:?}",
+        report.warnings
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn review_18_m5_two_case_variants_of_fotos_do_not_overwrite_each_other() {
+    let r = rig_from("v2");
+    fs::create_dir_all(r.data.join("Fotos")).unwrap();
+    fs::write(r.data.join("Fotos/school-logo.png"), b"other").unwrap();
+    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("niet verplaatst")),
+        "{:?}",
+        report.warnings
+    );
+    assert!(r.data.join("afbeeldingen/school-logo.png").is_file());
+    let left = ["Fotos", "fotos"]
+        .iter()
+        .filter(|d| r.data.join(d).join("school-logo.png").is_file())
+        .count();
+    assert_eq!(left, 1, "one of the two stays");
+}
+
+#[cfg(unix)]
+#[test]
+fn security_m1_a_linked_images_folder_is_refused() {
+    let r = rig_from("v2");
+    let outside = r.shared.join("buiten");
+    fs::create_dir_all(&outside).unwrap();
+    std::os::unix::fs::symlink(&outside, r.data.join("afbeeldingen")).unwrap();
+    let err = migrate(&r.data, Some(&r.backups), now()).unwrap_err();
+    assert_eq!(err.code(), "migration_blocked");
+    assert!(
+        fs::read_dir(&outside).unwrap().next().is_none(),
+        "nothing written outside"
+    );
 }

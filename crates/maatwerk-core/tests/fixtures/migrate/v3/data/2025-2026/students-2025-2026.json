@@ -1,0 +1,31 @@
+{
+  "students": [
+    {
+      "id": "1001",
+      "voornaam": "Anna",
+      "tussenvoegsel": "",
+      "achternaam": "Abbing",
+      "stamklas": "3a",
+      "geslacht": "V",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo"
+      ]
+    },
+    {
+      "id": "1002",
+      "voornaam": "Bram",
+      "tussenvoegsel": "van",
+      "achternaam": "Bos",
+      "stamklas": "3b",
+      "geslacht": "M",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo"
+      ]
+    }
+  ],
+  "_meta": {
+    "hash": "e477ff28c6cb59c03af9a6d2a4cb6c8ac15705c64815a3c00e8d42dad4ebf8f8"
+  }
+}

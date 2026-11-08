@@ -1,12 +1,25 @@
 # State
 
-Last updated: 2026-11-07 (steps 17 and 18 in one session, user request) Branch: `step/17-rapport-fixes`
-(from `main` `a62ea7e`)
+Last updated: 2026-11-08 (steps 17 and 18 merged into local `main`, PR open) Branch: `step/18-data-v3`
+(from `step/17-rapport-fixes`, which is from `main` `a62ea7e`)
 Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
 (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
 `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
+
+**Next action:** CI on the PR `release/v0.9.0` -> `main` (steps 16, 17, 18); the user merges it.
+Then step 19.
+
+**User (2026-11-08):** the migration ran fine on a copy of the real data (local exe 0.9.0).
+Leeradvies score column 3 cm -> 2,5 cm (`16439a2`, goldens re-blessed; scores up to
+"99,5 / 99 (100%)" fit). Steps 17 and 18 merged into local `main`, tagged `step-17`,
+`v0.8.0`, `step-18`, `v0.9.0` (local); pushed as `release/v0.9.0` with a PR.
+
+**User answers (2026-11-07):** golden check 17 approved (padding page with footer and
+watermark is fine). T9 moved to step 19b, T23 to step 30 (PLAN-2, ROADMAP 4.6; renumbered 2026-11-08). F-14:
+`opdrachtenVraag` stays on the exam (ADR-0010 item 7); `onder: 2` matches 0, 1 and `N`, not an
+empty score (step 30 implements the matching).
 
 **User instruction (2026-11-07):** do steps 17 and 18 in one go, as separate branches and
 commits; the gate, code review and security review only once, after step 18. Step 16: CI green
@@ -15,23 +28,57 @@ commits; the gate, code review and security review only once, after step 18. Ste
 ## Step 17 progress (Rapport fixes, 0.8)
 
 Scope as PLAN-2 step 17: B-06, B-07, F-13, F-04, T4, T7, T8, T10, T25; plus T6 (the rapport's
-numbers, same lines as T7). Not done: T9 (histogram/ranking texts) and T23 (batch reports only
-the first failure), which ROADMAP 4.6 puts in 17 but PLAN-2 does not list (asked the user).
+numbers, same lines as T7). T9 (histogram/ranking texts) moved to step 19b and T23 (batch
+reports only the first failure) to step 30 (user 2026-11-07; renumbered 2026-11-08).
 
 1. **Done** (`f26d77f`): template fixes, failing tests first (`tests/typst_rapport.rs`, 9 new):
    T4 watermark only when `fotos/school-watermerk.svg` exists (any case; `data.json` field
    `watermark`); T6/T7 `_num` (decimal comma, no truncation); T8 footer total = the student's
    own pages (metadata `<rapport-student-end>`); F-13 `pagebreak(to: "odd")` between students,
    the last student padded via its end marker; T10 zero/fractional maxima, missing
-   `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm; B-07
+   `grenswaarden` (TS, `buildLeeradviesRows`); T25 `lang: "nl"`; B-06 score column 3 cm (2,5 cm since 2026-11-08); B-07
    dots 5.5 pt when any score or maximum has a fraction. Goldens `rapport-one-student`,
    `rapport-valid` blessed (`MAATWERK_BLESS="<why>" MAATWERK_BLESS_IDS=<ids> cargo test`, new in `tests/support`; case
-   field `port.blessed`): page 1 of each student changes, page 2 not. **STOP: user's visual
-   check pending** (before/after PNGs at 110 ppi were made in the session scratchpad).
+   field `port.blessed`): page 1 of each student changes, page 2 not. User approved the
+   before/after PNGs (2026-11-07).
 2. **Done** (`8010810`): F-04 `components/render-warnings.ts`: folded panel above the PDF in the
    rapport and opdrachten dialogs; bridge returns `warnings`; batch warnings name the opdracht,
    once per opdracht; mock `useRenderWarnings`; e2e `e2e/rapport.spec.ts` (3).
 3. **Done** (`9ea3bd9`): version 0.8.0.
+
+## Step 18 progress (Data format v3, 0.9)
+
+Branch `step/18-data-v3` on top of `step/17-rapport-fixes` (17 is not merged: its golden check is
+pending). Spec: `docs/reference/data-files-v3.md`; runbook section 9.
+
+1. **Done:** core. `migrate::v3` (new): `school.json` first (`minAppVersion` 0.9.0 when absent or
+   lower; logo/watermerk paths), `fotos/` -> `afbeeldingen/` (any case), `users/` removed (stale
+   presence), `gebruikers` foto paths, every exam `kind: "toets"`/`diagnostic: false` when
+   absent, resits `obs_ids` = original's + own (warning) and `obs_from_parent: true`, with a
+   before/after `notes` line per resit (decision 13). Changed entities: rev + 1, `updatedBy`
+   null. `migrate` chains v1 -> v2 -> v3 after one backup (`migrate_to` for tests; a v1 dry run
+   lists v2 only and says v3 follows). `CURRENT_VERSION` 3; v2 is `needs_migration`. Storage
+   `IMAGES_DIR`/`PRESENCE_DIR`; rapport mount `/data/afbeeldingen`; watcher/snapshots skip
+   `afbeeldingen/`. D20: `presence::prune_stale` (30 days) at every start. `validate-data`:
+   v3 exam fields, `opdrachtenVraag` (F-14 data part), leftover `fotos/`/`users/` named.
+   Fixtures: v1 fixture got two resits; `tests/fixtures/migrate/v2` regenerated (only those two
+   added); new golden `v3`. 11 new Rust tests.
+2. **Done:** app + UI. `migrate_data_folder(dryRun)`, `MigrationResult.notes`; the start screen
+   shows the resit list before the confirm; CLI prints it. UI paths (`afbeeldingen/`,
+   `aanwezigheid/`), `withExamDefaults` in `Store.upsertExam`, new resits copy the original's
+   observaties (F-12 data part; locking in the edit screen is step 20). `tools/fixtures/to-v2.mjs`
+   -> `to-current.mjs` (`filesToV3`, mock only; Store goldens stay on v2). Mock app version 0.9.0.
+   Version 0.9.0.
+3. **Done:** gate after step 18 (user: one gate for 17 and 18): fmt, clippy, all Rust tests,
+   420 Vitest, 123 node tests (incl. the Typst reference-freshness check), 220 Chromium e2e,
+   117 local visual views unchanged, lint, typecheck, SPDX, licences, cargo deny,
+   `npm audit --omit=dev` 0. Reviews (fresh context): `docs/reviews/step-17.md` (0/1/5/5),
+   `step-18.md` (0/1/8/6), `step-17-18-security.md` (0/1/5/5); both majors and most minors
+   fixed (`ee4b0ea` on step 17, merged into 18; `1b522c4`), rest in `docs/backlog.md`. Nothing
+   pushed; WebKit e2e and macOS/Linux CI not run for 17/18.
+4. **Not done, needs the user (STOP gates):** the `validate-data` list from a copy of the real
+   data (PLAN-2 "before the step"); running the migration on that copy; deleting leftovers. No
+   automatic leftover removal was built: the list decides (runbook section 9).
 
 ## Step 16 (done, tags `step-16b`, `step-16`)
 
@@ -298,7 +345,7 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
    (spec 2.3: text colours as theme-token mixes, bar colours hex, score-grid cell fills) replace
    the copies in ~15 files; `utils/grades.js` -> `utils/grades.ts`; `utils/colors.js` keeps only
    `examTypeColor` until sub-task 4. Rounding paths unchanged (B8 note in `quirks.md`). The
-   score grid stays light in dark mode (token island) until step 21.
+   score grid stays light in dark mode (token island) until step 25 (renumbered 2026-11-08).
 3. **Done:** `ui/src/styles/buttons.css` (`.btn` + `--primary/--secondary/--text/--danger/
 --icon/--icon-danger/--sm`, focus ring, disabled, `aria-busy` spinner) and
    `components/button.ts` `setBusy`. All ~100 buttons converted (PIN dialogs included);
@@ -324,7 +371,7 @@ Phase 2 plan merged into `main` (`90e02a5`, pushed 2026-11-05). Sub-tasks per `P
 
 User decisions (2026-11-05): zwart accent in dark theme keeps the light fill (`#E7EAF0`, dark
 text); B8 rounding unification stays in step 19. `editor.css`/`pdf-viewer.css` (own windows)
-keep their colours until step 27.
+keep their colours until step 31 (renumbered 2026-11-08).
 
 User review of the visual diff (2026-11-05), fixed: groep-edit Schoolsoort on one line; text in
 inputs had no left padding (the `* { padding: 0 }` reset beat the zero-specificity base; base is
@@ -337,7 +384,7 @@ verzamelkaart and Leerling bewerken.
 ## Phase 2 intake (earlier)
 
 **Phase 2 (`PLAN-2.md`).** Cutover done by the user (2026-11). Intake in `ROADMAP.md` section 4;
-design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-29).
+design pass done (`docs/phase-2/design/`, rounds 1-5); step plan `PLAN-2.md` (steps 12-33).
 Step 12 (triage) done 2026-11-04: decisions in `PLAN-2.md` section 1 and ADR-0010, triage in
 `ROADMAP.md` 4.6. Step 13 done 2026-11-05. Before step 18 the user runs `validate-data`
 on a copy of the real data folder.

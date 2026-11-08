@@ -26,19 +26,13 @@ pub(crate) const V2_TEMPLATES: &str = "templates/rtti";
 pub(crate) struct Plan {
     pub ops: Vec<Op>,
     pub warnings: Vec<String>,
+    /// What the admin should see before the migration runs (decision 13: the observaties
+    /// resits get, before and after).
+    pub notes: Vec<String>,
 }
 
 pub(crate) fn build(root: &Path, now: OffsetDateTime) -> Result<Plan> {
-    let files = walk_all(root).map_err(|e| Error::io(".", e))?;
-    let mut p = Planner {
-        root,
-        now_iso: iso_utc(now.into()),
-        files,
-        ops: Vec::new(),
-        planned: BTreeSet::new(),
-        warnings: Vec::new(),
-        blocked: Vec::new(),
-    };
+    let mut p = Planner::new(root, now)?;
     p.legacy();
     p.transient();
     p.gebruikers();
@@ -51,16 +45,7 @@ pub(crate) fn build(root: &Path, now: OffsetDateTime) -> Result<Plan> {
         p.year(&year);
     }
     p.rapporten();
-    if !p.blocked.is_empty() {
-        return Err(Error::MigrationBlocked {
-            message: p.blocked.join("\n"),
-        });
-    }
-    p.config(); // last: a folder with schema_version 2 is completely migrated
-    Ok(Plan {
-        ops: p.ops,
-        warnings: p.warnings,
-    })
+    p.finish(2) // config.json last: a folder with schema_version 2 is completely migrated
 }
 
 /// Empty folders the migration leaves behind, removed bottom-up (best effort).
@@ -70,7 +55,7 @@ pub(crate) fn remove_empty_dirs(root: &Path) {
     }
 }
 
-fn remove_empty_tree(dir: &Path) {
+pub(super) fn remove_empty_tree(dir: &Path) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
     };
@@ -82,30 +67,60 @@ fn remove_empty_tree(dir: &Path) {
     let _ = fs::remove_dir(dir); // fails while not empty
 }
 
-struct Planner<'a> {
-    root: &'a Path,
-    now_iso: String,
+pub(super) struct Planner<'a> {
+    pub(super) root: &'a Path,
+    pub(super) now_iso: String,
     /// Every file in the folder (posix, relative, sorted); links are skipped.
-    files: Vec<String>,
-    ops: Vec<Op>,
+    pub(super) files: Vec<String>,
+    pub(super) ops: Vec<Op>,
     /// Targets of planned writes, so a later step does not plan them again.
     planned: BTreeSet<String>,
-    warnings: Vec<String>,
+    pub(super) warnings: Vec<String>,
+    pub(super) notes: Vec<String>,
     /// Reasons to refuse (Dutch, for the admin).
-    blocked: Vec<String>,
+    pub(super) blocked: Vec<String>,
 }
 
-impl Planner<'_> {
-    fn path(&self, rel: &str) -> PathBuf {
+impl<'a> Planner<'a> {
+    pub(super) fn new(root: &'a Path, now: OffsetDateTime) -> Result<Planner<'a>> {
+        Ok(Planner {
+            root,
+            now_iso: iso_utc(now.into()),
+            files: walk_all(root).map_err(|e| Error::io(".", e))?,
+            ops: Vec::new(),
+            planned: BTreeSet::new(),
+            warnings: Vec::new(),
+            notes: Vec::new(),
+            blocked: Vec::new(),
+        })
+    }
+
+    /// Refuses when a step found a reason to; else plans `config.json` with `version` (last, so
+    /// a folder with that version is completely migrated) and hands out the plan.
+    pub(super) fn finish(mut self, version: u64) -> Result<Plan> {
+        if !self.blocked.is_empty() {
+            return Err(Error::MigrationBlocked {
+                message: self.blocked.join("\n"),
+            });
+        }
+        self.config(version);
+        Ok(Plan {
+            ops: self.ops,
+            warnings: self.warnings,
+            notes: self.notes,
+        })
+    }
+
+    pub(super) fn path(&self, rel: &str) -> PathBuf {
         self.root.join(rel)
     }
 
-    fn exists(&self, rel: &str) -> bool {
+    pub(super) fn exists(&self, rel: &str) -> bool {
         self.files.binary_search_by(|f| f.as_str().cmp(rel)).is_ok()
     }
 
     /// Files directly in `dir` (posix) whose name ends with `suffix`.
-    fn children(&self, dir: &str, suffix: &str) -> Vec<String> {
+    pub(super) fn children(&self, dir: &str, suffix: &str) -> Vec<String> {
         let prefix = format!("{dir}/");
         self.files
             .iter()
@@ -118,7 +133,7 @@ impl Planner<'_> {
     }
 
     /// Files anywhere below `dir`.
-    fn below(&self, dir: &str) -> Vec<String> {
+    pub(super) fn below(&self, dir: &str) -> Vec<String> {
         let prefix = format!("{dir}/");
         self.files
             .iter()
@@ -128,7 +143,7 @@ impl Planner<'_> {
     }
 
     /// Parsed JSON; a corrupt file blocks the migration.
-    fn read(&mut self, rel: &str) -> Option<Value> {
+    pub(super) fn read(&mut self, rel: &str) -> Option<Value> {
         let bytes = match fs::read(self.path(rel)) {
             Ok(b) => b,
             Err(e) if e.kind() == io::ErrorKind::NotFound => return None,
@@ -150,7 +165,7 @@ impl Planner<'_> {
     }
 
     /// Like [`Self::read`], but anything other than an object blocks too.
-    fn read_object(&mut self, rel: &str) -> Option<Map<String, Value>> {
+    pub(super) fn read_object(&mut self, rel: &str) -> Option<Map<String, Value>> {
         match self.read(rel)? {
             Value::Object(map) => Some(map),
             _ => {
@@ -162,7 +177,7 @@ impl Planner<'_> {
 
     /// Plans writing `value` stamped (C19), formatted with a trailing newline (C13); skipped when
     /// the file already holds exactly that.
-    fn write_json(&mut self, rel: &str, value: Value) {
+    pub(super) fn write_json(&mut self, rel: &str, value: Value) {
         let (_, text) = integrity::stamped_text(&value);
         self.write_bytes(rel, text.into_bytes());
     }
@@ -178,7 +193,7 @@ impl Planner<'_> {
         });
     }
 
-    fn delete(&mut self, rel: &str) {
+    pub(super) fn delete(&mut self, rel: &str) {
         self.ops.push(Op::Delete {
             path: self.path(rel),
         });
@@ -186,7 +201,7 @@ impl Planner<'_> {
 
     /// Moves a file to `to` (absolute). An identical file there only removes the source; a
     /// different one is left alone with a warning, or gets a ` (2)` name when `rename` is set.
-    fn move_file(&mut self, rel: &str, mut to: PathBuf, rename: bool) {
+    pub(super) fn move_file(&mut self, rel: &str, mut to: PathBuf, rename: bool) {
         let from = self.path(rel);
         if to.exists() {
             if fs::read(&from).ok() == fs::read(&to).ok() {
@@ -492,7 +507,7 @@ impl Planner<'_> {
         self.each_entity_in(V2_TEMPLATES);
     }
 
-    fn years(&self) -> Vec<String> {
+    pub(super) fn years(&self) -> Vec<String> {
         let mut years: BTreeSet<String> = BTreeSet::new();
         for f in &self.files {
             if let Some((first, _)) = f.split_once('/')
@@ -634,13 +649,13 @@ impl Planner<'_> {
     }
 
     /// C1: written last.
-    fn config(&mut self) {
+    fn config(&mut self, version: u64) {
         let mut map = match self.read("config.json") {
             Some(Value::Object(map)) => map,
             _ => Map::new(),
         };
         map.shift_remove("_meta");
-        map.insert("schema_version".into(), Value::from(super::CURRENT_VERSION));
+        map.insert("schema_version".into(), Value::from(version));
         self.write_json("config.json", Value::Object(map));
     }
 }

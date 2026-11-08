@@ -1,4 +1,4 @@
-# Maatwerk: phase 2 plan (steps 12-29)
+# Maatwerk: phase 2 plan (steps 12-33)
 
 Phase 2 turns the intake in `ROADMAP.md` section 4 and the design in `docs/phase-2/design/` into
 steps that each fit one Claude Code session of at most 5 hours (**M**), or two sessions with a
@@ -27,12 +27,27 @@ Decided in step 12 (2026-11-04, `docs/adr/0010-phase-2-decisions.md`):
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
 | 8   | Manual test on a copy of real data only for steps that touch data or numbers (15, 18, 19, 20)                                                             | ROADMAP 7.3  |
 | 9   | Old goldens stay as regression tests until a step intentionally changes that output; then the new output becomes the golden after the user's visual check | ROADMAP 7.5  |
-| 10  | AI assistant in step 28                                                                                                                                   | ROADMAP 7.6  |
+| 10  | AI assistant in step 32                                                                                                                                   | ROADMAP 7.6  |
 | 11  | Data v3 renames `fotos/` -> `afbeeldingen/` and `users/` -> `aanwezigheid/`                                                                               | ROADMAP 7.8  |
 | 12  | Trend arrow: best attempt of the most recent counted test minus the weighted year average (as on the rapport); diagnostic tests ignored                   | ROADMAP 7.9  |
 | 13  | Existing inhaal/herkansing tests get the original's observaties (copied, locked) in the v3 migration, shown as a before/after list first                  | ROADMAP 7.10 |
 | 14  | Exam fields: `kind: "toets" \| "po"` and `diagnostic: true/false`; PTA stays `type: "pta"`                                                                | ROADMAP 7.11 |
 | 15  | Active school year per user (F-21, quirk D7), stored with the theme                                                                                       | triage       |
+
+Praktische opdrachten (PO) with rubrics (user, 2026-11-08; ROADMAP F-20, F-22, F-23):
+
+| #   | Decision                                                                                                                                                                                                                                                                                 | Source |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 16  | A PO is graded with a rubric (new tab Rubrics). Grade = 10 × points ÷ max, between 1,0 and 10,0; whole points only; bonus categories count in the points, not in the max; diagnostic categories count in neither; no N-term                                                              | user   |
+| 17  | Group and individual bonus/malus lines are in grade points (named, several allowed); student grade = group grade + group lines + own lines, between 1,0 and 10,0                                                                                                                         | user   |
+| 18  | Projectgroepen (UI word; "Groepen" stays the classes): students of different classes may be together if they match the PO's vak, schoolsoort and jaarlaag; a student alone is a projectgroep of one; unplaced students get no grade; a member differs only through own bonus/malus lines | user   |
+| 19  | Category scores, observaties and comments are the projectgroep's and are copied into every member's score file; a student moved to another projectgroep takes the new group's scores (with a warning), own lines stay                                                                    | user   |
+| 20  | Rubrics are shared per vak (like observaties), "Dupliceren" makes a variant; once a PO uses a rubric, the categories' **max and soort** are locked (names, levels and observaties stay editable) and the rubric cannot be deleted                                                        | user   |
+| 21  | A category has 2-5 levels (interval, optional title, explanation); intervals may overlap, never share a minimum or a maximum, and together cover 0 to the max without gaps                                                                                                               | user   |
+| 22  | PO toevoegen lists rubrics with the same vak, a shared schoolsoort and the PO's jaarlaag; PTA and D as for tests; PO herkansing only (no inhaal): same rubric, projectgroepen copied and editable, best attempt counts                                                                   | user   |
+| 23  | Observaties get a field `toetstypes` (`toets`, `po`, or both; existing ones `toets`); test modals list only `toets`, the rubric editor and PO grading only `po`, the Observaties tab gets a filter; opdracht bewerken is not filtered                                                    | user   |
+| 24  | The PO score table is read-only, grouped by projectgroep; grading happens in its own modal (sliders, descriptions highlighted, category observaties and comments, overall comment, bonus/malus), saved automatically every 10 s and on closing                                           | user   |
+| 25  | The Rubrics tab is for teachers and sectievoorzitters, not the admin; the PO rapport gets its own design round (step 24)                                                                                                                                                                 | user   |
 
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
@@ -76,18 +91,22 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done   |
 | 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done   |
 | 17   | Rapport fixes                                                    | M            | 0.8     | done   |
-| 18   | Data format v3                                                   | M            | 0.9     | todo   |
+| 18   | Data format v3                                                   | M            | 0.9     | done   |
 | 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | todo   |
 | 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | todo   |
-| 21   | Score entry                                                      | M            | 0.12    | todo   |
-| 22   | Login and splash                                                 | M            | 0.13    | todo   |
-| 23   | Leerlingen and Groepen cards                                     | M            | 0.14    | todo   |
-| 24   | Beheer screens                                                   | M            | 0.15    | todo   |
-| 25   | Overviews and profile                                            | L (25a, 25b) | 0.16    | todo   |
-| 26   | Observaties and opdrachten                                       | M            | 0.17    | todo   |
-| 27   | Opdrachten-editor                                                | M            | 0.18    | todo   |
-| 28   | AI assistant                                                     | L (28a, 28b) | 0.19    | todo   |
-| 29   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
+| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | todo   |
+| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | todo   |
+| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | todo   |
+| 24   | PO d: PO rapport                                                 | M            | 0.15    | todo   |
+| 25   | Score entry                                                      | M            | 0.16    | todo   |
+| 26   | Login and splash                                                 | M            | 0.17    | todo   |
+| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | todo   |
+| 28   | Beheer screens                                                   | M            | 0.19    | todo   |
+| 29   | Overviews and profile                                            | L (29a, 29b) | 0.20    | todo   |
+| 30   | Observaties and opdrachten                                       | M            | 0.21    | todo   |
+| 31   | Opdrachten-editor                                                | M            | 0.22    | todo   |
+| 32   | AI assistant                                                     | L (32a, 32b) | 0.23    | todo   |
+| 33   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
 
 ## 4. Steps
 
@@ -204,19 +223,24 @@ Stop and ask: before running the migration on the copy of real data; before dele
 
 ### Step 19: Domain logic in `maatwerk-core` (L)
 
-Items: R-04, B-02, B-03, B1-B8, B12-B19, B28-B31 (per triage), F-08 (trend helper), decision 7.9.
+Items: R-04, B-02, B-03, B1-B8, B12-B19, B28-B31 (per triage), F-08 (trend helper), decision 7.9,
+T9 (moved from step 17, user 2026-11-07).
 
 - **19a:** port attempts (best attempt), grade calculation, averages (weighted, SE), SD,
   percentages, RTTI statistics and the trend helper to `maatwerk-core` with unit tests on the
   fixtures; Tauri commands and generated bindings; the CLI gets `stats` for checking. The UI
   still uses its own code.
 - **19b:** switch every screen, the rapport and the score grid to the core; delete the four JS
-  implementations (B13); fix the B items as decided. Before/after tables for every number that
-  changes, user approval before the merge.
+  implementations (B13); fix the B items as decided. T9: the histogram and ranking thresholds
+  and texts agree (the ranking moves to the core with the other rapport numbers). Before/after
+  tables for every number or text that changes, user approval before the merge.
+- **PO (decision 16):** the core's statistics know `kind: "po"` (grade from the rubric points,
+  no RTTI, counted with its weging and weging SE like a test); the PO grade function itself comes
+  with step 21a.
 
 ### Step 20: Toetsen (L)
 
-Items: V-11, F-12, F-20 (button only, if the PO modal is designed by then), B-05, B-01 (check),
+Items: V-11, F-12, B-05, B-01 (check) (the "+ PO toevoegen" button is step 22),
 D5 of the implementation plan. Design: spec 2.5, 4.7, 4.11; boards 11, 14.
 
 - **20a:** exam list (cards, badges, kind pills, legend, attempts tree open by default, lock pill);
@@ -225,64 +249,135 @@ D5 of the implementation plan. Design: spec 2.5, 4.7, 4.11; boards 11, 14.
 - **20b:** Nieuwe poging modal (Soort poging cards, Beschrijving filled and locked; observaties
   copied and locked); the summary overview shows observaties of resits (B-05).
 
-### Step 21: Score entry (M)
+### Step 21: PO a: Rubrics and the observatie toetstype (L)
+
+Items: F-22 (rubrics), F-23 (toetstype), decisions 16, 20, 21, 23, 25. Design: spec 4.13 (Rubrics),
+4.12 (toetstype field); boards 15, 16. Data safety rules apply (additive change within v3,
+`minAppVersion` raised to this release).
+
+- **21a, data and core:** `rubrics/<id>.json` (schema, `_meta`, CAS + rev like observaties):
+  `{ id, naam, beschrijving?, subject, schoolsoort[], jaarlagen[], obs_ids[], categories: [{ id,
+naam, max, soort: normaal|bonus|diagnostisch, obs_ids[], niveaus: [{ min, max, titel?, uitleg }]
+}] }`. Core: level validation (2-5 levels, integer bounds, no shared min or max, cover 0..max
+  without gaps), "in use" = referenced by any exam in any year, PO grade function (decision 16).
+  Observatie field `toetstypes`; the migration step writes `["toets"]` where it is absent.
+  `validate-data` knows both. Fixtures with three rubrics and PO observaties. Bindings, CLI
+  `rubric check`.
+- **21b, UI:** Rubrics tab (icon, for teachers and sectievoorzitters), rubric cards (categories as
+  chips, totals, "In gebruik bij n PO's"), rubric editor (fixed-height dialog; per category name,
+  max, soort, levels with the number-row display and live validation, category observaties of
+  type PO; general observaties; Opslaan blocked while invalid; lock per decision 20), Dupliceren,
+  delete guard. Observatie bewerken gets Toetstype; the test modals and the score grid list only
+  `toets` observaties; the Observaties tab gets a toetstype filter chip.
+
+Tests: unit (validation edge cases: touching intervals, overlaps, shared bounds, gaps, max change
+on a locked rubric), e2e (create, edit, lock, duplicate), visual baselines after review.
+
+### Step 22: PO b: PO in Toetsen and projectgroepen (L)
+
+Items: F-20, F-22 (PO part), decisions 17, 18, 22. Design: spec 4.13; board 17.
+
+- **22a:** exam `kind: "po"` with `rubric_id` and `projectgroepen: [{ id, naam?, student_ids[] }]`
+  (no questions, no N-term); "+ PO toevoegen" next to "+ Toets toevoegen"; step 1 like Nieuwe
+  toets with the filtered rubric dropdown, its category preview and the grade formula; PO card
+  (striped badge, SE anti colour, the rubric line instead of RTTI, mean ± SD), the same ⋮ menu
+  as a test; PO bewerken.
+- **22b:** step 2 projectgroepen: unplaced students of all matching classes (class filter), groups
+  with optional names, "lln"/"ll" counts, add by click or drag, "+ Projectgroep", "Willekeurig
+  indelen…" (group size n, from the unplaced students), empty groups removed on save; regrouping
+  later (decision 19, warning); PO herkansing (same rubric, groups copied and editable).
+
+Tests: e2e for both steps including students of two classes in one projectgroep; core tests for
+the PO grade in averages (with step 19's statistics: no RTTI for a PO).
+
+### Step 23: PO c: PO beoordelen (L)
+
+Items: F-22 (grading), decisions 17, 19, 24. Design: spec 4.13; board 18.
+
+- **23a, score table:** read-only table grouped by projectgroep (sticky group headings with
+  "Beoordelen" and status), categories as slanted headings with their max, Punten, Groep ±,
+  Eigen ±, Cijfer; double-click a row opens the grading modal; "Projectgroepen" and
+  "PO bewerken" in the header; unplaced students listed without a grade.
+- **23b, grading modal:** per category the level cards (all levels whose interval contains the
+  value are highlighted), slider, category observaties (type PO) and a comment; overall comment;
+  group and individual bonus/malus lines; general observaties and live grades in the footer;
+  Vorige/Volgende; autosave every 10 s and on closing (CAS per member file; conflict message).
+  Score file: `scores[examId][categoryId]`, general observaties as for tests, and
+  `po[examId] = { projectgroep, categoryObs, categoryComments, comment, groupLines, ownLines }`.
+  PO grades in the averages, student and group cards, overviews; opdrachten genereren for a PO
+  uses the general and category observaties.
+
+Stop and ask: the before/after table for averages that now include PO grades.
+
+### Step 24: PO d: PO rapport (M)
+
+Items: F-22 (rapport). First a design round with the user in chat (layout of categories, level
+descriptions, comments, bonus/malus, grade; one or two pages, duplex rule of step 17), then the
+Typst template, `data.json` for a PO, goldens, and "Rapport genereren" for a PO. Stop and ask:
+the design before building, and the golden PNGs.
+
+### Step 25: Score entry (M)
 
 Items: F-03, B4, B5, U5 (if not done in 19b), spec 4.10; board 13. Restyle, centred content,
 header row with **?** first, sticky group heading, column headings and # / Naam columns, grade
 cell colours, GEMIDDELDE and SD per group. Keyboard behaviour and saving unchanged
 (`score-grid.spec.ts` stays green).
 
-### Step 22: Login and splash (M)
+### Step 26: Login and splash (M)
 
-Items: V-04, F-06, F-19 (crop modal shared with step 24). Design: spec 4.1, 4.2; boards 5, 6.
+Items: V-04, F-06, F-19 (crop modal shared with step 28). Design: spec 4.1, 4.2; boards 5, 6.
 Splash inline in `index.html` (window background set in the Tauri config, no white flash); login
 states with the FLIP avatar animation, inline PIN (one or two fields), reverse on "Andere
 gebruiker", keyboard flow, reduced-motion fallback.
 
-### Step 23: Leerlingen and Groepen cards (M)
+### Step 27: Leerlingen and Groepen cards (M)
 
 Items: F-07, F-08 (UI), F-09, V-02. Design: spec 4.3, 4.4; board 1. Student cards (variant C, SE /
 laatste swap in CSS), group cards (variant B), admin keeps the list. Stop and ask: the numbers on
 the cards (before/after on fixtures).
 
-### Step 24: Beheer screens (M)
+### Step 28: Beheer screens (M)
 
 Items: spec 4.9, F-02 (CSV example), F-19 (photo crop), D28, X-06 (if decided). Board 12.
 Gebruikers (card actions order, Gebruiker bewerken with Afkorting + Kleur swatches and the crop),
 School, Gegevenscontrole (findings as cards with actions), Instellingen (units, snapshot list),
 CSV import example.
 
-### Step 25: Overviews and profile (L)
+### Step 29: Overviews and profile (L)
 
 Items: F-10, F-11, B-05 (check), profile restyle, B15/B16 (if not done in 19b). Design: spec 4.5,
 4.6; board 3.
 
-- **25a:** group overview modal: five tabs over the year, lazy with skeletons, 30 px rows, sticky
+- **29a:** group overview modal: five tabs over the year, lazy with skeletons, 30 px rows, sticky
   `tfoot`, observaties "n (p%)".
-- **25b:** exam overview (SD row, sticky footer, type colours in charts) and the student profile
+- **29b:** exam overview (SD row, sticky footer, type colours in charts) and the student profile
   restyled on the dialog component.
+- **PO:** the RTTI tabs and RTTI charts skip PO's; the results, distribution and boxplot include
+  them (striped type colour); the profile shows a PO's categories instead of RTTI.
 
-### Step 26: Observaties and opdrachten (M)
+### Step 30: Observaties and opdrachten (M)
 
-Items: F-14 (UI), F-15, spec 4.12; board 15. Observatie bewerken with the icon picker (200+ emoji,
-categories, search); opdracht bewerken; opdrachten genereren with the new link type.
+Items: F-14 (UI), F-15, T23 (moved from step 17, user 2026-11-07), spec 4.12; board 15. Observatie bewerken with the icon picker (200+ emoji,
+categories, search); opdracht bewerken; opdrachten genereren with the new link type (`opdrachtenVraag`: a score
+below X or `N` matches, an empty score not; data-files-v3); the batch
+reports every failed opdracht, not only the first (T23).
 
-### Step 27: Opdrachten-editor (M)
+### Step 31: Opdrachten-editor (M)
 
 Items: V-07, F-05, F-16, V-03, T19/T20 (if kept), U10. Design: spec 4.8; board 10. Header and back
 button, toolbar on top with dropdown groups, file tabs below it, status pill, draggable divider
 (saved per user), smooth preview sync.
 
-### Step 28: AI assistant (L)
+### Step 32: AI assistant (L)
 
 Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 option D.
 
-- **28a:** the CLI bridge: detect installed CLIs, run them with the opdracht as context in a
+- **32a:** the CLI bridge: detect installed CLIs, run them with the opdracht as context in a
   sandboxed temp folder, time limit, cancel; the result is a diff, never a direct write.
-- **28b:** the rail and chat panel (spec 4.8), Bekijken/Toepassen on the diff card, a setting to
+- **32b:** the rail and chat panel (spec 4.8), Bekijken/Toepassen on the diff card, a setting to
   turn it off; provider logos per their brand rules, recorded in `THIRD_PARTY_LICENSES.md`.
 
-### Step 29: Hardening, dependencies, 1.0 (M)
+### Step 33: Hardening, dependencies, 1.0 (M)
 
 Items: X-01 (Typst upgrade, golden diff with the user), X-02, X-05, the remaining R-05 files and
 compat layer, backlog cleanup, `/security-review`, whole-codebase review by a fresh reviewer,

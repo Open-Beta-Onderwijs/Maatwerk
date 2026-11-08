@@ -32,7 +32,7 @@ test.describe('minimum app version', () => {
     const banner = page.locator('#read-only-banner');
     await expect(banner).toBeVisible();
     await expect(banner).toContainText('Maatwerk 99.0.0 of nieuwer');
-    await expect(banner).toContainText('deze versie: 0.6.0');
+    await expect(banner).toContainText('deze versie: 0.9.0');
     await expect(page.locator('html')).toHaveAttribute('data-read-only', 'true');
   });
 
@@ -104,7 +104,7 @@ test.describe('tab bar (spec 3.5, V-05, V-12)', () => {
 });
 
 test.describe('avatar (B-04, B-08)', () => {
-  // The fixture's nat teacher has a photo (fotos/...); the biology teacher does not.
+  // The fixture's nat teacher has a photo (afbeeldingen/...); the biology teacher does not.
   test('the same photo on the login screen, in the top bar and in the editor', async ({ page }) => {
     await page.goto('/');
     await page.locator('.subject-card[data-subject="nat"]').click();

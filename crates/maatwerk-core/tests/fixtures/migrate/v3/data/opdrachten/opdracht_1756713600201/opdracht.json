@@ -1,0 +1,25 @@
+{
+  "id": "opdracht_1756713600201",
+  "naam": "Zonder tekst",
+  "beschrijving": "De .typ ontbreekt",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "vakken": [
+    "wisb"
+  ],
+  "jaarlagen": [
+    "4"
+  ],
+  "observaties": [
+    "obs-1756713600101"
+  ],
+  "_meta": {
+    "rev": 1,
+    "createdBy": null,
+    "createdAt": null,
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "d507302cfe6d24d2bf33d8c2070f115ae1d88f0ae5ad92fd3709249ca733dcba"
+  }
+}

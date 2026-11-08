@@ -68,7 +68,7 @@ export const commands = {
 	writeLocalSession: (data: Value) => typedError<null, CommandError>(__TAURI_INVOKE("write_local_session", { data })),
 	/**  `data:<mime>;base64,...`; `null` if missing or unreadable. */
 	readPhotoAsDataUrl: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("read_photo_as_data_url", { relPath })),
-	/**  Only `fotos/<name>` (backlog n8). */
+	/**  Only `afbeeldingen/<name>` (backlog n8). */
 	savePhoto: (relPath: string, base64Data: string) => typedError<null, CommandError>(__TAURI_INVOKE("save_photo", { relPath, base64Data })),
 	/**
 	 *  The school year whose folder the watcher polls (ADR-0003 C7); `null`: `config.json`
@@ -97,11 +97,12 @@ export const commands = {
 	/**  Deletes an opdracht folder; a folder OneDrive keeps locked is retried in the background. */
 	deleteOpdrachtFolder: (opdrachtId: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_opdracht_folder", { opdrachtId })),
 	/**
-	 *  Migrates the data folder to v2 after zipping it to the local backup folder, then checks it.
-	 *  Only while the folder could not be opened because it needs the migration; the UI restarts
-	 *  the app afterwards.
+	 *  Migrates the data folder to the current format after zipping it to the local backup folder,
+	 *  then checks it. Only while the folder could not be opened because it needs the migration; the
+	 *  UI restarts the app afterwards. `dry_run`: only what would change, nothing written (the
+	 *  screen shows it before the admin confirms).
 	 */
-	migrateDataFolder: () => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder")),
+	migrateDataFolder: (dryRun: boolean | null) => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder", { dryRun })),
 	/**  `validate-data` on the open data folder (admin screen). */
 	validateDataFolder: () => typedError<DataCheck, CommandError>(__TAURI_INVOKE("validate_data_folder")),
 	/**  Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd"). */
@@ -461,6 +462,11 @@ export type MigrationResult = {
 	deleted: number,
 	/**  Dutch, for the admin. */
 	warnings: string[],
+	/**
+	 *  Dutch: the observaties each inhaal and herkansing gets, before and after (decision 13);
+	 *  shown before the admin confirms (dry run) and in the report.
+	 */
+	notes: string[],
 	/**  The check right after the migration. */
 	validation: DataCheck | null,
 	/**  The Dutch report next to the backup zip (`None` when it could not be written). */

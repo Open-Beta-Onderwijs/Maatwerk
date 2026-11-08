@@ -10,7 +10,7 @@ fn reset_pin_clears_the_admin_pin_and_codes_only() {
     let tmp = tempfile::tempdir().unwrap();
     let data = tmp.path().join("data");
     fs::create_dir_all(data.join("gebruikers")).unwrap();
-    fs::write(data.join("config.json"), r#"{"schema_version":2}"#).unwrap();
+    fs::write(data.join("config.json"), r#"{"schema_version":3}"#).unwrap();
     fs::write(
         data.join("gebruikers/admin.json"),
         r#"{"id":"admin","isAdmin":true,"pinHash":"$argon2id$x","recoveryCodeHashes":["a"]}"#,

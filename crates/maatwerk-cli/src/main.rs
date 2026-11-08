@@ -30,11 +30,11 @@ typst compile: compiles <file.typ> to PDF with Maatwerk's embedded packages and 
 folder of <file.typ> is the project root; nothing outside it is readable. In an opdracht folder,
 `--input maatwerk-data=<json>` sets the header and mode that main.typ reads.
 
-validate-data: checks a data folder (format v2) and lists errors and warnings; exit code 1 when
-there are errors.
+validate-data: checks a data folder (format v3) and lists errors and warnings; exit code 1 when
+there are errors. Files Maatwerk does not use (leftovers) are warnings; nothing is removed.
 
-migrate: converts a v1 data folder to v2 (docs/reference/data-files-v2.md). --dry-run lists what
-would change. --apply first zips the whole folder into --backup-dir, which must be outside the
+migrate: converts a v1 or v2 data folder to v3 (docs/reference/data-files-v3.md). --dry-run
+lists what would change, with the observaties each inhaal and herkansing gets. --apply first zips the whole folder into --backup-dir, which must be outside the
 data folder, the shared folder and OneDrive, then migrates and validates. Nobody may have
 Maatwerk open on the folder meanwhile (docs/cutover-runbook.md).
 

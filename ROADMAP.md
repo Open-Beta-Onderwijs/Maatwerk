@@ -76,29 +76,31 @@ from the inventory keep their old ID in "Source".
 
 ### 4.1 Features (F)
 
-| ID   | What                                                                                                                                                                                                                                                                                                                                                                                                   | Area                 | Pri | Size | User?              | Source                             |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- | --- | ---- | ------------------ | ---------------------------------- |
-| F-01 | AI assistant on the teacher's own AI CLI. UI: a vertical rail of provider logos on the right of the editor (Claude, ChatGPT, Mistral, Gemini, DeepSeek, Copilot); clicking one slides open a chat panel for that CLI. The plumbing partly exists, the visual layer does not. Check each provider's logo usage terms                                                                                    | Opdrachten           | P2  | L    | yes (design)       | ADR-0009 option D; user 2026-11-04 |
-| F-02 | CSV import: example CSV shown and downloadable                                                                                                                                                                                                                                                                                                                                                         | Admin                | P2  | S    |                    | backlog M-LEER-3, M-GRP-3          |
-| F-03 | Ctrl+X in the score grid                                                                                                                                                                                                                                                                                                                                                                               | Scores               | P2  | S    |                    | backlog 3b m5                      |
-| F-04 | Show Typst warnings in the editor, generate and rapport modals                                                                                                                                                                                                                                                                                                                                         | Opdrachten / Rapport | P2  | S    |                    | backlog 6a                         |
-| F-05 | Editor: show that a compile is still running (spinner or similar)                                                                                                                                                                                                                                                                                                                                      | Opdrachten           | P2  | S    | yes                | manual test 10 M-OPD-11            |
-| F-06 | Splash screen with the Maatwerk logo instead of the short white screen at start; visible only while loading (longer on slow PCs)                                                                                                                                                                                                                                                                       | Shell                | P2  | S    | yes (design)       | user 2026-11-04                    |
-| F-07 | Leerlingen tab: student cards in a grid (left to right, top to bottom) instead of list rows. Left: name and student number. Right: last grade, year average (coloured), trend arrow (F-08), sparkline of the grades. SE average only in years 4-6. Only for teachers and sectievoorzitters; the admin keeps the plain list (not tied to a vak, so no grades). Existing filters and search keep working | Admin                | P2  | M    | yes (design)       | user 2026-11-04                    |
-| F-08 | Trend arrow, one shared helper: last grade minus year average. > +1,0 strongly up (saturated green); +0,5..+1,0 slightly up; -0,5..+0,5 level (right); -1,0..-0,5 slightly down; < -1,0 strongly down (saturated red). Used by F-07 and F-10. Decide which grade is "last" (best attempt?) and which average (weighted?) together with B-02/B-03                                                       | Domain               | P2  | S    | yes                | user 2026-11-04                    |
-| F-09 | Groepen tab: group cards side by side instead of rows. Card: group name, teacher(s), schoolsoort, student names; right: mean ± SD and % onvoldoende (today's line, moved). SE average only for upper-school groups (4-6). No trend per group                                                                                                                                                           | Admin                | P2  | M    | yes (design)       | user 2026-11-04                    |
-| F-10 | Group overview modal: an SD row under the average; trend arrows (F-08) after the student names; five tabs from the exam overview, over the whole year: Resultaten (today's table), Cijferverdeling (one chart per exam, stacked), Boxplot (one per exam, each its own colour), RTTI-analyse (course through the year), Observaties (course through the year). No vraaganalyse                          | Overzicht            | P2  | L    | yes (design)       | user 2026-11-04                    |
-| F-11 | Exam overview modal, Resultaten: average at the bottom plus an SD row. Other tabs unchanged                                                                                                                                                                                                                                                                                                            | Overzicht            | P2  | S    |                    | user 2026-11-04                    |
-| F-12 | Inhaal and herkansing exams get the original's observaties when created; locked, not editable separately. Fixes B-05. Decide what happens to existing resits (backfill or not)                                                                                                                                                                                                                         | Toetsen              | P1  | M    | yes (data)         | user 2026-11-04                    |
-| F-13 | Rapport, duplex-safe: when the leeradvies table lands on a third page, add an empty fourth page, so each student is always two full A4 sheets                                                                                                                                                                                                                                                          | Rapport              | P1  | S    | yes (output)       | user 2026-11-04                    |
-| F-14 | Opdrachten genereren: link an opdracht to a score below a threshold on one specific question (for example question 7, max 4 points, the student scores 0 or 1). Linking by observatie and by grade threshold work and stay. New link type in `opdracht.json`                                                                                                                                           | Opdrachten           | P2  | M    | yes (data)         | user 2026-11-04                    |
-| F-15 | Observaties: emoji list from ~30-40 to at least 200, adding emoji for the science subjects and for learning and school in general, on top of the current ones                                                                                                                                                                                                                                          | Observaties          | P2  | S    | yes                | user 2026-11-04                    |
-| F-16 | Editor: draggable divider between the editor and the PDF viewer                                                                                                                                                                                                                                                                                                                                        | Opdrachten           | P2  | S    |                    | user 2026-11-04                    |
-| F-17 | User menu top right as a small dropdown instead of the overlay modal: Uitloggen, Pincode wijzigen, Thema (F-18), Foto wijzigen (F-19)                                                                                                                                                                                                                                                                  | Shell                | P2  | S    | yes (design)       | user 2026-11-04                    |
-| F-18 | Themes: light/dark toggle (default light) and 21 accent colours (the 7 rainbow colours plus two rows grouped under them, including black; design spec 2.2); titles, buttons and tabs follow the accent. Dark: dark background, inverted watermark, cards a slightly different shade. A new colour scheme for both (part of R-03). Remembered per user                                                  | Foundation           | P2  | M    | yes (design, data) | user 2026-11-04                    |
-| F-19 | Change your own photo (not the name): non-square images allowed, the user drags/selects the 1:1 crop, saved and shown from then on. With B-04 and D28                                                                                                                                                                                                                                                  | Shell                | P2  | M    | yes (design)       | user 2026-11-04                    |
-| F-20 | Praktische opdracht (PO) as its own test kind: a separate "+ PO toevoegen" button on the Toetsen tab and its own modal (design still to do). Badge per V-11                                                                                                                                                                                                                                            | Toetsen              | P3  | M    | yes (design, data) | user 2026-11-04                    |
-| F-21 | Active school year per user (quirk D7): stored with the user like the theme; default the current school year                                                                                                                                                                                                                                                                                           | Shell                | P2  | S    |                    | triage 2026-11-04                  |
+| ID   | What                                                                                                                                                                                                                                                                                                                                                                                                   | Area                      | Pri | Size | User?                       | Source                             |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- | --- | ---- | --------------------------- | ---------------------------------- |
+| F-01 | AI assistant on the teacher's own AI CLI. UI: a vertical rail of provider logos on the right of the editor (Claude, ChatGPT, Mistral, Gemini, DeepSeek, Copilot); clicking one slides open a chat panel for that CLI. The plumbing partly exists, the visual layer does not. Check each provider's logo usage terms                                                                                    | Opdrachten                | P2  | L    | yes (design)                | ADR-0009 option D; user 2026-11-04 |
+| F-02 | CSV import: example CSV shown and downloadable                                                                                                                                                                                                                                                                                                                                                         | Admin                     | P2  | S    |                             | backlog M-LEER-3, M-GRP-3          |
+| F-03 | Ctrl+X in the score grid                                                                                                                                                                                                                                                                                                                                                                               | Scores                    | P2  | S    |                             | backlog 3b m5                      |
+| F-04 | Show Typst warnings in the editor, generate and rapport modals                                                                                                                                                                                                                                                                                                                                         | Opdrachten / Rapport      | P2  | S    |                             | backlog 6a                         |
+| F-05 | Editor: show that a compile is still running (spinner or similar)                                                                                                                                                                                                                                                                                                                                      | Opdrachten                | P2  | S    | yes                         | manual test 10 M-OPD-11            |
+| F-06 | Splash screen with the Maatwerk logo instead of the short white screen at start; visible only while loading (longer on slow PCs)                                                                                                                                                                                                                                                                       | Shell                     | P2  | S    | yes (design)                | user 2026-11-04                    |
+| F-07 | Leerlingen tab: student cards in a grid (left to right, top to bottom) instead of list rows. Left: name and student number. Right: last grade, year average (coloured), trend arrow (F-08), sparkline of the grades. SE average only in years 4-6. Only for teachers and sectievoorzitters; the admin keeps the plain list (not tied to a vak, so no grades). Existing filters and search keep working | Admin                     | P2  | M    | yes (design)                | user 2026-11-04                    |
+| F-08 | Trend arrow, one shared helper: last grade minus year average. > +1,0 strongly up (saturated green); +0,5..+1,0 slightly up; -0,5..+0,5 level (right); -1,0..-0,5 slightly down; < -1,0 strongly down (saturated red). Used by F-07 and F-10. Decide which grade is "last" (best attempt?) and which average (weighted?) together with B-02/B-03                                                       | Domain                    | P2  | S    | yes                         | user 2026-11-04                    |
+| F-09 | Groepen tab: group cards side by side instead of rows. Card: group name, teacher(s), schoolsoort, student names; right: mean ± SD and % onvoldoende (today's line, moved). SE average only for upper-school groups (4-6). No trend per group                                                                                                                                                           | Admin                     | P2  | M    | yes (design)                | user 2026-11-04                    |
+| F-10 | Group overview modal: an SD row under the average; trend arrows (F-08) after the student names; five tabs from the exam overview, over the whole year: Resultaten (today's table), Cijferverdeling (one chart per exam, stacked), Boxplot (one per exam, each its own colour), RTTI-analyse (course through the year), Observaties (course through the year). No vraaganalyse                          | Overzicht                 | P2  | L    | yes (design)                | user 2026-11-04                    |
+| F-11 | Exam overview modal, Resultaten: average at the bottom plus an SD row. Other tabs unchanged                                                                                                                                                                                                                                                                                                            | Overzicht                 | P2  | S    |                             | user 2026-11-04                    |
+| F-12 | Inhaal and herkansing exams get the original's observaties when created; locked, not editable separately. Fixes B-05. Decide what happens to existing resits (backfill or not)                                                                                                                                                                                                                         | Toetsen                   | P1  | M    | yes (data)                  | user 2026-11-04                    |
+| F-13 | Rapport, duplex-safe: when the leeradvies table lands on a third page, add an empty fourth page, so each student is always two full A4 sheets                                                                                                                                                                                                                                                          | Rapport                   | P1  | S    | yes (output)                | user 2026-11-04                    |
+| F-14 | Opdrachten genereren: link an opdracht to a score below a threshold on one specific question (for example question 7, max 4 points, the student scores 0 or 1). Linking by observatie and by grade threshold work and stay. New link type on the exam (`opdrachtenVraag`; was "in `opdracht.json`", user 2026-11-07); `N` matches, an empty score does not                                             | Opdrachten                | P2  | M    | yes (data)                  | user 2026-11-04                    |
+| F-15 | Observaties: emoji list from ~30-40 to at least 200, adding emoji for the science subjects and for learning and school in general, on top of the current ones                                                                                                                                                                                                                                          | Observaties               | P2  | S    | yes                         | user 2026-11-04                    |
+| F-16 | Editor: draggable divider between the editor and the PDF viewer                                                                                                                                                                                                                                                                                                                                        | Opdrachten                | P2  | S    |                             | user 2026-11-04                    |
+| F-17 | User menu top right as a small dropdown instead of the overlay modal: Uitloggen, Pincode wijzigen, Thema (F-18), Foto wijzigen (F-19)                                                                                                                                                                                                                                                                  | Shell                     | P2  | S    | yes (design)                | user 2026-11-04                    |
+| F-18 | Themes: light/dark toggle (default light) and 21 accent colours (the 7 rainbow colours plus two rows grouped under them, including black; design spec 2.2); titles, buttons and tabs follow the accent. Dark: dark background, inverted watermark, cards a slightly different shade. A new colour scheme for both (part of R-03). Remembered per user                                                  | Foundation                | P2  | M    | yes (design, data)          | user 2026-11-04                    |
+| F-19 | Change your own photo (not the name): non-square images allowed, the user drags/selects the 1:1 crop, saved and shown from then on. With B-04 and D28                                                                                                                                                                                                                                                  | Shell                     | P2  | M    | yes (design)                | user 2026-11-04                    |
+| F-20 | Praktische opdracht (PO) as its own test kind: "+ PO toevoegen" on the Toetsen tab, a two-step modal (data with a rubric; projectgroepen), PO card and ⋮ menu, PO herkansing. Badge per V-11                                                                                                                                                                                                           | Toetsen                   | P1  | L    | yes (design, data)          | user 2026-11-04, 2026-11-08        |
+| F-21 | Active school year per user (quirk D7): stored with the user like the theme; default the current school year                                                                                                                                                                                                                                                                                           | Shell                     | P2  | S    |                             | triage 2026-11-04                  |
+| F-22 | Rubrics and PO grading: new tab Rubrics (shared per vak; categories with max, soort and 2-5 levels; lock once used), PO score table and grading modal (sliders, descriptions, observaties, comments, group and individual bonus/malus, autosave), copies per student, PO rapport                                                                                                                       | Rubrics, Toetsen, Rapport | P1  | L    | yes (design, data, numbers) | user 2026-11-08                    |
+| F-23 | Observaties get a Toetstype (Toets, PO or both; existing ones Toets); test screens list only Toets, PO screens only PO, the Observaties tab gets a filter                                                                                                                                                                                                                                              | Observaties               | P1  | S    | yes (data)                  | user 2026-11-08                    |
 
 ### 4.2 Bugs and quirks (B)
 
@@ -160,62 +162,64 @@ from the inventory keep their old ID in "Source".
 Every item has a priority (P1 soon, P2 planned, P3 some day, Won't) and the `PLAN-2.md` step that
 does it.
 
-| ID   | Pri  | Step             |
-| ---- | ---- | ---------------- |
-| F-01 | P2   | 28               |
-| F-02 | P2   | 24               |
-| F-03 | P2   | 21               |
-| F-04 | P2   | 17               |
-| F-05 | P2   | 27               |
-| F-06 | P2   | 22               |
-| F-07 | P2   | 23               |
-| F-08 | P2   | 19, 23           |
-| F-09 | P2   | 23               |
-| F-10 | P2   | 25               |
-| F-11 | P2   | 25               |
-| F-12 | P1   | 18, 20           |
-| F-13 | P1   | 17               |
-| F-14 | P2   | 18, 26           |
-| F-15 | P2   | 26               |
-| F-16 | P2   | 27               |
-| F-17 | P2   | 15               |
-| F-18 | P2   | 13, 15           |
-| F-19 | P2   | 24               |
-| F-20 | P3   | after its design |
-| F-21 | P2   | 15               |
-| B-01 | Done | 10               |
-| B-02 | P1   | 19               |
-| B-03 | P1   | 19               |
-| B-04 | P2   | 15               |
-| B-05 | P1   | 20               |
-| B-06 | P1   | 17               |
-| B-07 | P1   | 17               |
-| B-08 | P2   | 15               |
-| V-01 | P2   | 13               |
-| V-02 | P3   | 23               |
-| V-03 | P2   | 27               |
-| V-04 | P2   | 22               |
-| V-05 | P2   | 15               |
-| V-06 | P2   | 13               |
-| V-07 | P2   | 27               |
-| V-08 | P2   | 14               |
-| V-09 | P2   | 14 + areas       |
-| V-10 | P2   | 14               |
-| V-11 | P2   | 13, 20           |
-| V-12 | P2   | 15               |
-| R-01 | P1   | 13               |
-| R-02 | P1   | 14               |
-| R-03 | P1   | 13, 14           |
-| R-04 | P1   | 19               |
-| R-05 | P2   | every step       |
-| X-01 | P2   | 29               |
-| X-02 | P3   | 29               |
-| X-03 | P3   | after 1.0        |
-| X-04 | P2   | 16               |
-| X-05 | P2   | 29 + ongoing     |
-| X-06 | P3   | 24               |
-| X-07 | P2   | 18               |
-| X-08 | P2   | 19               |
+| ID   | Pri  | Step         |
+| ---- | ---- | ------------ |
+| F-01 | P2   | 32           |
+| F-02 | P2   | 28           |
+| F-03 | P2   | 25           |
+| F-04 | P2   | 17           |
+| F-05 | P2   | 31           |
+| F-06 | P2   | 26           |
+| F-07 | P2   | 27           |
+| F-08 | P2   | 19, 27       |
+| F-09 | P2   | 27           |
+| F-10 | P2   | 29           |
+| F-11 | P2   | 29           |
+| F-12 | P1   | 18, 20       |
+| F-13 | P1   | 17           |
+| F-14 | P2   | 18, 30       |
+| F-15 | P2   | 30           |
+| F-16 | P2   | 31           |
+| F-17 | P2   | 15           |
+| F-18 | P2   | 13, 15       |
+| F-19 | P2   | 28           |
+| F-20 | P1   | 22           |
+| F-21 | P2   | 15           |
+| F-22 | P1   | 21, 23, 24   |
+| F-23 | P1   | 21           |
+| B-01 | Done | 10           |
+| B-02 | P1   | 19           |
+| B-03 | P1   | 19           |
+| B-04 | P2   | 15           |
+| B-05 | P1   | 20           |
+| B-06 | P1   | 17           |
+| B-07 | P1   | 17           |
+| B-08 | P2   | 15           |
+| V-01 | P2   | 13           |
+| V-02 | P3   | 27           |
+| V-03 | P2   | 31           |
+| V-04 | P2   | 26           |
+| V-05 | P2   | 15           |
+| V-06 | P2   | 13           |
+| V-07 | P2   | 31           |
+| V-08 | P2   | 14           |
+| V-09 | P2   | 14 + areas   |
+| V-10 | P2   | 14           |
+| V-11 | P2   | 13, 20       |
+| V-12 | P2   | 15           |
+| R-01 | P1   | 13           |
+| R-02 | P1   | 14           |
+| R-03 | P1   | 13, 14       |
+| R-04 | P1   | 19           |
+| R-05 | P2   | every step   |
+| X-01 | P2   | 33           |
+| X-02 | P3   | 33           |
+| X-03 | P3   | after 1.0    |
+| X-04 | P2   | 16           |
+| X-05 | P2   | 33 + ongoing |
+| X-06 | P3   | 28           |
+| X-07 | P2   | 18           |
+| X-08 | P2   | 19           |
 
 **Old quirks** (`docs/phase-2/inventory.md` section 1):
 
@@ -224,34 +228,35 @@ does it.
 | B1-B8, B12-B16, B19, B28, B31                              | Fix in the core; every changed number in a before/after table for the user | 19   |
 | B3 (empty question: 0 for the grade, left out of RTTI)     | Verify; probably intended, ask the user with an example                    | 19   |
 | B10, B11, B12 (rapport numbers)                            | Fix when the rapport switches to the core                                  | 19b  |
-| B17, B18 (Cijfer onder)                                    | Fix with the opdrachten-genereren rework                                   | 26   |
-| B20 (empty lists: availability vs fit)                     | Fix                                                                        | 26   |
-| B23 (hex/exponent score input)                             | Fix                                                                        | 21   |
+| B17, B18 (Cijfer onder)                                    | Fix with the opdrachten-genereren rework                                   | 30   |
+| B20 (empty lists: availability vs fit)                     | Fix                                                                        | 30   |
+| B23 (hex/exponent score input)                             | Fix                                                                        | 25   |
 | B27 (volgnummer > 99)                                      | Won't (unlikely)                                                           | -    |
 | B29 (calcGrade bounds)                                     | Verify, fix if not equivalent                                              | 19   |
-| B30 (partial warning)                                      | Fix                                                                        | 21   |
+| B30 (partial warning)                                      | Fix                                                                        | 25   |
 | T4, T10 (rapport crashes on edge data)                     | Verify, fix                                                                | 17   |
 | T5, T6 (Typst values, float noise)                         | Fix (T6 visible); T5 keep unless it bites                                  | 17   |
 | T7 (fractional scores truncated in the scoretabel)         | Fix (visible wrong data)                                                   | 17   |
-| T8 (footer "/ 2"), T9 (histogram texts), T25 (lang)        | Fix                                                                        | 17   |
+| T8 (footer "/ 2"), T25 (lang)                              | Fix                                                                        | 17   |
+| T9 (histogram texts)                                       | Fix with the rapport numbers in the core (user 2026-11-07)                 | 19b  |
 | T19, T20                                                   | Keep (rare; editor warns)                                                  | -    |
-| T23 (batch reports only the first failure)                 | Fix                                                                        | 17   |
+| T23 (batch reports only the first failure)                 | Fix with the opdrachten-genereren rework (user 2026-11-07)                 | 30   |
 | T24 (merge drops PDF metadata)                             | Won't                                                                      | -    |
 | D4, D16, D17                                               | Verify                                                                     | 19   |
 | D7 (active year shared)                                    | Fix: per user (F-21)                                                       | 15   |
 | D11 (image changes not watched)                            | P3                                                                         | -    |
 | D20 (presence race, files never deleted)                   | Fix with the `aanwezigheid/` rename                                        | 18   |
 | D24 (dead store handlers), D26 (deleteFile result ignored) | Fix                                                                        | 19   |
-| D27 (image copy without subfolders)                        | Verify                                                                     | 26   |
-| D28 (photo name vs user id), D29 (watermark always SVG)    | Fix                                                                        | 24   |
-| U5                                                         | Fix                                                                        | 21   |
-| U10                                                        | Refactor                                                                   | 27   |
+| D27 (image copy without subfolders)                        | Verify                                                                     | 30   |
+| D28 (photo name vs user id), D29 (watermark always SVG)    | Fix                                                                        | 28   |
+| U5                                                         | Fix                                                                        | 25   |
+| U10                                                        | Refactor                                                                   | 31   |
 | U11 (filter listeners pile up)                             | Fix                                                                        | 15   |
 | U12, U14, U15                                              | Fixed by the dialog component                                              | 14   |
 | U13, U16                                                   | Verify superseded, remove dead code                                        | 15   |
-| U17 (smaller observations)                                 | Ask the user what is meant                                                 | 26   |
-| U18                                                        | = V-02                                                                     | 23   |
-| Backlog robustness, Typst, tests (inventory section 2)     | Into step 29 unless a step above names them                                | 29   |
+| U17 (smaller observations)                                 | Ask the user what is meant                                                 | 30   |
+| U18                                                        | = V-02                                                                     | 27   |
+| Backlog robustness, Typst, tests (inventory section 2)     | Into step 29 unless a step above names them                                | 33   |
 
 ## 5. Areas
 
@@ -271,15 +276,15 @@ Steps are cut along these areas. The files listed are the current main ones.
 
 ## 6. Steps
 
-The steps are in `PLAN-2.md` (steps 12-29, each one or two 5-hour sessions). This file keeps the
+The steps are in `PLAN-2.md` (steps 12-33, each one or two 5-hour sessions). This file keeps the
 item lists; `PLAN-2.md` decides the order and the scope per session.
 
 ## 7. Decisions
 
 All decided (2026-11-04); details in `PLAN-2.md` section 1 and
-`docs/adr/0010-phase-2-decisions.md`: 1 Rust core; 2 0.x per step, 1.0 at the end; 3 real-data
+`docs/adr/0010-phase-2-decisions.md`: 1 Rust core; 2 0.x per step, 1.0 at the end (step 33); 3 real-data
 test only for steps that touch data; 4 minimum app version in `school.json`; 5 old goldens
-replaced step by step; 6 AI assistant in step 28; 7 theme, accent, divider and active year per
+replaced step by step; 6 AI assistant in step 32; 7 theme, accent, divider and active year per
 user in `gebruikers/<id>.json`; 8 data v3 renames `fotos/` and `users/`; 9 trend arrow = best
 attempt of the latest counted test minus the weighted year average; 10 existing resits get the
 original's observaties in the v3 migration; 11 exam fields `kind: "toets" | "po"` and

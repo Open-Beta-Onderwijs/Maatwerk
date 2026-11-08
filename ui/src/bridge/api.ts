@@ -254,7 +254,8 @@ export interface MaatwerkApi {
   /** Writes an error the UI did not handle to the log file (text and stack, no data). */
   logUiError(message: string): Promise<void>;
   /** v1 -> v2 after a backup, only while the folder needs it (startup screen). */
-  migrateDataFolder(): Promise<MigrationResult>;
+  /** `dryRun`: what would change, nothing written (shown before the admin confirms). */
+  migrateDataFolder(dryRun?: boolean): Promise<MigrationResult>;
   /** `validate-data` on the open folder (admin, "Gegevenscontrole"). */
   validateDataFolder(): Promise<DataCheck>;
   /** JSON files read with a missing or wrong stamp since start (C19). */

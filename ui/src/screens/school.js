@@ -3,7 +3,7 @@
 import { toast, escHtml } from '../app.js';
 import { ICONS } from '../utils/icons.js';
 
-// Image types the data folder takes for fotos/ (maatwerk-core IMAGE_EXTS) and Typst can show.
+// Image types the data folder takes for afbeeldingen/ (maatwerk-core IMAGE_EXTS) and Typst can show.
 const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
 const IMAGE_EXTS_TEXT = 'PNG-, JPG-, GIF-, SVG- of WebP';
 const LOGO_ACCEPT = IMAGE_EXTS.map((ext) => `.${ext}`).join(',');
@@ -267,7 +267,7 @@ async function saveImageField(file, fileBaseName, field, school, container) {
     );
     return;
   }
-  const relPath = `fotos/${fileBaseName}.${ext}`;
+  const relPath = `afbeeldingen/${fileBaseName}.${ext}`;
 
   const dataUrl = await readFileAsDataUrl(file);
   const base64 = dataUrl.split(',')[1];

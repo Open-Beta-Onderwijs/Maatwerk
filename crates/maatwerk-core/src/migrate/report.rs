@@ -69,6 +69,17 @@ pub fn report_text(
         count(Action::Delete)
     );
 
+    if !report.notes.is_empty() {
+        let _ = writeln!(
+            out,
+            "\nObservaties bij inhaal- en herkansingstoetsen ({}):",
+            report.notes.len()
+        );
+        for n in &report.notes {
+            let _ = writeln!(out, "  - {n}");
+        }
+    }
+
     let _ = writeln!(
         out,
         "\nMeldingen bij het omzetten ({}):",

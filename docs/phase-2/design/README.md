@@ -33,6 +33,9 @@ UI text stays Dutch, decimal comma, as everywhere in the app.
 | 13 Scores                    | score-entry modal: sticky parts, centred                                               | V-06, V-10                         |
 | 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                         | V-11, F-12                         |
 | 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                        | F-15                               |
+| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                           | F-22                               |
+| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                         | F-20, F-22                         |
+| 18 POScores                  | PO score table, projectgroep grading modal                                             | F-22                               |
 
 ## 2. Design tokens
 
@@ -468,6 +471,69 @@ Resultaten: the GEMIDDELDE row at the bottom plus a STANDAARDDEVIATIE row, same 
   200+ emoji, F-15). Fixed height.
 - **Opdracht:** Naam, Beschrijving, Schoolsoort, Vakken, Jaarlagen, Observaties (emoji chips);
   footer "Inhoud bewerken in de editor" (left), Annuleren, Opslaan.
+
+- **Toetstype (F-23):** the observatie form gets TOETSTYPE chips "Toets" and "PO" (one or both,
+  never none; new observaties default to Toets). Test screens list only Toets observaties, PO
+  screens (rubric editor, PO grading) only PO; the Observaties tab gets a filter chip
+  "Alle toetstypes / Toets / PO". Opdracht bewerken lists all.
+
+### 4.13 Praktische opdrachten and rubrics (F-20, F-22)
+
+Boards 16-18. Decisions: `PLAN-2.md` 16-25.
+
+- **Tab bar:** a sixth teacher tab **Rubrics** between Toetsen and Observaties, icon a table
+  (rounded rectangle with two horizontal lines and one vertical line). Not for the admin.
+- **Rubrics screen:** title, "+ Rubric toevoegen", filters (schoolsoort, jaarlaag, vak). Cards
+  (`minmax(420px, 1fr)`): name (link, accent), "Gymnasium · Natuurkunde · jaarlaag 4, 5, 6",
+  category chips ("Theorie 8"; bonus chips tinted accent, diagnostic grey italic), "4
+  categorieën · 17 punten · bonus 4", lock pill "In gebruik bij 2 PO's" (tooltip: max and soort
+  locked). Actions: edit, Dupliceren, delete (disabled with tooltip while in use).
+- **Rubric editor (dialog, 1180 × fixed height):** header row Naam, Schoolsoort chips, Vak,
+  Jaarlagen, Totaal ("17 punten + 4 bonus"); when in use an amber pill "In gebruik bij n PO's:
+  maxima en soort liggen vast" and those controls disabled. Body (`--surface` cards on a light
+  ground), per category: drag handle, Naam, max (number), segmented Normaal / Bonus /
+  Diagnostisch, delete; the **level display**: a number row with one box per score 0..max, then
+  one bar per level spanning exactly its boxes (2 px inset, so 0–2 and 3–4 sit side by side
+  without touching), labelled "range title"; scores not covered show red in the number row;
+  then the level rows (min–max number fields, Titel optional, Uitleg; "+ Niveau (n van 5)"; the
+  rule as a hint); category observaties (type PO) as chips with "+ Observatie". An error line
+  per category in red ("Twee niveaus beginnen bij 2 · Niet gedekt: 3"); Opslaan disabled with a
+  footer note while any category is invalid. Footer: general observaties (type PO).
+- **Toetsen:** "+ PO toevoegen" (secondary) left of "+ Toets toevoegen". **PO card** as a test
+  card: striped badge (SE: striped anti colour), kind pill, meta line ending in "9
+  projectgroepen", the rubric line ("Rubric Onderzoeksverslag · 4 categorieën · 17 punten ·
+  bonus 4") where a test shows its RTTI split, mean ± SD · % onvoldoende. Same ⋮ menu (Nieuwe
+  poging = herkansing only).
+- **PO toevoegen, step 1 "Gegevens":** exactly the Nieuwe toets layout (Naam, PTA, D,
+  Schooljaar; Schoolsoort; the three-column grid Jaarlaag + Periode / Weging / Weging SE); the
+  last row has the **Rubric** select in the first column (only matching rubrics) and the filter
+  note in columns 2–3; no Aantal vragen, no N-term. Below: a preview card with the category chips
+  and "Cijfer = 10 × punten ÷ 17, minimaal 1,0 en hoogstens 10,0. Bonuspunten tellen mee in de
+  punten, niet in het maximum."
+- **Step 2 "Projectgroepen" (dialog 1180 × fixed height):** left panel "Niet ingedeeld" (count,
+  class filter chips, students with a class tag and "+"; clicking adds to the active
+  projectgroep); right: "n projectgroepen · leerlingen uit verschillende klassen mogen samen",
+  "Willekeurig indelen…", "+ Projectgroep"; projectgroep cards (3 columns; active one with a 2 px
+  accent border): editable name, count "2 lln" / "1 ll", members with class tag and ×; empty
+  card hint. Footer: "← Gegevens", the amber note "n leerlingen nog niet ingedeeld…", Annuleren,
+  Opslaan.
+- **Scores invoeren (PO):** as 4.10, but rows grouped by projectgroep (heading row with name,
+  count, "Beoordelen" button and a status: Beoordeeld / Bezig / Nog niet beoordeeld); category
+  columns with headings slanted at −55° ("Theorie (8)"; bonus in accent); then Punten ("13 /
+  17"), Groep ±, Eigen ± (tooltip with the line names), Cijfer (grade cell). Read-only cells;
+  double-click a row opens grading. Header: ?, "Projectgroepen", "PO bewerken", close. Footer
+  hint "Scores per categorie wijzig je via Beoordelen…" and the save status.
+- **Projectgroep beoordelen (dialog 1240 × fixed height):** title "<naam> beoordelen", members
+  with classes, "● Automatisch opgeslagen · 14:32". Per category a card: name (+ BONUS pill),
+  score "6 / 8"; the level cards side by side (range, optional title, explanation); every level
+  whose interval contains the value is highlighted (accent border and tint, others 60 %
+  opacity); a slider 0..max (step 1) with the numbers below; right column (300 px) the category
+  observaties (toggle chips) and "Opmerking bij <categorie>". Then "Commentaar op het werk als
+  geheel" and a two-column card: "Bonus / malus voor de hele projectgroep" (lines: Omschrijving,
+  grade points, ×; "+ Regel") and "Bonus / malus per leerling". Sticky footer: general observaties
+  (toggle chips), "Punten 14 / 17 → projectgroep 7,7", each member's grade on its grade colour,
+  "← Vorige", "Volgende →", "Klaar". Autosave every 10 s and on closing.
+- **PO rapport:** designed later (step 24).
 
 ## 5. Logo (V-12)
 

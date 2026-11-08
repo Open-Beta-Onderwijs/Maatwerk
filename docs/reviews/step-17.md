@@ -143,7 +143,9 @@ Checked and found correct:
 - **m1 fixed:** blessing needs `MAATWERK_BLESS_IDS=<case>,<case>`; every other case is compared.
 - **m2 backlog:** the reference's page text of the two blessed cases is in git history (before
   `f26d77f`); a `reference.pdf` / `port.pdf` split is in `docs/backlog.md` "From Step 17".
-- **m3 asked the user** (T9, T23: PLAN-2 step 17 does not list them).
+- **m3 resolved (user 2026-11-07):** T9 moved to step 19b (rapport numbers in the core), T23 to
+  step 26 (opdrachten-genereren rework); PLAN-2 and ROADMAP 4.6 updated.
 - **m4, m5, n2, n3, n4, n5 fixed** (literal 40/70 fallback; `_num` for the n-term, output
   unchanged; doc lines; no symlinked watermark; `render-warnings.test.ts`).
-- **n1** shown to the user with the golden check.
+- **n1** shown to the user with the golden check; the user approved the goldens, padding page
+  included (2026-11-07).

@@ -1,0 +1,253 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: rubrics</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-card{transition:box-shadow .15s}
+.mw-card:hover{box-shadow:0 4px 14px rgba(16,24,40,.08)}
+.mw-ib{width:32px;height:32px;border-radius:7px;border:1px solid #E1E4EA;background:#FFFFFF;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#1B2230;padding:0}
+.mw-lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;letter-spacing:.6px;color:#5D6675}
+.mw-in{height:36px;box-sizing:border-box;padding:0 10px;border:1px solid #C9CED8;border-radius:8px;background:#FFFFFF;font:inherit;font-size:14px;font-weight:400;letter-spacing:0;color:#1B2230}
+.mw-num{width:46px;height:30px;box-sizing:border-box;border:1px solid #C9CED8;border-radius:7px;text-align:center;font:inherit;font-size:13px;color:#1B2230;background:#FFFFFF}
+.mw-seg{display:inline-flex;border:1px solid #C9CED8;border-radius:8px;overflow:hidden;height:30px}
+.mw-seg button{border:0;border-right:1px solid #E1E4EA;font:inherit;font-size:12px;cursor:pointer;padding:0 10px}
+.mw-seg button:last-child{border-right:0}
+</style>
+</helmet>
+<div style="width: 100%; height: 960px; position: relative; display: flex; flex-direction: column; background: #F5F6F8; color: #1B2230; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <header style="height: 56px; flex: none; display: flex; align-items: stretch; gap: 2px; padding: 0 20px 0 24px; background: #FFFFFF; border-bottom: 1px solid #E1E4EA">
+    <div style="display: flex; align-items: center; gap: 10px; margin-right: 22px">
+      <svg width="28" height="28" viewBox="0 0 1024 1024" aria-hidden="true"><rect x="159" y="159" width="706" height="706" rx="100" transform="rotate(45 512 512)" fill="#2E3E50"></rect><polygon fill="#FFFFFF" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon><polygon fill="#FFFFFF" transform="rotate(180 512 511)" points="92,494 348,238 428,238 428,404 595,238 675,238 675,494 595,494 595,328 428,494 348,494 348,328 182,494"></polygon></svg>
+      <span aria-label="Maatwerk" style="font-family: 'Archivo Black', sans-serif; font-size: 19px; letter-spacing: .5px; color: #2E3E50">M<span style="font-size: 0.72em">AATWERK</span></span>
+    </div>
+    <sc-for list="{{tabs}}" as="tb" hint-placeholder-count="6">
+      <span style="display: flex; align-items: center; gap: 7px; padding: 0 12px; font-weight: {{tb.w}}; color: {{tb.color}}; box-shadow: inset 0 -3px 0 {{tb.bar}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: {{tb.ic}}">
+          <sc-if value="{{tb.i0}}" hint-placeholder-val="{{ false }}"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></sc-if>
+          <sc-if value="{{tb.i1}}" hint-placeholder-val="{{ false }}"><circle cx="9" cy="8" r="3.5"></circle><path d="M2 20.5a7 7 0 0 1 14 0"></path><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"></path><path d="M18.5 14a7 7 0 0 1 3.5 6.5"></path></sc-if>
+          <sc-if value="{{tb.i2}}" hint-placeholder-val="{{ false }}"><path d="M14 2.5H6.5A1.5 1.5 0 0 0 5 4v16a1.5 1.5 0 0 0 1.5 1.5h6"></path><path d="M14 2.5 19 7.5V11"></path><path d="M14 2.5v5h5"></path><path d="M8.5 11h5M8.5 14.5h3"></path><circle cx="17.5" cy="17.5" r="4.2"></circle><path d="M16.4 16.2h2.2l-1.5 3"></path></sc-if>
+          <sc-if value="{{tb.i3}}" hint-placeholder-val="{{ false }}"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9.5h18M3 15h18M9 4v16"></path></sc-if>
+          <sc-if value="{{tb.i4}}" hint-placeholder-val="{{ false }}"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></sc-if>
+          <sc-if value="{{tb.i5}}" hint-placeholder-val="{{ false }}"><path d="M9 3.5h3.5a2 2 0 1 1 4 0H20v5.5a2 2 0 1 0 0 4V20h-5.5a2 2 0 1 0-4 0H5v-5.5a2 2 0 1 1 0-4V3.5z"></path></sc-if>
+        </svg>{{tb.label}}
+      </span>
+    </sc-for>
+    <div style="flex: 1"></div>
+    <div style="display: flex; align-items: center"><span style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #2F6FD6; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px">MK</span></div>
+  </header>
+
+  <main style="flex: 1; min-height: 0; overflow-y: auto">
+    <div style="position: sticky; top: 0; z-index: 2; background: #F5F6F8">
+      <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px 14px; display: flex; align-items: center; gap: 10px">
+        <h1 style="margin: 0; font-size: 24px; font-weight: 650; color: #2560BF">Rubrics</h1>
+        <div style="flex: 1"></div>
+        <button onClick="{{openNew}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #2F6FD6; background: #2F6FD6; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">+ Rubric toevoegen</button>
+      </div>
+      <div style="max-width: 1360px; margin: 0 auto; padding: 0 40px 14px; display: flex; gap: 8px; border-bottom: 1px solid #E1E4EA">
+        <sc-for list="{{filters}}" as="f" hint-placeholder-count="3"><button style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 1px solid #E1E4EA; border-radius: 999px; background: #FFFFFF; font: inherit; font-size: 13px; cursor: pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"></path></svg>{{f}}</button></sc-for>
+      </div>
+    </div>
+    <div style="max-width: 1360px; margin: 0 auto; padding: 18px 40px 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 12px">
+      <sc-for list="{{rubrics}}" as="r" hint-placeholder-count="4">
+        <article class="mw-card" style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px">
+          <div style="display: flex; align-items: flex-start; gap: 10px">
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+              <a href="#" onClick="{{r.open}}" style="font-weight: 700; font-size: 16px; color: #2560BF; text-decoration: none">{{r.name}}</a>
+              <span style="font-size: 13px; color: #5D6675">{{r.meta}}</span>
+            </div>
+            <button class="mw-ib" aria-label="Bewerken" onClick="{{r.open}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="m13.5 6.5 4 4"></path></svg></button>
+            <button class="mw-ib" aria-label="Dupliceren" title="Dupliceren"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg></button>
+            <button class="mw-ib" aria-label="Verwijderen" title="{{r.delTitle}}" disabled="{{r.delDisabled}}" style="color: {{r.delColor}}; cursor: {{r.delCursor}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button>
+          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{r.cats}}" as="c" hint-placeholder-count="5"><span style="font-size: 12px; padding: 2px 8px; border-radius: 999px; background: {{c.bg}}; color: {{c.fg}}; font-style: {{c.fs}}">{{c.label}}</span></sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #5D6675">
+            <span style="font-variant-numeric: tabular-nums">{{r.summary}}</span>
+            <div style="flex: 1"></div>
+            <sc-if value="{{r.used}}" hint-placeholder-val="{{ false }}"><span title="Categorieën en maximumscores liggen vast; beschrijvingen en intervallen blijven aanpasbaar" style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid #E1E4EA"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>{{r.usedLabel}}</span></sc-if>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </main>
+
+  <sc-if value="{{editOpen}}" hint-placeholder-val="{{ true }}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 10; background: rgba(16,24,40,.42)"></div>
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-rb" style="position: absolute; z-index: 11; top: 64px; left: 50%; transform: translateX(-50%); width: 1180px; height: 864px; display: flex; flex-direction: column; background: #FFFFFF; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28); overflow: hidden">
+      <div style="flex: none; padding: 18px 24px 16px; border-bottom: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <h2 id="mw-rb" style="margin: 0; flex: 1; font-size: 22px; color: #2560BF">Rubric bewerken</h2>
+          <sc-if value="{{locked}}" hint-placeholder-val="{{ true }}"><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #7A5300; padding: 4px 10px; border-radius: 999px; background: #FFF6E0; border: 1px solid #F0C36D"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>In gebruik bij 2 PO's: categorieën en maxima liggen vast</span></sc-if>
+          <button aria-label="Sluiten" onClick="{{close}}" style="width: 36px; height: 36px; border: 0; background: transparent; color: #5D6675; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: flex-start">
+          <label class="mw-lbl" style="width: 300px">NAAM<input class="mw-in" value="Onderzoeksverslag natuurkunde"></label>
+          <div class="mw-lbl">SCHOOLSOORT<div style="height: 36px; display: flex; align-items: center; gap: 6px"><sc-for list="{{types}}" as="st" hint-placeholder-count="3"><span style="height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid {{st.bd}}; background: {{st.bg}}; color: {{st.fg}}; font-size: 12px; font-weight: {{st.w}}; letter-spacing: 0; display: inline-flex; align-items: center">{{st.l}}</span></sc-for></div></div>
+          <div class="mw-lbl">VAK<select class="mw-in"><option>Natuurkunde</option></select></div>
+          <div class="mw-lbl">JAARLAGEN<div style="height: 36px; display: flex; align-items: center; gap: 4px"><sc-for list="{{jl}}" as="j" hint-placeholder-count="6"><span style="width: 30px; height: 28px; border-radius: 7px; border: 1px solid {{j.bd}}; background: {{j.bg}}; color: {{j.fg}}; font-size: 12px; font-weight: {{j.w}}; letter-spacing: 0; display: inline-flex; align-items: center; justify-content: center">{{j.l}}</span></sc-for></div></div>
+          <div style="flex: 1"></div>
+          <div class="mw-lbl" style="align-items: flex-end">TOTAAL<div style="height: 36px; display: flex; align-items: center; font-size: 14px; font-weight: 600; letter-spacing: 0; color: #1B2230; font-variant-numeric: tabular-nums">{{total}}</div></div>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; background: #FAFBFC">
+        <sc-for list="{{cats}}" as="c" hint-placeholder-count="3">
+          <section style="background: #FFFFFF; border: 1px solid {{c.border}}; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span aria-hidden="true" title="Slepen om te ordenen" style="color: #9AA1AD; cursor: grab; font-size: 16px; letter-spacing: -2px">⋮⋮</span>
+              <input class="mw-in" value="{{c.name}}" aria-label="Naam categorie" disabled="{{lockedAttr}}" style="width: 240px; font-weight: 600; background: {{c.lockBg}}">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #5D6675">max
+                <input class="mw-num" value="{{c.max}}" aria-label="Maximumscore" disabled="{{lockedAttr}}" style="background: {{c.lockBg}}"></span>
+              <div class="mw-seg" role="radiogroup" aria-label="Soort">
+                <sc-for list="{{c.kinds}}" as="k" hint-placeholder-count="3"><button role="radio" aria-checked="{{k.on}}" disabled="{{lockedAttr}}" style="background: {{k.bg}}; color: {{k.fg}}; font-weight: {{k.w}}">{{k.l}}</button></sc-for>
+              </div>
+              <div style="flex: 1"></div>
+              <sc-if value="{{c.hasError}}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size: 12px; color: #B42318; font-weight: 600">{{c.error}}</span></sc-if>
+              <button class="mw-ib" aria-label="Categorie verwijderen" disabled="{{lockedAttr}}" style="color: {{c.delColor}}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg></button>
+            </div>
+            <div aria-hidden="true" style="margin-left: 28px; display: flex; flex-direction: column; gap: 4px">
+              <div style="display: grid; grid-template-columns: repeat({{c.cells}}, minmax(0, 1fr)); gap: 0; font-size: 11px; text-align: center; font-variant-numeric: tabular-nums">
+                <sc-for list="{{c.scale}}" as="sv" hint-placeholder-count="9"><span style="margin: 0 2px; padding: 1px 0; border-radius: 4px; color: {{sv.fg}}; font-weight: {{sv.w}}; background: {{sv.bg}}">{{sv.n}}</span></sc-for>
+              </div>
+              <div style="position: relative; height: {{c.barH}}px; background-image: {{c.guides}}; border-radius: 4px">
+                <sc-for list="{{c.bars}}" as="b" hint-placeholder-count="3"><div title="{{b.t}}" style="position: absolute; left: calc({{b.l}}% + 2px); width: calc({{b.w}}% - 4px); top: {{b.top}}px; height: 16px; box-sizing: border-box; border-radius: 4px; background: #2F6FD626; border: 1px solid #2F6FD6; color: #1F55AD; font-size: 10px; font-weight: 600; line-height: 14px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{b.t}}</div></sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-left: 28px">
+              <sc-for list="{{c.levels}}" as="lv" hint-placeholder-count="3">
+                <div style="display: grid; grid-template-columns: 116px 200px minmax(0, 1fr) 32px; gap: 10px; align-items: center">
+                  <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #5D6675">
+                    <input class="mw-num" value="{{lv.min}}" aria-label="Van" onChange="{{lv.setMin}}" style="border-color: {{lv.minBd}}">–<input class="mw-num" value="{{lv.max}}" aria-label="Tot en met" onChange="{{lv.setMax}}" style="border-color: {{lv.maxBd}}">
+                  </span>
+                  <input class="mw-in" style="height: 30px; font-size: 13px; font-weight: 600" value="{{lv.title}}" placeholder="Titel (optioneel)" aria-label="Titel">
+                  <input class="mw-in" style="height: 30px; font-size: 13px" value="{{lv.text}}" placeholder="Uitleg" aria-label="Uitleg">
+                  <button class="mw-ib" aria-label="Niveau verwijderen" style="width: 30px; height: 30px; color: #5D6675">×</button>
+                </div>
+              </sc-for>
+              <div style="display: flex; align-items: center; gap: 12px">
+                <button disabled="{{c.addDisabled}}" style="height: 28px; padding: 0 12px; border-radius: 7px; border: 1px dashed #C9CED8; background: #FFFFFF; color: #2560BF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; opacity: {{c.addOpacity}}">+ Niveau ({{c.nLevels}} van 5)</button>
+                <span style="font-size: 12px; color: #5D6675">Intervallen mogen overlappen, maar delen geen begin of eind en dekken samen 0 tot en met {{c.max}}.</span>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: 28px; padding-top: 10px; border-top: 1px solid #EEF0F3">
+              <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675; margin-right: 4px">OBSERVATIES</span>
+              <sc-for list="{{c.obs}}" as="o" hint-placeholder-count="2"><span style="height: 26px; padding: 0 10px 0 6px; border-radius: 999px; border: 1px solid #2F6FD6; background: #2F6FD614; color: #2560BF; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px"><span aria-hidden="true" style="font-size: 14px">{{o.e}}</span>{{o.n}}</span></sc-for>
+              <button style="height: 26px; padding: 0 10px; border-radius: 999px; border: 1px dashed #C9CED8; background: #FFFFFF; color: #2560BF; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">+ Observatie</button>
+            </div>
+          </section>
+        </sc-for>
+        <button disabled="{{lockedAttr}}" style="align-self: flex-start; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px dashed #C9CED8; background: #FFFFFF; color: #2560BF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; opacity: {{addCatOpacity}}">+ Categorie toevoegen</button>
+      </div>
+
+      <div style="flex: none; padding: 12px 24px; border-top: 1px solid #E1E4EA; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">ALGEMENE OBSERVATIES</span>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <sc-for list="{{genObs}}" as="o" hint-placeholder-count="5"><span style="height: 28px; padding: 0 12px 0 6px; border-radius: 999px; border: 1px solid {{o.bd}}; background: {{o.bg}}; color: {{o.fg}}; font-size: 13px; font-weight: {{o.w}}; display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="font-size: 15px">{{o.e}}</span>{{o.n}}</span></sc-for>
+        </div>
+      </div>
+      <div style="flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 24px 16px; border-top: 1px solid #E1E4EA">
+        <sc-if value="{{anyError}}" hint-placeholder-val="{{ false }}"><span style="flex: 1; font-size: 13px; color: #B42318">Los eerst de intervallen op die rood zijn; daarna kun je opslaan.</span></sc-if>
+        <button onClick="{{close}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid #C9CED8; background: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button disabled="{{saveDisabled}}" style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{saveBg}}; background: {{saveBg}}; color: #FFFFFF; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button>
+      </div>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"inGebruik":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { open: true, cats: [
+      { name: 'Introductie', max: 3, kind: 'Normaal', obs: [['❓', 'Onderzoeksvraag onduidelijk']], levels: [[0, 1, 'Matige introductie', 'Achtergrondinformatie ontbreekt, onderzoeksvraag vaag.'], [2, 2, 'Redelijk', 'Onderzoeksvraag duidelijk, achtergrond beperkt.'], [3, 3, 'Goed', 'Heldere onderzoeksvraag met relevante achtergrond.']] },
+      { name: 'Theorie', max: 8, kind: 'Normaal', obs: [['➗', 'Formule verkeerd omgeschreven']], levels: [[0, 3, 'Matig', 'Theorie ontbreekt grotendeels of bevat fouten.'], [2, 5, 'Voldoende', 'Belangrijkste formules genoemd, niet toegepast.'], [4, 7, 'Goed', 'Formules toegepast op de eigen proef.'], [6, 8, 'Uitstekend', 'Theorie verbonden met de resultaten.']] },
+      { name: 'Figuren', max: 6, kind: 'Normaal', obs: [['📈', 'Grafiek: aslabels vergeten']], levels: [[0, 2, '', 'Figuren ontbreken of zijn onleesbaar.'], [4, 4, '', 'Figuren aanwezig, assen niet volledig.'], [5, 6, '', 'Figuren volledig, met eenheden en bijschrift.']] },
+      { name: 'Originaliteit', max: 4, kind: 'Bonus', obs: [], levels: [[0, 1, 'Standaard', 'Voert de proef uit zoals beschreven.'], [2, 4, 'Eigen inbreng', 'Eigen variant of extra meting.']] },
+    ] };
+  }
+  check(c) {
+    const L = c.levels, errs = [];
+    const mins = L.map((l) => l[0]), maxs = L.map((l) => l[1]);
+    const dupMin = mins.filter((v, i) => mins.indexOf(v) !== i), dupMax = maxs.filter((v, i) => maxs.indexOf(v) !== i);
+    const bad = L.map((l) => l[0] > l[1] || l[0] < 0 || l[1] > c.max);
+    const gaps = []; let run = null;
+    for (let v = 0; v <= c.max; v++) {
+      const cov = L.some((l) => l[0] <= v && v <= l[1]);
+      if (!cov) { if (run === null) run = v; } else if (run !== null) { gaps.push([run, v - 1]); run = null; }
+    }
+    if (run !== null) gaps.push([run, c.max]);
+    if (dupMin.length) errs.push('Twee niveaus beginnen bij ' + dupMin[0]);
+    if (dupMax.length) errs.push('Twee niveaus eindigen bij ' + dupMax[0]);
+    if (bad.some(Boolean)) errs.push('Interval buiten 0–' + c.max);
+    if (gaps.length) errs.push('Niet gedekt: ' + gaps.map((g) => g[0] === g[1] ? g[0] : g[0] + '–' + g[1]).join(', '));
+    return { errs, gaps, dupMin, dupMax, bad };
+  }
+  renderVals() {
+    const locked = !!this.props.inGebruik;
+    const T = ['Leerlingen', 'Groepen', 'Toetsen', 'Rubrics', 'Observaties', 'Opdrachten'];
+    const tabs = T.map((label, i) => { const on = label === 'Rubrics'; const r = { label, w: on ? 600 : 400, color: on ? '#1B2230' : '#5D6675', ic: on ? '#2560BF' : 'currentColor', bar: on ? '#2560BF' : 'transparent' }; for (let k = 0; k < 6; k++) r['i' + k] = k === i; return r; });
+    const kc = (k) => k === 'Bonus' ? { bg: '#EAF1FC', fg: '#2560BF', fs: 'normal' } : k === 'Diagnostisch' ? { bg: '#EEF0F3', fg: '#5D6675', fs: 'italic' } : { bg: '#F5F6F8', fg: '#1B2230', fs: 'normal' };
+    const RB = [
+      ['Onderzoeksverslag natuurkunde', 'Gymnasium · Natuurkunde · jaarlaag 4, 5, 6', [['Introductie', 3, 'Normaal'], ['Theorie', 8, 'Normaal'], ['Figuren', 6, 'Normaal'], ['Originaliteit', 4, 'Bonus']], 2],
+      ['Practicumverslag onderbouw', 'Gymnasium · Natuurkunde · jaarlaag 2, 3', [['Doel', 2, 'Normaal'], ['Uitvoering', 6, 'Normaal'], ['Meetresultaten', 6, 'Normaal'], ['Conclusie', 4, 'Normaal']], 1],
+      ['Profielwerkstuk (voorlopig)', 'Gymnasium · Natuurkunde · jaarlaag 6', [['Onderzoeksvraag', 5, 'Normaal'], ['Methode', 10, 'Normaal'], ['Resultaten', 10, 'Normaal'], ['Discussie', 8, 'Normaal'], ['Reflectie', 4, 'Diagnostisch']], 0],
+      ['Poster zonnestelsel', 'Gymnasium · Natuurkunde · jaarlaag 1', [['Inhoud', 8, 'Normaal'], ['Vormgeving', 4, 'Normaal'], ['Presentatie', 6, 'Normaal']], 0],
+    ];
+    const rubrics = RB.map(([name, meta, cs, used]) => {
+      const norm = cs.filter((c) => c[2] === 'Normaal').reduce((s, c) => s + c[1], 0), bonus = cs.filter((c) => c[2] === 'Bonus').reduce((s, c) => s + c[1], 0);
+      return {
+        name, meta, used: used > 0, usedLabel: 'In gebruik bij ' + used + (used === 1 ? ' PO' : " PO's"),
+        delDisabled: used ? true : undefined, delColor: used ? '#C9CED8' : '#B42318', delCursor: used ? 'not-allowed' : 'pointer', delTitle: used ? 'In gebruik: niet te verwijderen' : 'Verwijderen',
+        cats: cs.map(([n, m, k]) => ({ label: n + ' ' + m + (k === 'Bonus' ? ' · bonus' : k === 'Diagnostisch' ? ' · diag' : ''), ...kc(k) })),
+        summary: cs.length + ' categorieën · ' + norm + ' punten' + (bonus ? ' · bonus ' + bonus : ''),
+        open: () => this.setState({ open: true }),
+      };
+    });
+    const chip = (l, on) => ({ l, bd: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', fg: on ? '#2560BF' : '#1B2230', w: on ? 600 : 400 });
+    let anyError = false;
+    const cats = this.state.cats.map((c, ci) => {
+      const v = this.check(c); if (v.errs.length) anyError = true;
+      const rows = c.levels.length;
+      const upd = (li, idx) => (e) => { const n = parseInt(e.target.value, 10); const cs = this.state.cats.map((x) => ({ ...x, levels: x.levels.map((l) => [...l]) })); if (!isNaN(n)) cs[ci].levels[li][idx] = n; this.setState({ cats: cs }); };
+      return {
+        name: c.name, max: c.max, border: v.errs.length ? '#F2B8B5' : '#E1E4EA', lockBg: locked ? '#F5F6F8' : '#FFFFFF',
+        kinds: ['Normaal', 'Bonus', 'Diagnostisch'].map((k) => ({ l: k, on: k === c.kind ? 'true' : 'false', bg: k === c.kind ? '#2F6FD6' : '#FFFFFF', fg: k === c.kind ? '#FFFFFF' : '#1B2230', w: k === c.kind ? 700 : 400 })),
+        hasError: v.errs.length > 0, error: v.errs.join(' · '), delColor: locked ? '#C9CED8' : '#B42318',
+        barH: 4 + rows * 20, cells: c.max + 1,
+        guides: `repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / ${c.max + 1} - 1px), #EEF0F3 calc(100% / ${c.max + 1} - 1px), #EEF0F3 calc(100% / ${c.max + 1}))`,
+        scale: Array.from({ length: c.max + 1 }, (_, n) => { const gap = v.gaps.some((g) => g[0] <= n && n <= g[1]); return { n, fg: gap ? '#B42318' : '#5D6675', w: gap ? 700 : 400, bg: gap ? '#FBE1DE' : '#F5F6F8' }; }),
+        bars: c.levels.map((l, li) => ({ l: (Math.max(0, l[0]) / (c.max + 1)) * 100, w: (Math.max(1, l[1] - l[0] + 1) / (c.max + 1)) * 100, top: 2 + li * 20, t: (l[0] === l[1] ? l[0] : l[0] + '–' + l[1]) + (l[2] ? '  ' + l[2] : '') })),
+        levels: c.levels.map((l, li) => ({ min: l[0], max: l[1], title: l[2], text: l[3], setMin: upd(li, 0), setMax: upd(li, 1), minBd: v.dupMin.includes(l[0]) || v.bad[li] ? '#D92D20' : '#C9CED8', maxBd: v.dupMax.includes(l[1]) || v.bad[li] ? '#D92D20' : '#C9CED8' })),
+        nLevels: rows, addDisabled: rows >= 5 ? true : undefined, addOpacity: rows >= 5 ? 0.45 : 1,
+        obs: c.obs.map(([e, n]) => ({ e, n })),
+      };
+    });
+    const norm = this.state.cats.filter((c) => c.kind === 'Normaal').reduce((s, c) => s + c.max, 0), bonus = this.state.cats.filter((c) => c.kind === 'Bonus').reduce((s, c) => s + c.max, 0);
+    const G = [['📏', 'Eenheid vergeten', true], ['🎯', 'Significantie antwoord verkeerd', true], ['🧮', 'Rekenfout', false], ['📐', 'Grafiek: verkeerde schaal', false], ['🔄', 'Meetwaarde verkeerd omgerekend', false]];
+    return {
+      tabs, rubrics, cats, anyError, locked, lockedAttr: locked ? true : undefined, addCatOpacity: locked ? 0.45 : 1,
+      editOpen: this.state.open, close: () => this.setState({ open: false }), openNew: () => this.setState({ open: true }),
+      filters: ['Alle schoolsoorten', 'Alle jaarlagen', 'Alle vakken'],
+      types: ['Havo', 'Vwo', 'Gymnasium'].map((l) => chip(l, l === 'Gymnasium')),
+      jl: [1, 2, 3, 4, 5, 6].map((n) => chip(String(n), n >= 4)),
+      total: norm + ' punten' + (bonus ? ' + ' + bonus + ' bonus' : ''),
+      genObs: G.map(([e, n, on]) => ({ e, n, bd: on ? '#2F6FD6' : '#E1E4EA', bg: on ? '#2F6FD614' : '#FFFFFF', fg: on ? '#2560BF' : '#1B2230', w: on ? 600 : 400 })),
+      saveDisabled: anyError ? true : undefined, saveBg: anyError ? '#9AA1AD' : '#2F6FD6',
+    };
+  }
+}
+</script>
+</body>
+</html>

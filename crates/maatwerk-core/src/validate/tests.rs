@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! `validate-data` on the migrated golden folder (`tests/fixtures/migrate/v2`) and on
+//! `validate-data` on the migrated golden folder (`tests/fixtures/migrate/v3`) and on
 //! deliberately broken copies of it.
 
 use std::fs;
@@ -11,7 +11,7 @@ use tempfile::TempDir;
 use super::*;
 
 fn golden() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrate/v2/data")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrate/v3/data")
 }
 
 fn copy_tree(from: &Path, to: &Path) {
@@ -47,7 +47,7 @@ fn has(report: &ValidationReport, kind: IssueKind, path: &str, text: &str) -> bo
 #[test]
 fn the_migrated_fixture_has_no_errors_only_its_known_strays() {
     let report = validate(&golden()).unwrap();
-    assert_eq!(report.schema_version, 2);
+    assert_eq!(report.schema_version, 3);
     assert_eq!(report.errors(), 0, "{:#?}", report.issues);
     let paths: Vec<(&str, IssueKind)> = report
         .issues
@@ -317,4 +317,101 @@ fn b24_a_repeated_question_id_is_reported() {
         report.issues
     );
     assert_eq!(report.errors(), 0, "{:#?}", report.issues);
+}
+
+/// Edits the exam of the fixture as JSON (the stamp breaks, which is only a warning).
+fn edit_exam(data: &Path, rel: &str, change: impl FnOnce(&mut serde_json::Map<String, Value>)) {
+    let mut exam: Value = serde_json::from_slice(&fs::read(data.join(rel)).unwrap()).unwrap();
+    change(exam.as_object_mut().unwrap());
+    fs::write(data.join(rel), serde_json::to_vec_pretty(&exam).unwrap()).unwrap();
+}
+
+#[test]
+fn step_18_exam_fields_are_checked() {
+    let (_tmp, data) = copy();
+    let rel = "2025-2026/exams/nat-toets-1-2025-2026.json";
+    edit_exam(&data, rel, |e| {
+        e.insert("kind".into(), "PO".into());
+        e.insert("diagnostic".into(), true.into());
+        e.insert("type".into(), "pta".into());
+        e.insert("weging".into(), 2.into());
+        e.insert("obs_from_parent".into(), true.into());
+        e.insert(
+            "opdrachtenVraag".into(),
+            serde_json::json!([
+                { "id": "c1", "vraag": "q2", "onder": 1, "opdrachten": ["opdracht_1756713600200"] },
+                { "id": "c2", "vraag": "q9", "onder": 2, "opdrachten": ["weg"] },
+                { "vraag": "q1" }
+            ]),
+        );
+    });
+    let report = validate(&data).unwrap();
+    for (kind, text) in [
+        (IssueKind::Shape, "Soort toets \"PO\" is niet"),
+        (
+            IssueKind::Shape,
+            "diagnostische toets kan geen PTA-toets zijn",
+        ),
+        (IssueKind::Shape, "telt niet mee, maar heeft een weging"),
+        (IssueKind::Shape, "dit is geen inhaal of herkansing"),
+        (
+            IssueKind::Reference,
+            "opdrachtenVraag: vraag q9 bestaat niet",
+        ),
+        (
+            IssueKind::Reference,
+            "Opdracht weg (bij een vraag) bestaat niet",
+        ),
+        (IssueKind::Shape, "opdrachtenVraag: onvolledige koppeling"),
+    ] {
+        assert!(
+            has(&report, kind, rel, text),
+            "{text}: {:#?}",
+            report.issues
+        );
+    }
+    assert!(!has(&report, IssueKind::Reference, rel, "vraag q2"));
+
+    let resit = "2025-2026/exams/toets-herkansing-1.json";
+    let clean = validate(&copy().1).unwrap();
+    assert!(issues_for(&clean, resit).is_empty(), "{:#?}", clean.issues);
+}
+
+#[test]
+fn step_18_v2_folders_left_in_a_v3_folder_are_named() {
+    let (_tmp, data) = copy();
+    for rel in ["fotos/oud.png", "Users/admin.json"] {
+        fs::create_dir_all(data.join(rel).parent().unwrap()).unwrap();
+        fs::write(data.join(rel), "{}").unwrap();
+    }
+    let report = validate(&data).unwrap();
+    for rel in ["fotos/oud.png", "Users/admin.json"] {
+        assert!(
+            has(
+                &report,
+                IssueKind::Stray,
+                rel,
+                "Overgebleven uit gegevensversie 2"
+            ),
+            "{rel}: {:#?}",
+            report.issues
+        );
+    }
+    assert_eq!(report.errors(), 0);
+}
+
+#[test]
+fn review_18_m6_a_windows_made_images_folder_is_in_use() {
+    let (_tmp, data) = copy();
+    fs::rename(data.join("afbeeldingen"), data.join("tmp")).unwrap();
+    fs::rename(data.join("tmp"), data.join("Afbeeldingen")).unwrap();
+    let report = validate(&data).unwrap();
+    assert!(
+        !report
+            .issues
+            .iter()
+            .any(|i| i.path.starts_with("Afbeeldingen/")),
+        "{:#?}",
+        report.issues
+    );
 }

@@ -3,7 +3,8 @@
 /**
  * presence.js — Which colleagues are using the app right now, and where.
  *
- * Own state is written to data/users/<userId>.json (via main.js): a heartbeat
+ * Own state is written to data/aanwezigheid/<userId>.json (format v3; users/
+ * before): a heartbeat
  * every 15 s, right away when the score modal opens or closes, and at most
  * every 5 s for cursor moves and score edits inside it. Colleagues' files
  * arrive as 'presence' sync events.
@@ -65,7 +66,7 @@ export async function start(userId) {
   own = { scoreModal: null };
   write();
   heartbeatTimer = setInterval(write, HEARTBEAT_MS);
-  const all = (await window.maatwerk.readAllJson('users')) ?? [];
+  const all = (await window.maatwerk.readAllJson('aanwezigheid')) ?? [];
   for (const state of all) receive(state, true);
   notify();
 }

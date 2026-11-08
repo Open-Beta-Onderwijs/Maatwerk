@@ -81,8 +81,8 @@ them, as it does OneDrive's.
 ## The data folder
 
 - The data folder holds everything: school settings, users, groups, students, exams,
-  scores, observaties, opdrachten (JSON files and Typst folders, format v2:
-  `docs/reference/data-files-v2.md`). Printed PDFs go to `rapporten\` next to it.
+  scores, observaties, opdrachten (JSON files and Typst folders, format v3 from 0.9:
+  `docs/reference/data-files-v3.md`, on top of `data-files-v2.md`). Printed PDFs go to `rapporten\` next to it.
 - Every teacher's app watches the folder and shows colleagues' changes; a save that would
   overwrite a colleague's newer change is refused with a message, never done silently.
 - Where it is, in this order: `MAATWERK_DATA_DIR` (tests, a copy), the folder chosen on this PC,

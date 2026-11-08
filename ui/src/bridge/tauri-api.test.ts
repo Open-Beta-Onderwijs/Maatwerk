@@ -146,7 +146,7 @@ describe('TauriApi', () => {
     const { api } = fakeBackend(() => null);
     expect(await api.ensureDir('a')).toBeUndefined();
     expect(await api.writeLocalSession({ a: 1 })).toBeUndefined();
-    expect(await api.savePhoto('fotos/a.png', 'AA==')).toBeUndefined();
+    expect(await api.savePhoto('afbeeldingen/a.png', 'AA==')).toBeUndefined();
     expect(await api.updatePresence('jan', { online: true })).toBeUndefined();
   });
 
@@ -175,7 +175,7 @@ describe('TauriApi', () => {
   it('null-on-error methods: readLocalSession, readPhotoAsDataUrl', async () => {
     const { api } = fakeBackend(() => err('io'));
     expect(await api.readLocalSession()).toBeNull();
-    expect(await api.readPhotoAsDataUrl('fotos/a.png')).toBeNull();
+    expect(await api.readPhotoAsDataUrl('afbeeldingen/a.png')).toBeNull();
   });
 
   it('updatePresence: null user and missing state are sent as null; errors are only logged', async () => {

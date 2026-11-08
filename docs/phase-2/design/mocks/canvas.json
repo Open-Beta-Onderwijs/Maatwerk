@@ -115,6 +115,30 @@
       "w": 1440,
       "x": 4560,
       "y": 6960
+    },
+    "Rubrics.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "16 · Rubrics: nieuwe tab en rubric bewerken (intervallen live gecontroleerd)",
+      "w": 1440,
+      "x": 0,
+      "y": 8280
+    },
+    "PO.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "17 · PO in Toetsen: kaart, PO toevoegen (rubric) en projectgroepen",
+      "w": 1440,
+      "x": 1520,
+      "y": 8280
+    },
+    "POScores.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "18 · PO scores invoeren en projectgroep beoordelen (schuifjes, bonus/malus)",
+      "w": 1440,
+      "x": 3040,
+      "y": 8280
     }
   },
   "createdOnFiles": {
@@ -164,6 +188,13 @@
       "text": "Ronde 5: beheer, scores invoeren, toets-, observatie- en opdrachtmodals",
       "x": 0,
       "y": 6720
+    },
+    "r6": {
+      "kind": "title1",
+      "maxW": 4480,
+      "text": "Ronde 6: praktische opdrachten en rubrics",
+      "x": 0,
+      "y": 8040
     }
   },
   "order": [
@@ -181,7 +212,10 @@
     "Beheer.dc.html",
     "Scores.dc.html",
     "Toetsmodals.dc.html",
-    "ObsOpdModals.dc.html"
+    "ObsOpdModals.dc.html",
+    "Rubrics.dc.html",
+    "PO.dc.html",
+    "POScores.dc.html"
   ],
   "pages": [],
   "title": "Maatwerk redesign"

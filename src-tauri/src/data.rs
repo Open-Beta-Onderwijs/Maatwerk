@@ -34,6 +34,9 @@ pub struct MigrationResult {
     pub deleted: u32,
     /// Dutch, for the admin.
     pub warnings: Vec<String>,
+    /// Dutch: the observaties each inhaal and herkansing gets, before and after (decision 13);
+    /// shown before the admin confirms (dry run) and in the report.
+    pub notes: Vec<String>,
     /// The check right after the migration.
     pub validation: Option<DataCheck>,
     /// The Dutch report next to the backup zip (`None` when it could not be written).
@@ -99,13 +102,19 @@ fn backup_dir(app: &AppHandle) -> Res<PathBuf> {
         .map_err(|e| CommandError::internal(format!("no local app data folder: {e}")))
 }
 
-/// Migrates the data folder to v2 after zipping it to the local backup folder, then checks it.
-/// Only while the folder could not be opened because it needs the migration; the UI restarts
-/// the app afterwards.
+/// Migrates the data folder to the current format after zipping it to the local backup folder,
+/// then checks it. Only while the folder could not be opened because it needs the migration; the
+/// UI restarts the app afterwards. `dry_run`: only what would change, nothing written (the
+/// screen shows it before the admin confirms).
 #[tauri::command]
 #[specta::specta]
-pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Res<MigrationResult> {
-    let backups = backup_dir(&app)?;
+pub async fn migrate_data_folder(
+    state: State<'_, Shared>,
+    app: AppHandle,
+    dry_run: Option<bool>,
+) -> Res<MigrationResult> {
+    let dry_run = dry_run.unwrap_or(false);
+    let backups = (!dry_run).then(|| backup_dir(&app)).transpose()?;
     blocking(state, move |c| {
         // Only a folder that could not be opened because it is v1 (review 7a m5).
         match c.storage() {
@@ -119,11 +128,12 @@ pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Re
         }
         let data_dir = c.data_dir().to_path_buf();
         let now = local_now();
-        let report = migrate::migrate(&data_dir, Some(&backups), now)?;
+        let report = migrate::migrate(&data_dir, backups.as_deref(), now)?;
         tracing::info!(
-            "migrated {} from v{} (backup {:?}, {} changes)",
+            "migration of {} from v{} (applied {}, backup {:?}, {} changes)",
             display_path(&data_dir),
             report.from_version,
+            report.applied,
             report.backup,
             report.changes.len()
         );
@@ -152,6 +162,7 @@ pub async fn migrate_data_folder(state: State<'_, Shared>, app: AppHandle) -> Re
             moved: count(Action::Move),
             deleted: count(Action::Delete),
             warnings: report.warnings,
+            notes: report.notes,
             validation,
             report_file,
         })
