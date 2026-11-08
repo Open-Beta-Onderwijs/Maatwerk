@@ -28,12 +28,15 @@ npm run build:exe                        # target/release/maatwerk.exe (portable
 
 ## Layout
 
+- `crates/maatwerk-grades`: the grade rules, pure (`docs/phase-2/step-19-grade-rules.md`). Never
+  changed without the user's OK. `crates/maatwerk-grades-wasm` compiles them for the UI (ADR-0011).
 - `crates/maatwerk-core`: pure Rust. **Never** depends on `tauri` (CI checks this).
 - `crates/maatwerk-cli`: headless tools on top of core.
 - `src-tauri/` (`maatwerk-app`, binary `maatwerk`): thin shell. Command handlers parse args, call
   core, map errors. No business logic.
 - `ui/`: Vite + TypeScript (JS UI migrates gradually). Layering:
-  `ui -> bridge -> Tauri -> commands -> maatwerk-core`.
+  `ui -> bridge -> Tauri -> commands -> maatwerk-core`; the grade rules are the exception
+  (WebAssembly, no I/O).
 - `tools/`: fixture/golden generators, policy scripts. `docs/`: STATE, ADRs, reviews, reference.
 - `_reference/`: gitignored, **read-only** clone of the Electron app. Never edit.
 

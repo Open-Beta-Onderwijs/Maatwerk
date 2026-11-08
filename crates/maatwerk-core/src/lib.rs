@@ -25,6 +25,7 @@ pub mod validate;
 pub mod watcher;
 
 pub use error::{Error, Result};
+pub use maatwerk_grades as grades;
 
 /// Version of the core crate, shown in the UI for diagnostics.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

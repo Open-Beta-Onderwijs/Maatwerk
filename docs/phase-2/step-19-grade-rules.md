@@ -8,21 +8,21 @@ Notation: `S` = points scored, `L` = maximum (normal questions), `n` = n-term.
 
 ## 1. What goes into the core
 
-| Logic                                            | Where it lives now (copies)                                                                                            |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| Grade of one attempt, RTTI of one attempt        | `domain/grades.ts` `calcGrade`, `calcResults`, `examResults`                                                           |
-| Best attempt                                     | **5:** `domain/attempts.ts` `bestAttempt`, `resolveBestAttempts`; `groep-leerlingen.js`, `groepen.js`, `profiel.js`    |
-| Weighted year average                            | **3:** `profiel.js` `yearAvg`, `groep-leerlingen.js` `calcWeightedAvg`, `groepen.js`                                   |
-| SE average                                       | **2:** `profiel.js` `ptaAvg`, `groep-leerlingen.js`                                                                    |
-| Mean, SD, % onvoldoende                          | **5:** `toetsen.js` (2x), `toets-overzicht.js`, `groepen.js`, `domain/scoregrid.ts`                                    |
-| Rounding, pass/fail                              | `domain/format.ts`, `domain/grade-colors.ts` `isFail`, scattered `Math.round`/`toFixed`                                |
-| Score grid totals and summary rows               | `domain/scoregrid.ts` (parses the displayed text back)                                                                 |
-| Histogram, grade groups, boxplot                 | `toets-overzicht.js`, `utils/grades.ts`, histogram again in `rapport.typ`                                              |
-| RTTI statistics, question analysis               | `toets-overzicht.js` (3x), `profiel.js`                                                                                |
-| Jaarlaag averages                                | `profiel.js`                                                                                                           |
-| Rapport numbers (class average, advice brackets) | `domain/rapport.ts`; ranking in `rapport.typ`                                                                          |
-| "The student's group"                            | **3 rules:** `store.js`, `domain/rapport.ts`, `toets-overzicht.js`                                                     |
-| Trend arrow                                      | new                                                                                                                    |
+| Logic                                            | Where it lives now (copies)                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Grade of one attempt, RTTI of one attempt        | `domain/grades.ts` `calcGrade`, `calcResults`, `examResults`                                                        |
+| Best attempt                                     | **5:** `domain/attempts.ts` `bestAttempt`, `resolveBestAttempts`; `groep-leerlingen.js`, `groepen.js`, `profiel.js` |
+| Weighted year average                            | **3:** `profiel.js` `yearAvg`, `groep-leerlingen.js` `calcWeightedAvg`, `groepen.js`                                |
+| SE average                                       | **2:** `profiel.js` `ptaAvg`, `groep-leerlingen.js`                                                                 |
+| Mean, SD, % onvoldoende                          | **5:** `toetsen.js` (2x), `toets-overzicht.js`, `groepen.js`, `domain/scoregrid.ts`                                 |
+| Rounding, pass/fail                              | `domain/format.ts`, `domain/grade-colors.ts` `isFail`, scattered `Math.round`/`toFixed`                             |
+| Score grid totals and summary rows               | `domain/scoregrid.ts` (parses the displayed text back)                                                              |
+| Histogram, grade groups, boxplot                 | `toets-overzicht.js`, `utils/grades.ts`, histogram again in `rapport.typ`                                           |
+| RTTI statistics, question analysis               | `toets-overzicht.js` (3x), `profiel.js`                                                                             |
+| Jaarlaag averages                                | `profiel.js`                                                                                                        |
+| Rapport numbers (class average, advice brackets) | `domain/rapport.ts`; ranking in `rapport.typ`                                                                       |
+| "The student's group"                            | **3 rules:** `store.js`, `domain/rapport.ts`, `toets-overzicht.js`                                                  |
+| Trend arrow                                      | new                                                                                                                 |
 
 **Stays in the UI:** decimal-comma formatting, colours, charts, score input parsing (B23: step 25),
 "Cijfer onder" rules (B17, B18: step 30; they call the core's grade). **D4, D16, D17** are about
@@ -43,17 +43,17 @@ My understanding: this is the CvTE rule. The code checks bounds in sequence inst
 (quirk B29). **Tested: identical on 453,840 combinations** (n 0..3, L 1..120, half points). They
 differ only for n above 4, which the UI does not allow.
 
-| S / L | n   | raw   | grade (shown)  | Why            |
-| ----- | --- | ----- | -------------- | -------------- |
-| 20/40 | 1   | 5,50  | 5,50 (5,5)     |                |
-| 30/40 | 1   | 7,75  | 7,75 (7,8)     |                |
-| 20/40 | 1,5 | 6,00  | 6,00 (6,0)     |                |
-| 4/40  | 2   | 2,90  | 2,80 (2,8)     | upper bound    |
-| 38/40 | 3   | 11,55 | 9,775 (9,8)    | upper bound    |
-| 4/40  | 0,5 | 1,40  | 1,45 (1,5)     | lower bound    |
-| 38/40 | 0,5 | 9,05  | 9,10 (9,1)     | lower bound    |
-| 39/40 | 0   | 8,775 | 9,55 (9,6)     | lower bound    |
-| 0/40  | 3   | 3,00  | 1,00 (1,0)     | upper bound    |
+| S / L | n   | raw   | grade (shown) | Why         |
+| ----- | --- | ----- | ------------- | ----------- |
+| 20/40 | 1   | 5,50  | 5,50 (5,5)    |             |
+| 30/40 | 1   | 7,75  | 7,75 (7,8)    |             |
+| 20/40 | 1,5 | 6,00  | 6,00 (6,0)    |             |
+| 4/40  | 2   | 2,90  | 2,80 (2,8)    | upper bound |
+| 38/40 | 3   | 11,55 | 9,775 (9,8)   | upper bound |
+| 4/40  | 0,5 | 1,40  | 1,45 (1,5)    | lower bound |
+| 38/40 | 0,5 | 9,05  | 9,10 (9,1)    | lower bound |
+| 39/40 | 0   | 8,775 | 9,55 (9,6)    | lower bound |
+| 0/40  | 3   | 3,00  | 1,00 (1,0)    | upper bound |
 
 ### Rounding: two findings
 
@@ -69,28 +69,28 @@ differ only for n above 4, which the UI does not allow.
 
 ### Questions, N, empty, invalid
 
-| Input (4 questions of 10 points, n = 1)  | Points | Grade | R / T1 / T2 / I     |
-| ---------------------------------------- | ------ | ----- | ------------------- |
-| 8, 6, 4, 2                               | 20/40  | 5,5   | 80 / 60 / 40 / 20   |
-| 8, 6, empty, empty                       | 14/40  | 4,2   | 80 / 60 / NVT / NVT |
-| 8, 6, N, N                               | 14/40  | 4,2   | 80 / 60 / 0 / 0     |
-| N, N, N, N                               | 0/40   | 1,0   | 0 / 0 / 0 / 0       |
-| all empty                                | 0/40   | none  | NVT                 |
-| 12 (invalid), 6, 4, 2                    | 12/40  | 3,7   | 0 / 60 / 40 / 20    |
-| only 12 (invalid)                        | 0/40   | none  | 0 / NVT / NVT / NVT |
+| Input (4 questions of 10 points, n = 1) | Points | Grade | R / T1 / T2 / I     |
+| --------------------------------------- | ------ | ----- | ------------------- |
+| 8, 6, 4, 2                              | 20/40  | 5,5   | 80 / 60 / 40 / 20   |
+| 8, 6, empty, empty                      | 14/40  | 4,2   | 80 / 60 / NVT / NVT |
+| 8, 6, N, N                              | 14/40  | 4,2   | 80 / 60 / 0 / 0     |
+| N, N, N, N                              | 0/40   | 1,0   | 0 / 0 / 0 / 0       |
+| all empty                               | 0/40   | none  | NVT                 |
+| 12 (invalid), 6, 4, 2                   | 12/40  | 3,7   | 0 / 60 / 40 / 20    |
+| only 12 (invalid)                       | 0/40   | none  | 0 / NVT / NVT / NVT |
 
 The overview and vraaganalyse skip N (B1) and count over-max values (B2), unlike the above.
 
 Bonus and diagnostic questions (normal 10 + 10, bonus 5, diag 5):
 
-| Input                | Points | Grade | Note                          |
-| -------------------- | ------ | ----- | ----------------------------- |
-| 7, 7                 | 14/20  | 7,3   |                               |
-| 7, 7, bonus 3        | 17/20  | 8,7   | bonus in S, not in L          |
-| 10, 6, bonus 5       | 21/20  | 10,0  | S >= L gives 10               |
-| only bonus 3         | 3/20   | 2,4   | a grade from bonus alone      |
-| only diag 3          | 0/20   | none  | diag never counts             |
-| 7, 7, diag 5         | 14/20  | 7,3   |                               |
+| Input          | Points | Grade | Note                     |
+| -------------- | ------ | ----- | ------------------------ |
+| 7, 7           | 14/20  | 7,3   |                          |
+| 7, 7, bonus 3  | 17/20  | 8,7   | bonus in S, not in L     |
+| 10, 6, bonus 5 | 21/20  | 10,0  | S >= L gives 10          |
+| only bonus 3   | 3/20   | 2,4   | a grade from bonus alone |
+| only diag 3    | 0/20   | none  | diag never counts        |
+| 7, 7, diag 5   | 14/20  | 7,3   |                          |
 
 ### Override
 
@@ -173,3 +173,10 @@ Filled in as the user answers (2026-11-08).
     counted with weging and weging SE; best attempt counts. The grade function comes in step 21a.
 20. **Architecture:** a pure Rust crate, native for core, CLI and rapport, WebAssembly for the UI
     and the mock (`docs/adr/0011-grades-in-webassembly.md`).
+
+21. **Averages of averages (group card, jaarlaag average):** of the students' year averages as
+    shown, rounded to 1 decimal; SD and % onvoldoende too.
+22. **A bad weging in a file:** negative counts like 0 (the test falls out); not a number counts as
+    1; Gegevenscontrole lists it; the data is not rewritten.
+23. **An unknown question `kind` in a file:** counts as a normal question; Gegevenscontrole lists
+    it; the data is not rewritten.

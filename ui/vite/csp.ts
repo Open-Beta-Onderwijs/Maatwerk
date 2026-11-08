@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Content Security Policy (ADR-0002 section 7). No remote origins, no inline
-// scripts or styles, no eval. Styles set through the CSSOM (el.style.x = …,
+// scripts or styles, no eval; 'wasm-unsafe-eval' only compiles the grade rules (ADR-0011). Styles set through the CSSOM (el.style.x = …,
 // as Chart.js and the grid do) are not affected by style-src.
 
 import type { Plugin } from 'vite';
 
 const COMMON = {
   'default-src': ["'self'"],
-  'script-src': ["'self'"],
+  'script-src': ["'self'", "'wasm-unsafe-eval'"],
   'style-src': ["'self'"],
   'img-src': ["'self'", 'data:', 'blob:'],
   'font-src': ["'self'"],

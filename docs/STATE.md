@@ -1,15 +1,41 @@
 # State
 
-Last updated: 2026-11-08 (steps 17 and 18 merged into local `main`, PR open) Branch: `step/18-data-v3`
-(from `step/17-rapport-fixes`, which is from `main` `a62ea7e`)
+Last updated: 2026-11-08 (step 19a) Branch: `step/19-domain-core` (from local `main` `2542e41`)
 Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
 (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
 `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Next action:** CI on the PR `release/v0.9.0` -> `main` (steps 16, 17, 18); the user merges it.
-Then step 19.
+**Next action:** 19b (below). Also open: the user merges PR #10 `release/v0.9.0` -> `main` (CI green on all jobs, 2026-11-08); step 19 branches from local
+`main`, which equals that PR's head.
+
+## Step 19 progress (Domain logic, 0.10)
+
+User instruction (2026-11-08): run everything about grades, averages and scores by the user, with
+formulae, examples and a recommendation, as a multiple-choice question; assume nothing. The 23
+decisions: `docs/phase-2/step-19-grade-rules.md` section 6. **Never change a number or rule in step
+19 without asking.**
+
+1. **Done** (`8427148`): analysis, the user's decisions, ADR-0011 (WebAssembly instead of Tauri
+   commands: synchronous, and one implementation also in the mock).
+2. **Done** (`202c84e`): `crates/maatwerk-grades`: 71 tests from the approved tables, 10 against the
+   reference goldens (every difference names its decision).
+3. **Done:** `maatwerk_core::grades`, CLI `stats` (read-only; student numbers only);
+   `crates/maatwerk-grades-wasm` (JSON `dispatch`, tiny `abi.rs`, no new dependencies);
+   `ui/vite/grades-wasm.ts` (cargo build once per Vite run, inlined as a base64 module);
+   `ui/src/domain/core.ts` (`initCore` at start, then synchronous `coreCall`, `round1`, ...); CSP
+   `'wasm-unsafe-eval'`; wasm target in `rust-toolchain.toml`. Run npm from PowerShell: Vite now
+   runs cargo (Git Bash's `link` breaks build scripts). No screen uses the rules yet.
+
+**19b, to do:** switch the screens, rapport and score grid to the core, one area per commit; delete
+the JS copies (`domain/grades.ts`, `attempts.ts`, copies in `groepen.js`, `groep-leerlingen.js`,
+`profiel.js`, `toetsen.js`, `toets-overzicht.js`, `scoregrid.ts`, `isFail`, `gradeGroupIdx`,
+`makeHistBins`, `boxStats`); `formatGrade`/`formatFixed` on `round1`; `rapport.typ` ranking text
+and I row; Gegevenscontrole warnings for an unknown RTTI tag, a bad weging and an unknown question
+kind (decisions 18, 22, 23); check D4, D16, D17;
+measure the grid with the JSON calls (a batch call if needed); before/after table on the fixtures
+and the user's OK before the merge; manual check on a copy of real data (decision 8 of `PLAN-2.md`).
 
 **User (2026-11-08):** the migration ran fine on a copy of the real data (local exe 0.9.0).
 Leeradvies score column 3 cm -> 2,5 cm (`16439a2`, goldens re-blessed; scores up to

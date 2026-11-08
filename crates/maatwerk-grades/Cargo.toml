@@ -9,7 +9,8 @@ publish.workspace = true
 
 [dependencies]
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
+# float_roundtrip: a number read from JSON is exactly the number the UI sent.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
 
 [lints]
 workspace = true

@@ -28,14 +28,16 @@ jobs:
           command: check licenses bans sources advisories
       - name: Rust toolchain (from rust-toolchain.toml)
         run: rustup toolchain install
-      - name: maatwerk-core must not depend on tauri
+      - name: maatwerk-core and maatwerk-grades must not depend on tauri
         shell: bash
         run: |
           set -euo pipefail
-          tree="$(cargo tree -p maatwerk-core --target all -e normal,build --prefix none)"
-          if grep -E '^tauri' <<<"$tree"; then
-            echo "maatwerk-core depends on tauri"; exit 1
-          fi
+          for crate in maatwerk-core maatwerk-grades; do
+            tree="$(cargo tree -p "$crate" --target all -e normal,build --prefix none)"
+            if grep -E '^tauri' <<<"$tree"; then
+              echo "$crate depends on tauri"; exit 1
+            fi
+          done
       - uses: actions/setup-node@v7
         with:
           node-version: 24

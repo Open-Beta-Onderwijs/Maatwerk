@@ -1,9 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM"],
     "types": ["node"],
     "allowImportingTsExtensions": true
   },
-  "include": ["vite.config.ts", "eslint.config.js", "vite", "tests"]
+  "include": ["vite.config.ts", "eslint.config.js", "vite", "tests", "src/domain/core-wasm.d.ts"]
 }

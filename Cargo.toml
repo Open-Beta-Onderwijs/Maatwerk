@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/maatwerk-grades", "crates/maatwerk-core", "crates/maatwerk-cli", "src-tauri"]
+members = ["crates/maatwerk-grades", "crates/maatwerk-grades-wasm", "crates/maatwerk-core", "crates/maatwerk-cli", "src-tauri"]
 
 [workspace.package]
 version = "0.9.0"

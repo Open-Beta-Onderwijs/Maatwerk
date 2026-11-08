@@ -5,6 +5,8 @@
 // 2026-03-02T10:00 local.
 
 import { freezeClock, setupEnvironment } from '../../tests/reference-harness/environment.mjs';
+import { initCore } from '../src/domain/core';
 
 setupEnvironment();
 freezeClock();
+await initCore();

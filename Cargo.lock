@@ -3274,6 +3274,7 @@ dependencies = [
  "base64 0.23.1",
  "image",
  "lopdf",
+ "maatwerk-grades",
  "notify",
  "password-hash",
  "proptest",
@@ -3301,6 +3302,15 @@ dependencies = [
 name = "maatwerk-grades"
 version = "0.9.0"
 dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "maatwerk-grades-wasm"
+version = "0.9.0"
+dependencies = [
+ "maatwerk-grades",
  "serde",
  "serde_json",
 ]

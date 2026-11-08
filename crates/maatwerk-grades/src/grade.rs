@@ -476,6 +476,21 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn an_unknown_question_kind_counts_as_normal() {
+        // Decision 23.
+        let exam = exam_of(json!({"id": "e", "n_term": 1, "questions": [
+            {"id": "q1", "max_points": 10, "rtti": "R"},
+            {"id": "q2", "max_points": 10, "rtti": "T1", "kind": "x"}
+        ]}));
+        let res = calc_results(&exam, &scores_of(json!({"q1": 8, "q2": 6})), None);
+        assert_eq!(
+            (res.scored, res.normal_max, res.grade),
+            (14.0, 20.0, Some(7.3))
+        );
+        assert_eq!(res.t1, pct(60.0));
+    }
+
+    #[test]
     fn a_po_has_no_rtti() {
         // Decision 19.
         let exam = exam_of(json!({"id": "e", "kind": "po", "questions": [

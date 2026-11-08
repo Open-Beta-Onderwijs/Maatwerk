@@ -45,6 +45,11 @@ fn text<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
     Ok(opt_text(d)?.unwrap_or_default())
 }
 
+/// A map or list that may be `null` or missing in old files.
+fn nullable<'de, D: Deserializer<'de>, T: Default + Deserialize<'de>>(d: D) -> Result<T, D::Error> {
+    Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
+}
+
 fn string_list<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
     Ok(match Value::deserialize(d)? {
         Value::Array(items) => items
@@ -84,6 +89,7 @@ pub struct Question {
 }
 
 impl Question {
+    /// An unknown kind counts as normal (decision 23).
     pub fn kind(&self) -> QuestionKind {
         match self.kind.as_deref() {
             Some("bonus") => QuestionKind::Bonus,
@@ -99,7 +105,7 @@ pub struct Exam {
     pub id: String,
     #[serde(default, deserialize_with = "opt_number")]
     pub n_term: Option<f64>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "nullable")]
     pub questions: Vec<Question>,
     #[serde(default, deserialize_with = "opt_text")]
     pub parent_id: Option<String>,
@@ -202,9 +208,9 @@ pub struct Override {
 /// One student's score file for one vak and year.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct ScoreRecord {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "nullable")]
     pub scores: HashMap<String, QuestionScores>,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "nullable")]
     pub overrides: HashMap<String, Override>,
 }
 

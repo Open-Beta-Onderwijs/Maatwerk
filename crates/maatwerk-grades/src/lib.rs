@@ -19,7 +19,7 @@ pub mod stats;
 pub mod trend;
 
 pub use attempts::{BestEntry, HistoryEntry, best_attempt, resolve_best_attempts};
-pub use averages::{se_average, year_average};
+pub use averages::{mean_of_averages, se_average, stats_of_averages, year_average};
 pub use grade::{Results, RttiPct, calc_grade, calc_results, exam_results};
 pub use groups::student_group;
 pub use model::{Exam, Group, Override, Question, QuestionKind, ScoreRecord, ScoreValue};
