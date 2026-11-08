@@ -187,3 +187,5 @@ Filled in as the user answers (2026-11-08).
 25. **The year's tests (found in review, M4):** every screen and the CLI use all tests of that vak
     and school year that the student has a grade for, so one student has one year average. The
     group overview's columns still show only the group's jaarlaag.
+26. **Average points (found in review, m5):** the grid's average Totaal counts only rows with a
+    grade, as the exam card does.

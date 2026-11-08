@@ -58,6 +58,39 @@ describe('score grid decisions', () => {
   });
 });
 
+describe('score grid decision 26', () => {
+  it('the average Totaal counts only rows with a grade', () => {
+    const exam: Exam = {
+      id: 'e',
+      n_term: 1,
+      questions: [
+        { id: 'q1', max_points: 40, rtti: 'R' },
+        { id: 'd', max_points: 5, rtti: 'R', kind: 'diag' },
+      ],
+    };
+    const width = 12;
+    const row = (a: string, d: string): GridData[number] => {
+      const r: GridData[number] = Array(width).fill('');
+      r[0] = 'x';
+      r[2] = a;
+      r[3] = d;
+      return r;
+    };
+    const grid = [
+      row('20', ''),
+      row('', '3'), // only a diagnostic score: Totaal 0 / 40, no grade
+      Array(width).fill(''),
+      Array(width).fill(''),
+    ] as GridData;
+    recomputeRow(grid, exam, 0);
+    recomputeRow(grid, exam, 1);
+    recomputeSummaryRow(grid, 2, 3, exam);
+    const totaal = 5; // N + 3 with N = 2 questions
+    expect(grid[1]![totaal]).toBe('0 / 40');
+    expect(grid[2]![totaal]).toBe('20,0 / 40');
+  });
+});
+
 describe('scoregrid golden', () => {
   it('normalizeScore', async () => {
     const { inputs } = inputOf<{ inputs: unknown[] }>(goldenCase(golden, 'normalizeScore'));

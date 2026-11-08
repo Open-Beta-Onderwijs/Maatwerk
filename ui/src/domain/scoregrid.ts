@@ -189,7 +189,8 @@ export function recomputeSummaryRow(
   for (let r = 0; r < summaryIdx; r++) {
     const totaalStr = gridData[r]![N + 3 + TOFF];
     const gradeStr = gridData[r]![N + 4 + TOFF];
-    if (totaalStr) {
+    // Only rows with a grade, as on the exam card (decision 26).
+    if (totaalStr && gradeStr && gradeStr !== '—') {
       // The points before " / " in the row's Totaal, half points included (B4, U5).
       const scored = parseDecimalLoose(totaalStr);
       if (!isNaN(scored)) totaals.push(scored);

@@ -374,5 +374,5 @@ there for rules that have changed: add one line at its top pointing to the decis
 - **M4:** the user chose decision 25: all the student's tests; `Store.studentYearAverage`.
 - **M5:** a non-number weging counts as 1. **M6:** `qKind` treats unknown as normal; card totals from the core. **M7:** `classQuestions`, one call per rapport. **M8:** damaged entries are skipped, limits per field.
 - **Fixed:** m1, m3, m4, m7, m10, n1, n2, n4, n5. n8 is in the before/after document.
-- **Open question for the user:** m5.
+- **m5:** the user chose decision 26: only rows with a grade.
 - **Backlog:** m6 (fields sent per call), m8 (message when WebAssembly cannot start), m9 (tests of the screens' wiring), n3, n6, n7.
