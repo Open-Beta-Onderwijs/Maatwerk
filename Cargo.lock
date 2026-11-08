@@ -3298,6 +3298,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "maatwerk-grades"
+version = "0.9.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "markup5ever"
 version = "0.39.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
