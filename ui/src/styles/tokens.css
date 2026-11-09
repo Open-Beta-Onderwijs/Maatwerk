@@ -19,6 +19,7 @@ html[data-theme='dark'] .score-grid {
   --surface-hover: #e6e9ee;
   --border: #e1e4ea;
   --border-strong: #c9ced8;
+  --tree-line: #d5dae1;
   --line: #eef0f3;
   --text: #1b2230;
   --muted: #5d6675;
@@ -114,6 +115,7 @@ html[data-theme='dark'] {
   --surface-hover: #2e343e;
   --border: #30363f;
   --border-strong: #434a57;
+  --tree-line: #434a57;
   --line: #262b33;
   --text: #e7eaf0;
   --muted: #a3abb8;

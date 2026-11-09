@@ -56,6 +56,8 @@ export interface DialogOptions {
   subtitle?: string;
   /** Subtitle as HTML (e.g. an exam badge before the exam name); the caller escapes every text. */
   subtitleHtml?: string;
+  /** HTML before the title block (e.g. an exam badge); the caller escapes every text. */
+  leadHtml?: string;
   /** Extra classes on the dialog element (legacy size classes, area styling). */
   className?: string;
   size?: DialogSize;
@@ -166,6 +168,7 @@ export class Dialog {
       header.className = 'dlg-header';
       header.innerHTML = `
         <div class="dlg-head-row">
+          ${opts.leadHtml ?? ''}
           <div class="dlg-head-text">
             <div class="dlg-title-row">
               <h2 class="dlg-title" id="${titleId}">${esc(opts.title)}</h2>

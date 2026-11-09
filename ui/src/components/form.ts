@@ -67,10 +67,15 @@ export function isTicked(box: HTMLElement): boolean {
   return box.dataset.checked === 'true';
 }
 
+/** Set a tick box. */
+export function setTick(box: HTMLElement, on: boolean): void {
+  box.dataset.checked = String(on);
+  box.setAttribute('aria-pressed', String(on));
+}
+
 /** Flip a tick box; returns the new state. */
 export function toggleTick(box: HTMLElement): boolean {
   const on = !isTicked(box);
-  box.dataset.checked = String(on);
-  box.setAttribute('aria-pressed', String(on));
+  setTick(box, on);
   return on;
 }

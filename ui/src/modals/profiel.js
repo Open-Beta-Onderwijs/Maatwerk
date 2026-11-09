@@ -18,7 +18,7 @@ const kindColor = (kind) => cssToken(testKindToken(kind));
 const examTypeColor = (exam) => kindColor(testKind(exam));
 import { formatGrade, parseDecimalLoose } from '../domain/format';
 import { meanOfAverages, pooledRtti, rttiPercents, seAverage } from '../domain/statistics';
-import { computeExamStats } from '../screens/toetsen.js';
+import { computeExamStats } from '../screens/toetsen';
 import { leerlingenState } from '../screens/leerlingen.js';
 
 /**
