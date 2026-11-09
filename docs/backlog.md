@@ -433,3 +433,16 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - m8: a message when WebAssembly cannot start; today an empty window. Check the oldest supported macOS WebKit for `'wasm-unsafe-eval'`.
 - m9: tests of how the screens call the rules (the rules are tested; which arguments a screen passes is not).
 - n3, n6, n7 in `docs/reviews/step-19.md`.
+
+## From Step 20
+
+- `attempt` of a new resit is `resits.length + 2`: after a resit is deleted the next one can repeat
+  a number. The order on the tree is then decided by `volgnummer` and insertion order. Harmless so
+  far; a number one above the highest would be cleaner. Reference behaviour, unchanged.
+- Two attempts with the same first letter (two inhaals, or "Anders" starting with an I) get the same
+  code, `501-I`. Reference behaviour, unchanged.
+- A new resit copies every field of the original with `...parent`, `_meta` too. Works today; a
+  cleaner copy would leave `_meta` out.
+- `toets-overzicht.js` (1200+ lines) stays JS until step 29, its area step (R-05 rule, step 13).
+- Review 20 m5: `aria-pressed` on Schoolsoort, Jaarlaag, Periode, Subcategorie and the question row buttons (state is only a class).
+- Review 20 m6, tests still missing: confirm when only an attempt has scores; locked top fields unchanged on saving; Verzamelkaart `obs_ids` and resit title; wiskunde interlock in Nieuwe toets; keyboard focus on Soort poging.
