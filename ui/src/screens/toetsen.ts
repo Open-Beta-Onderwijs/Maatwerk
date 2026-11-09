@@ -340,5 +340,9 @@ export async function renderToetsenList() {
       }
     }
   }
-  void Promise.allSettled(fills).then(endStats);
+  void Promise.allSettled(fills).then(() => {
+    // A read that failed leaves no placeholder behind.
+    container.querySelectorAll('.exam-stats:has(> .skel)').forEach((el) => el.remove());
+    endStats();
+  });
 }

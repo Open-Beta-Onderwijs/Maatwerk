@@ -429,13 +429,10 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
               ...obsBefore.filter((id) => !offered.has(id)),
             ];
         const resits: Exam[] = hasAttempts ? Store.getResitsSync(exam.id, toetsYear) : [];
-        for (const obsId of deselectedObs) {
-          for (const e of [exam, ...resits]) {
-            await Store.removeObsFromExamScores(obsId, e.id, toetsYear);
-          }
-        }
         // The attempts first: the original still holds the old list if this fails halfway, so
-        // saving again reaches them too (resitObsIds can be repeated).
+        // saving again from this editor reaches them too (resitObsIds can be repeated). After a
+        // refusal an observatie it gained can stay on an attempt: add and remove it on the
+        // original to clear it (review 20 m2).
         for (const r of resits) {
           const next = resitObsIds(r.obs_ids ?? [], obsBefore, obs_ids);
           if (JSON.stringify(next) !== JSON.stringify(r.obs_ids ?? [])) {
@@ -453,6 +450,14 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
           },
           toetsYear,
         );
+        // Last: it cannot be undone, and a refused save above must not have cost any indication
+        // (review 20 M2). Only what the exam had: ticked on and off again changes nothing (m1).
+        for (const obsId of deselectedObs) {
+          if (!obsBefore.includes(obsId)) continue;
+          for (const e of [exam, ...resits]) {
+            await Store.removeObsFromExamScores(obsId, e.id, toetsYear);
+          }
+        }
         closeModal();
         toast('Toets opgeslagen.', 'success');
         if (afterSave) afterSave();

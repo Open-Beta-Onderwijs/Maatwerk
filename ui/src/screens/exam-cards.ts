@@ -92,10 +92,10 @@ function examCard(e: Exam, attempts: number, open: boolean): string {
 /** One attempt on the tree: Origineel, Inhaal, Herkansing, ... */
 function attemptCard(e: Exam, original: Exam): string {
   const lock = e.parent_id
-    ? `<span class="exam-lock-pill" title="${esc(LOCK_TITLE)}">${LOCK}Observaties van ${esc(attemptCode(original))}</span>`
+    ? `<span class="exam-lock-pill" title="${esc(LOCK_TITLE)}">${LOCK}Observaties van ${esc(attemptCode(original) || 'het origineel')}</span>`
     : '';
   return `
-    <article class="card exam-attempt-card">
+    <article class="card exam-attempt-card${e.diagnostic ? ' exam-card--diagnostic' : ''}">
       <div class="card-main">
         <div class="exam-card-head">
           ${subBadge(e)}${badge(e)}

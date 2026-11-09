@@ -200,6 +200,8 @@ test.describe('Nieuwe toets (spec 4.11)', () => {
       YEAR,
     );
     expect(saved).toMatchObject({ diagnostic: true, weging: 0, type: 'regular', kind: 'toets' });
+    // Kept: it applies only with PTA, and unticking D brings it back (review 20 M1).
+    expect(saved.weging_se).toBe(1);
     expect(errors).toEqual([]);
   });
 });
@@ -400,9 +402,105 @@ test.describe('Nieuwe poging (spec 4.11, F-12)', () => {
   });
 });
 
+test.describe('removing an observatie from the original (F-12)', () => {
+  interface ScoreFile {
+    scores?: Record<string, unknown>;
+    observations?: Record<string, string[]>;
+  }
+
+  /** A student with scores on the resit; the app starts with no observaties on that file. */
+  async function seed(page: Page) {
+    const { original, resit } = await testWithResit(page);
+    const records = await withMock(
+      page,
+      async (m, year) =>
+        (await m.readJsonDir(`${year}/scores/nat`)) as unknown as {
+          name: string;
+          data: ScoreFile;
+        }[],
+      YEAR,
+    );
+    const one = records.find((r) => Object.keys(r.data.scores?.[resit.id] ?? {}).length > 0)!;
+    const score = `${YEAR}/scores/nat/${one.name}`;
+    await seedFiles(page, { [score]: { ...one.data, observations: {} } });
+    return { original, resit, data: one.data, score };
+  }
+
+  /** What another PC would do: the file changes on disk while the app runs. */
+  const write = (page: Page, file: string, data: unknown) =>
+    withMock(page, (m, [f, d]) => m.externalWrite(f as string, d as never), [file, data] as const);
+
+  /** Logs in, opens the original's editor; returns an observatie ticked there. */
+  async function openOriginal(page: Page, originalId: string) {
+    await login(page);
+    await toetsen(page);
+    await menu(page, originalId, 'attempt', 'Toets bewerken');
+    return (await page.locator('.obs-sel-btn.selected').first().getAttribute('data-obs-id'))!;
+  }
+
+  test('its indications go from the original and every attempt', async ({ page }) => {
+    const { original, resit, data, score } = await seed(page);
+    const obsId = await openOriginal(page, original.id);
+    await write(page, score, {
+      ...data,
+      observations: { [original.id]: [obsId], [resit.id]: [obsId] },
+    });
+    await page.locator(`.obs-sel-btn[data-obs-id="${obsId}"]`).click();
+    await page.locator('.dlg--confirm .btn--danger').click();
+    await page.locator('#f-esave').click();
+    await expect(page.locator('.dlg-backdrop')).toHaveCount(0);
+    await expect
+      .poll(async () => (await readMockJson<ScoreFile>(page, score)).observations)
+      .toEqual({ [original.id]: [], [resit.id]: [] });
+  });
+
+  test('a refused save leaves the indications alone (review 20 M2)', async ({ page }) => {
+    const { original, resit, data, score } = await seed(page);
+    const obsId = await openOriginal(page, original.id);
+    const observations = { [original.id]: [obsId], [resit.id]: [obsId] };
+    await write(page, score, { ...data, observations });
+    await page.locator(`.obs-sel-btn[data-obs-id="${obsId}"]`).click();
+    await page.locator('.dlg--confirm .btn--danger').click();
+    await withMock(page, (m, id) => m.fail('writeJson', `/exams/${id}`), original.id);
+    await page.locator('#f-esave').click();
+    await expect(page.locator('.toast-persistent')).toBeVisible();
+    expect((await readMockJson<ScoreFile>(page, score)).observations).toEqual(observations);
+  });
+
+  test("ticking one on and off again leaves an attempt's own alone (review 20 m1)", async ({
+    page,
+  }) => {
+    const { original, resit, data, score } = await seed(page);
+    await openOriginal(page, original.id);
+    // Offered on the original, not ticked there: from now on only the resit has it.
+    const chip = page.locator('.obs-sel-btn:not(.selected)').first();
+    const own = (await chip.getAttribute('data-obs-id'))!;
+    const observations = { [resit.id]: [own] };
+    await write(page, score, { ...data, observations });
+    const before = await readExam(page, resit.id);
+    await write(page, examFile(resit.id), {
+      ...before,
+      obs_ids: [...(before.obs_ids ?? []), own],
+    });
+    await expect(async () => {
+      expect((await readExam(page, resit.id)).obs_ids).toContain(own);
+    }).toPass();
+
+    const button = page.locator(`.obs-sel-btn[data-obs-id="${own}"]`);
+    await button.click();
+    await page.locator('.dlg--confirm .btn--primary').click();
+    await button.click();
+    await page.locator('.dlg--confirm .btn--danger').click();
+    await page.locator('#f-esave').click();
+    await expect(page.locator('.dlg-backdrop')).toHaveCount(0);
+    await expect(page.locator('.toast').last()).toContainText('opgeslagen');
+    expect((await readMockJson<ScoreFile>(page, score)).observations).toEqual(observations);
+  });
+});
+
 test.describe('B-05: the summary overview shows observaties of attempts', () => {
   /** One student, only in the resit, with one observatie there; nobody else has any. */
-  async function seed(page: Page) {
+  async function seed(page: Page, noGrade = false) {
     const { original, resit } = await testWithResit(page);
     const obsId = original.obs_ids![0]!;
     const obs = await withMock(
@@ -431,12 +529,25 @@ test.describe('B-05: the summary overview shows observaties of attempts', () => 
     delete scores[original.id];
     files[`${YEAR}/scores/nat/${one.name}`] = {
       ...one.data,
-      scores,
+      // No grade on any attempt: no attempt counts.
+      ...(noGrade ? { overrides: {} } : {}),
+      scores: noGrade ? {} : scores,
       observations: { [resit.id]: [obsId] },
     };
     await seedFiles(page, files);
     return { original, obs };
   }
+
+  test('also for a student without any grade (review 20 m3)', async ({ page }) => {
+    const { original, obs } = await seed(page, true);
+    await login(page);
+    await toetsen(page);
+    await page
+      .locator(`[data-action="exam-overview-best"][data-examid="${original.id}"]`)
+      .first()
+      .click();
+    await expect(page.locator(`#tab-resultaten td[title="${obs}"]`).first()).toBeAttached();
+  });
 
   test('the Resultaten tab marks the observatie made on the resit', async ({ page }) => {
     const { original, obs } = await seed(page);

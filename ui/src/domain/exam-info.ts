@@ -21,7 +21,7 @@ export interface PointTotals {
 
 export function pointTotals(questions: readonly Question[]): PointTotals {
   const sum = (filter: (q: Question) => boolean) =>
-    clean(questions.filter(filter).reduce((s, q) => s + (q.max_points ?? 0), 0));
+    clean(questions.filter(filter).reduce((s, q) => s + (Number(q.max_points) || 0), 0));
   const normal = (q: Question) => qKind(q) === 'normal';
   return {
     normal: sum(normal),

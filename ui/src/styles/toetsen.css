@@ -69,7 +69,8 @@
   vertical-align: middle;
 }
 /* A diagnostic test counts for nothing: grey italic title and stats (spec 4.7). */
-.exam-card--diagnostic .exam-title-link {
+.exam-card--diagnostic .exam-title-link,
+.exam-card--diagnostic .exam-attempt-label {
   color: var(--muted);
   font-style: italic;
 }

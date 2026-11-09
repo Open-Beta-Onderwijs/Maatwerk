@@ -327,6 +327,28 @@ fn edit_exam(data: &Path, rel: &str, change: impl FnOnce(&mut serde_json::Map<St
 }
 
 #[test]
+fn a_diagnostic_test_may_keep_its_weging_se() {
+    // The app keeps it: it applies only with PTA, and unticking D brings it back (review 20 M1).
+    let (_tmp, data) = copy();
+    let rel = "2025-2026/exams/nat-toets-1-2025-2026.json";
+    edit_exam(&data, rel, |e| {
+        e.insert("diagnostic".into(), true.into());
+        e.insert("type".into(), "regular".into());
+        e.insert("weging".into(), 0.into());
+        e.insert("weging_se".into(), 1.into());
+    });
+    let report = validate(&data).unwrap();
+    assert!(
+        !report
+            .issues
+            .iter()
+            .any(|i| i.message.contains("heeft een weging")),
+        "{:?}",
+        report.issues
+    );
+}
+
+#[test]
 fn step_18_exam_fields_are_checked() {
     let (_tmp, data) = copy();
     let rel = "2025-2026/exams/nat-toets-1-2025-2026.json";

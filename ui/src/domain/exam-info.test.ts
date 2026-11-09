@@ -54,6 +54,10 @@ describe('point totals', () => {
     expect(t.byRtti).toEqual({ R: 3, T1: 21, T2: 17, I: 0 });
   });
 
+  it('adds points that are stored as text, as the grade rules do', () => {
+    expect(pointTotals([q('2' as unknown as number, 'R'), q(3, 'R')]).normal).toBe(5);
+  });
+
   it('the points line leaves out empty categories and uses a decimal comma', () => {
     expect(pointsLine(QS)).toBe('41p · R: 3p · T1: 21p · T2: 17p');
     expect(pointsLine([q(1.5, 'I'), q(2, 'I', 'bonus')])).toBe('1,5p (+2p bonus) · I: 1,5p');

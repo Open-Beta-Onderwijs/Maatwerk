@@ -33,7 +33,7 @@ export interface StepperOptions {
 /** A .num-spinner with an id. */
 export function stepper(id: string, o: StepperOptions): string {
   const dis = o.disabled ? ' disabled' : '';
-  return `<div class="num-spinner${o.disabled ? ' spinner-disabled' : ''}" id="${esc(id)}" data-val="${o.value}" data-step="${o.step}" data-min="${o.min}" data-max="${o.max}">
+  return `<div class="num-spinner${o.disabled ? ' spinner-disabled' : ''}" id="${esc(id)}" data-val="${esc(o.value)}" data-step="${o.step}" data-min="${o.min}" data-max="${o.max}">
     <button type="button" class="spin-btn spin-minus" aria-label="Lager"${dis}>−</button>
     <input class="spin-val" value="${esc(o.shown ?? formatNumber(o.value))}"${o.label ? ` aria-label="${esc(o.label)}"` : ''}${dis} />
     <button type="button" class="spin-btn spin-plus" aria-label="Hoger"${dis}>+</button>
@@ -170,7 +170,7 @@ export function lockedObsBlock(
         `<span class="exam-obs-chip exam-obs-chip--locked"><span aria-hidden="true">${esc(o.icon)}</span>${esc(o.naam)}</span>`,
     )
     .join('');
-  const code = esc(originalCode);
+  const code = esc(originalCode || 'het origineel');
   return `<div class="exam-lock-block" id="f-obs-locked">
     <span class="exam-lock-title">${LOCK_ICON}Observaties worden overgenomen van ${code}</span>
     ${chips ? `<div class="exam-obs-chips">${chips}</div>` : `<span class="muted">${code} heeft nog geen observaties.</span>`}
