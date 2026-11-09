@@ -219,6 +219,10 @@
 .exam-new-jp .form-group {
   flex: none;
 }
+/* One line also with a wider font (DejaVu on Linux): the label may run into the gap. */
+.exam-stepper > label {
+  white-space: nowrap;
+}
 .form-group.exam-stepper {
   margin-bottom: 0;
   flex: none;
