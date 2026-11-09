@@ -25,8 +25,17 @@ export interface Exam {
   jaarlaag?: string | number;
   schoolsoort?: string[];
   n_term?: number;
+  /** `pta` is an SE test; anything else is a regular one. */
+  type?: string;
+  periode?: string | number | null;
+  weging?: number;
+  weging_se?: number;
+  /** `roman`, `alpha`, `alpha2` or `seq`: how the questions are numbered. */
+  structureMode?: string;
   questions: Question[];
   parent_id?: string;
+  /** A resit's own word, as typed: `INHAAL`, `HERKANSING`, or anything. */
+  description?: string;
   /** Format v3; absent counts as `'toets'`. */
   kind?: ExamKind;
   /** Format v3: a diagnostic test counts for neither rapport nor SE (weging 0, never PTA). */
