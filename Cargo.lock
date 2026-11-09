@@ -3234,7 +3234,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-app"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "maatwerk-core",
  "rfd",
@@ -3257,7 +3257,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-cli"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "maatwerk-core",
  "serde",
@@ -3268,12 +3268,13 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-core"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "argon2",
  "base64 0.23.1",
  "image",
  "lopdf",
+ "maatwerk-grades",
  "notify",
  "password-hash",
  "proptest",
@@ -3295,6 +3296,23 @@ dependencies = [
  "typst-svg",
  "unicode-normalization",
  "zip",
+]
+
+[[package]]
+name = "maatwerk-grades"
+version = "0.10.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "maatwerk-grades-wasm"
+version = "0.10.0"
+dependencies = [
+ "maatwerk-grades",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

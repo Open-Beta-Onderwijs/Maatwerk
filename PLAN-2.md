@@ -226,10 +226,12 @@ Stop and ask: before running the migration on the copy of real data; before dele
 Items: R-04, B-02, B-03, B1-B8, B12-B19, B28-B31 (per triage), F-08 (trend helper), decision 7.9,
 T9 (moved from step 17, user 2026-11-07).
 
+**The rules are the user's decisions in `docs/phase-2/step-19-grade-rules.md` section 6.**
+
 - **19a:** port attempts (best attempt), grade calculation, averages (weighted, SE), SD,
-  percentages, RTTI statistics and the trend helper to `maatwerk-core` with unit tests on the
-  fixtures; Tauri commands and generated bindings; the CLI gets `stats` for checking. The UI
-  still uses its own code.
+  percentages, RTTI statistics and the trend helper to a pure crate `maatwerk-grades` (re-exported
+  by `maatwerk-core`) with unit tests; WebAssembly for the UI instead of Tauri commands (user,
+  ADR-0011); the CLI gets `stats` for checking. The UI still uses its own code.
 - **19b:** switch every screen, the rapport and the score grid to the core; delete the four JS
   implementations (B13); fix the B items as decided. T9: the histogram and ranking thresholds
   and texts agree (the ranking moves to the core with the other rapport numbers). Before/after

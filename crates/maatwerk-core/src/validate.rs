@@ -447,6 +447,7 @@ fn check_references(
 /// Format v3 (step 18): `kind`, `diagnostic`, `obs_from_parent` and the question link of
 /// opdrachten (`opdrachtenVraag`, F-14).
 fn check_exam_v3(rel: &str, exam: &Value, out: &mut Found) {
+    check_grade_inputs(rel, exam, out);
     match exam.get("kind") {
         None => {}
         Some(Value::String(k)) if k == "toets" || k == "po" => {}
@@ -533,6 +534,60 @@ fn check_exam_v3(rel: &str, exam: &Value, out: &mut Found) {
                 IssueKind::Shape,
                 rel,
                 format!("opdrachtenVraag: koppeling zonder vraag {card}"),
+            ),
+        }
+    }
+}
+
+/// Values the grade rules read past (`docs/phase-2/step-19-grade-rules.md`, decisions 18, 22, 23):
+/// a grade is still calculated, so these are warnings. Nothing is repaired.
+fn check_grade_inputs(rel: &str, exam: &Value, out: &mut Found) {
+    for key in ["weging", "weging_se"] {
+        match exam.get(key) {
+            None | Some(Value::Null) => {}
+            Some(value) => match value
+                .as_f64()
+                .or_else(|| value.as_str().and_then(|s| s.trim().parse().ok()))
+            {
+                Some(w) if w < 0.0 => out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!("Negatieve {key} {w}: de toets telt niet mee"),
+                ),
+                Some(_) => {}
+                None => out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!("{key} {value} is geen getal: telt als 1"),
+                ),
+            },
+        }
+    }
+    for q in exam
+        .get("questions")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let id = q.get("id").and_then(Value::as_str).unwrap_or("?");
+        match q.get("rtti").and_then(Value::as_str) {
+            Some("R" | "T1" | "T2" | "I") => {}
+            other => out.warn(
+                IssueKind::Shape,
+                rel,
+                format!(
+                    "Vraag {id}: onbekende RTTI-categorie {}: telt wel mee voor het cijfer, niet voor RTTI",
+                    other.unwrap_or("(leeg)")
+                ),
+            ),
+        }
+        match q.get("kind") {
+            None | Some(Value::Null) => {}
+            Some(Value::String(k)) if matches!(k.as_str(), "normal" | "bonus" | "diag") => {}
+            Some(other) => out.warn(
+                IssueKind::Shape,
+                rel,
+                format!("Vraag {id}: onbekend soort vraag {other}: telt als gewone vraag"),
             ),
         }
     }

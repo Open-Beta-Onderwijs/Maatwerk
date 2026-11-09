@@ -52,7 +52,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.9.0';
+export const MOCK_APP_VERSION = '0.10.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];

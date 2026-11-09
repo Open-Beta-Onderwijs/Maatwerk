@@ -1,0 +1,16 @@
+[package]
+name = "maatwerk-grades"
+description = "Maatwerk grade rules: grades, attempts, averages, statistics. Pure: no I/O, no tauri, no Typst."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+# float_roundtrip: a number read from JSON is exactly the number the UI sent.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+
+[lints]
+workspace = true

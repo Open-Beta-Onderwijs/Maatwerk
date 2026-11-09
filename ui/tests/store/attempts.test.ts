@@ -3,6 +3,7 @@
 // The ported Store against tests/golden/logic/attempts.json (BR 5).
 
 import { beforeAll, describe, expect, it } from 'vitest';
+import { round1 } from '../../src/domain/core';
 import { goldenCase, inputOf, loadGolden, run } from '../golden';
 import { openStore, type LegacyStore } from '../store-session';
 
@@ -52,7 +53,14 @@ describe('attempts golden (Store)', () => {
         id === 'computeBestGradeMap'
           ? Object.fromEntries(Object.entries(map).map(([k, v]) => [k, slimEntry(v)]))
           : map;
-      expect(await run(() => actual)).toEqual(c.output);
+      // Decision 2: the grade is rounded to one decimal.
+      const decided = Object.fromEntries(
+        Object.entries(c.output as Record<string, Entry>).map(([k, v]) => [
+          k,
+          { ...v, grade: round1(v.grade!) },
+        ]),
+      );
+      expect(await run(() => actual)).toEqual(decided);
     });
   }
 

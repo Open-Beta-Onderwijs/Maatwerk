@@ -19,9 +19,7 @@ describe('formatGrade', () => {
     expect(formatGrade(1)).toBe('1,0');
   });
 
-  it('rounds the product, as the grade system does (quirk B8)', () => {
-    // 5.45 * 10 = 54.5 rounds up to 55; see formatFixed below for 1.15,
-    // where the two paths differ.
+  it('rounds exact halves up (decision 3)', () => {
     expect(formatGrade(5.45)).toBe('5,5');
     expect(formatGrade(5.449)).toBe('5,4');
   });
@@ -34,17 +32,22 @@ describe('formatGrade', () => {
 });
 
 describe('formatFixed', () => {
-  it('uses toFixed rounding and a comma', () => {
+  it('rounds with the same rule and uses a comma', () => {
     expect(formatFixed(6.25)).toBe('6,3');
     expect(formatFixed(1.005, 2)).toBe('1,00'); // binary value below 1.005
     expect(formatFixed(3, 0)).toBe('3');
     expect(formatFixed(0.5, 1)).toBe('0,5');
   });
 
-  it('differs from formatGrade only at binary x.x5 cases (B8, kept until step 19)', () => {
-    expect(formatFixed(5.45)).toBe('5,5');
-    expect(formatGrade(1.15)).toBe('1,2');
-    expect(formatFixed(1.15)).toBe('1,1');
+  it('agrees with formatGrade at binary x.x5 cases (B8, decision 3)', () => {
+    for (const [x, shown] of [
+      [5.45, '5,5'],
+      [1.15, '1,2'],
+      [6.35, '6,4'],
+    ] as const) {
+      expect(formatFixed(x)).toBe(shown);
+      expect(formatGrade(x)).toBe(shown);
+    }
   });
 });
 

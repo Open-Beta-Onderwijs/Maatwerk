@@ -10,11 +10,12 @@
 // Observaties without a saved coupling fall back to the matching opdrachten
 // that list the observatie in their observaties[].
 
+import { round1 } from './core';
 import { formatFixed } from './format';
 import { examResults } from './grades';
 import { fullName } from './ids';
+import { studentGroup } from './statistics';
 import {
-  sameId,
   type CijferCard,
   type Exam,
   type Group,
@@ -164,7 +165,7 @@ export function assignOpdrachten({
     }
     const grade = cijferCards.length ? examResults(rec, exam)?.grade : null;
     if (grade !== null && grade !== undefined) {
-      const rounded = Math.round(grade * 10) / 10;
+      const rounded = round1(grade);
       for (const card of cijferCards) {
         if (!(rounded < card.onder)) continue;
         cijferStudents[card.id]!.push(s.id);
@@ -172,9 +173,9 @@ export function assignOpdrachten({
       }
     }
     if (!items.size) continue;
-    const ownGroups = groups.filter((g) => g.student_ids.some((id) => sameId(id, s.id)));
-    const group =
-      ownGroups.find((g) => String(g.jaarlaag) === String(exam.jaarlaag)) ?? ownGroups[0] ?? null;
+    // The one rule for the student's group (decision 17).
+    const groupId = studentGroup(s.id, exam, groups);
+    const group = groups.find((g) => g.id === groupId) ?? null;
     result.push({ student: s, group, items: [...items.values()] });
   }
 

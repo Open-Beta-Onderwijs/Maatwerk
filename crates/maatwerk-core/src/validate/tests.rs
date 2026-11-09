@@ -415,3 +415,30 @@ fn review_18_m6_a_windows_made_images_folder_is_in_use() {
         report.issues
     );
 }
+
+#[test]
+fn step_19_values_the_grade_rules_read_past_are_warnings() {
+    let (_tmp, data) = copy();
+    let rel = "2025-2026/exams/nat-toets-1-2025-2026.json";
+    edit_exam(&data, rel, |e| {
+        e.insert("weging".into(), (-1).into());
+        e.insert("weging_se".into(), "x".into());
+        let questions = e.get_mut("questions").unwrap().as_array_mut().unwrap();
+        questions[0]["rtti"] = "X".into();
+        questions[1]["kind"] = "raar".into();
+    });
+    let report = validate(&data).unwrap();
+    for message in [
+        "Negatieve weging -1: de toets telt niet mee",
+        "weging_se \"x\" is geen getal: telt als 1",
+        "Vraag q1: onbekende RTTI-categorie X: telt wel mee voor het cijfer, niet voor RTTI",
+        "Vraag q2: onbekend soort vraag \"raar\": telt als gewone vraag",
+    ] {
+        assert!(
+            has(&report, IssueKind::Shape, rel, message),
+            "{message}: {:#?}",
+            report.issues
+        );
+    }
+    assert_eq!(report.errors(), 0, "{:#?}", report.issues);
+}

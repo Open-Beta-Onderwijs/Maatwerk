@@ -3,20 +3,14 @@
 // Grade groups (histogram buckets) and small grade HTML helpers. Colours are in
 // domain/grade-colors.ts, number formats in domain/format.ts.
 
+import { coreCall } from '../domain/core';
 import { formatFixed, formatGrade } from '../domain/format';
 import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
 
-export const GRADE_GROUP_LABELS = ['<4', '4–5', '5–6', '6–7', '7–8', '>8'];
+export const GRADE_GROUP_LABELS = ['<4', '4–5', '5–6', '6–7', '7–8', '≥8'];
 export const GRADE_GROUP_MIDPOINTS = [2.5, 4.5, 5.5, 6.5, 7.5, 9.0];
 
-export function gradeGroupIdx(g: number): number {
-  if (g < 4) return 0;
-  if (g < 5) return 1;
-  if (g < 6) return 2;
-  if (g < 7) return 3;
-  if (g < 8) return 4;
-  return 5;
-}
+export const gradeGroupIdx = (g: number): number => coreCall('gradeGroup', g);
 
 /** A grade pill (design spec 2.3): bar-coloured border, text colour, bold fails. */
 export function gradePillHtml(g: number | null, extraClass = ''): string {

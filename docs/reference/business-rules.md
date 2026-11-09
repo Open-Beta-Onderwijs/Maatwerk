@@ -1,5 +1,7 @@
 # Business rules (reference app)
 
+> Since step 19 the app follows `docs/phase-2/step-19-grade-rules.md` section 6 where it differs from what is described here.
+
 This is a description of the domain logic in the Electron reference app (`_reference/`). It is the
 **spec**: it records what the code does, including inconsistencies. It does not say what the code
 should do. Every rule cites `file:line`. Paths are relative to `_reference/renderer/` unless they

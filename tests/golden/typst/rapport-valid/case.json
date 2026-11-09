@@ -2529,7 +2529,7 @@
           595.28,
           841.89
         ],
-        "text": "Uitleg RTTI-categorieën\nAfk.\nCategorie\nBeschrijving\nR\nReproductie\nReproductie: \nkennen\n en \nherkennen\n.\nT1\nTraining\n—\nT2\nTransfer\nUitleg T2.\nI\nInzicht\nUitleg I.\nVerdeling RTTI deze toets\nR (17%)\nT1 (34%)\nT2 (27%)\nI (22%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n57%\nR\n68%\nT1\n64%\nT2\n56%\nI\nVerdeling toetscijfers\n1\n2\n3\n2\n<4,5\n<5,0\n3\n<5,5\n1\n<6,0\n1\n<6,5\n2\n<7,0\n1\n<7,5\n<8,0\n<8,5\n1\n<9,0\n<9,5\n≤10\nGefeliciteerd! Je resultaat hoort bij de beste 33% van de toetsresultaten! \n👑\n2 / 2\nNatuurkunde Toets H3 — Marie-Claire 't Hart"
+        "text": "Uitleg RTTI-categorieën\nAfk.\nCategorie\nBeschrijving\nR\nReproductie\nReproductie: \nkennen\n en \nherkennen\n.\nT1\nTraining\n—\nT2\nTransfer\nUitleg T2.\nI\nInzicht\nUitleg I.\nVerdeling RTTI deze toets\nR (17%)\nT1 (34%)\nT2 (27%)\nI (22%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n57%\nR\n68%\nT1\n64%\nT2\n56%\nI\nVerdeling toetscijfers\n1\n2\n3\n2\n<4,5\n<5,0\n3\n<5,5\n1\n<6,0\n1\n<6,5\n2\n<7,0\n1\n<7,5\n<8,0\n<8,5\n1\n<9,0\n<9,5\n≤10\nGefeliciteerd! Je resultaat hoort bij de beste 10% van de toetsresultaten! \n👑\n2 / 2\nNatuurkunde Toets H3 — Marie-Claire 't Hart"
       },
       {
         "size": [
@@ -2543,7 +2543,7 @@
           595.28,
           841.89
         ],
-        "text": "Uitleg RTTI-categorieën\nAfk.\nCategorie\nBeschrijving\nR\nReproductie\nReproductie: \nkennen\n en \nherkennen\n.\nT1\nTraining\n—\nT2\nTransfer\nUitleg T2.\nI\nInzicht\nUitleg I.\nVerdeling RTTI deze toets\nR (17%)\nT1 (34%)\nT2 (27%)\nI (22%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n43%\nR\n46%\nT1\n68%\nT2\n33%\nI\nVerdeling toetscijfers\n1\n2\n3\n2\n<4,5\n<5,0\n3\n<5,5\n1\n<6,0\n1\n<6,5\n2\n<7,0\n1\n<7,5\n<8,0\n<8,5\n1\n<9,0\n<9,5\n≤10\nGefeliciteerd! Je resultaat hoort bij de beste 67% van de toetsresultaten! \n🥈\n2 / 2\nNatuurkunde Toets H3 — Gijs Kok"
+        "text": "Uitleg RTTI-categorieën\nAfk.\nCategorie\nBeschrijving\nR\nReproductie\nReproductie: \nkennen\n en \nherkennen\n.\nT1\nTraining\n—\nT2\nTransfer\nUitleg T2.\nI\nInzicht\nUitleg I.\nVerdeling RTTI deze toets\nR (17%)\nT1 (34%)\nT2 (27%)\nI (22%)\nJouw RTTI-scores\n25%\n50%\n75%\n100%\n43%\nR\n46%\nT1\n68%\nT2\n33%\nI\nVerdeling toetscijfers\n1\n2\n3\n2\n<4,5\n<5,0\n3\n<5,5\n1\n<6,0\n1\n<6,5\n2\n<7,0\n1\n<7,5\n<8,0\n<8,5\n1\n<9,0\n<9,5\n≤10\nGefeliciteerd! Je resultaat hoort bij de beste 20% van de toetsresultaten! \n🥈\n2 / 2\nNatuurkunde Toets H3 — Gijs Kok"
       },
       {
         "size": [
@@ -2661,8 +2661,8 @@
     },
     {
       "file": "p12.png",
-      "sha256": "05273e2a017a10a0d9d77c65d0435a92ea180d8bd0147908b5d5069e492f6989",
-      "bytes": 35914
+      "sha256": "ac6c343ef26ae71b7ba6c11e12c958ae08aee5e6ef90fc526592a23d2c9d8505",
+      "bytes": 35911
     },
     {
       "file": "p13.png",
@@ -2671,8 +2671,8 @@
     },
     {
       "file": "p14.png",
-      "sha256": "6a7c896939b5aee453c2961725d36b4825706acc095a25a7c007b92594d44482",
-      "bytes": 35018
+      "sha256": "6bb1f1d738a8af32458e1434019a7da5c7f3f7851c51ff1e2d805e1ea917d8c8",
+      "bytes": 35015
     },
     {
       "file": "p15.png",
@@ -2716,6 +2716,6 @@
     }
   ],
   "port": {
-    "blessed": "step 17: leeradvies score column 3 cm -> 2,5 cm (user 2026-11-08)"
+    "blessed": "step 19 decision 16: the ranking line says beste 10% and 20%"
   }
 }

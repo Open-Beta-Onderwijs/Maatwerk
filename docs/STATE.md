@@ -1,15 +1,38 @@
 # State
 
-Last updated: 2026-11-08 (steps 17 and 18 merged into local `main`, PR open) Branch: `step/18-data-v3`
-(from `step/17-rapport-fixes`, which is from `main` `a62ea7e`)
+Last updated: 2026-11-09 (step 19b) Branch: `step/19-domain-core` (from local `main` `2542e41`)
 Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
 (pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
 `step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
 
 ## Current step
 
-**Next action:** CI on the PR `release/v0.9.0` -> `main` (steps 16, 17, 18); the user merges it.
-Then step 19.
+**Next action:** the user merges the step 19 PR (`step/19-domain-core` -> `main`). After that: sync local `main`, tag `step-19`, `v0.10.0`. PR #10 is merged on GitHub (`80345c3`); local `main` is one merge commit behind `origin/main`.
+
+## Step 19 progress (Domain logic, 0.10)
+
+User instruction (2026-11-08): run everything about grades, averages and scores by the user, with
+formulae, examples and a recommendation, as a multiple-choice question; assume nothing. The 23
+decisions: `docs/phase-2/step-19-grade-rules.md` section 6. **Never change a number or rule in step
+19 without asking.**
+
+1. **Done** (`8427148`): analysis, the user's decisions, ADR-0011 (WebAssembly instead of Tauri
+   commands: synchronous, and one implementation also in the mock).
+2. **Done** (`202c84e`): `crates/maatwerk-grades`: 71 tests from the approved tables, 10 against the
+   reference goldens (every difference names its decision).
+3. **Done:** `maatwerk_core::grades`, CLI `stats` (read-only; student numbers only);
+   `crates/maatwerk-grades-wasm` (JSON `dispatch`, tiny `abi.rs`, no new dependencies);
+   `ui/vite/grades-wasm.ts` (cargo build once per Vite run, inlined as a base64 module);
+   `ui/src/domain/core.ts` (top-level await, then synchronous `coreCall`, `round1`, ...); CSP
+   `'wasm-unsafe-eval'`; wasm target in `rust-toolchain.toml`. Run npm from PowerShell: Vite now
+   runs cargo (Git Bash's `link` breaks build scripts).
+
+4. **Done** (`7e4241d` and later): every screen, the score grid and the rapport on the core; the JS copies are gone. Gegevenscontrole warns about values the rules read past (decisions 18, 22, 23). D4, D16, D17 checked, unchanged (`quirks.md`). Grid speed: 0,07 ms per 40-question row, no batch call needed. Version 0.10.0. Golden `rapport-valid` p12, p14 re-blessed, pending the user's check.
+5. **Done:** review `docs/reviews/step-19.md` (0/8/10/8), triage at its end: all majors fixed. Two were the user's call: decisions 24 and 25.
+
+6. **Done:** user OK (2026-11-09) after testing the local exe 0.10.0 on the real data. Local visual baselines updated (30 images: 10 views, 3 looks; not committed). CI baselines of those 10 views replaced on all three platforms from CI's own run; the other 29 views passed unchanged.
+
+**Pending, needs the user:** merge.
 
 **User (2026-11-08):** the migration ran fine on a copy of the real data (local exe 0.9.0).
 Leeradvies score column 3 cm -> 2,5 cm (`16439a2`, goldens re-blessed; scores up to

@@ -28,7 +28,8 @@
  */
 
 import { bestAttempt, compareHistory, resitsOf, resolveBestAttempts } from './domain/attempts';
-import { calcGrade, calcResults, examResults } from './domain/grades';
+import { calcResults, examResults } from './domain/grades';
+import { yearAverage } from './domain/statistics';
 import {
   currentSchoolYear,
   fullName,
@@ -617,11 +618,6 @@ const Store = (() => {
     return getJaarlagenSync(year);
   }
 
-  function getStudentGroup(studentId, year) {
-    const id = asStudentId(studentId);
-    return getGroupsSync(year).find((g) => g.student_ids.includes(id)) ?? null;
-  }
-
   // ── Exams (year-scoped, subject-filtered) ─────────────────────────────────
   async function getExams(year, subject = _activeSubject) {
     return loadExams(year, subject);
@@ -761,6 +757,20 @@ const Store = (() => {
     }
     results.sort(compareHistory);
     return results;
+  }
+
+  // A student's year average: all tests of the vak and school year (decision 25), so one student
+  // has one year average on every screen.
+  function studentYearAverage(rec, year, subject = _activeSubject) {
+    return yearAverage(getExamsSync(year, subject), rec);
+  }
+
+  // Every year's tests of a vak: the SE average takes a resit's weight from its original, which
+  // can be in another file than the student's own history (decision 10).
+  function getAllExamsSync(subject = _activeSubject) {
+    return listYearsSync().flatMap((year) =>
+      getExamsSync(year, subject).map((e) => ({ ...e, academic_year: year })),
+    );
   }
 
   // RTTI calculations (calcResults, examResults, calcGrade): src/domain/grades.ts
@@ -1310,7 +1320,6 @@ const Store = (() => {
     getGroupsByJaarlaag,
     getJaarlagenSync,
     getJaarlagen,
-    getStudentGroup,
     getExams,
     upsertExam,
     setExamNTerm,
@@ -1318,9 +1327,10 @@ const Store = (() => {
     getStudentScores,
     setScore,
     getStudentHistory,
+    getAllExamsSync,
+    studentYearAverage,
     calcResults,
     examResults: examResultsMemo,
-    calcGrade,
     setGradeOverride,
     makeExamId,
     makeGroupId,

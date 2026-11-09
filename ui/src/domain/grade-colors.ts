@@ -10,13 +10,12 @@
 // Pass is from 5,5 after rounding to one decimal; the pass gradients run
 // over 5,5..9,5. The rapport (Typst) keeps its own colours.
 
+import { isFail } from './core';
+
 export const PASS = 5.5;
 const TOP = 9.5;
 
-/** A grade is a fail when it rounds (one decimal, as in the school's grade system) below 5,5. */
-export function isFail(g: number): boolean {
-  return Math.round(g * 10) / 10 < PASS;
-}
+export { isFail };
 
 function clamp01(t: number): number {
   return Math.max(0, Math.min(1, t));

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { gradeBarColor, isFail } from '../domain/grade-colors';
+import { clean } from '../domain/core';
+import { gradeBarColor } from '../domain/grade-colors';
+import { mean, stats } from '../domain/statistics';
 import { testBadgeClass } from '../domain/test-type';
 import { formatFixed, formatNumber, parseDecimalLoose } from '../domain/format';
 import { ICONS } from '../utils/icons.js';
@@ -70,9 +72,7 @@ export function renderToetsen() {
 
 export async function computeExamStats(year, exam) {
   const students = Store.getStudentsSync(year);
-  const normalMax = exam.questions
-    .filter((q) => qKind(q) === 'normal')
-    .reduce((s, q) => s + q.max_points, 0);
+  const { normalMax } = Store.calcResults(exam, {});
   const grades = [],
     points = [];
   for (const s of students) {
@@ -84,18 +84,15 @@ export async function computeExamStats(year, exam) {
       if (Object.keys(rec.scores?.[exam.id] ?? {}).length) points.push(res.scored);
     }
   }
-  if (grades.length === 0) return null;
-  const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-  const sd = (arr, m) =>
-    arr.length < 2 ? 0 : Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / arr.length);
-  const mg = mean(grades),
-    mp = mean(points);
+  const st = stats(grades);
+  if (!st) return null;
+  const avgPts = mean(points);
   return {
-    n: grades.length,
-    avgPts: points.length ? formatFixed(mp) : '—',
-    avgG: formatFixed(mg),
-    sd: formatFixed(sd(grades, mg)),
-    fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
+    n: st.n,
+    avgPts: avgPts === null ? '—' : formatFixed(avgPts),
+    avgG: formatFixed(st.mean),
+    sd: formatFixed(st.sd),
+    fails: st.fails,
     normalMax,
   };
 }
@@ -126,18 +123,9 @@ export async function computeExamWarnings(year, exam) {
 
 export async function computeBestGradeStats(parentId, year) {
   const bestMap = await Store.computeBestGradeMap(parentId, year);
-  const grades = Object.values(bestMap)
-    .map((e) => e.grade)
-    .filter((g) => g !== null);
-  if (grades.length === 0) return null;
-  const mean = grades.reduce((a, b) => a + b, 0) / grades.length;
-  const sd = Math.sqrt(grades.reduce((s, g) => s + (g - mean) ** 2, 0) / grades.length);
-  return {
-    n: grades.length,
-    avgG: formatFixed(mean),
-    sd: formatFixed(sd),
-    fails: Math.round((grades.filter((g) => isFail(g)).length / grades.length) * 100),
-  };
+  const st = stats(Object.values(bestMap).map((e) => e.grade));
+  if (!st) return null;
+  return { n: st.n, avgG: formatFixed(st.mean), sd: formatFixed(st.sd), fails: st.fails };
 }
 
 const SUBCATEGORY_TO_FILTER = {
@@ -244,10 +232,12 @@ export async function renderToetsenList() {
   function rttiLine(e) {
     const cats = ['R', 'T1', 'T2', 'I']
       .map((c) => {
-        const pts = e.questions
-          .filter((q) => qKind(q) === 'normal' && q.rtti === c)
-          .reduce((s, q) => s + q.max_points, 0);
-        return pts > 0 ? `${c}: ${pts}p` : null;
+        const pts = clean(
+          e.questions
+            .filter((q) => qKind(q) === 'normal' && q.rtti === c)
+            .reduce((s, q) => s + q.max_points, 0),
+        );
+        return pts > 0 ? `${c}: ${formatNumber(pts)}p` : null;
       })
       .filter(Boolean)
       .join(' · ');
@@ -255,13 +245,9 @@ export async function renderToetsenList() {
   }
 
   function ptsTotalDisplay(e) {
-    const normalTotal = e.questions
-      .filter((q) => qKind(q) === 'normal')
-      .reduce((s, q) => s + q.max_points, 0);
-    const bonusTotal = e.questions
-      .filter((q) => qKind(q) === 'bonus')
-      .reduce((s, q) => s + q.max_points, 0);
-    return bonusTotal > 0 ? `${normalTotal}p (+${bonusTotal}p bonus)` : `${normalTotal}p`;
+    const { normalMax, bonusMax } = Store.calcResults(e, {});
+    const normal = formatNumber(normalMax);
+    return bonusMax > 0 ? `${normal}p (+${formatNumber(bonusMax)}p bonus)` : `${normal}p`;
   }
 
   function examSummaryLine(e) {

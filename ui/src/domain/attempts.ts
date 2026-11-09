@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Resits and the best attempt per student (business-rules.md section 5).
-// Ported from store.js (getResitsSync, computeBestGradeMap,
-// resolveBestAttempts, getStudentHistory); pinned by
-// tests/golden/logic/attempts.json.
+// Resits and the attempt that counts. The rules are in Rust (crates/maatwerk-grades, ADR-0011,
+// decision 8); this file gives them types and joins the answers back to the UI's objects.
 
-import { calcResults, examResults } from './grades';
+import { coreCall } from './core';
+import { recordFor } from './grades';
 import type { Exam, Override, QuestionScores, ScoreRecord } from './types';
 
 /** One attempt in a student's history (getStudentHistory). */
@@ -32,32 +31,26 @@ export function resitsOf<E extends Exam>(exams: E[], parentId: string): E[] {
 }
 
 /**
- * The attempt with the highest grade (override included) among `attempts`
- * (the parent first, then its resits); the earliest wins a tie. Null when no
- * attempt has a grade.
+ * The attempt with the highest grade (override included) among `attempts` (the parent first, then
+ * its resits); the earliest wins a tie. Null when no attempt has a grade.
  */
-export function bestAttempt(rec: ScoreRecord, attempts: Exam[]): BestEntry | null {
-  let bestGrade = -Infinity;
-  let bestEntry: BestEntry | null = null;
-  for (const attempt of attempts) {
-    const res = examResults(rec, attempt);
-    if (res && res.grade !== null && res.grade > bestGrade) {
-      bestGrade = res.grade;
-      const qs: QuestionScores = {};
-      attempt.questions.forEach((q) => {
-        const v = rec.scores?.[attempt.id]?.[q.id];
-        if (v !== undefined) qs[q.id] = v;
-      });
-      bestEntry = {
-        examId: attempt.id,
-        exam: attempt,
-        questionScores: qs,
-        override: rec.overrides?.[attempt.id],
-        grade: res.grade,
-      };
-    }
+export function bestAttempt(
+  rec: ScoreRecord | null | undefined,
+  attempts: Exam[],
+): BestEntry | null {
+  const best = coreCall<{ examId: string; grade: number } | null>(
+    'bestAttempt',
+    recordFor(rec, attempts),
+    attempts,
+  );
+  const exam = best && attempts.find((e) => e.id === best.examId);
+  if (!best || !exam) return null;
+  const questionScores: QuestionScores = {};
+  for (const q of exam.questions) {
+    const v = rec?.scores?.[exam.id]?.[q.id];
+    if (v !== undefined) questionScores[q.id] = v;
   }
-  return bestEntry;
+  return { ...best, exam, questionScores, override: rec?.overrides?.[exam.id] };
 }
 
 /** History order: school year, then volgnummer. */
@@ -66,46 +59,10 @@ export function compareHistory(a: HistoryEntry, b: HistoryEntry): number {
   return ycmp !== 0 ? ycmp : (a.exam.volgnummer ?? 0) - (b.exam.volgnummer ?? 0);
 }
 
-const gradeOf = (e: HistoryEntry) => calcResults(e.exam, e.questionScores, e.override).grade ?? -1;
-
 /**
- * Collapses a flat history so that only the attempt with the highest grade
- * appears per resit group. Standalone exams pass through unchanged.
+ * The attempt that counts per test, in history order. A test in which nothing has a grade keeps
+ * its earliest attempt, so it stays in the student's list.
  */
 export function resolveBestAttempts<H extends HistoryEntry>(history: H[]): H[] {
-  const parentsWithResits = new Set(
-    history.filter((h) => h.exam.parent_id).map((h) => h.exam.parent_id),
-  );
-  const handledParents = new Set<string>();
-  const result: H[] = [];
-
-  // Originals (no parent_id) first
-  for (const entry of history) {
-    if (entry.exam.parent_id) continue;
-    const examId = entry.exam.id;
-    if (!parentsWithResits.has(examId)) {
-      result.push(entry); // standalone: pass through
-      continue;
-    }
-    handledParents.add(examId);
-    const candidates = [entry, ...history.filter((h) => h.exam.parent_id === examId)];
-    let best = candidates[0]!;
-    for (const c of candidates) if (gradeOf(c) > gradeOf(best)) best = c;
-    result.push(best);
-  }
-
-  // Resits whose parent has no history entry (the student only did the resit)
-  for (const entry of history) {
-    if (!entry.exam.parent_id) continue;
-    const parentId = entry.exam.parent_id;
-    if (handledParents.has(parentId)) continue;
-    handledParents.add(parentId);
-    const resitGroup = history.filter((h) => h.exam.parent_id === parentId);
-    let best = resitGroup[0]!;
-    for (const c of resitGroup) if (gradeOf(c) > gradeOf(best)) best = c;
-    result.push(best);
-  }
-
-  result.sort(compareHistory);
-  return result;
+  return coreCall<number[]>('resolveBestAttempts', history).map((i) => history[i]!);
 }

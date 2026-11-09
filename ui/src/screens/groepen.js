@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ICONS } from '../utils/icons.js';
-import { isFail } from '../domain/grade-colors';
+import { statsOfAverages } from '../domain/statistics';
 import {
   escHtml,
   SEL,
@@ -204,25 +204,8 @@ async function calcGroupGradeStats(group, year) {
   const students = allStudents.filter((s) => group.student_ids.includes(s.id));
   if (students.length === 0) return null;
 
-  const allExams = await Store.getExams(year, subject);
-  const exams = allExams.filter(
-    (e) => String(e.jaarlaag) === String(group.jaarlaag) && e.volgnummer,
-  );
-  if (exams.length === 0) return null;
-
-  const resitMap = {};
-  exams
-    .filter((e) => e.parent_id)
-    .forEach((e) => {
-      (resitMap[e.parent_id] ??= []).push(e);
-    });
-  const examFamilies = exams
-    .filter((e) => !e.parent_id)
-    .map((e) => ({
-      original: e,
-      resits: (resitMap[e.id] ?? []).sort((a, b) => (a.attempt ?? 1) - (b.attempt ?? 1)),
-    }));
-  if (examFamilies.length === 0) return null;
+  // All the students' tests of the year, whatever the group's jaarlaag (decision 25).
+  await Store.getExams(year, subject);
 
   const scoreMap = {};
   await Promise.all(
@@ -232,43 +215,12 @@ async function calcGroupGradeStats(group, year) {
     }),
   );
 
-  function studentGrade(s, exam) {
-    return Store.examResults(scoreMap[s.id], exam)?.grade ?? null;
-  }
-
-  function bestGradeForFamily(s, family) {
-    const candidates = [family.original, ...family.resits]
-      .map((e) => ({ exam: e, grade: studentGrade(s, e) }))
-      .filter((x) => x.grade !== null);
-    if (candidates.length === 0) return { grade: null };
-    return candidates.reduce((a, b) => (b.grade > a.grade ? b : a));
-  }
-
-  const yearAvgs = students
-    .map((s) => {
-      let sumW = 0,
-        sumWG = 0;
-      for (const f of examFamilies) {
-        const { grade } = bestGradeForFamily(s, f);
-        if (grade === null) continue;
-        const w = Number(f.original.weging ?? 1);
-        sumW += w;
-        sumWG += w * grade;
-      }
-      return sumW > 0 ? sumWG / sumW : null;
-    })
-    .filter((g) => g !== null);
-
-  if (yearAvgs.length === 0) return null;
-
-  const mean = yearAvgs.reduce((a, b) => a + b, 0) / yearAvgs.length;
-  const sd =
-    yearAvgs.length < 2
-      ? 0
-      : Math.sqrt(yearAvgs.reduce((s, v) => s + (v - mean) ** 2, 0) / yearAvgs.length);
-  const fails = Math.round((yearAvgs.filter((g) => isFail(g)).length / yearAvgs.length) * 100);
-
-  return { mean, sd, fails };
+  // Decision 21: mean, SD and % onvoldoende of the year averages as shown.
+  return statsOfAverages(
+    students
+      .map((s) => Store.studentYearAverage(scoreMap[s.id], year, subject))
+      .filter((g) => g !== null),
+  );
 }
 
 async function fillGroupGradeStats(groups, year, container) {

@@ -21,10 +21,11 @@ describe('CSP', () => {
     it(`${name}: no inline code, no eval, no remote origins`, () => {
       // The only http origins are the app's own URI schemes as Windows exposes them.
       expect(csp).not.toMatch(
-        /unsafe-inline|unsafe-eval|https?:\/\/(?!(ipc|maatwerk-out)\.localhost[ ;])|\*/,
+        /'unsafe-inline'|'unsafe-eval'|https?:\/\/(?!(ipc|maatwerk-out)\.localhost[ ;])|\*/,
       );
+      // WebAssembly only (the grade rules, ADR-0011): JavaScript eval stays blocked.
+      expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval';");
       expect(csp).toMatch(/style-src 'self';/);
-      expect(csp).toMatch(/script-src 'self';/);
       expect(csp).toMatch(/object-src 'none'/);
     });
   }

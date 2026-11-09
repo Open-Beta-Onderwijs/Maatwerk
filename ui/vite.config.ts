@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { mockCsp } from './vite/csp.ts';
+import { gradesWasm } from './vite/grades-wasm.ts';
 import { mockFixtures } from './vite/mock-fixtures.ts';
 
 // "Over Maatwerk" shows the workspace version and the git build it came from,
@@ -23,7 +24,7 @@ try {
 // Tauri expects a fixed dev port; see src-tauri/tauri.conf.json (devUrl).
 export default defineConfig({
   clearScreen: false,
-  plugins: [mockFixtures(), mockCsp()],
+  plugins: [gradesWasm(), mockFixtures(), mockCsp()],
   define: {
     __MAATWERK_VERSION__: JSON.stringify(version),
     __MAATWERK_BUILD__: JSON.stringify(build),

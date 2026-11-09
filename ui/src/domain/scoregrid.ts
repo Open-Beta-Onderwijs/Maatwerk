@@ -15,8 +15,10 @@
 //   N+5+TOFF    = spacer3
 //   N+6+TOFF    = R%, then T1%, T2%, I%
 
+import { round1 } from './core';
 import { formatFixed, formatGrade, formatNumber, parseDecimal, parseDecimalLoose } from './format';
 import { calcResults } from './grades';
+import { stats } from './statistics';
 import type { Exam, Override, Question, QuestionScores } from './types';
 
 export type GridCell = string | boolean | number | null | undefined;
@@ -50,7 +52,7 @@ export function scoreCellText(v: unknown): string {
 export function parseGradeInput(raw: unknown): number {
   const n = parseScoreNum(raw);
   if (isNaN(n) || n < 1 || n > 10) return NaN;
-  return Math.round(n * 10) / 10;
+  return round1(n);
 }
 
 export function sameOverride(
@@ -158,10 +160,9 @@ export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number,
   const pct = (v: number | 'NVT') => (v === 'NVT' ? 'NVT' : v + '%');
   row[N + 2] = ''; // spacer1
   if (O > 0) row[N + 3 + O] = ''; // spacer2 — obs cols untouched
-  row[N + 3 + TOFF] =
-    res.hasBonus && res.scored > res.normalMax
-      ? `${res.scored} / ${res.normalMax} (+)`
-      : `${res.scored} / ${res.normalMax}`;
+  // Decimal comma (B5); the core's totals have no floating-point noise (decision 3).
+  const totaal = `${formatNumber(res.scored)} / ${formatNumber(res.normalMax)}`;
+  row[N + 3 + TOFF] = res.hasBonus && res.scored > res.normalMax ? `${totaal} (+)` : totaal;
   row[N + 4 + TOFF] = res.grade !== null ? formatGrade(res.grade) : '';
   row[N + 5 + TOFF] = ''; // spacer3
   row[N + 6 + TOFF] = pct(res.R);
@@ -180,16 +181,18 @@ export function recomputeSummaryRow(
 ): void {
   const N = exam.questions.length;
   const TOFF = O > 0 ? O + 1 : 0;
-  const examMaxTotal = exam.questions.reduce((s, q) => s + q.max_points, 0);
+  // The max of the normal questions, as each row shows (B4, decision 12).
+  const { normalMax } = calcResults(exam, {});
   const totaals: number[] = [],
     grades: number[] = [];
 
   for (let r = 0; r < summaryIdx; r++) {
     const totaalStr = gridData[r]![N + 3 + TOFF];
     const gradeStr = gridData[r]![N + 4 + TOFF];
-    if (totaalStr) {
-      // U5: parseInt truncates half points ("7.5 / 16" counts as 7).
-      const scored = parseInt(String(totaalStr), 10);
+    // Only rows with a grade, as on the exam card (decision 26).
+    if (totaalStr && gradeStr && gradeStr !== '—') {
+      // The points before " / " in the row's Totaal, half points included (B4, U5).
+      const scored = parseDecimalLoose(totaalStr);
       if (!isNaN(scored)) totaals.push(scored);
     }
     if (gradeStr && gradeStr !== '—') {
@@ -209,23 +212,18 @@ export function recomputeSummaryRow(
 
   // Avg row
   const avgRow = gridData[summaryIdx]!;
-  const meanTotaal =
-    totaals.length > 0 ? totaals.reduce((a, b) => a + b, 0) / totaals.length : null;
-  const meanGrade = grades.length > 0 ? grades.reduce((a, b) => a + b, 0) / grades.length : null;
+  const totaalStats = stats(totaals);
+  const gradeStats = stats(grades);
   clearSpecialRow(avgRow);
-  avgRow[N + 3 + TOFF] = meanTotaal !== null ? formatFixed(meanTotaal) + ' / ' + examMaxTotal : '';
-  avgRow[N + 4 + TOFF] = meanGrade !== null ? formatFixed(meanGrade) : '';
+  avgRow[N + 3 + TOFF] = totaalStats
+    ? `${formatFixed(totaalStats.mean)} / ${formatNumber(normalMax)}`
+    : '';
+  avgRow[N + 4 + TOFF] = gradeStats ? formatFixed(gradeStats.mean) : '';
 
   // Std dev row
   if (stdIdx == null) return;
   const sdRow = gridData[stdIdx]!;
-  function sdFn(arr: number[], mean: number) {
-    if (arr.length < 2) return null;
-    return Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / arr.length);
-  }
-  const sdTotaal = meanTotaal !== null ? sdFn(totaals, meanTotaal) : null;
-  const sdGrade = meanGrade !== null ? sdFn(grades, meanGrade) : null;
   clearSpecialRow(sdRow);
-  sdRow[N + 3 + TOFF] = sdTotaal !== null ? formatFixed(sdTotaal) : '';
-  sdRow[N + 4 + TOFF] = sdGrade !== null ? formatFixed(sdGrade) : '';
+  sdRow[N + 3 + TOFF] = totaalStats ? formatFixed(totaalStats.sd) : '';
+  sdRow[N + 4 + TOFF] = gradeStats ? formatFixed(gradeStats.sd) : '';
 }
