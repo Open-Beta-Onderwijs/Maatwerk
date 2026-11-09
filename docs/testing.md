@@ -128,7 +128,11 @@ in the local `visual` project (exact, not committed).
   copy `visual-baselines/` from it into `ui/e2e/` and commit.
 - An intended visual change: delete the affected folders (or files) and push; commit what the
   next run writes, after looking at it. A failed comparison uploads the expected, actual and
-  diff images (`test-results/`) in the same artifact.
+  diff images (`test-results/`) in the same artifact. Deleting single files keeps the other views
+  compared: that run writes the missing files but fails, and the next one must pass. Copy only the
+  platform's own folder (an artifact holds all three). A view can change within the tolerance, so
+  a passing view is not proof that its baseline is current: take the list from the local `visual`
+  project (exact) and also replace those.
 
 ## Size budget
 
