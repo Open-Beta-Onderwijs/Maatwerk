@@ -324,6 +324,9 @@ test.describe('Nieuwe poging (spec 4.11, F-12)', () => {
     await menu(page, solo.id, 'solo', 'Inhaal / herkansing toevoegen');
     const chips = page.locator('#f-obs-locked .exam-obs-chip--locked');
     await expect(chips).toHaveCount(solo.obs_ids!.length);
+    await expect(page.locator('.exam-lock-title')).toHaveText(
+      'Observaties worden overgenomen van het origineel.',
+    );
     await page.locator('#f-resit-next').click();
 
     // Step 2: no observatie buttons, the same lock block.

@@ -5,7 +5,7 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action:** waiting for the user (STOP gate, end of step 20): (1) look at the visual diff; then update the local and CI baselines of the 6 views; (2) test on a copy of the real data (PLAN-2 decision 8; M-TOE-8..10); (3) decide review 20 m4. Nothing pushed yet. After that: PR, merge, tag `step-20`, `v0.11.0`.
+**Next action:** CI baselines of the 6 changed views: from CI's own run on `step/20-toetsen` (`docs/testing.md`). Then the user merges the PR; after that sync `main`, tag `step-20`, `v0.11.0`.
 
 ## Step 20 progress (Toetsen, 0.11)
 
@@ -16,7 +16,7 @@ Both parts in one session, so no `step-20a` tag.
 3. **Done:** version 0.11.0; gate green on Chromium.
 4. **Done:** review `docs/reviews/step-20.md` (0/2/6/10), triage at its end. M1 (validator warned about `weging_se` on every diagnostic test) and M2 (a refused save had already removed indications) fixed, failing tests first; also m1, m3, n1, n2, n4-n7. m5 and the rest of m6 in the backlog.
 
-**Open, the user's call (review 20 m4):** a diagnostic test counts in the profile's pooled RTTI "Gem." of a year. Not changed: it is a number.
+5. **Done, user (2026-11-09):** visual diff OK with one text change (lock block: "Observaties worden overgenomen van het origineel."); tested on a copy of the real data: everything works; review m4: diagnostic tests leave the profile's year RTTI Gem. (decision 27, `rttiGemHistory`; grade crate unchanged). Local baselines updated.
 
 Choices made without asking, for the report: an attempt keeps observaties only it has (`resitObsIds`); percentages in the footer are of the normal points, bonus shown apart (the mock's example counted a bonus question in its total); the D note shows a `D` badge (the test has no number yet); summary overview columns are the union of all attempts' observaties.
 

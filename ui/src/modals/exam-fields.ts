@@ -157,10 +157,7 @@ export function kindFields(
 }
 
 /** The locked observaties of an attempt (F-12): read-only, changed through the original. */
-export function lockedObsBlock(
-  obsIds: readonly string[] | undefined,
-  originalCode: string,
-): string {
+export function lockedObsBlock(obsIds: readonly string[] | undefined): string {
   const all: { id: string; naam?: string; icon?: string }[] = Store.getObservatiesSync();
   const chips = (obsIds ?? [])
     .map((id) => all.find((o) => o.id === id))
@@ -170,10 +167,9 @@ export function lockedObsBlock(
         `<span class="exam-obs-chip exam-obs-chip--locked"><span aria-hidden="true">${esc(o.icon)}</span>${esc(o.naam)}</span>`,
     )
     .join('');
-  const code = esc(originalCode || 'het origineel');
   return `<div class="exam-lock-block" id="f-obs-locked">
-    <span class="exam-lock-title">${LOCK_ICON}Observaties worden overgenomen van ${code}</span>
-    ${chips ? `<div class="exam-obs-chips">${chips}</div>` : `<span class="muted">${code} heeft nog geen observaties.</span>`}
+    <span class="exam-lock-title">${LOCK_ICON}Observaties worden overgenomen van het origineel.</span>
+    ${chips ? `<div class="exam-obs-chips">${chips}</div>` : `<span class="muted">Het origineel heeft nog geen observaties.</span>`}
     <span class="exam-lock-note">Je wijzigt ze via het origineel; ze gelden dan voor alle pogingen.</span>
   </div>`;
 }

@@ -17,7 +17,13 @@ import { chartInk, cssToken } from '../theme';
 const kindColor = (kind) => cssToken(testKindToken(kind));
 const examTypeColor = (exam) => kindColor(testKind(exam));
 import { formatGrade, parseDecimalLoose } from '../domain/format';
-import { meanOfAverages, pooledRtti, rttiPercents, seAverage } from '../domain/statistics';
+import {
+  meanOfAverages,
+  pooledRtti,
+  rttiGemHistory,
+  rttiPercents,
+  seAverage,
+} from '../domain/statistics';
 import { computeExamStats } from '../screens/toetsen';
 import { leerlingenState } from '../screens/leerlingen.js';
 
@@ -857,11 +863,7 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
                 const canvas = el.querySelector('#mc-rtti-chart');
                 const rLabels = filtered.map((r) => examLabel(r.exam));
                 // Gem.: pooled points over the best attempts (decision 7); the bars show every attempt.
-                const counting =
-                  selectedYear === 'se'
-                    ? history.filter((h) => h.exam.type === 'pta')
-                    : history.filter((h) => h.exam.academic_year === selectedYear);
-                const gem = pooledRtti(counting);
+                const gem = pooledRtti(rttiGemHistory(history, selectedYear));
                 const avg = (cat) => rttiPercents(gem, [cat])[0];
                 const toVal = (v) => (v === 'NVT' ? 50 : v === null ? null : v);
                 const toClr = (v, c) => (v === 'NVT' ? NVT_CLR : c);

@@ -81,6 +81,16 @@ export const rttiByGradeGroup = (attempts: StatAttempt[]): RttiPoints[] =>
 /** RTTI points pooled over a student's attempts (decision 7). */
 export const pooledRtti = (history: HistoryEntry[]): RttiPoints => coreCall('pooledRtti', history);
 
+/**
+ * The tests in a student's RTTI Gem.: those of a school year without the diagnostic ones (decision
+ * 27), or for `'se'` the PTA tests. The bars keep showing every test.
+ */
+export function rttiGemHistory<H extends HistoryEntry>(history: H[], selected: string): H[] {
+  return selected === 'se'
+    ? history.filter((h) => h.exam.type === 'pta')
+    : history.filter((h) => h.exam.academic_year === selected && !h.exam.diagnostic);
+}
+
 export interface ClassQuestion {
   classAvg: number;
   classPct: number;

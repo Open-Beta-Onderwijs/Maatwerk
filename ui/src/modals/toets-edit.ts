@@ -204,7 +204,7 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
       : { title: 'Nieuwe toets', subtitle: context, ...examSteps('vragen') };
 
   const obsSection = obsLocked
-    ? lockedObsBlock(exam.obs_ids, String(exam.volgnummer ?? ''))
+    ? lockedObsBlock(exam.obs_ids)
     : availableObs.length > 0
       ? `
       <div class="exam-edit-obs">

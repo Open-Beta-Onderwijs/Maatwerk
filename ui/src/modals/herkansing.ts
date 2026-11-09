@@ -92,7 +92,7 @@ export async function openResitModal(parentId: string, year: string): Promise<vo
       ${stepperField('Aantal vragen', 'f-resit-num', { value: parent.questions.length, step: 1, min: 1, max: 40 })}
       ${stepperField('N-term', 'f-resit-nterm', { value: parent.n_term ?? 1, shown: formatNTerm(parent.n_term ?? 1), step: 0.1, min: 0, max: 3 })}
     </div>
-    ${lockedObsBlock(parent.obs_ids, code)}
+    ${lockedObsBlock(parent.obs_ids)}
     `,
     onShow: (el: HTMLElement) => {
       const descInput = el.querySelector<HTMLInputElement>('#f-resit-desc')!;

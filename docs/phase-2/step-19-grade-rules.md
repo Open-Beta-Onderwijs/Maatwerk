@@ -189,3 +189,8 @@ Filled in as the user answers (2026-11-08).
     group overview's columns still show only the group's jaarlaag.
 26. **Average points (found in review, m5):** the grid's average Totaal counts only rows with a
     grade, as the exam card does.
+27. **A diagnostic test in the RTTI Gem. (user, 2026-11-09, review 20 m4):** a student's year Gem. in
+    the profile leaves out tests with `diagnostic: true`; the bars still show them. A test with
+    weging 0 that is not diagnostic stays in. Example, T1 points of a normal test 8/10 and a
+    diagnostic test 10/40: before 18/50 = **36%**, after 8/10 = **80%**. No change on the fixtures
+    (they have no diagnostic test) or on existing data: D could not be set before 0.11.

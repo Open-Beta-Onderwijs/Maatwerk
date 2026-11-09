@@ -219,7 +219,7 @@ Each fix below that changes behaviour has a test that failed first, except n1, n
 | m1      | Fixed: only observaties the exam had when the editor opened lose their indications                          |
 | m2      | Accepted, documented in the code: needs a conflict at this exact moment; adding and removing clears it      |
 | m3      | Fixed: a student without a grade shows the observaties of all attempts                                      |
-| m4      | **Open, the user's call:** a number; not changed                                                            |
+| m4      | Fixed, user decision 2026-11-09 (decision 27): diagnostic tests are out of the year's Gem.                  |
 | m5      | Backlog: old gap, not a regression                                                                          |
 | m6      | Partly: indications on an attempt's score file, refused save, `weging_se`; the rest in the backlog          |
 | n1, n2  | Fixed                                                                                                       |
