@@ -77,10 +77,13 @@ pub struct Category {
     pub niveaus: Vec<Niveau>,
 }
 
+/// The highest max a category may have (user, 2026-11-10).
+pub const MAX_POINTS: u32 = 100;
+
 impl Category {
-    /// The max as a whole number of 1 or more, else `None`.
+    /// The max as a whole number from 1 to [`MAX_POINTS`], else `None`.
     pub fn whole_max(&self) -> Option<u32> {
-        whole(self.max).filter(|&m| m >= 1)
+        whole(self.max).filter(|&m| (1..=MAX_POINTS).contains(&m))
     }
 }
 
@@ -173,8 +176,9 @@ pub fn check_category(cat: &Category) -> CategoryCheck {
         out.errors.push(format!("Hoogstens {MAX_LEVELS} niveaus"));
     }
     let Some(max) = cat.whole_max() else {
-        out.errors
-            .push("Het maximum moet een heel getal van 1 of meer zijn".into());
+        out.errors.push(format!(
+            "Het maximum moet een heel getal van 1 tot en met {MAX_POINTS} zijn"
+        ));
         return out;
     };
 
@@ -476,13 +480,15 @@ mod tests {
     }
 
     #[test]
-    fn a_huge_max_is_checked_without_walking_every_score() {
-        // Review 21 M1: the old check allocated one entry per uncovered score.
+    fn a_huge_max_is_refused_at_once() {
+        // Review 21 M1: the old check walked every score up to the max; now the max is at most
+        // 100 and the gaps come from the intervals, so neither costs anything.
         let c = check_category(&cat(4_000_000_000, &[(0, 1), (2, 3)]));
-        assert_eq!(c.gaps, vec![(4, 4_000_000_000)]);
-        assert_eq!(c.errors, vec!["Niet gedekt: 4–4000000000"]);
-        let c = check_category(&cat(u32::MAX, &[(0, 10), (11, u32::MAX)]));
-        assert!(c.errors.is_empty(), "{:?}", c.errors);
+        assert_eq!(
+            c.errors,
+            vec!["Het maximum moet een heel getal van 1 tot en met 100 zijn"]
+        );
+        assert_eq!(gaps(&[(0, 0, 1), (1, 2, 3)], u32::MAX), vec![(4, u32::MAX)]);
     }
 
     #[test]
@@ -537,8 +543,15 @@ mod tests {
     }
 
     #[test]
-    fn max_must_be_a_whole_number_of_one_or_more() {
-        for max in [json!(0), json!(2.5), json!(-1), json!(""), json!(null)] {
+    fn max_must_be_a_whole_number_from_one_to_a_hundred() {
+        for max in [
+            json!(0),
+            json!(2.5),
+            json!(-1),
+            json!(""),
+            json!(null),
+            json!(101),
+        ] {
             let c: Category = serde_json::from_value(json!({
                 "id": "c", "naam": "A", "max": max,
                 "niveaus": [{"min": 0, "max": 0, "uitleg": "x"}, {"min": 1, "max": 1, "uitleg": "x"}]
@@ -546,10 +559,16 @@ mod tests {
             .unwrap();
             assert_eq!(
                 errors(&c),
-                vec!["Het maximum moet een heel getal van 1 of meer zijn"],
+                vec!["Het maximum moet een heel getal van 1 tot en met 100 zijn"],
                 "{max}"
             );
         }
+        let mut levels: Vec<(u32, u32)> = vec![(0, 50)];
+        levels.push((51, 100));
+        assert!(
+            errors(&cat(100, &levels)).is_empty(),
+            "100 itself is allowed"
+        );
     }
 
     #[test]

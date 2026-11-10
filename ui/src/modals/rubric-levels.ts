@@ -13,8 +13,10 @@ import {
   type RubricCategory,
 } from '../domain/rubric';
 
-/** The display stops drawing boxes above this max (the rule still applies). */
-const MAX_DRAWN = 60;
+/** The highest max (`maatwerk_grades::rubric::MAX_POINTS`, user 2026-11-10). */
+const MAX_DRAWN = 100;
+/** Above this many boxes only every fifth score (and a gap) is numbered. */
+const DENSE = 41;
 
 function whole(x: number | null): number | null {
   return x !== null && Number.isInteger(x) && x >= 0 ? x : null;
@@ -32,9 +34,11 @@ export function levelDisplay(cat: RubricCategory, check: CategoryCheck | undefin
   if (max === null || max < 1 || max > MAX_DRAWN) return '';
   const cells = max + 1;
   const gaps = check?.gaps ?? [];
+  const dense = cells > DENSE;
   const numbers = Array.from({ length: cells }, (_, n) => {
     const gap = gaps.some(([a, b]) => a <= n && n <= b);
-    return `<span class="rubric-scale-n${gap ? ' rubric-scale-n--gap' : ''}">${n}</span>`;
+    const label = !dense || gap || n % 5 === 0 ? String(n) : '';
+    return `<span class="rubric-scale-n${gap ? ' rubric-scale-n--gap' : ''}">${label}</span>`;
   }).join('');
   const bars = cat.niveaus
     .map((lv, i) => {
@@ -48,7 +52,7 @@ export function levelDisplay(cat: RubricCategory, check: CategoryCheck | undefin
     })
     .join('');
   return `<div class="rubric-display" aria-hidden="true" data-cells="${cells}" data-rows="${cat.niveaus.length}">
-    <div class="rubric-scale">${numbers}</div>
+    <div class="rubric-scale${dense ? ' rubric-scale--dense' : ''}">${numbers}</div>
     <div class="rubric-bars">${bars}</div>
   </div>`;
 }

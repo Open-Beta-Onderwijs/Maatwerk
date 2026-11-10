@@ -58,7 +58,12 @@ describe('rubric rules (WebAssembly)', () => {
   it('a huge max is checked at once (review 21 M1)', () => {
     const r = fixtureRubric();
     must(r.categories[0]).max = 400_000_000;
-    expect(must(checkRubric(r).categories[0]).gaps).toEqual([[9, 400_000_000]]);
+    expect(must(checkRubric(r).categories[0]).errors).toEqual([
+      'Het maximum moet een heel getal van 1 tot en met 100 zijn',
+    ]);
+    // 100 is the highest max (user, 2026-11-10).
+    must(r.categories[0]).max = 100;
+    expect(must(checkRubric(r).categories[0]).gaps).toEqual([[9, 100]]);
   });
 
   it('a damaged file reads as an invalid rubric, not an exception (review 21 m5)', () => {

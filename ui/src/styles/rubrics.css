@@ -240,6 +240,12 @@
   background: var(--surface-2);
   color: var(--muted);
 }
+.rubric-scale--dense .rubric-scale-n {
+  margin: 0 1px;
+  min-height: 1.3em;
+  overflow: visible;
+  font-size: 10px;
+}
 .rubric-scale-n--gap {
   background: var(--danger-soft);
   color: var(--danger);

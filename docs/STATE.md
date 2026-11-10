@@ -44,6 +44,11 @@ categories (they change the max); category names stay editable when locked (deci
 16 disables them); `uitleg` of a level is required; a rubric needs one `normaal` category; an
 observatie used in a test keeps toetstype Toets (so the score grid needs no filter).
 
+**User decisions (2026-11-10):** a category's max is 1 to 100 (`MAX_POINTS`; the display numbers
+every fifth score above 40 boxes); the card chips keep "· bonus" / "· diag". macOS baselines of
+step 20 committed (`0ddc7c8`, from run `42636690859`) and pushed; CI run `42796049482`; merged into
+this branch. A local exe 0.12.0 was built for the user's manual test on real data.
+
 **Step 20 (waiting):** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
 
 ## Step 20 progress (Toetsen, 0.11)

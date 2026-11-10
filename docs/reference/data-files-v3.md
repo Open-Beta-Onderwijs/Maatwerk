@@ -76,7 +76,7 @@ data/
 ```
 
 - Rules (`maatwerk_grades::rubric`, one implementation for the UI, the core and the CLI): a
-  category has 2-5 niveaus; `max` and the bounds are whole points (`max` at least 1); a niveau
+  category has 2-5 niveaus; `max` and the bounds are whole points (`max` from 1 to 100, user 2026-11-10); a niveau
   lies within `0..max`; niveaus may overlap but no two share a `min` or a `max`; together they
   cover every score from 0 to `max`. `naam` (rubric, category) and `uitleg` are required, `titel`
   is not. A rubric needs a vak, a schoolsoort, a jaarlaag and at least one `normaal` category.

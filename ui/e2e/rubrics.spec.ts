@@ -185,6 +185,15 @@ test.describe('rubric editor', () => {
     await level(page, 0, 2).locator('[data-field="min"]').fill('6');
     await expect(cat(page, 0).locator('.rubric-cat-error')).toHaveText('');
     await expect(page.locator('#rubric-save')).toBeEnabled();
+    // The max is 1 to 100 (user, 2026-11-10).
+    await cat(page, 0).locator('[data-field="cat-max"]').fill('101');
+    await expect(cat(page, 0).locator('.rubric-cat-error')).toHaveText(
+      'Het maximum moet een heel getal van 1 tot en met 100 zijn',
+    );
+    await expect(page.locator('#rubric-save')).toBeDisabled();
+    await cat(page, 0).locator('[data-field="cat-max"]').fill('100');
+    await expect(cat(page, 0).locator('.rubric-scale-n')).toHaveCount(101);
+    await expect(cat(page, 0).locator('.rubric-cat-error')).toHaveText('Niet gedekt: 9–100');
   });
 
   test('levels: add up to five, remove down to two; soort changes the totals', async ({ page }) => {
