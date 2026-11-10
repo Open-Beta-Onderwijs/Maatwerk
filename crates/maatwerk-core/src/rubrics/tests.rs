@@ -15,7 +15,7 @@ fn setup() -> (tempfile::TempDir, Storage) {
     let tmp = tempfile::tempdir().unwrap();
     let mut storage =
         Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks")).unwrap();
-    storage.set_app_version(PO_MIN_APP_VERSION);
+    storage.set_app_version(PO_EXAM_MIN_APP_VERSION);
     storage
         .write_json(
             &rel("school.json"),
@@ -42,9 +42,41 @@ fn rubric(id: &str) -> Value {
 fn po_exam(year: &str, id: &str, rubric_id: &str) -> (RelPath, Value) {
     (
         rel(&format!("{year}/exams/{id}.json")),
-        json!({"id": id, "naam": format!("PO {id}"), "subject": "nat", "kind": "po",
+        json!({"id": id, "title": format!("PO {id}"), "subject": "nat", "kind": "po",
                "rubric_id": rubric_id}),
     )
+}
+
+#[test]
+fn the_first_po_exam_raises_the_minimum_to_0_13() {
+    // Step 22: a test raises nothing, a PO (any case of the path) raises to 0.13.0.
+    let (_t, s) = setup();
+    s.write_json(
+        &rel("2026-2027/exams/t1.json"),
+        &json!({"id": "t1", "kind": "toets"}),
+        Expect::Missing,
+    )
+    .unwrap();
+    assert_eq!(min_version(&s), "0.9.0");
+    let (_, exam) = po_exam("2026-2027", "p1", "r1");
+    s.write_json(&rel("2026-2027/Exams/p1.JSON"), &exam, Expect::Missing)
+        .unwrap();
+    assert_eq!(min_version(&s), PO_EXAM_MIN_APP_VERSION);
+    assert!(!is_exam_path("exams/p1.json"));
+    assert!(!is_exam_path("2026-2027/exams/a/p1.json"));
+    assert!(!is_exam_path("2026-2027/scores/p1.json"));
+}
+
+#[test]
+fn an_app_of_0_12_cannot_write_after_the_first_po() {
+    let (_t, mut s) = setup();
+    let (path, exam) = po_exam("2026-2027", "p1", "r1");
+    s.write_json(&path, &exam, Expect::Missing).unwrap();
+    s.set_app_version(PO_MIN_APP_VERSION);
+    let err = s
+        .write_json(&rel("rubrics/r1.json"), &rubric("r1"), Expect::Missing)
+        .unwrap_err();
+    assert!(matches!(err, Error::ReadOnly { .. }), "{err:?}");
 }
 
 fn min_version(s: &Storage) -> String {

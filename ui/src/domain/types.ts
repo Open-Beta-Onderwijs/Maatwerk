@@ -44,6 +44,10 @@ export interface Exam {
   obs_from_parent?: boolean;
   /** Format v3 (F-14): opdrachten for a score below `onder` on question `vraag`. */
   opdrachtenVraag?: VraagCard[];
+  /** A PO (step 22): the rubric it is graded with. */
+  rubric_id?: string;
+  /** A PO (step 22, decision 18): a student is in at most one. */
+  projectgroepen?: Projectgroep[];
   attempt?: number;
   volgnummer?: number;
   obs_ids?: string[];
@@ -53,6 +57,13 @@ export interface Exam {
   academic_year?: string;
   _meta?: Meta;
   [key: string]: unknown;
+}
+
+/** A projectgroep of a PO (step 22, decision 18). */
+export interface Projectgroep {
+  id: string;
+  naam?: string;
+  student_ids: StudentId[];
 }
 
 /** A typed score: number of points, `null` or `'N'` (not made), or any string as typed. */

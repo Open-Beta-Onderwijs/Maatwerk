@@ -118,21 +118,21 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-OBS-1** "+ Observatie toevoegen", edit, delete (with confirmation); filters by
       schoolsoort, vak, jaarlaag.
 - [ pass ] **M-OBS-2** (0.12) Toetstype: a new observatie is Toets; tick PO too, or only PO (never
-      none). The filter chip "Alle toetstypes / Toets / PO" filters; PO observaties show a badge.
-      Toets bewerken does not offer a PO-only observatie; an observatie a rubric uses keeps PO.
+  none). The filter chip "Alle toetstypes / Toets / PO" filters; PO observaties show a badge.
+  Toets bewerken does not offer a PO-only observatie; an observatie a rubric uses keeps PO.
 
 ## Rubrics (M-RUB, 0.12)
 
 - [ pass ] **M-RUB-1** As a teacher the tab Rubrics is between Toetsen and Observaties; the admin has no
-      such tab. Cards show the categories, "n categorieën · n punten · bonus n".
+  such tab. Cards show the categories, "n categorieën · n punten · bonus n".
 - [ pass ] **M-RUB-2** "+ Rubric toevoegen": Opslaan stays grey until naam, schoolsoort, jaarlaag and
-      every category (naam, levels with uitleg) are right. Make two levels start at the same
-      number, and leave a score uncovered: the red line names both, the number row marks the gap.
+  every category (naam, levels with uitleg) are right. Make two levels start at the same
+  number, and leave a score uncovered: the red line names both, the number row marks the gap.
 - [ pass ] **M-RUB-3** Save the first rubric on a copy of the data: `school.json` `minAppVersion` is
-      now 0.12.0, and Maatwerk 0.11 on that copy opens read-only.
+  now 0.12.0, and Maatwerk 0.11 on that copy opens read-only.
 - [ pass ] **M-RUB-4** Dupliceren opens "Nieuwe rubric" with "(kopie)"; saving adds a second card.
-      Delete an unused rubric (confirm). A rubric in use (from 0.13, PO's) shows "In gebruik bij
-      n PO's" and cannot be deleted; its maxima and soort are locked in the editor.
+  Delete an unused rubric (confirm). A rubric in use (from 0.13, PO's) shows "In gebruik bij
+  n PO's" and cannot be deleted; its maxima and soort are locked in the editor.
 - [ pass ] **M-RUB-5** `maatwerk-cli rubric check <data>` lists every rubric with its use and errors.
 
 ## Opdrachten and the editor (M-OPD)

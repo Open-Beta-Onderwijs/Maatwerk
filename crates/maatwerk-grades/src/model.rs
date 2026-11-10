@@ -12,6 +12,8 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
+use crate::rubric::Rubric;
+
 /// A number, a numeric string, or `None` for anything else.
 fn number_of(value: &Value) -> Option<f64> {
     match value {
@@ -158,9 +160,32 @@ pub struct Exam {
     pub schoolsoort: Vec<String>,
     #[serde(default, deserialize_with = "opt_text")]
     pub academic_year: Option<String>,
+    /// A PO's rubric (`rubric_id`, step 22), **attached by the caller** before grading: the exam
+    /// file names the rubric, it never holds it. A PO without one has no grade.
+    #[serde(default, deserialize_with = "opt_rubric")]
+    pub rubric: Option<Rubric>,
+}
+
+/// An attached rubric; anything that is not one reads as none.
+fn opt_rubric<'de, D: Deserializer<'de>>(d: D) -> Result<Option<Rubric>, D::Error> {
+    Ok(serde_json::from_value(Value::deserialize(d)?).ok())
 }
 
 impl Exam {
+    /// The ids a score record holds for this exam: a PO's rubric categories (step 22), else the
+    /// questions.
+    pub fn score_ids(&self) -> Vec<&str> {
+        if self.is_po() {
+            self.rubric
+                .iter()
+                .flat_map(|r| &r.categories)
+                .map(|c| c.id.as_str())
+                .collect()
+        } else {
+            self.questions.iter().map(|q| q.id.as_str()).collect()
+        }
+    }
+
     /// The n-term; 1 when absent.
     pub fn n(&self) -> f64 {
         self.n_term.unwrap_or(1.0)

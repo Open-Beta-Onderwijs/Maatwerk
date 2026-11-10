@@ -130,6 +130,9 @@ pub struct Results {
 /// - Diag: in nothing.
 /// - Override: replaces the grade; points and RTTI stay from the scores.
 pub fn calc_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override>) -> Results {
+    if exam.is_po() {
+        return calc_po_results(exam, scores, over);
+    }
     let mut normal_max = 0.0;
     let mut bonus_max = 0.0;
     let mut scored = 0.0;
@@ -171,6 +174,18 @@ pub fn calc_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override
             round1(calc_grade(scored, normal_max, exam.n()))
         }
     });
+    finish(scored, normal_max, bonus_max, calculated, over, cats)
+}
+
+/// The results from the totals; the override replaces the grade.
+fn finish(
+    scored: f64,
+    normal_max: f64,
+    bonus_max: f64,
+    calculated: Option<f64>,
+    over: Option<&Override>,
+    cats: RttiPoints,
+) -> Results {
     let cijfer = over.and_then(|o| o.cijfer);
     let berekend = over.and_then(|o| o.berekend);
 
@@ -192,14 +207,59 @@ pub fn calc_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override
     }
 }
 
-/// The scores in `rec` for this exam's current questions.
+/// A PO (step 22, decision 16): the rubric's categories are its questions, scored in whole points
+/// from 0 to the category max. Normal and bonus scores count in the points, only normal maxima in
+/// the max, diagnostic categories in neither. Grade = 10 × points ÷ max between 1,0 and 10,0,
+/// rounded to one decimal; no n-term, no RTTI.
+///
+/// Scores read as for a test: `N` is 0 and gradeable, a value out of range, with a fraction or
+/// text is 0 and not gradeable. Without an attached rubric there is no max, so no grade.
+/// Bonus/malus lines (decision 17) come with grading (step 23).
+fn calc_po_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override>) -> Results {
+    use crate::rubric::Soort;
+
+    let mut normal_max = 0.0;
+    let mut bonus_max = 0.0;
+    let mut scored = 0.0;
+    let mut gradeable = false;
+    for cat in exam.rubric.iter().flat_map(|r| &r.categories) {
+        let max = f64::from(cat.whole_max().unwrap_or(0));
+        match cat.soort {
+            Soort::Normaal => normal_max += max,
+            Soort::Bonus => bonus_max += max,
+            Soort::Diagnostisch => continue,
+        }
+        let Some(raw) = scores.get(&cat.id) else {
+            continue;
+        };
+        let value = ScoreValue::of(raw);
+        let points = value.valid_points(max).filter(|p| p.fract() == 0.0);
+        if points.is_some() || value == ScoreValue::NotMade {
+            gradeable = true;
+        }
+        scored += points.unwrap_or(0.0);
+    }
+    let calculated = (gradeable && normal_max > 0.0)
+        .then(|| crate::rubric::po_grade(scored, normal_max).map(round1))
+        .flatten();
+    finish(
+        scored,
+        normal_max,
+        bonus_max,
+        calculated,
+        over,
+        RttiPoints::default(),
+    )
+}
+
+/// The scores in `rec` for this exam's current questions (a PO: its rubric's categories).
 pub fn exam_scores(rec: &ScoreRecord, exam: &Exam) -> QuestionScores {
     let Some(all) = rec.scores.get(&exam.id) else {
         return QuestionScores::new();
     };
-    exam.questions
-        .iter()
-        .filter_map(|q| all.get(&q.id).map(|v| (q.id.clone(), v.clone())))
+    exam.score_ids()
+        .into_iter()
+        .filter_map(|id| all.get(id).map(|v| (id.to_owned(), v.clone())))
         .collect()
 }
 
@@ -249,6 +309,91 @@ pub(crate) mod tests {
 
     fn pct(p: f64) -> RttiPct {
         RttiPct::Pct(p)
+    }
+
+    /// The design's PO (spec 4.13): normal 3 + 8 + 6, bonus 4, diagnostic 5; max 17.
+    fn po() -> Exam {
+        exam_of(
+            json!({"id": "p", "kind": "po", "n_term": 3, "questions": [],
+            "rubric": {"categories": [
+                {"id": "intro", "max": 3, "soort": "normaal"},
+                {"id": "theorie", "max": 8, "soort": "normaal"},
+                {"id": "figuren", "max": 6, "soort": "normaal"},
+                {"id": "orig", "max": 4, "soort": "bonus"},
+                {"id": "diag", "max": 5, "soort": "diagnostisch"}
+            ]}}),
+        )
+    }
+
+    #[test]
+    fn a_po_grade_is_ten_times_points_over_max_without_n_term() {
+        // 14/17 -> 8,235... -> 8,2; the n-term 3 in the file is ignored (decision 16).
+        let r = calc_results(
+            &po(),
+            &scores_of(json!({"intro": 2, "theorie": 7, "figuren": 5, "diag": 5})),
+            None,
+        );
+        assert_eq!((r.scored, r.normal_max, r.bonus_max), (14.0, 17.0, 4.0));
+        assert_eq!(r.grade, Some(8.2));
+        assert!(r.has_bonus);
+        // No RTTI for a PO.
+        assert_eq!([r.r, r.t1, r.t2, r.i], [RttiPct::Nvt; 4]);
+    }
+
+    #[test]
+    fn a_po_bonus_counts_in_the_points_and_the_grade_stops_at_ten() {
+        let r = calc_results(
+            &po(),
+            &scores_of(json!({"intro": 3, "theorie": 8, "figuren": 4, "orig": 4})),
+            None,
+        );
+        assert_eq!(r.scored, 19.0);
+        assert_eq!(r.grade, Some(10.0));
+        // Nothing earned is 1,0, not 0.
+        let zero = calc_results(&po(), &scores_of(json!({"intro": 0})), None);
+        assert_eq!(zero.grade, Some(1.0));
+    }
+
+    #[test]
+    fn a_po_score_must_be_whole_and_in_range() {
+        // Whole points only (decision 16): 2,5 and 9 (over 8) earn 0 and make nothing gradeable.
+        let bad = calc_results(&po(), &scores_of(json!({"intro": 2.5, "theorie": 9})), None);
+        assert_eq!((bad.scored, bad.grade), (0.0, None));
+        let r = calc_results(&po(), &scores_of(json!({"intro": 2.5, "theorie": 8})), None);
+        assert_eq!(r.scored, 8.0);
+        assert_eq!(r.grade, Some(round1(80.0 / 17.0)));
+        // Only a diagnostic category scored: no grade.
+        let diag = calc_results(&po(), &scores_of(json!({"diag": 3})), None);
+        assert_eq!(diag.grade, None);
+    }
+
+    #[test]
+    fn a_po_without_its_rubric_has_no_grade_but_keeps_an_override() {
+        let mut exam = po();
+        exam.rubric = None;
+        let r = calc_results(&exam, &scores_of(json!({"intro": 3})), None);
+        assert_eq!((r.normal_max, r.grade), (0.0, None));
+        let over = Override {
+            cijfer: Some(7.0),
+            berekend: None,
+        };
+        assert_eq!(
+            calc_results(&exam, &QuestionScores::new(), Some(&over)).grade,
+            Some(7.0)
+        );
+    }
+
+    #[test]
+    fn a_pos_scores_are_its_categories_not_questions() {
+        let mut exam = po();
+        exam.questions =
+            vec![serde_json::from_value(json!({"id": "q1", "max_points": 10})).unwrap()];
+        let rec: ScoreRecord =
+            serde_json::from_value(json!({"scores": {"p": {"intro": 3, "q1": 10, "gone": 1}}}))
+                .unwrap();
+        let scores = exam_scores(&rec, &exam);
+        assert_eq!(scores.len(), 1);
+        assert_eq!(exam_results(&rec, &exam).unwrap().scored, 3.0);
     }
 
     #[test]

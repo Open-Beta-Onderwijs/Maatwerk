@@ -32,6 +32,10 @@ pub const RUBRICS_DIR: &str = "rubrics";
 /// The first app version that knows rubrics and observatie toetstypes.
 pub const PO_MIN_APP_VERSION: &str = "0.12.0";
 
+/// The first app version that knows PO exams (`kind: "po"`, `rubric_id`, `projectgroepen`; step
+/// 22): an older one would show a PO as a test without questions and could save it as one.
+pub const PO_EXAM_MIN_APP_VERSION: &str = "0.13.0";
+
 /// The observatie field that says where an observatie is offered (decision 23).
 pub const TOETSTYPES_FIELD: &str = "toetstypes";
 
@@ -80,7 +84,8 @@ pub fn usage(storage: &Storage) -> Result<BTreeMap<String, Vec<RubricUse>>> {
             out.entry(id.to_owned()).or_default().push(RubricUse {
                 year: year.clone(),
                 exam_id: text(&exam, "id"),
-                naam: text(&exam, "naam"),
+                // An exam's name is its `title`.
+                naam: text(&exam, "title"),
             });
         }
     }
@@ -116,11 +121,15 @@ pub(crate) fn guard_write(
 ) -> Result<()> {
     let raise = if let Some(id) = rubric_id_of(rel.as_str()) {
         check_rubric_write(storage, rel, id, value)?;
-        true
+        Some(PO_MIN_APP_VERSION)
+    } else if json_in(rel.as_str(), "observaties").is_some() && is_po_observatie(value) {
+        Some(PO_MIN_APP_VERSION)
+    } else if is_exam_path(rel.as_str()) && is_po_exam(value) {
+        Some(PO_EXAM_MIN_APP_VERSION)
     } else {
-        json_in(rel.as_str(), "observaties").is_some() && is_po_observatie(value)
+        None
     };
-    if raise {
+    if let Some(min) = raise {
         // A write that will fail its CAS raises nothing (review 21 m1); the commit checks again.
         if !storage.expect_holds(rel, expect)? {
             return Err(Error::Conflict {
@@ -128,9 +137,20 @@ pub(crate) fn guard_write(
                 updated_by: None,
             });
         }
-        ensure_min_app_version(storage, PO_MIN_APP_VERSION)?;
+        ensure_min_app_version(storage, min)?;
     }
     Ok(())
+}
+
+/// `<year>/exams/<id>.json`, the folder and extension in any ASCII case.
+fn is_exam_path(rel: &str) -> bool {
+    rel.split_once('/')
+        .is_some_and(|(_, rest)| json_in(rest, "exams").is_some())
+}
+
+/// A practical assignment (`kind: "po"`, step 22).
+pub fn is_po_exam(exam: &Value) -> bool {
+    exam.get("kind").and_then(Value::as_str) == Some("po")
 }
 
 fn check_rubric_write(storage: &Storage, rel: &RelPath, id: &str, value: &Value) -> Result<()> {

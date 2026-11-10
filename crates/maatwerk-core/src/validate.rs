@@ -453,8 +453,103 @@ fn check_references(
             {
                 out.missing(rel, format!("Rubric {r} bestaat niet"));
             }
+            check_po_exam(rel, value, students, out);
         } else if rest.starts_with("scores/") {
             check_scores(rel, year, value, students, exams, out);
+        }
+    }
+}
+
+/// A PO exam (step 22, decisions 18 and 22): a rubric, no questions, and `projectgroepen`
+/// `[{ id, naam?, student_ids }]` of students of this year, each in at most one projectgroep. A
+/// test has no projectgroepen.
+fn check_po_exam(rel: &str, exam: &Value, students: &BTreeSet<String>, out: &mut Found) {
+    let po = crate::rubrics::is_po_exam(exam);
+    let groups = exam.get("projectgroepen");
+    if !po {
+        if groups.is_some() {
+            out.warn(
+                IssueKind::Shape,
+                rel,
+                "Projectgroepen bij een toets: ze tellen niet mee".into(),
+            );
+        }
+        return;
+    }
+    if crate::rubrics::exam_rubric_id(exam).is_none() {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            "PO zonder rubric: er wordt geen cijfer berekend".into(),
+        );
+    }
+    if exam
+        .get("questions")
+        .and_then(Value::as_array)
+        .is_some_and(|q| !q.is_empty())
+    {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            "PO met vragen: die tellen niet mee, het cijfer komt uit de rubric".into(),
+        );
+    }
+    let Some(groups) = groups else {
+        return;
+    };
+    let Some(groups) = groups.as_array() else {
+        out.error(IssueKind::Shape, rel, "projectgroepen is geen lijst".into());
+        return;
+    };
+    let mut group_ids = BTreeSet::new();
+    let mut placed: BTreeMap<&str, &str> = BTreeMap::new();
+    for g in groups {
+        let Some(id) = g
+            .get("id")
+            .and_then(Value::as_str)
+            .filter(|i| !i.is_empty())
+        else {
+            out.error(
+                IssueKind::Shape,
+                rel,
+                format!("Projectgroep zonder id: {g}"),
+            );
+            continue;
+        };
+        if !group_ids.insert(id) {
+            out.error(
+                IssueKind::Shape,
+                rel,
+                format!("Projectgroep {id} staat er twee keer in"),
+            );
+        }
+        let Some(members) = g.get("student_ids").and_then(Value::as_array) else {
+            out.error(
+                IssueKind::Shape,
+                rel,
+                format!("Projectgroep {id}: student_ids is geen lijst"),
+            );
+            continue;
+        };
+        for s in members {
+            let Some(s) = s.as_str() else {
+                out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!("Projectgroep {id}: leerlingnummer {s} is geen tekst"),
+                );
+                continue;
+            };
+            if !students.contains(s) {
+                out.missing(rel, format!("Projectgroep {id}: leerling {s} bestaat niet"));
+            }
+            if let Some(first) = placed.insert(s, id) {
+                out.error(
+                    IssueKind::Shape,
+                    rel,
+                    format!("Leerling {s} zit in twee projectgroepen ({first} en {id})"),
+                );
+            }
         }
     }
 }

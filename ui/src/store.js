@@ -53,6 +53,7 @@ import {
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { normaliseRubric } from './domain/rubric';
+import { setRubricLookup } from './domain/po';
 import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
@@ -447,6 +448,11 @@ const Store = (() => {
     cache[key] = all.map(normaliseRubric).filter((r) => r.id && r.subject === subject);
     return cache[key];
   }
+
+  // A PO is graded with its rubric (step 22): the grade calls find it in the cache.
+  setRubricLookup((id, subject) =>
+    (cache[`rubrics/${subject ?? _activeSubject}`] ?? []).find((r) => r.id === id),
+  );
 
   async function loadYear(year, subject = _activeSubject) {
     await window.maatwerk.ensureYear(year);

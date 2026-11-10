@@ -1,16 +1,40 @@
 # State
 
-Last updated: 2026-11-10 (step 21) Branch: `step/21-rubrics` (from `step/20-toetsen` `49bb2d7`;
-step 20 is not merged yet: its macOS CI baselines are pending, user 2026-11-10: "later")
+Last updated: 2026-11-10 (step 22) Branch: `step/22-po` (from `step/21-rubrics` `d4299cc`; steps
+20 and 21 are not merged yet: the macOS CI runs are pending, user 2026-11-10: "later")
 Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action (step 21):** waiting for the user: visual diff (30 local images, plus 9 new ones
-for `screen-rubrics`, `modal-rubric-edit`, `modal-rubric-new`), the questions in the step report
-(cap on a category's max; card chip suffixes "· bonus"/"· diag"), test on a copy of real data.
-Then: push `step/21-rubrics` for CI (after step 20's macOS rerun ends, or the push cancels it),
-replace the CI baselines of the changed views from CI's own run, local baselines, merge, tag
+**Next action (step 22):** sub-task 2 (22a UI: "+ PO toevoegen" step 1, PO card, PO bewerken, ⋮
+menu). Visual views get an optional `seed` (`ui/e2e/views.ts`): the shared mock fixture has no
+PO, because the step 21 rubric e2e tests count rubric uses.
+
+## Step 22 progress (PO b: PO in Toetsen and projectgroepen, 0.13)
+
+Plan: (1) 22a core/data; (2) 22a UI: PO toevoegen step 1, PO card, PO bewerken, menu; (3) 22b UI:
+Projectgroepen step (click/drag, Willekeurig indelen, empty groups dropped), regrouping warning,
+PO herkansing; (4) gate, review, report.
+
+1. **Done**, 22a core/data: `maatwerk_grades` `Exam.rubric` (attached by the caller, never in
+   a file) and `calc_results` for a PO (categories as questions, whole points, decision 16,
+   round1, no RTTI/N-term; no rubric: no grade); `exam_scores` reads category ids. Tests incl.
+   year average and PO herkansing. CLI `stats` attaches `rubrics/<id>.json`. Core guard: the
+   first `kind: "po"` exam raises `minAppVersion` to **0.13.0** (`PO_EXAM_MIN_APP_VERSION`);
+   `usage` names exams by `title` (was `naam`, which exams lack). `validate-data`: PO without
+   rubric / with questions (warn), `projectgroepen` shape, a student in two groups (error),
+   unknown members. Docs `data-files-v3.md` "PO exams". UI: `domain/po.ts` (matching rubrics
+   and classes, unplaced, random groups, save/copy/moved, `forGrading` + `setRubricLookup`
+   registered by Store; used by `grades.ts`, `statistics.ts`), mock guard 0.13.0, version
+   0.13.0.
+
+Step 21 (for the record): the user's manual test passed (`docs/reviews/manual-test-step-21.md`,
+M-OBS-2, M-RUB-1..5). Still to do there: push for CI, CI baselines, merge, tags.
+
+## Step 21 (waiting for CI and merge)
+
+Next there: push `step/21-rubrics` for CI (after step 20's macOS rerun ends, or the push cancels
+it), replace the CI baselines of the changed views from CI's own run, local baselines, merge, tag
 `step-21`, `v0.12.0`.
 
 ## Step 21 progress (PO a: rubrics, observatie toetstype, 0.12)

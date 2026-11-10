@@ -7,6 +7,7 @@
 import type { HistoryEntry } from './attempts';
 import { coreCall, round0 } from './core';
 import { recordFor, type Points, type RttiCategory, type RttiPoints } from './grades';
+import { forGrading } from './po';
 import type { Exam, Group, Question, QuestionScores, ScoreRecord } from './types';
 
 export interface Stats {
@@ -30,11 +31,15 @@ export const meanOfAverages = (averages: number[]): number | null =>
 
 /** The weighted year average over one year's tests, unrounded (decision 9). */
 export const yearAverage = (exams: Exam[], rec: ScoreRecord | null | undefined): number | null =>
-  coreCall('yearAverage', exams, recordFor(rec, exams));
+  coreCall('yearAverage', exams.map(forGrading), recordFor(rec, exams));
 
 /** The SE average over a student's history of all years, unrounded (decision 10). */
 export const seAverage = (history: HistoryEntry[], exams: Exam[]): number | null =>
-  coreCall('seAverage', history, exams);
+  coreCall(
+    'seAverage',
+    history.map((h) => ({ ...h, exam: forGrading(h.exam) })),
+    exams.map(forGrading),
+  );
 
 export interface Histogram {
   bins: number[];
@@ -156,4 +161,4 @@ export interface Trend {
 
 /** The trend arrow of one student in one year (decision 13). */
 export const trend = (exams: Exam[], rec: ScoreRecord | null | undefined): Trend | null =>
-  coreCall('trend', exams, recordFor(rec, exams));
+  coreCall('trend', exams.map(forGrading), recordFor(rec, exams));

@@ -100,7 +100,39 @@ refused. The first rubric, or the first observatie with `po` in `toetstypes`, ra
 observaties in a test or overwrite what it does not know. Without a `school.json` (not synced
 yet) nothing is raised.
 
+## PO exams (0.13, step 22)
+
+Additive within v3 (PLAN-2 decisions 16-18, 22). A PO is an exam file with `kind: "po"`:
+
+```
+{ id, title, kind: "po", rubric_id, projectgroepen: [{ id, naam?, student_ids: [..] }],
+  subject, jaarlaag, schoolsoort, periode, weging, weging_se, type, diagnostic,
+  questions: [], obs_ids, parent_id?, attempt?, description?, _meta }
+```
+
+- No questions and no N-term (`n_term` is not written; a stray one is ignored). PTA and D work
+  as for a test. A herkansing (`parent_id`, `description: "HERKANSING"`) keeps the original's
+  `rubric_id` and starts with a copy of its projectgroepen (new ids, editable); there is no
+  inhaal for a PO.
+- `rubric_id` names a rubric of the same vak with a shared schoolsoort and the PO's jaarlaag
+  (the UI offers only those; it is not re-checked later). PO bewerken changes it only while no
+  student has a score for the PO (or a herkansing of it).
+- `projectgroepen`: a student is in at most one; students of different classes may be together
+  (the UI offers the students of the classes with the PO's vak, a shared schoolsoort and its
+  jaarlaag); a student alone is a group of one; `naam` is optional ("Projectgroep n" is shown).
+  Unplaced students get no grade. Empty groups are dropped on save.
+- Scores (graded from step 23): `scores[examId][categoryId]`, whole points `0..max`. The grade is
+  `maatwerk_grades` `calc_results` with the rubric **attached by the caller** (`exam.rubric`; an
+  exam file never holds it): decision 16, rounded to one decimal; no RTTI. A PO without its
+  rubric has no grade. The PO's grade counts in the year and SE averages like a test's.
+- Guard: the first exam with `kind: "po"` raises `school.json` `minAppVersion` to **0.13.0**
+  (`maatwerk_core::rubrics`), as for rubrics.
+
 ## `validate-data`
+
+Step 22 adds: a PO without `rubric_id` or with questions (warnings), `projectgroepen` shape
+(errors), a student in two projectgroepen (error), a member who is not a student of the year
+(missing), and `projectgroepen` on a test (warning).
 
 Step 21 adds: rubric files (the rules above, errors; id = file name), their observaties (missing:
 warning; not of toetstype PO: warning), `toetstypes` values (warning) and an exam's `rubric_id`

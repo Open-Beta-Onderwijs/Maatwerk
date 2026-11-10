@@ -4,6 +4,7 @@
 // docs/phase-2/step-19-grade-rules.md); this file only gives them types.
 
 import { coreCall } from './core';
+import { forGrading } from './po';
 import type { Exam, Override, Question, QuestionKind, QuestionScores, ScoreRecord } from './types';
 
 /** The kind of a question; absent or unknown means 'normal' (decision 23). */
@@ -49,11 +50,11 @@ export function calcGrade(scored: number, max: number, nTerm: number): number {
 
 /** Grade, points and RTTI percentages of one attempt. */
 export function calcResults(
-  exam: Pick<Exam, 'n_term' | 'questions'>,
+  exam: Pick<Exam, 'n_term' | 'questions'> & Partial<Pick<Exam, 'kind' | 'subject' | 'rubric_id'>>,
   questionScores: QuestionScores,
   override?: Override | null,
 ): Results {
-  return coreCall('calcResults', exam, questionScores, override);
+  return coreCall('calcResults', forGrading(exam), questionScores, override);
 }
 
 /**
@@ -81,7 +82,8 @@ export function recordFor(
  */
 export function examResults(
   rec: ScoreRecord | null | undefined,
-  exam: Pick<Exam, 'id' | 'n_term' | 'questions'>,
+  exam: Pick<Exam, 'id' | 'n_term' | 'questions'> &
+    Partial<Pick<Exam, 'kind' | 'subject' | 'rubric_id'>>,
 ): Results | null {
-  return coreCall('examResults', recordFor(rec, [exam]), exam);
+  return coreCall('examResults', recordFor(rec, [exam]), forGrading(exam));
 }
