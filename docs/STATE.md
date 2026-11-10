@@ -6,10 +6,12 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action (step 22):** finish sub-tasks 2+3 (UI written, `e2e/po.spec.ts` 5 green): full
-Chromium e2e, own look at the new visual views, commit; then gate, review, report. Visual views
-get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has no PO,
-because the step 21 rubric e2e tests count rubric uses.
+**Next action (step 22):** waiting for the user: review M2 (unplaced students and their PO
+scores: grade rule or data), the visual diff (3 new PO views; `screen-toetsen` and `exam-menu`
+change too: "+ PO toevoegen"), the choices below, a manual test on a copy of real data (M-PO-1..).
+Then push for CI (after steps 20/21), CI baselines, merge order 20 -> 21 -> 22, tags. Visual
+views get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has
+no PO, because the step 21 rubric e2e tests count rubric uses.
 
 ## Step 22 progress (PO b: PO in Toetsen and projectgroepen, 0.13)
 
@@ -40,7 +42,21 @@ PO herkansing; (4) gate, review, report.
    "Willekeurig indelen…" (size n, over the visible unplaced, as even as possible), empty
    groups dropped on save, "← Gegevens" keeps everything; regrouping a student of a PO with
    scores asks first (decision 19; the score copy itself comes with grading, step 23). PO
-   herkansing: same rubric, groups copied with new ids, editable before saving.
+   herkansing: same rubric, groups copied with new ids, editable before saving. (`6c202ac`)
+4. Gate green: fmt, clippy, cargo test, lint, typecheck, 517 Vitest, 125 node, 273 Chromium e2e,
+   WebKit (po/rubrics/shell 34), licences, cargo deny, `npm audit --omit=dev` 0, SPDX. Review
+   `docs/reviews/step-22.md` (0/2/4/6), triage at its end: M1 (best attempt of a PO family
+   ungraded) fixed with a failing test first; m1-m4, n2-n4, n6 fixed; n5 backlog; **M2 for the
+   user**. Local visual: the 30 step 21 images still differ (local baselines predate step 21)
+   plus the 9 new PO images.
+
+Choices made without asking (for the report): a PO's title and "Overzicht openen" are not
+clickable until a PO overview exists; Scores/Rapport/Opdrachten in a PO's menu are disabled with
+a reason; "Projectgroepen" is its own ⋮ item (the score table gets it in step 23); PO bewerken
+locks the rubric once the PO or its herkansing has scores, and a family's fields as for tests;
+the class tag is the student's matching Groep name (first by name); random groups go over the
+visible (filtered) unplaced students, as even as possible; no wiskunde subcategory for a PO;
+the grade of a PO is round1(10 × punten ÷ max) like a test's.
 
 Step 21 (for the record): the user's manual test passed (`docs/reviews/manual-test-step-21.md`,
 M-OBS-2, M-RUB-1..5). Still to do there: push for CI, CI baselines, merge, tags.

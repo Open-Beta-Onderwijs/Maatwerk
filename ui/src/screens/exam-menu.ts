@@ -101,7 +101,7 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
   return items;
 }
 
-const PO_GRADING_LATER = 'Een PO beoordelen kan vanaf Maatwerk 0.14.';
+const PO_GRADING_LATER = 'Een PO beoordelen kan vanaf de volgende versie van Maatwerk.';
 const PO_RAPPORT_LATER = 'Het rapport van een PO komt in een latere versie.';
 
 async function buildMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {

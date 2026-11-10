@@ -53,7 +53,7 @@ import {
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { normaliseRubric } from './domain/rubric';
-import { setRubricLookup } from './domain/po';
+import { rubricOf, setRubricLookup } from './domain/po';
 import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
@@ -812,9 +812,17 @@ const Store = (() => {
     let perExam = resultsMemo.get(rec);
     if (!perExam) resultsMemo.set(rec, (perExam = new WeakMap()));
     const hit = perExam.get(exam);
-    if (hit && hit.nTerm === exam.n_term && hit.questions === exam.questions) return hit.value;
+    // A PO is graded with its rubric: a reloaded rubric is a new object (review 22 m3).
+    const rubric = rubricOf(exam);
+    if (
+      hit &&
+      hit.nTerm === exam.n_term &&
+      hit.questions === exam.questions &&
+      hit.rubric === rubric
+    )
+      return hit.value;
     const value = examResults(rec, exam);
-    perExam.set(exam, { nTerm: exam.n_term, questions: exam.questions, value });
+    perExam.set(exam, { nTerm: exam.n_term, questions: exam.questions, rubric, value });
     return value;
   }
 

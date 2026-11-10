@@ -21,6 +21,7 @@ import { isTicked } from '../components/form';
 import { attemptCode, questionSummary, resitObsIds } from '../domain/exam-info';
 import { formatNTerm } from '../domain/format';
 import { nextQuestionId } from '../domain/ids';
+import { isPo } from '../domain/po';
 import { obsHasToetstype } from '../domain/rubric';
 import {
   cascadeStructure,
@@ -489,9 +490,11 @@ export async function deleteExam(id: string): Promise<void> {
     );
     return;
   }
-  if (!(await confirmDialog('Toets verwijderen?', { okLabel: 'Verwijderen', danger: true })))
+  // A PO says PO (review 22 n3).
+  const what = isPo(Store.getExamsSync(toetsYear).find((e: Exam) => e.id === id)) ? 'PO' : 'Toets';
+  if (!(await confirmDialog(`${what} verwijderen?`, { okLabel: 'Verwijderen', danger: true })))
     return;
   await Store.deleteExam(id, toetsYear);
-  toast('Toets verwijderd.', 'info');
+  toast(`${what} verwijderd.`, 'info');
   void renderToetsen();
 }

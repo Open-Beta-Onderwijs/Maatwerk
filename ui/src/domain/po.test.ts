@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
+import { bestAttempt, resolveBestAttempts } from './attempts';
 import { examResults } from './grades';
 import {
   classesByStudent,
@@ -203,6 +204,20 @@ describe('a PO is graded with its rubric (step 22, decision 16)', () => {
     expect([res.scored, res.normalMax, res.bonusMax, res.grade]).toEqual([7, 10, 4, 7]);
     expect(res.R).toBe('NVT');
     expect(yearAverage([po], rec)).toBe(7);
+  });
+
+  it('the best attempt of a PO family is graded with the rubric (review 22 M1)', () => {
+    setRubricLookup((id) => (id === 'rx' ? r : undefined));
+    const resit: Exam = { ...po, id: 'p2', parent_id: 'p', attempt: 2 };
+    const rec2 = { scores: { p: { c1: 4 }, p2: { c1: 8, c3: 2 } } };
+    const best = bestAttempt(rec2, [po, resit])!;
+    expect([best.examId, best.grade]).toEqual(['p2', 10]);
+    expect(best.questionScores).toEqual({ c1: 8, c3: 2 });
+    const history = [po, resit].map((exam) => ({
+      exam,
+      questionScores: rec2.scores[exam.id as 'p' | 'p2'],
+    }));
+    expect(resolveBestAttempts(history).map((h) => h.exam.id)).toEqual(['p2']);
   });
 
   it('without its rubric no grade', () => {

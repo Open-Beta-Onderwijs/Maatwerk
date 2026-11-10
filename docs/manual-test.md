@@ -135,6 +135,20 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       n PO's" and cannot be deleted; its maxima and soort are locked in the editor.
 - [ ] **M-RUB-5** `maatwerk-cli rubric check <data>` lists every rubric with its use and errors.
 
+## Praktische opdrachten (M-PO, 0.13)
+
+- [ ] **M-PO-1** Toetsen > "+ PO toevoegen": the Rubric list shows only rubrics of the vak with a
+      chosen schoolsoort and the jaarlaag; the preview shows the categories and "Cijfer = 10 ×
+      punten ÷ n". Verder: the students of all matching classes (filter chips per class).
+- [ ] **M-PO-2** Put students of two classes in one projectgroep (click and drag), one alone,
+      "Willekeurig indelen…" the rest, leave one empty group: Opslaan. The card: striped badge,
+      "n projectgroepen", the rubric line; `school.json` `minAppVersion` is 0.13.0 and Maatwerk
+      0.12 on that copy opens read-only. The rubric shows "In gebruik bij 1 PO".
+- [ ] **M-PO-3** ⋮ > Projectgroepen: move, rename, remove; ⋮ > PO bewerken: change naam, periode,
+      rubric. Scores invoeren, Rapport and Opdrachten are grey with a reason.
+- [ ] **M-PO-4** ⋮ > Herkansing toevoegen: the groups are copied; take one student out; Opslaan:
+      a card with 2 pogingen, the original's groups unchanged.
+
 ## Opdrachten and the editor (M-OPD)
 
 - [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the folder `opdrachten\<id>\` with

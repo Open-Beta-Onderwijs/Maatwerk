@@ -50,6 +50,9 @@ interface State {
 
 const RANDOM_SIZE_DEFAULT = 3;
 
+/** The drag data type of a student in this dialog. */
+const DRAG_TYPE = 'application/x-maatwerk-student';
+
 function fullName(s: Student | undefined, id: string): string {
   return s ? (Store.fullName(s) as string) : `Leerling ${id}`;
 }
@@ -103,7 +106,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
     bodyClass: 'po-groups-body',
     footerHtml: `
       ${mode === 'new' ? '<button class="btn btn--text" data-align="start" id="po-back">← Gegevens</button>' : ''}
-      <span class="po-free-note" id="po-free-note"></span>
+      <span class="po-free-note" id="po-free-note" aria-live="polite"></span>
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
       <button class="btn btn--primary" id="po-groups-save">Opslaan</button>
     `,
@@ -149,7 +152,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
       };
 
       const studentButton = (id: string) =>
-        `<button type="button" class="po-stu" draggable="true" data-student="${esc(id)}">
+        `<button type="button" class="po-stu" draggable="true" data-student="${esc(id)}" aria-label="${esc(name(id))} (${esc(tag(id))}) toevoegen aan de actieve projectgroep">
           <span class="po-stu-name">${esc(name(id))}</span>
           <span class="po-tag" title="${esc(tagTitle(id))}">${esc(tag(id))}</span>
           <span class="po-stu-add" aria-hidden="true">+</span>
@@ -185,7 +188,13 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         note.textContent = all
           ? `${all} ${all === 1 ? 'leerling nog niet ingedeeld: die krijgt' : 'leerlingen nog niet ingedeeld: zij krijgen'} pas een cijfer in een projectgroep.`
           : 'Iedereen is ingedeeld.';
-        note.classList.toggle('po-free-note--open', all > 0);
+        // Placed students outside the matching classes, e.g. after a jaarlaag change (review 22 m2).
+        const outside = state.groups
+          .flatMap((g) => g.student_ids.map(String))
+          .filter((s) => !byStudent.has(s)).length;
+        if (outside)
+          note.textContent += ` ${outside} ingedeelde ${outside === 1 ? 'leerling zit' : 'leerlingen zitten'} in geen passende klas (—).`;
+        note.classList.toggle('po-free-note--open', all > 0 || outside > 0);
       };
 
       const renderActive = () => {
@@ -230,12 +239,22 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         if (stu) {
           state.active ??= addGroup();
           if (!state.groups.some((g) => g.id === state.active)) state.active = addGroup();
+          const at = [...freeList.querySelectorAll('.po-stu')].indexOf(stu);
           place(stu.dataset.student ?? '', state.active);
+          // Keyboard: on to the next student (review 22 m4).
+          const left = freeList.querySelectorAll<HTMLElement>('.po-stu');
+          (left[Math.min(at, left.length - 1)] ?? freeList).focus?.();
           return;
         }
         const remove = t.closest<HTMLElement>('[data-remove]');
         if (remove) {
+          const group = remove.closest<HTMLElement>('.po-group')?.dataset.group ?? '';
           place(remove.dataset.remove ?? '', null);
+          grid
+            .querySelector<HTMLInputElement>(
+              `.po-group[data-group="${CSS.escape(group)}"] .po-group-name`,
+            )
+            ?.focus();
           return;
         }
         const chip = t.closest<HTMLElement>('.po-class-chip');
@@ -277,7 +296,8 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
       el.addEventListener('dragstart', (e) => {
         const item = (e.target as HTMLElement).closest<HTMLElement>('[data-student]');
         if (!item || !e.dataTransfer) return;
-        e.dataTransfer.setData('text/plain', item.dataset.student ?? '');
+        // Our own type: dropped text (a selected name, say) is never taken for a student (review 22 m1).
+        e.dataTransfer.setData(DRAG_TYPE, item.dataset.student ?? '');
         e.dataTransfer.effectAllowed = 'move';
       });
       const dropTarget = (e: DragEvent) =>
@@ -296,7 +316,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
       });
       el.addEventListener('drop', (e) => {
         const target = dropTarget(e);
-        const student = e.dataTransfer?.getData('text/plain');
+        const student = e.dataTransfer?.getData(DRAG_TYPE);
         el.querySelectorAll('.po-drop-over').forEach((x) => x.classList.remove('po-drop-over'));
         if (!target || !student) return;
         e.preventDefault();
@@ -319,8 +339,8 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
           return;
         }
         openRandomDialog(pool.length, (size) => {
-          // Empty groups make way for the new ones.
-          state.groups = state.groups.filter((g) => g.student_ids.length);
+          // Empty groups without a name make way for the new ones (review 22 n2).
+          state.groups = state.groups.filter((g) => g.student_ids.length || g.naam?.trim());
           for (const members of randomGroups(pool, size)) addGroup(members);
           state.active = state.groups[state.groups.length - 1]?.id ?? null;
           render();

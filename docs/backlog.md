@@ -465,3 +465,12 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - Review 21 n9: `maatwerk-grades/src/rubric.rs` (~720 lines with tests): move the tests to
   `rubric/tests.rs` as the core does.
 - `observaties.js` stays JS (R-05, area step 30); the toetstype parts are in TS beside it.
+
+## From Step 22
+
+- Review 22 n5: `validate-data` could warn when a herkansing's `rubric_id` differs from its
+  original's, and when an exam file holds a `rubric` field (it is never read from a file).
+- Review 22 M2 (if the user chooses the data way): removing a student from every projectgroep
+  should remove the student's PO scores (step 23).
+- The Toetsen list re-renders after its statistics load and closes an open ⋮ menu (seen again in
+  `po.spec.ts`; the helpers retry).

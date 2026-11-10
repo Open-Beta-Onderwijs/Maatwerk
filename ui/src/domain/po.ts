@@ -167,7 +167,9 @@ export function groupsToSave(groups: readonly Projectgroep[]): Projectgroep[] {
     .filter((g) => g.student_ids.length > 0)
     .map((g) => {
       const naam = g.naam?.trim();
-      return { id: g.id, ...(naam ? { naam } : {}), student_ids: g.student_ids.map(String) };
+      // A student once per group (review 22 n4).
+      const ids = [...new Set(g.student_ids.map(String))];
+      return { id: g.id, ...(naam ? { naam } : {}), student_ids: ids };
     });
 }
 
