@@ -5,7 +5,7 @@
 // the fixture rubric "Onderzoeksverslag" (max 17, bonus 4) with two projectgroepen that mix the
 // classes, and optionally category scores merged into the students' existing score files.
 
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { TEACHER, withMock, YEAR } from './helpers';
 
 export const PO_ID = 'po-valbeweging';
@@ -55,7 +55,10 @@ export function poExam(fields: Record<string, unknown> = {}): Record<string, unk
 
 /** The files to seed; reads the fixture first (it goes to `/`). */
 export async function poSeed(page: Page, o: SeedOptions = {}): Promise<Record<string, unknown>> {
+  // Wait for the start screen: WebKit logs "Importing a module script failed." when the login's
+  // navigation aborts a page still importing app.js (as perceived-speed.spec.ts loadApp).
   await page.goto('/');
+  await expect(page.locator('.subject-card').first()).toBeVisible();
   const studentsRel = `${YEAR}/students-${YEAR}.json`;
   const read = (rel: string) =>
     withMock(page, (m, p) => JSON.parse(m.peek(p) ?? 'null') as unknown, rel);
