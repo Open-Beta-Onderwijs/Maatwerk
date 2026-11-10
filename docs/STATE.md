@@ -44,6 +44,11 @@ categories (they change the max); category names stay editable when locked (deci
 16 disables them); `uitleg` of a level is required; a rubric needs one `normaal` category; an
 observatie used in a test keeps toetstype Toets (so the score grid needs no filter).
 
+**User confirmed (2026-11-10)** the choices made without asking: a rubric in use also locks
+adding/removing categories, names stay editable (decision 20 over board 16); every level needs an
+uitleg; a rubric needs one Normaal category; an observatie a test uses keeps Toets, one a rubric
+uses keeps PO; the editor's vak is the active vak; the rubric module in `maatwerk-grades`.
+
 **User decisions (2026-11-10):** a category's max is 1 to 100 (`MAX_POINTS`; the display numbers
 every fifth score above 40 boxes); the card chips keep "· bonus" / "· diag". macOS baselines of
 step 20 committed (`0ddc7c8`, from run `42636690859`) and pushed; CI run `42796049482`; merged into
