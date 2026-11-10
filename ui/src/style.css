@@ -27,7 +27,9 @@ html {
 }
 
 body {
-  height: 100%;
+  /* min-height, not height: the sticky top bar sticks only within the body's box, and a fixed
+     height ended that box after one window of a long list (user 2026-11-10). */
+  min-height: 100%;
   font-family: var(--font-ui);
   font-size: var(--fs-body);
   color: var(--text);
@@ -89,6 +91,13 @@ body::after {
 :root[data-theme='dark'] .theme-light-only,
 :root:not([data-theme='dark']) .theme-dark-only {
   display: none;
+}
+/* Too narrow for the tabs: only the logo stays (shell/topbar-fit.ts, user 2026-11-10). */
+#topbar.topbar--narrow .brand-word {
+  display: none;
+}
+#topbar.topbar--narrow .app-brand {
+  margin-right: 8px;
 }
 #main-nav {
   display: flex;

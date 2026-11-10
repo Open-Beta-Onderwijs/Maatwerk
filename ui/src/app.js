@@ -10,6 +10,7 @@
 import { renderStartup } from './screens/startup.js';
 import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderMigration } from './screens/migration';
+import { watchTopbar } from './shell/topbar-fit';
 import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
@@ -59,6 +60,8 @@ export {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
+// On a narrow window the wordmark makes way for the tabs (user 2026-11-10).
+watchTopbar();
 const screens = {};
 document.querySelectorAll('.screen').forEach((el) => {
   screens[el.id.replace('screen-', '')] = el;

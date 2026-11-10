@@ -14,7 +14,11 @@ scores, after a confirm) and a wiskunde PO gets A/B/C/D from jaarlaag 4: both do
 `docs/reviews/manual-test-step-22.md`: M-PO-1, 2, 4 pass; M-PO-3 partial: an empty projectgroep
 needs a delete button, and members sorted by achternaam: both done (the unplaced list too).
 `modal-po-groepen` changes again (the trash button on the empty group): show the user.
-Top bar fixes (narrow window, hidden on scroll in Leerlingen) on `fix/topbar`.
+Top bar fixes on `fix/topbar` (from `step/22-po`): `body` `min-height` instead of `height` (the
+sticky bar scrolled away after one window of a long list); `shell/topbar-fit.ts` hides the
+wordmark when the tabs do not fit (measured). Probe: teacher fits at 900 px without wordmark;
+admin needs 874 px of tabs and overflows below ~1010 px even then: proposal to the user (inactive
+tabs icon-only when still too narrow). `e2e/topbar.spec.ts` (2).
 
 **Next action (step 22):** waiting for the user: the visual diff (3 new PO views; `screen-toetsen` and `exam-menu`
 change too: "+ PO toevoegen"), the choices below, a manual test on a copy of real data (M-PO-1..).
