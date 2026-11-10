@@ -6,9 +6,10 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action (step 22):** sub-task 2 (22a UI: "+ PO toevoegen" step 1, PO card, PO bewerken, ⋮
-menu). Visual views get an optional `seed` (`ui/e2e/views.ts`): the shared mock fixture has no
-PO, because the step 21 rubric e2e tests count rubric uses.
+**Next action (step 22):** finish sub-tasks 2+3 (UI written, `e2e/po.spec.ts` 5 green): full
+Chromium e2e, own look at the new visual views, commit; then gate, review, report. Visual views
+get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has no PO,
+because the step 21 rubric e2e tests count rubric uses.
 
 ## Step 22 progress (PO b: PO in Toetsen and projectgroepen, 0.13)
 
@@ -26,7 +27,20 @@ PO herkansing; (4) gate, review, report.
    unknown members. Docs `data-files-v3.md` "PO exams". UI: `domain/po.ts` (matching rubrics
    and classes, unplaced, random groups, save/copy/moved, `forGrading` + `setRubricLookup`
    registered by Store; used by `grades.ts`, `statistics.ts`), mock guard 0.13.0, version
-   0.13.0.
+   0.13.0. (`e858b22`)
+2. 22a UI (with 3 in one go, written): "+ PO toevoegen" (`modals/po-gegevens.ts`: step 1 and PO
+   bewerken; rubric list follows schoolsoort + jaarlaag, preview chips + formula; rubric locked
+   once the PO or its family has scores; a family's fields locked as for tests), PO card
+   (`exam-cards.ts`: rubric line, "n projectgroepen", no N-term; title and Overzicht openen not
+   clickable for a PO), ⋮ menu (`exam-menu.ts`: Scores/Rapport/Opdrachten disabled with a
+   reason, Herkansing toevoegen, Projectgroepen, PO bewerken, PO verwijderen), `styles/po.css`.
+3. 22b UI (written): `modals/po-groepen.ts`: Projectgroepen (new step 2, the PO's own dialog,
+   herkansing): unplaced students of the matching classes with class filter and class tag,
+   click adds to the active group, drag and drop both ways, × removes, names, "+ Projectgroep",
+   "Willekeurig indelen…" (size n, over the visible unplaced, as even as possible), empty
+   groups dropped on save, "← Gegevens" keeps everything; regrouping a student of a PO with
+   scores asks first (decision 19; the score copy itself comes with grading, step 23). PO
+   herkansing: same rubric, groups copied with new ids, editable before saving.
 
 Step 21 (for the record): the user's manual test passed (`docs/reviews/manual-test-step-21.md`,
 M-OBS-2, M-RUB-1..5). Still to do there: push for CI, CI baselines, merge, tags.

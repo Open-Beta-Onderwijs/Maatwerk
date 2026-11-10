@@ -39,7 +39,7 @@ describe('MockApi rubric guard', () => {
     const r = await fixtureRubric(api);
     await api.writeJson('2025-2026/exams/po-1.json', {
       id: 'po-1',
-      naam: 'PO verslag',
+      title: 'PO verslag', // an exam's name is its title (step 22)
       kind: 'po',
       rubric_id: r.id,
     });

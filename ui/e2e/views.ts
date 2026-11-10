@@ -4,7 +4,8 @@
 // fixture). Used by the visual regression and the CSP walkthrough.
 
 import { expect, type Page } from '@playwright/test';
-import { login } from './helpers';
+import { login, seedFiles } from './helpers';
+import { poSeed } from './po-seed';
 
 export interface View {
   /** Also the screenshot name. */
@@ -13,7 +14,23 @@ export interface View {
   user: 'teacher' | 'admin' | 'none';
   /** What to compare: the whole page or the modal box. */
   target: 'page' | 'modal';
+  /** Files to seed before the login (step 22: the PO views; the shared fixture has no PO). */
+  seed?(page: Page): Promise<Record<string, unknown>>;
   open(page: Page): Promise<void>;
+}
+
+/** Nieuwe praktische opdracht, step 1 filled in (Havo + Vwo, jaarlaag 3, Onderzoeksverslag). */
+async function poStep1(p: Page): Promise<void> {
+  await screen(p, 'toetsen');
+  await p.locator('#btn-add-po').click();
+  const d = p.locator('.dlg--po');
+  await d.locator('#po-naam').fill('PO Onderzoek valbeweging');
+  await d.locator('.ss-btn[data-ss="Havo"]').click();
+  await d.locator('.ss-btn[data-ss="Vwo"]').click();
+  await d.locator('.jl-btn[data-jl="3"]').click();
+  await d.locator('.per-btn[data-per="2"]').click();
+  await d.locator('#po-rubric-host .csel-trigger').click();
+  await d.locator('#po-rubric-host .csel-option[data-value="rubric-onderzoek"]').click();
 }
 
 export async function screen(page: Page, name: string) {
@@ -134,6 +151,35 @@ export const VIEWS: View[] = [
       await p.locator(`.dlg [data-tab="${tab}"]`).click();
     },
   })),
+  // Step 22: a PO on the Toetsen screen (seeded with grades), PO toevoegen and Projectgroepen.
+  {
+    name: 'screen-toetsen-po',
+    user: 'teacher',
+    target: 'page',
+    seed: (p) => poSeed(p, { scores: true }),
+    open: async (p) => {
+      await screen(p, 'toetsen');
+      await expect(p.locator('[data-exam-card="po-valbeweging"] .exam-stats b')).toBeVisible();
+    },
+  },
+  { name: 'modal-po-new', user: 'teacher', target: 'modal', open: poStep1 },
+  {
+    name: 'modal-po-groepen',
+    user: 'teacher',
+    target: 'modal',
+    seed: (p) => poSeed(p),
+    open: async (p) => {
+      await poStep1(p);
+      await p.locator('#po-next').click();
+      const d = p.locator('.dlg--po-groups');
+      for (const id of ['900101', '900001'])
+        await d.locator(`.po-stu[data-student="${id}"]`).click();
+      await d.locator('.po-group-name').first().fill('Valtoren');
+      await d.locator('#po-add-group').click();
+      await d.locator('.po-stu[data-student="900002"]').click();
+      await d.locator('#po-add-group').click();
+    },
+  },
   {
     name: 'exam-menu',
     user: 'teacher',
@@ -163,6 +209,7 @@ export const VIEWS: View[] = [
 
 /** Logs in as the view's user and opens it. */
 export async function openView(page: Page, view: View): Promise<void> {
+  if (view.seed) await seedFiles(page, await view.seed(page));
   if (view.user === 'teacher') await login(page);
   if (view.user === 'admin') await login(page, 'nat', 'admin');
   await view.open(page);

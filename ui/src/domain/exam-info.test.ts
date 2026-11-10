@@ -102,6 +102,17 @@ describe('meta line', () => {
   it('leaves out what is absent', () => {
     expect(metaLine(exam({}))).toBe('N-term 1,0 · Weging 1');
   });
+
+  it('a PO has no N-term and ends with its projectgroepen (spec 4.13)', () => {
+    const g = (id: string) => ({ id, student_ids: ['1'] });
+    const po = { ...base, kind: 'po' as const, type: 'pta', weging_se: 10 };
+    expect(metaLine(exam({ ...po, projectgroepen: [g('a'), g('b')] }))).toBe(
+      'Gymnasium · Periode 1 · Weging 3 · Weging SE 10 · 2 projectgroepen',
+    );
+    expect(metaLine(exam({ ...po, diagnostic: true, projectgroepen: [g('a')] }))).toBe(
+      'Gymnasium · Periode 1 · telt niet mee voor rapport of SE · 1 projectgroep',
+    );
+  });
 });
 
 describe('attempts', () => {

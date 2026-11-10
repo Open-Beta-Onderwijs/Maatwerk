@@ -7,6 +7,8 @@
 import { skelLine } from '../components/skeleton';
 import { esc } from '../components/dialog';
 import { attemptCode, attemptLabel, metaLine, pointsLine } from '../domain/exam-info';
+import { groupCountText, isPo, rubricLine, rubricOf } from '../domain/po';
+import { checkRubric } from '../domain/rubric';
 import { testBadgeClass, testKind, testKindLabel } from '../domain/test-type';
 import type { Exam } from '../domain/types';
 import { ICONS } from '../utils/icons.js';
@@ -55,7 +57,26 @@ function menuButton(examId: string, kind: CardKind): string {
 }
 
 function overviewButton(action: 'exam-overview' | 'exam-overview-best', e: Exam): string {
+  if (isPo(e))
+    return `<span title="${esc(PO_OVERVIEW_LATER)}"><button class="btn btn--secondary btn--sm exam-card-btn" disabled>Overzicht openen</button></span>`;
   return `<button class="btn btn--secondary btn--sm exam-card-btn" data-action="${action}" data-examid="${esc(e.id)}">Overzicht openen</button>`;
+}
+
+/** A PO's overview comes with its own design (steps 23, 29): until then the link is plain text. */
+const PO_OVERVIEW_LATER = 'Het overzicht van een praktische opdracht komt in een latere versie.';
+
+/** The title: a link to the overview, or plain text for a PO. */
+function titleLink(e: Exam, action: string, cls: string, text: string): string {
+  return isPo(e)
+    ? `<span class="${cls}">${esc(text)}</span>`
+    : `<button class="${cls}" data-action="${action}" data-examid="${esc(e.id)}">${esc(text)}</button>`;
+}
+
+/** Where a test shows its points and RTTI split, a PO shows its rubric (spec 4.13). */
+function numbersLine(e: Exam): string {
+  if (!isPo(e)) return pointsLine(e.questions);
+  const r = rubricOf(e);
+  return rubricLine(r, r ? checkRubric(r).totals : null);
 }
 
 /** The card of a test: without resits (`solo`), or above its attempts (`summary`). */
@@ -64,16 +85,16 @@ function examCard(e: Exam, attempts: number, open: boolean): string {
   const action = summary ? 'exam-overview-best' : 'exam-overview';
   const kind = testKind(e);
   return `
-    <article class="card exam-card${kind === 'diagnostic' ? ' exam-card--diagnostic' : ''}">
+    <article class="card exam-card${kind === 'diagnostic' ? ' exam-card--diagnostic' : ''}${isPo(e) ? ' exam-card--po' : ''}" data-exam-card="${esc(e.id)}">
       <div class="card-main">
         <div class="exam-card-head">
           ${subBadge(e)}${badge(e)}
-          <button class="exam-title-link" data-action="${action}" data-examid="${esc(e.id)}">${esc(e.title)}</button>
+          ${titleLink(e, action, 'exam-title-link', e.title ?? '')}
           <span class="exam-kind-pill">${esc(testKindLabel(kind))}</span>
           ${summary ? '' : warningSlot(e.id)}
         </div>
         <span class="exam-line">${esc(metaLine(e))}</span>
-        ${summary ? '' : `<span class="exam-line exam-line--nums">${esc(pointsLine(e.questions))}</span>`}
+        ${summary ? '' : `<span class="exam-line exam-line--nums">${esc(numbersLine(e))}</span>`}
         ${statsSlot(e.id, summary)}
       </div>
       <div class="card-actions">
@@ -95,16 +116,16 @@ function attemptCard(e: Exam, original: Exam): string {
     ? `<span class="exam-lock-pill" title="${esc(LOCK_TITLE)}">${LOCK}Observaties van ${esc(attemptCode(original) || 'het origineel')}</span>`
     : '';
   return `
-    <article class="card exam-attempt-card${e.diagnostic ? ' exam-card--diagnostic' : ''}">
+    <article class="card exam-attempt-card${e.diagnostic ? ' exam-card--diagnostic' : ''}" data-exam-card="${esc(e.id)}">
       <div class="card-main">
         <div class="exam-card-head">
           ${subBadge(e)}${badge(e)}
-          <button class="exam-attempt-label" data-action="exam-overview" data-examid="${esc(e.id)}">${esc(attemptLabel(e))}</button>
+          ${titleLink(e, 'exam-overview', 'exam-attempt-label', attemptLabel(e))}
           <span class="exam-attempt-count" data-attempt-count="${esc(e.id)}"></span>
           ${lock}
           ${warningSlot(e.id)}
         </div>
-        <span class="exam-line exam-line--nums">${esc(pointsLine(e.questions))}</span>
+        <span class="exam-line exam-line--nums">${esc(isPo(e) ? `${numbersLine(e)} · ${groupCountText(e.projectgroepen?.length ?? 0)}` : pointsLine(e.questions))}</span>
         ${statsSlot(e.id)}
       </div>
       <div class="card-actions">

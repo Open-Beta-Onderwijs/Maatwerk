@@ -38,7 +38,8 @@ export function rubricMeta(r: Rubric): string {
   return [r.schoolsoort.join(', '), vak, jl].filter(Boolean).join(' · ');
 }
 
-function chip(c: Rubric['categories'][number]): string {
+/** A category as a chip: "Theorie 8", "Extra 4 · bonus" (also the PO dialog's preview). */
+export function rubricChip(c: Rubric['categories'][number]): string {
   const suffix = c.soort === 'bonus' ? ' · bonus' : c.soort === 'diagnostisch' ? ' · diag' : '';
   return `<span class="rubric-chip rubric-chip--${c.soort}">${esc(c.naam)} ${esc(c.max ?? '')}${suffix}</span>`;
 }
@@ -59,7 +60,7 @@ function card(r: Rubric): string {
       <button class="btn btn--icon" data-action="dup-rubric" data-id="${esc(r.id)}" title="Dupliceren" aria-label="Dupliceren">${ICONS.copy}</button>
       ${del}
     </div>
-    <div class="rubric-chips">${r.categories.map(chip).join('')}</div>
+    <div class="rubric-chips">${r.categories.map(rubricChip).join('')}</div>
     <div class="rubric-card-foot">
       <span class="rubric-summary">${esc(totalsText(totals, 'card'))}</span>
       ${uses ? `<span class="rubric-lock-pill" title="${esc(LOCK_TOOLTIP)}">${LOCK_ICON}${esc(usageText(uses))}</span>` : ''}

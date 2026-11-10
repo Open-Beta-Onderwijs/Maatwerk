@@ -21,6 +21,7 @@ import { applyStyleData } from '../legacy/style-data';
 import { openExamOverviewModal } from '../modals/toets-overzicht.js';
 import { openExamModal } from '../modals/toets-edit';
 import { openBestGradesOverviewModal } from '../modals/herkansing';
+import { openNewPoModal } from '../modals/po-gegevens';
 import { openRttiUitlegModal } from '../modals/rapport.js';
 import * as Presence from '../presence.js';
 import { Store } from '../store.js';
@@ -53,6 +54,11 @@ export function renderToetsen() {
   SEL.toetsenYear.setValue(years.includes(selected) ? selected : years[0]);
 
   document.getElementById('btn-add-exam')!.onclick = () => openExamModal(null);
+  document.getElementById('btn-add-po')!.onclick = async () => {
+    const year = currentYear();
+    await Store.loadYear(year);
+    openNewPoModal(year);
+  };
   document.getElementById('btn-toetsen-rtti-uitleg')!.onclick = () => openRttiUitlegModal();
   renderLegend();
   // Started first: the statistics wait for this one folder read (Step 7c).
