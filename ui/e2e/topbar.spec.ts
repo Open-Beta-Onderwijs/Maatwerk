@@ -56,3 +56,39 @@ test('a narrow window hides the wordmark, the logo stays', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(wordmark(page)).toHaveCount(1);
 });
+
+const navFits = (page: Page) =>
+  page.locator('#main-nav').evaluate((nav) => nav.scrollWidth <= nav.clientWidth);
+
+test('still too narrow: inactive tabs show only their icon, the active tab its name', async ({
+  page,
+}) => {
+  await login(page, 'nat', 'admin');
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  const groepen = page.locator('.nav-btn[data-screen="groepen"] span');
+  const gebruikers = page.locator('.nav-btn[data-screen="gebruikers"]');
+  await page.setViewportSize({ width: 900, height: 700 });
+  await expect(wordmark(page)).toHaveCount(0);
+  expect(await navFits(page)).toBe(true);
+  // The active tab keeps its name; an inactive one shows its icon, its name a tooltip and the
+  // accessible name.
+  await expect(groepen).toBeVisible();
+  expect((await groepen.boundingBox())?.width ?? 0).toBeGreaterThan(20);
+  const label = await gebruikers.locator('span').boundingBox();
+  expect(label?.width ?? 0).toBeLessThanOrEqual(1);
+  await expect(gebruikers).toHaveAttribute('title', 'Gebruikers');
+  await expect(gebruikers).toHaveAccessibleName('Gebruikers');
+  // Back to wide: every name returns, no tooltips.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(gebruikers.locator('span')).toBeVisible();
+  expect((await gebruikers.locator('span').boundingBox())?.width ?? 0).toBeGreaterThan(20);
+  await expect(gebruikers).not.toHaveAttribute('title', /./);
+});
+
+test('a teacher at 900 px keeps every tab name', async ({ page }) => {
+  await login(page);
+  await page.setViewportSize({ width: 900, height: 700 });
+  await expect(wordmark(page)).toHaveCount(0);
+  expect(await navFits(page)).toBe(true);
+  await expect(page.locator('#topbar.topbar--icons')).toHaveCount(0);
+});

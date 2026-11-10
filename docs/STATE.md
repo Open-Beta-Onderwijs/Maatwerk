@@ -17,12 +17,16 @@ needs a delete button, and members sorted by achternaam: both done (the unplaced
 Top bar fixes on `fix/topbar` (from `step/22-po`): `body` `min-height` instead of `height` (the
 sticky bar scrolled away after one window of a long list); `shell/topbar-fit.ts` hides the
 wordmark when the tabs do not fit (measured). Probe: teacher fits at 900 px without wordmark;
-admin needs 874 px of tabs and overflows below ~1010 px even then: proposal to the user (inactive
-tabs icon-only when still too narrow). `e2e/topbar.spec.ts` (2).
+admin needs 874 px of tabs and overflows below ~1010 px even then.
 
-**Next action (step 22):** waiting for the user: the visual diff (3 new PO views; `screen-toetsen` and `exam-menu`
-change too: "+ PO toevoegen"), the choices below, a manual test on a copy of real data (M-PO-1..).
-Then push for CI (after steps 20/21), CI baselines, merge order 20 -> 21 -> 22, tags. Visual
+**User (2026-11-10, evening):** `modal-po-groepen` OK (local baselines updated); icon-only step
+approved and done on `fix/topbar`: when the tabs still overflow without the wordmark,
+`topbar--icons` shows inactive tabs as icon only (name visually hidden, so still the accessible
+name, and a `title` tooltip); the active tab keeps its name. `e2e/topbar.spec.ts` (4). Chromium
+e2e 278, WebKit topbar+shell 19, 520 Vitest, local visual unchanged.
+
+**Next action:** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
+and merging"), CI baselines of changed views from CI's own run, tags. Visual
 views get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has
 no PO, because the step 21 rubric e2e tests count rubric uses.
 
