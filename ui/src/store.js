@@ -52,6 +52,7 @@ import {
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
+import { normaliseRubric } from './domain/rubric';
 import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
@@ -442,7 +443,8 @@ const Store = (() => {
     const key = `rubrics/${subject}`;
     if (cache[key] !== undefined) return cache[key];
     const all = await window.maatwerk.readAllJson('rubrics');
-    cache[key] = all.filter((r) => r && r.id && r.subject === subject);
+    // Normalised: one damaged file must not break the tab (review 21 m5).
+    cache[key] = all.map(normaliseRubric).filter((r) => r.id && r.subject === subject);
     return cache[key];
   }
 

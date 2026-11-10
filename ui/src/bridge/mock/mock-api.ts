@@ -364,6 +364,7 @@ export class MockApi implements MaatwerkApi {
       // reference compares and writes in one synchronous handler).
       if (this.files.get(relPath) !== current) return { ok: false, reason: 'conflict' };
     }
+    if (this.raisesPoVersion(relPath, data)) this.raiseMinAppVersion('0.12.0');
     const bytes = encoder.encode(JSON.stringify(data, null, 2) + '\n'); // C13
     this.putFile(relPath, bytes);
     return { ok: true, hash: await sha1(bytes) };
@@ -854,17 +855,21 @@ export class MockApi implements MaatwerkApi {
     return out;
   }
 
-  /**
-   * The core's write guard (`rubrics::guard_write`): a refusal message, or null. A valid rubric or
-   * a PO observatie raises the mock `school.json` `minAppVersion` to 0.12.0.
-   */
-  private rubricGuard(relPath: string, data: Json): string | null {
-    const id = /^rubrics\/([^/]+)\.json$/.exec(relPath)?.[1];
+  /** Whether this write raises `minAppVersion` (a rubric, or a PO observatie). */
+  private raisesPoVersion(relPath: string, data: Json): boolean {
     const isPoObs =
-      relPath.startsWith('observaties/') &&
+      /^observaties\//i.test(relPath) &&
       Array.isArray((data as { toetstypes?: unknown })?.toetstypes) &&
       (data as { toetstypes: unknown[] }).toetstypes.includes('po');
-    if (!id && !isPoObs) return null;
+    return /^rubrics\/[^/]+\.json$/i.test(relPath) || isPoObs;
+  }
+
+  /**
+   * The core's write guard (`rubrics::guard_write`): a refusal message, or null. The caller raises
+   * `minAppVersion` once the CAS has passed (review 21 m1).
+   */
+  private rubricGuard(relPath: string, data: Json): string | null {
+    const id = /^rubrics\/([^/]+)\.json$/i.exec(relPath)?.[1];
     if (id) {
       const rubric = data as unknown as Rubric;
       if (rubric?.id !== id) return `Rubric niet opgeslagen: het id hoort ${id} te zijn`;
@@ -888,7 +893,6 @@ export class MockApi implements MaatwerkApi {
         }
       }
     }
-    this.raiseMinAppVersion('0.12.0');
     return null;
   }
 

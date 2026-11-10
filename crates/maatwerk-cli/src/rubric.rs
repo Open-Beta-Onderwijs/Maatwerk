@@ -73,23 +73,36 @@ struct Line {
     check: RubricCheck,
 }
 
-fn line(file: String, value: Value, used_by: Option<usize>) -> Result<Line, String> {
-    let rubric: Rubric =
-        serde_json::from_value(value).map_err(|e| format!("{file}: geen rubric: {e}"))?;
-    Ok(Line {
-        file,
-        id: rubric.id.clone(),
-        naam: rubric.naam.clone(),
-        used_by,
-        check: check_rubric(&rubric),
-    })
+/// A file that is no rubric at all is an invalid line, so it does not hide the others (review
+/// 21 n9).
+fn line(file: String, value: Value, used_by: Option<usize>) -> Line {
+    match serde_json::from_value::<Rubric>(value) {
+        Ok(rubric) => Line {
+            file,
+            id: rubric.id.clone(),
+            naam: rubric.naam.clone(),
+            used_by,
+            check: check_rubric(&rubric),
+        },
+        Err(e) => Line {
+            file,
+            id: String::new(),
+            naam: "(geen rubric)".into(),
+            used_by,
+            check: RubricCheck {
+                valid: false,
+                errors: vec![format!("Geen rubric: {e}")],
+                ..RubricCheck::default()
+            },
+        },
+    }
 }
 
 fn check(target: &Path) -> Result<Vec<Line>, String> {
     if target.is_file() {
         let text = std::fs::read_to_string(target).map_err(|e| e.to_string())?;
         let value: Value = serde_json::from_str(&text).map_err(|e| format!("not JSON: {e}"))?;
-        return Ok(vec![line(target.display().to_string(), value, None)?]);
+        return Ok(vec![line(target.display().to_string(), value, None)]);
     }
     let storage = Storage::open(target).map_err(|e| e.to_string())?;
     let used = usage(&storage).map_err(|e| e.to_string())?;
@@ -101,7 +114,7 @@ fn check(target: &Path) -> Result<Vec<Line>, String> {
     {
         let id = value.get("id").and_then(Value::as_str).unwrap_or("");
         let n = used.get(id).map_or(0, Vec::len);
-        lines.push(line(format!("{RUBRICS_DIR}/{name}"), value, Some(n))?);
+        lines.push(line(format!("{RUBRICS_DIR}/{name}"), value, Some(n)));
     }
     lines.sort_by(|a, b| a.file.cmp(&b.file));
     Ok(lines)
@@ -168,19 +181,23 @@ mod tests {
         };
         std::fs::write(data.join("rubrics/r1.json"), rubric("r1", 3).to_string()).unwrap();
         std::fs::write(data.join("rubrics/r2.json"), rubric("r2", 4).to_string()).unwrap();
+        // Not a rubric at all: one invalid line, the others still listed (review 21 n9).
+        std::fs::write(data.join("rubrics/r3.json"), r#"{"categories": "x"}"#).unwrap();
         std::fs::write(
             data.join("2025-2026/exams/p.json"),
             r#"{"id":"p","kind":"po","rubric_id":"r1"}"#,
         )
         .unwrap();
         let lines = check(data).unwrap();
-        assert_eq!(lines.len(), 2);
+        assert_eq!(lines.len(), 3);
         assert!(lines[0].check.valid);
         assert_eq!(lines[0].used_by, Some(1));
         assert!(!lines[1].check.valid);
         assert_eq!(lines[1].used_by, Some(0));
+        assert!(!lines[2].check.valid);
+        assert!(lines[2].check.errors[0].starts_with("Geen rubric"));
         let one = check(&data.join("rubrics/r2.json")).unwrap();
         assert_eq!(one[0].used_by, None);
-        assert_eq!(one[0].check.categories[0].uncovered, vec![4]);
+        assert_eq!(one[0].check.categories[0].gaps, vec![(4, 4)]);
     }
 }

@@ -9,6 +9,7 @@ import {
   duplicateRubric,
   lockedChanges,
   newRubric,
+  normaliseRubric,
   obsHasToetstype,
   obsToetstypes,
   poGrade,
@@ -50,8 +51,22 @@ describe('rubric rules (WebAssembly)', () => {
     must(theorie.niveaus[2]).min = 7;
     expect(checkRubric(r).categories[0]).toMatchObject({
       errors: ['Niet gedekt: 5, 6'],
-      uncovered: [5, 6],
+      gaps: [[5, 6]],
     });
+  });
+
+  it('a huge max is checked at once (review 21 M1)', () => {
+    const r = fixtureRubric();
+    must(r.categories[0]).max = 400_000_000;
+    expect(must(checkRubric(r).categories[0]).gaps).toEqual([[9, 400_000_000]]);
+  });
+
+  it('a damaged file reads as an invalid rubric, not an exception (review 21 m5)', () => {
+    const r = normaliseRubric({ id: 'x', categories: [null, { max: '4', niveaus: 'kapot' }] });
+    expect(r.categories).toHaveLength(1);
+    expect(r.categories[0]).toMatchObject({ max: 4, soort: 'normaal', niveaus: [] });
+    expect(checkRubric(r).valid).toBe(false);
+    expect(normaliseRubric(null).categories).toEqual([]);
   });
 
   it('a new rubric is invalid until its fields and levels are filled in', () => {

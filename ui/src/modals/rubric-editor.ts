@@ -24,11 +24,13 @@ import {
   type RubricCheck,
   type RubricUse,
   type Soort,
+  normaliseRubric,
 } from '../domain/rubric';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import {
   applyLevelDisplay,
+  boundInvalid,
   levelDisplay,
   levelRows,
   obsChip,
@@ -64,28 +66,6 @@ function parseNum(text: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** A file read from disk with every list present, so the editor can rely on them. */
-function normalise(r: Rubric): Rubric {
-  return {
-    ...r,
-    naam: r.naam ?? '',
-    schoolsoort: [...(r.schoolsoort ?? [])],
-    jaarlagen: (r.jaarlagen ?? []).map(String),
-    obs_ids: [...(r.obs_ids ?? [])],
-    categories: (r.categories ?? []).map((c) => ({
-      ...c,
-      naam: c.naam ?? '',
-      soort: c.soort ?? 'normaal',
-      obs_ids: [...(c.obs_ids ?? [])],
-      niveaus: (c.niveaus ?? []).map((l) => ({
-        ...l,
-        titel: l.titel ?? '',
-        uitleg: l.uitleg ?? '',
-      })),
-    })),
-  };
-}
-
 /** What is saved: trimmed names, no empty titles. */
 function cleaned(r: Rubric): Rubric {
   return {
@@ -116,7 +96,7 @@ function toggles(cls: string, data: string, values: string[], on: string[], allo
 export function openRubricEditor(existing: Rubric | null, opts: RubricEditorOptions): void {
   const subject: string = Store.getActiveSubject();
   const isNew = !!opts.isNew || !existing;
-  const draft = normalise(existing ? structuredClone(existing) : newRubric(subject));
+  const draft = normaliseRubric(existing ? structuredClone(existing) : newRubric(subject));
   const original = isNew ? null : structuredClone(draft);
   const uses = isNew ? 0 : opts.usage.length;
   const locked = uses > 0;
@@ -261,19 +241,13 @@ export function openRubricEditor(existing: Rubric | null, opts: RubricEditorOpti
         const host = sec.querySelector<HTMLElement>('.rubric-display-host')!;
         host.innerHTML = levelDisplay(cat, c);
         applyLevelDisplay(host);
-        const bad = new Set(c?.badLevels ?? []);
         sec.querySelectorAll<HTMLElement>('.rubric-level').forEach((row) => {
           const li = Number(row.dataset.level);
-          const lv = cat.niveaus[li];
-          if (!lv) return;
-          const shared = (key: 'min' | 'max') =>
-            lv[key] !== null && cat.niveaus.filter((l) => l[key] === lv[key]).length > 1;
-          row
-            .querySelector('[data-field="min"]')
-            ?.classList.toggle('is-invalid', bad.has(li) || shared('min'));
-          row
-            .querySelector('[data-field="max"]')
-            ?.classList.toggle('is-invalid', bad.has(li) || shared('max'));
+          for (const key of ['min', 'max'] as const) {
+            row
+              .querySelector(`[data-field="${key}"]`)
+              ?.classList.toggle('is-invalid', boundInvalid(c, li, key));
+          }
         });
       };
 

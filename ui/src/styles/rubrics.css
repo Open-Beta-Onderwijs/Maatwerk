@@ -412,7 +412,15 @@
 }
 
 /* ── Observaties tab: toetstype chip (F-23) ──────────────────────────────── */
+/* The chip sits in the filter row before the shared filter bar, on the same line. */
+.filter-row:has(> .choice-chip) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .choice-chip-pop {
+  left: 0;
+  right: auto;
   display: flex;
   flex-direction: column;
   gap: 3px;

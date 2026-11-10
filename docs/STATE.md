@@ -6,7 +6,12 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action (step 21):** 21b UI, sub-task 2 below (Store done, uncommitted on the branch).
+**Next action (step 21):** waiting for the user: visual diff (30 local images, plus 9 new ones
+for `screen-rubrics`, `modal-rubric-edit`, `modal-rubric-new`), the questions in the step report
+(cap on a category's max; card chip suffixes "· bonus"/"· diag"), test on a copy of real data.
+Then: push `step/21-rubrics` for CI (after step 20's macOS rerun ends, or the push cancels it),
+replace the CI baselines of the changed views from CI's own run, local baselines, merge, tag
+`step-21`, `v0.12.0`.
 
 ## Step 21 progress (PO a: rubrics, observatie toetstype, 0.12)
 
@@ -16,8 +21,23 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
    `toetstypes`, `validate-data`, CLI `rubric check`, command `rubric_usage`, mock guard, mock
    fixture (3 rubrics, 4 PO observaties in `to-current.mjs` only), docs
    `data-files-v3.md`. Version 0.12.0 already (the guard raises to 0.12.0). Chromium e2e 240.
-2. 21b UI: Rubrics tab + cards, rubric editor, Dupliceren, delete guard; Observatie toetstype
-   field + filter chip; toets-edit offers only `toets` observaties.
+2. **Done** (`f540e71`), 21b UI: Rubrics tab + cards, rubric editor (`modals/rubric-editor.ts`,
+   `rubric-levels.ts`), Dupliceren, delete guard; Observatie toetstype field + filter chip
+   (`screens/observatie-toetstype.ts`, `components/choice-chip.ts`); toets-edit offers only
+   `toets` observaties. `e2e/rubrics.spec.ts` (13); Chromium e2e 261. New views
+   `screen-rubrics`, `modal-rubric-edit`, `modal-rubric-new` (local images written, not yet
+   seen by the user).
+3. Gate + review: local visual: 30 images differ (10 views × 3 looks): every teacher page
+   (`screen-leerlingen/groepen/toetsen/observaties/opdrachten`, `exam-menu`, `user-menu-teacher`:
+   the Rubrics tab), `modal-observatie-edit/new` (Toetstype), `modal-opdracht-edit` (lists the 4
+   new PO observaties of the mock fixture). CI baselines of those views and of the 3 new ones
+   must be replaced from CI's own run, as in step 20. Gate green: fmt, clippy, cargo test,
+   lint, typecheck, 498 Vitest, 125 node, 261 Chromium e2e, WebKit (rubrics/shell/dialog 102),
+   licences, cargo deny, `npm audit --omit=dev` 0, SPDX.
+4. **Done:** review `docs/reviews/step-21.md` (0/1/8/9), triage at its end: M1 (gaps from the
+   intervals; a huge max no longer freezes the editor), m1 (CAS checked before raising
+   `minAppVersion`), m4, m5, n6, n8 partly, n9 fixed with tests; m2, m3, m6 and the rest in
+   `docs/backlog.md` "From Step 21". Manual checks M-OBS-2, M-RUB-1..5.
 
 Choices made without asking (for the report): a locked rubric also locks adding/removing
 categories (they change the max); category names stay editable when locked (decision 20; board

@@ -44,11 +44,20 @@ pub struct RubricUse {
     pub naam: String,
 }
 
+/// `rel` split as `<dir>/<stem>.json`, the folder and extension in any ASCII case: Windows and
+/// macOS find `Rubrics/X.JSON` as `rubrics/X.json` (review 21 m4).
+fn json_in<'a>(rel: &'a str, dir: &str) -> Option<&'a str> {
+    let (first, file) = rel.split_once('/')?;
+    if !first.eq_ignore_ascii_case(dir) || file.contains('/') || file.len() <= 5 {
+        return None;
+    }
+    let (stem, ext) = file.split_at(file.len() - 5);
+    ext.eq_ignore_ascii_case(".json").then_some(stem)
+}
+
 /// The id of a rubric file path (`rubrics/<id>.json`).
 pub fn rubric_id_of(rel: &str) -> Option<&str> {
-    rel.strip_prefix("rubrics/")?
-        .strip_suffix(".json")
-        .filter(|id| !id.is_empty() && !id.contains('/'))
+    json_in(rel, RUBRICS_DIR)
 }
 
 /// The rubric an exam uses, if any (`rubric_id`, step 22).
@@ -99,11 +108,26 @@ pub fn is_po_observatie(obs: &Value) -> bool {
 
 /// Checks a JSON write before it is committed (see the module docs). Called by
 /// `Storage::write_json`; `school.json` itself is never guarded.
-pub(crate) fn guard_write(storage: &Storage, rel: &RelPath, value: &Value) -> Result<()> {
-    if let Some(id) = rubric_id_of(rel.as_str()) {
+pub(crate) fn guard_write(
+    storage: &Storage,
+    rel: &RelPath,
+    value: &Value,
+    expect: Expect<'_>,
+) -> Result<()> {
+    let raise = if let Some(id) = rubric_id_of(rel.as_str()) {
         check_rubric_write(storage, rel, id, value)?;
-        ensure_min_app_version(storage, PO_MIN_APP_VERSION)?;
-    } else if rel.as_str().starts_with("observaties/") && is_po_observatie(value) {
+        true
+    } else {
+        json_in(rel.as_str(), "observaties").is_some() && is_po_observatie(value)
+    };
+    if raise {
+        // A write that will fail its CAS raises nothing (review 21 m1); the commit checks again.
+        if !storage.expect_holds(rel, expect)? {
+            return Err(Error::Conflict {
+                path: rel.to_string(),
+                updated_by: None,
+            });
+        }
         ensure_min_app_version(storage, PO_MIN_APP_VERSION)?;
     }
     Ok(())
@@ -137,7 +161,12 @@ fn check_rubric_write(storage: &Storage, rel: &RelPath, id: &str, value: &Value)
     if n == 0 {
         return Ok(());
     }
-    let old: Rubric = serde_json::from_value(old).unwrap_or_default();
+    let old: Rubric = serde_json::from_value(old).map_err(|_| {
+        refuse(format!(
+            "Rubric niet opgeslagen: de rubric op schijf is onleesbaar en in gebruik bij {n} \
+             PO('s). Herstel het bestand via Gegevenscontrole."
+        ))
+    })?;
     let locked = rubric::locked_changes(&old, &new);
     if locked.is_empty() {
         Ok(())

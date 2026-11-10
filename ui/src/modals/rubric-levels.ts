@@ -31,9 +31,9 @@ export function levelDisplay(cat: RubricCategory, check: CategoryCheck | undefin
   const max = whole(cat.max);
   if (max === null || max < 1 || max > MAX_DRAWN) return '';
   const cells = max + 1;
-  const uncovered = new Set(check?.uncovered ?? []);
+  const gaps = check?.gaps ?? [];
   const numbers = Array.from({ length: cells }, (_, n) => {
-    const gap = uncovered.has(n);
+    const gap = gaps.some(([a, b]) => a <= n && n <= b);
     return `<span class="rubric-scale-n${gap ? ' rubric-scale-n--gap' : ''}">${n}</span>`;
   }).join('');
   const bars = cat.niveaus
@@ -72,15 +72,23 @@ export function applyLevelDisplay(root: ParentNode): void {
 
 const num = (v: number | null): string => (v === null ? '' : String(v));
 
-/** One input per bound; red when the check names the level or a shared bound. */
+/** A bound field is red when the check names its level, or another level shares the bound. */
+export function boundInvalid(
+  check: CategoryCheck | undefined,
+  level: number,
+  key: 'min' | 'max',
+): boolean {
+  if (!check) return false;
+  const shared = key === 'min' ? check.sharedMin : check.sharedMax;
+  return check.badLevels.includes(level) || shared.includes(level);
+}
+
+/** One input per bound, red as `boundInvalid` says. */
 export function levelRows(cat: RubricCategory, check: CategoryCheck | undefined): string {
-  const bad = new Set(check?.badLevels ?? []);
-  const count = (key: 'min' | 'max', v: number | null): number =>
-    v === null ? 0 : cat.niveaus.filter((l) => l[key] === v).length;
   const rows = cat.niveaus
     .map((lv, i) => {
-      const badMin = bad.has(i) || count('min', lv.min) > 1;
-      const badMax = bad.has(i) || count('max', lv.max) > 1;
+      const badMin = boundInvalid(check, i, 'min');
+      const badMax = boundInvalid(check, i, 'max');
       const nr = i + 1;
       return `<div class="rubric-level" data-level="${i}">
         <span class="rubric-level-range">

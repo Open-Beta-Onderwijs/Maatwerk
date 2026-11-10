@@ -119,10 +119,13 @@ pub struct CategoryCheck {
     pub id: String,
     /// Dutch, shown as one red line joined by " · ".
     pub errors: Vec<String>,
-    /// Scores `0..=max` no level covers (red in the number row).
-    pub uncovered: Vec<u32>,
+    /// Runs `[from, to]` of scores `0..=max` no level covers (red in the number row).
+    pub gaps: Vec<(u32, u32)>,
     /// Indexes of levels whose bounds are wrong on their own (empty, not whole, out of range).
     pub bad_levels: Vec<usize>,
+    /// Indexes of levels whose minimum, or maximum, another level has too.
+    pub shared_min: Vec<usize>,
+    pub shared_max: Vec<usize>,
     /// Indexes of levels without an uitleg.
     pub missing_uitleg: Vec<usize>,
 }
@@ -154,28 +157,6 @@ fn count_word(n: usize) -> String {
     }
 }
 
-/// "3, 5–7": runs of three or more as a range.
-fn ranges(values: &[u32]) -> String {
-    let mut parts = Vec::new();
-    let mut i = 0;
-    while i < values.len() {
-        let mut j = i;
-        while j + 1 < values.len() && values[j + 1] == values[j] + 1 {
-            j += 1;
-        }
-        match j - i {
-            0 => parts.push(values[i].to_string()),
-            1 => {
-                parts.push(values[i].to_string());
-                parts.push(values[j].to_string());
-            }
-            _ => parts.push(format!("{}–{}", values[i], values[j])),
-        }
-        i = j + 1;
-    }
-    parts.join(", ")
-}
-
 /// Checks one category (decision 21).
 pub fn check_category(cat: &Category) -> CategoryCheck {
     let mut out = CategoryCheck {
@@ -198,7 +179,7 @@ pub fn check_category(cat: &Category) -> CategoryCheck {
     };
 
     // Levels whose own fields are fine take part in the overlap and coverage checks.
-    let mut intervals: Vec<(u32, u32)> = Vec::new();
+    let mut intervals: Vec<(usize, u32, u32)> = Vec::new();
     for (i, level) in cat.niveaus.iter().enumerate() {
         let nr = i + 1;
         let (lo, hi) = (whole(level.min), whole(level.max));
@@ -225,7 +206,7 @@ pub fn check_category(cat: &Category) -> CategoryCheck {
                     .push(format!("Niveau {nr} gaat verder dan het maximum {max}"));
                 bad = true;
             } else {
-                intervals.push((lo, hi));
+                intervals.push((i, lo, hi));
             }
         }
         if level.uitleg.trim().is_empty() {
@@ -239,7 +220,7 @@ pub fn check_category(cat: &Category) -> CategoryCheck {
 
     let mut starts: BTreeMap<u32, usize> = BTreeMap::new();
     let mut ends: BTreeMap<u32, usize> = BTreeMap::new();
-    for &(lo, hi) in &intervals {
+    for &(_, lo, hi) in &intervals {
         *starts.entry(lo).or_default() += 1;
         *ends.entry(hi).or_default() += 1;
     }
@@ -251,15 +232,52 @@ pub fn check_category(cat: &Category) -> CategoryCheck {
         out.errors
             .push(format!("{} niveaus eindigen bij {v}", count_word(*k)));
     }
+    for &(i, lo, hi) in &intervals {
+        if starts[&lo] > 1 {
+            out.shared_min.push(i);
+        }
+        if ends[&hi] > 1 {
+            out.shared_max.push(i);
+        }
+    }
 
-    out.uncovered = (0..=max)
-        .filter(|s| !intervals.iter().any(|&(lo, hi)| lo <= *s && *s <= hi))
-        .collect();
-    if !out.uncovered.is_empty() {
+    out.gaps = gaps(&intervals, max);
+    if !out.gaps.is_empty() {
         out.errors
-            .push(format!("Niet gedekt: {}", ranges(&out.uncovered)));
+            .push(format!("Niet gedekt: {}", gaps_text(&out.gaps)));
     }
     out
+}
+
+/// The runs of scores `0..=max` that no interval covers. Works on the intervals, not on every
+/// score, so a huge max costs nothing (review 21 M1).
+fn gaps(intervals: &[(usize, u32, u32)], max: u32) -> Vec<(u32, u32)> {
+    let mut sorted: Vec<(u32, u32)> = intervals.iter().map(|&(_, lo, hi)| (lo, hi)).collect();
+    sorted.sort_unstable();
+    let mut out = Vec::new();
+    let mut next: u64 = 0; // every score below this is covered
+    for (lo, hi) in sorted {
+        if u64::from(lo) > next {
+            out.push((next as u32, lo - 1));
+        }
+        next = next.max(u64::from(hi) + 1);
+    }
+    if next <= u64::from(max) {
+        out.push((next as u32, max));
+    }
+    out
+}
+
+/// "3, 5–7": a run of three or more as a range, two as two numbers.
+fn gaps_text(gaps: &[(u32, u32)]) -> String {
+    gaps.iter()
+        .map(|&(a, b)| match b - a {
+            0 => a.to_string(),
+            1 => format!("{a}, {b}"),
+            _ => format!("{a}–{b}"),
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Points per soort; a category without a valid max counts 0.
@@ -421,7 +439,7 @@ mod tests {
     fn touching_intervals_are_fine() {
         let c = check_category(&cat(4, &[(0, 2), (3, 4)]));
         assert!(c.errors.is_empty(), "{:?}", c.errors);
-        assert!(c.uncovered.is_empty());
+        assert!(c.gaps.is_empty());
     }
 
     #[test]
@@ -448,10 +466,30 @@ mod tests {
     #[test]
     fn gaps_are_listed_and_marked() {
         let c = check_category(&cat(8, &[(0, 2), (4, 4), (8, 8)]));
-        assert_eq!(c.uncovered, vec![3, 5, 6, 7]);
+        assert_eq!(c.gaps, vec![(3, 3), (5, 7)]);
         assert_eq!(c.errors, vec!["Niet gedekt: 3, 5–7"]);
         let c = check_category(&cat(4, &[(1, 2), (3, 3)]));
         assert_eq!(c.errors, vec!["Niet gedekt: 0, 4"]);
+        // Two in a row read as two numbers; overlaps do not hide a later gap.
+        let c = check_category(&cat(9, &[(0, 5), (1, 3), (8, 9)]));
+        assert_eq!(c.errors, vec!["Niet gedekt: 6, 7"]);
+    }
+
+    #[test]
+    fn a_huge_max_is_checked_without_walking_every_score() {
+        // Review 21 M1: the old check allocated one entry per uncovered score.
+        let c = check_category(&cat(4_000_000_000, &[(0, 1), (2, 3)]));
+        assert_eq!(c.gaps, vec![(4, 4_000_000_000)]);
+        assert_eq!(c.errors, vec!["Niet gedekt: 4–4000000000"]);
+        let c = check_category(&cat(u32::MAX, &[(0, 10), (11, u32::MAX)]));
+        assert!(c.errors.is_empty(), "{:?}", c.errors);
+    }
+
+    #[test]
+    fn shared_bounds_name_their_levels() {
+        let c = check_category(&cat(6, &[(0, 2), (2, 2), (2, 4), (5, 6)]));
+        assert_eq!(c.shared_min, vec![1, 2]);
+        assert_eq!(c.shared_max, vec![0, 1]);
     }
 
     #[test]
@@ -495,7 +533,7 @@ mod tests {
                 "Niveau 4 gaat verder dan het maximum 4",
             ]
         );
-        assert_eq!(check.uncovered, vec![0, 1, 2, 3, 4]);
+        assert_eq!(check.gaps, vec![(0, 4)]);
     }
 
     #[test]

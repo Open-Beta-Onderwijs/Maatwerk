@@ -47,9 +47,13 @@ export interface RubricTotals {
 export interface CategoryCheck {
   id: string;
   errors: string[];
-  uncovered: number[];
+  /** Runs [from, to] of scores no level covers. */
+  gaps: [number, number][];
   /** Levels whose bounds are wrong on their own. */
   badLevels: number[];
+  /** Levels whose minimum (maximum) another level has too. */
+  sharedMin: number[];
+  sharedMax: number[];
   missingUitleg: number[];
 }
 
@@ -75,6 +79,50 @@ export const SOORTEN: { value: Soort; label: string }[] = [
   { value: 'bonus', label: 'Bonus' },
   { value: 'diagnostisch', label: 'Diagnostisch' },
 ];
+
+/**
+ * A rubric file with every list present, whatever is on disk (a hand-edited or damaged file must
+ * not break the tab, review 21 m5). The rules still judge what is there.
+ */
+export function normaliseRubric(raw: unknown): Rubric {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<Rubric>;
+  const list = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+  // As the Rust reader: a number or a numeric string.
+  const num = (v: unknown): number | null => {
+    const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+    return typeof n === 'number' && Number.isFinite(n) ? n : null;
+  };
+  const str = (v: unknown): string => (typeof v === 'string' ? v : '');
+  const soort = (v: unknown): Soort => (v === 'bonus' || v === 'diagnostisch' ? v : 'normaal');
+  return {
+    ...r,
+    id: str(r.id),
+    naam: str(r.naam),
+    subject: str(r.subject),
+    schoolsoort: list<unknown>(r.schoolsoort).map(String),
+    jaarlagen: list<unknown>(r.jaarlagen).map(String),
+    obs_ids: list<unknown>(r.obs_ids).map(String),
+    categories: list<Partial<RubricCategory> | null>(r.categories)
+      .filter((c): c is Partial<RubricCategory> => !!c && typeof c === 'object')
+      .map((c) => ({
+        ...c,
+        id: str(c.id),
+        naam: str(c.naam),
+        max: num(c.max),
+        soort: soort(c.soort),
+        obs_ids: list<unknown>(c.obs_ids).map(String),
+        niveaus: list<Partial<Niveau> | null>(c.niveaus)
+          .filter((l): l is Partial<Niveau> => !!l && typeof l === 'object')
+          .map((l) => ({
+            ...l,
+            min: num(l.min),
+            max: num(l.max),
+            titel: str(l.titel),
+            uitleg: str(l.uitleg),
+          })),
+      })),
+  };
+}
 
 /** Every rule of decision 21 plus the rubric's own fields; `valid` means it may be saved. */
 export function checkRubric(rubric: Rubric): RubricCheck {

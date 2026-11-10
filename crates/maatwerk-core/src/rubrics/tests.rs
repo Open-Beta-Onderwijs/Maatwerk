@@ -62,6 +62,70 @@ fn message(e: Error) -> String {
 }
 
 #[test]
+fn a_refused_write_raises_nothing() {
+    // Review 21 m1: a CAS that will fail leaves minAppVersion alone.
+    let (_t, s) = setup();
+    let err = s
+        .write_json(&rel("rubrics/r1.json"), &rubric("r1"), Expect::Hash("nope"))
+        .unwrap_err();
+    assert!(matches!(err, Error::Conflict { .. }), "{err:?}");
+    let obs = json!({"id": "o1", "toetstypes": ["po"]});
+    s.write_json(
+        &rel("observaties/o1.json"),
+        &json!({"id": "o1"}),
+        Expect::Any,
+    )
+    .unwrap();
+    let err = s
+        .write_json(&rel("observaties/o1.json"), &obs, Expect::Missing)
+        .unwrap_err();
+    assert!(matches!(err, Error::Conflict { .. }), "{err:?}");
+    assert_eq!(min_version(&s), "0.9.0");
+}
+
+#[test]
+fn case_variants_of_the_path_are_guarded_too() {
+    // Review 21 m4: Windows and macOS open Rubrics/X.JSON as rubrics/X.json.
+    assert_eq!(rubric_id_of("Rubrics/r1.JSON"), Some("r1"));
+    let (_t, s) = setup();
+    let mut bad = rubric("r1");
+    bad["categories"] = json!([]);
+    let err = s
+        .write_json(&rel("RUBRICS/r1.Json"), &bad, Expect::Missing)
+        .unwrap_err();
+    assert!(message(err).starts_with("Rubric niet opgeslagen"));
+    s.write_json(
+        &rel("Observaties/o1.json"),
+        &json!({"id": "o1", "toetstypes": ["po"]}),
+        Expect::Missing,
+    )
+    .unwrap();
+    assert_eq!(min_version(&s), PO_MIN_APP_VERSION);
+}
+
+#[test]
+fn an_unreadable_rubric_in_use_is_refused_clearly() {
+    let (_t, s) = setup();
+    let path = rel("rubrics/r1.json");
+    s.write_json(
+        &path,
+        &json!({"id": "r1", "categories": "kapot"}),
+        Expect::Any,
+    )
+    .unwrap_err(); // the guard refuses writing it ...
+    fs::create_dir_all(s.data_dir().resolve(&rel("rubrics")).unwrap()).unwrap();
+    fs::write(
+        s.data_dir().resolve(&path).unwrap(),
+        r#"{"id":"r1","categories":[{"id":"a","max":"x","soort":5,"niveaus":7}]}"#,
+    )
+    .unwrap(); // ... so it is written by hand
+    let (exam_path, exam) = po_exam("2025-2026", "p1", "r1");
+    s.write_json(&exam_path, &exam, Expect::Any).unwrap();
+    let err = s.write_json(&path, &rubric("r1"), Expect::Any).unwrap_err();
+    assert!(message(err).contains("onleesbaar"));
+}
+
+#[test]
 fn rubric_path_and_exam_reference() {
     assert_eq!(rubric_id_of("rubrics/r1.json"), Some("r1"));
     assert_eq!(rubric_id_of("rubrics/.json"), None);

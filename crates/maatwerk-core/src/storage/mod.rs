@@ -446,7 +446,7 @@ impl Storage {
     /// A rubric must be valid and may not break its lock; the first rubric or PO observatie
     /// raises `minAppVersion` first (`rubrics::guard_write`, step 21).
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
-        crate::rubrics::guard_write(self, rel, value)?;
+        crate::rubrics::guard_write(self, rel, value, expect)?;
         let (value, text) = integrity::stamped_text(value);
         self.commit_bytes(rel, text.as_bytes(), expect, true)?;
         self.note_stamp(rel.as_str(), &value);
@@ -472,6 +472,19 @@ impl Storage {
         self.commit_bytes(rel, &bytes, Expect::Any, false)
     }
 
+    /// Whether the file matches `expect` now (the commit checks it again under the lock).
+    pub(crate) fn expect_holds(&self, rel: &RelPath, expect: Expect<'_>) -> Result<bool> {
+        if expect == Expect::Any {
+            return Ok(true);
+        }
+        let current = self.read_bytes(rel)?.map(|b| hash_hex(&b));
+        Ok(match expect {
+            Expect::Missing => current.is_none(),
+            Expect::Hash(h) => current.as_deref() == Some(h),
+            Expect::Any => true,
+        })
+    }
+
     fn commit_bytes(
         &self,
         rel: &RelPath,
@@ -485,19 +498,11 @@ impl Storage {
         // and the rename (plus its retries and fallback, which are part of the rename).
         let tmp = atomic::TempFile::write(&path, bytes).map_err(|e| Error::io(rel.as_str(), e))?;
         let _guard = self.commit.acquire()?;
-        if expect != Expect::Any {
-            let current = self.read_bytes(rel)?.map(|b| hash_hex(&b));
-            let ok = match expect {
-                Expect::Missing => current.is_none(),
-                Expect::Hash(h) => current.as_deref() == Some(h),
-                Expect::Any => true,
-            };
-            if !ok {
-                return Err(Error::Conflict {
-                    path: rel.to_string(),
-                    updated_by: None,
-                });
-            }
+        if !self.expect_holds(rel, expect)? {
+            return Err(Error::Conflict {
+                path: rel.to_string(),
+                updated_by: None,
+            });
         }
         let observer = self.observer.as_ref().filter(|_| note);
         if let Some(observer) = observer {
