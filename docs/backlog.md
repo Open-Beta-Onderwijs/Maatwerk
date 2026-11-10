@@ -470,7 +470,7 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 - Review 22 n5: `validate-data` could warn when a herkansing's `rubric_id` differs from its
   original's, and when an exam file holds a `rubric` field (it is never read from a file).
-- Review 22 M2 (if the user chooses the data way): removing a student from every projectgroep
-  should remove the student's PO scores (step 23).
+- `validate-data` could warn about PO scores of a student in no projectgroep (review 22 M2 is
+  handled in the UI; a hand edit or an older app could still leave them).
 - The Toetsen list re-renders after its statistics load and closes an open ⋮ menu (seen again in
   `po.spec.ts`; the helpers retry).

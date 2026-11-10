@@ -973,6 +973,30 @@ const Store = (() => {
     return false;
   }
 
+  /** Whether the student's score file holds anything for this exam (scores, grade, observaties, PO data). */
+  async function studentHasExamData(studentId, examId, year, subject = _activeSubject) {
+    const rec = await getStudentScores(studentId, year, subject);
+    const filled = (o) => o && typeof o === 'object' && Object.keys(o).length > 0;
+    return Boolean(
+      filled(rec.scores?.[examId]) ||
+      rec.overrides?.[examId] ||
+      rec.observations?.[examId]?.length ||
+      rec.po?.[examId],
+    );
+  }
+
+  /**
+   * Removes everything the student's score file holds for this exam: a student who leaves every
+   * projectgroep of a PO loses its scores (user 2026-11-10, review 22 M2).
+   */
+  async function removeStudentExamData(studentId, examId, year, subject = _activeSubject) {
+    await updateStudentScores(studentId, year, subject, (rec) => {
+      for (const key of ['scores', 'overrides', 'observations', 'po']) {
+        if (rec[key] && typeof rec[key] === 'object') delete rec[key][examId];
+      }
+    });
+  }
+
   async function studentHasScores(studentId, year, subject = _activeSubject) {
     const rec = await getStudentScores(studentId, year, subject);
     if (Object.keys(rec.overrides ?? {}).length) return true;
@@ -1431,6 +1455,8 @@ const Store = (() => {
     studentYearAverage,
     calcResults,
     examResults: examResultsMemo,
+    studentHasExamData,
+    removeStudentExamData,
     setGradeOverride,
     makeExamId,
     makeGroupId,

@@ -10,6 +10,7 @@ import {
   gradeFormula,
   groupName,
   groupsToSave,
+  leftStudents,
   matchingClasses,
   matchingRubrics,
   memberCount,
@@ -159,6 +160,12 @@ describe('projectgroepen (decisions 18, 19)', () => {
     expect(copy.every((g, i) => g.id !== groups[i]?.id)).toBe(true);
     copy[0]?.student_ids.push('9');
     expect(groups[0]?.student_ids).toEqual(['1', '2']);
+  });
+
+  it('students in no group after the change have left (review 22 M2)', () => {
+    const after: Projectgroep[] = [{ id: 'g2', student_ids: ['3', '1', '9'] }];
+    expect(leftStudents(groups, after)).toEqual(['2']);
+    expect(leftStudents(groups, groups)).toEqual([]);
   });
 
   it('only students who change group count as moved', () => {

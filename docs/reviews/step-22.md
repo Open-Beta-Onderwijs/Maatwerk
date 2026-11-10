@@ -181,7 +181,10 @@ By the author, 2026-11-10.
 - **M1 fixed**, failing test first (`po.test.ts` "the best attempt of a PO family…"):
   `bestAttempt` grades with `forGrading` and reads a PO's scores by category id;
   `resolveBestAttempts` grades its history with `forGrading`.
-- **M2: the user's call** (asked in the step report). Options: the grade rules return no grade
+- **M2: user decision 2026-11-10: option b, fixed.** A student who leaves every projectgroep
+  loses the PO's data in their score file (scores, override, observaties, `po`), after a confirm
+  that names them (`leftStudents`, `Store.removeStudentExamData`; e2e in `po.spec.ts`).
+  The question as asked: Options: the grade rules return no grade
   for a student outside the projectgroepen (changes `maatwerk-grades`), or step 23 removes a
   student's PO scores when the student leaves every group (a data change with a confirm). Until
   then nobody has PO scores (grading is step 23), so nothing is graded wrongly today.

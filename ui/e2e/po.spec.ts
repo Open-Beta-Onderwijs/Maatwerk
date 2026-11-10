@@ -126,6 +126,58 @@ test.describe('PO toevoegen, step 1 (spec 4.13)', () => {
   });
 });
 
+test.describe('wiskunde (user 2026-11-10)', () => {
+  test('a PO in jaarlaag 4-6 needs A/B/C/D, as a test', async ({ page }) => {
+    const errors = watchErrors(page);
+    const WI_TEACHER = 'gebr-1756713600003';
+    await page.goto('/');
+    await expect(page.locator('.subject-card').first()).toBeVisible();
+    const user = await readMockJson<Record<string, unknown>>(page, `gebruikers/${WI_TEACHER}.json`);
+    const levels = [
+      { min: 0, max: 2, uitleg: 'a' },
+      { min: 3, max: 5, uitleg: 'b' },
+    ];
+    await seedFiles(page, {
+      [`gebruikers/${WI_TEACHER}.json`]: { ...user, actief: true },
+      'rubrics/rubric-wi.json': {
+        id: 'rubric-wi',
+        naam: 'Modelleren',
+        subject: 'wi',
+        schoolsoort: ['Vwo'],
+        jaarlagen: ['5'],
+        obs_ids: [],
+        categories: [
+          { id: 'c1', naam: 'Model', max: 5, soort: 'normaal', obs_ids: [], niveaus: levels },
+        ],
+        _meta: { rev: 1 },
+      },
+    });
+    await login(page, 'wi', WI_TEACHER);
+    await toetsen(page);
+    await page.locator('#btn-add-po').click();
+    const d = dlg(page);
+    const subs = d.locator('.sub-btn');
+    await expect(subs).toHaveText(['A', 'B', 'C', 'D']);
+    await d.locator('#po-naam').fill('PO Modelleren');
+    await d.locator('.ss-btn[data-ss="Vwo"]').click();
+    await d.locator('.jl-btn[data-jl="3"]').click();
+    await expect(subs.first()).toBeDisabled();
+    await d.locator('.jl-btn[data-jl="5"]').click();
+    await expect(subs.first()).toBeEnabled();
+    await pickRubric(page, 'rubric-wi');
+    await d.locator('#po-next').click();
+    await expect(page.locator('.toast').last()).toContainText('Selecteer een subcategorie');
+    await subs.nth(1).click();
+    await d.locator('#po-next').click();
+    await dlg(page).locator('#po-groups-save').click();
+    await expect(page.locator('.dlg')).toHaveCount(0);
+    const [po] = await poFiles(page);
+    expect(po).toMatchObject({ subject: 'wi', jaarlaag: '5', subcategory: 'wisb' });
+    await expect(page.locator(`[data-exam-card="${po!.id}"] .test-badge--sub`)).toHaveText('B');
+    expect(errors).toEqual([]);
+  });
+});
+
 test.describe('projectgroepen (decisions 18, 19)', () => {
   test('a new PO with students of two classes in one projectgroep', async ({ page }) => {
     const errors = watchErrors(page);
@@ -312,6 +364,23 @@ test.describe('a PO on the Toetsen screen', () => {
       ['900001', '900101', '900002'],
       ['900003'],
     ]);
+
+    // A student out of every group loses the PO's scores, after a confirm (user 2026-11-10).
+    await menu(page, PO_ID, 'Projectgroepen');
+    const g = dlg(page);
+    await g.locator('.po-member[data-student="900003"] .po-member-remove').click();
+    await g.locator('#po-groups-save').click();
+    const ask = page.locator('.dlg--confirm');
+    await expect(ask).toContainText('Eén leerling zit in geen projectgroep meer');
+    await expect(ask).toContainText('Olivia ter Østergaard');
+    await ask.locator('.btn--danger').click();
+    await expect(page.locator('.dlg')).toHaveCount(0);
+    type Rec = { scores?: Record<string, unknown> };
+    const gone = await readMockJson<Rec>(page, `${YEAR}/scores/nat/900003.json`);
+    expect(gone.scores?.[PO_ID]).toBeUndefined();
+    expect(Object.keys(gone.scores ?? {}).length).toBeGreaterThan(0); // its tests stay
+    const kept = await readMockJson<Rec>(page, `${YEAR}/scores/nat/900002.json`);
+    expect(kept.scores?.[PO_ID]).toBeDefined();
 
     // PO bewerken: the rubric is locked once there are scores.
     await menu(page, PO_ID, 'PO bewerken');

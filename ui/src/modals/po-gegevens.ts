@@ -64,6 +64,29 @@ function vakNaam(subject: string | undefined): string {
   return (Store.SUBJECT_DISPLAY as Record<string, string>)[subject ?? ''] ?? subject ?? '';
 }
 
+/** Wiskunde A/B/C/D, as for a test (user 2026-11-10): from jaarlaag 4, then required. */
+const SUBCATEGORIES = [
+  ['wisa', 'A'],
+  ['wisb', 'B'],
+  ['wisc', 'C'],
+  ['wisd', 'D'],
+] as const;
+
+function subcategoryField(d: PoDraft, locked: boolean): string {
+  const upper = Number(d.jaarlaag) >= 4;
+  return `
+      <div class="u-flex-none u-mb-0 form-group"${locked ? ` title="${esc(LOCKED_TITLE)}"` : ''}>
+        <label>Subcategorie</label>
+        <div class="btn-toggle-group">
+          ${SUBCATEGORIES.map(([v, l]) => {
+            const on = upper && d.subcategory === v;
+            const dis = locked || !upper;
+            return `<button type="button" class="tog-btn sub-btn${on ? ' selected' : ''}${dis ? ' tog-btn-disabled' : ''}" data-sub="${v}" aria-pressed="${on}"${dis ? ' disabled' : ''}>${l}</button>`;
+          }).join('')}
+        </div>
+      </div>`;
+}
+
 function formHtml(d: PoDraft, year: string, locks: Locks): string {
   const schoolSS: string[] = Store.getSchoolSync().schoolsoort ?? [];
   const lockAll = locks.family;
@@ -88,6 +111,7 @@ function formHtml(d: PoDraft, year: string, locks: Locks): string {
           }).join('')}
         </div>
       </div>
+      ${d.subject === 'wi' ? subcategoryField(d, lockAll) : ''}
     </div>
     <div class="exam-new-grid">
       <div class="exam-new-jp">
@@ -205,10 +229,32 @@ function wireForm(el: HTMLElement, base: PoDraft, locks: Locks): FormControls {
       refresh();
     }),
   );
+  const subBtns = el.querySelectorAll<HTMLButtonElement>('.sub-btn');
+  const setSubEnabled = (upper: boolean) =>
+    subBtns.forEach((b) => {
+      const dis = locks.family || !upper;
+      b.disabled = dis;
+      b.classList.toggle('tog-btn-disabled', dis);
+      if (!upper) {
+        b.classList.remove('selected');
+        b.setAttribute('aria-pressed', 'false');
+      }
+    });
+  if (!locks.family)
+    subBtns.forEach((btn) =>
+      btn.addEventListener('click', () => {
+        subBtns.forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle('selected', on);
+          b.setAttribute('aria-pressed', String(on));
+        });
+      }),
+    );
   const jlBtns = el.querySelectorAll<HTMLButtonElement>('.jl-btn:not(:disabled)');
   jlBtns.forEach((btn) =>
     btn.addEventListener('click', () => {
       jlBtns.forEach((b) => b.classList.toggle('selected', b === btn));
+      setSubEnabled(Number(btn.dataset.jl) >= 4);
       refresh();
     }),
   );
@@ -234,6 +280,18 @@ function wireForm(el: HTMLElement, base: PoDraft, locks: Locks): FormControls {
         toast('Selecteer een jaarlaag.', 'error');
         return null;
       }
+      // Wiskunde: onderbouw up to jaarlaag 3, A/B/C/D required from 4 (as Nieuwe toets).
+      let subcategory = base.subcategory;
+      if (subject === 'wi' && !locks.family) {
+        subcategory =
+          Number(scope.jaarlaag) <= 3
+            ? 'onderbouw'
+            : (el.querySelector<HTMLElement>('.sub-btn.selected')?.dataset.sub ?? null);
+        if (!subcategory) {
+          toast('Selecteer een subcategorie (A, B, C of D) voor jaarlaag 4-6.', 'error');
+          return null;
+        }
+      }
       if (!rubricId) {
         toast('Kies een rubric.', 'error');
         return null;
@@ -242,6 +300,7 @@ function wireForm(el: HTMLElement, base: PoDraft, locks: Locks): FormControls {
       return {
         ...base,
         title,
+        ...(subcategory !== undefined ? { subcategory } : {}),
         jaarlaag: scope.jaarlaag ?? undefined,
         schoolsoort: [...(scope.schoolsoort ?? [])],
         periode: el.querySelector<HTMLElement>('.per-btn.selected')?.dataset.per || null,

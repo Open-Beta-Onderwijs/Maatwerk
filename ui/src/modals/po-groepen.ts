@@ -13,6 +13,7 @@ import {
   copyGroups,
   groupName,
   groupsToSave,
+  leftStudents,
   matchingClasses,
   memberCount,
   movedStudents,
@@ -363,8 +364,28 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
             if (!ok) return;
           }
         }
+        // A student in no group any more leaves the PO and loses its scores (user 2026-11-10).
+        const leaving: string[] = [];
+        if (mode === 'edit') {
+          for (const s of leftStudents(before, groups))
+            if (await Store.studentHasExamData(s, po.id, year)) leaving.push(s);
+          if (leaving.length) {
+            const one = leaving.length === 1;
+            const ok = await confirmDialog(
+              `${one ? 'Eén leerling zit' : `${leaving.length} leerlingen zitten`} in geen projectgroep meer. ${one ? 'Diens' : 'Hun'} scores, observaties en opmerkingen voor deze PO worden verwijderd.`,
+              {
+                title: 'Scores verwijderen',
+                okLabel: 'Verwijderen en opslaan',
+                danger: true,
+                detailsHtml: `<ul>${leaving.map((s) => `<li>${esc(name(s))}</li>`).join('')}</ul>`,
+              },
+            );
+            if (!ok) return;
+          }
+        }
         const saved: Exam = { ...po, projectgroepen: groups };
         await Store.upsertExam(saved, year);
+        for (const s of leaving) await Store.removeStudentExamData(s, po.id, year);
         closeModal();
         toast(mode === 'resit' ? 'Herkansing toegevoegd.' : 'PO opgeslagen.', 'success');
         void renderToetsen();

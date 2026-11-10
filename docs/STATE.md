@@ -6,8 +6,11 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action (step 22):** waiting for the user: review M2 (unplaced students and their PO
-scores: grade rule or data), the visual diff (3 new PO views; `screen-toetsen` and `exam-menu`
+**User (2026-11-10):** M2 option b (a student who leaves every projectgroep loses the PO's
+scores, after a confirm) and a wiskunde PO gets A/B/C/D from jaarlaag 4: both done. Local exe
+0.13.0 built for the user's test on real data.
+
+**Next action (step 22):** waiting for the user: the visual diff (3 new PO views; `screen-toetsen` and `exam-menu`
 change too: "+ PO toevoegen"), the choices below, a manual test on a copy of real data (M-PO-1..).
 Then push for CI (after steps 20/21), CI baselines, merge order 20 -> 21 -> 22, tags. Visual
 views get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has

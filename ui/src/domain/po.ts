@@ -196,6 +196,20 @@ export function movedStudents(
   return [...a].filter(([s, g]) => b.has(s) && b.get(s) !== g).map(([s]) => s);
 }
 
+/**
+ * Students in a group before and in none after: they leave the PO and lose its scores (user
+ * 2026-11-10, review 22 M2).
+ */
+export function leftStudents(
+  before: readonly Projectgroep[],
+  after: readonly Projectgroep[],
+): string[] {
+  const placed = new Set(after.flatMap((g) => g.student_ids.map(String)));
+  return [...new Set(before.flatMap((g) => g.student_ids.map(String)))].filter(
+    (s) => !placed.has(s),
+  );
+}
+
 // ── Grading: a PO is graded with its rubric, attached here (never saved) ─────────
 
 type RubricLookup = (id: string, subject: string | undefined) => Rubric | undefined;

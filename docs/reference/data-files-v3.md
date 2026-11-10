@@ -120,7 +120,11 @@ Additive within v3 (PLAN-2 decisions 16-18, 22). A PO is an exam file with `kind
 - `projectgroepen`: a student is in at most one; students of different classes may be together
   (the UI offers the students of the classes with the PO's vak, a shared schoolsoort and its
   jaarlaag); a student alone is a group of one; `naam` is optional ("Projectgroep n" is shown).
-  Unplaced students get no grade. Empty groups are dropped on save.
+  Unplaced students get no grade. Empty groups are dropped on save. A student who leaves every
+  projectgroep loses everything their score file holds for the PO (`scores`, `overrides`,
+  `observations`, `po` under its id), after a confirm (user 2026-11-10, review 22 M2).
+- Wiskunde: `subcategory` as for a test (`onderbouw` up to jaarlaag 3; `wisa`..`wisd` required
+  from jaarlaag 4; user 2026-11-10).
 - Scores (graded from step 23): `scores[examId][categoryId]`, whole points `0..max`. The grade is
   `maatwerk_grades` `calc_results` with the rubric **attached by the caller** (`exam.rubric`; an
   exam file never holds it): decision 16, rounded to one decimal; no RTTI. A PO without its
