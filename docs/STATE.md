@@ -5,7 +5,7 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action:** CI baselines of the 6 changed views: from CI's own run on `step/20-toetsen` (`docs/testing.md`). Then the user merges the PR; after that sync `main`, tag `step-20`, `v0.11.0`.
+**Next action:** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
 
 ## Step 20 progress (Toetsen, 0.11)
 
