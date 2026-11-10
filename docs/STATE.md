@@ -38,7 +38,14 @@ wait for macOS green (main stays green). **User decision:** merge step 20 (PR #1
 views from one macOS run on `fix/topbar` (it stops at the visual step), then a second macOS run to
 confirm. Tags `step-21`/`v0.12.0` on the head of `step/21-rubrics`, `step-22`/`v0.13.0` on the
 head of `step/22-po`. Step 22 run `42872007833`; step 21 Windows baselines `472cbf2` (run
-`42871975947`). Visual
+`42871975947`).
+**Done 2026-11-10 evening:** Windows + Linux green on `step/21-rubrics` (`472cbf2`, run
+`42871975947`), `step/22-po` (`81e9c63`, 3 new PO views' baselines, run `42876302305`) and PR #13
+(`fix/topbar` -> `main`, run `42880268851`; push CI runs only for `main`/`step/**`, so the PR
+runs it). Exe and CLI 0.13.0 rebuilt from `fix/topbar`. **Tomorrow:** user reruns macOS of PR #12
+(`gh run rerun 42796057189 --failed`), merges it, tag `step-20`/`v0.11.0`; then a macOS run on PR
+#13 (rerun its macOS job), commit the macOS baselines of the failed views from its
+`visual-macos` artifact on `fix/topbar`, push, confirm green, merge, tags. Visual
 views get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has
 no PO, because the step 21 rubric e2e tests count rubric uses.
 
