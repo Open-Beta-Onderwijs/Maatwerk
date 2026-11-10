@@ -116,7 +116,7 @@ fn place(rel: &str) -> Place<'_> {
         ["snapshots", ..] => Place::Ignored,
         // Any case: a Windows-made folder is in use (T32, review 18 m6).
         [dir, ..] if dir.eq_ignore_ascii_case(crate::storage::IMAGES_DIR) => Place::Ignored,
-        ["gebruikers", f] | ["observaties", f] => named("id", f),
+        ["gebruikers", f] | ["observaties", f] | ["rubrics", f] => named("id", f),
         ["aanwezigheid", f] => named("userId", f),
         ["opdrachten", id, "opdracht.json"] => Place::Json(Some(("id", id))),
         ["opdrachten", _, f] if f.ends_with(".typ") => Place::Other,
@@ -337,6 +337,12 @@ fn check_references(
     let users = ids_in(json, "gebruikers/", ".json");
     let observaties = ids_in(json, "observaties/", ".json");
     let opdrachten = ids_in(json, "opdrachten/", "/opdracht.json");
+    let rubrics = ids_in(json, "rubrics/", ".json");
+    let po_observaties: BTreeSet<String> = json
+        .iter()
+        .filter(|(rel, v)| rel.starts_with("observaties/") && crate::rubrics::is_po_observatie(v))
+        .filter_map(|(_, v)| v.get("id").and_then(Value::as_str).map(str::to_owned))
+        .collect();
     let years = year_ids(json, out);
     let empty = YearIds::default();
 
@@ -360,6 +366,10 @@ fn check_references(
             if let Some(f) = absent_file("foto") {
                 out.missing(rel, format!("Foto {f} ontbreekt"));
             }
+        } else if rel.starts_with("observaties/") {
+            check_toetstypes(rel, value, out);
+        } else if rel.starts_with("rubrics/") {
+            check_rubric_file(rel, value, &observaties, &po_observaties, out);
         } else if rel == "school.json" {
             for key in ["logo", "watermerk"] {
                 if let Some(f) = absent_file(key) {
@@ -438,8 +448,93 @@ fn check_references(
             }
         } else if rest.starts_with("exams/") {
             check_exam(rel, value, exams, &observaties, &opdrachten, out);
+            if let Some(r) = crate::rubrics::exam_rubric_id(value)
+                && !rubrics.contains(r)
+            {
+                out.missing(rel, format!("Rubric {r} bestaat niet"));
+            }
         } else if rest.starts_with("scores/") {
             check_scores(rel, year, value, students, exams, out);
+        }
+    }
+}
+
+/// Observatie `toetstypes` (step 21): absent means `toets`; present it lists `toets`, `po` or
+/// both, never none.
+fn check_toetstypes(rel: &str, obs: &Value, out: &mut Found) {
+    let Some(v) = obs.get(crate::rubrics::TOETSTYPES_FIELD) else {
+        return;
+    };
+    let ok = v.as_array().is_some_and(|a| {
+        !a.is_empty() && a.iter().all(|t| matches!(t.as_str(), Some("toets" | "po")))
+    });
+    if !ok {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            format!("Toetstype {v} onbekend: verwacht \"toets\", \"po\" of beide"),
+        );
+    }
+}
+
+/// A rubric (step 21): the level rules, and observaties that exist and are of toetstype PO.
+fn check_rubric_file(
+    rel: &str,
+    value: &Value,
+    observaties: &BTreeSet<String>,
+    po_observaties: &BTreeSet<String>,
+    out: &mut Found,
+) {
+    use crate::grades::rubric::{Rubric, check_rubric};
+    let rubric: Rubric = match serde_json::from_value(value.clone()) {
+        Ok(r) => r,
+        Err(e) => {
+            out.error(IssueKind::Shape, rel, format!("Geen rubric: {e}"));
+            return;
+        }
+    };
+    let check = check_rubric(&rubric);
+    for e in check.errors {
+        out.error(IssueKind::Shape, rel, e);
+    }
+    for (cat, c) in rubric.categories.iter().zip(check.categories) {
+        if !c.errors.is_empty() {
+            out.error(
+                IssueKind::Shape,
+                rel,
+                format!("{}: {}", cat.naam, c.errors.join(" · ")),
+            );
+        }
+    }
+    let ids = |v: &Value| -> Vec<String> {
+        v.get("obs_ids")
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let mut all = ids(value);
+    for cat in value
+        .get("categories")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        all.extend(ids(cat));
+    }
+    for obs in all {
+        if !observaties.contains(&obs) {
+            out.missing(rel, format!("Observatie {obs} bestaat niet"));
+        } else if !po_observaties.contains(&obs) {
+            out.warn(
+                IssueKind::Reference,
+                rel,
+                format!("Observatie {obs} is geen PO-observatie (toetstype)"),
+            );
         }
     }
 }

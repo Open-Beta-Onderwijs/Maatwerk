@@ -26,7 +26,7 @@ fn parse_number(s: &str) -> Option<f64> {
     s.trim().parse::<f64>().ok().filter(|n| n.is_finite())
 }
 
-fn opt_number<'de, D: Deserializer<'de>>(d: D) -> Result<Option<f64>, D::Error> {
+pub(crate) fn opt_number<'de, D: Deserializer<'de>>(d: D) -> Result<Option<f64>, D::Error> {
     Ok(number_of(&Value::deserialize(d)?))
 }
 
@@ -66,16 +66,18 @@ fn opt_text<'de, D: Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error>
     })
 }
 
-fn text<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+pub(crate) fn text<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
     Ok(opt_text(d)?.unwrap_or_default())
 }
 
 /// A map or list that may be `null` or missing in old files.
-fn nullable<'de, D: Deserializer<'de>, T: Default + Deserialize<'de>>(d: D) -> Result<T, D::Error> {
+pub(crate) fn nullable<'de, D: Deserializer<'de>, T: Default + Deserialize<'de>>(
+    d: D,
+) -> Result<T, D::Error> {
     Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
 }
 
-fn string_list<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
+pub(crate) fn string_list<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
     Ok(match Value::deserialize(d)? {
         Value::Array(items) => items
             .into_iter()

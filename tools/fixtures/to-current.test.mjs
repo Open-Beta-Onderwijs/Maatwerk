@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { filesToV3 } from './to-current.mjs';
+import { filesToV3, withRubrics, RUBRICS, PO_OBSERVATIES } from './to-current.mjs';
 
 const json = (v) => JSON.stringify(v);
 
@@ -54,4 +54,30 @@ test('v3: images, presence, school, users, exams and resits', () => {
     diagnostic: false,
     obs_from_parent: true,
   });
+});
+
+test('v3: observaties get toetstypes toets when absent (step 21)', () => {
+  const out = filesToV3(
+    new Map(
+      Object.entries({
+        'observaties/a.json': json({ id: 'a' }),
+        'observaties/b.json': json({ id: 'b', toetstypes: ['po'] }),
+      }),
+    ),
+  );
+  assert.deepEqual(JSON.parse(out.get('observaties/a.json')).toetstypes, ['toets']);
+  assert.deepEqual(JSON.parse(out.get('observaties/b.json')).toetstypes, ['po']);
+});
+
+test('withRubrics adds the rubrics, PO observaties and raises minAppVersion', () => {
+  const out = withRubrics(new Map([['school.json', json({ minAppVersion: '0.9.0' })]]));
+  assert.equal(JSON.parse(out.get('school.json')).minAppVersion, '0.12.0');
+  assert.equal(RUBRICS.length, 3);
+  for (const r of RUBRICS) assert.ok(out.has(`rubrics/${r.id}.json`));
+  const po = new Set(PO_OBSERVATIES.map((o) => o.id));
+  for (const r of RUBRICS)
+    for (const id of [...r.obs_ids, ...r.categories.flatMap((c) => c.obs_ids)])
+      assert.ok(po.has(id), `${r.id} names ${id}`);
+  // Without school.json (a partial map) nothing is added.
+  assert.equal(withRubrics(new Map()).size, 0);
 });

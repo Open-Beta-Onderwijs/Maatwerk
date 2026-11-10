@@ -13,12 +13,15 @@
   "jaarlagen": [
     "4"
   ],
+  "toetstypes": [
+    "toets"
+  ],
   "_meta": {
-    "rev": 1,
+    "rev": 2,
     "createdBy": null,
     "createdAt": null,
     "updatedBy": null,
     "updatedAt": "2026-10-30T14:05:00.000Z",
-    "hash": "9fa3ae253bbc0c07d11205eabb4767227b14b131bd659663f4b6ea6fa2c56985"
+    "hash": "0091de4039bbf1512af67a7fac2620a15c43d18b334687856f76b7a862b442e3"
   }
 }

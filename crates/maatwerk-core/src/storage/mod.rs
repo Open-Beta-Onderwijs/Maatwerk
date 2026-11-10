@@ -442,7 +442,11 @@ impl Storage {
     /// matches `expect`; returns the hash of what was written (S10-S12). An object gets a fresh
     /// `_meta.hash` (C19). The check and the rename run under the commit lock, so no write from
     /// this PC can land in between (S37).
+    ///
+    /// A rubric must be valid and may not break its lock; the first rubric or PO observatie
+    /// raises `minAppVersion` first (`rubrics::guard_write`, step 21).
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
+        crate::rubrics::guard_write(self, rel, value)?;
         let (value, text) = integrity::stamped_text(value);
         self.commit_bytes(rel, text.as_bytes(), expect, true)?;
         self.note_stamp(rel.as_str(), &value);
@@ -509,10 +513,12 @@ impl Storage {
         result.map_err(|e| Error::io(rel.as_str(), e))
     }
 
-    /// Removes the file; a missing file is fine (S19). Reported to the watcher (S18).
+    /// Removes the file; a missing file is fine (S19). Reported to the watcher (S18). A rubric in
+    /// use is refused (`rubrics::guard_delete`).
     pub fn delete(&self, rel: &RelPath) -> Result<()> {
         let path = self.dir.resolve(rel)?;
         self.check_writable()?;
+        crate::rubrics::guard_delete(self, rel)?;
         let _guard = self.commit.acquire()?;
         if let Some(observer) = &self.observer {
             observer.will_change(rel);

@@ -5,6 +5,7 @@
 
 mod assignment;
 mod data;
+mod rubric;
 mod stats;
 
 use std::path::{Path, PathBuf};
@@ -22,6 +23,7 @@ usage: maatwerk-cli typst compile <file.typ> [--out <file.pdf>] [--input <key>=<
        maatwerk-cli migrate <data-folder> (--dry-run | --apply --backup-dir <dir>) [--json] [-v]
        maatwerk-cli admin reset-pin <data-folder>
        maatwerk-cli stats <data-folder> --year <school-year> --vak <vak> [--json]
+       maatwerk-cli rubric check <rubric.json | data-folder> [--json]
        maatwerk-cli assignment check <opdracht> [--json] [--answers] [--ignore-system-fonts]
        maatwerk-cli assignment render <opdracht> --pdf <file.pdf> [--answers | --no-answers]
                                      [--ignore-system-fonts]
@@ -46,6 +48,11 @@ and gets new codes. Last resort when both are lost (docs/cutover-runbook.md).
 stats: prints the numbers of one school year and vak, for checking them by hand: per test the
 mean, SD and % onvoldoende, per student (by number) the year average, SE average and trend. Reads
 only (docs/phase-2/step-19-grade-rules.md).
+
+rubric check: checks the levels of one rubric file, or of every rubric in a data folder (with
+the number of PO's that use it): 2-5 levels per category, whole points, no two levels with the
+same minimum or maximum, every score from 0 to the max covered. Exit code 1 when one is invalid,
+2 when the target cannot be read. Reads only.
 
 assignment: works on one opdracht folder (main.typ, opdracht.typ, lib.typ, images/) and reads
 nothing outside it (docs/assignment-format.md). <opdracht> is the folder, or a .typ file in it
@@ -94,6 +101,10 @@ fn main() -> ExitCode {
             Err(message) => usage_error(&message),
         },
         ["admin", "reset-pin", rest @ ..] => match data::ResetPinArgs::parse(rest) {
+            Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["rubric", "check", rest @ ..] => match rubric::CheckArgs::parse(rest) {
             Ok(args) => args.run(),
             Err(message) => usage_error(&message),
         },

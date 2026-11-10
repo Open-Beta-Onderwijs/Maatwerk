@@ -18,6 +18,7 @@ pub mod outputs;
 pub mod paths;
 pub mod pdf_merge;
 pub mod presence;
+pub mod rubrics;
 pub mod snapshots;
 pub mod storage;
 pub mod typst_svc;

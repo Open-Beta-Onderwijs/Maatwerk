@@ -464,3 +464,92 @@ fn step_19_values_the_grade_rules_read_past_are_warnings() {
     }
     assert_eq!(report.errors(), 0, "{:#?}", report.issues);
 }
+
+#[test]
+fn rubrics_toetstypes_and_rubric_references_are_checked() {
+    let (_tmp, data) = copy();
+    let write = |rel: &str, v: serde_json::Value| {
+        let path = data.join(rel);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, serde_json::to_string_pretty(&v).unwrap()).unwrap();
+    };
+    write(
+        "observaties/obs-po.json",
+        serde_json::json!({"id": "obs-po", "naam": "Bron", "toetstypes": ["po"]}),
+    );
+    write(
+        "observaties/obs-x.json",
+        serde_json::json!({"id": "obs-x", "naam": "X", "toetstypes": []}),
+    );
+    let levels = serde_json::json!([
+        {"min": 0, "max": 1, "uitleg": "a"}, {"min": 2, "max": 4, "uitleg": "b"}
+    ]);
+    write(
+        "rubrics/r1.json",
+        serde_json::json!({
+            "id": "r1", "naam": "Verslag", "subject": "nat", "schoolsoort": ["Havo"],
+            "jaarlagen": ["4"], "obs_ids": ["obs-po", "obs-1756713600100", "obs-weg"],
+            "categories": [{"id": "a", "naam": "Theorie", "max": 4, "soort": "normaal",
+                            "obs_ids": ["obs-po"], "niveaus": levels}]
+        }),
+    );
+    write(
+        "rubrics/r2.json",
+        serde_json::json!({
+            "id": "r2", "naam": "Kapot", "subject": "nat", "schoolsoort": ["Havo"],
+            "jaarlagen": ["4"],
+            "categories": [{"id": "a", "naam": "Theorie", "max": 5, "niveaus": levels}]
+        }),
+    );
+    write(
+        "2025-2026/exams/po-1.json",
+        serde_json::json!({"id": "po-1", "kind": "po", "subject": "nat", "rubric_id": "r9"}),
+    );
+    let report = validate(&data).unwrap();
+    let r1 = "rubrics/r1.json";
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        r1,
+        "Observatie obs-weg bestaat niet"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        r1,
+        "Observatie obs-1756713600100 is geen PO-observatie"
+    ));
+    assert!(
+        !issues_for(&report, r1)
+            .iter()
+            .any(|i| i.message.contains("obs-po")),
+        "{:#?}",
+        report.issues
+    );
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "rubrics/r2.json",
+        "Theorie: Niet gedekt: 5"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "observaties/obs-x.json",
+        "Toetstype [] onbekend"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        "2025-2026/exams/po-1.json",
+        "Rubric r9 bestaat niet"
+    ));
+    // A rubric file named after another id is misplaced.
+    write("rubrics/r3.json", serde_json::json!({"id": "r1"}));
+    let report = validate(&data).unwrap();
+    assert!(
+        issues_for(&report, "rubrics/r3.json")
+            .iter()
+            .any(|i| i.kind == IssueKind::Placement)
+    );
+}

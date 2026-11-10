@@ -125,6 +125,10 @@ export function filesToV3(files) {
       out.set(rel, json('foto' in user ? { ...user, foto: renameImage(user.foto) } : user));
     } else if (/^\d{4}-\d{4}\/exams\/[^/]+\.json$/.test(rel)) {
       exams.set(rel, JSON.parse(text(content)));
+    } else if (/^observaties\/[^/]+\.json$/.test(rel)) {
+      // Step 21 (decision 23): absent means a test observatie.
+      const obs = JSON.parse(text(content));
+      out.set(rel, json('toetstypes' in obs ? obs : { ...obs, toetstypes: ['toets'] }));
     } else {
       out.set(rel, content);
     }
@@ -148,6 +152,170 @@ export function filesToCurrent(files) {
   return filesToV3(filesToV2(files));
 }
 
+const META = {
+  rev: 1,
+  createdBy: 'gebr-1756713600001',
+  createdAt: '2025-09-01T08:00:00.000Z',
+  updatedBy: 'gebr-1756713600001',
+  updatedAt: '2025-09-01T08:00:00.000Z',
+};
+
+/** Two to five niveaus from [min, max, titel, uitleg] rows. */
+const niveaus = (rows) => rows.map(([min, max, titel, uitleg]) => ({ min, max, titel, uitleg }));
+
+/** PO observaties (toetstype `po`) for natuurkunde (step 21, data-files-v3.md "Rubrics"). */
+export const PO_OBSERVATIES = [
+  ['obs-po-bronnen', 'Bronnen ontbreken', '📚', ['po']],
+  ['obs-po-samen', 'Goed samengewerkt', '🤝', ['po']],
+  ['obs-po-planning', 'Planning niet gehaald', '⏰', ['po']],
+  ['obs-po-netjes', 'Netjes gewerkt', '✨', ['toets', 'po']],
+].map(([id, naam, icon, toetstypes]) => ({
+  id,
+  naam,
+  icon,
+  uitleg: `Uitleg bij ${naam.toLowerCase()}.`,
+  leeradvies: '',
+  schoolsoort: ['Havo', 'Vwo'],
+  subjects: ['nat'],
+  jaarlagen: [],
+  toetstypes,
+  _meta: META,
+}));
+
+/** Three natuurkunde rubrics: one with bonus and diagnostic categories (board 16's example). */
+export const RUBRICS = [
+  {
+    id: 'rubric-onderzoek',
+    naam: 'Onderzoeksverslag',
+    beschrijving: 'Verslag van een eigen onderzoek.',
+    subject: 'nat',
+    schoolsoort: ['Havo', 'Vwo'],
+    jaarlagen: ['3', '4'],
+    obs_ids: ['obs-po-planning', 'obs-po-netjes'],
+    categories: [
+      {
+        id: 'cat-theorie',
+        naam: 'Theorie',
+        max: 8,
+        soort: 'normaal',
+        obs_ids: ['obs-po-bronnen'],
+        niveaus: niveaus([
+          [0, 2, 'Onvoldoende', 'De theorie ontbreekt of klopt niet.'],
+          [3, 5, 'Voldoende', 'De belangrijkste begrippen zijn goed uitgelegd.'],
+          [6, 8, 'Goed', 'Volledig, met bronnen en eigen voorbeelden.'],
+        ]),
+      },
+      {
+        id: 'cat-uitvoering',
+        naam: 'Uitvoering',
+        max: 9,
+        soort: 'normaal',
+        obs_ids: [],
+        niveaus: niveaus([
+          [0, 4, '', 'Metingen onvolledig of onnauwkeurig.'],
+          [5, 9, '', 'Metingen volledig, herhaald en nauwkeurig.'],
+        ]),
+      },
+      {
+        id: 'cat-extra',
+        naam: 'Extra onderzoek',
+        max: 4,
+        soort: 'bonus',
+        obs_ids: [],
+        niveaus: niveaus([
+          [0, 1, '', 'Geen of weinig extra.'],
+          [2, 4, '', 'Een eigen vervolgvraag onderzocht.'],
+        ]),
+      },
+      {
+        id: 'cat-samen',
+        naam: 'Samenwerken',
+        max: 3,
+        soort: 'diagnostisch',
+        obs_ids: ['obs-po-samen'],
+        niveaus: niveaus([
+          [0, 1, '', 'Taken niet verdeeld.'],
+          [2, 3, '', 'Taken verdeeld en afspraken nagekomen.'],
+        ]),
+      },
+    ],
+    _meta: META,
+  },
+  {
+    id: 'rubric-practicum',
+    naam: 'Practicum',
+    subject: 'nat',
+    schoolsoort: ['Havo'],
+    jaarlagen: ['3'],
+    obs_ids: [],
+    categories: [
+      ['cat-voorbereiding', 'Voorbereiding', 4],
+      ['cat-meten', 'Meten', 6],
+      ['cat-verslag', 'Verslag', 5],
+    ].map(([id, naam, max]) => ({
+      id,
+      naam,
+      max,
+      soort: 'normaal',
+      obs_ids: [],
+      niveaus: niveaus([
+        [0, Math.floor(max / 2), '', `${naam}: onvoldoende.`],
+        [Math.floor(max / 2) + 1, max, '', `${naam}: voldoende.`],
+      ]),
+    })),
+    _meta: META,
+  },
+  {
+    id: 'rubric-presentatie',
+    naam: 'Presentatie',
+    subject: 'nat',
+    schoolsoort: ['Vwo'],
+    jaarlagen: ['4', '5', '6'],
+    obs_ids: [],
+    categories: [
+      {
+        id: 'cat-inhoud',
+        naam: 'Inhoud',
+        max: 6,
+        soort: 'normaal',
+        obs_ids: [],
+        niveaus: niveaus([
+          [0, 2, 'Zwak', 'Onjuist of onvolledig.'],
+          [2, 4, 'Redelijk', 'Grotendeels juist.'],
+          [5, 6, 'Sterk', 'Juist en volledig.'],
+        ]),
+      },
+      {
+        id: 'cat-vorm',
+        naam: 'Vorm',
+        max: 4,
+        soort: 'normaal',
+        obs_ids: [],
+        niveaus: niveaus([
+          [0, 1, '', 'Rommelig, slecht te volgen.'],
+          [2, 4, '', 'Helder opgebouwd.'],
+        ]),
+      },
+    ],
+    _meta: META,
+  },
+];
+
+/**
+ * The step 21 additions (format 0.12, an additive change within v3): the rubrics and PO
+ * observaties above, for natuurkunde only, and `minAppVersion` 0.12.0 (as the core raises it).
+ * Mock only: the generated v1 fixtures stay as the reference app knows them.
+ */
+export function withRubrics(files) {
+  const out = new Map(files);
+  if (!out.has('school.json')) return out;
+  for (const o of PO_OBSERVATIES) out.set(`observaties/${o.id}.json`, json(o));
+  for (const r of RUBRICS) out.set(`rubrics/${r.id}.json`, json(r));
+  const school = JSON.parse(text(out.get('school.json')));
+  out.set('school.json', json({ ...school, minAppVersion: '0.12.0' }));
+  return out;
+}
+
 /** Converts the folder `root` in place to the current format. */
 export function toCurrent(root) {
   const files = new Map();
@@ -159,7 +327,7 @@ export function toCurrent(root) {
     }
   };
   walk('');
-  const converted = filesToCurrent(files);
+  const converted = withRubrics(filesToCurrent(files));
   for (const rel of files.keys()) fs.rmSync(path.join(root, rel));
   for (const [rel, content] of converted) {
     fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });

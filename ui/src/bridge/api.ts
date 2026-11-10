@@ -110,8 +110,8 @@ export interface OpdrachtImage {
 export type Unsubscribe = () => void;
 
 /** The migration offered on the startup screen (C1). */
-export type { MigrationResult, DataCheck, DataIssue, StampIssue } from './bindings';
-import type { MigrationResult, DataCheck, StampIssue, PinCheck } from './bindings';
+export type { MigrationResult, DataCheck, DataIssue, StampIssue, RubricUse } from './bindings';
+import type { MigrationResult, DataCheck, StampIssue, PinCheck, RubricUse } from './bindings';
 /** Result of the PIN methods (Step 7b). */
 export type { PinCheck, PinOutcome } from './bindings';
 
@@ -258,6 +258,8 @@ export interface MaatwerkApi {
   migrateDataFolder(dryRun?: boolean): Promise<MigrationResult>;
   /** `validate-data` on the open folder (admin, "Gegevenscontrole"). */
   validateDataFolder(): Promise<DataCheck>;
+  /** Per rubric id, the PO's in any school year that use it (step 21, decision 20). */
+  rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>>;
   /** JSON files read with a missing or wrong stamp since start (C19). */
   stampIssues(): Promise<StampIssue[]>;
   /** "Accepteren": re-stamps the file as it is. */

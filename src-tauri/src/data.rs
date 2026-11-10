@@ -181,6 +181,41 @@ pub async fn validate_data_folder(state: State<'_, Shared>) -> Res<DataCheck> {
     .await
 }
 
+/// One PO that uses a rubric (step 21).
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RubricUse {
+    pub year: String,
+    pub exam_id: String,
+    pub naam: String,
+}
+
+/// Per rubric id, the PO's in any school year that use it ("In gebruik bij n PO's"; decision 20
+/// locks max and soort while this is not empty).
+#[tauri::command]
+#[specta::specta]
+pub async fn rubric_usage(
+    state: State<'_, Shared>,
+) -> Res<std::collections::BTreeMap<String, Vec<RubricUse>>> {
+    blocking(state, move |c| {
+        Ok(maatwerk_core::rubrics::usage(c.storage()?)?
+            .into_iter()
+            .map(|(id, uses)| {
+                let uses = uses
+                    .into_iter()
+                    .map(|u| RubricUse {
+                        year: u.year,
+                        exam_id: u.exam_id,
+                        naam: u.naam,
+                    })
+                    .collect();
+                (id, uses)
+            })
+            .collect())
+    })
+    .await
+}
+
 /// Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd").
 #[tauri::command]
 #[specta::specta]

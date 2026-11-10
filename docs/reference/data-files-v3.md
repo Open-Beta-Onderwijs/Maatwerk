@@ -13,6 +13,7 @@ data/
 ├── school.json                 + minAppVersion "0.9.0" (or higher)
 ├── afbeeldingen/               was fotos/: photos, school logo, watermark
 ├── aanwezigheid/<userId>.json  was users/: presence
+├── rubrics/<id>.json           from 0.12 (see "Rubrics" below)
 └── ...                         everything else as in v2
 ```
 
@@ -55,7 +56,55 @@ when it is absent or lower (decision 5), so later additive changes can use the r
   `opdrachtenCijfer`, and linking never rewrites a colleague's shared opdracht file.
 - A changed entity file gets `_meta.rev` + 1, `updatedBy: null`, `updatedAt` = migration time.
 
+## Rubrics and observatie toetstypes (0.12, step 21)
+
+An additive change within v3 (PLAN-2 decisions 16, 20, 21, 23); `schema_version` stays 3.
+
+```
+data/
+├── rubrics/<id>.json           new: one rubric, shared per vak like observaties
+└── observaties/<id>.json       + toetstypes
+```
+
+**`rubrics/<id>.json`** (CAS + `_meta` like every entity; new ids are opaque, as observaties):
+
+```
+{ id, naam, beschrijving?, subject, schoolsoort: [..], jaarlagen: ["4", ..], obs_ids: [obsId],
+  categories: [{ id, naam, max, soort: "normaal" | "bonus" | "diagnostisch", obs_ids: [obsId],
+                 niveaus: [{ min, max, titel?, uitleg }] }],
+  _meta }
+```
+
+- Rules (`maatwerk_grades::rubric`, one implementation for the UI, the core and the CLI): a
+  category has 2-5 niveaus; `max` and the bounds are whole points (`max` at least 1); a niveau
+  lies within `0..max`; niveaus may overlap but no two share a `min` or a `max`; together they
+  cover every score from 0 to `max`. `naam` (rubric, category) and `uitleg` are required, `titel`
+  is not. A rubric needs a vak, a schoolsoort, a jaarlaag and at least one `normaal` category.
+- PO grade (decision 16): 10 × points ÷ max, between 1,0 and 10,0, where points = normal + bonus
+  category scores and max = the sum of the normal maxima; diagnostic categories count in
+  neither. Whole points only, no N-term.
+- **In use** = an exam in any school year names it (`rubric_id`, written from step 22). Then the
+  categories (their ids), every `max` and every `soort` are locked, and the file cannot be
+  deleted (decision 20); names, niveaus and observaties stay editable.
+- `obs_ids` (rubric and category) name observaties of toetstype `po`.
+
+**Observatie `toetstypes`**: `["toets"]`, `["po"]` or both, never empty. Absent means
+`["toets"]`; the v2 -> v3 migration writes it, and the observatie form always does. Test screens
+list `toets` observaties, PO screens (rubric editor, PO grading) `po`; opdracht bewerken lists all.
+
+**Guards in the core** (`maatwerk_core::rubrics`, inside `Storage::write_json` and `delete`): a
+rubric write is refused (`invalid_argument`, Dutch message) when it breaks the rules, when its `id`
+is not its file name, or when it is in use and changes what is locked; deleting a rubric in use is
+refused. The first rubric, or the first observatie with `po` in `toetstypes`, raises `school.json`
+`minAppVersion` to **0.12.0** first, so an older app becomes read-only before it can list PO
+observaties in a test or overwrite what it does not know. Without a `school.json` (not synced
+yet) nothing is raised.
+
 ## `validate-data`
+
+Step 21 adds: rubric files (the rules above, errors; id = file name), their observaties (missing:
+warning; not of toetstype PO: warning), `toetstypes` values (warning) and an exam's `rubric_id`
+that names no rubric (warning).
 
 Checks the above: `kind` value, `diagnostic` a bool and not with PTA (error), a diagnostic test
 with a `weging` above 0 (warning; `weging_se` may stay, it applies only with PTA), `obs_from_parent` without `parent_id` (warning), `opdrachtenVraag` shape,
