@@ -10,6 +10,7 @@ import { closeModal, guardModalClose, openModal, toast } from '../app.js';
 import { confirmDialog, esc, openDialog } from '../components/dialog';
 import {
   classesByStudent,
+  compareStudents,
   copyGroups,
   groupName,
   groupsToSave,
@@ -29,6 +30,7 @@ import { testBadgeClass } from '../domain/test-type';
 import type { Exam, Student } from '../domain/types';
 import { renderToetsen } from '../screens/toetsen';
 import { Store } from '../store.js';
+import { ICONS } from '../utils/icons.js';
 import { spinnerValue, wireSpinners } from '../utils/spinners';
 import { stepper } from './exam-fields';
 import { openNewPoModal, poSteps, type PoDraft } from './po-gegevens';
@@ -71,7 +73,9 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
   const tag = (id: string) => byStudent.get(id)?.[0] ?? '—';
   const tagTitle = (id: string) => byStudent.get(id)?.join(', ') ?? 'In geen passende klas';
   // Everyone a class offers, by name.
-  const eligible = [...byStudent.keys()].sort((a, b) => name(a).localeCompare(name(b), 'nl'));
+  // By achternaam, in the list and in every group (user 2026-11-10).
+  const order = (a: string, b: string) => compareStudents(students.get(a), students.get(b));
+  const eligible = [...byStudent.keys()].sort(order);
 
   const before = structuredClone(po.projectgroepen ?? []);
   const state: State = {
@@ -163,7 +167,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         <div class="po-group${g.id === state.active ? ' po-group--active' : ''}" data-group="${esc(g.id)}" data-drop="group">
           <div class="po-group-head">
             <input class="po-group-name" type="text" value="${esc(g.naam ?? '')}" placeholder="${esc(groupName({ ...g, naam: '' }, i))}" aria-label="Naam projectgroep ${i + 1}" />
-            <span class="po-group-count">${memberCount(g.student_ids.length)}</span>
+            <span class="po-group-count">${memberCount(g.student_ids.length)}</span>${g.student_ids.length ? '' : `<button type="button" class="btn btn--icon po-group-delete" data-delete-group="${esc(g.id)}" title="Lege projectgroep verwijderen" aria-label="${esc(groupName(g, i))} verwijderen">${ICONS.trash}</button>`}
           </div>
           ${g.student_ids
             .map(
@@ -215,6 +219,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
       };
 
       const render = () => {
+        for (const g of state.groups) g.student_ids = g.student_ids.map(String).sort(order);
         renderGroups();
         renderFree();
         renderActive();
@@ -245,6 +250,17 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
           // Keyboard: on to the next student (review 22 m4).
           const left = freeList.querySelectorAll<HTMLElement>('.po-stu');
           (left[Math.min(at, left.length - 1)] ?? freeList).focus?.();
+          return;
+        }
+        const del = t.closest<HTMLElement>('[data-delete-group]');
+        if (del) {
+          // Only an empty group has the button (user 2026-11-10).
+          const at = state.groups.findIndex((g) => g.id === del.dataset.deleteGroup);
+          if (at >= 0 && !state.groups[at]!.student_ids.length) state.groups.splice(at, 1);
+          if (!state.groups.some((g) => g.id === state.active))
+            state.active = state.groups[Math.min(at, state.groups.length - 1)]?.id ?? null;
+          render();
+          $('#po-add-group').focus();
           return;
         }
         const remove = t.closest<HTMLElement>('[data-remove]');

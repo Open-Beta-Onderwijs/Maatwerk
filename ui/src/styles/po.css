@@ -184,6 +184,15 @@
   font-size: var(--fs-secondary);
   font-weight: 600;
 }
+.po-group-delete {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+.po-group-delete svg {
+  width: 14px;
+  height: 14px;
+}
 .po-group-count {
   color: var(--muted);
   font-size: var(--fs-caption);

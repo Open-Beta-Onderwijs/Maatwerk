@@ -271,13 +271,18 @@ test.describe('projectgroepen (decisions 18, 19)', () => {
       .dragTo(d.locator('#po-free-list'));
     await expect(d.locator('.po-member')).toHaveCount(0);
 
+    // An empty group can be deleted (user 2026-11-10).
+    await d.locator('.po-group-delete').click();
+    await expect(d.locator('.po-group')).toHaveCount(0);
+    await expect(d.locator('#po-active-name')).toHaveText('een nieuwe projectgroep');
+
     // 3b only: 2 students in groups of at most 3 -> one group of 2.
     await d.locator(`.po-class-chip[data-class="${CLASS_3B}"]`).click();
     await d.locator('#po-random').click();
     const r = page.locator('.dlg--po-random');
     await expect(r).toContainText('Verdeel de 2 leerlingen');
     await r.locator('[data-action="po-random-ok"]').click();
-    // The empty first group made way.
+    // One new group of 2.
     await expect(d.locator('.po-group')).toHaveCount(1);
     await expect(d.locator('.po-group .po-member')).toHaveCount(2);
     // The rest (8) in groups of at most 3: 3, 3, 2.
@@ -361,7 +366,8 @@ test.describe('a PO on the Toetsen screen', () => {
     await expect(page.locator('.dlg')).toHaveCount(0);
     const po = await readMockJson<PoFile>(page, `${YEAR}/exams/${PO_ID}.json`);
     expect(po.projectgroepen.map((g) => g.student_ids)).toEqual([
-      ['900001', '900101', '900002'],
+      // By achternaam (user 2026-11-10): Bakker, 't Hart, O'Neill.
+      ['900101', '900002', '900001'],
       ['900003'],
     ]);
 
@@ -406,7 +412,7 @@ test.describe('a PO on the Toetsen screen', () => {
     await expect(d.locator('.dlg-subtitle')).toContainText('PO Onderzoek valbeweging');
     await expect(d.locator('.po-group')).toHaveCount(2);
     await expect(d.locator('.po-group-name').first()).toHaveValue('Valtoren');
-    // Only one student makes the herkansing in the first group.
+    // Only one student makes the herkansing in the first group (Bakker is listed first).
     await d.locator('.po-group').first().locator('.po-member-remove').first().click();
     await d.locator('#po-groups-save').click();
     await expect(page.locator('.dlg')).toHaveCount(0);
@@ -419,7 +425,7 @@ test.describe('a PO on the Toetsen screen', () => {
       questions: [],
     });
     expect(resit.projectgroepen.map((g) => g.student_ids)).toEqual([
-      ['900101'],
+      ['900001'],
       ['900002', '900003'],
     ]);
     expect(resit.projectgroepen.map((g) => g.id)).not.toContain('pg-1');

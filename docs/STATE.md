@@ -10,6 +10,12 @@ Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 scores, after a confirm) and a wiskunde PO gets A/B/C/D from jaarlaag 4: both done. Local exe
 0.13.0 built for the user's test on real data.
 
+**User (2026-11-10, later):** visual diff OK, local baselines updated (139 images). Manual test
+`docs/reviews/manual-test-step-22.md`: M-PO-1, 2, 4 pass; M-PO-3 partial: an empty projectgroep
+needs a delete button, and members sorted by achternaam: both done (the unplaced list too).
+`modal-po-groepen` changes again (the trash button on the empty group): show the user.
+Top bar fixes (narrow window, hidden on scroll in Leerlingen) on `fix/topbar`.
+
 **Next action (step 22):** waiting for the user: the visual diff (3 new PO views; `screen-toetsen` and `exam-menu`
 change too: "+ PO toevoegen"), the choices below, a manual test on a copy of real data (M-PO-1..).
 Then push for CI (after steps 20/21), CI baselines, merge order 20 -> 21 -> 22, tags. Visual

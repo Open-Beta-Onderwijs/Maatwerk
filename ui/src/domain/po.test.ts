@@ -5,6 +5,7 @@ import { bestAttempt, resolveBestAttempts } from './attempts';
 import { examResults } from './grades';
 import {
   classesByStudent,
+  compareStudents,
   copyGroups,
   forGrading,
   gradeFormula,
@@ -125,6 +126,24 @@ describe('projectgroepen (decisions 18, 19)', () => {
     { id: 'g2', student_ids: ['3'] },
     { id: 'g3', naam: ' ', student_ids: [] },
   ];
+
+  it('students sort by achternaam, then voornaam; the tussenvoegsel does not count', () => {
+    const s = (id: string, voornaam: string, tussenvoegsel: string, achternaam: string) => ({
+      id,
+      voornaam,
+      tussenvoegsel,
+      achternaam,
+    });
+    const list = [
+      s('1', 'Sem', 'van den', 'Dekker'),
+      s('2', 'Mila', 'de', 'Meijer'),
+      s('3', 'Bram', '', 'Bakker'),
+      s('4', 'Anna', '', 'Meijer'),
+      s('5', 'Éva', '', 'Ölsen'),
+    ];
+    expect([...list].sort(compareStudents).map((x) => x.id)).toEqual(['3', '1', '4', '2', '5']);
+    expect([undefined, list[0]].sort(compareStudents)[0]).toBe(list[0]);
+  });
 
   it('unplaced keeps the order of the students', () => {
     expect(unplaced(['5', '3', '4', '1'], groups)).toEqual(['5', '4']);

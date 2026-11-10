@@ -5,7 +5,7 @@
 // docs/reference/data-files-v3.md "PO exams".
 
 import { totalsText, type Rubric, type RubricTotals } from './rubric';
-import type { Exam, Projectgroep, StudentId } from './types';
+import type { Exam, Projectgroep, Student, StudentId } from './types';
 
 export type { Projectgroep };
 
@@ -101,6 +101,24 @@ export function unplaced(
 ): string[] {
   const placed = new Set(groups.flatMap((g) => g.student_ids.map(String)));
   return students.map(String).filter((s) => !placed.has(s));
+}
+
+/**
+ * Students by achternaam, then voornaam (user 2026-11-10); the tussenvoegsel does not count, as in
+ * a class list ("de Meijer" under M). Unknown students last, by id.
+ */
+export function compareStudents(
+  a: Pick<Student, 'id' | 'voornaam' | 'achternaam'> | undefined,
+  b: Pick<Student, 'id' | 'voornaam' | 'achternaam'> | undefined,
+): number {
+  if (!a || !b) return a ? -1 : b ? 1 : 0;
+  const nl = (x?: string, y?: string) =>
+    (x ?? '').localeCompare(y ?? '', 'nl', { sensitivity: 'base' });
+  return (
+    nl(a.achternaam, b.achternaam) ||
+    nl(a.voornaam, b.voornaam) ||
+    String(a.id).localeCompare(String(b.id))
+  );
 }
 
 /** The name a projectgroep shows: its own, else "Projectgroep n" (1-based). */
