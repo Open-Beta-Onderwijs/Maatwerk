@@ -376,6 +376,7 @@ const Store = (() => {
   const ypExam = (year, id) => `${year}/exams/${id}.json`;
   const ypGroup = (year, id) => `${year}/groups/${id}.json`;
   const ypObs = (id) => `observaties/${id}.json`;
+  const ypRubric = (id) => `rubrics/${id}.json`;
   const ypScore = (year, subj, id) => `${year}/scores/${subj}/${id}.json`;
 
   // ── Subject helpers ────────────────────────────────────────────────────────
@@ -394,6 +395,12 @@ const Store = (() => {
   function invalidateObsCache() {
     for (const key of Object.keys(cache)) {
       if (key.startsWith('obs/')) delete cache[key];
+    }
+  }
+
+  function invalidateRubricCache() {
+    for (const key of Object.keys(cache)) {
+      if (key.startsWith('rubrics/')) delete cache[key];
     }
   }
 
@@ -430,6 +437,15 @@ const Store = (() => {
     return cache[key];
   }
 
+  // Rubrics (step 21) are shared per vak, like observaties: `rubrics/<id>.json`.
+  async function loadRubrics(subject) {
+    const key = `rubrics/${subject}`;
+    if (cache[key] !== undefined) return cache[key];
+    const all = await window.maatwerk.readAllJson('rubrics');
+    cache[key] = all.filter((r) => r && r.id && r.subject === subject);
+    return cache[key];
+  }
+
   async function loadYear(year, subject = _activeSubject) {
     await window.maatwerk.ensureYear(year);
     const tasks = [load(ypStudents(year))];
@@ -460,7 +476,7 @@ const Store = (() => {
       await loadYear(year, null);
     } else {
       setActiveSubject(subject);
-      await Promise.all([loadYear(year, subject), loadObservaties(subject)]);
+      await Promise.all([loadYear(year, subject), loadObservaties(subject), loadRubrics(subject)]);
     }
   }
 
@@ -491,6 +507,9 @@ const Store = (() => {
   }
   function getObservatiesSync(subject = _activeSubject) {
     return cache[`obs/${subject}`] ?? [];
+  }
+  function getRubricsSync(subject = _activeSubject) {
+    return cache[`rubrics/${subject}`] ?? [];
   }
 
   // ── Config ────────────────────────────────────────────────────────────────
@@ -825,6 +844,55 @@ const Store = (() => {
     await loadObservaties(subject);
   }
 
+  // ── Rubrics (step 21; the core checks the rules and the lock on every save) ──
+  // A refusal by the core (invalid, or a locked change while a PO uses the
+  // rubric) throws an Error whose message is the core's Dutch text.
+  function refusal(relPath, e) {
+    const prefix = `Save failed for ${relPath}: `;
+    if (e instanceof Error && e.message.startsWith(prefix)) {
+      const err = new Error(e.message.slice(prefix.length));
+      err.code = 'refused';
+      return err;
+    }
+    return e;
+  }
+
+  async function getRubrics(subject = _activeSubject) {
+    return loadRubrics(subject);
+  }
+
+  async function upsertRubric(rubric, subject = _activeSubject) {
+    const rel = ypRubric(rubric.id);
+    try {
+      await saveEntity(rel, { ...rubric, subject: rubric.subject || subject }, rubric._meta?.rev);
+    } catch (e) {
+      throw refusal(rel, e);
+    }
+    invalidateRubricCache();
+    await loadRubrics(subject);
+  }
+
+  async function deleteRubric(id, subject = _activeSubject) {
+    const result = await window.maatwerk.deleteFile(ypRubric(id));
+    if (result && result.ok === false) {
+      if (result.reason === READ_ONLY_CODE) {
+        noteReadOnly();
+        throw readOnlyError();
+      }
+      const err = new Error(result.reason);
+      err.code = 'refused';
+      throw err;
+    }
+    changed();
+    invalidateRubricCache();
+    await loadRubrics(subject);
+  }
+
+  /** Per rubric id, the PO's in any school year that use it (decision 20). */
+  async function rubricUsage() {
+    return (await window.maatwerk.rubricUsage()) ?? {};
+  }
+
   async function setObservation(studentId, examId, obsId, checked, year, subject = _activeSubject) {
     await updateStudentScores(studentId, year, subject, (rec) => {
       if (!rec.observations) rec.observations = {};
@@ -1100,6 +1168,7 @@ const Store = (() => {
     ['group', new RegExp(`^${YEAR}/groups/([^/]+)\\.json$`)],
     ['students', new RegExp(`^${YEAR}/students-\\d{4}-\\d{4}\\.json$`)],
     ['observatie', /^observaties\/([^/]+)\.json$/],
+    ['rubric', /^rubrics\/([^/]+)\.json$/],
     ['opdracht', /^opdrachten\/([^/]+)\/opdracht\.json$/],
     ['opdrachtTyp', /^opdrachten\/([^/]+)\/[^/]+\.typ$/],
     ['gebruikers', /^gebruikers\/([^/]+)\.json$/],
@@ -1205,6 +1274,16 @@ const Store = (() => {
           changed(); // a render between the drop and the reload saw no observaties (review 7c m4)
           break;
         }
+        case 'rubric': {
+          ev.id = match[1];
+          ev.before = getRubricsSync().find((r) => r.id === ev.id) ?? null;
+          ev.after = await readFresh();
+          ev.subject = ev.after?.subject ?? ev.before?.subject ?? null;
+          invalidateRubricCache();
+          if (_activeSubject) await loadRubrics(_activeSubject);
+          changed(); // as for observaties (review 7c m4)
+          break;
+        }
         case 'opdracht': {
           ev.id = match[1];
           ev.before = getOpdrachtenSync().find((o) => o.id === ev.id) ?? null;
@@ -1277,6 +1356,11 @@ const Store = (() => {
     getGroupsSync,
     getExamsSync,
     getObservatiesSync,
+    getRubricsSync,
+    getRubrics,
+    upsertRubric,
+    deleteRubric,
+    rubricUsage,
     getActiveSubject,
     setActiveSubject,
     getActiveUser,

@@ -1,11 +1,30 @@
 # State
 
-Last updated: 2026-11-09 (step 20) Branch: `step/20-toetsen` (from `main` `4bd1528`)
+Last updated: 2026-11-10 (step 21) Branch: `step/21-rubrics` (from `step/20-toetsen` `49bb2d7`;
+step 20 is not merged yet: its macOS CI baselines are pending, user 2026-11-10: "later")
 Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action:** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
+**Next action (step 21):** 21b UI, sub-task 2 below (Store done, uncommitted on the branch).
+
+## Step 21 progress (PO a: rubrics, observatie toetstype, 0.12)
+
+1. **Done** (`a89e910`), 21a data and core: `maatwerk-grades::rubric` (rules, totals, lock,
+   PO grade; wasm), `maatwerk-core::rubrics` (usage over all years; guard in `write_json` /
+   `delete`; `minAppVersion` 0.12.0 on the first rubric or PO observatie), migration writes
+   `toetstypes`, `validate-data`, CLI `rubric check`, command `rubric_usage`, mock guard, mock
+   fixture (3 rubrics, 4 PO observaties in `to-current.mjs` only), docs
+   `data-files-v3.md`. Version 0.12.0 already (the guard raises to 0.12.0). Chromium e2e 240.
+2. 21b UI: Rubrics tab + cards, rubric editor, Dupliceren, delete guard; Observatie toetstype
+   field + filter chip; toets-edit offers only `toets` observaties.
+
+Choices made without asking (for the report): a locked rubric also locks adding/removing
+categories (they change the max); category names stay editable when locked (decision 20; board
+16 disables them); `uitleg` of a level is required; a rubric needs one `normaal` category; an
+observatie used in a test keeps toetstype Toets (so the score grid needs no filter).
+
+**Step 20 (waiting):** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
 
 ## Step 20 progress (Toetsen, 0.11)
 

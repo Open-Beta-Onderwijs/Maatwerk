@@ -95,6 +95,24 @@
           </svg>
           <span>Toetsen</span>
         </button>
+        <button class="nav-btn" data-screen="rubrics">
+          <svg
+            class="nav-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M3 9.5h18M3 15h18M9 4v16" />
+          </svg>
+          <span>Rubrics</span>
+        </button>
         <button class="nav-btn" data-screen="observaties">
           <svg
             class="nav-icon"
@@ -455,6 +473,20 @@
           </div>
         </div>
         <div id="exam-list" class="card-list"></div>
+      </section>
+
+      <!-- Rubrics (step 21) -->
+      <section id="screen-rubrics" class="screen">
+        <div class="screen-head">
+          <div class="screen-header screen-header--h32">
+            <h2>Rubrics</h2>
+            <div class="header-actions">
+              <button class="btn btn--primary" id="btn-add-rubric">+ Rubric toevoegen</button>
+            </div>
+          </div>
+          <div class="filter-row" id="filter-row-rubrics"></div>
+        </div>
+        <div id="rubric-list" class="rubric-list"></div>
       </section>
 
       <!-- Observaties -->

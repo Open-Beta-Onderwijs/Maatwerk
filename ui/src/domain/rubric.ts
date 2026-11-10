@@ -48,7 +48,9 @@ export interface CategoryCheck {
   id: string;
   errors: string[];
   uncovered: number[];
+  /** Levels whose bounds are wrong on their own. */
   badLevels: number[];
+  missingUitleg: number[];
 }
 
 export interface RubricCheck {

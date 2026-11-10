@@ -132,6 +132,8 @@ export interface Observatie {
   id: string;
   naam?: string;
   icon?: string;
+  /** `toets`, `po` or both (step 21, decision 23); absent means `toets`. */
+  toetstypes?: string[];
   [key: string]: unknown;
 }
 

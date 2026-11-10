@@ -21,6 +21,7 @@ import { isTicked } from '../components/form';
 import { attemptCode, questionSummary, resitObsIds } from '../domain/exam-info';
 import { formatNTerm } from '../domain/format';
 import { nextQuestionId } from '../domain/ids';
+import { obsHasToetstype } from '../domain/rubric';
 import {
   cascadeStructure,
   extractBoundaries,
@@ -54,6 +55,7 @@ interface Observatie {
   icon?: string;
   jaarlagen?: unknown[];
   schoolsoort?: string[];
+  toetstypes?: unknown;
 }
 
 export async function openExamModal(
@@ -177,6 +179,8 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
     ? []
     : allObs
         .filter((o) => {
+          // Tests offer only observaties of toetstype Toets (F-23, decision 23).
+          if (!obsHasToetstype(o, 'toets')) return false;
           if (!(o.jaarlagen ?? []).map(String).includes(String(exam.jaarlaag))) return false;
           const obsSS = o.schoolsoort ?? [];
           if (obsSS.length === 0) return true;

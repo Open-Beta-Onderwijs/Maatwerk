@@ -121,8 +121,10 @@ pub struct CategoryCheck {
     pub errors: Vec<String>,
     /// Scores `0..=max` no level covers (red in the number row).
     pub uncovered: Vec<u32>,
-    /// Indexes of levels with a field that is wrong on its own (empty, not whole, out of range).
+    /// Indexes of levels whose bounds are wrong on their own (empty, not whole, out of range).
     pub bad_levels: Vec<usize>,
+    /// Indexes of levels without an uitleg.
+    pub missing_uitleg: Vec<usize>,
 }
 
 /// The whole rubric's check.
@@ -228,7 +230,7 @@ pub fn check_category(cat: &Category) -> CategoryCheck {
         }
         if level.uitleg.trim().is_empty() {
             out.errors.push(format!("Niveau {nr}: uitleg ontbreekt"));
-            bad = true;
+            out.missing_uitleg.push(i);
         }
         if bad {
             out.bad_levels.push(i);
@@ -521,7 +523,9 @@ mod tests {
             errors(&c),
             vec!["Naam ontbreekt", "Niveau 2: uitleg ontbreekt"]
         );
-        assert_eq!(check_category(&c).bad_levels, vec![1]);
+        let check = check_category(&c);
+        assert!(check.bad_levels.is_empty(), "the bounds are fine");
+        assert_eq!(check.missing_uitleg, vec![1]);
     }
 
     fn rubric() -> Rubric {

@@ -70,16 +70,17 @@ test.describe('tab bar (spec 3.5, V-05, V-12)', () => {
   const visibleTabs = (page: import('@playwright/test').Page) =>
     page.locator('#main-nav .nav-btn:not(.hidden)');
 
-  test('a teacher sees five tabs with icons; the active one is marked', async ({ page }) => {
+  test('a teacher sees six tabs with icons; the active one is marked', async ({ page }) => {
     await login(page);
     await expect(visibleTabs(page)).toHaveText([
       'Leerlingen',
       'Groepen',
       'Toetsen',
+      'Rubrics', // step 21, spec 4.13
       'Observaties',
       'Opdrachten',
     ]);
-    await expect(visibleTabs(page).locator('svg.nav-icon')).toHaveCount(5);
+    await expect(visibleTabs(page).locator('svg.nav-icon')).toHaveCount(6);
     await page.locator('.nav-btn[data-screen="toetsen"]').click();
     await expect(page.locator('.nav-btn[aria-current="page"]')).toHaveText('Toetsen');
     await expect(page.locator('#topbar')).toHaveCSS('height', '56px');

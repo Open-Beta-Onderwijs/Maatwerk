@@ -53,12 +53,14 @@ export const VIEWS: View[] = [
       await p.locator('.subject-card[data-subject="nat"]').click();
     },
   },
-  ...['leerlingen', 'groepen', 'toetsen', 'observaties', 'opdrachten'].map((name): View => ({
-    name: `screen-${name}`,
-    user: 'teacher',
-    target: 'page',
-    open: (p) => screen(p, name),
-  })),
+  ...['leerlingen', 'groepen', 'toetsen', 'rubrics', 'observaties', 'opdrachten'].map(
+    (name): View => ({
+      name: `screen-${name}`,
+      user: 'teacher',
+      target: 'page',
+      open: (p) => screen(p, name),
+    }),
+  ),
   ...['leerlingen', 'groepen', 'gebruikers', 'school'].map((name): View => ({
     name: `admin-${name}`,
     user: 'admin',
@@ -101,6 +103,9 @@ export const VIEWS: View[] = [
         (p: Page) => examMenu(p, 'Verzamelkaart bewerken', '[data-kind="summary"]'),
       ],
       ['rtti-uitleg', click('toetsen', '#btn-toetsen-rtti-uitleg')],
+      // Step 21: the rubric editor (fixture rubric with bonus and diagnostic categories).
+      ['rubric-edit', click('rubrics', '.rubric-card-name')],
+      ['rubric-new', click('rubrics', '#btn-add-rubric')],
       ['observatie-edit', click('observaties', '[data-action="edit-obs"]')],
       ['observatie-new', click('observaties', '#btn-add-obs')],
       ['opdracht-edit', click('opdrachten', '[data-action="edit-opdracht"]')],
