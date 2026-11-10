@@ -54,7 +54,14 @@ every fifth score above 40 boxes); the card chips keep "· bonus" / "· diag". m
 step 20 committed (`0ddc7c8`, from run `42636690859`) and pushed; CI run `42796049482`; merged into
 this branch. A local exe 0.12.0 was built for the user's manual test on real data.
 
-**Step 20 (waiting):** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
+**Step 20 (waiting):** PR #12 (`step/20-toetsen`), head `0ddc7c8` (macOS baselines). Push run
+`42796049482` fully green, visual included on all three OSes. PR run `42796057189`: macOS failed
+one WebKit test (`quirks.spec.ts:141` D34, `Target crashed` at its first click: the browser died,
+the same test passed in the push run). The user reruns it later: `gh run rerun 42796057189
+--failed`. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
+
+**CI retry (user 2026-11-10):** `ui/playwright.config.ts` has `retries: process.env.CI ? 1 : 0`
+on this branch, so one browser crash no longer fails a run (a pass on retry is reported flaky).
 
 ## Step 20 progress (Toetsen, 0.11)
 
