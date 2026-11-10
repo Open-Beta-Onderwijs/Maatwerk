@@ -26,7 +26,19 @@ name, and a `title` tooltip); the active tab keeps its name. `e2e/topbar.spec.ts
 e2e 278, WebKit topbar+shell 19, 520 Vitest, local visual unchanged.
 
 **Next action:** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
-and merging"), CI baselines of changed views from CI's own run, tags. Visual
+and merging"), CI baselines of changed views from CI's own run, tags. Started 2026-11-10 17:32:
+rerun of step 20's failed PR job (run `42796057189`); `step/21-rubrics` pushed (run
+`42866062460`, expected to fail visual on the changed views: take their baselines from it).
+Result: step 20 macOS got no runner (capacity); step 21 Linux visual 6 views (baselines committed,
+`f21427e`, with Prettier on `manual-test-step-21.md`, which failed Windows lint); run
+`42868926174`. **User (2026-11-10 evening):** macOS gets no runner now; go on with Windows and
+Linux for steps 21, 22, `fix/topbar`; the user reruns macOS tomorrow morning. Merges into `main`
+wait for macOS green (main stays green). **User decision:** merge step 20 (PR #12) alone; then
+21, 22 and the top bar in **one** merge of `fix/topbar` into `main`. macOS baselines of all their
+views from one macOS run on `fix/topbar` (it stops at the visual step), then a second macOS run to
+confirm. Tags `step-21`/`v0.12.0` on the head of `step/21-rubrics`, `step-22`/`v0.13.0` on the
+head of `step/22-po`. Step 22 run `42872007833`; step 21 Windows baselines `472cbf2` (run
+`42871975947`). Visual
 views get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has
 no PO, because the step 21 rubric e2e tests count rubric uses.
 
