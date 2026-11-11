@@ -4,7 +4,9 @@
 
 use serde::{Serialize, Serializer};
 
-use crate::model::{Exam, Override, QuestionKind, QuestionScores, ScoreRecord, ScoreValue};
+use crate::model::{
+    Exam, Override, PoGrading, QuestionKind, QuestionScores, ScoreRecord, ScoreValue,
+};
 use crate::round::{clean, round0, round1};
 
 /// The grade from points with the n-term and the CvTE bounds, unrounded (decision 1).
@@ -118,6 +120,10 @@ pub struct Results {
     #[serde(rename = "I")]
     pub i: RttiPct,
     pub rtti_points: RttiPoints,
+    /// A PO's grade from its rubric alone, before the bonus/malus lines (decision 28); absent for
+    /// a test.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rubric_grade: Option<f64>,
 }
 
 /// Grade, points and RTTI of one attempt.
@@ -130,8 +136,19 @@ pub struct Results {
 /// - Diag: in nothing.
 /// - Override: replaces the grade; points and RTTI stay from the scores.
 pub fn calc_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override>) -> Results {
+    calc_results_with(exam, scores, over, None)
+}
+
+/// As [`calc_results`], with what the score file holds for a PO (its bonus/malus lines,
+/// decision 28). A test ignores `po`.
+pub fn calc_results_with(
+    exam: &Exam,
+    scores: &QuestionScores,
+    over: Option<&Override>,
+    po: Option<&PoGrading>,
+) -> Results {
     if exam.is_po() {
-        return calc_po_results(exam, scores, over);
+        return calc_po_results(exam, scores, over, po);
     }
     let mut normal_max = 0.0;
     let mut bonus_max = 0.0;
@@ -204,6 +221,7 @@ fn finish(
         t2: cats.t2.pct(),
         i: cats.i.pct(),
         rtti_points: cats,
+        rubric_grade: None,
     }
 }
 
@@ -214,8 +232,17 @@ fn finish(
 ///
 /// Scores read as for a test: `N` is 0 and gradeable, a value out of range, with a fraction or
 /// text is 0 and not gradeable. Without an attached rubric there is no max, so no grade.
-/// Bonus/malus lines (decision 17) come with grading (step 23).
-fn calc_po_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override>) -> Results {
+///
+/// Bonus/malus lines (decisions 17, 28): the rubric grade plus the group's and the student's own
+/// lines, held between 1,0 and 10,0 once, at the end. Lines alone give no grade.
+fn calc_po_results(
+    exam: &Exam,
+    scores: &QuestionScores,
+    over: Option<&Override>,
+    po: Option<&PoGrading>,
+) -> Results {
+    use crate::rubric::{lines_sum, with_lines};
+
     use crate::rubric::Soort;
 
     let mut normal_max = 0.0;
@@ -239,17 +266,23 @@ fn calc_po_results(exam: &Exam, scores: &QuestionScores, over: Option<&Override>
         }
         scored += points.unwrap_or(0.0);
     }
-    let calculated = (gradeable && normal_max > 0.0)
+    let rubric_grade = (gradeable && normal_max > 0.0)
         .then(|| crate::rubric::po_grade(scored, normal_max).map(round1))
         .flatten();
-    finish(
+    let lines = po.map_or(0.0, |p| {
+        clean(lines_sum(&p.group_lines) + lines_sum(&p.own_lines))
+    });
+    let calculated = rubric_grade.map(|g| with_lines(g, lines));
+    let mut results = finish(
         scored,
         normal_max,
         bonus_max,
         calculated,
         over,
         RttiPoints::default(),
-    )
+    );
+    results.rubric_grade = rubric_grade;
+    results
 }
 
 /// The scores in `rec` for this exam's current questions (a PO: its rubric's categories).
@@ -270,7 +303,7 @@ pub fn exam_results(rec: &ScoreRecord, exam: &Exam) -> Option<Results> {
     if scores.is_empty() && over.is_none() {
         return None;
     }
-    Some(calc_results(exam, &scores, over))
+    Some(calc_results_with(exam, &scores, over, rec.po.get(&exam.id)))
 }
 
 #[cfg(test)]
@@ -381,6 +414,111 @@ pub(crate) mod tests {
             calc_results(&exam, &QuestionScores::new(), Some(&over)).grade,
             Some(7.0)
         );
+    }
+
+    /// A PO of one normal category of 50 points, so 49 points is 9,8.
+    fn po50() -> Exam {
+        exam_of(json!({"id": "p", "kind": "po", "rubric": {"categories": [
+            {"id": "c", "max": 50, "soort": "normaal"}
+        ]}}))
+    }
+
+    fn po_record(points: u32, group: Value, own: Value) -> ScoreRecord {
+        serde_json::from_value(json!({
+            "scores": {"p": {"c": points}},
+            "po": {"p": {"groupLines": group, "ownLines": own, "projectgroep": "g1"}}
+        }))
+        .unwrap()
+    }
+
+    fn line(v: Value) -> Value {
+        json!([{"label": "x", "value": v}])
+    }
+
+    #[test]
+    fn po_lines_add_to_the_rubric_grade_held_once_at_the_end() {
+        // Decision 28: R 9,8 + 0,5 − 0,5 = 9,8 (not 10,0 − 0,5 = 9,5).
+        let r = exam_results(&po_record(49, line(json!(0.5)), line(json!(-0.5))), &po50()).unwrap();
+        assert_eq!((r.rubric_grade, r.grade), (Some(9.8), Some(9.8)));
+        // Over 10 and under 1 are held.
+        let high = exam_results(&po_record(49, line(json!(0.5)), json!([])), &po50()).unwrap();
+        assert_eq!(high.grade, Some(10.0));
+        let low = exam_results(&po_record(0, json!([]), line(json!(-0.5))), &po50()).unwrap();
+        assert_eq!((low.rubric_grade, low.grade), (Some(1.0), Some(1.0)));
+        // The design's example: 14/17 is 8,2; a group line −0,5 gives 7,7.
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "scores": {"p": {"intro": 2, "theorie": 6, "figuren": 4, "orig": 2}},
+            "po": {"p": {"groupLines": line(json!(-0.5))}}
+        }))
+        .unwrap();
+        let design = exam_results(&rec, &po()).unwrap();
+        assert_eq!((design.rubric_grade, design.grade), (Some(8.2), Some(7.7)));
+    }
+
+    #[test]
+    fn several_lines_add_up_without_noise() {
+        // 0,1 + 0,2 is 0,30000000000000004 in floating point.
+        let group = json!([{"value": 0.1}, {"value": 0.2}, {"label": "y", "value": -1}]);
+        let r = exam_results(&po_record(35, group, line(json!("0.3"))), &po50()).unwrap();
+        assert_eq!(r.rubric_grade, Some(7.0));
+        assert_eq!(r.grade, Some(6.6));
+    }
+
+    #[test]
+    fn invalid_po_lines_count_nothing() {
+        for bad in [
+            json!(0.25),
+            json!(9.5),
+            json!(-10),
+            json!(0),
+            json!("x"),
+            json!(null),
+        ] {
+            let r = exam_results(&po_record(35, line(bad.clone()), json!([])), &po50()).unwrap();
+            assert_eq!(r.grade, Some(7.0), "{bad}");
+        }
+        // A damaged line list or line is skipped, not fatal.
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "scores": {"p": {"c": 35}},
+            "po": {"p": {"groupLines": 3, "ownLines": [5, {"value": 1}]}}
+        }))
+        .unwrap();
+        assert_eq!(exam_results(&rec, &po50()).unwrap().grade, Some(8.0));
+        assert!(crate::rubric::line_valid(-9.0) && crate::rubric::line_valid(0.3));
+    }
+
+    #[test]
+    fn po_lines_alone_give_no_grade_and_a_test_ignores_them() {
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "scores": {"p": {}},
+            "po": {"p": {"groupLines": line(json!(1))}}
+        }))
+        .unwrap();
+        assert!(exam_results(&rec, &po50()).is_none_or(|r| r.grade.is_none()));
+        // A test with a `po` entry under its id (not written by the app) keeps its grade.
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "scores": {"e": {"q1": 10, "q2": 10, "q3": 10, "q4": 10}},
+            "po": {"e": {"groupLines": line(json!(-2))}}
+        }))
+        .unwrap();
+        let r = exam_results(&rec, &four()).unwrap();
+        assert_eq!((r.grade, r.rubric_grade), (Some(10.0), None));
+    }
+
+    #[test]
+    fn an_override_replaces_the_po_result_with_lines() {
+        let mut rec = po_record(35, line(json!(1)), json!([]));
+        rec.overrides.insert(
+            "p".into(),
+            Override {
+                cijfer: Some(6.0),
+                berekend: Some(8.0),
+            },
+        );
+        let r = exam_results(&rec, &po50()).unwrap();
+        // The calculated grade includes the lines, so the override (set at 8,0) is not stale.
+        assert_eq!((r.grade, r.calculated_grade), (Some(6.0), Some(8.0)));
+        assert!(r.overridden && !r.override_stale);
     }
 
     #[test]

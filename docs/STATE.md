@@ -11,7 +11,7 @@ merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (
 remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
 `81e9c63`. Merged local branches deleted.
 
-**Next action:** step 23a sub-task 1 (see "Step 23 progress" below).
+**Next action:** step 23 sub-task 2, the PO score table (see "Step 23 progress" below).
 
 ## Step 23 progress (PO c: PO beoordelen, 0.14)
 
@@ -28,6 +28,15 @@ enabled for a PO; (3) 23b UI: grading modal, autosave (10 s, on close; CAS per m
 Vorige/Volgende; (4) 23b: regrouping copies the new group's data (decision 19), PO grades on
 cards/overviews checked, opdrachten genereren with category observaties; (5) before/after table
 of averages (STOP: user), gate, review, report.
+
+1. **Done**, core: `maatwerk_grades` `PoGrading`/`PoLine` (`ScoreRecord.po`, tolerant),
+   `calc_results_with(exam, scores, over, po)`, `exam_results` passes `rec.po[examId]`,
+   `HistoryEntry.po`, `Results.rubricGrade` (PO only), `rubric::{line_valid, lines_sum,
+   with_lines}`; wasm `calcResults` takes an optional 4th arg, new `poLineValid`, `poLinesSum`,
+   `poWithLines`. Core guard `PO_GRADING_MIN_APP_VERSION` 0.14.0 (score file with non-empty `po`;
+   mock too). `validate-data` checks `po`. UI: types `PoGrading`/`PoLine`, `recordFor` carries
+   `po`, history/best attempt/profile pass it. Docs `data-files-v3.md` "PO grading". Version
+   0.14.0. Tests: 6 grade, 1 wasm, 2 core, 1 Vitest.
 
 ## Step 22 and the merge (history)
 

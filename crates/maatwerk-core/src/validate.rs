@@ -890,13 +890,18 @@ fn check_scores(
         _ => out.warn(IssueKind::Shape, rel, "student_id is geen tekst".into()),
     }
     let mut orphans = BTreeSet::new();
-    for key in ["scores", "observations", "overrides"] {
+    for key in ["scores", "observations", "overrides", "po"] {
         if let Some(Value::Object(map)) = record.get(key) {
             orphans.extend(map.keys().filter(|e| !exams.contains(*e)).cloned());
         }
     }
     for e in orphans {
         out.missing(rel, format!("Scores voor toets {e}, die niet bestaat"));
+    }
+    if let Some(Value::Object(po)) = record.get("po") {
+        for (exam_id, grading) in po {
+            check_po_grading(rel, exam_id, grading, out);
+        }
     }
     if let Some(Value::Object(map)) = record.get("scores") {
         let odd = map
@@ -910,6 +915,60 @@ fn check_scores(
                 rel,
                 "Score die geen getal of tekst is (null uit v1?)".into(),
             );
+        }
+    }
+}
+
+/// A PO's grading in a score file (`po[examId]`, step 23): an object whose `groupLines` and
+/// `ownLines` are lists of lines that count (decision 28). A line that does not count is a warning:
+/// the grade leaves it out, nothing is rewritten.
+fn check_po_grading(rel: &str, exam_id: &str, grading: &Value, out: &mut Found) {
+    let Value::Object(grading) = grading else {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            format!("PO-beoordeling van {exam_id} is geen object"),
+        );
+        return;
+    };
+    for key in ["groupLines", "ownLines"] {
+        let lines = match grading.get(key) {
+            None | Some(Value::Null) => continue,
+            Some(Value::Array(lines)) => lines,
+            Some(_) => {
+                out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!("PO-beoordeling van {exam_id}: {key} is geen lijst"),
+                );
+                continue;
+            }
+        };
+        for line in lines {
+            let Some(obj) = line.as_object() else {
+                out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!("PO-beoordeling van {exam_id}: bonus/malus {line} is geen regel"),
+                );
+                continue;
+            };
+            // As the grade rules read it: a number or a numeric string.
+            let value = obj.get("value").and_then(|v| {
+                v.as_f64()
+                    .or_else(|| v.as_str().and_then(|s| s.trim().parse().ok()))
+            });
+            if !value.is_some_and(maatwerk_grades::rubric::line_valid) {
+                let label = obj.get("label").and_then(Value::as_str).unwrap_or("");
+                out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!(
+                        "PO-beoordeling van {exam_id}: bonus/malus \"{label}\" telt niet mee \
+                         (één decimaal, van −9,0 tot +9,0, niet 0)"
+                    ),
+                );
+            }
         }
     }
 }

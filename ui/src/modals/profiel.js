@@ -82,16 +82,16 @@ export async function openProfielModal(studentId, peers = null, activeTab = 'cij
     return;
   }
 
-  const results = history.map(({ exam, questionScores, override }) => ({
+  const results = history.map(({ exam, questionScores, override, po }) => ({
     exam,
-    res: Store.calcResults(exam, questionScores, override),
+    res: Store.calcResults(exam, questionScores, override, po),
     questionScores,
   }));
   // All attempts (including resits) where the student actually has a grade — used for per-attempt graphs
   const allResults = rawHistory
-    .map(({ exam, questionScores, override }) => ({
+    .map(({ exam, questionScores, override, po }) => ({
       exam,
-      res: Store.calcResults(exam, questionScores, override),
+      res: Store.calcResults(exam, questionScores, override, po),
       questionScores,
     }))
     .filter((r) => r.res.grade !== null);

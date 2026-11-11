@@ -420,6 +420,35 @@ pub fn po_points(rubric: &Rubric, scores: &HashMap<String, f64>) -> PoPoints {
     }
 }
 
+/// The largest bonus or malus of one line, in grade points (decision 28).
+pub const LINE_LIMIT: f64 = 9.0;
+
+/// A bonus/malus line value that counts (decision 28): grade points with at most one decimal,
+/// from −9,0 to +9,0, not 0. Anything else counts nothing (`validate-data` lists it).
+pub fn line_valid(value: f64) -> bool {
+    let tenths = value * 10.0;
+    value.is_finite()
+        && value != 0.0
+        && value.abs() <= LINE_LIMIT
+        && (tenths - tenths.round()).abs() < 1e-6
+}
+
+/// The sum of the lines that count, without floating-point noise.
+pub fn lines_sum(lines: &[crate::model::PoLine]) -> f64 {
+    crate::round::clean(
+        lines
+            .iter()
+            .filter_map(|l| l.value.filter(|v| line_valid(*v)))
+            .sum(),
+    )
+}
+
+/// A PO grade with bonus/malus lines (decisions 17, 28): the rubric grade plus the lines, held
+/// between 1,0 and 10,0 once, at the end; rounded to one decimal (only noise: lines have one).
+pub fn with_lines(rubric_grade: f64, lines: f64) -> f64 {
+    crate::round::round1(rubric_grade + lines).clamp(1.0, 10.0)
+}
+
 #[cfg(test)]
 mod tests {
     use serde_json::json;

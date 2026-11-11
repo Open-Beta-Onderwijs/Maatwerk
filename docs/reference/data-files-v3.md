@@ -132,7 +132,35 @@ Additive within v3 (PLAN-2 decisions 16-18, 22). A PO is an exam file with `kind
 - Guard: the first exam with `kind: "po"` raises `school.json` `minAppVersion` to **0.13.0**
   (`maatwerk_core::rubrics`), as for rubrics.
 
+## PO grading (0.14, step 23)
+
+Additive within v3 (PLAN-2 decisions 17, 19, 24; grade rules decision 28). A student's score file
+(`<year>/scores/<vak>/<id>.json`) gets, per graded PO:
+
+```
+scores: { <examId>: { <categoryId>: 0..max } }        as in step 22
+observations: { <examId>: [obsId] }                    general observaties, as for tests
+po: { <examId>: { projectgroep, categoryObs: { <categoryId>: [obsId] },
+                  categoryComments: { <categoryId>: "..." }, comment,
+                  groupLines: [{ label, value }], ownLines: [{ label, value }] } }
+```
+
+- The category scores, `observations`, `categoryObs`, `categoryComments`, `comment` and
+  `groupLines` are the projectgroep's: grading writes the same values into every member's file
+  (CAS per file; decision 19). `projectgroep` names the group they were copied from. `ownLines`
+  are the student's own and are kept when the student moves to another projectgroep; everything
+  else is replaced by the new group's (after a warning).
+- A line is grade points: at most one decimal, from −9,0 to +9,0, not 0; any other value counts
+  nothing (`validate-data` warns). Grade = rubric grade + group lines + own lines, held between
+  1,0 and 10,0 once, at the end (`maatwerk_grades` `exam_results`; decision 28). Lines alone give
+  no grade.
+- Guard: the first score file with a non-empty `po` raises `school.json` `minAppVersion` to
+  **0.14.0** (`maatwerk_core::rubrics`): an older app would show PO grades without the lines.
+
 ## `validate-data`
+
+Step 23 adds: `po` under an exam id that does not exist (missing), a `po` entry that is not an
+object, `groupLines`/`ownLines` that are not lists, and lines that do not count (warnings).
 
 Step 22 adds: a PO without `rubric_id` or with questions (warnings), `projectgroepen` shape
 (errors), a student in two projectgroepen (error), a member who is not a student of the year

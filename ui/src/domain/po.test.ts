@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { bestAttempt, resolveBestAttempts } from './attempts';
-import { examResults } from './grades';
+import { calcResults, examResults, poLineValid, poLinesSum, poWithLines } from './grades';
 import {
   classesByStudent,
   compareStudents,
@@ -26,7 +26,7 @@ import {
   type Projectgroep,
 } from './po';
 import { newRubric, type Rubric } from './rubric';
-import { yearAverage } from './statistics';
+import { seAverage, yearAverage } from './statistics';
 import type { Exam } from './types';
 
 const rubric = (fields: Partial<Rubric>): Rubric => newRubric('nat', fields);
@@ -251,5 +251,40 @@ describe('a PO is graded with its rubric (step 22, decision 16)', () => {
     // Without categories none of its scores are read: no results at all.
     expect(examResults(rec, po)).toBeNull();
     expect(yearAverage([po], rec)).toBeNull();
+  });
+
+  it('bonus/malus lines count everywhere (step 23, decision 28)', () => {
+    setRubricLookup((id) => (id === 'rx' ? r : undefined));
+    const withLines = {
+      ...rec,
+      po: {
+        p: {
+          projectgroep: 'g1',
+          groupLines: [{ label: 'Te laat', value: -0.5 }],
+          ownLines: [{ label: 'Extra', value: 0.2 }],
+        },
+      },
+    };
+    const res = examResults(withLines, po)!;
+    expect([res.rubricGrade, res.grade]).toEqual([7, 6.7]);
+    expect(calcResults(po, rec.scores.p, null, withLines.po.p).grade).toBe(6.7);
+    expect(yearAverage([po], withLines)).toBe(6.7);
+    expect(bestAttempt(withLines, [po])?.grade).toBe(6.7);
+    const pta: Exam = { ...po, type: 'pta', academic_year: '2026-2027' };
+    const history = [{ exam: pta, questionScores: rec.scores.p, po: withLines.po.p }];
+    expect(seAverage(history, [pta])).toBe(6.7);
+    expect([poLineValid(0.5), poLineValid(0.25), poLineValid('x'), poLineValid(0)]).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
+    expect(
+      poLinesSum([
+        { label: '', value: 0.1 },
+        { label: '', value: 0.2 },
+      ]),
+    ).toBe(0.3);
+    expect(poWithLines(9.8, 0.5)).toBe(10);
   });
 });

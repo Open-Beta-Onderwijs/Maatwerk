@@ -5,7 +5,16 @@
 
 import { coreCall } from './core';
 import { forGrading } from './po';
-import type { Exam, Override, Question, QuestionKind, QuestionScores, ScoreRecord } from './types';
+import type {
+  Exam,
+  Override,
+  PoGrading,
+  PoLine,
+  Question,
+  QuestionKind,
+  QuestionScores,
+  ScoreRecord,
+} from './types';
 
 /** The kind of a question; absent or unknown means 'normal' (decision 23). */
 export function qKind(q: Pick<Question, 'kind'>): QuestionKind {
@@ -41,6 +50,8 @@ export interface Results {
   T2: RttiPct;
   I: RttiPct;
   rttiPoints: RttiPoints;
+  /** A PO's grade from its rubric alone, before the bonus/malus lines (decision 28). */
+  rubricGrade?: number;
 }
 
 /** The exact grade from points with the n-term and its bounds (decision 1). */
@@ -48,13 +59,17 @@ export function calcGrade(scored: number, max: number, nTerm: number): number {
   return coreCall('calcGrade', scored, max, nTerm);
 }
 
-/** Grade, points and RTTI percentages of one attempt. */
+/**
+ * Grade, points and RTTI percentages of one attempt. `po` is a PO's `po[examId]` of the score
+ * file: its bonus/malus lines count (decision 28); a test ignores it.
+ */
 export function calcResults(
   exam: Pick<Exam, 'n_term' | 'questions'> & Partial<Pick<Exam, 'kind' | 'subject' | 'rubric_id'>>,
   questionScores: QuestionScores,
   override?: Override | null,
+  po?: PoGrading | null,
 ): Results {
-  return coreCall('calcResults', forGrading(exam), questionScores, override);
+  return coreCall('calcResults', forGrading(exam), questionScores, override ?? null, po ?? null);
 }
 
 /**
@@ -64,16 +79,34 @@ export function calcResults(
 export function recordFor(
   rec: ScoreRecord | null | undefined,
   exams: Pick<Exam, 'id'>[],
-): Pick<ScoreRecord, 'scores' | 'overrides'> {
+): Pick<ScoreRecord, 'scores' | 'overrides' | 'po'> {
   const scores: NonNullable<ScoreRecord['scores']> = {};
   const overrides: NonNullable<ScoreRecord['overrides']> = {};
+  const po: NonNullable<ScoreRecord['po']> = {};
   for (const { id } of exams) {
     const s = rec?.scores?.[id];
     const o = rec?.overrides?.[id];
+    const p = rec?.po?.[id];
     if (s) scores[id] = s;
     if (o) overrides[id] = o;
+    if (p) po[id] = p;
   }
-  return { scores, overrides };
+  return { scores, overrides, po };
+}
+
+/** Whether a bonus/malus line value counts: one decimal, −9,0..+9,0, not 0 (decision 28). */
+export function poLineValid(value: unknown): boolean {
+  return coreCall('poLineValid', value);
+}
+
+/** The sum of the lines that count. */
+export function poLinesSum(lines: PoLine[] | null | undefined): number {
+  return coreCall('poLinesSum', lines ?? null);
+}
+
+/** A rubric grade with lines added, held between 1,0 and 10,0 (decision 28). */
+export function poWithLines(rubricGrade: number, lines: number): number {
+  return coreCall('poWithLines', rubricGrade, lines);
 }
 
 /**

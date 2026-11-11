@@ -36,6 +36,10 @@ pub const PO_MIN_APP_VERSION: &str = "0.12.0";
 /// 22): an older one would show a PO as a test without questions and could save it as one.
 pub const PO_EXAM_MIN_APP_VERSION: &str = "0.13.0";
 
+/// The first app version that grades PO's (`po[examId]` in a score file, step 23): an older one
+/// would show PO grades without the bonus/malus lines and regroup without copying the grading.
+pub const PO_GRADING_MIN_APP_VERSION: &str = "0.14.0";
+
 /// The observatie field that says where an observatie is offered (decision 23).
 pub const TOETSTYPES_FIELD: &str = "toetstypes";
 
@@ -126,6 +130,8 @@ pub(crate) fn guard_write(
         Some(PO_MIN_APP_VERSION)
     } else if is_exam_path(rel.as_str()) && is_po_exam(value) {
         Some(PO_EXAM_MIN_APP_VERSION)
+    } else if is_score_path(rel.as_str()) && has_po_grading(value) {
+        Some(PO_GRADING_MIN_APP_VERSION)
     } else {
         None
     };
@@ -146,6 +152,26 @@ pub(crate) fn guard_write(
 fn is_exam_path(rel: &str) -> bool {
     rel.split_once('/')
         .is_some_and(|(_, rest)| json_in(rest, "exams").is_some())
+}
+
+/// `<year>/scores/<subject>/<id>.json`, the folders and extension in any ASCII case.
+fn is_score_path(rel: &str) -> bool {
+    let mut parts = rel.splitn(3, '/');
+    let (Some(_year), Some(dir), Some(rest)) = (parts.next(), parts.next(), parts.next()) else {
+        return false;
+    };
+    dir.eq_ignore_ascii_case("scores")
+        && rest
+            .split_once('/')
+            .is_some_and(|(subject, _)| !subject.is_empty() && json_in(rest, subject).is_some())
+}
+
+/// A score file that holds a PO's grading (a non-empty `po` object, step 23).
+pub fn has_po_grading(record: &Value) -> bool {
+    record
+        .get("po")
+        .and_then(Value::as_object)
+        .is_some_and(|po| !po.is_empty())
 }
 
 /// A practical assignment (`kind: "po"`, step 22).

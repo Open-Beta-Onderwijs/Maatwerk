@@ -779,6 +779,7 @@ const Store = (() => {
           exam: { ...exam, academic_year: year },
           questionScores: record.scores?.[examId] ?? {},
           override: record.overrides?.[examId],
+          po: record.po?.[examId],
         });
       }
     }

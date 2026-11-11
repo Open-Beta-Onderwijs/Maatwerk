@@ -54,7 +54,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.13.0';
+export const MOCK_APP_VERSION = '0.14.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -858,7 +858,8 @@ export class MockApi implements MaatwerkApi {
 
   /**
    * The `minAppVersion` this write raises to, as `rubrics::guard_write`: a rubric or a PO
-   * observatie 0.12.0, a PO exam 0.13.0 (step 22); null for anything else.
+   * observatie 0.12.0, a PO exam 0.13.0 (step 22), a score file with a PO's grading 0.14.0
+   * (step 23); null for anything else.
    */
   private raisesPoVersion(relPath: string, data: Json): string | null {
     const isPoObs =
@@ -868,7 +869,11 @@ export class MockApi implements MaatwerkApi {
     if (/^rubrics\/[^/]+\.json$/i.test(relPath) || isPoObs) return '0.12.0';
     const isPoExam =
       /^[^/]+\/exams\/[^/]+\.json$/i.test(relPath) && (data as { kind?: unknown })?.kind === 'po';
-    return isPoExam ? '0.13.0' : null;
+    if (isPoExam) return '0.13.0';
+    const po = (data as { po?: unknown })?.po;
+    const hasGrading =
+      typeof po === 'object' && po !== null && !Array.isArray(po) && Object.keys(po).length > 0;
+    return /^[^/]+\/scores\/[^/]+\/[^/]+\.json$/i.test(relPath) && hasGrading ? '0.14.0' : null;
   }
 
   /**
