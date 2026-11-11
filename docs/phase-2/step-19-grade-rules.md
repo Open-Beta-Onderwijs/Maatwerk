@@ -194,3 +194,10 @@ Filled in as the user answers (2026-11-08).
     weging 0 that is not diagnostic stays in. Example, T1 points of a normal test 8/10 and a
     diagnostic test 10/40: before 18/50 = **36%**, after 8/10 = **80%**. No change on the fixtures
     (they have no diagnostic test) or on existing data: D could not be set before 0.11.
+28. **PO bonus/malus lines (user, 2026-11-11, step 23; PLAN-2 decision 17):** rubric grade R =
+    round1(10 × punten ÷ max, between 1,0 and 10,0) as before; student grade = R + the group's
+    lines + the student's own lines, held between 1,0 and 10,0 **once, at the end** (R 9,8, group
+    +0,5, own −0,5 gives 9,8, not 9,5). The "projectgroep" grade in the grading footer is R +
+    group lines, held 1,0..10,0 (display only). A line is in grade points with at most one
+    decimal, from −9,0 to +9,0, not 0. A PO is gradeable as a test: one scored category is enough,
+    an unscored one counts 0; lines alone give no grade. An override still replaces the result.

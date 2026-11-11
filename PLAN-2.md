@@ -93,10 +93,10 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 17   | Rapport fixes                                                    | M            | 0.8     | done      |
 | 18   | Data format v3                                                   | M            | 0.9     | done      |
 | 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done      |
-| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | in review |
-| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | in review |
-| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | in review |
-| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | todo      |
+| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done      |
+| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done      |
+| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done      |
+| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | doing     |
 | 24   | PO d: PO rapport                                                 | M            | 0.15    | todo      |
 | 25   | Score entry                                                      | M            | 0.16    | todo      |
 | 26   | Login and splash                                                 | M            | 0.17    | todo      |

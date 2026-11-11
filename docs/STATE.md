@@ -1,10 +1,35 @@
 # State
 
-Last updated: 2026-11-10 (step 22) Branch: `step/22-po` (from `step/21-rubrics` `d4299cc`; steps
-20 and 21 are not merged yet: the macOS CI runs are pending, user 2026-11-10: "later")
-Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
+Last updated: 2026-11-11 (step 23) Branch: `step/23-po-grading` (from `main` `3062568`)
+Last tags: `step-22`, `v0.13.0`, `step-21`, `v0.12.0`, `step-20`, `v0.11.0`
 
 ## Current step
+
+**Step 23 (PO c: PO beoordelen, 0.14), started 2026-11-11.** Steps 20-22 and the top bar are
+merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (`3062568`, steps
+21, 22 and `fix/topbar` in one merge); push CI on `main` green (run `42962807480`). Tags on the
+remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
+`81e9c63`. Merged local branches deleted.
+
+**Next action:** step 23a sub-task 1 (see "Step 23 progress" below).
+
+## Step 23 progress (PO c: PO beoordelen, 0.14)
+
+Baseline 2026-11-11 on `main` `3062568`: cargo test all ok, 520 Vitest, 125 node.
+
+**User decisions (2026-11-11, grade rules, `step-19-grade-rules.md` decision 28):** student grade
+= R + group lines + own lines, held 1,0..10,0 once at the end; lines one decimal, −9,0..+9,0, not
+0; a PO is gradeable as a test (one scored category; lines alone give no grade).
+
+Plan: (1) core: decision 17/28 in `maatwerk-grades` (lines from `po[examId]` of the score
+record), wasm, `validate-data` for `po`, guard `minAppVersion` 0.14.0 on the first score file with
+a `po` entry, docs, version 0.14.0; (2) 23a UI: PO score table (`modals/po-scores.ts`), ⋮ Scores
+enabled for a PO; (3) 23b UI: grading modal, autosave (10 s, on close; CAS per member file),
+Vorige/Volgende; (4) 23b: regrouping copies the new group's data (decision 19), PO grades on
+cards/overviews checked, opdrachten genereren with category observaties; (5) before/after table
+of averages (STOP: user), gate, review, report.
+
+## Step 22 and the merge (history)
 
 **User (2026-11-10):** M2 option b (a student who leaves every projectgroep loses the PO's
 scores, after a confirm) and a wiskunde PO gets A/B/C/D from jaarlaag 4: both done. Local exe
@@ -25,7 +50,7 @@ approved and done on `fix/topbar`: when the tabs still overflow without the word
 name, and a `title` tooltip); the active tab keeps its name. `e2e/topbar.spec.ts` (4). Chromium
 e2e 278, WebKit topbar+shell 19, 520 Vitest, local visual unchanged.
 
-**Next action:** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
+**Was the next action (done 2026-11-11):** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
 and merging"), CI baselines of changed views from CI's own run, tags. Started 2026-11-10 17:32:
 rerun of step 20's failed PR job (run `42796057189`); `step/21-rubrics` pushed (run
 `42866062460`, expected to fail visual on the changed views: take their baselines from it).
