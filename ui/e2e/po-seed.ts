@@ -19,7 +19,26 @@ export interface SeedOptions {
   po?: boolean;
   /** Category scores: Valtoren 17 of 17 (10,0), the other group 14 (8,2). */
   scores?: boolean;
+  /**
+   * Step 23 grading: Valtoren 15 of 17 (8,8) with a group line −0,5 and, for Noor Bakker, an own
+   * line +0,3 (8,3 and 8,6); Projectgroep 2 only Theorie 4, without a `po` entry (Bezig).
+   */
+  grading?: boolean;
 }
+
+/** The step 23 grading of Valtoren (`grading: true`). */
+export const VALTOREN_GRADING = {
+  scores: { 'cat-theorie': 6, 'cat-uitvoering': 7, 'cat-extra': 2, 'cat-samen': 3 },
+  observations: ['obs-po-netjes'],
+  po: {
+    projectgroep: 'pg-1',
+    categoryObs: { 'cat-theorie': ['obs-po-bronnen'] },
+    categoryComments: { 'cat-uitvoering': 'Herhaal de metingen.' },
+    comment: 'Goed onderzoek.',
+    groupLines: [{ label: 'Te laat ingeleverd', value: -0.5 }],
+    ownLines: [] as { label: string; value: number }[],
+  },
+};
 
 interface ScoreFile {
   student_id?: string;
@@ -102,6 +121,32 @@ export async function poSeed(page: Page, o: SeedOptions = {}): Promise<Record<st
       const rel = `${YEAR}/scores/nat/${id}.json`;
       const old = ((await read(rel)) as ScoreFile | null) ?? { student_id: id };
       files[rel] = { ...old, scores: { ...(old.scores ?? {}), [PO_ID]: cats } };
+    }
+  }
+  if (o.grading) {
+    if (!o.po && !o.scores) files[`${YEAR}/exams/${PO_ID}.json`] = poExam();
+    const g = VALTOREN_GRADING;
+    const own = { '900101': [{ label: 'Extra meting', value: 0.3 }] } as Record<string, unknown[]>;
+    for (const id of ['900001', '900101', '900002', '900003']) {
+      const rel = `${YEAR}/scores/nat/${id}.json`;
+      const old = ((await read(rel)) as ScoreFile | null) ?? { student_id: id };
+      const valtoren = id === '900001' || id === '900101';
+      files[rel] = {
+        ...old,
+        scores: {
+          ...(old.scores ?? {}),
+          [PO_ID]: valtoren ? g.scores : { 'cat-theorie': 4 },
+        },
+        ...(valtoren
+          ? {
+              observations: {
+                ...((old.observations as Record<string, unknown> | undefined) ?? {}),
+                [PO_ID]: g.observations,
+              },
+              po: { [PO_ID]: { ...g.po, ownLines: own[id] ?? [] } },
+            }
+          : {}),
+      };
     }
   }
   return files;

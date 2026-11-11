@@ -83,6 +83,9 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
     active: null,
     filter: null,
   };
+  // Shown by achternaam: sorted before the close guard's snapshot, so a file in another order
+  // is not a change (step 23).
+  for (const g of state.groups) g.student_ids = g.student_ids.map(String).sort(order);
   if (!state.groups.length) state.groups.push({ id: newGroupId(), student_ids: [] });
   state.active = state.groups[0]!.id;
 

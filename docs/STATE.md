@@ -11,7 +11,8 @@ merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (
 remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
 `81e9c63`. Merged local branches deleted.
 
-**Next action:** step 23 sub-task 2, the PO score table (see "Step 23 progress" below).
+**Next action:** step 23 sub-task 4: regrouping copies the new group's grading (decision 19),
+PO grades on cards/overviews, opdrachten genereren for a PO (see "Step 23 progress" below).
 
 ## Step 23 progress (PO c: PO beoordelen, 0.14)
 
@@ -32,11 +33,24 @@ of averages (STOP: user), gate, review, report.
 1. **Done**, core: `maatwerk_grades` `PoGrading`/`PoLine` (`ScoreRecord.po`, tolerant),
    `calc_results_with(exam, scores, over, po)`, `exam_results` passes `rec.po[examId]`,
    `HistoryEntry.po`, `Results.rubricGrade` (PO only), `rubric::{line_valid, lines_sum,
-   with_lines}`; wasm `calcResults` takes an optional 4th arg, new `poLineValid`, `poLinesSum`,
+with_lines}`; wasm `calcResults` takes an optional 4th arg, new `poLineValid`, `poLinesSum`,
    `poWithLines`. Core guard `PO_GRADING_MIN_APP_VERSION` 0.14.0 (score file with non-empty `po`;
    mock too). `validate-data` checks `po`. UI: types `PoGrading`/`PoLine`, `recordFor` carries
    `po`, history/best attempt/profile pass it. Docs `data-files-v3.md` "PO grading". Version
    0.14.0. Tests: 6 grade, 1 wasm, 2 core, 1 Vitest.
+2. and 3. **Done** (one commit; they share `loadPoContext`): `domain/po-grading.ts` (group
+   grading in a record: read, write keeping own lines, clear, status, `groupSource` with a
+   fallback for unstamped scores, line parse/format); dialog option `headerActionsHtml`;
+   `modals/po-scores.ts` (table, sticky `thead` + group headings, unplaced last, header ?,
+   Projectgroepen, PO bewerken, refresh on focus back / sync); `modals/po-beoordelen.ts`
+   (levels highlighted, slider + Wissen, category obs + comment, overall comment, group and own
+   lines with validation, general obs, live grades, Vorige/Volgende, autosave 10 s + on close,
+   every member file checked fresh before any write: a conflict writes nothing and offers a
+   reload); ⋮ Scores invoeren enabled for a PO; `styles/po-scores.css`, `po-grade.css`.
+   Store exports `updateStudentScores`. Fix (step 22 bug, found by the e2e): Projectgroepen
+   counted a group stored in another order than by achternaam as a change (Escape asked).
+   `e2e/po-grading.spec.ts` (5), seed option `grading`; visual views `modal-po-scores`,
+   `modal-po-grade` (local images written, not yet seen by the user).
 
 ## Step 22 and the merge (history)
 

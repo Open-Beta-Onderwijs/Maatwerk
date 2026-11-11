@@ -1,0 +1,229 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Scores invoeren for a PO (step 23a; design spec 4.13, board 18): a read-only table grouped
+   by projectgroep, slanted category headings, sticky group headings. */
+
+.dlg--po-scores {
+  --po-sc-head-h: 120px;
+  width: 1320px;
+}
+.dlg-body.po-sc-body {
+  padding-top: 8px;
+}
+.po-sc-note {
+  margin: 24px auto;
+  max-width: 560px;
+  color: var(--muted);
+  text-align: center;
+}
+.po-sc-wrap {
+  width: max-content;
+  margin: 0 auto;
+}
+.po-sc-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-secondary);
+  font-variant-numeric: tabular-nums;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+.po-sc-table td,
+.po-sc-table thead th {
+  height: 30px;
+  padding: 0;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+/* The head row group is sticky and carries the background, so a slanted label can run over the
+   next columns (a sticky cell's own background would cover its neighbour's label). */
+.po-sc-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+}
+.po-sc-table thead th {
+  height: var(--po-sc-head-h);
+  vertical-align: bottom;
+  padding-bottom: 8px;
+  background: transparent;
+  border-bottom-color: var(--border);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+.po-sc-table th.po-sc-nr {
+  width: 70px;
+  padding-left: 10px;
+  text-align: left;
+}
+.po-sc-table th.po-sc-name {
+  width: 190px;
+  padding-left: 10px;
+  text-align: left;
+  font-size: var(--fs-secondary);
+}
+.po-sc-table th.po-sc-cls {
+  min-width: 48px;
+  padding: 0 6px 8px;
+}
+.po-sc-table th.po-sc-cat {
+  width: 46px;
+  padding: 0;
+}
+.po-sc-slant {
+  position: relative;
+  height: calc(var(--po-sc-head-h) - 8px);
+}
+.po-sc-slant > span {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform-origin: left bottom;
+  transform: rotate(-55deg);
+  white-space: nowrap;
+}
+.po-sc-max {
+  color: var(--muted);
+  font-weight: 400;
+}
+.po-sc-cat--bonus .po-sc-slant > span {
+  color: var(--accent-text);
+}
+.po-sc-cat--diagnostisch .po-sc-slant > span {
+  color: var(--muted);
+  font-style: italic;
+}
+.po-sc-table th.po-sc-pts {
+  width: 64px;
+}
+.po-sc-table th.po-sc-adj {
+  width: 62px;
+}
+.po-sc-table th.po-sc-grade {
+  width: 60px;
+  font-size: var(--fs-secondary);
+}
+
+/* A projectgroep's heading row stays under the column headings while its rows scroll. */
+.po-sc-ghead th {
+  position: sticky;
+  top: var(--po-sc-head-h);
+  z-index: 2;
+  height: 40px;
+  padding: 0 10px;
+  text-align: left;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.po-sc-ghead-in {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.po-sc-gname {
+  color: var(--accent-text);
+}
+.po-sc-free .po-sc-gname {
+  color: var(--text);
+}
+.po-sc-ginfo {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.btn.po-sc-grade-btn {
+  height: 26px;
+  padding: 0 10px;
+  gap: 5px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: var(--fs-caption);
+}
+.btn.po-sc-grade-btn svg {
+  width: 13px;
+  height: 13px;
+}
+.po-sc-status {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.po-sc-status--done {
+  color: var(--ok);
+}
+.po-sc-status--busy {
+  color: var(--warn);
+}
+
+.po-sc-row[data-group] {
+  cursor: pointer;
+}
+.po-sc-row:hover td {
+  background: var(--accent-soft);
+}
+.po-sc-row td.po-sc-nr {
+  padding: 0 10px;
+  text-align: left;
+  color: var(--muted);
+}
+.po-sc-row td.po-sc-name {
+  padding: 0 10px;
+  text-align: left;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.po-sc-row td.po-sc-cls,
+.po-sc-row td.po-sc-pts {
+  color: var(--muted);
+}
+.po-sc-row td.po-sc-cls {
+  padding: 0 6px;
+  font-size: var(--fs-caption);
+  white-space: nowrap;
+}
+.po-sc-empty {
+  color: var(--disabled);
+}
+/* Category cells on the score grid's light fills, also in the dark theme (as the grid). */
+.po-sc-row td.po-sc-cell--max {
+  background: #dff1e5;
+  color: #1b2230;
+}
+.po-sc-row td.po-sc-cell--zero {
+  background: #fbe1de;
+  color: #1b2230;
+}
+.po-sc-row td.po-sc-cell--mid {
+  background: #fcf1cf;
+  color: #1b2230;
+}
+.po-sc-minus {
+  color: var(--danger);
+}
+.po-sc-plus {
+  color: var(--ok);
+}
+.po-sc-row td.po-sc-grade {
+  font-weight: 700;
+}
+.po-sc-row td.po-sc-grade[data-bg] {
+  color: #1b2230;
+}
+
+.dlg--po-scores .dlg-footer {
+  justify-content: flex-start;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.dlg--po-scores .dlg-footer-spacer {
+  display: none;
+}
+.po-sc-hint {
+  flex: 1;
+}
+.po-sc-saved {
+  color: var(--ok);
+  font-weight: 600;
+}

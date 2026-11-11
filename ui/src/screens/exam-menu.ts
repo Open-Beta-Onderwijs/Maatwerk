@@ -9,7 +9,9 @@ import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren.js'
 import { openRapportModal } from '../modals/rapport.js';
 import { isPo } from '../domain/po';
 import { openPoEditModal } from '../modals/po-gegevens';
+import { openPoGrading } from '../modals/po-beoordelen';
 import { openPoResitModal, openProjectgroepenModal } from '../modals/po-groepen';
+import { openPoScoresModal } from '../modals/po-scores';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { perfSpan } from '../utils/perf';
@@ -49,12 +51,22 @@ async function deleteBlockReason(examId: string, year: string): Promise<string |
 
 /**
  * A PO's menu (spec 4.13): the test's items, Nieuwe poging is a herkansing only, and
- * Projectgroepen. Grading (Scores invoeren, Opdrachten) is step 23, the PO rapport step 24.
+ * Projectgroepen. Scores invoeren is the PO's score table (step 23); the PO rapport is step 24.
  */
 async function poMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {
   const summary = kind === 'summary';
   const items: MenuItem[] = [
-    { icon: ICONS.scores, label: 'Scores invoeren', disabled: PO_GRADING_LATER },
+    summary
+      ? {
+          icon: ICONS.scores,
+          label: 'Scores invoeren',
+          disabled: 'Voer de scores in per poging (origineel of herkansing).',
+        }
+      : {
+          icon: ICONS.scores,
+          label: 'Scores invoeren',
+          run: () => openPoScoresModal(examId, year, openPoGrading),
+        },
     { icon: ICONS.rapport, label: 'Rapport genereren', disabled: PO_RAPPORT_LATER },
     { icon: ICONS.opdrachten, label: 'Opdrachten genereren', disabled: PO_GRADING_LATER },
     'sep',

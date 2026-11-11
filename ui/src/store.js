@@ -1450,6 +1450,7 @@ const Store = (() => {
     setExamNTerm,
     deleteExam,
     getStudentScores,
+    updateStudentScores,
     setScore,
     getStudentHistory,
     getAllExamsSync,
