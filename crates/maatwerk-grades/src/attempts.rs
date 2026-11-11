@@ -7,8 +7,8 @@ use std::collections::HashSet;
 
 use serde::Deserialize;
 
-use crate::grade::{calc_results, exam_results};
-use crate::model::{Exam, Override, QuestionScores, ScoreRecord};
+use crate::grade::{calc_results_with, exam_results};
+use crate::model::{Exam, Override, PoGrading, QuestionScores, ScoreRecord};
 
 /// A test with its resits, in attempt order. An orphan resit (its original is gone) is a family
 /// of its own, without an original.
@@ -93,11 +93,20 @@ pub struct HistoryEntry {
     pub question_scores: QuestionScores,
     #[serde(default)]
     pub r#override: Option<Override>,
+    /// A PO's `po[examId]` of the score file: its bonus/malus lines count (decision 28).
+    #[serde(default)]
+    pub po: Option<PoGrading>,
 }
 
 impl HistoryEntry {
     pub fn grade(&self) -> Option<f64> {
-        calc_results(&self.exam, &self.question_scores, self.r#override.as_ref()).grade
+        calc_results_with(
+            &self.exam,
+            &self.question_scores,
+            self.r#override.as_ref(),
+            self.po.as_ref(),
+        )
+        .grade
     }
 }
 
@@ -240,6 +249,7 @@ mod tests {
             exam,
             question_scores,
             r#override: None,
+            po: None,
         }
     }
 
@@ -283,5 +293,26 @@ mod tests {
             entry("a", None, 1, "2025-2026", 1, Some(6.0)),
         ];
         assert_eq!(resolve_best_attempts(&history), vec![1]);
+    }
+
+    #[test]
+    fn a_po_history_entry_counts_its_lines() {
+        // Decision 28 in the SE history: 35/50 is 7,0, a group line −0,5 gives 6,5.
+        let e: HistoryEntry = serde_json::from_value(json!({
+            "exam": {"id": "p", "kind": "po", "rubric": {"categories": [
+                {"id": "c", "max": 50, "soort": "normaal"}
+            ]}},
+            "questionScores": {"c": 35},
+            "po": {"groupLines": [{"label": "Te laat", "value": -0.5}]}
+        }))
+        .unwrap();
+        assert_eq!(e.grade(), Some(6.5));
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "scores": {"p": {"c": 35}},
+            "po": {"p": {"ownLines": [{"value": 1}]}}
+        }))
+        .unwrap();
+        let best = best_attempt(&rec, &[&e.exam]).unwrap();
+        assert_eq!(best.grade, 8.0);
     }
 }

@@ -58,6 +58,8 @@ export interface DialogOptions {
   subtitleHtml?: string;
   /** HTML before the title block (e.g. an exam badge); the caller escapes every text. */
   leadHtml?: string;
+  /** Buttons between the title block and ✕ (board 18); the caller escapes every text. */
+  headerActionsHtml?: string;
   /** Extra classes on the dialog element (legacy size classes, area styling). */
   className?: string;
   size?: DialogSize;
@@ -180,6 +182,7 @@ export class Dialog {
                 : ''
             }
           </div>
+          ${opts.headerActionsHtml ? `<div class="dlg-head-actions">${opts.headerActionsHtml}</div>` : ''}
         </div>
         ${
           opts.tabs?.length

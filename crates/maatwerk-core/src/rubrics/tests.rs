@@ -68,6 +68,36 @@ fn the_first_po_exam_raises_the_minimum_to_0_13() {
 }
 
 #[test]
+fn the_first_po_grading_raises_the_minimum_to_0_14() {
+    // Step 23: a score file without `po`, or with an empty one, raises nothing; the first with
+    // a PO's grading (any case of the path) raises to 0.14.0.
+    let (_t, mut s) = setup();
+    s.set_app_version(PO_GRADING_MIN_APP_VERSION);
+    let path = rel("2026-2027/scores/nat/s1.json");
+    s.write_json(
+        &path,
+        &json!({"scores": {"t1": {"q1": 2}}}),
+        Expect::Missing,
+    )
+    .unwrap();
+    s.write_json(&path, &json!({"scores": {}, "po": {}}), Expect::Any)
+        .unwrap();
+    assert_eq!(min_version(&s), "0.9.0");
+    let graded = json!({"scores": {"p1": {"a": 3}}, "po": {"p1": {"projectgroep": "g1",
+        "groupLines": [], "ownLines": []}}});
+    s.write_json(&rel("2026-2027/Scores/nat/s1.JSON"), &graded, Expect::Any)
+        .unwrap();
+    assert_eq!(min_version(&s), PO_GRADING_MIN_APP_VERSION);
+    assert!(!is_score_path("2026-2027/scores/s1.json"));
+    assert!(!is_score_path("scores/nat/s1.json"));
+    assert!(!is_score_path("2026-2027/exams/nat/s1.json"));
+    // An app of 0.13 is read-only from now on.
+    s.set_app_version(PO_EXAM_MIN_APP_VERSION);
+    let err = s.write_json(&path, &graded, Expect::Any).unwrap_err();
+    assert!(matches!(err, Error::ReadOnly { .. }), "{err:?}");
+}
+
+#[test]
 fn an_app_of_0_12_cannot_write_after_the_first_po() {
     let (_t, mut s) = setup();
     let (path, exam) = po_exam("2026-2027", "p1", "r1");

@@ -347,7 +347,8 @@ test.describe('a PO on the Toetsen screen', () => {
         ],
         { timeout: 1000 },
       );
-      await expect(items.nth(0)).toHaveAttribute('aria-disabled', 'true', { timeout: 1000 });
+      // Scores invoeren is the PO score table from step 23.
+      await expect(items.nth(0)).not.toHaveAttribute('aria-disabled', 'true', { timeout: 1000 });
       // It has scores: it cannot be deleted.
       await expect(items.nth(6)).toHaveAttribute('aria-disabled', 'true', { timeout: 1000 });
     }).toPass();

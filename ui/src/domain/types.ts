@@ -79,12 +79,36 @@ export interface Override {
 /** A student number; a string in format v2 (ADR-0003 C8). */
 export type StudentId = string;
 
+/** A bonus/malus line of a PO, in grade points (decisions 17, 28). */
+export interface PoLine {
+  label: string;
+  value: number | null;
+}
+
+/**
+ * What a score file holds for one PO besides the category scores (`po[examId]`, step 23). The
+ * projectgroep's fields are copied into every member's file (decision 19); `ownLines` are the
+ * student's own.
+ */
+export interface PoGrading {
+  /** The projectgroep id these fields were copied from. */
+  projectgroep?: string;
+  /** Observatie ids per category id. */
+  categoryObs?: Record<string, string[]>;
+  categoryComments?: Record<string, string>;
+  comment?: string;
+  groupLines?: PoLine[];
+  ownLines?: PoLine[];
+}
+
 /** One student's score file for one subject and year. */
 export interface ScoreRecord {
   student_id?: StudentId;
   scores?: Record<string, QuestionScores>;
   overrides?: Record<string, Override>;
   observations?: Record<string, string[]>;
+  /** PO grading per exam id (step 23). */
+  po?: Record<string, PoGrading>;
   [key: string]: unknown;
 }
 

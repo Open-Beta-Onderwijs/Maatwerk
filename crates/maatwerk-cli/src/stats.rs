@@ -251,6 +251,7 @@ fn history(
                     exam: exam.clone(),
                     question_scores: scores.cloned().unwrap_or_default(),
                     r#override: over,
+                    po: rec.po.get(&exam.id).cloned(),
                 });
             }
         }

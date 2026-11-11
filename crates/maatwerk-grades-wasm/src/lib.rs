@@ -9,7 +9,9 @@ mod abi;
 
 use maatwerk_grades as g;
 use maatwerk_grades::rtti::Attempt;
-use maatwerk_grades::{Exam, Group, HistoryEntry, Override, Question, ScoreRecord};
+use maatwerk_grades::{
+    Exam, Group, HistoryEntry, Override, PoGrading, PoLine, Question, ScoreRecord,
+};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -47,6 +49,16 @@ fn parse<T: DeserializeOwned>(args: Value) -> Result<T, String> {
     serde_json::from_value(args).map_err(|e| format!("bad arguments: {e}"))
 }
 
+/// Pads an argument list with `null` up to `n`, for trailing optional arguments.
+fn pad(mut args: Value, n: usize) -> Value {
+    if let Value::Array(items) = &mut args {
+        while items.len() < n {
+            items.push(Value::Null);
+        }
+    }
+    args
+}
+
 fn json<T: Serialize>(value: T) -> Result<Value, String> {
     serde_json::to_value(value).map_err(|e| e.to_string())
 }
@@ -59,11 +71,14 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             json(g::calc_grade(s, l, n))
         }
         "calcResults" => {
-            let (exam, scores, over): (Exam, Option<_>, Option<Override>) = parse(args)?;
-            json(g::calc_results(
+            // The 4th argument, a PO's `po[examId]`, is optional.
+            let (exam, scores, over, po): (Exam, Option<_>, Option<Override>, Option<PoGrading>) =
+                parse(pad(args, 4))?;
+            json(g::calc_results_with(
                 &exam,
                 &scores.unwrap_or_default(),
                 over.as_ref(),
+                po.as_ref(),
             ))
         }
         "examResults" => {
@@ -195,6 +210,23 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             ) = parse(args)?;
             json(g::rubric::po_points(&rubric, &scores.unwrap_or_default()))
         }
+        "poLineValid" => {
+            let (value,): (Value,) = parse(args)?;
+            json(value.as_f64().is_some_and(g::rubric::line_valid))
+        }
+        "poLinesSum" => {
+            let (lines,): (Option<Vec<Value>>,) = parse(args)?;
+            let lines: Vec<PoLine> = lines
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|l| serde_json::from_value(l).ok())
+                .collect();
+            json(g::rubric::lines_sum(&lines))
+        }
+        "poWithLines" => {
+            let (grade, lines): (f64, f64) = parse(args)?;
+            json(g::rubric::with_lines(grade, lines))
+        }
         other => Err(format!("unknown function {other}")),
     }
 }
@@ -303,9 +335,36 @@ mod tests {
             ),
             ("poGrade", json!([5, 10])),
             ("poPoints", json!([{}, null])),
+            ("poLineValid", json!(["x"])),
+            ("poLinesSum", json!([null])),
+            ("poLinesSum", json!([[5, {"value": "x"}]])),
+            ("poWithLines", json!([5, -0.5])),
         ] {
             run(name, args);
         }
+    }
+
+    #[test]
+    fn po_lines_reach_the_ui() {
+        // Decision 28 through the UI's calls.
+        let po = json!({"id": "p", "kind": "po", "rubric": {"categories": [
+            {"id": "c", "max": 50, "soort": "normaal"}
+        ]}});
+        let lines = json!({"groupLines": [{"label": "Te laat", "value": -0.5}], "ownLines": []});
+        let v = run("calcResults", json!([po.clone(), {"c": 35}, null, lines]));
+        assert_eq!(
+            (v["rubricGrade"].clone(), v["grade"].clone()),
+            (json!(7.0), json!(6.5))
+        );
+        let rec = json!({"scores": {"p": {"c": 35}}, "po": {"p": lines}});
+        assert_eq!(run("examResults", json!([rec, po]))["grade"], json!(6.5));
+        assert_eq!(run("poLineValid", json!([0.5])), json!(true));
+        assert_eq!(run("poLineValid", json!([0.25])), json!(false));
+        assert_eq!(
+            run("poLinesSum", json!([[{"value": 0.1}, {"value": 0.2}]])),
+            json!(0.3)
+        );
+        assert_eq!(run("poWithLines", json!([9.8, 0.5])), json!(10.0));
     }
 
     #[test]

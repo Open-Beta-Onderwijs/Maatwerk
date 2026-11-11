@@ -72,6 +72,13 @@
   flex-direction: column;
   gap: 4px;
 }
+.dlg-head-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
 .dlg-title-row {
   display: flex;
   align-items: center;

@@ -4,7 +4,7 @@
 // fixture). Used by the visual regression and the CSP walkthrough.
 
 import { expect, type Page } from '@playwright/test';
-import { login, seedFiles } from './helpers';
+import { examMenuItem, login, seedFiles } from './helpers';
 import { poSeed } from './po-seed';
 
 export interface View {
@@ -178,6 +178,30 @@ export const VIEWS: View[] = [
       await d.locator('#po-add-group').click();
       await d.locator('.po-stu[data-student="900002"]').click();
       await d.locator('#po-add-group').click();
+    },
+  },
+  // Step 23: the PO score table and a projectgroep's grading (board 18).
+  {
+    name: 'modal-po-scores',
+    user: 'teacher',
+    target: 'modal',
+    seed: (p) => poSeed(p, { grading: true }),
+    open: async (p) => {
+      await screen(p, 'toetsen');
+      await examMenuItem(p, 'po-valbeweging', 'Scores invoeren');
+      await expect(p.locator('.po-sc-row[data-student="900101"] .po-sc-grade')).toHaveText('8,6');
+    },
+  },
+  {
+    name: 'modal-po-grade',
+    user: 'teacher',
+    target: 'modal',
+    seed: (p) => poSeed(p, { grading: true }),
+    open: async (p) => {
+      await screen(p, 'toetsen');
+      await examMenuItem(p, 'po-valbeweging', 'Scores invoeren');
+      await p.locator('[data-grade-group="pg-1"]').click();
+      await expect(p.locator('.dlg--po-grade #po-gr-points')).toContainText('8,3');
     },
   },
   {

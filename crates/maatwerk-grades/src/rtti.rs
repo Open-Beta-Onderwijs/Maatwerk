@@ -102,11 +102,13 @@ mod tests {
                 exam: test_a(),
                 question_scores: scores_of(json!({"q1": 8})),
                 r#override: None,
+                po: None,
             },
             HistoryEntry {
                 exam: test_b(),
                 question_scores: scores_of(json!({"q1": 10})),
                 r#override: None,
+                po: None,
             },
         ];
         let pooled = pooled_rtti(&history);

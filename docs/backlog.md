@@ -474,3 +474,16 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   handled in the UI; a hand edit or an older app could still leave them).
 - The Toetsen list re-renders after its statistics load and closes an open ⋮ menu (seen again in
   `po.spec.ts`; the helpers retry).
+
+## From Step 23
+
+- Review 23 m1/m9: a test for a colleague's write between the pre-check and the CAS write of one
+  member (the group can then be partly written; the reload shows the colleague's version).
+- Review 23 m4: quitting the app within 10 s of an edit in Projectgroep beoordelen loses it (the
+  window closes without the dialog's close save).
+- Review 23 m9: e2e for a member without a score file and a PO without a rubric in the grading.
+- Review 23 n1: two saves waiting on a running save can both start afterwards (same writes).
+- Review 23 n3: the PO score table's footer status "● Alles opgeslagen" is static.
+- Review 23 n4: `validate-data` could warn about a `po` entry under a test's id.
+- Local WebKit on Windows: Playwright's `dragTo` does not work (the step 22 and 23 drag tests fail
+  there, also on `main`); CI runs WebKit on Linux and macOS, where they pass.

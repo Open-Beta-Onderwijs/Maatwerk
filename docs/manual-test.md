@@ -145,9 +145,31 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       "n projectgroepen", the rubric line; `school.json` `minAppVersion` is 0.13.0 and Maatwerk
       0.12 on that copy opens read-only. The rubric shows "In gebruik bij 1 PO".
 - [ ] **M-PO-3** ⋮ > Projectgroepen: move, rename, remove; ⋮ > PO bewerken: change naam, periode,
-      rubric. Scores invoeren, Rapport and Opdrachten are grey with a reason.
+      rubric. Rapport is grey with a reason (from 0.14 Scores invoeren and Opdrachten work).
 - [ ] **M-PO-4** ⋮ > Herkansing toevoegen: the groups are copied; take one student out; Opslaan:
       a card with 2 pogingen, the original's groups unchanged.
+
+## PO beoordelen (M-POB, 0.14)
+
+- [ ] **M-POB-1** ⋮ > Scores invoeren on a PO: one block per projectgroep (heading, Beoordelen,
+      status), slanted category headings with their max, Punten, Groep ±, Eigen ±, Cijfer; the
+      unplaced students last without a grade. Projectgroepen and PO bewerken open on top; after
+      a change there the table shows it.
+- [ ] **M-POB-2** Beoordelen (or double-click a row): move each slider; the level cards holding
+      the value light up; Wissen empties a category. Tick category and general observaties, write
+      comments, add a group line −0,5 and an own line +0,3: the footer grades follow
+      (rubric grade + lines, between 1,0 and 10,0). A value like 0,25 is marked red.
+- [ ] **M-POB-3** Wait 10 s: "Automatisch opgeslagen · hh:mm"; Volgende/Vorige and ✕ save too. The
+      table shows the new grades; every member's score file has the same category scores and
+      `po` entry, own lines only in their own file; `school.json` `minAppVersion` is 0.14.0 and
+      Maatwerk 0.13 on that copy opens read-only.
+- [ ] **M-POB-4** Two PCs: both open the same projectgroep; save on PC 1, then change something on
+      PC 2: PC 2 says a colleague changed it, saves nothing and reloads.
+- [ ] **M-POB-5** ⋮ > Projectgroepen: move a graded student to another graded group: after the
+      warning they have the new group's scores and lines, their own lines kept. The student and
+      group cards and the profile include the PO grade (weging as set).
+- [ ] **M-POB-6** ⋮ > Opdrachten genereren on a PO: the rubric's general and category observaties
+      are listed; students with a ticked observatie get its opdrachten.
 
 ## Opdrachten and the editor (M-OPD)
 

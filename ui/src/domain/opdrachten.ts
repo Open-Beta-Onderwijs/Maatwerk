@@ -14,6 +14,8 @@ import { round1 } from './core';
 import { formatFixed } from './format';
 import { examResults } from './grades';
 import { fullName } from './ids';
+import { isPo, rubricOf } from './po';
+import { poObsIds, poStudentObs } from './po-grading';
 import { studentGroup } from './statistics';
 import {
   type CijferCard,
@@ -50,6 +52,19 @@ export function opdrachtMatchesExam(
   return vakOk && jlOk && ssOk;
 }
 
+/**
+ * The observaties of an exam that opdrachten can follow: a test's `obs_ids`; a PO's general and
+ * category observaties (step 23).
+ */
+export function examObsIds(exam: Exam): string[] {
+  return isPo(exam) ? poObsIds(exam, rubricOf(exam)) : (exam.obs_ids ?? []);
+}
+
+/** The observaties a student has for the exam (a PO: general and category ones). */
+function studentObs(rec: ScoreRecord | null | undefined, exam: Exam): string[] {
+  return isPo(exam) ? poStudentObs(rec, exam.id) : (rec?.observations?.[exam.id] ?? []);
+}
+
 /** The coupling to use for every observatie of the exam (saved, else the default). */
 export function opdrachtCoupling(
   exam: Exam,
@@ -58,7 +73,7 @@ export function opdrachtCoupling(
 ): Record<string, string[]> {
   const exists = new Set(opdrachten.map((o) => o.id));
   const coupling: Record<string, string[]> = {};
-  for (const obsId of exam.obs_ids ?? []) {
+  for (const obsId of examObsIds(exam)) {
     const saved = exam.opdrachten?.[obsId];
     coupling[obsId] = saved
       ? saved.filter((id) => exists.has(id))
@@ -138,7 +153,7 @@ export function assignOpdrachten({
 }): Assignments {
   const obsById = Object.fromEntries(observaties.map((o) => [o.id, o]));
   const opById = Object.fromEntries(opdrachten.map((o) => [o.id, o]));
-  const examObs = exam.obs_ids ?? [];
+  const examObs = examObsIds(exam);
 
   const obsStudents: Record<string, StudentId[]> = Object.fromEntries(
     examObs.map((id) => [id, []]),
@@ -149,7 +164,7 @@ export function assignOpdrachten({
   const result: Assignment[] = [];
   for (const s of students) {
     const rec = recordOf(s.id);
-    const own = new Set(rec?.observations?.[exam.id] ?? []);
+    const own = new Set(studentObs(rec, exam));
     const items = new Map<string, { opdracht: Opdracht; obs: Reason[] }>();
     const give = (opIds: string[] | undefined, reason: Reason) => {
       for (const opId of opIds ?? []) {

@@ -466,6 +466,68 @@ fn step_19_values_the_grade_rules_read_past_are_warnings() {
 }
 
 #[test]
+fn po_grading_in_score_files_is_checked() {
+    // Step 23: `po[examId]` names an exam, is an object, its lines are lists of valid lines.
+    let (_tmp, data) = copy();
+    let rel = "2025-2026/scores/nat/1001.json";
+    let t = "nat-toets-1-2025-2026";
+    fs::write(
+        data.join(rel),
+        serde_json::json!({"student_id": "1001", "scores": {}, "po": {
+            "po-weg": {},
+            t: {"groupLines": "x", "ownLines": [
+                {"label": "Goed", "value": 0.5}, {"label": "Te veel", "value": 0.25},
+                {"label": "Leeg"}, 3
+            ]}
+        }})
+        .to_string(),
+    )
+    .unwrap();
+    let report = validate(&data).unwrap();
+    for (kind, message) in [
+        (
+            IssueKind::Reference,
+            "Scores voor toets po-weg, die niet bestaat",
+        ),
+        (
+            IssueKind::Shape,
+            "PO-beoordeling van nat-toets-1-2025-2026: groupLines is geen lijst",
+        ),
+        (
+            IssueKind::Shape,
+            "PO-beoordeling van nat-toets-1-2025-2026: bonus/malus \"Te veel\" telt niet mee (één decimaal, van −9,0 tot +9,0, niet 0)",
+        ),
+        (
+            IssueKind::Shape,
+            "PO-beoordeling van nat-toets-1-2025-2026: bonus/malus \"Leeg\" telt niet mee (één decimaal, van −9,0 tot +9,0, niet 0)",
+        ),
+        (
+            IssueKind::Shape,
+            "PO-beoordeling van nat-toets-1-2025-2026: bonus/malus 3 is geen regel",
+        ),
+    ] {
+        assert!(
+            has(&report, kind, rel, message),
+            "{message}: {:#?}",
+            report.issues
+        );
+    }
+    assert!(!report.issues.iter().any(|i| i.message.contains("\"Goed\"")));
+    fs::write(
+        data.join(rel),
+        serde_json::json!({"student_id": "1001", "po": {t: 1}}).to_string(),
+    )
+    .unwrap();
+    let report = validate(&data).unwrap();
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        rel,
+        "PO-beoordeling van nat-toets-1-2025-2026 is geen object"
+    ));
+}
+
+#[test]
 fn po_exams_and_their_projectgroepen_are_checked() {
     // Step 22: rubric, no questions, projectgroepen of existing students, each placed once.
     let (_tmp, data) = copy();

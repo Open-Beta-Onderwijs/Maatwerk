@@ -1,0 +1,323 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Projectgroep beoordelen (step 23b; design spec 4.13, board 18). */
+
+.dlg--po-grade {
+  width: 1240px;
+}
+.dlg--po-grade .dlg-title {
+  color: var(--accent-text);
+}
+.dlg-body.po-gr-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg);
+}
+.po-gr-status {
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.po-gr-status[data-kind='ok'] {
+  color: var(--ok);
+}
+.po-gr-status[data-kind='busy'] {
+  color: var(--warn);
+}
+.po-gr-status[data-kind='error'] {
+  color: var(--danger);
+}
+.po-gr-label {
+  font-size: var(--fs-section);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.po-gr-none {
+  font-size: var(--fs-caption);
+  font-style: italic;
+  color: var(--disabled);
+}
+
+/* A category: levels, slider, then observaties and comment on the right. */
+.po-gr-cat,
+.po-gr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.po-gr-cat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+}
+.po-gr-cat-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.po-gr-cat-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.po-gr-cat-name {
+  font-size: 16px;
+}
+.po-gr-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.po-gr-pill--diag {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.po-gr-cat-spacer {
+  flex: 1;
+}
+.po-gr-cat-score {
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.po-gr-max {
+  font-size: var(--fs-secondary);
+  font-weight: 400;
+  color: var(--muted);
+}
+.po-gr-levels {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+}
+.po-gr-level {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  opacity: 0.6;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s,
+    background-color 0.15s;
+}
+.po-gr-cat--empty .po-gr-level {
+  opacity: 1;
+}
+.po-gr-level--on {
+  opacity: 1;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.po-gr-level-range {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.po-gr-level--on .po-gr-level-range {
+  color: var(--accent-text);
+}
+.po-gr-level-title {
+  font-size: var(--fs-secondary);
+}
+.po-gr-level-text {
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  color: var(--muted);
+}
+.po-gr-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.po-gr-slider input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+/* Not scored yet: the thumb is faded until the slider is moved. */
+.po-gr-cat--empty input[type='range'] {
+  opacity: 0.45;
+}
+.po-gr-ticks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.po-gr-cat-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 16px;
+  border-left: 1px solid var(--line);
+}
+.po-gr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.po-gr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-caption);
+  cursor: pointer;
+}
+.po-gr-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.po-gr-chip--on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.po-gr-comment,
+.po-gr-overall {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.4;
+}
+.po-gr-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Bonus / malus: the group's lines left, each member's right. */
+.po-gr-card.po-gr-adj {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+}
+.po-gr-adj-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.po-gr-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-gr-line-label {
+  flex: 1;
+  min-width: 0;
+}
+.po-gr-line-value {
+  width: 72px;
+  text-align: center;
+  font-weight: 600;
+}
+.po-gr-line-value[aria-invalid='true'] {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn.po-gr-add-line {
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-size: var(--fs-caption);
+}
+.po-gr-member-lines {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+.po-gr-member-name {
+  padding-top: 6px;
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+}
+.po-gr-member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.po-gr-line-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+
+/* Footer: general observaties, then points, grades and the buttons. */
+.dlg--po-grade .dlg-footer-spacer {
+  display: none;
+}
+.po-gr-foot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.po-gr-general {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.po-gr-general .po-gr-label {
+  margin-right: 4px;
+}
+.po-gr-foot-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.po-gr-points {
+  font-size: var(--fs-secondary);
+  color: var(--muted);
+}
+.po-gr-points b {
+  color: var(--text);
+}
+.po-gr-grades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.po-gr-grade {
+  padding: 3px 10px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  font-size: var(--fs-secondary);
+}
+.po-gr-grade[data-bg] {
+  color: #1b2230;
+}
+.po-gr-foot-spacer {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .po-gr-level {
+    transition: none;
+  }
+}

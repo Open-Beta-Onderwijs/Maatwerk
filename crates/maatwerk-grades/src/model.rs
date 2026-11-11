@@ -257,6 +257,37 @@ pub struct Override {
     pub berekend: Option<f64>,
 }
 
+/// A list whose items may be damaged: those are skipped, the rest still counts.
+fn tolerant_list<'de, D: Deserializer<'de>, T: DeserializeOwned>(d: D) -> Result<Vec<T>, D::Error> {
+    let Value::Array(items) = Value::deserialize(d)? else {
+        return Ok(Vec::new());
+    };
+    Ok(items
+        .into_iter()
+        .filter_map(|v| serde_json::from_value(v).ok())
+        .collect())
+}
+
+/// One bonus/malus line of a PO (decision 17): a label and grade points.
+#[derive(Debug, Clone, Default, Deserialize)]
+pub struct PoLine {
+    #[serde(default, deserialize_with = "text")]
+    pub label: String,
+    #[serde(default, deserialize_with = "opt_number")]
+    pub value: Option<f64>,
+}
+
+/// What a score file holds for one PO besides the category scores (step 23, `po[examId]`). The
+/// rules read only the lines; observaties, comments and the projectgroep are the UI's.
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PoGrading {
+    #[serde(default, deserialize_with = "tolerant_list")]
+    pub group_lines: Vec<PoLine>,
+    #[serde(default, deserialize_with = "tolerant_list")]
+    pub own_lines: Vec<PoLine>,
+}
+
 /// One student's score file for one vak and year.
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct ScoreRecord {
@@ -264,6 +295,9 @@ pub struct ScoreRecord {
     pub scores: HashMap<String, QuestionScores>,
     #[serde(default, deserialize_with = "tolerant_map")]
     pub overrides: HashMap<String, Override>,
+    /// PO grading per exam id (step 23).
+    #[serde(default, deserialize_with = "tolerant_map")]
+    pub po: HashMap<String, PoGrading>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

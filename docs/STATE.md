@@ -1,10 +1,92 @@
 # State
 
-Last updated: 2026-11-10 (step 22) Branch: `step/22-po` (from `step/21-rubrics` `d4299cc`; steps
-20 and 21 are not merged yet: the macOS CI runs are pending, user 2026-11-10: "later")
-Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
+Last updated: 2026-11-11 (step 23) Branch: `step/23-po-grading` (from `main` `3062568`)
+Last tags: `step-22`, `v0.13.0`, `step-21`, `v0.12.0`, `step-20`, `v0.11.0`
 
 ## Current step
+
+**Step 23 (PO c: PO beoordelen, 0.14), started 2026-11-11.** Steps 20-22 and the top bar are
+merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (`3062568`, steps
+21, 22 and `fix/topbar` in one merge); push CI on `main` green (run `42962807480`). Tags on the
+remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
+`81e9c63`. Merged local branches deleted.
+
+**User (2026-11-11):** visual diff of `modal-po-scores` and `modal-po-grade` OK (local images
+are the baselines); local exe 0.14.0 built for the test on real data.
+
+**User (2026-11-11):** before/after table OK ("works like I expect"); go on to CI and the merge.
+
+**Next action:** push for CI (CI baselines of the two new
+views from CI's own run), merge, tags `step-23`/`v0.14.0`. Manual test M-POB-1..6 on real data
+with a local exe 0.14.0.
+
+## Step 23 progress (PO c: PO beoordelen, 0.14)
+
+Baseline 2026-11-11 on `main` `3062568`: cargo test all ok, 520 Vitest, 125 node.
+
+**User decisions (2026-11-11, grade rules, `step-19-grade-rules.md` decision 28):** student grade
+= R + group lines + own lines, held 1,0..10,0 once at the end; lines one decimal, −9,0..+9,0, not
+0; a PO is gradeable as a test (one scored category; lines alone give no grade).
+
+Plan: (1) core: decision 17/28 in `maatwerk-grades` (lines from `po[examId]` of the score
+record), wasm, `validate-data` for `po`, guard `minAppVersion` 0.14.0 on the first score file with
+a `po` entry, docs, version 0.14.0; (2) 23a UI: PO score table (`modals/po-scores.ts`), ⋮ Scores
+enabled for a PO; (3) 23b UI: grading modal, autosave (10 s, on close; CAS per member file),
+Vorige/Volgende; (4) 23b: regrouping copies the new group's data (decision 19), PO grades on
+cards/overviews checked, opdrachten genereren with category observaties; (5) before/after table
+of averages (STOP: user), gate, review, report.
+
+1. **Done**, core: `maatwerk_grades` `PoGrading`/`PoLine` (`ScoreRecord.po`, tolerant),
+   `calc_results_with(exam, scores, over, po)`, `exam_results` passes `rec.po[examId]`,
+   `HistoryEntry.po`, `Results.rubricGrade` (PO only), `rubric::{line_valid, lines_sum,
+with_lines}`; wasm `calcResults` takes an optional 4th arg, new `poLineValid`, `poLinesSum`,
+   `poWithLines`. Core guard `PO_GRADING_MIN_APP_VERSION` 0.14.0 (score file with non-empty `po`;
+   mock too). `validate-data` checks `po`. UI: types `PoGrading`/`PoLine`, `recordFor` carries
+   `po`, history/best attempt/profile pass it. Docs `data-files-v3.md` "PO grading". Version
+   0.14.0. Tests: 6 grade, 1 wasm, 2 core, 1 Vitest.
+2. and 3. **Done** (one commit; they share `loadPoContext`): `domain/po-grading.ts` (group
+   grading in a record: read, write keeping own lines, clear, status, `groupSource` with a
+   fallback for unstamped scores, line parse/format); dialog option `headerActionsHtml`;
+   `modals/po-scores.ts` (table, sticky `thead` + group headings, unplaced last, header ?,
+   Projectgroepen, PO bewerken, refresh on focus back / sync); `modals/po-beoordelen.ts`
+   (levels highlighted, slider + Wissen, category obs + comment, overall comment, group and own
+   lines with validation, general obs, live grades, Vorige/Volgende, autosave 10 s + on close,
+   every member file checked fresh before any write: a conflict writes nothing and offers a
+   reload); ⋮ Scores invoeren enabled for a PO; `styles/po-scores.css`, `po-grade.css`.
+   Store exports `updateStudentScores`. Fix (step 22 bug, found by the e2e): Projectgroepen
+   counted a group stored in another order than by achternaam as a change (Escape asked).
+   `e2e/po-grading.spec.ts` (5), seed option `grading`; visual views `modal-po-scores`,
+   `modal-po-grade` (local images written, not yet seen by the user).
+3. **Done:** regrouping (decision 19, `po-groepen.ts` `takeNewGroupGrading`): a moved student
+   takes the grading of a member who stayed in the new group (else the group fields are
+   cleared), own lines kept; opdrachten genereren for a PO (`opdrachten.ts` `examObsIds`: the
+   rubric's general + category observaties; a student's general + category ones), ⋮ item
+   enabled when there are any; rapport.ts passes `po` (PO rapport is step 24). Cards, overviews,
+   profile already go through `examResults`/averages (with `po` since sub-task 1). Manual checks
+   M-POB-1..6. e2e 7 in `po-grading.spec.ts`.
+
+4. **Done:** gate green: fmt, clippy, cargo test, lint, typecheck, 537 Vitest, 125 node, 293
+   Chromium e2e, local visual 141 (6 new PO images written, not yet seen by the user; the other
+   135 unchanged), licences, cargo deny, `npm audit --omit=dev` 0, SPDX. WebKit (po-grading, po,
+   shell, dialog): all pass except the 3 drag-and-drop tests, which fail on local Windows WebKit
+   also on `main` (backlog; CI runs WebKit on Linux/macOS). Review `docs/reviews/step-23.md`
+   (0/2/9/4), triage at its end: M1, M2, m2, m3, m5-m8, n2 fixed; m1, m4, m9 in part; rest in
+   `docs/backlog.md` "From Step 23". New files `po-grade-view.ts`, `po-regroup.ts`.
+
+**Choices made without asking (for the report):** status Beoordeeld = every normal category
+scored (bonus/diagnostic may stay empty); an unscored category shows "—" until its slider is
+used, "Wissen" empties it; lines without a valid value stay in the dialog only (marked red);
+general observaties offered = the rubric's + the PO's own; a member graded in another group is
+tagged "andere groep" in the table; the first grading raises `minAppVersion` to 0.14.0; the
+`?` in the table header opens a short explanation.
+
+**Before/after (STOP, for the user):** the synthetic v3 fixture plus a PO (weging 2, PTA, Valtoren
+1001 + 1002, 15/17 = 8,8; group line −0,5, own line +0,3 for 1002), CLI `stats` (script
+`po-before-after.mjs` in the session scratchpad): PO mean 8,8 -> 8,5 (sd 0,0 -> 0,2); 1001 year
+8,4 -> 8,0, SE 8,8 -> 8,3; 1002 year 6,9 -> 6,8, SE 8,8 -> 8,6; the test unchanged. No change on
+the fixtures without a PO, nor on data without `po` entries (no app wrote them before 0.14).
+
+## Step 22 and the merge (history)
 
 **User (2026-11-10):** M2 option b (a student who leaves every projectgroep loses the PO's
 scores, after a confirm) and a wiskunde PO gets A/B/C/D from jaarlaag 4: both done. Local exe
@@ -25,7 +107,7 @@ approved and done on `fix/topbar`: when the tabs still overflow without the word
 name, and a `title` tooltip); the active tab keeps its name. `e2e/topbar.spec.ts` (4). Chromium
 e2e 278, WebKit topbar+shell 19, 520 Vitest, local visual unchanged.
 
-**Next action:** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
+**Was the next action (done 2026-11-11):** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
 and merging"), CI baselines of changed views from CI's own run, tags. Started 2026-11-10 17:32:
 rerun of step 20's failed PR job (run `42796057189`); `step/21-rubrics` pushed (run
 `42866062460`, expected to fail visual on the changed views: take their baselines from it).

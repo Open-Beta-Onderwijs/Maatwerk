@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { bestAttempt, resolveBestAttempts } from './attempts';
-import { examResults } from './grades';
+import { calcResults, examResults, poLineValid, poLinesSum, poWithLines } from './grades';
 import {
   classesByStudent,
   compareStudents,
@@ -26,8 +26,9 @@ import {
   type Projectgroep,
 } from './po';
 import { newRubric, type Rubric } from './rubric';
-import { yearAverage } from './statistics';
-import type { Exam } from './types';
+import { seAverage, yearAverage } from './statistics';
+import { assignOpdrachten, examObsIds } from './opdrachten';
+import type { Exam, Observatie, Opdracht, ScoreRecord, Student } from './types';
 
 const rubric = (fields: Partial<Rubric>): Rubric => newRubric('nat', fields);
 
@@ -251,5 +252,71 @@ describe('a PO is graded with its rubric (step 22, decision 16)', () => {
     // Without categories none of its scores are read: no results at all.
     expect(examResults(rec, po)).toBeNull();
     expect(yearAverage([po], rec)).toBeNull();
+  });
+
+  it('opdrachten follow the general and category observaties of a PO (step 23)', () => {
+    const withObs = {
+      ...r,
+      obs_ids: ['g1'],
+      categories: r.categories.map((c, i) => (i === 0 ? { ...c, obs_ids: ['c1o', 'g1'] } : c)),
+    };
+    setRubricLookup((id) => (id === 'rx' ? withObs : undefined));
+    expect(examObsIds(po)).toEqual(['g1', 'c1o']);
+    const recs: Record<string, ScoreRecord> = {
+      '1': { scores: { p: { c1: 6 } }, po: { p: { categoryObs: { c1: ['c1o'] } } } },
+      '2': { scores: { p: { c1: 6 } }, observations: { p: ['g1'] } },
+    };
+    const out = assignOpdrachten({
+      exam: po,
+      students: [{ id: '1' }, { id: '2' }] as Student[],
+      recordOf: (id) => recs[String(id)],
+      observaties: [
+        { id: 'g1', naam: 'Algemeen', icon: 'a' },
+        { id: 'c1o', naam: 'Categorie', icon: 'c' },
+      ] as Observatie[],
+      opdrachten: [{ id: 'op1' }, { id: 'op2' }] as Opdracht[],
+      groups: [],
+      coupling: { g1: ['op2'], c1o: ['op1'] },
+    });
+    expect(out.obsStudents).toEqual({ g1: ['2'], c1o: ['1'] });
+    expect(out.students.map((s) => [s.student.id, s.items.map((i) => i.opdracht.id)])).toEqual([
+      ['1', ['op1']],
+      ['2', ['op2']],
+    ]);
+  });
+
+  it('bonus/malus lines count everywhere (step 23, decision 28)', () => {
+    setRubricLookup((id) => (id === 'rx' ? r : undefined));
+    const withLines = {
+      ...rec,
+      po: {
+        p: {
+          projectgroep: 'g1',
+          groupLines: [{ label: 'Te laat', value: -0.5 }],
+          ownLines: [{ label: 'Extra', value: 0.2 }],
+        },
+      },
+    };
+    const res = examResults(withLines, po)!;
+    expect([res.rubricGrade, res.grade]).toEqual([7, 6.7]);
+    expect(calcResults(po, rec.scores.p, null, withLines.po.p).grade).toBe(6.7);
+    expect(yearAverage([po], withLines)).toBe(6.7);
+    expect(bestAttempt(withLines, [po])?.grade).toBe(6.7);
+    const pta: Exam = { ...po, type: 'pta', academic_year: '2026-2027' };
+    const history = [{ exam: pta, questionScores: rec.scores.p, po: withLines.po.p }];
+    expect(seAverage(history, [pta])).toBe(6.7);
+    expect([poLineValid(0.5), poLineValid(0.25), poLineValid('x'), poLineValid(0)]).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
+    expect(
+      poLinesSum([
+        { label: '', value: 0.1 },
+        { label: '', value: 0.2 },
+      ]),
+    ).toBe(0.3);
+    expect(poWithLines(9.8, 0.5)).toBe(10);
   });
 });

@@ -21,9 +21,11 @@ pub mod trend;
 
 pub use attempts::{BestEntry, HistoryEntry, best_attempt, resolve_best_attempts};
 pub use averages::{mean_of_averages, se_average, stats_of_averages, year_average};
-pub use grade::{Results, RttiPct, calc_grade, calc_results, exam_results};
+pub use grade::{Results, RttiPct, calc_grade, calc_results, calc_results_with, exam_results};
 pub use groups::student_group;
-pub use model::{Exam, Group, Override, Question, QuestionKind, ScoreRecord, ScoreValue};
+pub use model::{
+    Exam, Group, Override, PoGrading, PoLine, Question, QuestionKind, ScoreRecord, ScoreValue,
+};
 pub use round::{clean, is_fail, round0, round1};
 pub use stats::{BoxStats, Stats, box_stats, grade_group, histogram, stats};
 pub use trend::{Trend, TrendLevel, trend};

@@ -233,6 +233,7 @@ mod tests {
             exam,
             question_scores: Default::default(),
             r#override: serde_json::from_value(json!({"cijfer": grade})).unwrap(),
+            po: None,
         }
     }
 

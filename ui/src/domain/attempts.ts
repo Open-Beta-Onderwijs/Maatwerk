@@ -6,13 +6,15 @@
 import { coreCall } from './core';
 import { recordFor } from './grades';
 import { forGrading, isPo, rubricOf } from './po';
-import type { Exam, Override, QuestionScores, ScoreRecord } from './types';
+import type { Exam, Override, PoGrading, QuestionScores, ScoreRecord } from './types';
 
 /** One attempt in a student's history (getStudentHistory). */
 export interface HistoryEntry {
   exam: Exam & { academic_year?: string };
   questionScores: QuestionScores;
   override?: Override;
+  /** A PO's `po[examId]`: its bonus/malus lines count (decision 28). */
+  po?: PoGrading;
 }
 
 /** The best attempt of one student for a parent exam and its resits. */
@@ -21,6 +23,7 @@ export interface BestEntry {
   exam: Exam;
   questionScores: QuestionScores;
   override?: Override;
+  po?: PoGrading;
   grade: number;
 }
 
@@ -55,7 +58,13 @@ export function bestAttempt(
     const v = rec?.scores?.[exam.id]?.[id];
     if (v !== undefined) questionScores[id] = v;
   }
-  return { ...best, exam, questionScores, override: rec?.overrides?.[exam.id] };
+  return {
+    ...best,
+    exam,
+    questionScores,
+    override: rec?.overrides?.[exam.id],
+    po: rec?.po?.[exam.id],
+  };
 }
 
 /** History order: school year, then volgnummer. */

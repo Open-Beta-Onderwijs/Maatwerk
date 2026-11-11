@@ -6,7 +6,7 @@
 // (class filter; click adds to the active group, or drag), right the groups. Empty groups are
 // dropped on save; a student who changes group takes the new group's scores (decision 19).
 
-import { closeModal, guardModalClose, openModal, toast } from '../app.js';
+import { closeModal, guardModalClose, openModal, persistentError, toast } from '../app.js';
 import { confirmDialog, esc, openDialog } from '../components/dialog';
 import {
   classesByStudent,
@@ -26,6 +26,7 @@ import {
   type Projectgroep,
 } from '../domain/po';
 import { attemptCode } from '../domain/exam-info';
+import { poHasGrading, takeNewGroupGrading } from './po-regroup';
 import { testBadgeClass } from '../domain/test-type';
 import type { Exam, Student } from '../domain/types';
 import { renderToetsen } from '../screens/toetsen';
@@ -83,6 +84,9 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
     active: null,
     filter: null,
   };
+  // Shown by achternaam: sorted before the close guard's snapshot, so a file in another order
+  // is not a change (step 23).
+  for (const g of state.groups) g.student_ids = g.student_ids.map(String).sort(order);
   if (!state.groups.length) state.groups.push({ id: newGroupId(), student_ids: [] });
   state.active = state.groups[0]!.id;
 
@@ -372,7 +376,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         const groups = groupsToSave(state.groups);
         if (mode === 'edit') {
           const moved = movedStudents(before, groups);
-          if (moved.length && (await poHasScores(po, year))) {
+          if (moved.length && (await poHasGrading(po, year))) {
             const ok = await confirmDialog(
               `${moved.length === 1 ? 'Eén leerling wisselt' : `${moved.length} leerlingen wisselen`} van projectgroep. ${moved.length === 1 ? 'Die krijgt' : 'Zij krijgen'} de scores, observaties en opmerkingen van de nieuwe groep; eigen bonus/malus blijft.`,
               { title: 'Andere projectgroep', okLabel: 'Opslaan' },
@@ -402,6 +406,16 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         const saved: Exam = { ...po, projectgroepen: groups };
         await Store.upsertExam(saved, year);
         for (const s of leaving) await Store.removeStudentExamData(s, po.id, year);
+        if (mode === 'edit') {
+          try {
+            await takeNewGroupGrading(saved, year, movedStudents(before, groups));
+          } catch (err) {
+            // The groups are saved; tell which part did not follow (review 23 m6).
+            persistentError(
+              `De projectgroepen zijn opgeslagen, maar de beoordeling van een verplaatste leerling niet: ${(err as Error)?.message ?? err}. Open Projectgroepen en sla opnieuw op.`,
+            );
+          }
+        }
         closeModal();
         toast(mode === 'resit' ? 'Herkansing toegevoegd.' : 'PO opgeslagen.', 'success');
         void renderToetsen();
@@ -410,11 +424,6 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
       render();
     },
   });
-}
-
-/** Whether a student has a score for this PO. */
-async function poHasScores(po: Exam, year: string): Promise<boolean> {
-  return Store.examHasScores(po.id, year) as Promise<boolean>;
 }
 
 /** "Willekeurig indelen…": the group size, then `apply(size)`. */
