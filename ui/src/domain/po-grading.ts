@@ -37,13 +37,31 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 const strings = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 
+/** A stored line value as the grade rules read it: a number or a numeric string (review 23 M2). */
+function lineNumber(v: unknown): number | null {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v.trim());
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
 /** Lines as stored, damaged entries left out. */
 export function linesOf(v: unknown): PoLine[] {
   if (!Array.isArray(v)) return [];
   return v.filter(isObject).map((l) => ({
     label: typeof l.label === 'string' ? l.label : '',
-    value: typeof l.value === 'number' && Number.isFinite(l.value) ? l.value : null,
+    value: lineNumber(l.value),
   }));
+}
+
+/**
+ * A line value for editing, exactly as stored ("+0,3", "−0,25", "+1"): never rounded, so a value
+ * that does not count is shown as it is and marked, not silently made valid (review 23 M2).
+ */
+export function lineText(v: number): string {
+  return `${v > 0 ? '+' : v < 0 ? '−' : ''}${String(Math.abs(v)).replace('.', ',')}`;
 }
 
 /** The group grading a record holds for `examId` (empty parts for anything missing). */
@@ -139,7 +157,14 @@ export function writeGrading(
   if (Object.keys(comments).length) entry.categoryComments = comments;
   if (g.comment.trim()) entry.comment = g.comment;
   entry.groupLines = g.groupLines.map((l) => ({ label: l.label, value: l.value }));
-  entry.ownLines = own.map((l) => ({ label: l.label, value: l.value }));
+  // Own lines not given: kept exactly as stored, also values the UI would read differently
+  // (review 23 M2).
+  const rawOwn: unknown = rec.po?.[examId]?.ownLines;
+  entry.ownLines = ownLines
+    ? ownLines.map((l) => ({ label: l.label, value: l.value }))
+    : Array.isArray(rawOwn)
+      ? (structuredClone(rawOwn) as PoLine[])
+      : [];
   (rec.po ??= {})[examId] = entry;
 }
 

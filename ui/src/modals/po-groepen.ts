@@ -6,7 +6,7 @@
 // (class filter; click adds to the active group, or drag), right the groups. Empty groups are
 // dropped on save; a student who changes group takes the new group's scores (decision 19).
 
-import { closeModal, guardModalClose, openModal, toast } from '../app.js';
+import { closeModal, guardModalClose, openModal, persistentError, toast } from '../app.js';
 import { confirmDialog, esc, openDialog } from '../components/dialog';
 import {
   classesByStudent,
@@ -26,9 +26,9 @@ import {
   type Projectgroep,
 } from '../domain/po';
 import { attemptCode } from '../domain/exam-info';
-import { clearGrading, gradingOf, groupSource, writeGrading } from '../domain/po-grading';
+import { poHasGrading, takeNewGroupGrading } from './po-regroup';
 import { testBadgeClass } from '../domain/test-type';
-import type { Exam, ScoreRecord, Student } from '../domain/types';
+import type { Exam, Student } from '../domain/types';
 import { renderToetsen } from '../screens/toetsen';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
@@ -376,7 +376,7 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         const groups = groupsToSave(state.groups);
         if (mode === 'edit') {
           const moved = movedStudents(before, groups);
-          if (moved.length && (await poHasScores(po, year))) {
+          if (moved.length && (await poHasGrading(po, year))) {
             const ok = await confirmDialog(
               `${moved.length === 1 ? 'Eén leerling wisselt' : `${moved.length} leerlingen wisselen`} van projectgroep. ${moved.length === 1 ? 'Die krijgt' : 'Zij krijgen'} de scores, observaties en opmerkingen van de nieuwe groep; eigen bonus/malus blijft.`,
               { title: 'Andere projectgroep', okLabel: 'Opslaan' },
@@ -406,7 +406,16 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
         const saved: Exam = { ...po, projectgroepen: groups };
         await Store.upsertExam(saved, year);
         for (const s of leaving) await Store.removeStudentExamData(s, po.id, year);
-        if (mode === 'edit') await takeNewGroupGrading(saved, year, movedStudents(before, groups));
+        if (mode === 'edit') {
+          try {
+            await takeNewGroupGrading(saved, year, movedStudents(before, groups));
+          } catch (err) {
+            // The groups are saved; tell which part did not follow (review 23 m6).
+            persistentError(
+              `De projectgroepen zijn opgeslagen, maar de beoordeling van een verplaatste leerling niet: ${(err as Error)?.message ?? err}. Open Projectgroepen en sla opnieuw op.`,
+            );
+          }
+        }
         closeModal();
         toast(mode === 'resit' ? 'Herkansing toegevoegd.' : 'PO opgeslagen.', 'success');
         void renderToetsen();
@@ -415,34 +424,6 @@ export function showProjectgroepen(po: PoDraft, opts: GroupsOptions): void {
       render();
     },
   });
-}
-
-/**
- * Decision 19: a student who changed projectgroep takes the new group's grading (scores,
- * observaties, comments, group lines), read from a member who stayed; own lines stay. A new group
- * without a grading clears the student's group fields.
- */
-async function takeNewGroupGrading(po: Exam, year: string, moved: string[]): Promise<void> {
-  const movedSet = new Set(moved);
-  const subject = po.subject ?? Store.getActiveSubject();
-  for (const s of moved) {
-    const g = (po.projectgroepen ?? []).find((x) => x.student_ids.map(String).includes(s));
-    if (!g) continue;
-    const stayed = g.student_ids.map(String).filter((m) => !movedSet.has(m));
-    const records: ScoreRecord[] = [];
-    for (const m of stayed) records.push(await Store.getStudentScores(m, year, subject));
-    const source = groupSource(records, po.id, g.id);
-    if (!source && !(await Store.studentHasExamData(s, po.id, year, subject))) continue;
-    await Store.updateStudentScores(s, year, subject, (r: ScoreRecord) => {
-      if (source) writeGrading(r, po.id, g.id, gradingOf(source, po.id));
-      else clearGrading(r, po.id, g.id);
-    });
-  }
-}
-
-/** Whether a student has a score for this PO. */
-async function poHasScores(po: Exam, year: string): Promise<boolean> {
-  return Store.examHasScores(po.id, year) as Promise<boolean>;
 }
 
 /** "Willekeurig indelen…": the group size, then `apply(size)`. */

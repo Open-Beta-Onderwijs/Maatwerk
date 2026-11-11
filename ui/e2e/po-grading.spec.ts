@@ -310,6 +310,80 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('stored lines survive an edit elsewhere; 0 on an empty slider; Escape saves', async ({
+    page,
+  }) => {
+    // Review 23 M2 and m2: an own line that does not count (0,25) and one stored as text stay
+    // as they are when only the comment changes.
+    const files = await poSeed(page, { grading: true });
+    const rel = (id: string) => `${YEAR}/scores/nat/${id}.json`;
+    const odd = [
+      { label: 'Raar', value: 0.25 },
+      { label: 'Tekst', value: '0.2' },
+    ];
+    (files[rel('900001')] as Rec).po![PO_ID]!.ownLines = odd as never;
+    await seedFiles(page, files);
+    await login(page);
+    await openTable(page);
+    // The text line counts in the grade (8,8 − 0,5 + 0,2 = 8,5), as the grade rules read it.
+    await expect(row(page, '900001').locator('.po-sc-adj')).toHaveText(['−0,5', '+0,2']);
+    await expect(row(page, '900001').locator('.po-sc-grade')).toHaveText('8,5');
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    // Uitvoering is empty: a click on its slider at 0 scores 0.
+    const uitvoering = d.locator('.po-gr-cat[data-cat="cat-uitvoering"]');
+    const box = (await uitvoering.locator('input[type=range]').boundingBox())!;
+    await page.mouse.click(box.x + 3, box.y + box.height / 2);
+    await expect(uitvoering.locator('.po-gr-v')).toHaveText('0');
+    await page.keyboard.press('Escape');
+    await expect(d).toHaveCount(0);
+    await expect(row(page, '900002').locator('.po-sc-cell').nth(1)).toHaveText('0');
+    expect((await record(page, '900002')).scores?.[PO_ID]?.['cat-uitvoering']).toBe(0);
+
+    await page.locator('[data-grade-group="pg-1"]').click();
+    const values = d.locator('[data-line="own"][data-member="900001"] .po-gr-line-value');
+    await expect(values.nth(0)).toHaveValue('+0,25');
+    await expect(values.nth(1)).toHaveValue('+0,2');
+    await expect(values.nth(0)).toHaveAttribute('aria-invalid', 'true');
+    await d.locator('#po-gr-overall').fill('Alleen het commentaar.');
+    await d.locator('#po-gr-done').click();
+    await expect(d).toHaveCount(0);
+    const rec = await record(page, '900001');
+    expect(rec.po?.[PO_ID]?.comment).toBe('Alleen het commentaar.');
+    expect(rec.po?.[PO_ID]?.ownLines).toEqual(odd);
+  });
+
+  test('a colleague who changes the group while grading stops the saving (review 23 M1)', async ({
+    page,
+  }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-1"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('#po-gr-overall').fill('Mijn versie.');
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    const exam = await readMockJson<{ projectgroepen: { id: string; student_ids: string[] }[] }>(
+      page,
+      examRel,
+    );
+    exam.projectgroepen[0]!.student_ids = ['900001'];
+    exam.projectgroepen[1]!.student_ids.push('900101');
+    await withMock(page, (m, [p, data]) => m.externalWrite(p as string, data as never), [
+      examRel,
+      exam,
+    ]);
+    const notice = page.locator('#reload-notice');
+    await expect(notice).toContainText(
+      'De leerlingen van deze projectgroep zijn intussen gewijzigd',
+    );
+    await notice.locator('[data-action="ok"]').click();
+    await expect(page.locator('.dlg--po-grade .dlg-subtitle')).not.toContainText('Noor Bakker');
+    // Nothing of "Mijn versie." was written.
+    for (const id of ['900001', '900101'])
+      expect((await record(page, id)).po?.[PO_ID]?.comment).toBe('Goed onderzoek.');
+  });
+
   test('a colleague who changed a member file meanwhile is a conflict, not overwritten', async ({
     page,
   }) => {

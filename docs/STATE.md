@@ -11,8 +11,10 @@ merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (
 remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
 `81e9c63`. Merged local branches deleted.
 
-**Next action:** step 23 sub-task 5: gate, fresh-context review (`docs/reviews/step-23.md`),
-fixes, then stop and report (before/after table and visual diff for the user).
+**Next action (waiting for the user):** OK on the before/after table (STOP) and on the visual
+diff of `modal-po-scores` and `modal-po-grade`; then push for CI (CI baselines of the two new
+views from CI's own run), merge, tags `step-23`/`v0.14.0`. Manual test M-POB-1..6 on real data
+with a local exe 0.14.0.
 
 ## Step 23 progress (PO c: PO beoordelen, 0.14)
 
@@ -58,6 +60,21 @@ with_lines}`; wasm `calcResults` takes an optional 4th arg, new `poLineValid`, `
    enabled when there are any; rapport.ts passes `po` (PO rapport is step 24). Cards, overviews,
    profile already go through `examResults`/averages (with `po` since sub-task 1). Manual checks
    M-POB-1..6. e2e 7 in `po-grading.spec.ts`.
+
+4. **Done:** gate green: fmt, clippy, cargo test, lint, typecheck, 537 Vitest, 125 node, 293
+   Chromium e2e, local visual 141 (6 new PO images written, not yet seen by the user; the other
+   135 unchanged), licences, cargo deny, `npm audit --omit=dev` 0, SPDX. WebKit (po-grading, po,
+   shell, dialog): all pass except the 3 drag-and-drop tests, which fail on local Windows WebKit
+   also on `main` (backlog; CI runs WebKit on Linux/macOS). Review `docs/reviews/step-23.md`
+   (0/2/9/4), triage at its end: M1, M2, m2, m3, m5-m8, n2 fixed; m1, m4, m9 in part; rest in
+   `docs/backlog.md` "From Step 23". New files `po-grade-view.ts`, `po-regroup.ts`.
+
+**Choices made without asking (for the report):** status Beoordeeld = every normal category
+scored (bonus/diagnostic may stay empty); an unscored category shows "—" until its slider is
+used, "Wissen" empties it; lines without a valid value stay in the dialog only (marked red);
+general observaties offered = the rubric's + the PO's own; a member graded in another group is
+tagged "andere groep" in the table; the first grading raises `minAppVersion` to 0.14.0; the
+`?` in the table header opens a short explanation.
 
 **Before/after (STOP, for the user):** the synthetic v3 fixture plus a PO (weging 2, PTA, Valtoren
 1001 + 1002, 15/17 = 8,8; group line −0,5, own line +0,3 for 1002), CLI `stats` (script

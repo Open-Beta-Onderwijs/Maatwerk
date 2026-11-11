@@ -79,7 +79,6 @@ export interface Override {
 /** A student number; a string in format v2 (ADR-0003 C8). */
 export type StudentId = string;
 
-/** One student's score file for one subject and year. */
 /** A bonus/malus line of a PO, in grade points (decisions 17, 28). */
 export interface PoLine {
   label: string;
@@ -102,6 +101,7 @@ export interface PoGrading {
   ownLines?: PoLine[];
 }
 
+/** One student's score file for one subject and year. */
 export interface ScoreRecord {
   student_id?: StudentId;
   scores?: Record<string, QuestionScores>;

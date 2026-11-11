@@ -10,6 +10,8 @@ import {
   gradingStatus,
   groupSource,
   isEmptyGrading,
+  lineText,
+  linesOf,
   ownLinesOf,
   parseLineValue,
   signedPoints,
@@ -97,6 +99,13 @@ describe('PO grading in a score file (step 23, decision 19)', () => {
     expect(gradingStatus(rubric, { ...emptyGrading(), scores: { a: 0 } })).toBe('busy');
     expect(gradingStatus(rubric, { ...emptyGrading(), scores: { a: 0, b: 4 } })).toBe('done');
     expect(gradingStatus(null, emptyGrading())).toBe('none');
+  });
+
+  it('reads lines as the grade rules do and edits them unrounded (review 23 M2)', () => {
+    const lines = linesOf([{ label: 'a', value: '0.3' }, { value: 0.25 }, { value: ' ' }]);
+    expect(lines.map((l) => l.value)).toEqual([0.3, 0.25, null]);
+    expect([lineText(0.3), lineText(-0.25), lineText(1)]).toEqual(['+0,3', '−0,25', '+1']);
+    expect(lineText(-0.25)).not.toBe(signedPoints(-0.25));
   });
 
   it('formats and parses lines in grade points', () => {

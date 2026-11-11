@@ -28,6 +28,7 @@ import {
   type PoClass,
 } from '../domain/po';
 import {
+  gradedGroupOf,
   gradingOf,
   gradingStatus,
   groupSource,
@@ -133,9 +134,12 @@ function studentRow(ctx: PoContext, id: string, groupId: string | null): string 
   const own = poLinesSum(ownLines);
   const grade = res?.grade ?? null;
   const fill = gradeCellColor(grade);
+  // Graded in another projectgroep (moved by hand or by an older app): marked (review 23 m7).
+  const from = groupId ? gradedGroupOf(rec, ctx.exam.id) : null;
+  const stale = from !== null && from !== groupId;
   return `<tr class="po-sc-row"${groupId ? ` data-group="${esc(groupId)}" title="Dubbelklik om de projectgroep te beoordelen"` : ''} data-student="${esc(id)}">
     <td class="po-sc-nr">${esc(id)}</td>
-    <td class="po-sc-name">${esc(ctx.name(id))}</td>
+    <td class="po-sc-name">${esc(ctx.name(id))}${stale ? ' <span class="po-sc-stale" title="Beoordeeld in een andere projectgroep. Beoordelen en opslaan neemt de beoordeling van deze groep over.">andere groep</span>' : ''}</td>
     <td class="po-sc-cls">${esc(ctx.classTag(id))}</td>
     ${cells}
     <td class="po-sc-pts">${res && Object.keys(g.scores).length ? `${res.scored} / ${res.normalMax}` : '—'}</td>
