@@ -15,6 +15,7 @@ pub mod model;
 pub mod rapport;
 pub mod round;
 pub mod rtti;
+pub mod rubric;
 pub mod stats;
 pub mod trend;
 

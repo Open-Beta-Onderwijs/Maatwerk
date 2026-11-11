@@ -1,0 +1,247 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Praktische opdrachten (step 22, design spec 4.13, board 17): PO toevoegen / bewerken, and the
+   Projectgroepen dialog. The PO card is the test card (toetsen.css). */
+
+/* ── Gegevens: rubric note and preview ───────────────────────────────────── */
+.po-rubric-note {
+  grid-column: 2 / 4;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+}
+.po-rubric-note--none {
+  color: var(--warn);
+}
+.po-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: var(--fs-secondary);
+}
+.po-family-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+
+/* ── Projectgroepen: unplaced left, groups right ─────────────────────────── */
+.dlg--po-groups {
+  width: 1180px;
+}
+.dlg-body.po-groups-body {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  padding: 0;
+  overflow: hidden;
+}
+.po-free {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+.po-free-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 10px;
+}
+.po-free-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.po-free-title .muted {
+  font-size: var(--fs-secondary);
+}
+.po-free-hint {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+.po-free-hint b {
+  color: var(--accent-text);
+}
+.po-class-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.po-free-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 12px;
+}
+.po-free-empty {
+  padding: 8px;
+  font-size: var(--fs-secondary);
+}
+.po-stu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.po-stu:hover,
+.po-stu:focus-visible {
+  background: var(--accent-soft);
+}
+.po-stu:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.po-stu-name,
+.po-member-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.po-stu-add {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.po-tag {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.po-groups-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+.po-groups-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-groups-bar > .muted {
+  flex: 1;
+  font-size: var(--fs-secondary);
+}
+.po-group-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.po-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.po-group--active {
+  padding: 11px;
+  border: 2px solid var(--accent);
+}
+.po-drop-over {
+  background: var(--accent-soft);
+}
+.po-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-group-name {
+  flex: 1;
+  min-width: 0;
+  height: 30px;
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+}
+.po-group-delete {
+  flex: none;
+  width: 28px;
+  height: 28px;
+}
+.po-group-delete svg {
+  width: 14px;
+  height: 14px;
+}
+.po-group-count {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  white-space: nowrap;
+}
+.po-member {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-secondary);
+  cursor: grab;
+}
+.po-member-remove {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.po-member-remove:hover,
+.po-member-remove:focus-visible {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.po-group-empty {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-style: italic;
+}
+.dlg--po-groups .dlg-footer-spacer {
+  display: none;
+}
+.po-free-note {
+  flex: 1;
+  color: var(--ok);
+  font-size: var(--fs-secondary);
+}
+.po-free-note--open {
+  color: var(--warn);
+}
+
+/* A PO's title is not a link yet (no PO overview before steps 23/29). */
+.exam-card--po span.exam-title-link,
+.exam-attempt-card span.exam-attempt-label {
+  color: var(--text);
+  cursor: default;
+}

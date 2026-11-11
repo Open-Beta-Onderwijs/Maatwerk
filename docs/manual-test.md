@@ -117,6 +117,37 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 
 - [ ] **M-OBS-1** "+ Observatie toevoegen", edit, delete (with confirmation); filters by
       schoolsoort, vak, jaarlaag.
+- [ ] **M-OBS-2** (0.12) Toetstype: a new observatie is Toets; tick PO too, or only PO (never
+      none). The filter chip "Alle toetstypes / Toets / PO" filters; PO observaties show a badge.
+      Toets bewerken does not offer a PO-only observatie; an observatie a rubric uses keeps PO.
+
+## Rubrics (M-RUB, 0.12)
+
+- [ ] **M-RUB-1** As a teacher the tab Rubrics is between Toetsen and Observaties; the admin has no
+      such tab. Cards show the categories, "n categorieën · n punten · bonus n".
+- [ ] **M-RUB-2** "+ Rubric toevoegen": Opslaan stays grey until naam, schoolsoort, jaarlaag and
+      every category (naam, levels with uitleg) are right. Make two levels start at the same
+      number, and leave a score uncovered: the red line names both, the number row marks the gap.
+- [ ] **M-RUB-3** Save the first rubric on a copy of the data: `school.json` `minAppVersion` is
+      now 0.12.0, and Maatwerk 0.11 on that copy opens read-only.
+- [ ] **M-RUB-4** Dupliceren opens "Nieuwe rubric" with "(kopie)"; saving adds a second card.
+      Delete an unused rubric (confirm). A rubric in use (from 0.13, PO's) shows "In gebruik bij
+      n PO's" and cannot be deleted; its maxima and soort are locked in the editor.
+- [ ] **M-RUB-5** `maatwerk-cli rubric check <data>` lists every rubric with its use and errors.
+
+## Praktische opdrachten (M-PO, 0.13)
+
+- [ ] **M-PO-1** Toetsen > "+ PO toevoegen": the Rubric list shows only rubrics of the vak with a
+      chosen schoolsoort and the jaarlaag; the preview shows the categories and "Cijfer = 10 ×
+      punten ÷ n". Verder: the students of all matching classes (filter chips per class).
+- [ ] **M-PO-2** Put students of two classes in one projectgroep (click and drag), one alone,
+      "Willekeurig indelen…" the rest, leave one empty group: Opslaan. The card: striped badge,
+      "n projectgroepen", the rubric line; `school.json` `minAppVersion` is 0.13.0 and Maatwerk
+      0.12 on that copy opens read-only. The rubric shows "In gebruik bij 1 PO".
+- [ ] **M-PO-3** ⋮ > Projectgroepen: move, rename, remove; ⋮ > PO bewerken: change naam, periode,
+      rubric. Scores invoeren, Rapport and Opdrachten are grey with a reason.
+- [ ] **M-PO-4** ⋮ > Herkansing toevoegen: the groups are copied; take one student out; Opslaan:
+      a card with 2 pogingen, the original's groups unchanged.
 
 ## Opdrachten and the editor (M-OPD)
 

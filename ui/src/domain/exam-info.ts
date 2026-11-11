@@ -8,6 +8,7 @@
 import { clean, round0 } from './core';
 import { formatNTerm, formatNumber } from './format';
 import { qKind, type RttiCategory } from './grades';
+import { groupCountText, isPo } from './po';
 import type { Exam, Question } from './types';
 
 const RTTI: readonly RttiCategory[] = ['R', 'T1', 'T2', 'I'];
@@ -61,18 +62,23 @@ export function questionSummary(questions: readonly Question[]): string {
   return [`${n} ${n === 1 ? 'vraag' : 'vragen'}`, points, ...cats].join(' · ');
 }
 
-/** The meta line of a card; a diagnostic test says it does not count instead of its wegingen. */
+/**
+ * The meta line of a card; a diagnostic test says it does not count instead of its wegingen. A PO
+ * has no N-term and ends with its projectgroepen (spec 4.13).
+ */
 export function metaLine(e: Exam): string {
+  const po = isPo(e);
   const parts: string[] = [];
   if (e.schoolsoort?.length) parts.push(e.schoolsoort.join(' / '));
   if (e.periode) parts.push(`Periode ${e.periode}`);
   if (e.diagnostic) {
     parts.push('telt niet mee voor rapport of SE');
-    return parts.join(' · ');
+  } else {
+    if (!po) parts.push(`N-term ${formatNTerm(e.n_term ?? 1)}`);
+    parts.push(`Weging ${formatNumber(e.weging ?? 1)}`);
+    if (e.type === 'pta') parts.push(`Weging SE ${formatNumber(e.weging_se ?? e.weging ?? 1)}`);
   }
-  parts.push(`N-term ${formatNTerm(e.n_term ?? 1)}`);
-  parts.push(`Weging ${formatNumber(e.weging ?? 1)}`);
-  if (e.type === 'pta') parts.push(`Weging SE ${formatNumber(e.weging_se ?? e.weging ?? 1)}`);
+  if (po) parts.push(groupCountText(e.projectgroepen?.length ?? 0));
   return parts.join(' · ');
 }
 

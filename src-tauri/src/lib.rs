@@ -100,6 +100,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             opdrachten::delete_opdracht_folder,
             data::migrate_data_folder,
             data::validate_data_folder,
+            data::rubric_usage,
             data::stamp_issues,
             data::accept_stamp,
             auth::verify_pin,

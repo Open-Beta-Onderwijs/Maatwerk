@@ -5,6 +5,8 @@
 @import './styles/controls.css';
 @import './styles/dialog.css';
 @import './styles/toetsen.css';
+@import './styles/rubrics.css';
+@import './styles/po.css';
 @import './styles/skeleton.css';
 @import './styles/forms.css';
 @import './styles/render-warnings.css';
@@ -25,7 +27,9 @@ html {
 }
 
 body {
-  height: 100%;
+  /* min-height, not height: the sticky top bar sticks only within the body's box, and a fixed
+     height ended that box after one window of a long list (user 2026-11-10). */
+  min-height: 100%;
   font-family: var(--font-ui);
   font-size: var(--fs-body);
   color: var(--text);
@@ -87,6 +91,27 @@ body::after {
 :root[data-theme='dark'] .theme-light-only,
 :root:not([data-theme='dark']) .theme-dark-only {
   display: none;
+}
+/* Too narrow for the tabs: only the logo stays (shell/topbar-fit.ts, user 2026-11-10). */
+#topbar.topbar--narrow .brand-word {
+  display: none;
+}
+#topbar.topbar--narrow .app-brand {
+  margin-right: 8px;
+}
+/* Still too narrow: inactive tabs show only their icon. The name stays in the accessibility tree
+   (visually hidden, not display: none) and is the tooltip; the active tab keeps it visible. */
+#topbar.topbar--icons .nav-btn:not(.active) {
+  gap: 0;
+  padding: 0 12px;
+}
+#topbar.topbar--icons .nav-btn:not(.active) span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 #main-nav {
   display: flex;

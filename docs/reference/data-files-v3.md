@@ -13,6 +13,7 @@ data/
 ├── school.json                 + minAppVersion "0.9.0" (or higher)
 ├── afbeeldingen/               was fotos/: photos, school logo, watermark
 ├── aanwezigheid/<userId>.json  was users/: presence
+├── rubrics/<id>.json           from 0.12 (see "Rubrics" below)
 └── ...                         everything else as in v2
 ```
 
@@ -55,7 +56,91 @@ when it is absent or lower (decision 5), so later additive changes can use the r
   `opdrachtenCijfer`, and linking never rewrites a colleague's shared opdracht file.
 - A changed entity file gets `_meta.rev` + 1, `updatedBy: null`, `updatedAt` = migration time.
 
+## Rubrics and observatie toetstypes (0.12, step 21)
+
+An additive change within v3 (PLAN-2 decisions 16, 20, 21, 23); `schema_version` stays 3.
+
+```
+data/
+├── rubrics/<id>.json           new: one rubric, shared per vak like observaties
+└── observaties/<id>.json       + toetstypes
+```
+
+**`rubrics/<id>.json`** (CAS + `_meta` like every entity; new ids are opaque, as observaties):
+
+```
+{ id, naam, beschrijving?, subject, schoolsoort: [..], jaarlagen: ["4", ..], obs_ids: [obsId],
+  categories: [{ id, naam, max, soort: "normaal" | "bonus" | "diagnostisch", obs_ids: [obsId],
+                 niveaus: [{ min, max, titel?, uitleg }] }],
+  _meta }
+```
+
+- Rules (`maatwerk_grades::rubric`, one implementation for the UI, the core and the CLI): a
+  category has 2-5 niveaus; `max` and the bounds are whole points (`max` from 1 to 100, user 2026-11-10); a niveau
+  lies within `0..max`; niveaus may overlap but no two share a `min` or a `max`; together they
+  cover every score from 0 to `max`. `naam` (rubric, category) and `uitleg` are required, `titel`
+  is not. A rubric needs a vak, a schoolsoort, a jaarlaag and at least one `normaal` category.
+- PO grade (decision 16): 10 × points ÷ max, between 1,0 and 10,0, where points = normal + bonus
+  category scores and max = the sum of the normal maxima; diagnostic categories count in
+  neither. Whole points only, no N-term.
+- **In use** = an exam in any school year names it (`rubric_id`, written from step 22). Then the
+  categories (their ids), every `max` and every `soort` are locked, and the file cannot be
+  deleted (decision 20); names, niveaus and observaties stay editable.
+- `obs_ids` (rubric and category) name observaties of toetstype `po`.
+
+**Observatie `toetstypes`**: `["toets"]`, `["po"]` or both, never empty. Absent means
+`["toets"]`; the v2 -> v3 migration writes it, and the observatie form always does. Test screens
+list `toets` observaties, PO screens (rubric editor, PO grading) `po`; opdracht bewerken lists all.
+
+**Guards in the core** (`maatwerk_core::rubrics`, inside `Storage::write_json` and `delete`): a
+rubric write is refused (`invalid_argument`, Dutch message) when it breaks the rules, when its `id`
+is not its file name, or when it is in use and changes what is locked; deleting a rubric in use is
+refused. The first rubric, or the first observatie with `po` in `toetstypes`, raises `school.json`
+`minAppVersion` to **0.12.0** first, so an older app becomes read-only before it can list PO
+observaties in a test or overwrite what it does not know. Without a `school.json` (not synced
+yet) nothing is raised.
+
+## PO exams (0.13, step 22)
+
+Additive within v3 (PLAN-2 decisions 16-18, 22). A PO is an exam file with `kind: "po"`:
+
+```
+{ id, title, kind: "po", rubric_id, projectgroepen: [{ id, naam?, student_ids: [..] }],
+  subject, jaarlaag, schoolsoort, periode, weging, weging_se, type, diagnostic,
+  questions: [], obs_ids, parent_id?, attempt?, description?, _meta }
+```
+
+- No questions and no N-term (`n_term` is not written; a stray one is ignored). PTA and D work
+  as for a test. A herkansing (`parent_id`, `description: "HERKANSING"`) keeps the original's
+  `rubric_id` and starts with a copy of its projectgroepen (new ids, editable); there is no
+  inhaal for a PO.
+- `rubric_id` names a rubric of the same vak with a shared schoolsoort and the PO's jaarlaag
+  (the UI offers only those; it is not re-checked later). PO bewerken changes it only while no
+  student has a score for the PO (or a herkansing of it).
+- `projectgroepen`: a student is in at most one; students of different classes may be together
+  (the UI offers the students of the classes with the PO's vak, a shared schoolsoort and its
+  jaarlaag); a student alone is a group of one; `naam` is optional ("Projectgroep n" is shown).
+  Unplaced students get no grade. Empty groups are dropped on save. A student who leaves every
+  projectgroep loses everything their score file holds for the PO (`scores`, `overrides`,
+  `observations`, `po` under its id), after a confirm (user 2026-11-10, review 22 M2).
+- Wiskunde: `subcategory` as for a test (`onderbouw` up to jaarlaag 3; `wisa`..`wisd` required
+  from jaarlaag 4; user 2026-11-10).
+- Scores (graded from step 23): `scores[examId][categoryId]`, whole points `0..max`. The grade is
+  `maatwerk_grades` `calc_results` with the rubric **attached by the caller** (`exam.rubric`; an
+  exam file never holds it): decision 16, rounded to one decimal; no RTTI. A PO without its
+  rubric has no grade. The PO's grade counts in the year and SE averages like a test's.
+- Guard: the first exam with `kind: "po"` raises `school.json` `minAppVersion` to **0.13.0**
+  (`maatwerk_core::rubrics`), as for rubrics.
+
 ## `validate-data`
+
+Step 22 adds: a PO without `rubric_id` or with questions (warnings), `projectgroepen` shape
+(errors), a student in two projectgroepen (error), a member who is not a student of the year
+(missing), and `projectgroepen` on a test (warning).
+
+Step 21 adds: rubric files (the rules above, errors; id = file name), their observaties (missing:
+warning; not of toetstype PO: warning), `toetstypes` values (warning) and an exam's `rubric_id`
+that names no rubric (warning).
 
 Checks the above: `kind` value, `diagnostic` a bool and not with PTA (error), a diagnostic test
 with a `weging` above 0 (warning; `weging_se` may stay, it applies only with PTA), `obs_from_parent` without `parent_id` (warning), `opdrachtenVraag` shape,

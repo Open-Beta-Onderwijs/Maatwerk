@@ -13,6 +13,10 @@ export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
+  // One retry on CI only: a crashed browser on a busy runner (WebKit "Target crashed", run
+  // 42796057189) should not fail the run. A test that passes only on the retry is still
+  // reported as flaky, and a real failure fails twice.
+  retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: 'http://localhost:4173',

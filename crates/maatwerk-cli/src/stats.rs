@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use maatwerk_core::grades::attempts::families;
+use maatwerk_core::grades::rubric::Rubric;
 use maatwerk_core::grades::{
     Exam, HistoryEntry, ScoreRecord, Stats, Trend, best_attempt, exam_results, round1, se_average,
     stats, trend, year_average,
@@ -112,11 +113,25 @@ fn json_files(dir: &Path) -> Result<Vec<PathBuf>, String> {
     Ok(files)
 }
 
+/// The rubric `rubrics/<id>.json`, for grading a PO; `None` when missing or unreadable (the PO then
+/// has no grade; `validate-data` names it).
+fn read_rubric(data: &Path, id: &str) -> Option<Rubric> {
+    if id.is_empty() || id.contains(['/', '\\', '.']) {
+        return None;
+    }
+    serde_json::from_value(read_json(&data.join("rubrics").join(format!("{id}.json"))).ok()?).ok()
+}
+
 fn read_exams(data: &Path, year: &str, vak: &str) -> Result<Vec<Exam>, String> {
     let mut exams = Vec::new();
     for file in json_files(&data.join(year).join("exams"))? {
-        let mut exam: Exam = serde_json::from_value(read_json(&file)?)
+        let value = read_json(&file)?;
+        let mut exam: Exam = serde_json::from_value(value.clone())
             .map_err(|e| format!("{}: {e}", file.display()))?;
+        // A PO is graded with its rubric (step 22); an exam file never holds one itself.
+        exam.rubric = maatwerk_core::rubrics::exam_rubric_id(&value)
+            .filter(|_| exam.is_po())
+            .and_then(|id| read_rubric(data, id));
         if exam.subject.as_deref() == Some(vak) {
             exam.academic_year = Some(year.to_owned());
             exams.push(exam);

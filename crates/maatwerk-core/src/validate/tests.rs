@@ -464,3 +464,173 @@ fn step_19_values_the_grade_rules_read_past_are_warnings() {
     }
     assert_eq!(report.errors(), 0, "{:#?}", report.issues);
 }
+
+#[test]
+fn po_exams_and_their_projectgroepen_are_checked() {
+    // Step 22: rubric, no questions, projectgroepen of existing students, each placed once.
+    let (_tmp, data) = copy();
+    let write = |rel: &str, v: serde_json::Value| {
+        fs::write(data.join(rel), serde_json::to_string_pretty(&v).unwrap()).unwrap();
+    };
+    write(
+        "2025-2026/exams/po-1.json",
+        serde_json::json!({"id": "po-1", "kind": "po", "subject": "nat",
+        "questions": [{"id": "q1", "max_points": 1, "rtti": "R"}],
+        "projectgroepen": [
+            {"id": "g1", "naam": "Valtoren", "student_ids": ["1001", "9999"]},
+            {"id": "g1", "student_ids": ["1001", 1002]},
+            {"naam": "zonder id", "student_ids": []},
+            {"id": "g3", "student_ids": "1002"}
+        ]}),
+    );
+    write(
+        "2025-2026/exams/po-2.json",
+        serde_json::json!({"id": "po-2", "kind": "po", "subject": "nat",
+            "projectgroepen": {"g1": []}}),
+    );
+    write(
+        "2025-2026/exams/t-9.json",
+        serde_json::json!({"id": "t-9", "kind": "toets", "subject": "nat", "questions": [],
+            "projectgroepen": []}),
+    );
+    let report = validate(&data).unwrap();
+    let p1 = "2025-2026/exams/po-1.json";
+    for (kind, message) in [
+        (
+            IssueKind::Shape,
+            "PO zonder rubric: er wordt geen cijfer berekend",
+        ),
+        (
+            IssueKind::Shape,
+            "PO met vragen: die tellen niet mee, het cijfer komt uit de rubric",
+        ),
+        (
+            IssueKind::Reference,
+            "Projectgroep g1: leerling 9999 bestaat niet",
+        ),
+        (IssueKind::Shape, "Projectgroep g1 staat er twee keer in"),
+        (
+            IssueKind::Shape,
+            "Leerling 1001 zit in twee projectgroepen (g1 en g1)",
+        ),
+        (
+            IssueKind::Shape,
+            "Projectgroep g1: leerlingnummer 1002 is geen tekst",
+        ),
+        (
+            IssueKind::Shape,
+            "Projectgroep zonder id: {\"naam\":\"zonder id\",\"student_ids\":[]}",
+        ),
+        (
+            IssueKind::Shape,
+            "Projectgroep g3: student_ids is geen lijst",
+        ),
+    ] {
+        assert!(
+            has(&report, kind, p1, message),
+            "{message}: {:#?}",
+            report.issues
+        );
+    }
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "2025-2026/exams/po-2.json",
+        "projectgroepen is geen lijst"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "2025-2026/exams/t-9.json",
+        "Projectgroepen bij een toets: ze tellen niet mee"
+    ));
+}
+
+#[test]
+fn rubrics_toetstypes_and_rubric_references_are_checked() {
+    let (_tmp, data) = copy();
+    let write = |rel: &str, v: serde_json::Value| {
+        let path = data.join(rel);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, serde_json::to_string_pretty(&v).unwrap()).unwrap();
+    };
+    write(
+        "observaties/obs-po.json",
+        serde_json::json!({"id": "obs-po", "naam": "Bron", "toetstypes": ["po"]}),
+    );
+    write(
+        "observaties/obs-x.json",
+        serde_json::json!({"id": "obs-x", "naam": "X", "toetstypes": []}),
+    );
+    let levels = serde_json::json!([
+        {"min": 0, "max": 1, "uitleg": "a"}, {"min": 2, "max": 4, "uitleg": "b"}
+    ]);
+    write(
+        "rubrics/r1.json",
+        serde_json::json!({
+            "id": "r1", "naam": "Verslag", "subject": "nat", "schoolsoort": ["Havo"],
+            "jaarlagen": ["4"], "obs_ids": ["obs-po", "obs-1756713600100", "obs-weg"],
+            "categories": [{"id": "a", "naam": "Theorie", "max": 4, "soort": "normaal",
+                            "obs_ids": ["obs-po"], "niveaus": levels}]
+        }),
+    );
+    write(
+        "rubrics/r2.json",
+        serde_json::json!({
+            "id": "r2", "naam": "Kapot", "subject": "nat", "schoolsoort": ["Havo"],
+            "jaarlagen": ["4"],
+            "categories": [{"id": "a", "naam": "Theorie", "max": 5, "niveaus": levels}]
+        }),
+    );
+    write(
+        "2025-2026/exams/po-1.json",
+        serde_json::json!({"id": "po-1", "kind": "po", "subject": "nat", "rubric_id": "r9"}),
+    );
+    let report = validate(&data).unwrap();
+    let r1 = "rubrics/r1.json";
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        r1,
+        "Observatie obs-weg bestaat niet"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        r1,
+        "Observatie obs-1756713600100 is geen PO-observatie"
+    ));
+    assert!(
+        !issues_for(&report, r1)
+            .iter()
+            .any(|i| i.message.contains("obs-po")),
+        "{:#?}",
+        report.issues
+    );
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "rubrics/r2.json",
+        "Theorie: Niet gedekt: 5"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "observaties/obs-x.json",
+        "Toetstype [] onbekend"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        "2025-2026/exams/po-1.json",
+        "Rubric r9 bestaat niet"
+    ));
+    // A rubric file named after another id is misplaced.
+    write("rubrics/r3.json", serde_json::json!({"id": "r1"}));
+    let report = validate(&data).unwrap();
+    assert!(
+        issues_for(&report, "rubrics/r3.json")
+            .iter()
+            .any(|i| i.kind == IssueKind::Placement)
+    );
+}

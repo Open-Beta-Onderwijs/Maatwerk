@@ -8,7 +8,8 @@
 //!   `aanwezigheid/` from now on (X-07c, D20);
 //! - every exam gets `kind` and `diagnostic` (decision 14);
 //! - an inhaal or herkansing gets the original's observaties, locked (decision 13, F-12);
-//! - `school.json` gets `minAppVersion` 0.9.0 (decision 5).
+//! - `school.json` gets `minAppVersion` 0.9.0 (decision 5);
+//! - every observatie gets `toetstypes: ["toets"]` when absent (step 21, PLAN-2 decision 23).
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -256,6 +257,21 @@ impl Planner<'_> {
         }
     }
 
+    /// `observaties/<id>.json`: `toetstypes` `["toets"]` where absent (step 21, decision 23).
+    /// Readers treat a missing field the same way; this makes the files say it.
+    pub(super) fn observaties_v3(&mut self) {
+        for rel in self.children("observaties", ".json") {
+            self.update_entity(&rel, |obs| {
+                if !obs.contains_key(crate::rubrics::TOETSTYPES_FIELD) {
+                    obs.insert(
+                        crate::rubrics::TOETSTYPES_FIELD.into(),
+                        Value::Array(vec!["toets".into()]),
+                    );
+                }
+            });
+        }
+    }
+
     /// `observaties/<id>.json` id -> naam, for the notes.
     pub(super) fn observatie_names(&mut self) -> BTreeMap<String, String> {
         let mut out = BTreeMap::new();
@@ -318,6 +334,7 @@ pub(crate) fn build(
     p.images_v3(moves);
     p.presence_v3();
     p.gebruikers_v3(&kept);
+    p.observaties_v3();
     let obs_names = p.observatie_names();
     for year in p.years() {
         p.exams_v3(&year, &obs_names);

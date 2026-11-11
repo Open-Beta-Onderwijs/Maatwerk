@@ -176,6 +176,25 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             let (exams, rec): (Vec<Exam>, Option<ScoreRecord>) = parse(args)?;
             json(g::trend(&exams, &rec.unwrap_or_default()))
         }
+        "checkRubric" => {
+            let (rubric,): (g::rubric::Rubric,) = parse(args)?;
+            json(g::rubric::check_rubric(&rubric))
+        }
+        "rubricLockedChanges" => {
+            let (before, after): (g::rubric::Rubric, g::rubric::Rubric) = parse(args)?;
+            json(g::rubric::locked_changes(&before, &after))
+        }
+        "poGrade" => {
+            let (points, max): (f64, f64) = parse(args)?;
+            json(g::rubric::po_grade(points, max))
+        }
+        "poPoints" => {
+            let (rubric, scores): (
+                g::rubric::Rubric,
+                Option<std::collections::HashMap<String, f64>>,
+            ) = parse(args)?;
+            json(g::rubric::po_points(&rubric, &scores.unwrap_or_default()))
+        }
         other => Err(format!("unknown function {other}")),
     }
 }
@@ -273,6 +292,17 @@ mod tests {
             ("ranking", json!([5.0, [5.0]])),
             ("studentGroup", json!(["1", exam(), []])),
             ("trend", json!([[exam()], null])),
+            ("checkRubric", json!([{}])),
+            (
+                "checkRubric",
+                json!([{"categories": [{"max": "x", "niveaus": null}]}]),
+            ),
+            (
+                "rubricLockedChanges",
+                json!([{}, {"categories": [{"id": "a"}]}]),
+            ),
+            ("poGrade", json!([5, 10])),
+            ("poPoints", json!([{}, null])),
         ] {
             run(name, args);
         }

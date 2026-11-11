@@ -13,12 +13,15 @@
   "jaarlagen": [
     "3"
   ],
+  "toetstypes": [
+    "toets"
+  ],
   "_meta": {
-    "rev": 2,
+    "rev": 3,
     "createdBy": "admin",
     "createdAt": "2025-09-01T08:00:00.000Z",
-    "updatedBy": "admin",
-    "updatedAt": "2025-09-02T08:00:00.000Z",
-    "hash": "957638b0a1876ea5bd1abdffd86ace5bb3686a15b1ea3a64d000dded42323fd5"
+    "updatedBy": null,
+    "updatedAt": "2026-10-30T14:05:00.000Z",
+    "hash": "27f09c4a977ec47aa65f3adfcd04689420af20bcf3a4622d03905fe1576d628d"
   }
 }

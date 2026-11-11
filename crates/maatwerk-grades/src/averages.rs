@@ -110,6 +110,61 @@ mod tests {
         assert_eq!(round1(year_average(&approved_exams(), &rec).unwrap()), 7.3);
     }
 
+    /// A PO of 10 normal points (weging 2) with its rubric attached, as the callers do.
+    fn po(id: &str, extra: Value) -> Exam {
+        let mut v = json!({
+            "id": id, "kind": "po", "weging": 2, "questions": [],
+            "rubric": {"categories": [{"id": "c1", "max": 10, "soort": "normaal"}]},
+        });
+        v.as_object_mut()
+            .unwrap()
+            .extend(extra.as_object().unwrap().clone());
+        exam_of(v)
+    }
+
+    #[test]
+    fn a_po_grade_counts_in_the_year_average_with_its_weging() {
+        // Step 22 (decision 16): toets 6,0 (w1) and PO 8/10 -> 8,0 (w2): 22/3 = 7,33.
+        let exams = vec![exam("t1", json!({"weging": 1})), po("p", json!({}))];
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "overrides": {"t1": {"cijfer": 6}},
+            "scores": {"p": {"c1": 8}},
+        }))
+        .unwrap();
+        assert_eq!(round1(year_average(&exams, &rec).unwrap()), 7.3);
+    }
+
+    #[test]
+    fn a_po_resit_replaces_the_grade_when_better() {
+        // PO herkansing (decision 22): same rubric, best attempt counts with the original's weight.
+        let exams = vec![
+            exam("t1", json!({"weging": 1})),
+            po("p", json!({})),
+            po("p-h", json!({"parent_id": "p", "attempt": 2, "weging": 9})),
+        ];
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "overrides": {"t1": {"cijfer": 6}},
+            "scores": {"p": {"c1": 4}, "p-h": {"c1": 9}},
+        }))
+        .unwrap();
+        // 6,0 (w1) and 9,0 (w2): 24/3 = 8,0.
+        assert_eq!(round1(year_average(&exams, &rec).unwrap()), 8.0);
+    }
+
+    #[test]
+    fn a_po_without_its_rubric_has_no_grade_and_falls_out() {
+        let exams = vec![
+            exam("t1", json!({"weging": 1})),
+            po("p", json!({"rubric": null})),
+        ];
+        let rec: ScoreRecord = serde_json::from_value(json!({
+            "overrides": {"t1": {"cijfer": 6}},
+            "scores": {"p": {"c1": 8}},
+        }))
+        .unwrap();
+        assert_eq!(round1(year_average(&exams, &rec).unwrap()), 6.0);
+    }
+
     #[test]
     fn a_better_resit_replaces_the_grade_with_the_originals_weight() {
         let mut exams = approved_exams();

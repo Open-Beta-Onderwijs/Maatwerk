@@ -446,3 +446,31 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - `toets-overzicht.js` (1200+ lines) stays JS until step 29, its area step (R-05 rule, step 13).
 - Review 20 m5: `aria-pressed` on Schoolsoort, Jaarlaag, Periode, Subcategorie and the question row buttons (state is only a class).
 - Review 20 m6, tests still missing: confirm when only an attempt has scores; locked top fields unchanged on saving; Verzamelkaart `obs_ids` and resit title; wiskunde interlock in Nieuwe toets; keyboard focus on Soort poging.
+
+## From Step 21
+
+- Review 21 m1 (UI part): ticking PO on an observatie (or saving the first rubric) raises
+  `minAppVersion` to 0.12.0 without a notice; a one-time confirm ("collega's met een oudere
+  Maatwerk kunnen dan alleen nog lezen") would make it visible.
+- Review 21 m2: the "in use" scan fails open: `list_years` returns nothing on a read error and
+  unreadable exam files are skipped, so a locked change or a delete can pass then.
+- Review 21 m3: the guard reads the old rubric and the usage outside the commit lock (same-PC race;
+  colleagues sync later anyway).
+- Review 21 m6: the observatie form's Toets/PO lock and delete guard see only the loaded year's
+  exams and the active vak's rubrics.
+- Review 21 n7: the Store recognises a core refusal by the "Save failed for" prefix; a `code` on
+  the error of `update()` would be sturdier.
+- Review 21 n8: `SCHOOLSOORTEN` in seven files; `RubricUse` repeated in `src-tauri/src/data.rs`; the
+  mock guard repeats the core's Dutch messages.
+- Review 21 n9: `maatwerk-grades/src/rubric.rs` (~720 lines with tests): move the tests to
+  `rubric/tests.rs` as the core does.
+- `observaties.js` stays JS (R-05, area step 30); the toetstype parts are in TS beside it.
+
+## From Step 22
+
+- Review 22 n5: `validate-data` could warn when a herkansing's `rubric_id` differs from its
+  original's, and when an exam file holds a `rubric` field (it is never read from a file).
+- `validate-data` could warn about PO scores of a student in no projectgroep (review 22 M2 is
+  handled in the UI; a hand edit or an older app could still leave them).
+- The Toetsen list re-renders after its statistics load and closes an open ⋮ menu (seen again in
+  `po.spec.ts`; the helpers retry).

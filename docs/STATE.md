@@ -1,11 +1,157 @@
 # State
 
-Last updated: 2026-11-09 (step 20) Branch: `step/20-toetsen` (from `main` `4bd1528`)
+Last updated: 2026-11-10 (step 22) Branch: `step/22-po` (from `step/21-rubrics` `d4299cc`; steps
+20 and 21 are not merged yet: the macOS CI runs are pending, user 2026-11-10: "later")
 Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action:** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
+**User (2026-11-10):** M2 option b (a student who leaves every projectgroep loses the PO's
+scores, after a confirm) and a wiskunde PO gets A/B/C/D from jaarlaag 4: both done. Local exe
+0.13.0 built for the user's test on real data.
+
+**User (2026-11-10, later):** visual diff OK, local baselines updated (139 images). Manual test
+`docs/reviews/manual-test-step-22.md`: M-PO-1, 2, 4 pass; M-PO-3 partial: an empty projectgroep
+needs a delete button, and members sorted by achternaam: both done (the unplaced list too).
+`modal-po-groepen` changes again (the trash button on the empty group): show the user.
+Top bar fixes on `fix/topbar` (from `step/22-po`): `body` `min-height` instead of `height` (the
+sticky bar scrolled away after one window of a long list); `shell/topbar-fit.ts` hides the
+wordmark when the tabs do not fit (measured). Probe: teacher fits at 900 px without wordmark;
+admin needs 874 px of tabs and overflows below ~1010 px even then.
+
+**User (2026-11-10, evening):** `modal-po-groepen` OK (local baselines updated); icon-only step
+approved and done on `fix/topbar`: when the tabs still overflow without the wordmark,
+`topbar--icons` shows inactive tabs as icon only (name visually hidden, so still the accessible
+name, and a `title` tooltip); the active tab keeps its name. `e2e/topbar.spec.ts` (4). Chromium
+e2e 278, WebKit topbar+shell 19, 520 Vitest, local visual unchanged.
+
+**Next action:** push for CI and merge in order 20 -> 21 -> 22 -> `fix/topbar` (user: "start CI
+and merging"), CI baselines of changed views from CI's own run, tags. Started 2026-11-10 17:32:
+rerun of step 20's failed PR job (run `42796057189`); `step/21-rubrics` pushed (run
+`42866062460`, expected to fail visual on the changed views: take their baselines from it).
+Result: step 20 macOS got no runner (capacity); step 21 Linux visual 6 views (baselines committed,
+`f21427e`, with Prettier on `manual-test-step-21.md`, which failed Windows lint); run
+`42868926174`. **User (2026-11-10 evening):** macOS gets no runner now; go on with Windows and
+Linux for steps 21, 22, `fix/topbar`; the user reruns macOS tomorrow morning. Merges into `main`
+wait for macOS green (main stays green). **User decision:** merge step 20 (PR #12) alone; then
+21, 22 and the top bar in **one** merge of `fix/topbar` into `main`. macOS baselines of all their
+views from one macOS run on `fix/topbar` (it stops at the visual step), then a second macOS run to
+confirm. Tags `step-21`/`v0.12.0` on the head of `step/21-rubrics`, `step-22`/`v0.13.0` on the
+head of `step/22-po`. Step 22 run `42872007833`; step 21 Windows baselines `472cbf2` (run
+`42871975947`).
+**Done 2026-11-10 evening:** Windows + Linux green on `step/21-rubrics` (`472cbf2`, run
+`42871975947`), `step/22-po` (`81e9c63`, 3 new PO views' baselines, run `42876302305`) and PR #13
+(`fix/topbar` -> `main`, run `42880268851`; push CI runs only for `main`/`step/**`, so the PR
+runs it). Exe and CLI 0.13.0 rebuilt from `fix/topbar`. **Tomorrow:** user reruns macOS of PR #12
+(`gh run rerun 42796057189 --failed`), merges it, tag `step-20`/`v0.11.0`; then a macOS run on PR
+#13 (rerun its macOS job), commit the macOS baselines of the failed views from its
+`visual-macos` artifact on `fix/topbar`, push, confirm green, merge, tags. Visual
+views get an optional `seed` (`ui/e2e/views.ts`, `e2e/po-seed.ts`): the shared mock fixture has
+no PO, because the step 21 rubric e2e tests count rubric uses.
+
+## Step 22 progress (PO b: PO in Toetsen and projectgroepen, 0.13)
+
+Plan: (1) 22a core/data; (2) 22a UI: PO toevoegen step 1, PO card, PO bewerken, menu; (3) 22b UI:
+Projectgroepen step (click/drag, Willekeurig indelen, empty groups dropped), regrouping warning,
+PO herkansing; (4) gate, review, report.
+
+1. **Done**, 22a core/data: `maatwerk_grades` `Exam.rubric` (attached by the caller, never in
+   a file) and `calc_results` for a PO (categories as questions, whole points, decision 16,
+   round1, no RTTI/N-term; no rubric: no grade); `exam_scores` reads category ids. Tests incl.
+   year average and PO herkansing. CLI `stats` attaches `rubrics/<id>.json`. Core guard: the
+   first `kind: "po"` exam raises `minAppVersion` to **0.13.0** (`PO_EXAM_MIN_APP_VERSION`);
+   `usage` names exams by `title` (was `naam`, which exams lack). `validate-data`: PO without
+   rubric / with questions (warn), `projectgroepen` shape, a student in two groups (error),
+   unknown members. Docs `data-files-v3.md` "PO exams". UI: `domain/po.ts` (matching rubrics
+   and classes, unplaced, random groups, save/copy/moved, `forGrading` + `setRubricLookup`
+   registered by Store; used by `grades.ts`, `statistics.ts`), mock guard 0.13.0, version
+   0.13.0. (`e858b22`)
+2. 22a UI (with 3 in one go, written): "+ PO toevoegen" (`modals/po-gegevens.ts`: step 1 and PO
+   bewerken; rubric list follows schoolsoort + jaarlaag, preview chips + formula; rubric locked
+   once the PO or its family has scores; a family's fields locked as for tests), PO card
+   (`exam-cards.ts`: rubric line, "n projectgroepen", no N-term; title and Overzicht openen not
+   clickable for a PO), ⋮ menu (`exam-menu.ts`: Scores/Rapport/Opdrachten disabled with a
+   reason, Herkansing toevoegen, Projectgroepen, PO bewerken, PO verwijderen), `styles/po.css`.
+3. 22b UI (written): `modals/po-groepen.ts`: Projectgroepen (new step 2, the PO's own dialog,
+   herkansing): unplaced students of the matching classes with class filter and class tag,
+   click adds to the active group, drag and drop both ways, × removes, names, "+ Projectgroep",
+   "Willekeurig indelen…" (size n, over the visible unplaced, as even as possible), empty
+   groups dropped on save, "← Gegevens" keeps everything; regrouping a student of a PO with
+   scores asks first (decision 19; the score copy itself comes with grading, step 23). PO
+   herkansing: same rubric, groups copied with new ids, editable before saving. (`6c202ac`)
+4. Gate green: fmt, clippy, cargo test, lint, typecheck, 517 Vitest, 125 node, 273 Chromium e2e,
+   WebKit (po/rubrics/shell 34), licences, cargo deny, `npm audit --omit=dev` 0, SPDX. Review
+   `docs/reviews/step-22.md` (0/2/4/6), triage at its end: M1 (best attempt of a PO family
+   ungraded) fixed with a failing test first; m1-m4, n2-n4, n6 fixed; n5 backlog; **M2 for the
+   user**. Local visual: the 30 step 21 images still differ (local baselines predate step 21)
+   plus the 9 new PO images.
+
+Choices made without asking (for the report): a PO's title and "Overzicht openen" are not
+clickable until a PO overview exists; Scores/Rapport/Opdrachten in a PO's menu are disabled with
+a reason; "Projectgroepen" is its own ⋮ item (the score table gets it in step 23); PO bewerken
+locks the rubric once the PO or its herkansing has scores, and a family's fields as for tests;
+the class tag is the student's matching Groep name (first by name); random groups go over the
+visible (filtered) unplaced students, as even as possible; no wiskunde subcategory for a PO;
+the grade of a PO is round1(10 × punten ÷ max) like a test's.
+
+Step 21 (for the record): the user's manual test passed (`docs/reviews/manual-test-step-21.md`,
+M-OBS-2, M-RUB-1..5). Still to do there: push for CI, CI baselines, merge, tags.
+
+## Step 21 (waiting for CI and merge)
+
+Next there: push `step/21-rubrics` for CI (after step 20's macOS rerun ends, or the push cancels
+it), replace the CI baselines of the changed views from CI's own run, local baselines, merge, tag
+`step-21`, `v0.12.0`.
+
+## Step 21 progress (PO a: rubrics, observatie toetstype, 0.12)
+
+1. **Done** (`a89e910`), 21a data and core: `maatwerk-grades::rubric` (rules, totals, lock,
+   PO grade; wasm), `maatwerk-core::rubrics` (usage over all years; guard in `write_json` /
+   `delete`; `minAppVersion` 0.12.0 on the first rubric or PO observatie), migration writes
+   `toetstypes`, `validate-data`, CLI `rubric check`, command `rubric_usage`, mock guard, mock
+   fixture (3 rubrics, 4 PO observaties in `to-current.mjs` only), docs
+   `data-files-v3.md`. Version 0.12.0 already (the guard raises to 0.12.0). Chromium e2e 240.
+2. **Done** (`f540e71`), 21b UI: Rubrics tab + cards, rubric editor (`modals/rubric-editor.ts`,
+   `rubric-levels.ts`), Dupliceren, delete guard; Observatie toetstype field + filter chip
+   (`screens/observatie-toetstype.ts`, `components/choice-chip.ts`); toets-edit offers only
+   `toets` observaties. `e2e/rubrics.spec.ts` (13); Chromium e2e 261. New views
+   `screen-rubrics`, `modal-rubric-edit`, `modal-rubric-new` (local images written, not yet
+   seen by the user).
+3. Gate + review: local visual: 30 images differ (10 views × 3 looks): every teacher page
+   (`screen-leerlingen/groepen/toetsen/observaties/opdrachten`, `exam-menu`, `user-menu-teacher`:
+   the Rubrics tab), `modal-observatie-edit/new` (Toetstype), `modal-opdracht-edit` (lists the 4
+   new PO observaties of the mock fixture). CI baselines of those views and of the 3 new ones
+   must be replaced from CI's own run, as in step 20. Gate green: fmt, clippy, cargo test,
+   lint, typecheck, 498 Vitest, 125 node, 261 Chromium e2e, WebKit (rubrics/shell/dialog 102),
+   licences, cargo deny, `npm audit --omit=dev` 0, SPDX.
+4. **Done:** review `docs/reviews/step-21.md` (0/1/8/9), triage at its end: M1 (gaps from the
+   intervals; a huge max no longer freezes the editor), m1 (CAS checked before raising
+   `minAppVersion`), m4, m5, n6, n8 partly, n9 fixed with tests; m2, m3, m6 and the rest in
+   `docs/backlog.md` "From Step 21". Manual checks M-OBS-2, M-RUB-1..5.
+
+Choices made without asking (for the report): a locked rubric also locks adding/removing
+categories (they change the max); category names stay editable when locked (decision 20; board
+16 disables them); `uitleg` of a level is required; a rubric needs one `normaal` category; an
+observatie used in a test keeps toetstype Toets (so the score grid needs no filter).
+
+**User confirmed (2026-11-10)** the choices made without asking: a rubric in use also locks
+adding/removing categories, names stay editable (decision 20 over board 16); every level needs an
+uitleg; a rubric needs one Normaal category; an observatie a test uses keeps Toets, one a rubric
+uses keeps PO; the editor's vak is the active vak; the rubric module in `maatwerk-grades`.
+
+**User decisions (2026-11-10):** a category's max is 1 to 100 (`MAX_POINTS`; the display numbers
+every fifth score above 40 boxes); the card chips keep "· bonus" / "· diag". macOS baselines of
+step 20 committed (`0ddc7c8`, from run `42636690859`) and pushed; CI run `42796049482`; merged into
+this branch. A local exe 0.12.0 was built for the user's manual test on real data.
+
+**Step 20 (waiting):** PR #12 (`step/20-toetsen`), head `0ddc7c8` (macOS baselines). Push run
+`42796049482` fully green, visual included on all three OSes. PR run `42796057189`: macOS failed
+one WebKit test (`quirks.spec.ts:141` D34, `Target crashed` at its first click: the browser died,
+the same test passed in the push run). The user reruns it later: `gh run rerun 42796057189
+--failed`. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
+
+**CI retry (user 2026-11-10):** `ui/playwright.config.ts` has `retries: process.env.CI ? 1 : 0`
+on this branch, so one browser crash no longer fails a run (a pass on retry is reported flaky).
 
 ## Step 20 progress (Toetsen, 0.11)
 

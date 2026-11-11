@@ -52,6 +52,8 @@ import {
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
+import { normaliseRubric } from './domain/rubric';
+import { rubricOf, setRubricLookup } from './domain/po';
 import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
@@ -376,6 +378,7 @@ const Store = (() => {
   const ypExam = (year, id) => `${year}/exams/${id}.json`;
   const ypGroup = (year, id) => `${year}/groups/${id}.json`;
   const ypObs = (id) => `observaties/${id}.json`;
+  const ypRubric = (id) => `rubrics/${id}.json`;
   const ypScore = (year, subj, id) => `${year}/scores/${subj}/${id}.json`;
 
   // ── Subject helpers ────────────────────────────────────────────────────────
@@ -394,6 +397,12 @@ const Store = (() => {
   function invalidateObsCache() {
     for (const key of Object.keys(cache)) {
       if (key.startsWith('obs/')) delete cache[key];
+    }
+  }
+
+  function invalidateRubricCache() {
+    for (const key of Object.keys(cache)) {
+      if (key.startsWith('rubrics/')) delete cache[key];
     }
   }
 
@@ -430,6 +439,21 @@ const Store = (() => {
     return cache[key];
   }
 
+  // Rubrics (step 21) are shared per vak, like observaties: `rubrics/<id>.json`.
+  async function loadRubrics(subject) {
+    const key = `rubrics/${subject}`;
+    if (cache[key] !== undefined) return cache[key];
+    const all = await window.maatwerk.readAllJson('rubrics');
+    // Normalised: one damaged file must not break the tab (review 21 m5).
+    cache[key] = all.map(normaliseRubric).filter((r) => r.id && r.subject === subject);
+    return cache[key];
+  }
+
+  // A PO is graded with its rubric (step 22): the grade calls find it in the cache.
+  setRubricLookup((id, subject) =>
+    (cache[`rubrics/${subject ?? _activeSubject}`] ?? []).find((r) => r.id === id),
+  );
+
   async function loadYear(year, subject = _activeSubject) {
     await window.maatwerk.ensureYear(year);
     const tasks = [load(ypStudents(year))];
@@ -460,7 +484,7 @@ const Store = (() => {
       await loadYear(year, null);
     } else {
       setActiveSubject(subject);
-      await Promise.all([loadYear(year, subject), loadObservaties(subject)]);
+      await Promise.all([loadYear(year, subject), loadObservaties(subject), loadRubrics(subject)]);
     }
   }
 
@@ -491,6 +515,9 @@ const Store = (() => {
   }
   function getObservatiesSync(subject = _activeSubject) {
     return cache[`obs/${subject}`] ?? [];
+  }
+  function getRubricsSync(subject = _activeSubject) {
+    return cache[`rubrics/${subject}`] ?? [];
   }
 
   // ── Config ────────────────────────────────────────────────────────────────
@@ -785,9 +812,17 @@ const Store = (() => {
     let perExam = resultsMemo.get(rec);
     if (!perExam) resultsMemo.set(rec, (perExam = new WeakMap()));
     const hit = perExam.get(exam);
-    if (hit && hit.nTerm === exam.n_term && hit.questions === exam.questions) return hit.value;
+    // A PO is graded with its rubric: a reloaded rubric is a new object (review 22 m3).
+    const rubric = rubricOf(exam);
+    if (
+      hit &&
+      hit.nTerm === exam.n_term &&
+      hit.questions === exam.questions &&
+      hit.rubric === rubric
+    )
+      return hit.value;
     const value = examResults(rec, exam);
-    perExam.set(exam, { nTerm: exam.n_term, questions: exam.questions, value });
+    perExam.set(exam, { nTerm: exam.n_term, questions: exam.questions, rubric, value });
     return value;
   }
 
@@ -823,6 +858,55 @@ const Store = (() => {
     changed();
     invalidateObsCache();
     await loadObservaties(subject);
+  }
+
+  // ── Rubrics (step 21; the core checks the rules and the lock on every save) ──
+  // A refusal by the core (invalid, or a locked change while a PO uses the
+  // rubric) throws an Error whose message is the core's Dutch text.
+  function refusal(relPath, e) {
+    const prefix = `Save failed for ${relPath}: `;
+    if (e instanceof Error && e.message.startsWith(prefix)) {
+      const err = new Error(e.message.slice(prefix.length));
+      err.code = 'refused';
+      return err;
+    }
+    return e;
+  }
+
+  async function getRubrics(subject = _activeSubject) {
+    return loadRubrics(subject);
+  }
+
+  async function upsertRubric(rubric, subject = _activeSubject) {
+    const rel = ypRubric(rubric.id);
+    try {
+      await saveEntity(rel, { ...rubric, subject: rubric.subject || subject }, rubric._meta?.rev);
+    } catch (e) {
+      throw refusal(rel, e);
+    }
+    invalidateRubricCache();
+    await loadRubrics(subject);
+  }
+
+  async function deleteRubric(id, subject = _activeSubject) {
+    const result = await window.maatwerk.deleteFile(ypRubric(id));
+    if (result && result.ok === false) {
+      if (result.reason === READ_ONLY_CODE) {
+        noteReadOnly();
+        throw readOnlyError();
+      }
+      const err = new Error(result.reason);
+      err.code = 'refused';
+      throw err;
+    }
+    changed();
+    invalidateRubricCache();
+    await loadRubrics(subject);
+  }
+
+  /** Per rubric id, the PO's in any school year that use it (decision 20). */
+  async function rubricUsage() {
+    return (await window.maatwerk.rubricUsage()) ?? {};
   }
 
   async function setObservation(studentId, examId, obsId, checked, year, subject = _activeSubject) {
@@ -887,6 +971,30 @@ const Store = (() => {
       if (Object.values(exScores).some((v) => v !== null && v !== undefined)) return true;
     }
     return false;
+  }
+
+  /** Whether the student's score file holds anything for this exam (scores, grade, observaties, PO data). */
+  async function studentHasExamData(studentId, examId, year, subject = _activeSubject) {
+    const rec = await getStudentScores(studentId, year, subject);
+    const filled = (o) => o && typeof o === 'object' && Object.keys(o).length > 0;
+    return Boolean(
+      filled(rec.scores?.[examId]) ||
+      rec.overrides?.[examId] ||
+      rec.observations?.[examId]?.length ||
+      rec.po?.[examId],
+    );
+  }
+
+  /**
+   * Removes everything the student's score file holds for this exam: a student who leaves every
+   * projectgroep of a PO loses its scores (user 2026-11-10, review 22 M2).
+   */
+  async function removeStudentExamData(studentId, examId, year, subject = _activeSubject) {
+    await updateStudentScores(studentId, year, subject, (rec) => {
+      for (const key of ['scores', 'overrides', 'observations', 'po']) {
+        if (rec[key] && typeof rec[key] === 'object') delete rec[key][examId];
+      }
+    });
   }
 
   async function studentHasScores(studentId, year, subject = _activeSubject) {
@@ -1100,6 +1208,7 @@ const Store = (() => {
     ['group', new RegExp(`^${YEAR}/groups/([^/]+)\\.json$`)],
     ['students', new RegExp(`^${YEAR}/students-\\d{4}-\\d{4}\\.json$`)],
     ['observatie', /^observaties\/([^/]+)\.json$/],
+    ['rubric', /^rubrics\/([^/]+)\.json$/],
     ['opdracht', /^opdrachten\/([^/]+)\/opdracht\.json$/],
     ['opdrachtTyp', /^opdrachten\/([^/]+)\/[^/]+\.typ$/],
     ['gebruikers', /^gebruikers\/([^/]+)\.json$/],
@@ -1205,6 +1314,16 @@ const Store = (() => {
           changed(); // a render between the drop and the reload saw no observaties (review 7c m4)
           break;
         }
+        case 'rubric': {
+          ev.id = match[1];
+          ev.before = getRubricsSync().find((r) => r.id === ev.id) ?? null;
+          ev.after = await readFresh();
+          ev.subject = ev.after?.subject ?? ev.before?.subject ?? null;
+          invalidateRubricCache();
+          if (_activeSubject) await loadRubrics(_activeSubject);
+          changed(); // as for observaties (review 7c m4)
+          break;
+        }
         case 'opdracht': {
           ev.id = match[1];
           ev.before = getOpdrachtenSync().find((o) => o.id === ev.id) ?? null;
@@ -1277,6 +1396,11 @@ const Store = (() => {
     getGroupsSync,
     getExamsSync,
     getObservatiesSync,
+    getRubricsSync,
+    getRubrics,
+    upsertRubric,
+    deleteRubric,
+    rubricUsage,
     getActiveSubject,
     setActiveSubject,
     getActiveUser,
@@ -1331,6 +1455,8 @@ const Store = (() => {
     studentYearAverage,
     calcResults,
     examResults: examResultsMemo,
+    studentHasExamData,
+    removeStudentExamData,
     setGradeOverride,
     makeExamId,
     makeGroupId,

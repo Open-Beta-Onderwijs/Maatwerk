@@ -29,4 +29,8 @@ export const ICONS = {
   check: svgIcon('<path d="M20 6 9 17l-5-5"/>'),
   x: svgIcon('<path d="M18 6 6 18M6 6l12 12"/>'),
   ban: svgIcon('<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>'),
+  // Projectgroepen (step 22): two people.
+  users: svgIcon(
+    '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14a6.5 6.5 0 0 1 3.5 6"/>',
+  ),
 };

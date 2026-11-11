@@ -21,7 +21,15 @@ import {
 } from './exam-fields';
 import { showExamEditor } from './toets-edit';
 
-const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
+export const SCHOOLSOORTEN = [
+  'Vmbo-bb',
+  'Vmbo-kb',
+  'Vmbo-gl',
+  'Vmbo-tl',
+  'Havo',
+  'Vwo',
+  'Gymnasium',
+];
 
 /** The steps above a new test; the other step cannot be clicked. */
 export function examSteps(active: 'gegevens' | 'vragen') {

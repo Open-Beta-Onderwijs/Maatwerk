@@ -7,6 +7,9 @@ import { openExamModal, deleteExam } from '../modals/toets-edit';
 import { openResitModal, openSummaryEditModal } from '../modals/herkansing';
 import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren.js';
 import { openRapportModal } from '../modals/rapport.js';
+import { isPo } from '../domain/po';
+import { openPoEditModal } from '../modals/po-gegevens';
+import { openPoResitModal, openProjectgroepenModal } from '../modals/po-groepen';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { perfSpan } from '../utils/perf';
@@ -44,9 +47,67 @@ async function deleteBlockReason(examId: string, year: string): Promise<string |
   return null;
 }
 
+/**
+ * A PO's menu (spec 4.13): the test's items, Nieuwe poging is a herkansing only, and
+ * Projectgroepen. Grading (Scores invoeren, Opdrachten) is step 23, the PO rapport step 24.
+ */
+async function poMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {
+  const summary = kind === 'summary';
+  const items: MenuItem[] = [
+    { icon: ICONS.scores, label: 'Scores invoeren', disabled: PO_GRADING_LATER },
+    { icon: ICONS.rapport, label: 'Rapport genereren', disabled: PO_RAPPORT_LATER },
+    { icon: ICONS.opdrachten, label: 'Opdrachten genereren', disabled: PO_GRADING_LATER },
+    'sep',
+  ];
+  if (kind !== 'attempt') {
+    items.push({
+      icon: ICONS.plus,
+      label: 'Herkansing toevoegen',
+      run: () => openPoResitModal(examId, year),
+    });
+  }
+  if (summary) {
+    items.push(
+      {
+        icon: ICONS.pen,
+        label: 'Verzamelkaart bewerken',
+        run: () => openSummaryEditModal(examId, year),
+      },
+      {
+        icon: ICONS.trash,
+        label: 'PO verwijderen',
+        danger: true,
+        disabled:
+          'Deze PO bestaat uit meerdere pogingen. De individuele pogingen moeten eerst worden verwijderd.',
+      },
+    );
+  } else {
+    items.push(
+      {
+        icon: ICONS.users,
+        label: 'Projectgroepen',
+        run: () => openProjectgroepenModal(examId, year),
+      },
+      { icon: ICONS.pen, label: 'PO bewerken', run: () => openPoEditModal(examId, year) },
+      {
+        icon: ICONS.trash,
+        label: 'PO verwijderen',
+        danger: true,
+        disabled: (await deleteBlockReason(examId, year))?.replaceAll('toets', 'PO') ?? null,
+        run: () => deleteExam(examId),
+      },
+    );
+  }
+  return items;
+}
+
+const PO_GRADING_LATER = 'Een PO beoordelen kan vanaf de volgende versie van Maatwerk.';
+const PO_RAPPORT_LATER = 'Het rapport van een PO komt in een latere versie.';
+
 async function buildMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {
   const summary = kind === 'summary';
   const exam = Store.getExamsSync(year).find((e: { id: string }) => e.id === examId);
+  if (isPo(exam)) return poMenuItems(examId, kind, year);
   const items: MenuItem[] = [
     summary
       ? {
@@ -130,7 +191,8 @@ export async function toggleExamMenu(btn: HTMLElement, year: string): Promise<vo
   const examId = btn.dataset.id ?? '';
   const kind = (btn.dataset.kind ?? 'solo') as CardKind;
   // Most menus lead to "Scores invoeren": build its grids now, out of sight (Step 7c).
-  if (kind !== 'summary') prebuildScoreModal(examId, year);
+  const po = isPo(Store.getExamsSync(year).find((e: { id: string }) => e.id === examId));
+  if (kind !== 'summary' && !po) prebuildScoreModal(examId, year);
 
   const endMenu = perfSpan('menu:exam');
   const items = await buildMenuItems(examId, kind, year);

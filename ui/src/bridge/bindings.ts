@@ -105,6 +105,11 @@ export const commands = {
 	migrateDataFolder: (dryRun: boolean | null) => typedError<MigrationResult, CommandError>(__TAURI_INVOKE("migrate_data_folder", { dryRun })),
 	/**  `validate-data` on the open data folder (admin screen). */
 	validateDataFolder: () => typedError<DataCheck, CommandError>(__TAURI_INVOKE("validate_data_folder")),
+	/**
+	 *  Per rubric id, the PO's in any school year that use it ("In gebruik bij n PO's"; decision 20
+	 *  locks max and soort while this is not empty).
+	 */
+	rubricUsage: () => typedError<{ [key in string]: RubricUse[] }, CommandError>(__TAURI_INVOKE("rubric_usage")),
 	/**  Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd"). */
 	stampIssues: () => typedError<StampIssue[], CommandError>(__TAURI_INVOKE("stamp_issues")),
 	/**  "Accepteren": re-stamps the file as it is now. */
@@ -556,6 +561,13 @@ export type RenderedSvg = {
 	/**  One SVG document per page. */
 	pages: string[],
 	warnings: string[],
+};
+
+/**  One PO that uses a rubric (step 21). */
+export type RubricUse = {
+	year: string,
+	examId: string,
+	naam: string,
 };
 
 /**  A JSON file read with a missing or wrong stamp since start (C19). */

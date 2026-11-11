@@ -10,11 +10,13 @@
 import { renderStartup } from './screens/startup.js';
 import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderMigration } from './screens/migration';
+import { watchTopbar } from './shell/topbar-fit';
 import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
 import { renderToetsen, renderToetsenList } from './screens/toetsen';
 import { renderObservaties } from './screens/observaties.js';
+import { renderRubrics } from './screens/rubrics';
 import { renderOpdrachten } from './screens/opdrachten.js';
 import { openEditor } from './modals/editor.js';
 import { renderGebruikers } from './screens/gebruikers.js';
@@ -58,6 +60,8 @@ export {
 
 // ── Navigation ────────────────────────────────────────────────────────────────
 const topbar = document.getElementById('topbar');
+// On a narrow window the wordmark makes way for the tabs (user 2026-11-10).
+watchTopbar();
 const screens = {};
 document.querySelectorAll('.screen').forEach((el) => {
   screens[el.id.replace('screen-', '')] = el;
@@ -92,9 +96,10 @@ export function navigateTo(name) {
   document
     .getElementById('obs-filter-wrap')
     .classList.toggle('filter-screen-hidden', name !== 'opdrachten');
+  // Rubrics: shared per vak, not per group, so no eigen toggle either.
   document
     .getElementById('btn-filter-eigen')
-    .classList.toggle('filter-screen-hidden', name === 'opdrachten');
+    .classList.toggle('filter-screen-hidden', name === 'opdrachten' || name === 'rubrics');
 
   _screenRefreshPending = false;
   if (screens[name]) {
@@ -121,6 +126,7 @@ const KEPT_SCREENS = new Set([
   'leerlingen',
   'groepen',
   'toetsen',
+  'rubrics',
   'observaties',
   'opdrachten',
   'gebruikers',
@@ -154,6 +160,8 @@ export function renderScreen(name) {
       return renderGroepen();
     case 'toetsen':
       return renderToetsen();
+    case 'rubrics':
+      return renderRubrics();
     case 'observaties':
       return renderObservaties();
     case 'opdrachten':
@@ -532,7 +540,8 @@ async function checkDataInBackground() {
 
 function applyRoleVisibility(user) {
   const adminOnly = ['gebruikers', 'school', 'gegevens', 'instellingen'];
-  const teacherOnly = ['toetsen', 'observaties'];
+  // Rubrics: teachers and sectievoorzitters, not the admin (decision 25).
+  const teacherOnly = ['toetsen', 'rubrics', 'observaties'];
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     const screen = btn.dataset.screen;
     if (user.isAdmin) {
@@ -659,8 +668,10 @@ const SCREEN_REFRESH = {
     year: () => SEL.toetsenYear.getValue(),
     render: () => renderToetsenList(),
   },
+  // An exam change can change a rubric's use (step 22 writes `rubric_id`).
+  rubrics: { types: ['rubric', 'observatie', 'exam'], render: () => renderRubrics() },
   observaties: {
-    types: ['observatie', 'group'],
+    types: ['observatie', 'group', 'rubric'],
     year: () => Store.getConfigSync().activeYear,
     render: () => renderObservaties(),
   },

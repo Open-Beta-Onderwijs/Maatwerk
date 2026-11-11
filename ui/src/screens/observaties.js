@@ -14,6 +14,13 @@ import {
   guardModalClose,
   formSnapshot,
 } from '../app.js';
+import { obsToetstypes } from '../domain/rubric';
+import {
+  obsUsedInRubric,
+  toetstypeFilterChip,
+  toetstypeField,
+  readToetstypes,
+} from './observatie-toetstype';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Observaties
@@ -84,6 +91,11 @@ export function renderObservaties() {
   let obs = Store.getObservatiesSync();
   const container = document.getElementById('obs-list');
   document.getElementById('btn-add-obs').onclick = () => openObsModal(null);
+  // Toetstype filter (F-23): Alle toetstypes / Toets / PO.
+  const chip = toetstypeFilterChip(renderObservaties);
+  const row = document.getElementById('filter-row-observaties');
+  if (row && !row.contains(chip.element)) row.prepend(chip.element);
+  if (chip.value() !== 'alle') obs = obs.filter((o) => obsToetstypes(o).includes(chip.value()));
 
   const activeSubject = Store.getActiveSubject();
   const schoolsoortFilter = getSchoolsoortFilter();
@@ -167,14 +179,14 @@ export function renderObservaties() {
       <div class="card-main">
         <div class="student-card-row">
           <span class="obs-card-icon">${escHtml(o.icon)}</span>
-          <strong class="obs-card-naam">${escHtml(o.naam)}</strong>
+          <strong class="obs-card-naam">${escHtml(o.naam)}</strong>${obsToetstypes(o).includes('po') ? `<span class="obs-toetstype-badge" title="Toetstype">${obsToetstypes(o).includes('toets') ? 'Toets + PO' : 'PO'}</span>` : ''}
         </div>
         <span class="muted">${escHtml(o.uitleg)}</span>
         <span class="small">Schoolsoort: ${escHtml((o.schoolsoort ?? []).join(', ')) || '—'} &nbsp;·&nbsp; Jaarlagen: ${escHtml((o.jaarlagen ?? []).join(', ')) || '—'}</span>
       </div>
       <div class="card-actions">
         <button class="btn btn--icon" data-action="edit-obs" data-id="${escHtml(o.id)}" title="Observatie bewerken">${ICONS.pen}</button>
-        <button class="btn btn--icon btn--icon-danger" data-action="del-obs" data-id="${escHtml(o.id)}"${Store.obsIsUsedInAnyExam(o.id) ? ' disabled title="Deze observatie is gekoppeld aan een toets en kan dus niet worden verwijderd."' : ' title="Observatie verwijderen"'}>${ICONS.trash}</button>
+        <button class="btn btn--icon btn--icon-danger" data-action="del-obs" data-id="${escHtml(o.id)}"${Store.obsIsUsedInAnyExam(o.id) ? ' disabled title="Deze observatie is gekoppeld aan een toets en kan dus niet worden verwijderd."' : obsUsedInRubric(o.id) ? ' disabled title="Deze observatie staat in een rubric en kan dus niet worden verwijderd."' : ' title="Observatie verwijderen"'}>${ICONS.trash}</button>
       </div>
     </div>`,
     )
@@ -283,6 +295,7 @@ export async function openObsModal(existingId) {
         placeholder="Bijvoorbeeld: Vergeet bij het beantwoorden van vragen nooit te controleren of je de eenheid vergeten bent. Gebruik de GFBA-methode (Gegevens, Formule, Berekening &amp; Antwoord). In de Antwoordstap controleer je of het antwoord de juiste eenheid heeft. Maak nu opgave 1 en 2 van H1 nog eens volgens de GFBA-methode."
       >${escHtml(obs.leeradvies ?? '')}</textarea>
     </div>
+    ${toetstypeField(obsToetstypes(obs), isEdit && Store.obsIsUsedInAnyExam(obs.id), isEdit ? obs.id : undefined)}
     <div class="form-group">
       <label>Schoolsoort</label>
       <div class="btn-toggle-group" id="obs-ss-group">
@@ -334,6 +347,15 @@ export async function openObsModal(existingId) {
       el.querySelectorAll('.jl-btn').forEach((b) =>
         b.addEventListener('click', () => b.classList.toggle('selected')),
       );
+      // Toetstype: one or both, never none (the last selected one stays on).
+      el.querySelectorAll('.tt-btn:not(:disabled)').forEach((b) =>
+        b.addEventListener('click', () => {
+          const others = [...el.querySelectorAll('.tt-btn.selected')].filter((x) => x !== b);
+          if (b.classList.contains('selected') && others.length === 0) return;
+          b.classList.toggle('selected');
+          b.setAttribute('aria-pressed', String(b.classList.contains('selected')));
+        }),
+      );
 
       el.querySelector('#f-osave').addEventListener('click', async () => {
         const naam = el.querySelector('#f-onam').value.trim();
@@ -344,6 +366,7 @@ export async function openObsModal(existingId) {
         );
         const subjects = [...el.querySelectorAll('.subj-btn.selected')].map((b) => b.dataset.subj);
         const jaarlagen = [...el.querySelectorAll('.jl-btn.selected')].map((b) => b.dataset.jl);
+        const toetstypes = readToetstypes(el);
         if (!naam) {
           toast('Vul een naam in.', 'error');
           return;
@@ -369,6 +392,7 @@ export async function openObsModal(existingId) {
           schoolsoort,
           subjects,
           jaarlagen,
+          toetstypes,
         };
         delete updated.subject;
         await Store.upsertObservation(updated);

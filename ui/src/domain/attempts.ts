@@ -5,6 +5,7 @@
 
 import { coreCall } from './core';
 import { recordFor } from './grades';
+import { forGrading, isPo, rubricOf } from './po';
 import type { Exam, Override, QuestionScores, ScoreRecord } from './types';
 
 /** One attempt in a student's history (getStudentHistory). */
@@ -41,14 +42,18 @@ export function bestAttempt(
   const best = coreCall<{ examId: string; grade: number } | null>(
     'bestAttempt',
     recordFor(rec, attempts),
-    attempts,
+    attempts.map(forGrading),
   );
   const exam = best && attempts.find((e) => e.id === best.examId);
   if (!best || !exam) return null;
   const questionScores: QuestionScores = {};
-  for (const q of exam.questions) {
-    const v = rec?.scores?.[exam.id]?.[q.id];
-    if (v !== undefined) questionScores[q.id] = v;
+  // A PO's scores are per rubric category (step 22), a test's per question.
+  const ids = isPo(exam)
+    ? (rubricOf(exam)?.categories ?? []).map((c) => c.id)
+    : exam.questions.map((q) => q.id);
+  for (const id of ids) {
+    const v = rec?.scores?.[exam.id]?.[id];
+    if (v !== undefined) questionScores[id] = v;
   }
   return { ...best, exam, questionScores, override: rec?.overrides?.[exam.id] };
 }
@@ -64,5 +69,6 @@ export function compareHistory(a: HistoryEntry, b: HistoryEntry): number {
  * its earliest attempt, so it stays in the student's list.
  */
 export function resolveBestAttempts<H extends HistoryEntry>(history: H[]): H[] {
-  return coreCall<number[]>('resolveBestAttempts', history).map((i) => history[i]!);
+  const graded = history.map((h) => ({ ...h, exam: forGrading(h.exam) }));
+  return coreCall<number[]>('resolveBestAttempts', graded).map((i) => history[i]!);
 }

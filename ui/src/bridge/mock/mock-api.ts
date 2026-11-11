@@ -19,6 +19,7 @@ import type {
   MigrationResult,
   PinCheck,
   StampIssue,
+  RubricUse,
   FsResult,
   ImageResult,
   Json,
@@ -43,6 +44,7 @@ import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
 import { requiredVersion } from '../../services/read-only';
+import { checkRubric, lockedChanges, type Rubric } from '../../domain/rubric';
 
 /** A snapshot of a data folder: file contents (text or base64) and folders. */
 export interface MockSeed {
@@ -52,7 +54,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.11.0';
+export const MOCK_APP_VERSION = '0.13.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -352,6 +354,8 @@ export class MockApi implements MaatwerkApi {
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
     if (this.readOnly()) return { ok: false, reason: 'read_only' };
+    const refused = this.rubricGuard(relPath, data);
+    if (refused) return { ok: false, reason: refused };
     if (opts.cas) {
       const current = this.files.get(relPath);
       const currentHash = current ? await sha1(current) : null;
@@ -360,6 +364,8 @@ export class MockApi implements MaatwerkApi {
       // reference compares and writes in one synchronous handler).
       if (this.files.get(relPath) !== current) return { ok: false, reason: 'conflict' };
     }
+    const raise = this.raisesPoVersion(relPath, data);
+    if (raise) this.raiseMinAppVersion(raise);
     const bytes = encoder.encode(JSON.stringify(data, null, 2) + '\n'); // C13
     this.putFile(relPath, bytes);
     return { ok: true, hash: await sha1(bytes) };
@@ -426,6 +432,15 @@ export class MockApi implements MaatwerkApi {
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
     if (this.readOnly()) return { ok: false, reason: 'read_only' };
+    const rubricId = /^rubrics\/([^/]+)\.json$/.exec(relPath)?.[1];
+    const uses = rubricId ? (this.rubricUses()[rubricId]?.length ?? 0) : 0;
+    if (uses > 0) {
+      const what = uses === 1 ? 'PO' : "PO's";
+      return {
+        ok: false,
+        reason: `Deze rubric is in gebruik bij ${uses} ${what} en kan niet verwijderd worden`,
+      };
+    }
     this.files.delete(relPath);
     return { ok: true };
   }
@@ -813,6 +828,89 @@ export class MockApi implements MaatwerkApi {
     const result = structuredClone(this.migration);
     if (!dryRun) return result;
     return { ...result, applied: false, backup: null, validation: null, reportFile: null };
+  }
+
+  async rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>> {
+    this.record('rubricUsage', []);
+    return this.rubricUses();
+  }
+
+  /** As `maatwerk_core::rubrics::usage`: exams with a `rubric_id`, newest year first. */
+  private rubricUses(): Partial<Record<string, RubricUse[]>> {
+    const out: Partial<Record<string, RubricUse[]>> = {};
+    const years = this.list('')
+      .filter((n) => /^\d{4}-\d{4}$/.test(n))
+      .sort()
+      .reverse();
+    for (const year of years) {
+      for (const { data } of this.jsonFilesIn(`${year}/exams`)) {
+        const exam = data as { id?: string; title?: string; rubric_id?: string } | null;
+        if (!exam?.rubric_id) continue;
+        (out[exam.rubric_id] ??= []).push({
+          year,
+          examId: exam.id ?? '',
+          naam: exam.title ?? '',
+        });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * The `minAppVersion` this write raises to, as `rubrics::guard_write`: a rubric or a PO
+   * observatie 0.12.0, a PO exam 0.13.0 (step 22); null for anything else.
+   */
+  private raisesPoVersion(relPath: string, data: Json): string | null {
+    const isPoObs =
+      /^observaties\//i.test(relPath) &&
+      Array.isArray((data as { toetstypes?: unknown })?.toetstypes) &&
+      (data as { toetstypes: unknown[] }).toetstypes.includes('po');
+    if (/^rubrics\/[^/]+\.json$/i.test(relPath) || isPoObs) return '0.12.0';
+    const isPoExam =
+      /^[^/]+\/exams\/[^/]+\.json$/i.test(relPath) && (data as { kind?: unknown })?.kind === 'po';
+    return isPoExam ? '0.13.0' : null;
+  }
+
+  /**
+   * The core's write guard (`rubrics::guard_write`): a refusal message, or null. The caller raises
+   * `minAppVersion` once the CAS has passed (review 21 m1).
+   */
+  private rubricGuard(relPath: string, data: Json): string | null {
+    const id = /^rubrics\/([^/]+)\.json$/i.exec(relPath)?.[1];
+    if (id) {
+      const rubric = data as unknown as Rubric;
+      if (rubric?.id !== id) return `Rubric niet opgeslagen: het id hoort ${id} te zijn`;
+      const check = checkRubric(rubric);
+      if (!check.valid) {
+        const parts = [...check.errors];
+        check.categories.forEach((c, i) => {
+          if (c.errors.length) parts.push(`${rubric.categories[i]?.naam}: ${c.errors.join(' · ')}`);
+        });
+        return `Rubric niet opgeslagen: ${parts.join('; ')}`;
+      }
+      const old = this.readText(relPath);
+      const n = this.rubricUses()[id]?.length ?? 0;
+      if (old !== null && n > 0) {
+        const locked = lockedChanges(JSON.parse(old) as Rubric, rubric);
+        if (locked.length) {
+          return (
+            `Rubric niet opgeslagen: in gebruik bij ${n} ${n === 1 ? 'PO' : "PO's"}, ` +
+            `dus maxima en soort liggen vast. ${locked.join('; ')}`
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  private raiseMinAppVersion(min: string): void {
+    const text = this.readText('school.json');
+    if (text === null) return;
+    const school = JSON.parse(text) as Record<string, unknown>;
+    const current = typeof school.minAppVersion === 'string' ? school.minAppVersion : '';
+    if (current && requiredVersion({ minAppVersion: min }, current) === null) return;
+    school.minAppVersion = min;
+    this.putFile('school.json', encoder.encode(JSON.stringify(school, null, 2) + '\n'));
   }
 
   async validateDataFolder(): Promise<DataCheck> {
