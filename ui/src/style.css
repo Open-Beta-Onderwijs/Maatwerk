@@ -4,6 +4,7 @@
 @import './styles/buttons.css';
 @import './styles/controls.css';
 @import './styles/dialog.css';
+@import './styles/toetsen.css';
 @import './styles/skeleton.css';
 @import './styles/forms.css';
 @import './styles/render-warnings.css';
@@ -1674,50 +1675,6 @@ code {
 }
 .exam-title-link:hover {
   text-decoration: underline;
-}
-
-/* ── Resit / multi-attempt exam cards ────────────────────────────────────── */
-.exam-summary-card {
-  border-left: 3px solid var(--accent);
-}
-
-.attempt-cards-wrapper {
-  margin-left: 28px;
-  margin-top: 0;
-  padding-left: 16px;
-  margin-bottom: 4px;
-}
-
-.exam-attempt-card {
-  position: relative;
-  margin-top: 4px;
-}
-
-/* Horizontal stub at midpoint of each attempt card */
-.exam-attempt-card::before {
-  content: '';
-  position: absolute;
-  left: -18px;
-  top: calc(50% - 1px);
-  width: 16px;
-  height: 2px;
-  background: var(--border);
-}
-
-/* Vertical connector: default goes from above the card down to midpoint (last card) */
-.exam-attempt-card::after {
-  content: '';
-  position: absolute;
-  left: -18px;
-  top: -4px;
-  height: calc(50% + 4px);
-  width: 2px;
-  background: var(--border);
-}
-
-/* Non-last cards: extend vertical line all the way to the bottom to connect to the next card */
-.exam-attempt-card:not(:last-child)::after {
-  height: calc(100% + 4px);
 }
 
 /* ── Group name button (Groepen tab) ──────────────────────────────────────── */

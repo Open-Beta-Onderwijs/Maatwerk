@@ -437,15 +437,22 @@
           <div class="screen-header screen-header--h32">
             <h2>Toetsen</h2>
             <div class="header-actions">
-              <button class="btn btn--primary" id="btn-add-exam">+ Toets toevoegen</button>
               <button id="btn-toetsen-rtti-uitleg" class="btn btn--secondary u-nowrap">
                 RTTI uitleg / leeradvies
               </button>
+              <button class="btn btn--primary" id="btn-add-exam">+ Toets toevoegen</button>
               <label class="toolbar-inline-label">Schooljaar:</label>
               <div id="toetsen-year-select" class="csel-host"></div>
             </div>
           </div>
-          <div class="filter-row" id="filter-row-toetsen"></div>
+          <div class="filter-row" id="filter-row-toetsen">
+            <div
+              class="test-legend"
+              id="toetsen-legend"
+              role="group"
+              aria-label="Soorten toetsen"
+            ></div>
+          </div>
         </div>
         <div id="exam-list" class="card-list"></div>
       </section>

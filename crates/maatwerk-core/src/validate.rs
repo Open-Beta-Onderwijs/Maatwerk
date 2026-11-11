@@ -476,12 +476,12 @@ fn check_exam_v3(rel: &str, exam: &Value, out: &mut Found) {
             "Een diagnostische toets kan geen PTA-toets zijn".into(),
         );
     }
+    // Only `weging`: `weging_se` applies with PTA alone, and the app keeps it for unticking D.
     if diagnostic
-        && ["weging", "weging_se"].iter().any(|k| {
-            exam.get(*k)
-                .and_then(Value::as_f64)
-                .is_some_and(|w| w != 0.0)
-        })
+        && exam
+            .get("weging")
+            .and_then(Value::as_f64)
+            .is_some_and(|w| w != 0.0)
     {
         out.warn(
             IssueKind::Shape,

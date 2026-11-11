@@ -1,0 +1,480 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* The Toetsen screen and its modals (design spec 4.7, 4.11; boards 11, 14). */
+
+/* ── Legend of the test types, right in the filter row ───────────────────── */
+#filter-row-toetsen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.test-legend {
+  order: 1; /* the filter bar is moved in after it */
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.test-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.test-legend-swatch {
+  width: 18px;
+  height: 12px;
+  padding: 0;
+  border-radius: 3px;
+  box-sizing: border-box;
+}
+
+/* ── Exam card ───────────────────────────────────────────────────────────── */
+.exam-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.exam-card .exam-title-link {
+  font-size: 15px;
+  font-weight: 650 !important;
+}
+.exam-kind-pill {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  white-space: nowrap;
+}
+.exam-line {
+  color: var(--muted);
+  font-size: var(--fs-secondary);
+}
+.exam-line--nums,
+.exam-stats {
+  font-variant-numeric: tabular-nums;
+}
+.exam-stats {
+  display: block;
+  min-height: 1.4em;
+  font-size: var(--fs-secondary);
+}
+.exam-stats .skel {
+  vertical-align: middle;
+}
+/* A diagnostic test counts for nothing: grey italic title and stats (spec 4.7). */
+.exam-card--diagnostic .exam-title-link,
+.exam-card--diagnostic .exam-attempt-label {
+  color: var(--muted);
+  font-style: italic;
+}
+.exam-card--diagnostic .exam-stats {
+  font-style: italic;
+}
+.exam-card--diagnostic .exam-stats b {
+  color: var(--muted);
+}
+.exam-attempts-toggle .exam-chevron {
+  margin-left: 6px;
+  transition: transform 0.25s;
+}
+.exam-attempts-toggle[aria-expanded='true'] .exam-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Attempts on a tree line, indented 28 px; open by default ────────────── */
+.attempt-tree {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.25s;
+}
+.attempt-tree--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.attempt-tree-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.attempt-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 2px 50px;
+}
+/* Closed: out of sight once the animation is done, not only clipped. */
+.attempt-tree:not(.attempt-tree--open) .attempt-tree-list {
+  visibility: hidden;
+  transition: visibility 0s 0.35s;
+}
+.exam-attempt-card {
+  position: relative;
+  overflow: visible;
+  margin: 0;
+}
+.exam-attempt-card::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: calc(50% - 1px);
+  width: 18px;
+  height: 2px;
+  background: var(--tree-line);
+}
+.exam-attempt-card::after {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: -10px;
+  height: calc(50% + 10px);
+  width: 2px;
+  background: var(--tree-line);
+}
+.exam-attempt-card:not(:last-child)::after {
+  height: calc(100% + 18px);
+}
+.exam-attempt-label {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.exam-attempt-label:hover {
+  text-decoration: underline;
+}
+.exam-attempt-count {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+.exam-lock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .attempt-tree,
+  .exam-attempts-toggle .exam-chevron {
+    transition: none;
+  }
+}
+
+/* ── Nieuwe toets ────────────────────────────────────────────────────────── */
+.exam-new-row {
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.exam-new-year {
+  width: 110px;
+}
+.exam-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.form-group .exam-chip,
+.exam-chip {
+  height: 30px;
+  min-height: 0;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-weight: 400;
+}
+.form-group .exam-chip.selected,
+.exam-chip.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.exam-new-grid {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 16px 24px;
+  align-items: end;
+}
+.exam-new-jp {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.exam-new-jp .form-group {
+  flex: none;
+}
+/* One line also with a wider font (DejaVu on Linux): the label may run into the gap. */
+.exam-stepper > label {
+  white-space: nowrap;
+}
+.form-group.exam-stepper {
+  margin-bottom: 0;
+  flex: none;
+  width: 108px;
+}
+.exam-diag-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--r-btn);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-secondary);
+}
+.exam-diag-note[hidden] {
+  display: none;
+}
+.spinner-disabled .spin-val:disabled {
+  background: transparent;
+  color: var(--muted);
+}
+
+/* ── Toets bewerken: fixed parts around a scrolling question table ───────── */
+.dlg--exam-edit {
+  width: 1060px;
+}
+.dlg--exam-edit .dlg-head-row {
+  align-items: center;
+}
+.exam-edit-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow-y: auto;
+}
+.exam-edit-top {
+  flex: none;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+  padding: 16px var(--dlg-pad-x);
+  border-bottom: 1px solid var(--border);
+}
+.exam-edit-name {
+  flex: 1 1 150px;
+  min-width: 150px;
+  max-width: 220px;
+}
+.exam-edit-name input {
+  width: 100%;
+}
+.exam-edit-body .questions-scroll {
+  flex: 1 1 auto;
+  min-height: 160px;
+  max-height: none;
+  padding: 0 var(--dlg-pad-x);
+  border: 0;
+  border-radius: 0;
+}
+.exam-edit-body .questions-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.exam-edit-body .questions-table th {
+  padding: 12px 6px 8px;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.exam-edit-body .questions-table td {
+  padding: 5px 6px;
+}
+/* Segmented: light grey unselected, solid accent with white text selected (spec 4.11). */
+.exam-edit-body .sec-btn-group {
+  flex-wrap: nowrap;
+  max-width: none;
+}
+.exam-edit-body .sec-btn,
+.exam-edit-body table.questions-table .tog-btn {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: var(--fs-caption);
+  font-weight: 400;
+  line-height: 1;
+}
+.exam-edit-body table.questions-table .rtti-btn {
+  min-width: 32px;
+}
+.exam-edit-body .sec-btn.selected,
+.exam-edit-body table.questions-table .tog-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.exam-edit-body .sec-btn-inactive {
+  background: transparent !important;
+}
+.exam-edit-body .kind-sel {
+  width: 116px;
+}
+.exam-edit-body .qi-del {
+  width: 28px;
+  height: 28px;
+}
+.exam-edit-body .qi-del svg {
+  width: 14px;
+  height: 14px;
+}
+.exam-add-q {
+  margin: 12px 0 20px;
+  border-style: dashed;
+  color: var(--accent-text);
+}
+.exam-edit-obs,
+.exam-edit-body > .exam-lock-block {
+  flex: none;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 14px var(--dlg-pad-x);
+  border-top: 1px solid var(--border);
+}
+.exam-edit-obs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.exam-section-label {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+.exam-obs-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.exam-obs-chip,
+table.questions-table .exam-obs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px 0 6px;
+  border-radius: 999px;
+  font-size: var(--fs-secondary);
+  font-weight: 400;
+}
+.exam-obs-chip.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.exam-obs-chip--locked {
+  height: 26px;
+  padding: 0 10px 0 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}
+.exam-edit-summary {
+  order: -1;
+  flex: 1;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--fs-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.dlg--exam-edit .dlg-footer-spacer {
+  display: none;
+}
+
+/* ── Nieuwe poging ───────────────────────────────────────────────────────── */
+.dlg--attempt {
+  width: 720px;
+}
+.attempt-kinds {
+  display: flex;
+  gap: 8px;
+}
+.attempt-kind {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.attempt-kind span {
+  font-size: var(--fs-caption);
+}
+.attempt-kind[aria-checked='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.attempt-from-original {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin: 18px 0;
+  padding: 10px 14px;
+  border-radius: var(--r-btn);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: var(--fs-secondary);
+}
+.attempt-from-original b {
+  color: var(--text);
+}
+.exam-lock-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dlg-body > .exam-lock-block {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.dlg-body.exam-edit-body > .exam-lock-block {
+  margin-top: 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  padding: 14px var(--dlg-pad-x);
+}
+.exam-lock-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+}
+.exam-lock-note {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+}

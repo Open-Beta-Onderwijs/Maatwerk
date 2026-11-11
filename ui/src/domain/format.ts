@@ -44,3 +44,8 @@ export function parseDecimal(s: unknown): number {
 export function parseDecimalLoose(s: unknown): number {
   return parseFloat(String(s).replace(',', '.'));
 }
+
+/** An N-term with at least one decimal, as a teacher writes it: `1,0`, `1,5`, `1,25`. */
+export function formatNTerm(n: number): string {
+  return Number.isInteger(n) ? formatFixed(n, 1) : formatNumber(n);
+}

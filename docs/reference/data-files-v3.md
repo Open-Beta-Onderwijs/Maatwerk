@@ -58,6 +58,6 @@ when it is absent or lower (decision 5), so later additive changes can use the r
 ## `validate-data`
 
 Checks the above: `kind` value, `diagnostic` a bool and not with PTA (error), a diagnostic test
-with a weging (warning), `obs_from_parent` without `parent_id` (warning), `opdrachtenVraag` shape,
+with a `weging` above 0 (warning; `weging_se` may stay, it applies only with PTA), `obs_from_parent` without `parent_id` (warning), `opdrachtenVraag` shape,
 question and opdracht references. Leftover v2 folders are strays with their own message. Nothing
 is ever removed by `validate-data`.

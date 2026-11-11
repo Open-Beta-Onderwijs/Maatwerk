@@ -10,7 +10,7 @@
 //     <button type="button" class="spin-btn spin-plus">+</button>
 //   </div>
 
-import { formatFixed, parseDecimalLoose } from '../domain/format';
+import { formatFixed, formatNumber, parseDecimalLoose } from '../domain/format';
 
 function num(v: string | undefined, fallback: number): number {
   return v === undefined ? fallback : parseFloat(v);
@@ -62,4 +62,26 @@ export function spinnerValue(sp: HTMLElement | null | undefined): number {
   return parseDecimalLoose(
     sp?.dataset?.val ?? sp?.querySelector<HTMLInputElement>('.spin-val')?.value ?? '0',
   );
+}
+
+/** Set a .num-spinner from code. */
+export function setSpinnerValue(sp: HTMLElement, value: number): void {
+  sp.dataset.val = String(value);
+  const inp = sp.querySelector<HTMLInputElement>('.spin-val');
+  if (inp) inp.value = formatNumber(value);
+}
+
+/**
+ * Enable or disable a .num-spinner. It keeps its value; `blank` shows a dash while it is disabled
+ * (a Weging SE that does not apply, design spec 4.11).
+ */
+export function setSpinnerEnabled(sp: HTMLElement, enabled: boolean, blank = false): void {
+  sp.classList.toggle('spinner-disabled', !enabled);
+  sp.querySelectorAll<HTMLButtonElement>('.spin-btn').forEach((b) => {
+    b.disabled = !enabled;
+  });
+  const inp = sp.querySelector<HTMLInputElement>('.spin-val');
+  if (!inp) return;
+  inp.disabled = !enabled;
+  inp.value = !enabled && blank ? '—' : formatNumber(num(sp.dataset.val, 0));
 }

@@ -13,7 +13,7 @@ import { renderMigration } from './screens/migration';
 import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
-import { renderToetsen, renderToetsenList } from './screens/toetsen.js';
+import { renderToetsen, renderToetsenList } from './screens/toetsen';
 import { renderObservaties } from './screens/observaties.js';
 import { renderOpdrachten } from './screens/opdrachten.js';
 import { openEditor } from './modals/editor.js';
@@ -427,6 +427,7 @@ export function escHtml(str) {
 }
 
 // ── CustomSelect instances (created once at init, reused every render) ─────────
+/** @type {Record<string, any>} */
 export const SEL = {}; // populated by initSelects(); exported as live object
 
 // F-21: the school year chosen on any screen is the teacher's active year, on

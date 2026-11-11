@@ -1030,3 +1030,13 @@ computed just below and round down (3).
 Later steps: B17, B18, B20, B23, B30. Checked, not changed: **D4** (`locked` is still not retried),
 **D16** (`setExamNTerm` still bumps `rev`) and **D17** (`upsertExam` still merges over the cache).
 They concern saving, not numbers: nothing is lost, the teacher sees a conflict or an error.
+
+### T33. Saving an exam drops observaties the form does not offer
+
+- Where: reference `toets-edit.js`: the question editor lists the observaties that fit the exam's
+  jaarlaag and schoolsoort and saved `obs_ids` from the ticked buttons only. An observatie on the
+  exam that no longer fits (its jaarlagen changed since) silently left the exam on any save, also
+  a title change. The mock fixture has such exams.
+- **Port (step 20):** those ids stay. They would otherwise also leave every attempt, now that
+  attempts follow their original (F-12). No number changes: the rules do not read `obs_ids`.
+  Test: "an observatie the form does not offer stays on the exam (T33)".

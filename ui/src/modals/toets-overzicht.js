@@ -43,6 +43,7 @@ const GROUP_PALETTE = [
   '#F39C12',
 ];
 
+/** @param {Record<string, any> | null} [scoreOverride] per student: the attempt that counts */
 export async function openExamOverviewModal(
   examId,
   year,
@@ -77,7 +78,9 @@ export async function openExamOverviewModal(
   const hasPoints = (list) => questionStats(list).some((s) => s.points.max > 0);
 
   const allObs = Store.getObservatiesSync();
-  const examObsIds = exam.obs_ids ?? [];
+  // The summary also lists what only an attempt has (migrated resits: original's + own).
+  const allAttempts = isSummary ? [exam, ...Store.getResitsSync(exam.id, year)] : [exam];
+  const examObsIds = [...new Set(allAttempts.flatMap((e) => e.obs_ids ?? []))];
   const examObsObjects = examObsIds.map((id) => allObs.find((o) => o.id === id)).filter(Boolean);
   // obsAccum[obsId] = { count, byGroup: {groupId: n}, byGradeGroup: [6] }
   const obsAccum = {};
@@ -96,8 +99,11 @@ export async function openExamOverviewModal(
       ? (overrideEntry.questionScores ?? overrideEntry)
       : rec?.scores?.[exam.id];
     const gradeOverride = overrideEntry ? overrideEntry.override : rec?.overrides?.[exam.id];
-    // Track observations even if no scores
-    const studentObs = rec?.observations?.[exam.id] ?? [];
+    // Track observations even if no scores. In the summary: those of the attempt that counts,
+    // like the grade (B-05); without a grade no attempt counts, so those of all of them.
+    const studentObs = overrideEntry?.exam
+      ? (rec?.observations?.[overrideEntry.exam.id] ?? [])
+      : [...new Set(allAttempts.flatMap((e) => rec?.observations?.[e.id] ?? []))];
     const grpForObs = groupOf(s);
     studentData.set(String(s.id), { examScores, studentObs, overrideEntry, gradeOverride });
     if ((!examScores || Object.keys(examScores).length === 0) && !gradeOverride) {

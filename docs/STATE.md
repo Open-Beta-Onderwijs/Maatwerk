@@ -1,13 +1,26 @@
 # State
 
-Last updated: 2026-11-09 (step 19b) Branch: `step/19-domain-core` (from local `main` `2542e41`)
-Last tags: `step-16`, `step-16b`, `v0.7.0` (local; step 16 merged into local `main`, not pushed), `step-16a`
-(pushed), `v0.6.0`, `step-15`, `v0.5.0`, `step-14`, `v0.4.1`, `step-13`, `v0.4.0` (pushed), `v0.3.2`,
-`step-10`, `v0.3.1`, `step-09`, `step-08`, `step-07`, `v0.2.0-parity` (version tags are local only)
+Last updated: 2026-11-09 (step 20) Branch: `step/20-toetsen` (from `main` `4bd1528`)
+Last tags: `step-19`, `v0.10.0`, `step-19a`, `step-18`, `v0.9.0`
 
 ## Current step
 
-**Next action:** the user merges the step 19 PR (`step/19-domain-core` -> `main`). After that: sync local `main`, tag `step-19`, `v0.10.0`. PR #10 is merged on GitHub (`80345c3`); local `main` is one merge commit behind `origin/main`.
+**Next action:** PR #12 (`step/20-toetsen`). CI run `42636690859`: Windows and Linux green, visual included (new baselines committed: Windows 6, Linux 6). macOS had no runner in three runs (GitHub capacity); its job was rerun on 2026-11-10 without waiting. Resume: `gh run view 42636690859`; when the macOS job has run, copy its 6 baselines from the artifact `visual-macos` (`visual-ci-webkit-darwin/`), check them, commit, push. Do not push before that rerun ends: a push cancels it. Then the user merges; sync `main`, tag `step-20`, `v0.11.0`.
+
+## Step 20 progress (Toetsen, 0.11)
+
+Both parts in one session, so no `step-20a` tag.
+
+1. **Done** (`caa9d63`): pure functions and tests: `domain/test-type.ts` (diagnostic, PO), `domain/exam-info.ts`, `domain/question-structure.ts`.
+2. **Done** (`9d30b69`): 20a list (`screens/toetsen.ts`, `exam-cards.ts`, `exam-menu.ts`), Nieuwe toets (`modals/toets-nieuw.ts`), Toets bewerken (`modals/toets-edit.ts`), shared `modals/exam-fields.ts`, `styles/toetsen.css`, dialog option `leadHtml`. 20b Nieuwe poging and Verzamelkaart with D (`modals/herkansing.ts`), locked observaties, propagation to attempts, B-05 (`toets-overzicht.js`). `e2e/toetsen.spec.ts` (16). Quirk T33.
+3. **Done:** version 0.11.0; gate green on Chromium.
+4. **Done:** review `docs/reviews/step-20.md` (0/2/6/10), triage at its end. M1 (validator warned about `weging_se` on every diagnostic test) and M2 (a refused save had already removed indications) fixed, failing tests first; also m1, m3, n1, n2, n4-n7. m5 and the rest of m6 in the backlog.
+
+5. **Done, user (2026-11-09):** visual diff OK with one text change (lock block: "Observaties worden overgenomen van het origineel."); tested on a copy of the real data: everything works; review m4: diagnostic tests leave the profile's year RTTI Gem. (decision 27, `rttiGemHistory`; grade crate unchanged). Local baselines updated.
+
+Choices made without asking, for the report: an attempt keeps observaties only it has (`resitObsIds`); percentages in the footer are of the normal points, bonus shown apart (the mock's example counted a bonus question in its total); the D note shows a `D` badge (the test has no number yet); summary overview columns are the union of all attempts' observaties.
+
+**Not touched:** grade rules, data format. Local visual baselines: 18 images differ (6 views × 3 looks: `screen-toetsen`, `exam-menu`, `modal-toets-new`, `modal-toets-edit`, `modal-herkansing`, `modal-verzamelkaart`); not updated, the user first.
 
 ## Step 19 progress (Domain logic, 0.10)
 

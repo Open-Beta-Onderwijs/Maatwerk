@@ -104,6 +104,14 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-TOE-7** "Opdrachten genereren": cut-offs, "Alles aan"/"Alles uit", "Antwoordsleutel",
       "Genereren" shows progress and then the merged PDF; "Afdrukken" copies and opens it
       (name has `Opdrachten`, or `Antwoordsleutel` for the key). With duplex, every student starts on an odd page.
+- [ ] **M-TOE-8** (0.11) Toets with D ticked: grey badge and pill "Diagnostisch", "telt niet mee
+      voor rapport of SE", Weging 0; the student's year average and trend ignore it; unticking D
+      brings the old Weging back in the same dialog.
+- [ ] **M-TOE-9** (0.11) Nieuwe poging: Inhaal and Herkansing lock Beschrijving, Anders opens it;
+      the observaties show locked. Change them on the original, with scores on an attempt: it asks
+      first, and the attempt follows (also the overview).
+- [ ] **M-TOE-10** (0.11) Overzicht openen on a test with attempts: a student who only made the
+      resit shows the observaties ticked on that resit (B-05).
 
 ## Observaties (M-OBS)
 
