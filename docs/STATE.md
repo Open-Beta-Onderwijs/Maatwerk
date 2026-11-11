@@ -1,9 +1,19 @@
 # State
 
-Last updated: 2026-11-11 (step 23) Branch: `step/23-po-grading` (from `main` `3062568`)
-Last tags: `step-22`, `v0.13.0`, `step-21`, `v0.12.0`, `step-20`, `v0.11.0`
+Last updated: 2026-11-11 (after step 23) Branch: `step/24-po-rapport` (local, from `main`
+`6c144f5`; only this STATE commit)
+Last tags: `step-23`, `v0.14.0`, `step-22`, `v0.13.0`, `step-21`, `v0.12.0`
 
 ## Current step
+
+**Step 23 done and merged (2026-11-11):** PR #14 merged into `main` (`6c144f5`, merge commit);
+push CI (`43007836698`) and PR CI (`43013836802`) green on `727f8bb` on all three OSes, visual
+included (CI baselines of `modal-po-scores`/`modal-po-grade` from run `43005771776`, `727f8bb`).
+Tags `step-23`, `v0.14.0` on `727f8bb`, pushed.
+
+**Next action:** the user's manual test M-POB-1..6 on a copy of real data with the local exe
+0.14.0 (`target/release/maatwerk.exe`, built from `3b04a56`, same code as the merge); then step 24
+(PO rapport, its own design round) when the user says so.
 
 **Step 23 (PO c: PO beoordelen, 0.14), started 2026-11-11.** Steps 20-22 and the top bar are
 merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (`3062568`, steps
@@ -16,9 +26,7 @@ are the baselines); local exe 0.14.0 built for the test on real data.
 
 **User (2026-11-11):** before/after table OK ("works like I expect"); go on to CI and the merge.
 
-**Next action:** push for CI (CI baselines of the two new
-views from CI's own run), merge, tags `step-23`/`v0.14.0`. Manual test M-POB-1..6 on real data
-with a local exe 0.14.0.
+Then: pushed for CI, CI baselines, merged, tagged (see above).
 
 ## Step 23 progress (PO c: PO beoordelen, 0.14)
 
