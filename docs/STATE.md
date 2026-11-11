@@ -11,8 +11,12 @@ merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (
 remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
 `81e9c63`. Merged local branches deleted.
 
-**Next action (waiting for the user):** OK on the before/after table (STOP) and on the visual
-diff of `modal-po-scores` and `modal-po-grade`; then push for CI (CI baselines of the two new
+**User (2026-11-11):** visual diff of `modal-po-scores` and `modal-po-grade` OK (local images
+are the baselines); local exe 0.14.0 built for the test on real data.
+
+**User (2026-11-11):** before/after table OK ("works like I expect"); go on to CI and the merge.
+
+**Next action:** push for CI (CI baselines of the two new
 views from CI's own run), merge, tags `step-23`/`v0.14.0`. Manual test M-POB-1..6 on real data
 with a local exe 0.14.0.
 
