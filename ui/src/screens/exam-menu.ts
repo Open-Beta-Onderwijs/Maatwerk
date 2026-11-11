@@ -7,7 +7,9 @@ import { openExamModal, deleteExam } from '../modals/toets-edit';
 import { openResitModal, openSummaryEditModal } from '../modals/herkansing';
 import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren.js';
 import { openRapportModal } from '../modals/rapport.js';
+import { examObsIds } from '../domain/opdrachten';
 import { isPo } from '../domain/po';
+import type { Exam } from '../domain/types';
 import { openPoEditModal } from '../modals/po-gegevens';
 import { openPoGrading } from '../modals/po-beoordelen';
 import { openPoResitModal, openProjectgroepenModal } from '../modals/po-groepen';
@@ -55,6 +57,7 @@ async function deleteBlockReason(examId: string, year: string): Promise<string |
  */
 async function poMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {
   const summary = kind === 'summary';
+  const exam = Store.getExamsSync(year).find((e: Exam) => e.id === examId) as Exam | undefined;
   const items: MenuItem[] = [
     summary
       ? {
@@ -68,7 +71,17 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
           run: () => openPoScoresModal(examId, year, openPoGrading),
         },
     { icon: ICONS.rapport, label: 'Rapport genereren', disabled: PO_RAPPORT_LATER },
-    { icon: ICONS.opdrachten, label: 'Opdrachten genereren', disabled: PO_GRADING_LATER },
+    {
+      icon: ICONS.opdrachten,
+      label: 'Opdrachten genereren',
+      // The rubric's general and category observaties (step 23).
+      disabled: summary
+        ? 'Genereer de opdrachten per poging (origineel of herkansing).'
+        : exam && examObsIds(exam).length
+          ? null
+          : 'Er zijn geen observaties gekoppeld aan deze PO of zijn rubric.',
+      run: () => openOpdrachtenGenererenModal(examId, year),
+    },
     'sep',
   ];
   if (kind !== 'attempt') {
@@ -113,7 +126,6 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
   return items;
 }
 
-const PO_GRADING_LATER = 'Een PO beoordelen kan vanaf de volgende versie van Maatwerk.';
 const PO_RAPPORT_LATER = 'Het rapport van een PO komt in een latere versie.';
 
 async function buildMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {

@@ -243,6 +243,73 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('a student who changes projectgroep takes the new group grading, keeps own lines', async ({
+    page,
+  }) => {
+    // Decision 19.
+    const errors = watchErrors(page);
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await page.locator('.nav-btn[data-screen="toetsen"]').click();
+    await examMenuItem(page, PO_ID, 'Projectgroepen');
+    const g = dlg(page);
+    // 't Hart (Projectgroep 2) to Valtoren; Noor Bakker (Valtoren, own +0,3) to Projectgroep 2.
+    await g.locator('.po-member[data-student="900002"]').dragTo(g.locator('.po-group').first());
+    await g.locator('.po-member[data-student="900101"]').dragTo(g.locator('.po-group').nth(1));
+    await g.locator('#po-groups-save').click();
+    const confirm = page.locator('.dlg--confirm');
+    await expect(confirm).toContainText('2 leerlingen wisselen van projectgroep');
+    await confirm.locator('.btn--primary').click();
+    await expect(page.locator('.dlg')).toHaveCount(0);
+
+    const hart = await record(page, '900002');
+    expect(hart.scores?.[PO_ID]).toEqual({
+      'cat-theorie': 6,
+      'cat-uitvoering': 7,
+      'cat-extra': 2,
+      'cat-samen': 3,
+    });
+    expect(hart.observations?.[PO_ID]).toEqual(['obs-po-netjes']);
+    expect(hart.po?.[PO_ID]?.projectgroep).toBe('pg-1');
+    expect(hart.po?.[PO_ID]?.groupLines).toEqual([{ label: 'Te laat ingeleverd', value: -0.5 }]);
+    expect(hart.po?.[PO_ID]?.ownLines).toEqual([]);
+    // Projectgroep 2 had only unstamped scores (Theorie 4): Noor takes those, keeps her +0,3.
+    const noor = await record(page, '900101');
+    expect(noor.scores?.[PO_ID]).toEqual({ 'cat-theorie': 4 });
+    expect(noor.observations?.[PO_ID]).toBeUndefined();
+    expect(noor.po?.[PO_ID]).toEqual({
+      projectgroep: 'pg-2',
+      groupLines: [],
+      ownLines: [{ label: 'Extra meting', value: 0.3 }],
+    });
+    // The table agrees: 't Hart 8,3 (8,8 − 0,5), Noor 2,4 + 0,3 = 2,7.
+    await examMenuItem(page, PO_ID, 'Scores invoeren');
+    await expect(row(page, '900002').locator('.po-sc-grade')).toHaveText('8,3');
+    await expect(row(page, '900101').locator('.po-sc-grade')).toHaveText('2,7');
+    expect(errors).toEqual([]);
+  });
+
+  test('opdrachten genereren follows the general and category observaties', async ({ page }) => {
+    const errors = watchErrors(page);
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await page.locator('.nav-btn[data-screen="toetsen"]').click();
+    await examMenuItem(page, PO_ID, 'Opdrachten genereren');
+    const obs = page.locator('.og-obs-list .og-obs');
+    // The rubric's general (Planning, Netjes) and category observaties (Bronnen, Samen).
+    await expect(obs.locator('.og-obs-name')).toHaveText([
+      /Planning niet gehaald/,
+      /Netjes gewerkt/,
+      /Bronnen ontbreken/,
+      /Goed samengewerkt/,
+    ]);
+    // Valtoren has Netjes (general) and Bronnen (Theorie).
+    await expect(obs.nth(1).locator('.og-obs-head .muted')).toHaveText('2 leerlingen');
+    await expect(obs.nth(2).locator('.og-obs-head .muted')).toHaveText('2 leerlingen');
+    await expect(obs.nth(3).locator('.og-obs-head .muted')).toHaveText('0 leerlingen');
+    expect(errors).toEqual([]);
+  });
+
   test('a colleague who changed a member file meanwhile is a conflict, not overwritten', async ({
     page,
   }) => {

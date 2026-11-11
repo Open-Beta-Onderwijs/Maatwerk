@@ -11,8 +11,8 @@ merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (
 remote: `step-20`/`v0.11.0` `bf1821a`, `step-21`/`v0.12.0` `472cbf2`, `step-22`/`v0.13.0`
 `81e9c63`. Merged local branches deleted.
 
-**Next action:** step 23 sub-task 4: regrouping copies the new group's grading (decision 19),
-PO grades on cards/overviews, opdrachten genereren for a PO (see "Step 23 progress" below).
+**Next action:** step 23 sub-task 5: gate, fresh-context review (`docs/reviews/step-23.md`),
+fixes, then stop and report (before/after table and visual diff for the user).
 
 ## Step 23 progress (PO c: PO beoordelen, 0.14)
 
@@ -51,6 +51,19 @@ with_lines}`; wasm `calcResults` takes an optional 4th arg, new `poLineValid`, `
    counted a group stored in another order than by achternaam as a change (Escape asked).
    `e2e/po-grading.spec.ts` (5), seed option `grading`; visual views `modal-po-scores`,
    `modal-po-grade` (local images written, not yet seen by the user).
+3. **Done:** regrouping (decision 19, `po-groepen.ts` `takeNewGroupGrading`): a moved student
+   takes the grading of a member who stayed in the new group (else the group fields are
+   cleared), own lines kept; opdrachten genereren for a PO (`opdrachten.ts` `examObsIds`: the
+   rubric's general + category observaties; a student's general + category ones), ⋮ item
+   enabled when there are any; rapport.ts passes `po` (PO rapport is step 24). Cards, overviews,
+   profile already go through `examResults`/averages (with `po` since sub-task 1). Manual checks
+   M-POB-1..6. e2e 7 in `po-grading.spec.ts`.
+
+**Before/after (STOP, for the user):** the synthetic v3 fixture plus a PO (weging 2, PTA, Valtoren
+1001 + 1002, 15/17 = 8,8; group line −0,5, own line +0,3 for 1002), CLI `stats` (script
+`po-before-after.mjs` in the session scratchpad): PO mean 8,8 -> 8,5 (sd 0,0 -> 0,2); 1001 year
+8,4 -> 8,0, SE 8,8 -> 8,3; 1002 year 6,9 -> 6,8, SE 8,8 -> 8,6; the test unchanged. No change on
+the fixtures without a PO, nor on data without `po` entries (no app wrote them before 0.14).
 
 ## Step 22 and the merge (history)
 

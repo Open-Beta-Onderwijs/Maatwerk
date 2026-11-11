@@ -148,6 +148,29 @@ export function clearGrading(rec: ScoreRecord, examId: string, groupId: string):
   writeGrading(rec, examId, groupId, emptyGrading());
 }
 
+/**
+ * A PO's observaties for opdrachten genereren (step 23): the general ones (the rubric's and the
+ * exam's own) and every category's, each once.
+ */
+export function poObsIds(
+  exam: { obs_ids?: string[] },
+  rubric: Pick<Rubric, 'obs_ids' | 'categories'> | null | undefined,
+): string[] {
+  return [
+    ...new Set([
+      ...(rubric?.obs_ids ?? []),
+      ...(exam.obs_ids ?? []),
+      ...(rubric?.categories ?? []).flatMap((c) => c.obs_ids ?? []),
+    ]),
+  ];
+}
+
+/** A student's observaties of a PO: the general ones and those of every category. */
+export function poStudentObs(rec: ScoreRecord | null | undefined, examId: string): string[] {
+  const g = gradingOf(rec, examId);
+  return [...new Set([...g.observations, ...Object.values(g.categoryObs).flat()])];
+}
+
 export type GradingStatus = 'none' | 'busy' | 'done';
 
 /**

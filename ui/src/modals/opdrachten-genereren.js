@@ -13,6 +13,7 @@ import {
 } from '../app.js';
 import { printName } from '../domain/print';
 import { formatFixed, parseDecimal } from '../domain/format';
+import { examObsIds } from '../domain/opdrachten';
 import { printOutput } from './rapport.js';
 import { renderWarningsHtml } from '../components/render-warnings';
 
@@ -173,7 +174,8 @@ function renderObsList(el, state) {
   const opdrachten = Store.getOpdrachtenSync();
   const list = el.querySelector('.og-obs-list');
 
-  const rows = (exam.obs_ids ?? []).map((obsId) => {
+  // A PO: its general and category observaties (step 23).
+  const rows = examObsIds(exam).map((obsId) => {
     const obs = obsById[obsId];
     if (!obs) return '';
     const selected = coupling[obsId] ?? [];

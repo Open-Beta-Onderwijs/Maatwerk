@@ -324,7 +324,12 @@ export function buildRapportData({
       const override = rec?.overrides?.[examId];
       const hasScores = Object.keys(questionScores).length > 0;
       if (!hasScores && typeof override?.cijfer !== 'number') return null;
-      const { scored, normalMax, grade, overridden } = calcResults(exam, questionScores, override);
+      const { scored, normalMax, grade, overridden } = calcResults(
+        exam,
+        questionScores,
+        override,
+        rec?.po?.[examId],
+      );
       const groupId = studentGroup(s.id, exam, groups);
       const group = groups.find((g) => g.id === groupId);
       const obsIds = rec?.observations?.[examId] ?? [];
