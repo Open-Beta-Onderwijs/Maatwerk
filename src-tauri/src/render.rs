@@ -9,7 +9,7 @@ use maatwerk_core::outputs::{self, PrintName};
 use maatwerk_core::paths::RelPath;
 use maatwerk_core::typst_svc::{
     self, BatchError, BatchJob, BatchOptions, BatchProgress, Diagnostic, JobWarning, Mode,
-    OpdrachtHeader, OpdrachtInputs, RapportData, TypstProject, local_now,
+    OpdrachtHeader, OpdrachtInputs, PoRapportData, RapportData, TypstProject, local_now,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -156,6 +156,36 @@ pub async fn render_rapport_pdf(
         let compiled =
             typst_svc::render_rapport_pdf(c.fonts(), &data, c.storage()?.data_dir(), local_now())
                 .map_err(|e| CommandError::typst(e.to_text()))?;
+        let pdf_path = c.outputs()?.put("rapport_preview.pdf", &compiled.output)?;
+        Ok(RenderedPdf {
+            pdf_path,
+            warnings: warning_texts(&compiled.warnings),
+        })
+    })
+    .await
+}
+
+/// The PO rapport (step 24): all graded students of one PO in one PDF, from the data
+/// `ui/src/domain/po-rapport.ts` builds (passed through `normaliseForTypst`). `examId` is unused,
+/// as for the toets rapport.
+#[tauri::command]
+#[specta::specta]
+pub async fn render_po_rapport_pdf(
+    state: State<'_, Shared>,
+    exam_id: String,
+    students: Value,
+    po_info: Value,
+) -> Res<RenderedPdf> {
+    let _ = exam_id;
+    blocking(state, move |c| {
+        let data = PoRapportData { po_info, students };
+        let compiled = typst_svc::render_po_rapport_pdf(
+            c.fonts(),
+            &data,
+            c.storage()?.data_dir(),
+            local_now(),
+        )
+        .map_err(|e| CommandError::typst(e.to_text()))?;
         let pdf_path = c.outputs()?.put("rapport_preview.pdf", &compiled.output)?;
         Ok(RenderedPdf {
             pdf_path,

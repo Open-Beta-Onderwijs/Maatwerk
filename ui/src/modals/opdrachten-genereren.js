@@ -14,7 +14,7 @@ import {
 import { printName } from '../domain/print';
 import { formatFixed, parseDecimal } from '../domain/format';
 import { examObsIds } from '../domain/opdrachten';
-import { printOutput } from './rapport.js';
+import { printOutput } from './rapport';
 import { renderWarningsHtml } from '../components/render-warnings';
 
 // ═══════════════════════════════════════════════════════════════════════════════

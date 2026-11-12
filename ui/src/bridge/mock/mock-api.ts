@@ -700,6 +700,24 @@ export class MockApi implements MaatwerkApi {
     };
   }
 
+  async renderPoRapportPdf(
+    examId: string,
+    students: unknown[],
+    poInfo: Record<string, unknown>,
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>> {
+    this.record('renderPoRapportPdf', [examId, students, poInfo]);
+    const title = String(poInfo?.name ?? examId);
+    const pages = students.map((s, i) => {
+      const name = (s as { name?: unknown })?.name;
+      return ['PO-rapport (mock)', title, typeof name === 'string' ? name : `Leerling ${i + 1}`];
+    });
+    return {
+      success: true,
+      pdfPath: this.storePdf('rapport_preview.pdf', pages.length ? pages : [['PO-rapport (mock)']]),
+      warnings: [...this.renderWarnings],
+    };
+  }
+
   async renderAssignmentSvg(
     opdrachtId: string,
     title: string,
