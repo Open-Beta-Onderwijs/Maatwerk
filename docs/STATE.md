@@ -17,6 +17,42 @@ and 20, commit `62b608d`).
 
 **Next action:** step 24 (see "Step 24 progress" below).
 
+## Step 24 progress (PO d: PO rapport, 0.15)
+
+Baseline 2026-11-12 on `step/24-po-rapport` `62b608d`: cargo test all ok, 537 Vitest, 125 node
+(`npm ci` was needed first).
+
+1. **Done (24a, `3228af4`):** `rapport-po.typ` + `rapport-po-main.typ` (variant A, boards 19 and
+   20). Shared helpers factored out of `rapport.typ` (`section_label`, `zebra_stroke`/`_fill`,
+   `student_start`/`student_end`); toets goldens pixel-exact. Core `po_rapport_world`,
+   `render_po_rapport_pdf`, `PoRapportData` (shared private `world()`). UI
+   `domain/po-rapport.ts` (`buildPoRapportData`; numbers via wasm `calcResults`,
+   `classQuestions`, `mean`). Fixture `ui/tests/domain/po-rapport.fixture.ts` (Valtoren of 3 over
+   5A/5B with group −0,5 and own +0,3/−0,5 lines, a projectgroep of one, a placed ungraded and an
+   unplaced student; rubric with bonus, diagnostic, overlapping levels, 5 levels, no titles, two
+   category pages). Golden `tests/golden/typst/rapport-po` (Sem + Fleur, 6 pages, 50 ppi),
+   **blessed as a draft: needs the user's visual check (STOP)**; `po-rapport.test.ts` keeps its
+   data equal to the builder's (`MAATWERK_WRITE_PO_CASE=1` rewrites it). Rust
+   `tests/typst_po_rapport.rs` (7 + ignored `preview` writing 110-ppi PNGs to
+   `target/tmp/po-preview/`). `typst.test.mjs`/`regen-typst.mjs` accept Maatwerk-only goldens.
+2. **Done (24b, `b72cdd6`):** command `render_po_rapport_pdf`, bridge `renderPoRapportPdf`
+   (Tauri, mock; not in `PORTED_METHODS`), `services/rapport.ts` `compilePoRapport`; ⋮ Rapport
+   genereren enabled on a PO attempt. R-05: `modals/rapport.js` -> `modals/rapport.ts` +
+   `modals/rtti-uitleg.ts`. e2e `po-rapport.spec.ts` (2). Docs: manual checks M-POR-1..4,
+   typst-contract note.
+3. Next: version 0.15.0, gate, reviewer subagent (`docs/reviews/step-24.md`), then STOP: the user
+   checks the golden PNGs / a real PDF.
+
+**Choices made without asking (for the report):** "per student, per class, batch, as for a test"
+read as the toets rapport does it: one PDF of all graded students of the PO (attempt), sorted by
+class then achternaam; the data is built in the UI like the toets rapport's (numbers from
+`maatwerk-grades` via wasm), not by a new Rust loader; a projectgroep of one has no projectgroep
+line and "Je hebt …" wording; the sentence names group and/or personal bonus/malus as present;
+dots coloured as on the toets rapport (`scoreDotColor`); category averages over the graded
+students who have that category scored (as `class_questions`: empty left out); an invalid
+category score counts 0; positive lines green, negative red; the B / D footnote lists only what
+the rubric has; an overwritten grade without scores gets page 1 with the grade only.
+
 **Step 23 (PO c: PO beoordelen, 0.14), started 2026-11-11.** Steps 20-22 and the top bar are
 merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (`3062568`, steps
 21, 22 and `fix/topbar` in one merge); push CI on `main` green (run `42962807480`). Tags on the
