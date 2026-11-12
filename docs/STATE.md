@@ -14,9 +14,16 @@ commit, as `docs/release.md`), pushed.
 **Release 0.16.0:** a **draft** GitHub release "Maatwerk 0.16.0" (tag `v0.16.0`) with Dutch
 notes covering everything since 0.3.2 (user). The user publishes it.
 
-**Next action:** attach the tag CI's files (`maatwerk-windows-x64`, `maatwerk-macos-universal`,
-`maatwerk-linux-x86_64`) to the draft when that run is green, if not done yet; then step 26
-(Login and splash). Manual checks M-POR-1..4 (0.15) are still the user's.
+**Release files (2026-11-12):** tag CI run `43233388996`: Windows and Linux green, macOS got no
+runner (rerun started; the user: leave it for now). Attached to the draft after checking
+checksums: `maatwerk.exe` (SHA-256 `7fc476df…2159`, in the notes), `maatwerk.exe.sha256`,
+`LICENSE`, `THIRD_PARTY_NOTICES.txt`, the AppImage, the `.deb` and `SHA256SUMS-linux.txt`
+(renamed: macOS has its own `SHA256SUMS.txt`).
+
+**Next action:** when the macOS job of run `43233388996` is green, attach
+`Maatwerk-macos-universal.dmg`, the `.zip` and its `SHA256SUMS.txt` as `SHA256SUMS-macos.txt`
+(the notes name it so); the user publishes the draft. Then step 26 (Login and splash). Manual
+checks M-POR-1..4 (0.15) are still the user's.
 
 ## Step 25 progress (Score entry, 0.16)
 
