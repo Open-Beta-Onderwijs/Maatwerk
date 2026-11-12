@@ -10,12 +10,17 @@ Last tags: `step-24`, `v0.15.0`, `step-23`, `v0.14.0`, `step-22`, `v0.13.0`
 `43200670042` green on all three OSes (Windows and macOS first got no runner, rerun). Tags
 `step-24`, `v0.15.0` on `2bdac21`, pushed. Manual M-POR-1..4: the user, with a 0.15 exe.
 
-**Next action (STOP, user):** the visual check of `modal-scores` (3 looks; local images in
-`ui/test-results/visual-modal-scores*/*-actual.png` after `npm run test:visual`, or the local exe
-0.16.0). On OK: update the local visual baselines, push `step/25-score-entry`, PR, take the CI
-baselines of `modal-scores` from CI's own run, merge, tags `step-25`, `v0.16.0`. **Then the
-user wants a GitHub release** (`docs/release.md` section 4; ask which notes: since 0.3.2, the
-only (draft) release on GitHub, or 0.16 alone; draft or published).
+**User (2026-11-12, visual check):** the GEMIDDELDE row showed no observatie count: fixed
+(`b958b00`, the grid emptied read-only checkbox cells; G04 now checks it). Release notes: cover
+everything since 0.3.2; a **draft** release `Maatwerk 0.16.0` (tag `v0.16.0`, not yet created)
+exists on GitHub with Dutch notes, no files yet. CI on `main` / `v0.15.0` after the step 24
+merge had Windows and macOS cancelled (no runner); rerun 2026-11-12 (runs `43208689198`,
+`43208732019`).
+
+**Next action (STOP, user):** the user's OK on the fixed `modal-scores`. Then: local visual
+baselines, push `step/25-score-entry`, PR, CI baselines of `modal-scores` from CI's own run,
+merge, tags `step-25`, `v0.16.0`; when the tag's CI is green, attach its Windows, macOS and
+Linux files to the draft release (`docs/release.md` section 4) and leave it a draft for the user.
 
 ## Step 25 progress (Score entry, 0.16)
 
