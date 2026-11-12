@@ -201,3 +201,12 @@ Filled in as the user answers (2026-11-08).
     group lines, held 1,0..10,0 (display only). A line is in grade points with at most one
     decimal, from −9,0 to +9,0, not 0. A PO is gradeable as a test: one scored category is enough,
     an unscored one counts 0; lines alone give no grade. An override still replaces the result.
+29. **The score grid's GEMIDDELDE row (user, 2026-11-12, step 25, board 13):** besides Totaal
+    and Cijfer (unchanged), the row shows per question the class average of the toets rapport
+    (`class_questions`: N and an invalid score count 0, empty is left out, one decimal; empty when nobody has an
+    entry), per observatie how many students have it ticked, and per R/T1/T2/I the mean of the
+    students' percentages over the rows with a grade, NVT left out, whole percent (NVT when no
+    such row has one). Display only: no stored number changes. The STANDAARDDEVIATIE row is
+    unchanged (Totaal and Cijfer). Example on the tiny fixture, Toets H1, 3a nat (8 students):
+    questions 1,2 / 0,9 / 2,1 / 0,7 / 1,3 / 0,6 / 0,9; observaties 4 / 1 / 2; Totaal 7,1 / 16 and
+    Cijfer 5,0 as before; R 40%, T1 48%, T2 52%, I 23%.

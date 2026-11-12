@@ -63,6 +63,21 @@ export async function copySelection(page: Page): Promise<string> {
   });
 }
 
+/** Cuts the selection as Ctrl+X does and returns the cut text. */
+export async function cutSelection(page: Page): Promise<string> {
+  if (realClipboard(page)) {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.keyboard.press('Control+X');
+    return page.evaluate(() => navigator.clipboard.readText());
+  }
+  return page.evaluate(() => {
+    const data = new DataTransfer();
+    const event = new ClipboardEvent('cut', { clipboardData: data, bubbles: true });
+    (document.activeElement ?? document.body).dispatchEvent(event);
+    return data.getData('text/plain');
+  });
+}
+
 /** The table of the g-th group grid in the modal (0 = first). */
 export function gridTable(page: Page, g = 0): Locator {
   return page.locator('.dlg .score-grid-table').nth(g);

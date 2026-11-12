@@ -154,8 +154,7 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 3b
 
-- **Cut (Ctrl+X) in the score grid (review 3b m5):** Handsontable had it; the own grid has copy,
-  paste and Delete. Add if teachers miss it (copy + Delete is the workaround).
+- ~~**Cut (Ctrl+X) in the score grid (review 3b m5):**~~ Done in step 25 (F-03).
 - **Licence ban covers production deps only (review 3b m8):** `tools/check-npm-licenses.mjs` walks
   `--omit=dev`; Vite would bundle a dev dependency if UI code imported it. Add a check on the
   built bundle (or an ESLint import rule) when the dependency list grows.
@@ -504,3 +503,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - Review 24 n1: the notice's Dutch ("Geen rapport voor niet ingedeeld in …") reads awkwardly.
 - Review 24 n3: an unscored category shows "—" but its dot shows 0 (as the toets rapport's "N").
 - Review 24 n5: a placed student outside the matching classes gets klas "—".
+
+## From Step 25
+
+- **Review 25 m3/m6:** e2e for the score modal's help popover and footer save status, and for
+  Ctrl+X over observatie and Cijfer cells (behaves as Delete).
+- **Review 25 n2:** `screens/scores/group-grid.ts` is ~525 lines; move the keyboard handler into
+  its own module when it next changes.

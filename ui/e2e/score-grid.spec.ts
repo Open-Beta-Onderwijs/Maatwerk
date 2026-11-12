@@ -10,6 +10,7 @@ import {
   EXAMS,
   cell,
   copySelection,
+  cutSelection,
   header,
   headerTexts,
   isMarkedUnsaved,
@@ -65,6 +66,11 @@ test.describe('layout', () => {
     const n = await rows(page).count();
     await expect(cell(page, n - 2, 1)).toHaveText('Gemiddelde');
     await expect(cell(page, n - 1, 1)).toHaveText('Standaarddeviatie');
+    // Decision 29: the average row counts the ticked observaties (user, step 25 visual check).
+    const ticked = await rows(page)
+      .locator(`td:nth-child(${H2.obs1 + 1}) input:checked`)
+      .count();
+    await expect(cell(page, n - 2, H2.obs1)).toHaveText(String(ticked));
   });
 });
 
@@ -130,12 +136,82 @@ test.describe('entering scores', () => {
     await expect(cell(page, n - 2, E.cijfer)).toHaveText('10,0'); // Gemiddelde of one student
   });
 
-  test('G16 row status colours the # and Naam cells', async ({ page }) => {
+  test('spec 4.10 score cells are tinted by score (board 13)', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
+    await typeInto(page, 0, E.q1, '5'); // full
+    await typeInto(page, 0, E.q2, '2'); // partial
+    await typeInto(page, 0, E.q3, '0'); // zero
+    await typeInto(page, 1, E.q1, 'N');
+    await expect.poll(() => bg(page, 0, E.q1)).toBe('rgb(223, 241, 229)');
+    await expect.poll(() => bg(page, 0, E.q2)).toBe('rgb(252, 241, 207)');
+    await expect.poll(() => bg(page, 0, E.q3)).toBe('rgb(251, 225, 222)');
+    await expect.poll(() => bg(page, 1, E.q1)).toBe('rgb(238, 240, 243)');
+  });
+
+  test('spec 4.10 the group heading, column headings and # / Naam stay in view', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 760, height: 560 });
+    await openGrid(page, EXAMS.h2);
+    const box = page.locator('#sc-grid-container');
+    await box.evaluate((el) => el.scrollTo(240, 60));
+    const rect = (sel: string) =>
+      page
+        .locator(sel)
+        .first()
+        .evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    await expect
+      .poll(async () => {
+        const area = await rect('#sc-grid-container');
+        const head = await rect('.dlg .sc-group-head');
+        const th = await rect('.dlg .score-grid-table thead th:nth-child(3)');
+        const nr = await rect('.dlg .score-grid-table tbody td.sc-stick0');
+        return [
+          Math.round(head.top - area.top),
+          Math.round(th.top - head.bottom),
+          Math.round(nr.left - area.left),
+        ];
+      })
+      .toEqual([0, 0, 0]);
+  });
+
+  test('spec 4.10 a cell reached with the keyboard is not hidden under a sticky part (review 25 M1)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 760, height: 560 });
+    await openGrid(page, EXAMS.h2);
+    await select(page, 1, H2.q1);
+    await page.locator('#sc-grid-container').evaluate((el) => el.scrollTo(240, 80));
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowLeft');
+    const rect = (loc: ReturnType<typeof cell>) =>
+      loc.evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    await expect
+      .poll(async () => {
+        const td = await rect(cell(page, 0, H2.q1));
+        const th = await rect(page.locator('.dlg .score-grid-table thead th').nth(H2.q1));
+        const name = await rect(cell(page, 0, 1));
+        return [td.top >= th.bottom - 1, td.left >= name.right - 1];
+      })
+      .toEqual([true, true]);
+  });
+
+  test('G16 row status marks the # and Naam cells; the group heading counts it', async ({
+    page,
+  }) => {
+    await openGrid(page, EXAMS.empty);
+    const mark = (row: number, col: number) =>
+      cell(page, row, col).evaluate((td) => getComputedStyle(td).boxShadow);
+    const info = page.locator('.dlg .sc-group-info').first();
     await typeInto(page, 0, E.q1, '3');
-    await expect.poll(() => bg(page, 0, 0)).toBe('rgb(255, 243, 205)'); // partly entered
+    await expect.poll(() => mark(0, 0)).toContain('rgb(242, 201, 76)'); // partly entered
+    await expect(info).toContainText('nog niet compleet');
     await typeInto(page, 0, E.q2, 'x');
-    await expect.poll(() => bg(page, 0, 1)).toBe('rgb(255, 0, 51)'); // invalid
+    await expect.poll(() => mark(0, 0)).toContain('rgb(229, 115, 107)'); // invalid
+    await expect(cell(page, 0, 1)).toHaveClass(/sc-name--invalid/);
+    await expect(info).toContainText('1 met een ongeldige score');
+    await expect(info).toHaveAttribute('data-level', 'bad');
   });
 });
 
@@ -492,6 +568,21 @@ test.describe('undo, saving, colleagues', () => {
     await select(page, 1, E.q1);
     await cell(page, 1, E.q2).click({ modifiers: ['Shift'] });
     expect(await copySelection(page)).toBe('1\t2');
+  });
+
+  test('F-03 Ctrl+X copies a range and empties it; one undo step', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await select(page, 0, E.q1);
+    await pasteText(page, '1\t2\t3');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 1, q2: 2, q3: 3 });
+    await select(page, 0, E.q1);
+    await cell(page, 0, E.q2).click({ modifiers: ['Shift'] });
+    expect(await cutSelection(page)).toBe('1\t2');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q3: 3 });
+    await expect(cell(page, 0, E.q1)).toHaveText('');
+    await page.locator('#sc-undo').click();
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 1, q2: 2, q3: 3 });
   });
 
   test('G55 a colleague change updates the row and flashes it', async ({ page }) => {

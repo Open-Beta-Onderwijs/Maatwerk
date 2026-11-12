@@ -10,7 +10,6 @@ import {
   mixHex,
   pctBarColor,
   rttiPctCellColor,
-  sdCellColor,
 } from '../../src/domain/grade-colors';
 
 describe('isFail', () => {
@@ -70,9 +69,6 @@ describe('grade colours (design spec 2.3)', () => {
   });
 
   it('score-grid statistics cells keep their pastel scale', () => {
-    expect(sdCellColor(0)).toBe('#c3e6cb');
-    expect(sdCellColor(1)).toBe('#fff3cd');
-    expect(sdCellColor(3)).toBe('#f8d7da');
     expect(rttiPctCellColor(0)).toBe('#f8d7da');
     expect(rttiPctCellColor(100)).toBe('#c3e6cb');
     expect(rttiPctCellColor(null)).toBeNull();

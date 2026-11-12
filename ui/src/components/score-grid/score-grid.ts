@@ -27,7 +27,7 @@ export interface CellChange {
   newValue: CellValue;
 }
 
-/** `edit`: the editor or a checkbox; `paste`: Ctrl+V; `clear`: Delete/Backspace. */
+/** `edit`: the editor or a checkbox; `paste`: Ctrl+V; `clear`: Delete/Backspace or Ctrl+X. */
 export type ChangeSource = 'edit' | 'paste' | 'clear';
 
 export interface KeyContext {
@@ -413,6 +413,16 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
     e.clipboardData?.setData('text/plain', text);
   }
 
+  // Cut (F-03): copy, then empty the range as Delete does (checkboxes stay as they are).
+  function onCut(e: ClipboardEvent): void {
+    if (!ownsFocus()) return;
+    const text = copyText();
+    if (text === null) return;
+    e.preventDefault();
+    e.clipboardData?.setData('text/plain', text);
+    clearRange();
+  }
+
   function onPaste(e: ClipboardEvent): void {
     if (!ownsFocus()) return;
     const text = e.clipboardData?.getData('text/plain');
@@ -564,6 +574,7 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
   // Copy and paste events go to the body when the focused element is not
   // editable, so they are caught on the document.
   document.addEventListener('copy', onCopy);
+  document.addEventListener('cut', onCut);
   document.addEventListener('paste', onPaste);
 
   function getCell(row: number, col: number): HTMLTableCellElement | null {
@@ -583,6 +594,7 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
     destroyed = true;
     document.removeEventListener('mouseup', onMouseUp);
     document.removeEventListener('copy', onCopy);
+    document.removeEventListener('cut', onCut);
     document.removeEventListener('paste', onPaste);
     root.remove();
   }

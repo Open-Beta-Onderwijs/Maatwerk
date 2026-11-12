@@ -2,7 +2,7 @@
 
 // Score grid logic (score modal, docs/specs/score-grid.md): input parsing, row
 // status, and the computed columns and summary rows of a group's grid. Moved
-// out of screens/scores.js in Step 3b; golden: scoregrid.json.
+// out of the score modal (now screens/scores/) in Step 3b; golden: scoregrid.json.
 //
 // Column layout of a grid row (N questions, O observaties, TOFF = O > 0 ? O + 1 : 0):
 //   0..1        = id, naam
@@ -18,7 +18,7 @@
 import { round1 } from './core';
 import { formatFixed, formatGrade, formatNumber, parseDecimal, parseDecimalLoose } from './format';
 import { calcResults } from './grades';
-import { stats } from './statistics';
+import { classQuestions, stats } from './statistics';
 import type { Exam, Override, Question, QuestionScores } from './types';
 
 export type GridCell = string | boolean | number | null | undefined;
@@ -107,16 +107,8 @@ export function computeRowStatus(
   return 'ok';
 }
 
-/**
- * Fills the computed columns (Totaal, Cijfer, R%…I%) of row `rowIdx` from its
- * question cells. A grade overwritten by the teacher (gridData.overrides[rowIdx])
- * replaces the calculated one; gridData.gradeInfo[rowIdx] tells the renderer about it.
- */
-export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number, O = 0): void {
-  const N = exam.questions.length;
-  const TOFF = O > 0 ? O + 1 : 0;
-  const row = gridData[rowIdx]!;
-
+/** A row's question cells as the core reads them: empty left out, N null, a number, or the text. */
+function rowQuestionScores(row: GridCell[], exam: Pick<Exam, 'questions'>): QuestionScores {
   const questionScores: QuestionScores = {};
   exam.questions.forEach((q, qi) => {
     const raw = row[2 + qi];
@@ -127,8 +119,21 @@ export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number,
       return;
     }
     const n = parseScoreNum(raw);
-    questionScores[q.id] = isNaN(n) ? (raw as string) : n;
+    questionScores[q.id] = isNaN(n) ? String(raw) : n;
   });
+  return questionScores;
+}
+
+/**
+ * Fills the computed columns (Totaal, Cijfer, R%…I%) of row `rowIdx` from its
+ * question cells. A grade overwritten by the teacher (gridData.overrides[rowIdx])
+ * replaces the calculated one; gridData.gradeInfo[rowIdx] tells the renderer about it.
+ */
+export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number, O = 0): void {
+  const N = exam.questions.length;
+  const TOFF = O > 0 ? O + 1 : 0;
+  const row = gridData[rowIdx]!;
+  const questionScores = rowQuestionScores(row, exam);
 
   const override = gridData.overrides?.[rowIdx];
   const setGradeInfo = (res: ReturnType<typeof calcResults>) => {
@@ -220,10 +225,73 @@ export function recomputeSummaryRow(
     : '';
   avgRow[N + 4 + TOFF] = gradeStats ? formatFixed(gradeStats.mean) : '';
 
+  // Step 25 (decision 29): per question the class average as on the rapport (N counts 0, empty
+  // is left out); per observatie how many are ticked; per RTTI category the mean of the
+  // percentages of the rows with a grade (NVT left out), whole percent.
+  const rows = gridData.slice(0, summaryIdx);
+  const perStudent = rows.map((row) => rowQuestionScores(row, exam));
+  const perQuestion = classQuestions(exam.questions, perStudent);
+  exam.questions.forEach((q, qi) => {
+    const anyEntry = perStudent.some((s) => q.id in s);
+    avgRow[2 + qi] = anyEntry ? formatFixed(perQuestion[qi]!.classAvg) : '';
+  });
+  for (let i = 0; i < O; i++) {
+    avgRow[N + 3 + i] = rows.length ? String(rows.filter((r) => r[N + 3 + i] === true).length) : '';
+  }
+  const graded = rows.filter((r) => {
+    const g = r[N + 4 + TOFF];
+    return g && g !== '—';
+  });
+  for (let k = 0; k < 4; k++) {
+    const col = N + 6 + TOFF + k;
+    const pcts = graded
+      .map((r) => parseDecimalLoose(r[col]))
+      .filter((p): p is number => Number.isFinite(p));
+    const mean = stats(pcts)?.mean;
+    avgRow[col] = mean !== undefined ? `${formatFixed(mean, 0)}%` : graded.length ? 'NVT' : '';
+  }
+
   // Std dev row
   if (stdIdx == null) return;
   const sdRow = gridData[stdIdx]!;
   clearSpecialRow(sdRow);
   sdRow[N + 3 + TOFF] = totaalStats ? formatFixed(totaalStats.sd) : '';
   sdRow[N + 4 + TOFF] = gradeStats ? formatFixed(gradeStats.sd) : '';
+}
+
+/** The status line of a group in the score modal (board 13) and how it reads. */
+export interface GroupStatus {
+  text: string;
+  /** `ok`: every score entered; `todo`: some missing; `bad`: an invalid score. */
+  level: 'ok' | 'todo' | 'bad';
+}
+
+/**
+ * "alle scores ingevuld", "nog geen scores" or "<k> nog niet compleet", with
+ * "<k> met een ongeldige score" first when there are any. A student is complete when every
+ * question has an entry (N counts) and none is invalid.
+ */
+export function groupStatus(rows: GridCell[][], exam: Pick<Exam, 'questions'>): GroupStatus {
+  const N = exam.questions.length;
+  let invalid = 0,
+    incomplete = 0,
+    anyEntry = false;
+  for (const row of rows) {
+    const status = computeRowStatus(row, exam);
+    let filled = 0;
+    for (let qi = 0; qi < N; qi++) {
+      const v = row[2 + qi];
+      if (v !== '' && v !== undefined && v !== null) filled++;
+    }
+    if (filled > 0) anyEntry = true;
+    if (status === 'invalid') invalid++;
+    else if (filled < N) incomplete++;
+  }
+  if (invalid > 0) {
+    const rest = incomplete > 0 ? `, ${incomplete} nog niet compleet` : '';
+    return { text: `${invalid} met een ongeldige score${rest}`, level: 'bad' };
+  }
+  if (!anyEntry && rows.length > 0 && N > 0) return { text: 'nog geen scores', level: 'todo' };
+  if (incomplete > 0) return { text: `${incomplete} nog niet compleet`, level: 'todo' };
+  return { text: 'alle scores ingevuld', level: 'ok' };
 }

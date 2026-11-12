@@ -1,21 +1,61 @@
 # State
 
-Last updated: 2026-11-11 (after step 23) Branch: `step/24-po-rapport` (local, from `main`
-`6c144f5`; only this STATE commit)
-Last tags: `step-23`, `v0.14.0`, `step-22`, `v0.13.0`, `step-21`, `v0.12.0`
+Last updated: 2026-11-12 (step 25 in progress) Branch: `step/25-score-entry` (from
+`step/24-po-rapport` `2bdac21`, which is merged into `main` as `c94f377`)
+Last tags: `step-24`, `v0.15.0`, `step-23`, `v0.14.0`, `step-22`, `v0.13.0`
 
 ## Current step
 
-**Step 23 done and merged (2026-11-11):** PR #14 merged into `main` (`6c144f5`, merge commit);
-push CI (`43007836698`) and PR CI (`43013836802`) green on `727f8bb` on all three OSes, visual
-included (CI baselines of `modal-po-scores`/`modal-po-grade` from run `43005771776`, `727f8bb`).
-Tags `step-23`, `v0.14.0` on `727f8bb`, pushed.
+**Step 24 done and merged (2026-11-12):** PR #15 merged into `main` (`c94f377`); PR CI run
+`43200670042` green on all three OSes (Windows and macOS first got no runner, rerun). Tags
+`step-24`, `v0.15.0` on `2bdac21`, pushed. Manual M-POR-1..4: the user, with a 0.15 exe.
 
-**User (2026-11-12):** manual test M-POB-1..6 on a copy of real data with the local exe 0.14.0:
-all pass (`docs/reviews/manual-test-step-23.md`). PO rapport design done (variant A, boards 19
-and 20, commit `62b608d`).
+**User (2026-11-12, visual check):** the GEMIDDELDE row showed no observatie count: fixed
+(`b958b00`, the grid emptied read-only checkbox cells; G04 now checks it). Release notes: cover
+everything since 0.3.2; a **draft** release `Maatwerk 0.16.0` (tag `v0.16.0`, not yet created)
+exists on GitHub with Dutch notes, no files yet. CI on `main` / `v0.15.0` after the step 24
+merge had Windows and macOS cancelled (no runner); rerun 2026-11-12 (runs `43208689198`,
+`43208732019`).
 
-**Next action:** step 24 (see "Step 24 progress" below).
+**Next action (STOP, user):** the user's OK on the fixed `modal-scores`. Then: local visual
+baselines, push `step/25-score-entry`, PR, CI baselines of `modal-scores` from CI's own run,
+merge, tags `step-25`, `v0.16.0`; when the tag's CI is green, attach its Windows, macOS and
+Linux files to the draft release (`docs/release.md` section 4) and leave it a draft for the user.
+
+## Step 25 progress (Score entry, 0.16)
+
+Baseline 2026-11-12 on `2bdac21`: cargo test all ok, 127 node; Vitest 558 and Chromium e2e 296
+after sub-task 3.
+
+**User decisions (2026-11-12):** GEMIDDELDE row as board 13: per question the rapport's class
+average, per observatie the ticked count, per RTTI the mean percentage (decision 29 in
+`step-19-grade-rules.md`, with the fixture example); merge PR #15 when green (done).
+
+1. **Done (`a4d68cf`):** F-03 Ctrl+X: copy, then empty as Delete (one undo step); Chromium and
+   WebKit fire `cut` on the grid's focus. e2e `F-03 Ctrl+X ...`.
+2. **Done (`64ebdfd`):** decision 29 in `domain/scoregrid.ts` `recomputeSummaryRow`; tests
+   "score grid decision 29"; golden cases overlay only the new cells.
+3. **Done (`938ab9b`):** R-05: `screens/scores.js` -> `screens/scores/` (session, roster, build,
+   group-grid, cells, cell-menu, modal), behaviour unchanged.
+4. **Done (`77c23d7`):** restyle after board 13: one header row (title + badge + name; ?,
+   undo, redo, . → N, Toets bewerken, N-term), the ? popover (hover, focus, click), sticky group
+   heading with "<n> leerlingen · <status>" (`groupStatus`), sticky column headings and # / Naam,
+   tints, row bars, summary rows, footer legend + save status. `styles/scores.css` (modal) and
+   `styles/score-grid.css` (grid); old score CSS removed from `style.css`. Grid stays light in
+   the dark theme, as the PO table.
+5. **Done:** version 0.16.0 (`7a18015`). Gate green on `7a18015`: fmt, clippy, cargo test, 560
+   Vitest, 127 node, 298 Chromium e2e, licences, cargo deny, SPDX; WebKit score-grid/shell/dialog
+   137/138 (one PO dialog flake, passed on rerun). Review `docs/reviews/step-25.md` (0/1/7/5);
+   fixes `bb3a907` (M1, m1, m2, m4, m5, m7, parts of m3, m6, nits; rest in `docs/backlog.md`
+   "From Step 25"). After the fixes: 567 Vitest, 299 Chromium e2e, WebKit score-grid 43/43;
+   local visual: only `modal-scores` (3 looks) differs, 138 unchanged.
+
+**Choices made without asking (for the report):** the grid stays light in the dark theme (as
+the PO score table); row status is a bar before the number instead of coloured # / Naam cells
+(an invalid row's name red); the SD row is grey (no colour scale) as on the board, with "±";
+bonus/diag cells are tinted by score too, italic; the status line counts "nog niet compleet"
+and "met een ongeldige score"; N-term stays the app's stepper; Naam is bold, not a link; cut
+leaves observaties as Delete does.
 
 ## Step 24 progress (PO d: PO rapport, 0.15)
 

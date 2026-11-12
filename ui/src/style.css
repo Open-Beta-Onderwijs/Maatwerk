@@ -7,6 +7,8 @@
 @import './styles/toetsen.css';
 @import './styles/rubrics.css';
 @import './styles/po.css';
+@import './styles/scores.css';
+@import './styles/score-grid.css';
 @import './styles/po-scores.css';
 @import './styles/po-grade.css';
 @import './styles/skeleton.css';
@@ -1011,7 +1013,8 @@ body::after {
   box-sizing: border-box;
   border: 3px solid var(--cursor-color);
   pointer-events: none;
-  z-index: 150;
+  /* Under the score modal's sticky heading and column headings (review 25 m7). */
+  z-index: 1;
 }
 .remote-cursor-flag {
   position: absolute;
@@ -1037,21 +1040,6 @@ body::after {
 .dlg.modal-overview {
   width: 960px;
   height: var(--dlg-max-h);
-}
-.dlg.modal-scores {
-  width: min(100%, 1600px);
-  height: var(--dlg-max-h);
-}
-/* Only the grids scroll, so the header bar (title, buttons, N-term) stays in view. */
-.dlg.modal-scores .dlg-body {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.dlg.modal-scores #sc-grid-container {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
 }
 .dlg.modal-profile {
   width: min(100%, 1400px);
@@ -1320,18 +1308,7 @@ body::after {
   color: #fff;
 }
 
-/* ── Score grid ───────────────────────────────────────────────────────────── */
-/* Grids built ahead while the exam menu is open (Step 7c): laid out, not seen. */
-.sc-prebuild {
-  position: fixed;
-  top: 0;
-  left: -100000px;
-  visibility: hidden;
-  pointer-events: none;
-}
-.score-group-section {
-  margin-bottom: 28px;
-}
+/* Group name heading (exam overview; the score modal restyles it in styles/scores.css). */
 .group-heading {
   font-size: 15px;
   font-weight: 600;
@@ -1340,249 +1317,6 @@ body::after {
   border-bottom: 2px solid var(--accent);
   color: var(--text);
 }
-#score-grid-container {
-  overflow-x: auto;
-}
-/* Numpad '.' → N toggle in the score modal header, styled as a button */
-.sc-dot-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  margin-left: 6px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-btn);
-  background: var(--surface);
-  font-size: 13px;
-  cursor: pointer;
-  user-select: none;
-  box-sizing: border-box;
-  transition: background 0.15s;
-}
-.sc-dot-toggle:hover {
-  background: var(--bg);
-}
-.sc-dot-toggle input {
-  margin: 0;
-  cursor: pointer;
-}
-
-/* ── Score grid keyboard help panel ──────────────────────────────────────── */
-#scores-help-panel {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  font-size: 11px;
-  color: var(--text);
-}
-.scores-help-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 24px;
-}
-.scores-help-grid strong {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 4px;
-  margin-top: 8px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  color: var(--muted);
-}
-.scores-help-grid > div > strong:first-child {
-  margin-top: 0;
-}
-.scores-help-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-.scores-help-table td {
-  padding: 1px 6px 1px 0;
-  vertical-align: top;
-  white-space: nowrap;
-}
-.scores-help-table td:first-child {
-  font-family: monospace;
-  font-size: 11px;
-  color: var(--text);
-  min-width: 90px;
-}
-.scores-help-note {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-style: italic;
-}
-
-/* ── Score grid table (components/score-grid, ADR-0004) ────────────────────── */
-.score-grid {
-  position: relative;
-  outline: none;
-  width: max-content;
-  max-width: 100%;
-}
-.score-grid-table {
-  table-layout: fixed;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-top: 1px solid var(--border-strong);
-  border-left: 1px solid var(--border-strong);
-  font-size: 13px;
-  color: var(--text);
-  user-select: none;
-}
-.score-grid-table th,
-.score-grid-table td {
-  border-right: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border-strong);
-  padding: 0 4px;
-  overflow: hidden;
-  text-overflow: clip;
-  white-space: nowrap;
-}
-.score-grid-table td {
-  position: relative;
-  height: 23px;
-  line-height: 21px;
-  background: var(--surface);
-  cursor: cell;
-}
-.score-grid-table td.sg-readonly {
-  color: var(--muted);
-}
-.score-grid-table td.sg-checkbox {
-  text-align: center;
-  vertical-align: middle;
-}
-.score-grid-table td.sg-checkbox input {
-  /* A block box centres exactly; inline middle-alignment sits off by the x-height. */
-  display: block;
-  cursor: pointer;
-  width: 14px;
-  height: 14px;
-  margin: 0 auto;
-}
-/* Column headers: bold, italic, bottom-aligned */
-.score-grid-table th {
-  background: var(--surface-2);
-  text-align: center;
-  white-space: normal;
-  word-break: keep-all;
-  line-height: 1;
-  padding: 5px 4px 8px;
-  font-weight: bold;
-  font-style: italic;
-  vertical-align: bottom;
-}
-.score-grid-table th.sg-left {
-  text-align: left;
-}
-.score-grid-table th.sg-hdr-bonus {
-  background: var(--info-soft);
-}
-.score-grid-table th.sg-hdr-diag {
-  background: var(--surface-hover);
-}
-/* Current cell and selected range */
-/* Several grids share the modal: only the focused one shows a strong cursor. */
-.score-grid-table td.current {
-  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  outline-offset: -2px;
-}
-.score-grid:focus-within .score-grid-table td.current {
-  outline-color: var(--accent);
-}
-.score-grid-table td.area::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  pointer-events: none;
-}
-/* The last save of this cell failed (G53): retried when typed again. */
-.score-grid-table td.cell-unsaved {
-  outline: 2px dashed var(--danger);
-  outline-offset: -2px;
-}
-.score-grid-editor {
-  border-radius: 0;
-  position: absolute;
-  z-index: 10;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0 3px;
-  border: 2px solid var(--accent);
-  font: inherit;
-  font-size: 13px;
-  background: var(--surface);
-  color: var(--text);
-  outline: none;
-}
-
-/* Question header spans — new order: RTTI, pts (+ gap), section, number */
-/* th is bold+italic; rtti and pts override back to normal weight/style    */
-.hdr-rtti,
-.hdr-pts {
-  display: block;
-  line-height: 1.2;
-  margin: 0;
-  padding: 0;
-  font-size: 11px;
-  font-weight: normal !important;
-  font-style: normal !important;
-}
-.hdr-opgave,
-.hdr-vraag {
-  display: block;
-  line-height: 1.2;
-  margin: 0;
-  padding: 0;
-  font-size: 13px; /* matches other column header text */
-}
-.hdr-rtti {
-  color: var(--muted);
-}
-.hdr-pts {
-  color: var(--muted);
-  padding-bottom: 8px;
-} /* gap before section/number */
-.hdr-opgave {
-  color: var(--text);
-}
-.hdr-vraag {
-  color: var(--text);
-  line-height: 1; /* bottom line on the same baseline as Totaal, Cijfer, ... */
-}
-
-/* ── Cell colours (question columns) — set via inline style in renderers ────── */
-/* These classes are kept for legacy / fallback but renderers set inline styles */
-.cell-header-col {
-  background: var(--surface-2) !important;
-  font-weight: 500;
-}
-.cell-green {
-  background: #d4edda !important;
-}
-.cell-yellow {
-  background: #fff3cd !important;
-}
-.cell-red {
-  background: #f8d7da !important;
-}
-.cell-blue {
-  background: #cce5ff !important;
-  color: #004085 !important;
-  font-weight: 600 !important;
-}
-.cell-invalid {
-  background: #ff0033 !important;
-  color: #fff !important;
-  font-weight: 700 !important;
-}
-/* cell-calc no longer used directly; renderers set inline */
 
 code {
   background: var(--bg);
@@ -1790,14 +1524,6 @@ code {
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
-}
-
-/* ── Obs col header in the score grid ────────────────────────────────────────── */
-.hdr-obs {
-  display: block;
-  font-size: 14px;
-  line-height: 1;
-  padding: 2px 0 0; /* no bottom padding: sits level with the other headers */
 }
 
 /* ── Obs icon picker ──────────────────────────────────────────────────────── */

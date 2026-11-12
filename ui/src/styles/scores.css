@@ -1,0 +1,241 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Scores invoeren (step 25; design spec 4.10, board 13): one header row, the grids centred,
+   sticky group headings, column headings and # / Naam columns, cells tinted by score, a footer
+   with the legend and the save status. The grid (components/score-grid) stays light in both
+   themes, as the PO score table: tokens.css gives .score-grid the light values, so the fills
+   below are the board's light colours. */
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+.dlg.modal-scores {
+  --sc-ghead-h: 48px;
+  /* Side gutter of the scroll area; # and Naam stick over it, to the area's edge. */
+  --sc-gutter: 26px;
+  width: min(100%, 1320px);
+  height: var(--dlg-max-h);
+}
+.dlg.modal-scores .dlg-head-row {
+  align-items: center;
+}
+/* "Scores invoeren", the test badge and the name on one line. */
+.dlg.modal-scores .dlg-head-text {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.dlg.modal-scores .dlg-title-row {
+  flex: none;
+}
+.dlg.modal-scores .dlg-title {
+  color: var(--muted);
+  font-weight: 600;
+}
+.dlg.modal-scores .dlg-subtitle {
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 10px;
+  font-size: var(--fs-modal-title);
+  font-weight: 700;
+}
+.sc-exam-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-text);
+}
+.sc-head-sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--border);
+}
+/* Numpad '.' → N toggle, styled as a button. */
+.sc-dot-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-btn-sm);
+  background: var(--surface);
+  font-size: var(--fs-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.sc-dot-toggle:hover {
+  background: var(--surface-2);
+}
+.sc-dot-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.sc-nterm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-secondary);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sc-nterm .num-spinner {
+  height: 32px;
+  color: var(--text);
+}
+
+/* The ? button's shortcuts and explanation: on hover, keyboard focus or a click. */
+.sc-help-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.sc-help-wrap #sc-help {
+  font-weight: 700;
+}
+.sc-help-pop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: 420px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+  font-size: var(--fs-caption);
+  font-weight: 400;
+  color: var(--text);
+  text-align: left;
+}
+.sc-help-wrap:hover .sc-help-pop,
+.sc-help-wrap:has(#sc-help:focus-visible) .sc-help-pop,
+.sc-help-wrap--open .sc-help-pop {
+  display: block;
+}
+.sc-help-table {
+  border-collapse: collapse;
+}
+.sc-help-table th {
+  padding: 2px 14px 2px 0;
+  font-family: var(--font-code);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.sc-help-table td {
+  padding: 2px 0;
+}
+.sc-help-pop p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+/* Only the grids scroll; the sticky parts stick to the top and left of #sc-grid-container. */
+.dlg.modal-scores .dlg-body {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.dlg.modal-scores #sc-grid-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--sc-gutter) 24px;
+  /* A cell reached with the keyboard scrolls clear of the sticky heading, column headings and
+     # / Naam (review 25 M1); --sc-thead-h is measured in screens/scores/modal.ts. */
+  scroll-padding-top: calc(var(--sc-ghead-h) + var(--sc-thead-h, 64px));
+  scroll-padding-left: 262px;
+}
+
+/* Footer: the colour legend and the save status. */
+.dlg.modal-scores .dlg-footer {
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 10px 26px;
+  background: var(--surface-2);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.dlg.modal-scores .dlg-footer-spacer {
+  display: none;
+}
+.sc-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-legend i {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(16, 24, 40, 0.12);
+}
+.sc-saved {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--ok);
+}
+.sc-saved[data-state='busy'] {
+  color: var(--muted);
+}
+.sc-saved[data-state='error'] {
+  color: var(--danger);
+}
+
+/* Grids built ahead while the exam menu is open (Step 7c): laid out, not seen. */
+.sc-prebuild {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── Group heading (sticky) ─────────────────────────────────────────────── */
+.score-group-section {
+  margin-bottom: 18px;
+}
+.sc-group-head {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  height: var(--sc-ghead-h);
+  padding-top: 16px;
+  background: var(--surface);
+}
+/* The name and status stay in view when the grid scrolls sideways (review 25 m7). */
+.sc-group-title {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.score-group-section .group-heading {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+.sc-group-info {
+  font-size: var(--fs-secondary);
+  color: var(--muted);
+}
+.sc-group-info[data-level='bad'] {
+  color: var(--grade-fail-text);
+  font-weight: 600;
+}
