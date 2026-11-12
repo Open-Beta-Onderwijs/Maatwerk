@@ -1,21 +1,38 @@
 # State
 
-Last updated: 2026-11-11 (after step 23) Branch: `step/24-po-rapport` (local, from `main`
-`6c144f5`; only this STATE commit)
-Last tags: `step-23`, `v0.14.0`, `step-22`, `v0.13.0`, `step-21`, `v0.12.0`
+Last updated: 2026-11-12 (step 25 in progress) Branch: `step/25-score-entry` (from
+`step/24-po-rapport` `2bdac21`, which is merged into `main` as `c94f377`)
+Last tags: `step-24`, `v0.15.0`, `step-23`, `v0.14.0`, `step-22`, `v0.13.0`
 
 ## Current step
 
-**Step 23 done and merged (2026-11-11):** PR #14 merged into `main` (`6c144f5`, merge commit);
-push CI (`43007836698`) and PR CI (`43013836802`) green on `727f8bb` on all three OSes, visual
-included (CI baselines of `modal-po-scores`/`modal-po-grade` from run `43005771776`, `727f8bb`).
-Tags `step-23`, `v0.14.0` on `727f8bb`, pushed.
+**Step 24 done and merged (2026-11-12):** PR #15 merged into `main` (`c94f377`); PR CI run
+`43200670042` green on all three OSes (Windows and macOS first got no runner, rerun). Tags
+`step-24`, `v0.15.0` on `2bdac21`, pushed. Manual M-POR-1..4: the user, with a 0.15 exe.
 
-**User (2026-11-12):** manual test M-POB-1..6 on a copy of real data with the local exe 0.14.0:
-all pass (`docs/reviews/manual-test-step-23.md`). PO rapport design done (variant A, boards 19
-and 20, commit `62b608d`).
+**Next action:** step 25, sub-task 4 (restyle, see "Step 25 progress"). **After step 25 the
+user wants a GitHub release** (ask what it should contain if `docs/release.md` does not say).
 
-**Next action:** step 24 (see "Step 24 progress" below).
+## Step 25 progress (Score entry, 0.16)
+
+Baseline 2026-11-12 on `2bdac21`: cargo test all ok, 127 node; Vitest 558 and Chromium e2e 296
+after sub-task 3.
+
+**User decisions (2026-11-12):** GEMIDDELDE row as board 13: per question the rapport's class
+average, per observatie the ticked count, per RTTI the mean percentage (decision 29 in
+`step-19-grade-rules.md`, with the fixture example); merge PR #15 when green (done).
+
+1. **Done (`a4d68cf`):** F-03 Ctrl+X: copy, then empty as Delete (one undo step); Chromium and
+   WebKit fire `cut` on the grid's focus. e2e `F-03 Ctrl+X ...`.
+2. **Done (`64ebdfd`):** decision 29 in `domain/scoregrid.ts` `recomputeSummaryRow`; tests
+   "score grid decision 29"; golden cases overlay only the new cells.
+3. **Done (`938ab9b`):** R-05: `screens/scores.js` -> `screens/scores/` (session, roster, build,
+   group-grid, cells, cell-menu, modal), behaviour unchanged.
+4. Restyle (spec 4.10, board 13): header row (title + badge + name; ?, undo, redo, . → N, Toets
+   bewerken, N-term), sticky group heading with count and status, sticky column headings and #
+   / Naam, cell tints, focus ring, GEMIDDELDE / STANDAARDDEVIATIE footer look, footer legend +
+   save status. Then the user's visual check (STOP).
+5. Version 0.16.0, gate, review `docs/reviews/step-25.md`, report; then the release.
 
 ## Step 24 progress (PO d: PO rapport, 0.15)
 
