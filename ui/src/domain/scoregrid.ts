@@ -18,7 +18,7 @@
 import { round1 } from './core';
 import { formatFixed, formatGrade, formatNumber, parseDecimal, parseDecimalLoose } from './format';
 import { calcResults } from './grades';
-import { stats } from './statistics';
+import { classQuestions, stats } from './statistics';
 import type { Exam, Override, Question, QuestionScores } from './types';
 
 export type GridCell = string | boolean | number | null | undefined;
@@ -107,16 +107,8 @@ export function computeRowStatus(
   return 'ok';
 }
 
-/**
- * Fills the computed columns (Totaal, Cijfer, R%…I%) of row `rowIdx` from its
- * question cells. A grade overwritten by the teacher (gridData.overrides[rowIdx])
- * replaces the calculated one; gridData.gradeInfo[rowIdx] tells the renderer about it.
- */
-export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number, O = 0): void {
-  const N = exam.questions.length;
-  const TOFF = O > 0 ? O + 1 : 0;
-  const row = gridData[rowIdx]!;
-
+/** A row's question cells as the core reads them: empty left out, N null, a number, or the text. */
+function rowQuestionScores(row: GridCell[], exam: Pick<Exam, 'questions'>): QuestionScores {
   const questionScores: QuestionScores = {};
   exam.questions.forEach((q, qi) => {
     const raw = row[2 + qi];
@@ -127,8 +119,21 @@ export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number,
       return;
     }
     const n = parseScoreNum(raw);
-    questionScores[q.id] = isNaN(n) ? (raw as string) : n;
+    questionScores[q.id] = isNaN(n) ? String(raw) : n;
   });
+  return questionScores;
+}
+
+/**
+ * Fills the computed columns (Totaal, Cijfer, R%…I%) of row `rowIdx` from its
+ * question cells. A grade overwritten by the teacher (gridData.overrides[rowIdx])
+ * replaces the calculated one; gridData.gradeInfo[rowIdx] tells the renderer about it.
+ */
+export function recomputeRow(gridData: GridData, exam: GridExam, rowIdx: number, O = 0): void {
+  const N = exam.questions.length;
+  const TOFF = O > 0 ? O + 1 : 0;
+  const row = gridData[rowIdx]!;
+  const questionScores = rowQuestionScores(row, exam);
 
   const override = gridData.overrides?.[rowIdx];
   const setGradeInfo = (res: ReturnType<typeof calcResults>) => {
@@ -219,6 +224,32 @@ export function recomputeSummaryRow(
     ? `${formatFixed(totaalStats.mean)} / ${formatNumber(normalMax)}`
     : '';
   avgRow[N + 4 + TOFF] = gradeStats ? formatFixed(gradeStats.mean) : '';
+
+  // Step 25 (decision 29): per question the class average as on the rapport (N counts 0, empty
+  // is left out); per observatie how many are ticked; per RTTI category the mean of the
+  // percentages of the rows with a grade (NVT left out), whole percent.
+  const rows = gridData.slice(0, summaryIdx);
+  const perStudent = rows.map((row) => rowQuestionScores(row, exam));
+  const perQuestion = classQuestions(exam.questions, perStudent);
+  exam.questions.forEach((q, qi) => {
+    const anyEntry = perStudent.some((s) => q.id in s);
+    avgRow[2 + qi] = anyEntry ? formatFixed(perQuestion[qi]!.classAvg) : '';
+  });
+  for (let i = 0; i < O; i++) {
+    avgRow[N + 3 + i] = rows.length ? String(rows.filter((r) => r[N + 3 + i] === true).length) : '';
+  }
+  const graded = rows.filter((r) => {
+    const g = r[N + 4 + TOFF];
+    return g && g !== '—';
+  });
+  for (let k = 0; k < 4; k++) {
+    const col = N + 6 + TOFF + k;
+    const pcts = graded
+      .map((r) => parseDecimalLoose(r[col]))
+      .filter((p): p is number => Number.isFinite(p));
+    const mean = stats(pcts)?.mean;
+    avgRow[col] = mean !== undefined ? `${formatFixed(mean, 0)}%` : graded.length ? 'NVT' : '';
+  }
 
   // Std dev row
   if (stdIdx == null) return;
