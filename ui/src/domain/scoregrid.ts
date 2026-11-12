@@ -258,3 +258,40 @@ export function recomputeSummaryRow(
   sdRow[N + 3 + TOFF] = totaalStats ? formatFixed(totaalStats.sd) : '';
   sdRow[N + 4 + TOFF] = gradeStats ? formatFixed(gradeStats.sd) : '';
 }
+
+/** The status line of a group in the score modal (board 13) and how it reads. */
+export interface GroupStatus {
+  text: string;
+  /** `ok`: every score entered; `todo`: some missing; `bad`: an invalid score. */
+  level: 'ok' | 'todo' | 'bad';
+}
+
+/**
+ * "alle scores ingevuld", "nog geen scores" or "<k> nog niet compleet", with
+ * "<k> met een ongeldige score" first when there are any. A student is complete when every
+ * question has an entry (N counts) and none is invalid.
+ */
+export function groupStatus(rows: GridCell[][], exam: Pick<Exam, 'questions'>): GroupStatus {
+  const N = exam.questions.length;
+  let invalid = 0,
+    incomplete = 0,
+    anyEntry = false;
+  for (const row of rows) {
+    const status = computeRowStatus(row, exam);
+    let filled = 0;
+    for (let qi = 0; qi < N; qi++) {
+      const v = row[2 + qi];
+      if (v !== '' && v !== undefined && v !== null) filled++;
+    }
+    if (filled > 0) anyEntry = true;
+    if (status === 'invalid') invalid++;
+    else if (filled < N) incomplete++;
+  }
+  if (invalid > 0) {
+    const rest = incomplete > 0 ? `, ${incomplete} nog niet compleet` : '';
+    return { text: `${invalid} met een ongeldige score${rest}`, level: 'bad' };
+  }
+  if (!anyEntry && rows.length > 0 && N > 0) return { text: 'nog geen scores', level: 'todo' };
+  if (incomplete > 0) return { text: `${incomplete} nog niet compleet`, level: 'todo' };
+  return { text: 'alle scores ingevuld', level: 'ok' };
+}

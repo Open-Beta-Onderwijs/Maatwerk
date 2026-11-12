@@ -131,12 +131,60 @@ test.describe('entering scores', () => {
     await expect(cell(page, n - 2, E.cijfer)).toHaveText('10,0'); // Gemiddelde of one student
   });
 
-  test('G16 row status colours the # and Naam cells', async ({ page }) => {
+  test('spec 4.10 score cells are tinted by score (board 13)', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
+    await typeInto(page, 0, E.q1, '5'); // full
+    await typeInto(page, 0, E.q2, '2'); // partial
+    await typeInto(page, 0, E.q3, '0'); // zero
+    await typeInto(page, 1, E.q1, 'N');
+    await expect.poll(() => bg(page, 0, E.q1)).toBe('rgb(223, 241, 229)');
+    await expect.poll(() => bg(page, 0, E.q2)).toBe('rgb(252, 241, 207)');
+    await expect.poll(() => bg(page, 0, E.q3)).toBe('rgb(251, 225, 222)');
+    await expect.poll(() => bg(page, 1, E.q1)).toBe('rgb(238, 240, 243)');
+  });
+
+  test('spec 4.10 the group heading, column headings and # / Naam stay in view', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 760, height: 560 });
+    await openGrid(page, EXAMS.h2);
+    const box = page.locator('#sc-grid-container');
+    await box.evaluate((el) => el.scrollTo(240, 60));
+    const rect = (sel: string) =>
+      page
+        .locator(sel)
+        .first()
+        .evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    await expect
+      .poll(async () => {
+        const area = await rect('#sc-grid-container');
+        const head = await rect('.dlg .sc-group-head');
+        const th = await rect('.dlg .score-grid-table thead th:nth-child(3)');
+        const nr = await rect('.dlg .score-grid-table tbody td.sc-stick0');
+        return [
+          Math.round(head.top - area.top),
+          Math.round(th.top - head.bottom),
+          Math.round(nr.left - area.left),
+        ];
+      })
+      .toEqual([0, 0, 0]);
+  });
+
+  test('G16 row status marks the # and Naam cells; the group heading counts it', async ({
+    page,
+  }) => {
+    await openGrid(page, EXAMS.empty);
+    const mark = (row: number, col: number) =>
+      cell(page, row, col).evaluate((td) => getComputedStyle(td).boxShadow);
+    const info = page.locator('.dlg .sc-group-info').first();
     await typeInto(page, 0, E.q1, '3');
-    await expect.poll(() => bg(page, 0, 0)).toBe('rgb(255, 243, 205)'); // partly entered
+    await expect.poll(() => mark(0, 0)).toContain('rgb(242, 201, 76)'); // partly entered
+    await expect(info).toContainText('nog niet compleet');
     await typeInto(page, 0, E.q2, 'x');
-    await expect.poll(() => bg(page, 0, 1)).toBe('rgb(255, 0, 51)'); // invalid
+    await expect.poll(() => mark(0, 0)).toContain('rgb(229, 115, 107)'); // invalid
+    await expect(cell(page, 0, 1)).toHaveClass(/sc-name--invalid/);
+    await expect(info).toContainText('1 met een ongeldige score');
+    await expect(info).toHaveAttribute('data-level', 'bad');
   });
 });
 

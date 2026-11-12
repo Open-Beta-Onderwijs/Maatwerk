@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   computeRowStatus,
+  groupStatus,
   normalizeScore,
   parseGradeInput,
   parseScoreNum,
@@ -164,6 +165,28 @@ describe('score grid decision 29', () => {
   });
 });
 
+describe('group status line (board 13)', () => {
+  const exam = {
+    questions: [
+      { id: 'a', max_points: 2, rtti: 'R' as const },
+      { id: 'b', max_points: 2, rtti: 'R' as const },
+    ],
+  };
+  const r = (a: string, b: string): GridData[number] => ['x', 'X', a, b];
+  it('reads every case', () => {
+    expect(groupStatus([r('1', '2'), r('N', '0')], exam)).toEqual({
+      text: 'alle scores ingevuld',
+      level: 'ok',
+    });
+    expect(groupStatus([r('', ''), r('', '')], exam).text).toBe('nog geen scores');
+    expect(groupStatus([r('1', ''), r('', '')], exam).text).toBe('2 nog niet compleet');
+    expect(groupStatus([r('9', '1'), r('1', '')], exam)).toEqual({
+      text: '1 met een ongeldige score, 1 nog niet compleet',
+      level: 'bad',
+    });
+  });
+});
+
 describe('scoregrid golden', () => {
   it('normalizeScore', async () => {
     const { inputs } = inputOf<{ inputs: unknown[] }>(goldenCase(golden, 'normalizeScore'));
@@ -238,7 +261,7 @@ describe('scoregrid golden', () => {
       // they are checked in "score grid decision 29".
       decided.rows[summaryIdx] = withAverages(
         decided.rows[summaryIdx]!,
-        actual.rows[summaryIdx]!,
+        (actual as { rows: GridData }).rows[summaryIdx]!,
         N,
         O,
       );

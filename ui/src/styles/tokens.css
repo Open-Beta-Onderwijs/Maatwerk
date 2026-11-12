@@ -7,8 +7,8 @@
  * only uses these semantic names, never raw colours. */
 
 /* ── Neutrals (2.1), light ─────────────────────────────────────────────────── */
-/* .score-grid stays light in both themes: its cell fills are light pastels set
- * from JS. Its redesign (step 21) gives it dark values. */
+/* .score-grid stays light in both themes, as the PO score table: its cell fills
+ * are the light pastels of board 13 (styles/scores.css, step 25). */
 :root,
 html[data-theme='dark'] .score-grid {
   color-scheme: light;

@@ -246,6 +246,7 @@ test.describe('review 14 fixes', () => {
 });
 
 test('a modal without actions shows no footer', async ({ page }) => {
-  await openView(page, view('modal-scores'));
+  // (The score modal had none until its legend and save status, step 25.)
+  await openView(page, view('modal-groep-leerlingen'));
   await expect(topDialog(page).locator('.dlg-footer')).toBeHidden();
 });

@@ -14,6 +14,7 @@ import {
 } from '../../components/score-grid/score-grid';
 import {
   computeRowStatus,
+  groupStatus,
   normalizeScore,
   parseGradeInput,
   recomputeRow,
@@ -176,16 +177,26 @@ export function createGroupGrid(
     const flashEnd = flashUntil.get(`${row}:${col}`);
     const flashing = flashEnd !== undefined && flashEnd > Date.now();
     if (flashEnd !== undefined && !flashing) flashUntil.delete(`${row}:${col}`);
-    td.style.boxShadow = flashing ? `inset 0 0 0 2px ${session.remoteFlashColor}` : '';
+    if (flashing) td.style.boxShadow = `inset 0 0 0 2px ${session.remoteFlashColor}`;
     // A save of this cell failed: it is retried when the value is typed again.
     td.classList.toggle('cell-unsaved', row <= lastDataRow && isUnsaved(students[row], col));
+    // The selection's cross-hair (G58): its row and column, stronger where they cross.
     const onRow = row === selectedCell.row;
     const onCol = col === selectedCell.col;
-    if (!onRow && !onCol) return;
-    const alpha = onRow && onCol ? 0.16 : 0.08;
-    // backgroundImage overlays on top of the background colour already set.
-    td.style.backgroundImage = `linear-gradient(rgba(74,144,217,${alpha}), rgba(74,144,217,${alpha}))`;
+    if (onRow && onCol) td.classList.add('sc-cross', 'sc-cross--both');
+    else if (onRow || onCol) td.classList.add('sc-cross');
   }
+
+  // "<n> leerlingen · alle scores ingevuld" in the group's sticky heading.
+  const info = layer.querySelector<HTMLElement>('.sc-group-info');
+  function updateInfo(): void {
+    if (!info) return;
+    const s = groupStatus(gridData.slice(0, summaryIdx), exam);
+    const n = students.length;
+    info.textContent = `${n} ${n === 1 ? 'leerling' : 'leerlingen'} · ${s.text}`;
+    info.dataset.level = s.level;
+  }
+  updateInfo();
 
   // Recompute a student's row and the summary rows after a change, and redraw them (only
   // them: a modal can hold 10,000 cells).
@@ -194,6 +205,7 @@ export function createGroupGrid(
     recomputeRow(gridData, exam, row, O);
     recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
     grid.render({ rows: [row, summaryIdx, stdIdx] });
+    updateInfo();
   }
 
   // ── Scores ────────────────────────────────────────────────────────────────

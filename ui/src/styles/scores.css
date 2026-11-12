@@ -1,0 +1,526 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Scores invoeren (step 25; design spec 4.10, board 13): one header row, the grids centred,
+   sticky group headings, column headings and # / Naam columns, cells tinted by score, a footer
+   with the legend and the save status. The grid (components/score-grid) stays light in both
+   themes, as the PO score table: tokens.css gives .score-grid the light values, so the fills
+   below are the board's light colours. */
+
+/* ── Modal ──────────────────────────────────────────────────────────────── */
+.dlg.modal-scores {
+  --sc-ghead-h: 48px;
+  /* Side gutter of the scroll area; # and Naam stick over it, to the area's edge. */
+  --sc-gutter: 26px;
+  width: min(100%, 1320px);
+  height: var(--dlg-max-h);
+}
+.dlg.modal-scores .dlg-head-row {
+  align-items: center;
+}
+/* "Scores invoeren", the test badge and the name on one line. */
+.dlg.modal-scores .dlg-head-text {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.dlg.modal-scores .dlg-title-row {
+  flex: none;
+}
+.dlg.modal-scores .dlg-title {
+  color: var(--muted);
+  font-weight: 600;
+}
+.dlg.modal-scores .dlg-subtitle {
+  flex-wrap: nowrap;
+  min-width: 0;
+  gap: 10px;
+  font-size: var(--fs-modal-title);
+  font-weight: 700;
+}
+.sc-exam-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent-text);
+}
+.sc-head-sep {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: var(--border);
+}
+/* Numpad '.' → N toggle, styled as a button. */
+.sc-dot-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-btn-sm);
+  background: var(--surface);
+  font-size: var(--fs-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.sc-dot-toggle:hover {
+  background: var(--surface-2);
+}
+.sc-dot-toggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.sc-nterm {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-secondary);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sc-nterm .num-spinner {
+  height: 32px;
+  color: var(--text);
+}
+
+/* The ? button's shortcuts and explanation: on hover, keyboard focus or a click. */
+.sc-help-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.sc-help-wrap #sc-help {
+  font-weight: 700;
+}
+.sc-help-pop {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: 420px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+  font-size: var(--fs-caption);
+  font-weight: 400;
+  color: var(--text);
+  text-align: left;
+}
+.sc-help-wrap:hover .sc-help-pop,
+.sc-help-wrap:has(#sc-help:focus-visible) .sc-help-pop,
+.sc-help-wrap--open .sc-help-pop {
+  display: block;
+}
+.sc-help-table {
+  border-collapse: collapse;
+}
+.sc-help-table th {
+  padding: 2px 14px 2px 0;
+  font-family: var(--font-code);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.sc-help-table td {
+  padding: 2px 0;
+}
+.sc-help-pop p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+/* Only the grids scroll; the sticky parts stick to the top and left of #sc-grid-container. */
+.dlg.modal-scores .dlg-body {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.dlg.modal-scores #sc-grid-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 var(--sc-gutter) 24px;
+}
+
+/* Footer: the colour legend and the save status. */
+.dlg.modal-scores .dlg-footer {
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 10px 26px;
+  background: var(--surface-2);
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.dlg.modal-scores .dlg-footer-spacer {
+  display: none;
+}
+.sc-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-legend i {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(16, 24, 40, 0.12);
+}
+.sc-saved {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--ok);
+}
+.sc-saved[data-state='busy'] {
+  color: var(--muted);
+}
+.sc-saved[data-state='error'] {
+  color: var(--danger);
+}
+
+/* Grids built ahead while the exam menu is open (Step 7c): laid out, not seen. */
+.sc-prebuild {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── Group heading (sticky) ─────────────────────────────────────────────── */
+.score-group-section {
+  margin-bottom: 18px;
+}
+.sc-group-head {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  height: var(--sc-ghead-h);
+  padding-top: 16px;
+  background: var(--surface);
+}
+.score-group-section .group-heading {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+.sc-group-info {
+  font-size: var(--fs-secondary);
+  color: var(--muted);
+}
+.sc-group-info[data-level='bad'] {
+  color: var(--grade-fail-text);
+  font-weight: 600;
+}
+
+/* ── Grid ───────────────────────────────────────────────────────────────── */
+.score-grid {
+  position: relative;
+  outline: none;
+  width: max-content;
+}
+.score-grid-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  font-size: var(--fs-secondary);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  user-select: none;
+}
+.score-grid-table th,
+.score-grid-table td {
+  padding: 0 4px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+  text-align: center;
+}
+.score-grid-table td {
+  position: relative;
+  height: 30px;
+  line-height: 28px;
+  background: var(--surface);
+  cursor: cell;
+}
+.score-grid-table td.sg-readonly {
+  color: var(--muted);
+}
+.score-grid-table td.sg-checkbox {
+  vertical-align: middle;
+}
+.score-grid-table td.sg-checkbox input {
+  /* A block box centres exactly; inline middle-alignment sits off by the x-height. */
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Column headings: sticky under the group heading, bottom-aligned. */
+.score-grid-table th {
+  position: sticky;
+  top: var(--sc-ghead-h);
+  z-index: 2;
+  padding: 6px 4px;
+  background: var(--surface-2);
+  border-bottom-color: var(--border);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: normal;
+  word-break: keep-all;
+  vertical-align: bottom;
+}
+.score-grid-table th.sg-left {
+  padding-left: 10px;
+  text-align: left;
+}
+.score-grid-table th.sg-hdr-bonus {
+  background: var(--info-soft);
+  font-style: italic;
+}
+.score-grid-table th.sg-hdr-diag {
+  background: #eef0f3;
+  font-style: italic;
+}
+.sc-qh {
+  display: block;
+}
+.hdr-rtti,
+.hdr-pts {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.hdr-pts {
+  padding-bottom: 4px;
+}
+.hdr-opgave,
+.hdr-vraag {
+  display: block;
+  font-size: var(--fs-secondary);
+}
+.hdr-obs {
+  display: block;
+  font-size: 16px;
+  line-height: 1;
+}
+.sc-pct-key {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  border-radius: 2px;
+  vertical-align: 1px;
+}
+.sc-pct-key--r {
+  background: var(--rtti-r);
+}
+.sc-pct-key--t1 {
+  background: var(--rtti-t1);
+}
+.sc-pct-key--t2 {
+  background: var(--rtti-t2);
+}
+.sc-pct-key--i {
+  background: var(--rtti-i);
+}
+
+/* Spacer columns: white gaps without lines. */
+.score-grid-table th.sc-spacer,
+.score-grid-table td.sc-spacer {
+  background: var(--surface);
+  border-bottom-color: transparent;
+  cursor: default;
+}
+
+/* # and Naam stick to the left (widths: COL_WIDTH in screens/scores/cells.ts). */
+.score-grid-table .sc-stick0,
+.score-grid-table .sc-stick1 {
+  position: sticky;
+  z-index: 1;
+  padding: 0 10px;
+  text-align: left;
+}
+.score-grid-table .sc-stick0 {
+  left: calc(-1 * var(--sc-gutter, 0px));
+  color: var(--muted);
+}
+.score-grid-table .sc-stick1 {
+  left: calc(72px - var(--sc-gutter, 0px));
+  box-shadow: 2px 0 0 var(--border);
+}
+.score-grid-table th.sc-stick0,
+.score-grid-table th.sc-stick1 {
+  z-index: 3;
+  color: var(--text);
+}
+.score-grid-table td.sc-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  cursor: default;
+}
+.score-grid-table td.sc-name--invalid {
+  color: var(--grade-fail-text);
+}
+/* A bar before the number: scores missing, an invalid score, an overwritten grade. */
+.score-grid-table td.sc-row--partial {
+  box-shadow: inset 3px 0 0 #f2c94c;
+}
+.score-grid-table td.sc-row--invalid {
+  box-shadow: inset 3px 0 0 #e5736b;
+}
+.score-grid-table td.sc-row--override {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* Score tints (also the footer legend). */
+.sc-legend i.sc-full,
+.score-grid-table td.sc-full {
+  background: #dff1e5;
+}
+.sc-legend i.sc-part,
+.score-grid-table td.sc-part {
+  background: #fcf1cf;
+}
+.sc-legend i.sc-zero,
+.score-grid-table td.sc-zero {
+  background: #fbe1de;
+}
+.sc-legend i.sc-n,
+.score-grid-table td.sc-n {
+  background: #eef0f3;
+}
+.score-grid-table td.sc-n {
+  color: var(--muted);
+  font-weight: 600;
+}
+.score-grid-table td.sc-bonus,
+.score-grid-table td.sc-diag {
+  font-style: italic;
+}
+.score-grid-table td.sc-bonus:not(.sc-full, .sc-part, .sc-zero, .sc-n) {
+  background: #f4f8fe;
+}
+.score-grid-table td.sc-diag:not(.sc-full, .sc-part, .sc-zero, .sc-n) {
+  background: #f7f8fa;
+}
+.score-grid-table td.sc-bad {
+  background: #b42318;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.score-grid-table td.sc-total {
+  color: var(--muted);
+}
+.score-grid-table td.sc-grade {
+  font-weight: 700;
+  color: var(--text);
+}
+.score-grid-table td.sc-pct {
+  font-size: var(--fs-caption);
+  color: var(--text);
+}
+.score-grid-table td.sc-pct--nvt {
+  color: var(--disabled);
+}
+
+/* GEMIDDELDE and STANDAARDDEVIATIE. */
+.score-grid-table td.sc-sum {
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  cursor: default;
+}
+.score-grid-table td.sc-sum-first {
+  border-top: 2px solid var(--border);
+}
+.score-grid-table td.sc-sum.sc-stick0 {
+  border-right-color: transparent;
+}
+.score-grid-table td.sc-sum-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+.score-grid-table td.sc-sum.sc-grade {
+  font-weight: 700;
+}
+.score-grid-table td.sc-sum.sc-grade--filled {
+  color: var(--text);
+  font-size: var(--fs-secondary);
+}
+
+/* Selection: the current cell, the range, and the cross-hair of its row and column (G58). */
+.score-grid-table td.sc-cross {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--accent) 7%, transparent),
+    color-mix(in srgb, var(--accent) 7%, transparent)
+  );
+}
+.score-grid-table td.sc-cross--both {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    color-mix(in srgb, var(--accent) 14%, transparent)
+  );
+}
+/* Several grids share the modal: only the focused one shows a strong ring. */
+.score-grid-table td.current {
+  outline: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  outline-offset: -2px;
+}
+.score-grid:focus-within .score-grid-table td.current {
+  outline-color: var(--accent);
+}
+.score-grid-table td.area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  pointer-events: none;
+}
+/* The last save of this cell failed (G53): retried when typed again. */
+.score-grid-table td.cell-unsaved {
+  outline: 2px dashed var(--danger);
+  outline-offset: -2px;
+}
+.score-grid-editor {
+  position: absolute;
+  z-index: 10;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 3px;
+  border: 2px solid var(--accent);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-secondary);
+  text-align: center;
+  outline: none;
+}

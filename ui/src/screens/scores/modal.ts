@@ -25,9 +25,11 @@ import {
   REMOTE_FLASH_COLOR,
   REMOTE_FLASH_MS,
   destroyGridInstances,
+  pendingSaves,
   recomputeAllRows,
   resetScoreModal,
   session,
+  unsavedCount,
   waitForPendingSaves,
   wireHistory,
 } from './session';
@@ -45,8 +47,35 @@ interface SyncEvent {
   after: unknown;
 }
 
-const HELP =
-  "Navigeer sneller door gebruik te maken van de numpad:&#10;0-9: Punten invullen&#10;Punt (.): N invullen (als '. → N' aangevinkt is)&#10;Enter: Bevestigen &amp; volgende veld&#10;/ of *: Vorige / volgende veld&#10;- of +: Vorige / volgende leerling&#10;F1, F2, …: Eerste, tweede, … observatie aan/uit voor de huidige leerling&#10;&#10;Cijfer overschrijven: typ een cijfer in de kolom Cijfer. Leegmaken (of rechtermuisklik) herstelt het berekende cijfer.";
+// Shortcuts and explanation, shown under the ? button on hover, focus or click (spec 4.10).
+const HELP_ROWS: [string, string][] = [
+  ['0-9, Enter', 'Punten invullen en naar het volgende veld'],
+  ['. (numpad)', 'N invullen (niet gemaakt), als ". → N" aan staat'],
+  ['Tab, / en *', 'Volgende / vorige veld'],
+  ['- en + (numpad)', 'Vorige / volgende leerling'],
+  ['F1, F2, …', 'Eerste, tweede, … observatie aan of uit'],
+  ['0 / 1 bij een observatie', 'Observatie uit / aan'],
+  ['Ctrl+C, Ctrl+X, Ctrl+V', 'Kopiëren, knippen en plakken (ook uit Excel)'],
+  ['Delete', 'Gekozen scores wissen'],
+  ['Ctrl+Z, Ctrl+Y', 'Ongedaan maken / opnieuw'],
+];
+
+const HELP_HTML = `
+  <div class="sc-help-pop" id="sc-help-pop" role="tooltip">
+    <table class="sc-help-table">${HELP_ROWS.map(
+      ([k, v]) => `<tr><th scope="row">${escHtml(k)}</th><td>${escHtml(v)}</td></tr>`,
+    ).join('')}</table>
+    <p>Cijfer overschrijven: typ een cijfer in de kolom Cijfer. Leegmaken of rechtermuisklik
+      herstelt het berekende cijfer.</p>
+    <p>Kleuren: groen volle punten, geel deels, rood 0 punten, grijs N. Een balkje voor het
+      nummer: scores ontbreken (geel), een ongeldige score (rood) of een overschreven cijfer
+      (blauw).</p>
+  </div>`;
+
+const UNDO_ICON =
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>';
+const REDO_ICON =
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg>';
 
 export function openScoreModal(examId: string, year: string, deps: ScoreModalDeps): void {
   const endOpen = perfSpan('modal:scores');
@@ -67,38 +96,42 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
       exam.volgnummer
         ? `<span class="${testBadgeClass(exam)}">${escHtml(String(exam.volgnummer))}</span>`
         : ''
-    }<span>${escHtml(exam.title ?? '')}</span>`,
+    }<span class="sc-exam-name">${escHtml(exam.title ?? '')}</span>`,
     className: 'modal-scores',
     fixedHeight: true,
-    // The toolbar row stays in place: only the grids scroll (#sc-grid-container).
-    body: `
-    <div class="u-d-flex u-items-center u-gap-12 u-mb-16 u-flex-wrap u-shrink-0">
-      <div class="u-d-flex u-items-center u-gap-6 u-flex-1 u-min-w-0">
-        <div id="sc-presence" class="presence-badges"></div>
-      </div>
-      <div class="u-d-flex u-items-center u-gap-4 u-shrink-0">
-        <button class="btn btn--icon" id="sc-undo" title="Ongedaan maken (Ctrl+Z)">&#x21B6;</button>
-        <button class="btn btn--icon" id="sc-redo" title="Opnieuw (Ctrl+Y)">&#x21B7;</button>
-        <button class="btn btn--secondary u-cursor-default u-text-subtle u-border-light" id="sc-help" disabled
-          title="${HELP}">Help ?</button>
-        <label class="sc-dot-toggle"
-          title="Als deze checkbox aangevinkt is, wordt de Numpad '.' een sneltoets voor &quot;Niet gemaakt&quot;. Je kunt dan geen halve punten meer invoeren met alleen het numpad.">
-          <input type="checkbox" id="sc-dot-n" ${session.numpadDotIsN ? 'checked' : ''} /> . → N
-        </label>
-      </div>
-      <div class="u-d-flex u-items-center u-gap-8 u-shrink-0">
-        <button class="btn btn--secondary" id="sc-edit-exam">Toets bewerken</button>
-        <span class="toolbar-label">N-term:</span>
-        <div class="num-spinner spinner-wrap-sm" id="sc-nterm"
+    // One header row (board 13): the actions sit between the title and ✕; only the grids
+    // scroll (#sc-grid-container), so the sticky group headings stick to its top.
+    headerActionsHtml: `
+      <div id="sc-presence" class="presence-badges"></div>
+      <span class="sc-help-wrap">
+        <button type="button" class="btn btn--icon" id="sc-help" aria-label="Sneltoetsen en uitleg"
+          aria-describedby="sc-help-pop" aria-expanded="false">?</button>${HELP_HTML}
+      </span>
+      <button type="button" class="btn btn--icon" id="sc-undo" aria-label="Ongedaan maken"
+        title="Ongedaan maken (Ctrl+Z)">${UNDO_ICON}</button>
+      <button type="button" class="btn btn--icon" id="sc-redo" aria-label="Opnieuw"
+        title="Opnieuw (Ctrl+Y)">${REDO_ICON}</button>
+      <span class="sc-head-sep" aria-hidden="true"></span>
+      <label class="sc-dot-toggle"
+        title="Aangevinkt: de punt op het numpad vult N in (niet gemaakt). Halve punten typ je dan met een komma.">
+        <input type="checkbox" id="sc-dot-n" ${session.numpadDotIsN ? 'checked' : ''} /> . → N
+      </label>
+      <button type="button" class="btn btn--secondary btn--sm" id="sc-edit-exam">Toets bewerken</button>
+      <span class="sc-nterm">N-term
+        <span class="num-spinner spinner-wrap-sm" id="sc-nterm"
           data-val="${exam.n_term ?? 1}" data-step="0.1" data-min="0" data-max="3">
-          <button type="button" class="spin-btn spin-minus">&minus;</button>
-          <input class="spin-val" value="${formatNumber(exam.n_term ?? 1)}" />
-          <button type="button" class="spin-btn spin-plus">+</button>
-        </div>
-      </div>
-    </div>
-    <div id="sc-grid-container"></div>
-  `,
+          <button type="button" class="spin-btn spin-minus" aria-label="N-term lager">&minus;</button>
+          <input class="spin-val" aria-label="N-term" value="${formatNumber(exam.n_term ?? 1)}" />
+          <button type="button" class="spin-btn spin-plus" aria-label="N-term hoger">+</button>
+        </span>
+      </span>`,
+    body: '<div id="sc-grid-container"></div>',
+    footerHtml: `
+      <span class="sc-legend"><i class="sc-full"></i>volle punten</span>
+      <span class="sc-legend"><i class="sc-part"></i>deels</span>
+      <span class="sc-legend"><i class="sc-zero"></i>0 punten</span>
+      <span class="sc-legend"><i class="sc-n"></i>N = niet gemaakt</span>
+      <span class="sc-saved" id="sc-saved" role="status">● Alles opgeslagen</span>`,
     onShow: async (el: HTMLElement) => {
       wireSpinners(el);
       const ntermSp = el.querySelector<HTMLElement>('#sc-nterm')!;
@@ -124,6 +157,9 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
         el.querySelector<HTMLButtonElement>('#sc-undo')!,
         el.querySelector<HTMLButtonElement>('#sc-redo')!,
       );
+      wireHelp(el);
+      const savedEl = el.querySelector<HTMLElement>('#sc-saved')!;
+      session.onSaveState = () => showSaveState(savedEl);
       onModalCleanup(resetScoreModal);
 
       el.querySelector('#sc-edit-exam')!.addEventListener('click', () => {
@@ -287,4 +323,43 @@ async function reloadScoreModal(examId: string, year: string, deps: ScoreModalDe
   if ((Store.getExamsSync(year) as Exam[]).some((e) => e.id === examId)) {
     openScoreModal(examId, year, deps);
   }
+}
+
+// The ? button: its explanation shows on hover and focus (CSS) and stays open after a click
+// until the next click, Escape or a click elsewhere.
+function wireHelp(el: HTMLElement): void {
+  const btn = el.querySelector<HTMLButtonElement>('#sc-help')!;
+  const wrap = btn.parentElement!;
+  const setOpen = (open: boolean) => {
+    wrap.classList.toggle('sc-help-wrap--open', open);
+    btn.setAttribute('aria-expanded', String(open));
+  };
+  btn.addEventListener('click', () => setOpen(!wrap.classList.contains('sc-help-wrap--open')));
+  const onDown = (e: MouseEvent) => {
+    if (!wrap.contains(e.target as Node)) setOpen(false);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || !wrap.classList.contains('sc-help-wrap--open')) return;
+    e.preventDefault(); // handled: the modal stays open
+    e.stopPropagation();
+    setOpen(false);
+  };
+  document.addEventListener('mousedown', onDown, true);
+  document.addEventListener('keydown', onKey, true);
+  onModalCleanup(() => {
+    document.removeEventListener('mousedown', onDown, true);
+    document.removeEventListener('keydown', onKey, true);
+  });
+}
+
+// The footer's save status: saving, all saved, or how many cells were not saved.
+function showSaveState(el: HTMLElement): void {
+  const failed = unsavedCount();
+  const busy = pendingSaves.size > 0;
+  el.dataset.state = failed ? 'error' : busy ? 'busy' : 'ok';
+  el.textContent = failed
+    ? `● ${failed} ${failed === 1 ? 'score' : 'scores'} niet opgeslagen`
+    : busy
+      ? 'Opslaan…'
+      : '● Alles opgeslagen';
 }

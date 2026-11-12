@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// The columns of a group's score grid: where each kind of column sits, its heading and how its
-// cells look. Row layout: docs at the top of domain/scoregrid.ts.
+// The columns of a group's score grid (design spec 4.10, board 13): where each kind of column
+// sits, its heading and how its cells look. Row layout: docs at the top of domain/scoregrid.ts.
+// The looks are classes in styles/scores.css; only the grade cell's colour is computed.
 
 import { escHtml } from '../../app.js';
 import type { CellValue, Column } from '../../components/score-grid/score-grid';
 import { formatGrade, parseDecimalLoose } from '../../domain/format';
-import { gradeCellColor, rttiPctCellColor, sdCellColor } from '../../domain/grade-colors';
+import { gradeCellColor } from '../../domain/grade-colors';
 import { qKind } from '../../domain/grades';
 import { parseScoreNum, type GridData } from '../../domain/scoregrid';
-import type { Exam, Observatie } from '../../domain/types';
+import type { Exam, Observatie, Question } from '../../domain/types';
 
 export type RowStatus = 'ok' | 'partial' | 'invalid';
 
@@ -69,76 +70,130 @@ export interface GridColumn extends Column {
   render(td: HTMLTableCellElement, row: number, col: number, value: CellValue): void;
 }
 
+/** Column widths (board 13); # and Naam stick to the left. */
+export const COL_WIDTH = { nr: 72, name: 190, question: 38, spacer: 10, obs: 32 } as const;
+
 // A grid cell's text as a number; null when empty or not a number.
 const cellNumber = (v: unknown): number | null => {
   const n = v === '' || v == null ? NaN : parseDecimalLoose(v);
   return Number.isFinite(n) ? n : null;
 };
 
+/** Tint of a score cell: full, partial, zero, N (not made) or not a valid score. */
+export function scoreTint(value: CellValue, q: Pick<Question, 'max_points'>): string {
+  if (value === '' || value === false || value === true) return '';
+  if (String(value).toUpperCase().trim() === 'N') return 'sc-n';
+  const num = parseScoreNum(value);
+  if (isNaN(num) || num < 0 || num > q.max_points) return 'sc-bad';
+  if (num === 0) return 'sc-zero';
+  return num === q.max_points ? 'sc-full' : 'sc-part';
+}
+
+/** Tint of an R/T1/T2/I percentage: ≥ 80 green, ≥ 55 yellow, else red; NVT muted. */
+export function pctTint(value: CellValue): string {
+  if (value === 'NVT') return 'sc-pct--nvt';
+  const pct = cellNumber(value);
+  if (pct === null) return '';
+  return pct >= 80 ? 'sc-full' : pct >= 55 ? 'sc-part' : 'sc-zero';
+}
+
+const ROW_STATUS_TITLE: Record<string, string> = {
+  invalid: 'Deze leerling heeft een ongeldige score.',
+  partial: 'Nog niet alle scores van deze leerling zijn ingevuld.',
+  override: 'Het cijfer van deze leerling is met de hand overschreven.',
+};
+
 export function gridColumns(ctx: CellContext): GridColumn[] {
   const { exam, obs, data, layout, rowStatus, decorate } = ctx;
   const { summaryIdx, stdIdx, O } = layout;
   const isSummary = (row: number) => row === summaryIdx || row === stdIdx;
+  const summaryClass = (td: HTMLTableCellElement, row: number) => {
+    td.classList.add('sc-sum');
+    if (row === summaryIdx) td.classList.add('sc-sum-first');
+  };
 
-  // Question headers: RTTI (top) → pts → section → number (bottom).
-  const qHeader = (q: Exam['questions'][number]) => {
+  // Question heading: RTTI tag and points (small), then the section and number.
+  const qHeader = (q: Question) => {
     const kind = qKind(q);
-    const parts =
-      `<span class="hdr-rtti">${escHtml(q.rtti)}</span>` +
-      `<span class="hdr-pts">${q.max_points}p</span>`;
-    if (kind !== 'normal') {
-      const tooltip = kind === 'bonus' ? 'Bonusvraag' : 'Diagnostische vraag';
-      return (
-        `<span class="u-text-subtle u-italic" title="${tooltip}">${parts}` +
-        `<span class="u-text-subtle hdr-opgave">${escHtml(String(q.section ?? ''))}</span>` +
-        `<span class="u-text-subtle hdr-vraag">${escHtml(String(q.number ?? ''))}</span></span>`
-      );
-    }
+    const title =
+      kind === 'bonus'
+        ? ' title="Bonusvraag"'
+        : kind === 'diag'
+          ? ' title="Diagnostische vraag"'
+          : '';
     return (
-      parts +
+      `<span class="sc-qh"${title}>` +
+      `<span class="hdr-rtti">${escHtml(q.rtti)}</span>` +
+      `<span class="hdr-pts">${q.max_points}p</span>` +
       `<span class="hdr-opgave">${escHtml(String(q.section ?? ''))}</span>` +
-      `<span class="hdr-vraag">${escHtml(String(q.number ?? ''))}</span>`
+      `<span class="hdr-vraag">${escHtml(String(q.number ?? ''))}</span></span>`
     );
   };
-  // Tint bonus/diag question headers to match the cell background.
-  const qHeaderClass = (q: Exam['questions'][number]) =>
+  const qHeaderClass = (q: Question) =>
     qKind(q) === 'bonus' ? 'sg-hdr-bonus' : qKind(q) === 'diag' ? 'sg-hdr-diag' : undefined;
   const obsHeader = (o: Observatie, oi: number) =>
-    `<span class="hdr-obs" title="${escHtml(o.naam ?? '')}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon ?? '')}</span>`;
+    `<span class="hdr-obs" role="img" aria-label="${escHtml(o.naam ?? '')}" title="${escHtml(o.naam ?? '')}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon ?? '')}</span>`;
+  const pctHeader = (k: string) =>
+    `<span class="sc-pct-key sc-pct-key--${k.toLowerCase()}" aria-hidden="true"></span>${k}%`;
 
-  // Background of the # and Naam cells: red for invalid scores, yellow for missing scores,
-  // light blue for an overwritten grade.
-  function rowBackground(row: number, status: RowStatus | null): string {
-    if (isSummary(row)) return '#e8ecf2';
-    if (status === 'invalid') return '#ff0033';
-    if (status === 'partial') return '#fff3cd';
-    if (data.gradeInfo?.[row]?.overridden) return '#dce9fa';
-    return '#f8f9fb';
-  }
-
-  function idRenderer(td: HTMLTableCellElement, row: number, col: number): void {
-    const status = isSummary(row) ? null : (rowStatus[row] ?? 'ok');
-    td.style.background = rowBackground(row, status);
-    td.style.color = status === 'invalid' ? '#fff' : '';
-    td.style.textAlign = 'center';
-    if (isSummary(row)) td.style.color = 'transparent';
+  function nrRenderer(td: HTMLTableCellElement, row: number, col: number): void {
+    td.classList.add('sc-stick0');
+    if (isSummary(row)) {
+      summaryClass(td, row);
+      td.textContent = '';
+    } else {
+      const status = rowStatus[row] ?? 'ok';
+      const mark = status !== 'ok' ? status : data.gradeInfo?.[row]?.overridden ? 'override' : null;
+      if (mark) {
+        td.classList.add(`sc-row--${mark}`);
+        td.title = ROW_STATUS_TITLE[mark] ?? '';
+      }
+    }
     decorate(td, row, col);
   }
 
-  function naamRenderer(td: HTMLTableCellElement, row: number, col: number): void {
-    const special = isSummary(row);
-    const status = special ? null : (rowStatus[row] ?? 'ok');
-    td.style.background = rowBackground(row, status);
-    td.style.color = status === 'invalid' ? '#fff' : special ? 'var(--muted, #7f8c8d)' : '#000';
-    td.style.fontWeight = special ? '700' : '400';
-    td.style.fontStyle = special ? 'italic' : 'normal';
+  function nameRenderer(td: HTMLTableCellElement, row: number, col: number): void {
+    td.classList.add('sc-stick1', 'sc-name');
+    if (isSummary(row)) {
+      summaryClass(td, row);
+      td.classList.add('sc-sum-label');
+    } else if (rowStatus[row] === 'invalid') {
+      td.classList.add('sc-name--invalid');
+    }
     decorate(td, row, col);
   }
 
-  function calcCentered(td: HTMLTableCellElement, row: number, col: number): void {
-    td.style.textAlign = 'center';
-    td.style.background = isSummary(row) ? '#dde4f0' : '#eef2f7';
-    td.style.fontWeight = '600';
+  function scoreRenderer(
+    td: HTMLTableCellElement,
+    row: number,
+    col: number,
+    value: CellValue,
+  ): void {
+    const q = exam.questions[col - layout.firstQCol];
+    if (isSummary(row)) summaryClass(td, row);
+    else if (q) {
+      const kind = qKind(q);
+      if (kind !== 'normal') td.classList.add(kind === 'bonus' ? 'sc-bonus' : 'sc-diag');
+      const tint = scoreTint(value, q);
+      if (tint) td.classList.add(tint);
+    }
+    decorate(td, row, col);
+  }
+
+  function obsRenderer(td: HTMLTableCellElement, row: number, col: number): void {
+    if (isSummary(row)) summaryClass(td, row);
+    decorate(td, row, col);
+  }
+
+  function totalRenderer(
+    td: HTMLTableCellElement,
+    row: number,
+    col: number,
+    value: CellValue,
+  ): void {
+    td.classList.add('sc-total');
+    if (isSummary(row)) summaryClass(td, row);
+    if (row === stdIdx && value !== '') td.textContent = `± ${String(value)}`;
     decorate(td, row, col);
   }
 
@@ -148,13 +203,18 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
     col: number,
     value: CellValue,
   ): void {
-    td.style.textAlign = 'center';
-    td.style.fontWeight = 'bold';
-    td.style.color = '#000';
-    if (row === stdIdx) td.style.background = sdCellColor(cellNumber(value)) || '#dde4f0';
-    else if (row === summaryIdx) {
-      td.style.background = gradeCellColor(cellNumber(value)) || '#dde4f0';
-    } else td.style.background = gradeCellColor(cellNumber(value)) || '#eef2f7';
+    td.classList.add('sc-grade');
+    if (row === stdIdx) {
+      summaryClass(td, row);
+      if (value !== '') td.textContent = `± ${String(value)}`;
+    } else {
+      if (row === summaryIdx) summaryClass(td, row);
+      const fill = gradeCellColor(cellNumber(value));
+      if (fill) {
+        td.style.background = fill;
+        td.classList.add('sc-grade--filled');
+      }
+    }
     const info = row < summaryIdx ? data.gradeInfo?.[row] : undefined;
     const overridden = !!info?.overridden;
     td.classList.toggle('grade-override', overridden);
@@ -170,85 +230,38 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
     decorate(td, row, col);
   }
 
-  function rttiRenderer(
-    td: HTMLTableCellElement,
-    row: number,
-    col: number,
-    value: CellValue,
-  ): void {
-    td.style.textAlign = 'center';
-    td.style.fontWeight = '500';
-    td.style.background =
-      row === summaryIdx
-        ? '#e8ecf2'
-        : rttiPctCellColor(value === 'NVT' ? null : cellNumber(value)) || '#eef2f7';
-    decorate(td, row, col);
-  }
-
-  function scoreRenderer(
-    td: HTMLTableCellElement,
-    row: number,
-    col: number,
-    value: CellValue,
-  ): void {
-    td.style.textAlign = 'center';
-    if (isSummary(row)) {
-      td.style.background = '#e8ecf2';
-      decorate(td, row, col);
-      return;
-    }
-    const q = exam.questions[col - 2];
-    const kind = q ? qKind(q) : 'normal';
-    // Bonus: always blue; Diag: always gray, regardless of value.
-    if (kind === 'bonus') {
-      td.style.background = '#cce5ff';
-      td.style.fontStyle = 'italic';
-    } else if (kind === 'diag') {
-      td.style.background = '#d0d6df';
-      td.style.fontStyle = 'italic';
-    }
-    if (!value || !q) {
-      decorate(td, row, col);
-      return;
-    }
-    const upper = String(value).toUpperCase().trim();
-    if (upper === 'N') {
-      td.style.background = '#d0d6df';
-      td.style.color = '#4a5568';
-      td.style.fontWeight = '600';
-      decorate(td, row, col);
-      return;
-    }
-    const num = parseScoreNum(value);
-    if (isNaN(num) || num < 0 || num > q.max_points) {
-      td.style.background = '#ff0033';
-      td.style.color = '#fff';
-      td.style.fontWeight = '700';
-      decorate(td, row, col);
-      return;
-    }
-    if (kind === 'normal') {
-      if (value === '0') td.style.background = '#f8d7da';
-      else if (num === q.max_points) td.style.background = '#d4edda';
-      else td.style.background = '#fff3cd';
+  function pctRenderer(td: HTMLTableCellElement, row: number, col: number, value: CellValue): void {
+    td.classList.add('sc-pct');
+    if (isSummary(row)) summaryClass(td, row);
+    else {
+      const tint = pctTint(value);
+      if (tint) td.classList.add(tint);
     }
     decorate(td, row, col);
   }
 
-  function obsRenderer(td: HTMLTableCellElement, row: number, col: number): void {
-    if (isSummary(row)) td.style.background = '#e8ecf2';
+  function spacerRenderer(td: HTMLTableCellElement, row: number, col: number): void {
+    td.classList.add('sc-spacer');
     decorate(td, row, col);
   }
 
-  const plain = (td: HTMLTableCellElement, row: number, col: number) => decorate(td, row, col);
-
-  // Column order: #, Naam, scores, spacer1, obs + spacer2, Totaal, Cijfer, spacer3, RTTI.
-  const spacer: GridColumn = { width: 20, header: '', render: plain };
+  // Column order: #, Naam, scores, spacer, observaties + spacer, Totaal, Cijfer, spacer, RTTI.
+  const spacer: GridColumn = {
+    width: COL_WIDTH.spacer,
+    header: '',
+    headerClass: 'sc-spacer',
+    render: spacerRenderer,
+  };
   return [
-    { width: 72, header: '#', render: idRenderer },
-    { width: 150, header: 'Naam', headerClass: 'sg-left', render: naamRenderer },
+    { width: COL_WIDTH.nr, header: '#', headerClass: 'sg-left sc-stick0', render: nrRenderer },
+    {
+      width: COL_WIDTH.name,
+      header: 'Naam',
+      headerClass: 'sg-left sc-stick1',
+      render: nameRenderer,
+    },
     ...exam.questions.map((q) => ({
-      width: 32,
+      width: COL_WIDTH.question,
       header: qHeader(q),
       headerClass: qHeaderClass(q),
       render: scoreRenderer,
@@ -257,7 +270,7 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
     ...(O > 0
       ? [
           ...obs.map((o, oi): GridColumn => ({
-            width: 28,
+            width: COL_WIDTH.obs,
             header: obsHeader(o, oi),
             kind: 'checkbox',
             render: obsRenderer,
@@ -265,9 +278,13 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
           spacer,
         ]
       : []),
-    { width: 72, header: 'Totaal', render: calcCentered },
-    { width: 52, header: 'Cijfer', render: gradeRenderer },
+    { width: 76, header: 'Totaal', render: totalRenderer },
+    { width: 60, header: 'Cijfer', render: gradeRenderer },
     spacer,
-    ...['R%', 'T1%', 'T2%', 'I%'].map((header) => ({ width: 44, header, render: rttiRenderer })),
+    ...['R', 'T1', 'T2', 'I'].map((k) => ({
+      width: 52,
+      header: pctHeader(k),
+      render: pctRenderer,
+    })),
   ];
 }
