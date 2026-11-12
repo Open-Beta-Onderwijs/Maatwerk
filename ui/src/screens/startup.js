@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { escHtml, navigateTo, showUserBadge } from '../app.js';
-import { scoreSavesDone } from './scores.js';
+import { scoreSavesDone } from './scores/session';
 import { showAbout } from './about';
 import { pinLogin } from './pin';
 import { applyUserLook } from '../theme';

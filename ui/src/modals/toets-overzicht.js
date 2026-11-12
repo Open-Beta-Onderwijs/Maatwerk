@@ -30,7 +30,7 @@ import {
   showReloadNotice,
   modalRefresher,
 } from '../app.js';
-import { examGroups, groupStudentsOf } from '../screens/scores.js';
+import { examGroups, groupStudentsOf } from '../screens/scores/roster';
 
 const GROUP_PALETTE = [
   '#4A90D9',

@@ -152,7 +152,11 @@ describe('score grid decision 29', () => {
   });
 
   it('a question nobody has entered stays empty', () => {
-    const grid = [row(['4', '', ''], false), Array(width).fill(''), Array(width).fill('')] as GridData;
+    const grid = [
+      row(['4', '', ''], false),
+      Array(width).fill(''),
+      Array(width).fill(''),
+    ] as GridData;
     recomputeRow(grid, exam, 0, O);
     recomputeSummaryRow(grid, 1, 2, exam, O);
     expect(grid[1]!.slice(2, 2 + N)).toEqual(['4,0', '', '']);

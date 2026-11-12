@@ -2,7 +2,7 @@
 
 // Score grid logic (score modal, docs/specs/score-grid.md): input parsing, row
 // status, and the computed columns and summary rows of a group's grid. Moved
-// out of screens/scores.js in Step 3b; golden: scoregrid.json.
+// out of the score modal (now screens/scores/) in Step 3b; golden: scoregrid.json.
 //
 // Column layout of a grid row (N questions, O observaties, TOFF = O > 0 ? O + 1 : 0):
 //   0..1        = id, naam

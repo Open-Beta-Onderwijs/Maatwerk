@@ -18,7 +18,8 @@ import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { perfSpan } from '../utils/perf';
 import type { CardKind } from './exam-cards';
-import { openScoreModal, prebuildScoreModal } from './scores.js';
+import { prebuildScoreModal } from './scores/build';
+import { openScoreModal } from './scores/modal';
 import { renderToetsenList } from './toetsen';
 
 interface MenuAction {
