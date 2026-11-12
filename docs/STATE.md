@@ -11,9 +11,11 @@ push CI (`43007836698`) and PR CI (`43013836802`) green on `727f8bb` on all thre
 included (CI baselines of `modal-po-scores`/`modal-po-grade` from run `43005771776`, `727f8bb`).
 Tags `step-23`, `v0.14.0` on `727f8bb`, pushed.
 
-**Next action:** the user's manual test M-POB-1..6 on a copy of real data with the local exe
-0.14.0 (`target/release/maatwerk.exe`, built from `3b04a56`, same code as the merge); then step 24
-(PO rapport, its own design round) when the user says so.
+**User (2026-11-12):** manual test M-POB-1..6 on a copy of real data with the local exe 0.14.0:
+all pass (`docs/reviews/manual-test-step-23.md`). PO rapport design done (variant A, boards 19
+and 20, commit `62b608d`).
+
+**Next action:** step 24 (see "Step 24 progress" below).
 
 **Step 23 (PO c: PO beoordelen, 0.14), started 2026-11-11.** Steps 20-22 and the top bar are
 merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (`3062568`, steps
