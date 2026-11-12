@@ -10,8 +10,12 @@ Last tags: `step-24`, `v0.15.0`, `step-23`, `v0.14.0`, `step-22`, `v0.13.0`
 `43200670042` green on all three OSes (Windows and macOS first got no runner, rerun). Tags
 `step-24`, `v0.15.0` on `2bdac21`, pushed. Manual M-POR-1..4: the user, with a 0.15 exe.
 
-**Next action:** step 25, sub-task 4 (restyle, see "Step 25 progress"). **After step 25 the
-user wants a GitHub release** (ask what it should contain if `docs/release.md` does not say).
+**Next action (STOP, user):** the visual check of `modal-scores` (3 looks; local images in
+`ui/test-results/visual-modal-scores*/*-actual.png` after `npm run test:visual`, or the local exe
+0.16.0). On OK: update the local visual baselines, push `step/25-score-entry`, PR, take the CI
+baselines of `modal-scores` from CI's own run, merge, tags `step-25`, `v0.16.0`. **Then the
+user wants a GitHub release** (`docs/release.md` section 4; ask which notes: since 0.3.2, the
+only (draft) release on GitHub, or 0.16 alone; draft or published).
 
 ## Step 25 progress (Score entry, 0.16)
 
@@ -28,11 +32,25 @@ average, per observatie the ticked count, per RTTI the mean percentage (decision
    "score grid decision 29"; golden cases overlay only the new cells.
 3. **Done (`938ab9b`):** R-05: `screens/scores.js` -> `screens/scores/` (session, roster, build,
    group-grid, cells, cell-menu, modal), behaviour unchanged.
-4. Restyle (spec 4.10, board 13): header row (title + badge + name; ?, undo, redo, . → N, Toets
-   bewerken, N-term), sticky group heading with count and status, sticky column headings and #
-   / Naam, cell tints, focus ring, GEMIDDELDE / STANDAARDDEVIATIE footer look, footer legend +
-   save status. Then the user's visual check (STOP).
-5. Version 0.16.0, gate, review `docs/reviews/step-25.md`, report; then the release.
+4. **Done (`77c23d7`):** restyle after board 13: one header row (title + badge + name; ?,
+   undo, redo, . → N, Toets bewerken, N-term), the ? popover (hover, focus, click), sticky group
+   heading with "<n> leerlingen · <status>" (`groupStatus`), sticky column headings and # / Naam,
+   tints, row bars, summary rows, footer legend + save status. `styles/scores.css` (modal) and
+   `styles/score-grid.css` (grid); old score CSS removed from `style.css`. Grid stays light in
+   the dark theme, as the PO table.
+5. **Done:** version 0.16.0 (`7a18015`). Gate green on `7a18015`: fmt, clippy, cargo test, 560
+   Vitest, 127 node, 298 Chromium e2e, licences, cargo deny, SPDX; WebKit score-grid/shell/dialog
+   137/138 (one PO dialog flake, passed on rerun). Review `docs/reviews/step-25.md` (0/1/7/5);
+   fixes `bb3a907` (M1, m1, m2, m4, m5, m7, parts of m3, m6, nits; rest in `docs/backlog.md`
+   "From Step 25"). After the fixes: 567 Vitest, 299 Chromium e2e, WebKit score-grid 43/43;
+   local visual: only `modal-scores` (3 looks) differs, 138 unchanged.
+
+**Choices made without asking (for the report):** the grid stays light in the dark theme (as
+the PO score table); row status is a bar before the number instead of coloured # / Naam cells
+(an invalid row's name red); the SD row is grey (no colour scale) as on the board, with "±";
+bonus/diag cells are tinted by score too, italic; the status line counts "nog niet compleet"
+and "met een ongeldige score"; N-term stays the app's stepper; Naam is bold, not a link; cut
+leaves observaties as Delete does.
 
 ## Step 24 progress (PO d: PO rapport, 0.15)
 
