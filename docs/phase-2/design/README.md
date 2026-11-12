@@ -17,25 +17,28 @@ UI text stays Dutch, decimal comma, as everywhere in the app.
 
 ## 1. Boards and roadmap items
 
-| Board (mock file)            | Covers                                                                                 | Roadmap                            |
-| ---------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------- |
-| 1 Fundament (`Main.dc.html`) | tab bar, user menu, theme + accent, student and group cards                            | V-05, F-17, F-18, F-07, F-08, F-09 |
-| 2 Kaartvarianten             | history: card variants A/B/C (C chosen)                                                | F-07                               |
-| 3 Groepsoverzicht            | modal position, sticky header, placeholders, five tabs                                 | V-08..V-10, F-10                   |
-| 4 Knoppen                    | buttons, inputs, chips, dialog buttons, test-type badges                               | V-06, V-11                         |
-| 5 Login                      | login flow with inline PIN                                                             | V-04                               |
-| 6 Splash                     | splash screen                                                                          | F-06                               |
-| 7 Logo, 9 Logo B             | wordmark (7 = final; 9 is history)                                                     | V-12                               |
-| 8 Tabbalk                    | tab-bar wordmark variants (4 chosen)                                                   | V-12                               |
-| 10 Editor                    | editor header, toolbar, divider, status, AI rail                                       | V-07, F-16, F-05, B-08, F-01       |
-| 11 Toetsen                   | test-type badges, attempts as a tree, "+ PO toevoegen"                                 | V-11, F-12                         |
-| 12 Beheer                    | admin tab bar, Gebruikers (+ edit, photo crop), School, Gegevenscontrole, Instellingen | V-05, F-19, B-04                   |
-| 13 Scores                    | score-entry modal: sticky parts, centred                                               | V-06, V-10                         |
-| 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                         | V-11, F-12                         |
-| 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                        | F-15                               |
-| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                           | F-22                               |
-| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                         | F-20, F-22                         |
-| 18 POScores                  | PO score table, projectgroep grading modal                                             | F-22                               |
+| Board (mock file)            | Covers                                                                                      | Roadmap                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 1 Fundament (`Main.dc.html`) | tab bar, user menu, theme + accent, student and group cards                                 | V-05, F-17, F-18, F-07, F-08, F-09 |
+| 2 Kaartvarianten             | history: card variants A/B/C (C chosen)                                                     | F-07                               |
+| 3 Groepsoverzicht            | modal position, sticky header, placeholders, five tabs                                      | V-08..V-10, F-10                   |
+| 4 Knoppen                    | buttons, inputs, chips, dialog buttons, test-type badges                                    | V-06, V-11                         |
+| 5 Login                      | login flow with inline PIN                                                                  | V-04                               |
+| 6 Splash                     | splash screen                                                                               | F-06                               |
+| 7 Logo, 9 Logo B             | wordmark (7 = final; 9 is history)                                                          | V-12                               |
+| 8 Tabbalk                    | tab-bar wordmark variants (4 chosen)                                                        | V-12                               |
+| 10 Editor                    | editor header, toolbar, divider, status, AI rail                                            | V-07, F-16, F-05, B-08, F-01       |
+| 11 Toetsen                   | test-type badges, attempts as a tree, "+ PO toevoegen"                                      | V-11, F-12                         |
+| 12 Beheer                    | admin tab bar, Gebruikers (+ edit, photo crop), School, Gegevenscontrole, Instellingen      | V-05, F-19, B-04                   |
+| 13 Scores                    | score-entry modal: sticky parts, centred                                                    | V-06, V-10                         |
+| 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                              | V-11, F-12                         |
+| 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                             | F-15                               |
+| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                                | F-22                               |
+| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                              | F-20, F-22                         |
+| 18 POScores                  | PO score table, projectgroep grading modal                                                  | F-22                               |
+| 19 PORapport1                | PO rapport page 1: grade sentence, projectgroep, lollipop score table, bonus/malus, comment | F-22                               |
+| 20 PORapportA                | PO rapport category pages (chosen): level cards, comment, observaties with leeradvies       | F-22                               |
+| 21-24 PORapportB-E           | history: category page variants B-E (not chosen)                                            | F-22                               |
 
 ## 2. Design tokens
 
@@ -533,7 +536,16 @@ Boards 16-18. Decisions: `PLAN-2.md` 16-25.
   grade points, ×; "+ Regel") and "Bonus / malus per leerling". Sticky footer: general observaties
   (toggle chips), "Punten 14 / 17 → projectgroep 7,7", each member's grade on its grade colour,
   "← Vorige", "Volgende →", "Klaar". Autosave every 10 s and on closing.
-- **PO rapport:** designed later (step 24).
+- **PO rapport (boards 19, 20; decision 26):** the toets rapport's look (fonts, colours,
+  footer, logo, italic section labels, zebra tables). Page 1: title "Beoordeling <vak>
+  <PO-naam>", subtitle "<klas> — <naam> (<nr>)", one sentence with points, percentage, group
+  grade and the final grade in bold; "Projectgroep <naam>" as one line of names with classes;
+  Scoretabel per category (Categorie, B / D, Jij (●), lollipop on one scale, Gemiddeld (◇) over
+  the PO) with Totaal; "Bonus / malus" (Voor, Omschrijving, Cijfer); "Opmerking van de
+  docent". Then "Beoordeling per categorie": per category a heading with score and the level
+  cards side by side (achieved levels outlined in blue), "Opmerking:", and per observatie the
+  icon, **name** — short description, "Leeradvies:" on the next line; "Algemene observaties"
+  last. No RTTI parts, no grade histogram; duplex as the toets rapport.
 
 ## 5. Logo (V-12)
 

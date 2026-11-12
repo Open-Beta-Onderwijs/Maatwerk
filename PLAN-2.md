@@ -48,6 +48,7 @@ Praktische opdrachten (PO) with rubrics (user, 2026-11-08; ROADMAP F-20, F-22, F
 | 23  | Observaties get a field `toetstypes` (`toets`, `po`, or both; existing ones `toets`); test modals list only `toets`, the rubric editor and PO grading only `po`, the Observaties tab gets a filter; opdracht bewerken is not filtered                                                    | user   |
 | 24  | The PO score table is read-only, grouped by projectgroep; grading happens in its own modal (sliders, descriptions highlighted, category observaties and comments, overall comment, bonus/malus), saved automatically every 10 s and on closing                                           | user   |
 | 25  | The Rubrics tab is for teachers and sectievoorzitters, not the admin; the PO rapport gets its own design round (step 24)                                                                                                                                                                 | user   |
+| 26  | PO rapport (2026-11-12): an overview page, then the categories as level cards (variant A); no RTTI, no grade histogram; layout in step 24                                                                                                                                                | user   |
 
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
@@ -97,7 +98,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done   |
 | 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done   |
 | 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done   |
-| 24   | PO d: PO rapport                                                 | M            | 0.15    | todo   |
+| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | todo   |
 | 25   | Score entry                                                      | M            | 0.16    | todo   |
 | 26   | Login and splash                                                 | M            | 0.17    | todo   |
 | 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | todo   |
@@ -313,10 +314,39 @@ Stop and ask: the before/after table for averages that now include PO grades.
 
 ### Step 24: PO d: PO rapport (M)
 
-Items: F-22 (rapport). First a design round with the user in chat (layout of categories, level
-descriptions, comments, bonus/malus, grade; one or two pages, duplex rule of step 17), then the
-Typst template, `data.json` for a PO, goldens, and "Rapport genereren" for a PO. Stop and ask:
-the design before building, and the golden PNGs.
+Items: F-22 (rapport), decision 26. Design: spec 4.13 ("PO rapport"); boards 19 and 20
+(`PORapport1.dc.html`, `PORapportA.dc.html`). Boards 21-24 are the variants B-E that were not
+chosen (history). The mocks use a stand-in serif and a "logo" placeholder: the template keeps the
+fonts, colours and unicorn logo of `rapport.typ`.
+
+- **24a, data and template:** `rapport-po.typ` beside `rapport.typ`, sharing its page setup,
+  header, footer (page number, title, logo), section labels (9pt italic grey), zebra tables and
+  the lollipop `scale_track`; no RTTI parts, no histogram. `data.json` for a PO built in core
+  (the step 19 logic): student, projectgroep (name, members with class), points, max, group
+  grade, group and own bonus/malus lines, final grade, per category (name, soort, max, score,
+  PO average, levels, comment, observaties with name, short description and leeradvies), general
+  observaties, overall comment.
+  - **Page 1, overview:** title "Beoordeling <vak> <PO-naam>", subtitle "<klas> — <naam>
+    (<leerlingnummer>)"; one sentence with points, percentage, group grade and the final grade in
+    bold; "Projectgroep <naam>" as one line of names with classes ("Sem Dijkstra (5A), Emma Kok
+    (5A) en Bas Vos (5B)", the student first); Scoretabel with one row per category: Categorie,
+    B / D, Jij (●), the lollipop on one scale up to the largest category max (colour by
+    percentage, dashed to the category max, ◇ at the average), Gemiddeld (◇) over all students
+    of the PO; a Totaal row (diagnostic categories left out) and the footnote; "Bonus / malus"
+    (Voor: Projectgroep / Persoonlijk, Omschrijving, Cijfer); "Opmerking van de docent". A
+    section without content is left out.
+  - **Category pages (variant A):** "Beoordeling per categorie"; per category a heading (name,
+    "bonus" or "diagnostisch", score / max) and the level cards side by side (range, optional
+    title, explanation), every level whose interval contains the score outlined in blue; then
+    "Opmerking:" and per observatie the icon, **name** — short description, with "Leeradvies:"
+    and the advice on the next line. Last "Algemene observaties" in the same form. The
+    categories flow over as many pages as needed; a category block is never split.
+  - **Duplex:** as the toets rapport, every student starts on an odd page.
+- **24b, flow and goldens:** "Rapport genereren" for a PO (per student, per class, batch, as for
+  a test); unplaced students get no grade, so no rapport (named in the result). Fixture PO
+  (projectgroep of 3 with group and own lines, a group of 1, a bonus and a diagnostic category,
+  overlapping levels, a category with 5 levels, a category without comment or observaties, a
+  rubric long enough for two category pages) and golden PNGs. Stop and ask: the golden PNGs.
 
 ### Step 25: Score entry (M)
 
