@@ -106,8 +106,6 @@ fn the_overview_page_has_the_sentence_projectgroep_scores_lines_and_comment() {
         "Projectgroep Valtoren",
         "Sem Dijkstra (5A), Emma Kok (5A) en Bas Vos (5B)",
         "Scoretabel",
-        "Totaal",
-        "28,3 / 36 (78%)",
         "Bonus / malus",
         "−0,5",
         "+0,3",
@@ -116,6 +114,8 @@ fn the_overview_page_has_the_sentence_projectgroep_scores_lines_and_comment() {
         assert!(p1.contains(want), "{want:?} not on page 1: {p1}");
     }
     assert!(!p1.contains("Beoordeling per categorie"));
+    // No Totaal row (user, 2026-11-12).
+    assert!(!p1.contains("Totaal"), "{p1}");
 }
 
 #[test]
@@ -153,28 +153,33 @@ fn every_student_starts_on_an_odd_page_and_the_footer_counts_their_own_pages() {
 #[test]
 fn the_categories_flow_over_pages_without_splitting_a_category() {
     let d = doc(&case_data());
-    let names = [
-        "Introductie",
-        "Onderzoeksvraag en hypothese",
-        "Theorie",
-        "Meetopstelling",
-        "Figuren",
-        "Conclusie",
-        "Discussie",
-        "Originaliteit",
-        "Samenwerking",
+    // Each category's heading and its first level's explanation (fixture po-rapport.fixture.ts).
+    let blocks = [
+        ("Introductie", "Achtergrondinformatie ontbreekt"),
+        ("Onderzoeksvraag en hypothese", "Geen onderzoeksvraag."),
+        ("Theorie", "Theorie ontbreekt grotendeels"),
+        ("Meetopstelling", "Opstelling niet beschreven"),
+        ("Figuren", "Figuren ontbreken of zijn onleesbaar."),
+        ("Conclusie", "Geen conclusie, of een conclusie"),
+        ("Discussie", "Geen discussie van de meetfouten."),
+        ("Originaliteit", "Voert de proef uit zoals beschreven."),
+        ("Samenwerking", "De taken zijn niet verdeeld."),
     ];
     // Sem's category pages are 2 and 3 (the first page holds the score table).
     let p2 = page_text(&d, 1);
     let p3 = page_text(&d, 2);
     assert!(p2.starts_with("Beoordeling per categorie"), "{p2}");
-    // Every category on one of the two pages; the last one does not fit on the first, and moves
-    // to the next page whole (its heading and its level cards together).
-    for name in names {
-        assert!(p2.contains(name) || p3.contains(name), "{name} missing");
+    // A category that does not fit moves to the next page whole: its heading and its level cards
+    // are always on the same page, and both pages hold some.
+    let on = |page: &str, (name, level): (&str, &str)| page.contains(name) && page.contains(level);
+    for block in blocks {
+        assert!(
+            on(&p2, block) || on(&p3, block),
+            "{} split or missing",
+            block.0
+        );
     }
-    assert!(p3.starts_with("Samenwerking"), "{p3}");
-    assert!(p3.contains("De taken zijn niet verdeeld."), "{p3}");
+    assert!(blocks.iter().any(|b| on(&p3, *b)), "{p3}");
     assert!(p3.contains("Algemene observaties"));
     assert!(p3.contains("Leeradvies:"));
     // Diagnostic and bonus tags.
@@ -210,12 +215,19 @@ fn render_po_rapport_pdf_makes_a_pdf() {
 }
 
 /// For a visual check: `cargo test -p maatwerk-core --test typst_po_rapport -- --ignored`
-/// writes every page at 110 ppi to `target/tmp/po-preview/`.
+/// writes every page at 110 ppi to `target/tmp/po-preview/<seconds>/` (a new folder per run, so
+/// pages still open in an image viewer do not block it).
 #[test]
 #[ignore]
 fn preview() {
     let d = doc(&case_data());
-    let out = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("po-preview");
+    let run = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let out = std::path::Path::new(env!("CARGO_TARGET_TMPDIR"))
+        .join("po-preview")
+        .join(run.to_string());
     std::fs::create_dir_all(&out).unwrap();
     for (i, page) in d.pages.iter().enumerate() {
         typst_render::render(page, 110.0 / 72.0)

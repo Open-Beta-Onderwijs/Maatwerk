@@ -332,7 +332,7 @@ fonts, colours and unicorn logo of `rapport.typ`.
     (5A) en Bas Vos (5B)", the student first); Scoretabel with one row per category: Categorie,
     B / D, Jij (●), the lollipop on one scale up to the largest category max (colour by
     percentage, dashed to the category max, ◇ at the average), Gemiddeld (◇) over all students
-    of the PO; a Totaal row (diagnostic categories left out) and the footnote; "Bonus / malus"
+    of the PO; no Totaal row (user, 2026-11-12) and the footnote; "Bonus / malus"
     (Voor: Projectgroep / Persoonlijk, Omschrijving, Cijfer); "Opmerking van de docent". A
     section without content is left out.
   - **Category pages (variant A):** "Beoordeling per categorie"; per category a heading (name,

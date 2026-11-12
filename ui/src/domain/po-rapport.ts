@@ -5,7 +5,7 @@
 // crates/maatwerk-core/assets/templates/rapport-po.typ. Every number comes from the core
 // (crates/maatwerk-grades through WebAssembly): grades, points, averages and their rounding.
 
-import { coreCall, round0, round1 } from './core';
+import { coreCall, round0 } from './core';
 import { formatGrade } from './format';
 import { poLineValid, type Results } from './grades';
 import { fullName } from './ids';
@@ -13,7 +13,7 @@ import { compareStudents, groupName } from './po';
 import { gradingOf, ownLinesOf, signedPoints } from './po-grading';
 import { sanitizeTypstMarkup, scoreDotColor, subjectDisplayName } from './rapport';
 import type { Rubric, RubricCategory } from './rubric';
-import { classQuestions, mean } from './statistics';
+import { classQuestions } from './statistics';
 import type { Exam, Observatie, PoLine, Question, ScoreRecord, Student } from './types';
 
 /** What the builder reads of one PO (a `PoContext` of the score table fits). */
@@ -69,7 +69,6 @@ export interface PoRapportStudent {
   group_size: number;
   projectgroep: { naam: string; members: { name: string; klas: string }[] };
   categories: PoRapportCategory[];
-  total: { avg: number; avg_pct: number };
   lines: PoRapportLine[];
   comment: string;
   observaties: PoRapportObservatie[];
@@ -181,8 +180,6 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
       Object.fromEntries(Object.entries(e.scores).filter(([, v]) => v !== null)),
     ),
   );
-  const normalMax = entries[0]?.res.normalMax ?? 0;
-  const totalAvg = mean(withScores.map((e) => e.res.scored)) ?? 0;
 
   entries.sort(
     (a, b) =>
@@ -231,10 +228,6 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
           observaties: obsOf(g.categoryObs[c.id] ?? []),
         };
       }),
-      total: {
-        avg: round1(totalAvg),
-        avg_pct: normalMax > 0 ? round0((100 * totalAvg) / normalMax) : 0,
-      },
       // An overwritten grade replaces the lines too: they did not count (review 24 m2).
       lines: res.overridden
         ? []

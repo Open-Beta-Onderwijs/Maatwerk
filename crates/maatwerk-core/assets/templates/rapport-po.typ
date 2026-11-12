@@ -15,7 +15,6 @@
 //     avg, avg_pct, dot_color, levels: array of (min, max, title, text),
 //     comment, observaties
 //   ),
-//   total: (avg, avg_pct),
 //   lines: array of (voor ("Projectgroep" or "Persoonlijk"), label, value (number), text),
 //   comment, observaties (general),
 // )
@@ -24,7 +23,7 @@
 
 #import "rapport.typ": (
   setup, section_label, zebra_stroke, zebra_fill, scale_track, lollipop_track, student_start,
-  student_end, _num, _dots, _guard_markup, _eval_scope, TRACK_W, TRACK_H,
+  student_end, _num, _dots, _guard_markup, _eval_scope, TRACK_W,
 )
 
 #let BLUE = rgb("#1a5276")
@@ -93,8 +92,6 @@
         ),
         cell(c, _num(c.avg) + " / " + _num(c.max) + " (" + str(c.avg_pct) + "%)"),
       )).flatten(),
-      [*Totaal*], [], [*#_num(s.points) / #_num(s.max)*], box(height: TRACK_H * 1cm),
-      [#_num(s.total.avg) / #_num(s.max) (#s.total.avg_pct%)],
     )
   }
   let notes = ()
@@ -179,7 +176,8 @@
   )
 }
 
-#let _category(c) = block(breakable: false, below: 14pt, {
+// 24pt between categories (user, 2026-11-12: 14pt was tight); inside a block unchanged.
+#let _category(c) = block(breakable: false, below: 24pt, {
   set text(size: 9.5pt)
   let tag = _soort_tag(c.soort)
   _block_heading(

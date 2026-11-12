@@ -541,7 +541,7 @@ Boards 16-18. Decisions: `PLAN-2.md` 16-25.
   <PO-naam>", subtitle "<klas> — <naam> (<nr>)", one sentence with points, percentage, group
   grade and the final grade in bold; "Projectgroep <naam>" as one line of names with classes;
   Scoretabel per category (Categorie, B / D, Jij (●), lollipop on one scale, Gemiddeld (◇) over
-  the PO) with Totaal; "Bonus / malus" (Voor, Omschrijving, Cijfer); "Opmerking van de
+  the PO), no Totaal row (user, 2026-11-12); "Bonus / malus" (Voor, Omschrijving, Cijfer); "Opmerking van de
   docent". Then "Beoordeling per categorie": per category a heading with score and the level
   cards side by side (achieved levels outlined in blue), "Opmerking:", and per observatie the
   icon, **name** — short description, "Leeradvies:" on the next line; "Algemene observaties"

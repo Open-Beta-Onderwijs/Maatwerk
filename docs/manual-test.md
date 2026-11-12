@@ -180,7 +180,7 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
 - [ ] **M-POR-2** Page 1 of a student in a projectgroep: "Beoordeling <vak> <PO>", "<klas> —
       <naam> (<nr>)", the sentence with points, percentage, the group grade and the final grade
       in bold; the projectgroep's names with classes (the student first); the Scoretabel
-      (B / D, lollipop, Gemiddeld, Totaal) and its footnote; Bonus / malus (red minus, green
+      (B / D, lollipop, Gemiddeld; no Totaal row) and its footnote; Bonus / malus (red minus, green
       plus); Opmerking van de docent. Compare the numbers with Scores invoeren.
 - [ ] **M-POR-3** The category pages: per category the level cards, the levels holding the score
       outlined in blue (two when levels overlap), "bonus"/"diagnostisch", the comment and the

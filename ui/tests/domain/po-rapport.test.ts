@@ -78,8 +78,8 @@ describe('buildPoRapportData', () => {
     // An unscored category is left out of its average: only the Valtoren members scored it.
     const bonus = fleur.categories.find((c) => c.soort === 'bonus')!;
     expect([bonus.score, bonus.avg, bonus.avg_pct]).toEqual([null, 2, 50]);
-    // (27 × 3 + 32) ÷ 4 = 28,25 of 36.
-    expect(sem.total).toEqual({ avg: 28.3, avg_pct: 78 });
+    // No Totaal row (user, 2026-11-12).
+    expect(sem).not.toHaveProperty('total');
     expect(data.poInfo).toEqual({
       name: 'PO Onderzoek valbeweging',
       subject_display: 'Natuurkunde',
