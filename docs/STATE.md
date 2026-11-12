@@ -47,7 +47,8 @@ Baseline 2026-11-12 on `step/24-po-rapport` `62b608d`: cargo test all ok, 537 Vi
    (no lines on an overwritten grade) fixed; the rest in `docs/backlog.md` "From Step 24".
 4. **User (2026-11-12):** wording of the sentence (vs board 19) and >100% with bonus are OK.
    Changes asked: no Totaal row in the Scoretabel (data field `total` removed too), more space
-   between categories (14pt -> 24pt; spacing inside a block unchanged). Done, golden reblessed
+   between categories (14pt -> 24pt; spacing inside a block unchanged). Then: 5pt instead of 2pt
+   between a category title and its line (Fleur's rapport now 3 pages + 1 empty, 8 in all). Done, golden reblessed
    ("visual check OK by the user"); the user confirms the new pages before the push.
 5. **Was STOP (user):** check the golden PNGs `tests/golden/typst/rapport-po/p1..p6.png` (50 ppi) or
    the 110-ppi preview (`cargo test -p maatwerk-core --test typst_po_rapport -- --ignored` writes

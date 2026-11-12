@@ -690,10 +690,10 @@
     "success": true
   },
   "port": {
-    "blessed": "step 24: PO rapport (rapport-po.typ), visual check OK by the user 2026-11-12 (no Totaal row, 24pt between categories)"
+    "blessed": "step 24: PO rapport (rapport-po.typ), visual check OK by the user 2026-11-12 (no Totaal row, 24pt between categories, 5pt under category titles)"
   },
   "pdf": {
-    "pageCount": 6,
+    "pageCount": 8,
     "pages": [
       {
         "size": [
@@ -728,14 +728,28 @@
           595.28,
           841.89
         ],
-        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n0\n2 / 4 (50%)\nSamenwerking\nD\n— / 3\n0\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 2\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n0\n2 / 4 (50%)\nSamenwerking\nD\n— / 3\n0\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "Beoordeling per categorie\nIntroductie\n3 / 3\n0–1\n \nMatig\nAchtergrondinformatie ontbreekt, de \nonderzoeksvraag is vaag.\n2\n \nRedelijk\nOnderzoeksvraag duidelijk, \nachtergrond beperkt.\n3\n \nGoed\nHeldere onderzoeksvraag met \nrelevante achtergrond.\nOnderzoeksvraag en hypothese\n4 / 4\n0\n \nOntbreekt\nGeen \nonderzoeksvraag.\n1\n \nZwak\nVraag aanwezig, niet \nonderzoekbaar.\n2\n \nMatig\nOnderzoekbare vraag \nzonder hypothese.\n3\n \nGoed\nVraag met hypothese, \nniet onderbouwd.\n4\n \nUitstekend\nVraag met een \nonderbouwde, \ntoetsbare hypothese.\nTheorie\n7 / 8\n0–3\n \nMatig\nTheorie ontbreekt \ngrotendeels of bevat fouten.\n2–5\n \nVoldoende\nDe belangrijkste formules \nworden genoemd, maar niet \ntoegepast.\n4–7\n \nGoed\nDe formules worden \ntoegepast op de eigen proef.\n6–8\n \nUitstekend\nDe theorie wordt verbonden \nmet de resultaten.\nMeetopstelling\n6 / 6\n0–2\nOpstelling niet beschreven of niet na \nte bouwen.\n3–4\nOpstelling beschreven, enkele details \nontbreken.\n5–6\nOpstelling volledig beschreven met \neen schets en de meetinstrumenten.\nFiguren\n5 / 6\n0–2\nFiguren ontbreken of zijn onleesbaar.\n3–4\nFiguren aanwezig, de assen zijn niet \nvolledig.\n5–6\nFiguren volledig, met grootheden, \neenheden en een bijschrift.\nConclusie\n4 / 5\n0–1\n \nMatig\nGeen conclusie, of een conclusie die \nniet uit de metingen volgt.\n2–3\n \nVoldoende\nConclusie volgt uit de metingen, de \nonderzoeksvraag wordt half \nbeantwoord.\n4–5\n \nGoed\nConclusie beantwoordt de \nonderzoeksvraag met de metingen als \nonderbouwing.\nOpmerking:\n Sterk: je koppelt de conclusie aan je hypothese.\nDiscussie\n3 / 4\n0–1\n \nMatig\nGeen discussie van de meetfouten.\n2–3\n \nVoldoende\nMeetfouten genoemd, zonder hun \ninvloed op het resultaat.\n4\n \nGoed\nMeetfouten en hun invloed besproken, \nmet een verbetering van de proef.\nOriginaliteit\nbonus\n— / 4\n0–1\n \nStandaard\nVoert de proef uit zoals beschreven.\n2–4\n \nEigen inbreng\nEen eigen variant van de proef of een extra meting.\nSamenwerking\ndiagnostisch\n— / 3\n0–1\n \nMatig\nDe taken zijn niet verdeeld.\n2–3\n \nGoed\nIedereen had een eigen taak en hield zich eraan.\n2 / 2\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+        "text": "Beoordeling per categorie\nIntroductie\n3 / 3\n0–1\n \nMatig\nAchtergrondinformatie ontbreekt, de \nonderzoeksvraag is vaag.\n2\n \nRedelijk\nOnderzoeksvraag duidelijk, \nachtergrond beperkt.\n3\n \nGoed\nHeldere onderzoeksvraag met \nrelevante achtergrond.\nOnderzoeksvraag en hypothese\n4 / 4\n0\n \nOntbreekt\nGeen \nonderzoeksvraag.\n1\n \nZwak\nVraag aanwezig, niet \nonderzoekbaar.\n2\n \nMatig\nOnderzoekbare vraag \nzonder hypothese.\n3\n \nGoed\nVraag met hypothese, \nniet onderbouwd.\n4\n \nUitstekend\nVraag met een \nonderbouwde, \ntoetsbare hypothese.\nTheorie\n7 / 8\n0–3\n \nMatig\nTheorie ontbreekt \ngrotendeels of bevat fouten.\n2–5\n \nVoldoende\nDe belangrijkste formules \nworden genoemd, maar niet \ntoegepast.\n4–7\n \nGoed\nDe formules worden \ntoegepast op de eigen proef.\n6–8\n \nUitstekend\nDe theorie wordt verbonden \nmet de resultaten.\nMeetopstelling\n6 / 6\n0–2\nOpstelling niet beschreven of niet na \nte bouwen.\n3–4\nOpstelling beschreven, enkele details \nontbreken.\n5–6\nOpstelling volledig beschreven met \neen schets en de meetinstrumenten.\nFiguren\n5 / 6\n0–2\nFiguren ontbreken of zijn onleesbaar.\n3–4\nFiguren aanwezig, de assen zijn niet \nvolledig.\n5–6\nFiguren volledig, met grootheden, \neenheden en een bijschrift.\nConclusie\n4 / 5\n0–1\n \nMatig\nGeen conclusie, of een conclusie die \nniet uit de metingen volgt.\n2–3\n \nVoldoende\nConclusie volgt uit de metingen, de \nonderzoeksvraag wordt half \nbeantwoord.\n4–5\n \nGoed\nConclusie beantwoordt de \nonderzoeksvraag met de metingen als \nonderbouwing.\nOpmerking:\n Sterk: je koppelt de conclusie aan je hypothese.\nDiscussie\n3 / 4\n0–1\n \nMatig\nGeen discussie van de meetfouten.\n2–3\n \nVoldoende\nMeetfouten genoemd, zonder hun \ninvloed op het resultaat.\n4\n \nGoed\nMeetfouten en hun invloed besproken, \nmet een verbetering van de proef.\nOriginaliteit\nbonus\n— / 4\n0–1\n \nStandaard\nVoert de proef uit zoals beschreven.\n2–4\n \nEigen inbreng\nEen eigen variant van de proef of een extra meting.\n2 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Samenwerking\ndiagnostisch\n— / 3\n0–1\n \nMatig\nDe taken zijn niet verdeeld.\n2–3\n \nGoed\nIedereen had een eigen taak en hield zich eraan.\n3 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "4 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
       }
     ]
   },
@@ -747,13 +761,13 @@
     },
     {
       "file": "p2.png",
-      "sha256": "5ff3174d9cf2171728758735cbb1e12d2ac225972fc174b07a7a58916a14fd79",
-      "bytes": 136401
+      "sha256": "4a3bce6702cb60a2c063b7461a49152c54eba63ff52911ff11776bd45a00ec03",
+      "bytes": 136692
     },
     {
       "file": "p3.png",
-      "sha256": "902f12fedd2dadf38631672537d3adf35f64e00351c30060b265df14b047f2ba",
-      "bytes": 46739
+      "sha256": "f491280af7ef24e6265f58746a7839379c247d34a8549fe0569fd9cefd737f8c",
+      "bytes": 46164
     },
     {
       "file": "p4.png",
@@ -762,13 +776,23 @@
     },
     {
       "file": "p5.png",
-      "sha256": "ab6b9a44543c90d1a6d6e836dde511fa38e52d2035cea24b8d59dbbd72488f0a",
-      "bytes": 54225
+      "sha256": "7b22a83887ebea27618c87bc72744946a0487865187d6023d99bc68fe05a7186",
+      "bytes": 54224
     },
     {
       "file": "p6.png",
-      "sha256": "f894621f1196c4cffbd051a0fe9058dc63021d585822ce53cf8f8e9359def705",
-      "bytes": 125291
+      "sha256": "b05b7c9e3bf0c9f544ede353e7730dbc7bab8cf17e9d0751cb5589687d0a0037",
+      "bytes": 119147
+    },
+    {
+      "file": "p7.png",
+      "sha256": "cf5d22a2356cd88d09d8625a3104145a1794cf2185238547f1246be928268e4c",
+      "bytes": 18572
+    },
+    {
+      "file": "p8.png",
+      "sha256": "1542b78160a1281d3cc0e7c4b13ca01bdf1283ef7198c487594a642df495334a",
+      "bytes": 11519
     }
   ]
 }

@@ -156,7 +156,8 @@
   width: 100%,
   below: 5pt,
   stroke: (bottom: 0.5pt + gray),
-  inset: (bottom: 2pt),
+  // 5pt between the title and its line (user, 2026-11-12: 2pt was close).
+  inset: (bottom: 5pt),
   grid(columns: (1fr, auto), left, right),
 )
 
