@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+// The RTTI uitleg and leeradvies texts per jaarlaag (`templates/rtti/`, C11), opened from the
+// Toetsen screen. Moved out of modals/rapport.js (step 24, R-05).
+
 import {
   toast,
   openModal,
@@ -8,106 +11,27 @@ import {
   guardModalClose,
   requestCloseModal,
 } from '../app.js';
-import { printName } from '../domain/print';
 import { GRADE_BAR } from '../domain/grade-colors';
 import { setBusy } from '../components/button';
-import { defaultTabData, rttiExplFilePath } from '../domain/rapport';
-import { compileRapport } from '../services/rapport';
-import { renderWarningsHtml } from '../components/render-warnings';
+import { defaultTabData, rttiExplFilePath, type AdviesData } from '../domain/rapport';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MODAL: Rapport (opened from the Toetsen screen)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-let _printListener = null; // cleaned up each time a new rapport is rendered
-
-// Report data: src/domain/rapport.ts; loading and compiling: src/services/rapport.ts.
-
-/**
- * Compiles the rapport for `exam` and shows it in the PDF viewer inside `content`.
- * Shows a spinner while compiling and an error message on failure.
- */
-async function showRapportPdf(content, exam, year) {
-  content.innerHTML = '<div class="rapport-spinner">Rapport wordt gegenereerd…</div>';
-
-  let result;
-  let groupNames = [];
-  // The group names of the students in the rapport, for the printed file name.
-  const api = {
-    readJson: (relPath) => window.maatwerk.readJson(relPath),
-    renderRapportPdf: (examId, students, examInfo) => {
-      groupNames = students.map((s) => s?.group);
-      return window.maatwerk.renderRapportPdf(examId, students, examInfo);
-    },
-  };
-  try {
-    result = await compileRapport(exam, year, { Store, api });
-  } catch (err) {
-    result = { success: false, error: String(err?.message ?? err) };
-  }
-
-  if (!result.success) {
-    content.innerHTML = `<pre class="hint rapport-error">${String(result.error).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
-    toast('Compilatiefout bij het genereren van het rapport.', 'error');
-    return;
-  }
-  // The user may have navigated away / closed the modal while compiling
-  if (!content.isConnected) return;
-
-  // The bridge turns the output ID into a URL the viewer iframe can load
-  // (the reference used 'file:///' + path, which a webview cannot load).
-  const pdfUrl = window.maatwerk.pdfUrl(result.pdfPath);
-  const outputId = result.pdfPath;
-  const viewerSrc = `pdf-viewer.html?file=${encodeURIComponent(pdfUrl)}`;
-  content.innerHTML = `${renderWarningsHtml(result.warnings)}<iframe class="rapport-pdf-frame" src="${viewerSrc}"></iframe>`;
-
-  // The embedded PDF viewer's "Afdrukken" button (postMessage): a named copy in
-  // rapporten/<schooljaar>/, opened in the system viewer (ADR-0002 section 9).
-  const name = printName('Rapport', year, exam, groupNames);
-  if (_printListener) window.removeEventListener('message', _printListener);
-  _printListener = (e) => {
-    if (e.data?.type === 'print-pdf') printOutput(outputId, name);
-  };
-  window.addEventListener('message', _printListener);
-
-  toast('Rapport gegenereerd.', 'success');
+interface Tab {
+  label: string;
+  fileKey: string;
+  jaar: number;
 }
 
-/** Saves a named copy of a render output in rapporten/ and opens it; toasts a failure. */
-export async function printOutput(outputId, name) {
-  try {
-    await window.maatwerk.printPdf(outputId, name);
-  } catch (err) {
-    toast(`Afdrukken mislukt: ${err?.message ?? err}`, 'error');
-  }
+type Bracket = 'laag' | 'midden' | 'hoog';
+
+/** An element of the dialog that is always there (built by buildTabHtml). */
+function q<T extends Element = HTMLElement>(root: ParentNode, selector: string): T {
+  return root.querySelector(selector) as T;
 }
+import { Store } from '../store.js';
 
-/** Opens the rapport for one exam in a modal overlay (used from the Toetsen screen). */
-export function openRapportModal(examId, year) {
-  const exam = Store.getExamsSync(year).find((e) => e.id === examId);
-  if (!exam) return;
-  const dialog = openModal({
-    key: 'rapport',
-    title: `Rapport: ${exam.title}`,
-    subtitle: `Jaarlaag ${exam.jaarlaag} · ${year}`,
-    className: 'modal-pdf',
-    fixedHeight: true,
-    body: '<div class="rapport-modal-content"></div>',
-    onClose: () => {
-      if (_printListener) window.removeEventListener('message', _printListener);
-      _printListener = null;
-    },
-  });
-  showRapportPdf(dialog.body.querySelector('.rapport-modal-content'), exam, year);
-}
+const RTTI_CATS = ['R', 'T1', 'T2', 'I'] as const;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// RTTI UITLEG / LEERADVIES MODAL
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const RTTI_CATS = ['R', 'T1', 'T2', 'I'];
-
-const RTTI_PLACEHOLDERS = {
+const RTTI_PLACEHOLDERS: Record<(typeof RTTI_CATS)[number], Record<'uitleg' | Bracket, string>> = {
   R: {
     uitleg:
       'Bijvoorbeeld: Reproductievragen zijn vragen die je kunt beantwoorden door de tekst in het boek en de aantekeningen te leren en goed op te letten in de les.',
@@ -142,7 +66,7 @@ const RTTI_PLACEHOLDERS = {
   },
 };
 
-function buildTabs(subject) {
+function buildTabs(subject: string): Tab[] {
   if (subject === 'wi') {
     return [
       { label: '1', fileKey: 'wi', jaar: 1 },
@@ -165,8 +89,8 @@ function buildTabs(subject) {
   return [1, 2, 3, 4, 5, 6].map((j) => ({ label: String(j), fileKey: subject, jaar: j }));
 }
 
-function buildTabHtml(data, tabs, activeTab) {
-  function copyBtnHtml(block) {
+function buildTabHtml(data: AdviesData, tabs: Tab[], activeTab: number): string {
+  function copyBtnHtml(block: string): string {
     const targets = tabs
       .map((t, i) =>
         i !== activeTab ? `<button class="tog-btn" data-copy-tab="${i}">${t.label}</button>` : '',
@@ -195,17 +119,17 @@ function buildTabHtml(data, tabs, activeTab) {
       (cat) => `
     <tr>
       <td>${cat}</td>
-      <td><textarea rows="5" data-adv="${cat}-laag" placeholder="${RTTI_PLACEHOLDERS[cat].laag}">${escHtml(data.leeradvies[cat].laag)}</textarea></td>
-      <td><textarea rows="5" data-adv="${cat}-midden" placeholder="${RTTI_PLACEHOLDERS[cat].midden}">${escHtml(data.leeradvies[cat].midden)}</textarea></td>
-      <td><textarea rows="5" data-adv="${cat}-hoog" placeholder="${RTTI_PLACEHOLDERS[cat].hoog}">${escHtml(data.leeradvies[cat].hoog)}</textarea></td>
+      <td><textarea rows="5" data-adv="${cat}-laag" placeholder="${RTTI_PLACEHOLDERS[cat].laag}">${escHtml(data.leeradvies[cat]?.laag)}</textarea></td>
+      <td><textarea rows="5" data-adv="${cat}-midden" placeholder="${RTTI_PLACEHOLDERS[cat].midden}">${escHtml(data.leeradvies[cat]?.midden)}</textarea></td>
+      <td><textarea rows="5" data-adv="${cat}-hoog" placeholder="${RTTI_PLACEHOLDERS[cat].hoog}">${escHtml(data.leeradvies[cat]?.hoog)}</textarea></td>
     </tr>`,
     )
     .join('');
 
   const sliderRows = RTTI_CATS.filter((cat) => cat !== 'I')
     .map((cat) => {
-      const low = data.grenswaarden[cat].laag_midden;
-      const high = data.grenswaarden[cat].midden_hoog;
+      const low = data.grenswaarden[cat]!.laag_midden;
+      const high = data.grenswaarden[cat]!.midden_hoog;
       return `
     <div class="slider-row">
       <span class="slider-row-cat">${cat}</span>
@@ -249,7 +173,7 @@ function buildTabHtml(data, tabs, activeTab) {
   `;
 }
 
-function updateSliderTrack(track, labels, low, high) {
+function updateSliderTrack(track: HTMLElement, labels: HTMLElement, low: number, high: number) {
   // Three-zone gradient: danger (low) → warning (mid) → success (high)
   const lo = Math.min(low, high);
   const hi = Math.max(low, high);
@@ -260,12 +184,12 @@ function updateSliderTrack(track, labels, low, high) {
   labels.textContent = `${lo}% / ${hi}%`;
 }
 
-function initDualSliders(el) {
+function initDualSliders(el: HTMLElement) {
   for (const cat of RTTI_CATS.filter((c) => c !== 'I')) {
-    const lowInput = el.querySelector(`[data-slider="${cat}-low"]`);
-    const highInput = el.querySelector(`[data-slider="${cat}-high"]`);
-    const track = el.querySelector(`[data-slider-track="${cat}"]`);
-    const labels = el.querySelector(`[data-slider-labels="${cat}"]`);
+    const lowInput = q<HTMLInputElement>(el, `[data-slider="${cat}-low"]`);
+    const highInput = q<HTMLInputElement>(el, `[data-slider="${cat}-high"]`);
+    const track = q(el, `[data-slider-track="${cat}"]`);
+    const labels = q(el, `[data-slider-labels="${cat}"]`);
 
     updateSliderTrack(track, labels, Number(lowInput.value), Number(highInput.value));
 
@@ -279,25 +203,28 @@ function initDualSliders(el) {
 }
 
 export async function openRttiUitlegModal() {
-  const subject = Store.getActiveSubject() ?? 'nat';
+  const subject = (Store.getActiveSubject() as string | null) ?? 'nat';
   const tabs = buildTabs(subject);
 
   // Each tab remembers the version it was loaded from, so saving cannot
   // overwrite a change another teacher made meanwhile (ADR-0003 C6). An
   // unreadable file shows the defaults and then conflicts on save.
-  const tabData = {};
-  const tabHash = {};
-  const tabSaved = {}; // JSON of the version on disk, to skip unchanged tabs
+  const tabData: Record<number, AdviesData> = {};
+  const tabHash: Record<number, string> = {};
+  const tabSaved: Record<number, string | null> = {}; // JSON of the version on disk, to skip unchanged tabs
 
   await Promise.all(
     tabs.map(async (t, i) => {
       const relPath = rttiExplFilePath(t.fileKey, t.jaar);
       try {
-        const { data, hash } = await Store.loadVersioned(relPath);
+        const { data, hash } = (await Store.loadVersioned(relPath)) as {
+          data: AdviesData | null;
+          hash: string;
+        };
         tabData[i] = data ?? defaultTabData();
         tabHash[i] = hash;
         tabSaved[i] = data ? JSON.stringify(data) : null;
-      } catch (_) {
+      } catch {
         tabData[i] = defaultTabData();
         tabHash[i] = 'onleesbaar';
       }
@@ -306,19 +233,19 @@ export async function openRttiUitlegModal() {
 
   let activeTab = 0;
 
-  let selectTab = null; // set in onShow; the dialog calls onTab on open
+  let selectTab: ((idx: number) => void) | null = null; // set in onShow; the dialog calls onTab on open
   openModal({
     title: 'Leerlingrapport RTTI uitleg en leeradvies',
     key: 'rtti-uitleg',
     size: 'lg',
     fixedHeight: true,
     tabs: tabs.map((t, i) => ({ id: String(i), label: t.label })),
-    onTab: (id) => selectTab?.(Number(id)),
+    onTab: (id: string) => selectTab?.(Number(id)),
     body: '<div id="rtti-uitleg-tab-content"></div>',
     footerHtml: `
       <button class="btn btn--secondary" id="btn-rtti-uitleg-cancel">Annuleren</button>
       <button class="btn btn--primary" id="btn-rtti-uitleg-save">Opslaan</button>`,
-    onShow: (el) => {
+    onShow: (el: HTMLElement) => {
       let _dirty = false;
 
       function markDirty() {
@@ -329,23 +256,19 @@ export async function openRttiUitlegModal() {
       // Annuleren all ask first; U14).
       guardModalClose(() => _dirty);
 
-      function renderTab(idx) {
-        el.querySelector('#rtti-uitleg-tab-content').innerHTML = buildTabHtml(
-          tabData[idx],
-          tabs,
-          idx,
-        );
+      function renderTab(idx: number) {
+        q(el, '#rtti-uitleg-tab-content').innerHTML = buildTabHtml(tabData[idx]!, tabs, idx);
         initDualSliders(el);
         initCopyButtons(el, idx);
         // Mark dirty on any input change
-        el.querySelector('#rtti-uitleg-tab-content').addEventListener('input', markDirty);
+        q(el, '#rtti-uitleg-tab-content').addEventListener('input', markDirty);
       }
 
-      function initCopyButtons(el, srcIdx) {
+      function initCopyButtons(el: HTMLElement, srcIdx: number) {
         for (const block of ['uitleg', 'leeradvies', 'grenswaarden']) {
-          const openBtn = el.querySelector(`[data-copy-open="${block}"]`);
-          const popover = el.querySelector(`[data-copy-popover="${block}"]`);
-          const confirmBtn = el.querySelector(`[data-copy-confirm="${block}"]`);
+          const openBtn = q(el, `[data-copy-open="${block}"]`);
+          const popover = q(el, `[data-copy-popover="${block}"]`);
+          const confirmBtn = q(el, `[data-copy-confirm="${block}"]`);
 
           openBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -358,16 +281,18 @@ export async function openRttiUitlegModal() {
 
           confirmBtn.addEventListener('click', () => {
             readCurrentTabIntoData(srcIdx);
-            const selected = [...popover.querySelectorAll('.tog-btn.selected')].map((b) =>
-              Number(b.dataset.copyTab),
+            const selected = [...popover.querySelectorAll<HTMLElement>('.tog-btn.selected')].map(
+              (b) => Number(b.dataset.copyTab),
             );
             for (const destIdx of selected) {
+              const dest = tabData[destIdx]!;
+              const src = tabData[srcIdx]!;
               if (block === 'uitleg') {
-                tabData[destIdx].uitleg = structuredClone(tabData[srcIdx].uitleg);
+                dest.uitleg = structuredClone(src.uitleg);
               } else if (block === 'leeradvies') {
-                tabData[destIdx].leeradvies = structuredClone(tabData[srcIdx].leeradvies);
+                dest.leeradvies = structuredClone(src.leeradvies);
               } else {
-                tabData[destIdx].grenswaarden = structuredClone(tabData[srcIdx].grenswaarden);
+                dest.grenswaarden = structuredClone(src.grenswaarden);
               }
             }
             // Deselect all and close
@@ -388,29 +313,25 @@ export async function openRttiUitlegModal() {
         }
 
         // Close popovers when clicking outside
-        el.querySelector('#rtti-uitleg-tab-content').addEventListener('click', (e) => {
-          if (!e.target.closest('.rtti-copy-wrap')) {
+        q(el, '#rtti-uitleg-tab-content').addEventListener('click', (e) => {
+          if (!(e.target as Element).closest('.rtti-copy-wrap')) {
             el.querySelectorAll('.rtti-copy-popover').forEach((p) => p.classList.add('hidden'));
           }
         });
       }
 
-      function readCurrentTabIntoData(idx) {
-        const content = el.querySelector('#rtti-uitleg-tab-content');
+      function readCurrentTabIntoData(idx: number) {
+        const content = q(el, '#rtti-uitleg-tab-content');
+        const value = (selector: string) => q<HTMLInputElement>(content, selector).value;
+        const data = tabData[idx]!;
         for (const cat of RTTI_CATS) {
-          tabData[idx].uitleg[cat] = content.querySelector(`[data-uitleg="${cat}"]`).value;
+          data.uitleg[cat] = value(`[data-uitleg="${cat}"]`);
           if (cat !== 'I') {
-            for (const score of ['laag', 'midden', 'hoog']) {
-              tabData[idx].leeradvies[cat][score] = content.querySelector(
-                `[data-adv="${cat}-${score}"]`,
-              ).value;
+            for (const score of ['laag', 'midden', 'hoog'] as const) {
+              data.leeradvies[cat]![score] = value(`[data-adv="${cat}-${score}"]`);
             }
-            tabData[idx].grenswaarden[cat].laag_midden = Number(
-              content.querySelector(`[data-slider="${cat}-low"]`).value,
-            );
-            tabData[idx].grenswaarden[cat].midden_hoog = Number(
-              content.querySelector(`[data-slider="${cat}-high"]`).value,
-            );
+            data.grenswaarden[cat]!.laag_midden = Number(value(`[data-slider="${cat}-low"]`));
+            data.grenswaarden[cat]!.midden_hoog = Number(value(`[data-slider="${cat}-high"]`));
           }
         }
       }
@@ -421,13 +342,11 @@ export async function openRttiUitlegModal() {
         renderTab(activeTab);
       };
 
-      el.querySelector('#btn-rtti-uitleg-cancel').addEventListener('click', () =>
-        requestCloseModal(),
-      );
+      q(el, '#btn-rtti-uitleg-cancel').addEventListener('click', () => requestCloseModal());
 
-      el.querySelector('#btn-rtti-uitleg-save').addEventListener('click', async () => {
+      q(el, '#btn-rtti-uitleg-save').addEventListener('click', async () => {
         readCurrentTabIntoData(activeTab);
-        const saveBtn = el.querySelector('#btn-rtti-uitleg-save');
+        const saveBtn = q<HTMLButtonElement>(el, '#btn-rtti-uitleg-save');
         setBusy(saveBtn, true);
         // Unchanged tabs whose file exists are skipped, so they cannot conflict.
         // A missing file is still written, as in the reference: the rapport
@@ -437,17 +356,21 @@ export async function openRttiUitlegModal() {
             const json = JSON.stringify(tabData[i]);
             if (tabSaved[i] !== null && tabSaved[i] === json) return;
             const relPath = rttiExplFilePath(t.fileKey, t.jaar);
-            tabHash[i] = await Store.saveVersioned(relPath, tabData[i], tabHash[i]);
+            tabHash[i] = (await Store.saveVersioned(relPath, tabData[i], tabHash[i])) as string;
             tabSaved[i] = json;
           }),
         );
         setBusy(saveBtn, false);
-        const failed = tabs.filter((_, i) => results[i].status === 'rejected');
+        const failed = tabs.filter((_, i) => results[i]!.status === 'rejected');
         if (failed.length === 0) {
           _dirty = false;
           toast('RTTI uitleg en leeradvies opgeslagen.', 'success');
           closeModal();
-        } else if (results.some((r) => r.status === 'rejected' && r.reason?.code === 'conflict')) {
+        } else if (
+          results.some(
+            (r) => r.status === 'rejected' && (r.reason as { code?: string })?.code === 'conflict',
+          )
+        ) {
           const names = failed.map((t) => `tabblad ${t.label}`).join(', ');
           toast(
             `Niet opgeslagen: ${names}. Iemand anders heeft dit intussen gewijzigd ` +

@@ -17,6 +17,13 @@ The reference bundles the CLI `bin/typst/win/x_86_64/typst.exe`, **typst 0.14.2 
 | E   | Raw compile                                    | `typst:compile`             | exposed in `preload.js:61`, **no caller** (dead)                                              | PDF at caller-given path                                       |
 | F   | Version smoke test                             | `typst:version`             | exposed in `preload.js:57`, no caller found                                                   | `{ success, version }`                                         |
 
+**Maatwerk addition (step 24): the PO rapport** (no reference counterpart). Command
+`render_po_rapport_pdf(examId, students, poInfo)` (`renderPoRapportPdf`), World as path A with
+`rapport-po-main.typ` and `rapport-po.typ`, which imports the shared parts of `rapport.typ` (page
+setup, footer, section label, zebra tables, lollipop, duplex padding). The data is built by
+`ui/src/domain/po-rapport.ts`; its field contract is at the top of `rapport-po.typ`. Golden
+`tests/golden/typst/rapport-po` (Maatwerk-only: channel without `app:`, `port.blessed`).
+
 The app has **no single-student rapport**. Path A always renders every student with scores in one document. The app has no PNG export, does not use `--input`/`sys.inputs`, `--ppi`, `--format` or `--pages`, and never calls `typst query`. All data reaches Typst as **source-code literals in a generated wrapper file**.
 
 ### Binary location and common arguments

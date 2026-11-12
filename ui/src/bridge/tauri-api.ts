@@ -255,6 +255,16 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       logWarnings(r.data.warnings);
       return { success: true, pdfPath: r.data.pdfPath, warnings: r.data.warnings };
     },
+    async renderPoRapportPdf(examId, students, poInfo) {
+      const r = await c.renderPoRapportPdf(
+        examId,
+        normaliseForTypst(students) as Value,
+        normaliseForTypst(poInfo) as Value,
+      );
+      if (r.status === 'error') return { success: false, error: message(r.error) };
+      logWarnings(r.data.warnings);
+      return { success: true, pdfPath: r.data.pdfPath, warnings: r.data.warnings };
+    },
     async renderAssignmentSvg(opdrachtId, title, previewContent) {
       const r = await c.renderAssignmentSvg(opdrachtId, title, previewContent ?? null);
       if (r.status === 'error') return { success: false, error: message(r.error) };

@@ -2,6 +2,14 @@
   "v": 3,
   "attachments": {},
   "boards": {
+    "Beheer.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "12 · Beheer: tabbalk met 7 iconen, Gebruikers (+ bewerken met fotouitsnede), School, Gegevenscontrole, Instellingen",
+      "w": 1440,
+      "x": 0,
+      "y": 6960
+    },
     "Editor.dc.html": {
       "h": 900,
       "is_interactive": true,
@@ -62,6 +70,88 @@
       "x": 0,
       "y": 0
     },
+    "ObsOpdModals.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "15 · Observatie bewerken (iconenkiezer) en opdracht bewerken",
+      "w": 1440,
+      "x": 4560,
+      "y": 6960
+    },
+    "PO.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "17 · PO in Toetsen: kaart, PO toevoegen (rubric) en projectgroepen",
+      "w": 1440,
+      "x": 1520,
+      "y": 8280
+    },
+    "PORapport1.dc.html": {
+      "h": 1123,
+      "title": "19 · PO-rapport p.1: projectgroep, scoretabel (lollipop), bonus/malus, opmerking",
+      "w": 794,
+      "x": 0,
+      "y": 9600
+    },
+    "PORapportA.dc.html": {
+      "h": 1123,
+      "title": "20 · Categorieën A (gekozen): niveaukaarten zoals in Beoordelen",
+      "w": 794,
+      "x": 874,
+      "y": 9600
+    },
+    "PORapportB.dc.html": {
+      "h": 1123,
+      "title": "21 · Categorieën B: alleen het behaalde niveau (compact)",
+      "w": 794,
+      "x": 1748,
+      "y": 9600
+    },
+    "PORapportC.dc.html": {
+      "h": 1123,
+      "title": "22 · Categorieën C: rubric als tabel, leeradvies in één tabel",
+      "w": 794,
+      "x": 2622,
+      "y": 9600
+    },
+    "PORapportD.dc.html": {
+      "h": 1123,
+      "title": "23 · Categorieën D: getallenschaal met niveaubanden, zijkolom",
+      "w": 794,
+      "x": 3496,
+      "y": 9600
+    },
+    "PORapportE.dc.html": {
+      "h": 794,
+      "title": "24 · Categorieën E: als A, liggend, opmerkingen en observaties ernaast",
+      "w": 1123,
+      "x": 4370,
+      "y": 9600
+    },
+    "POScores.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "18 · PO scores invoeren en projectgroep beoordelen (schuifjes, bonus/malus)",
+      "w": 1440,
+      "x": 3040,
+      "y": 8280
+    },
+    "Rubrics.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "16 · Rubrics: nieuwe tab en rubric bewerken (intervallen live gecontroleerd)",
+      "w": 1440,
+      "x": 0,
+      "y": 8280
+    },
+    "Scores.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "13 · Scores invoeren: vaste groepskop, kolomkoppen, nummer- en naamkolom",
+      "w": 1440,
+      "x": 1520,
+      "y": 6960
+    },
     "Splash.dc.html": {
       "h": 960,
       "title": "6 · Splash screen tijdens het laden",
@@ -84,22 +174,6 @@
       "x": 1520,
       "y": 5640
     },
-    "Beheer.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "title": "12 · Beheer: tabbalk met 7 iconen, Gebruikers (+ bewerken met fotouitsnede), School, Gegevenscontrole, Instellingen",
-      "w": 1440,
-      "x": 0,
-      "y": 6960
-    },
-    "Scores.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "title": "13 · Scores invoeren: vaste groepskop, kolomkoppen, nummer- en naamkolom",
-      "w": 1440,
-      "x": 1520,
-      "y": 6960
-    },
     "Toetsmodals.dc.html": {
       "h": 960,
       "is_interactive": true,
@@ -107,38 +181,6 @@
       "w": 1440,
       "x": 3040,
       "y": 6960
-    },
-    "ObsOpdModals.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "title": "15 · Observatie bewerken (iconenkiezer) en opdracht bewerken",
-      "w": 1440,
-      "x": 4560,
-      "y": 6960
-    },
-    "Rubrics.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "title": "16 · Rubrics: nieuwe tab en rubric bewerken (intervallen live gecontroleerd)",
-      "w": 1440,
-      "x": 0,
-      "y": 8280
-    },
-    "PO.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "title": "17 · PO in Toetsen: kaart, PO toevoegen (rubric) en projectgroepen",
-      "w": 1440,
-      "x": 1520,
-      "y": 8280
-    },
-    "POScores.dc.html": {
-      "h": 960,
-      "is_interactive": true,
-      "title": "18 · PO scores invoeren en projectgroep beoordelen (schuifjes, bonus/malus)",
-      "w": 1440,
-      "x": 3040,
-      "y": 8280
     }
   },
   "createdOnFiles": {
@@ -149,6 +191,15 @@
   "launch": {
     "view": "canvas"
   },
+  "noteOrder": [
+    "r7",
+    "r1",
+    "r2",
+    "r3",
+    "r4",
+    "r5",
+    "r6"
+  ],
   "notes": {
     "r1": {
       "kind": "title1",
@@ -186,6 +237,7 @@
       "kind": "title1",
       "maxW": 5960,
       "text": "Ronde 5: beheer, scores invoeren, toets-, observatie- en opdrachtmodals",
+      "w": 240,
       "x": 0,
       "y": 6720
     },
@@ -193,8 +245,17 @@
       "kind": "title1",
       "maxW": 4480,
       "text": "Ronde 6: praktische opdrachten en rubrics",
+      "w": 240,
       "x": 0,
       "y": 8040
+    },
+    "r7": {
+      "kind": "title1",
+      "maxW": 5493,
+      "text": "Ronde 7: PO-rapport (A4): overzicht en categoriepagina (gekozen: A)",
+      "w": 240,
+      "x": 0,
+      "y": 9360
     }
   },
   "order": [
@@ -215,7 +276,13 @@
     "ObsOpdModals.dc.html",
     "Rubrics.dc.html",
     "PO.dc.html",
-    "POScores.dc.html"
+    "POScores.dc.html",
+    "PORapport1.dc.html",
+    "PORapportA.dc.html",
+    "PORapportB.dc.html",
+    "PORapportC.dc.html",
+    "PORapportD.dc.html",
+    "PORapportE.dc.html"
   ],
   "pages": [],
   "title": "Maatwerk redesign"

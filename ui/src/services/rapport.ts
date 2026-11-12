@@ -5,6 +5,7 @@
 // Dependencies are passed in, so tests run it on a MockApi without the DOM.
 
 import type { MaatwerkApi } from '../bridge/api';
+import { buildPoRapportData, type PoRapportInput } from '../domain/po-rapport';
 import {
   buildRapportData,
   defaultTabData,
@@ -65,4 +66,19 @@ export async function compileRapport(exam: Exam, year: string, { Store, api }: R
     adviesData: await loadAdviesData(exam, api),
   });
   return api.renderRapportPdf(exam.id, studentData, examInfo);
+}
+
+/**
+ * The PO rapport (step 24): every graded student of the PO in one PDF. Without any, nothing is
+ * compiled (`result` null). `skipped` names the students without a rapport.
+ */
+export async function compilePoRapport(
+  input: PoRapportInput,
+  api: Pick<MaatwerkApi, 'renderPoRapportPdf'>,
+) {
+  const { students, poInfo, skipped } = buildPoRapportData(input);
+  const result = students.length
+    ? await api.renderPoRapportPdf(input.exam.id, students, poInfo)
+    : null;
+  return { result, skipped, classes: students.map((s) => s.klas) };
 }

@@ -54,7 +54,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.14.0';
+export const MOCK_APP_VERSION = '0.15.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -696,6 +696,24 @@ export class MockApi implements MaatwerkApi {
     return {
       success: true,
       pdfPath: this.storePdf('rapport_preview.pdf', pages.length ? pages : [['Rapport (mock)']]),
+      warnings: [...this.renderWarnings],
+    };
+  }
+
+  async renderPoRapportPdf(
+    examId: string,
+    students: unknown[],
+    poInfo: Record<string, unknown>,
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>> {
+    this.record('renderPoRapportPdf', [examId, students, poInfo]);
+    const title = String(poInfo?.name ?? examId);
+    const pages = students.map((s, i) => {
+      const name = (s as { name?: unknown })?.name;
+      return ['PO-rapport (mock)', title, typeof name === 'string' ? name : `Leerling ${i + 1}`];
+    });
+    return {
+      success: true,
+      pdfPath: this.storePdf('rapport_preview.pdf', pages.length ? pages : [['PO-rapport (mock)']]),
       warnings: [...this.renderWarnings],
     };
   }

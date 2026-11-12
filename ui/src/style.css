@@ -1074,6 +1074,14 @@ body::after {
   flex-direction: column;
 }
 
+/* The PO rapport's students without a rapport (step 24). */
+.rapport-skipped {
+  flex: none;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 /* ── Opdrachten genereren modal ───────────────────────────────────────────── */
 .og-root,
 .og-settings,

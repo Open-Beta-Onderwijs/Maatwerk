@@ -145,7 +145,7 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       "n projectgroepen", the rubric line; `school.json` `minAppVersion` is 0.13.0 and Maatwerk
       0.12 on that copy opens read-only. The rubric shows "In gebruik bij 1 PO".
 - [ ] **M-PO-3** ⋮ > Projectgroepen: move, rename, remove; ⋮ > PO bewerken: change naam, periode,
-      rubric. Rapport is grey with a reason (from 0.14 Scores invoeren and Opdrachten work).
+      rubric. (From 0.14 Scores invoeren and Opdrachten work, from 0.15 Rapport genereren.)
 - [ ] **M-PO-4** ⋮ > Herkansing toevoegen: the groups are copied; take one student out; Opslaan:
       a card with 2 pogingen, the original's groups unchanged.
 
@@ -170,6 +170,25 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       group cards and the profile include the PO grade (weging as set).
 - [ ] **M-POB-6** ⋮ > Opdrachten genereren on a PO: the rubric's general and category observaties
       are listed; students with a ticked observatie get its opdrachten.
+
+## PO rapport (M-POR, 0.15)
+
+- [ ] **M-POR-1** ⋮ > Rapport genereren on a graded PO: one PDF with every graded student, by
+      class then achternaam. Above it: "Geen rapport voor niet ingedeeld in een projectgroep: …"
+      and/or "nog geen cijfer: …" when there are such students. A PO without any grade shows a
+      short reason and no PDF.
+- [ ] **M-POR-2** Page 1 of a student in a projectgroep: "Beoordeling <vak> <PO>", "<klas> —
+      <naam> (<nr>)", the sentence with points, percentage, the group grade and the final grade
+      in bold; the projectgroep's names with classes (the student first); the Scoretabel
+      (B / D, lollipop, Gemiddeld; no Totaal row) and its footnote; Bonus / malus (red minus, green
+      plus); Opmerking van de docent. Compare the numbers with Scores invoeren.
+- [ ] **M-POR-3** The category pages: per category the level cards, the levels holding the score
+      outlined in blue (two when levels overlap), "bonus"/"diagnostisch", the comment and the
+      observaties with Leeradvies; Algemene observaties last. No category is split over two
+      pages. A projectgroep of one: "Je hebt …", no projectgroep line.
+- [ ] **M-POR-4** Afdrukken: duplex, every student starts on an odd page (an empty page pads);
+      the footer counts the student's own pages; logo and watermark as on the toets rapport.
+      The copy in `rapporten\<schooljaar>\` is named `… Rapport nat <klas> <PO>.pdf`.
 
 ## Opdrachten and the editor (M-OPD)
 

@@ -265,6 +265,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (check && !only.length) {
     // A removed case must not leave an orphan folder behind.
     for (const dir of fs.readdirSync(TYPST_DIR)) {
+      // A Maatwerk-only golden (step 24, the PO rapport) has no reference case.
+      const own = JSON.parse(fs.readFileSync(path.join(TYPST_DIR, dir, 'case.json'), 'utf8'));
+      if (!own.call.channel.startsWith('app:')) continue;
       if (!(dir in results)) {
         console.error(`STALE ${dir}: no case produces it`);
         failed++;

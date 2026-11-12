@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>PO-rapport: categorieën A</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2A6496}a:hover{color:#1E4E78}
+.r-sec{margin:0 0 8px;font-size:12px;font-style:italic;color:#6B7079}
+.r-lbl{font-size:12px;font-style:italic;color:#6B7079}
+</style>
+</helmet>
+<div style="width: 794px; height: 1123px; box-sizing: border-box; padding: 56px 60px 0; position: relative; background: #FFFFFF; font-family: 'Source Serif 4', Georgia, serif; font-size: 13px; line-height: 1.4; color: #1D2026">
+  <div class="r-sec">Beoordeling per categorie</div>
+  <div style="display: flex; flex-direction: column; gap: 16px">
+    <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+      <section>
+        <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; padding-bottom: 2px; border-bottom: 1px solid #4A4F57">
+          <h3 style="margin: 0; font-size: 14px; font-weight: 700; flex: 1">{{c.name}}<sc-if value="{{c.isBonus}}" hint-placeholder-val="{{ false }}"><span style="margin-left: 8px; font-size: 12px; font-weight: 400; font-style: italic; color: #2A6496">bonus</span></sc-if></h3>
+          <span style="font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums">{{c.v}} / {{c.max}}</span>
+        </div>
+        <div style="display: flex; gap: 6px">
+          <sc-for list="{{c.levels}}" as="l" hint-placeholder-count="3">
+            <div style="flex: 1; min-width: 0; padding: 4px 8px 5px; border: {{l.bw}} solid {{l.bd}}; border-radius: 4px; background: {{l.bg}}; color: {{l.fg}}">
+              <div style="display: flex; gap: 6px; align-items: baseline">
+                <span style="font-weight: 700; font-variant-numeric: tabular-nums; color: {{l.rangeFg}}">{{l.range}}</span>
+                <sc-if value="{{l.hasTitle}}" hint-placeholder-val="{{ true }}"><b>{{l.title}}</b></sc-if>
+              </div>
+              <div style="font-size: 12px; line-height: 1.35">{{l.text}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{c.hasComment}}" hint-placeholder-val="{{ true }}">
+          <p style="margin: 6px 0 0"><span class="r-lbl">Opmerking:</span> {{c.comment}}</p>
+        </sc-if>
+        <sc-for list="{{c.obs}}" as="o" hint-placeholder-count="1">
+          <div style="display: flex; gap: 8px; margin-top: 5px">
+            <span aria-hidden="true" style="font-size: 15px; line-height: 18px">{{o.e}}</span>
+            <div>
+              <div><b>{{o.n}}</b> — {{o.desc}}</div>
+              <div><span class="r-lbl">Leeradvies:</span> {{o.advice}}</div>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+    <section>
+      <div style="margin-bottom: 4px; padding-bottom: 2px; border-bottom: 1px solid #4A4F57"><h3 style="margin: 0; font-size: 14px; font-weight: 700">Algemene observaties</h3></div>
+      <sc-for list="{{general}}" as="o" hint-placeholder-count="1">
+        <div style="display: flex; gap: 8px; margin-top: 5px">
+          <span aria-hidden="true" style="font-size: 15px; line-height: 18px">{{o.e}}</span>
+          <div>
+            <div><b>{{o.n}}</b> — {{o.desc}}</div>
+            <div><span class="r-lbl">Leeradvies:</span> {{o.advice}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+  </div>
+  <div aria-label="Logo" style="position: absolute; right: 22px; bottom: 26px; width: 70px; height: 100px; border: 1px dashed #C9CDD3; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #8A8F97">logo</div>
+  <div style="position: absolute; left: 60px; right: 120px; bottom: 34px; display: flex; font-size: 12px; font-style: italic; color: #8A8F97">
+    <span style="width: 120px">2 / 2</span><span style="flex: 1; text-align: center; margin-right: 120px">Natuurkunde PO Onderzoek valbeweging — Sem Dijkstra</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":794,"height":1123}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = [
+      { name: 'Introductie', kind: 'Normaal', max: 3, v: 2, comment: '', obs: [], levels: [[0, 1, 'Matige introductie', 'Achtergrondinformatie ontbreekt, onderzoeksvraag vaag.'], [2, 2, 'Redelijk', 'Onderzoeksvraag duidelijk, achtergrond beperkt.'], [3, 3, 'Goed', 'Heldere onderzoeksvraag met relevante achtergrond.']] },
+      { name: 'Theorie', kind: 'Normaal', max: 8, v: 6, comment: 'Formules goed gekozen; de afleiding van g uit de helling ontbreekt.', obs: [['➗', 'Formule verkeerd omgeschreven', 'Leerling heeft bij het omschrijven van een formule een fout gemaakt.', 'Schrijf bij het omschrijven elke stap op een nieuwe regel en doe links en rechts van het =-teken hetzelfde. Controleer daarna met de eenheden.']], levels: [[0, 3, 'Matig', 'Theorie ontbreekt grotendeels of bevat fouten.'], [2, 5, 'Voldoende', 'Belangrijkste formules genoemd, niet toegepast.'], [4, 7, 'Goed', 'Formules toegepast op de eigen proef.'], [6, 8, 'Uitstekend', 'Theorie verbonden met de resultaten.']] },
+      { name: 'Figuren', kind: 'Normaal', max: 6, v: 4, comment: 'Grafiek 2 mist eenheden op de y-as.', obs: [['📈', 'Grafiek: aslabels vergeten', 'Leerling heeft bij een grafiek de grootheid of eenheid op een as weggelaten.', 'Zet bij elke as de grootheid en de eenheid, bijvoorbeeld t (s). Kijk je grafiek na met de checklist uit de practicumhandleiding.']], levels: [[0, 2, '', 'Figuren ontbreken of zijn onleesbaar.'], [3, 4, '', 'Figuren aanwezig, assen niet volledig.'], [5, 6, '', 'Figuren volledig, met eenheden en bijschrift.']] },
+      { name: 'Originaliteit', kind: 'Bonus', max: 4, v: 2, comment: '', obs: [], levels: [[0, 1, 'Standaard', 'Voert de proef uit zoals beschreven.'], [2, 4, 'Eigen inbreng', 'Eigen variant of extra meting.']] },
+    ];
+    const cats = C.map((c) => ({
+      name: c.name, isBonus: c.kind === 'Bonus', v: c.v, max: c.max, comment: c.comment, hasComment: !!c.comment,
+      obs: c.obs.map(([e, n, desc, advice]) => ({ e, n, desc, advice })),
+      levels: c.levels.map(([a, b, t, x]) => {
+        const on = a <= c.v && c.v <= b;
+        return { range: a === b ? String(a) : a + '–' + b, title: t, hasTitle: !!t, text: x, bw: on ? '2px' : '1px', bd: on ? '#2A6496' : '#D3D6DB', bg: on ? '#EAF1F8' : '#FFFFFF', fg: on ? '#1D2026' : '#6B7079', rangeFg: on ? '#2A6496' : '#6B7079' };
+      }),
+    }));
+    const general = [{ e: '📏', n: 'Eenheid vergeten / verkeerd', desc: 'Leerling is bij het beantwoorden van een vraag de eenheid vergeten of heeft een verkeerde eenheid opgeschreven.', advice: 'Vergeet bij het beantwoorden van vragen nooit te controleren of je de juiste eenheid bij het antwoord hebt geschreven. Gebruik de GFBA-methode (Gegevens, Formule, Berekening & Antwoord). In de Antwoordstap controleer je of het antwoord de juiste eenheid heeft.' }];
+    return { cats, general };
+  }
+}
+</script>
+</body>
+</html>

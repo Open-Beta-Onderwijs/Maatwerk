@@ -1,0 +1,798 @@
+{
+  "format": 1,
+  "id": "rapport-po",
+  "path": "A",
+  "rule": "Step 24: PO rapport (ui/tests/domain/po-rapport.fixture.ts), a projectgroep of three with group and own lines and one of one",
+  "reference": {
+    "typst": "0.14.2",
+    "ppi": 50
+  },
+  "call": {
+    "channel": "renderPoRapportPdf",
+    "args": [
+      "rapport-po",
+      [
+        {
+          "name": "Sem Dijkstra",
+          "student_nr": "900101",
+          "klas": "5A",
+          "grade": "7,3",
+          "grade_overridden": false,
+          "grade_only": false,
+          "points": 27,
+          "max": 36,
+          "pct": 75,
+          "rubric_grade": "7,5",
+          "group_size": 3,
+          "projectgroep": {
+            "naam": "Valtoren",
+            "members": [
+              {
+                "name": "Sem Dijkstra",
+                "klas": "5A"
+              },
+              {
+                "name": "Emma Kok",
+                "klas": "5A"
+              },
+              {
+                "name": "Bas Vos",
+                "klas": "5B"
+              }
+            ]
+          },
+          "categories": [
+            {
+              "name": "Introductie",
+              "soort": "normaal",
+              "max": 3,
+              "score": 2,
+              "avg": 2.3,
+              "avg_pct": 75,
+              "dot_color": "#cccc58",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "Achtergrondinformatie ontbreekt, de onderzoeksvraag is vaag."
+                },
+                {
+                  "min": 2,
+                  "max": 2,
+                  "title": "Redelijk",
+                  "text": "Onderzoeksvraag duidelijk, achtergrond beperkt."
+                },
+                {
+                  "min": 3,
+                  "max": 3,
+                  "title": "Goed",
+                  "text": "Heldere onderzoeksvraag met relevante achtergrond."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Onderzoeksvraag en hypothese",
+              "soort": "normaal",
+              "max": 4,
+              "score": 3,
+              "avg": 3.3,
+              "avg_pct": 81,
+              "dot_color": "#b3c85d",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 0,
+                  "title": "Ontbreekt",
+                  "text": "Geen onderzoeksvraag."
+                },
+                {
+                  "min": 1,
+                  "max": 1,
+                  "title": "Zwak",
+                  "text": "Vraag aanwezig, niet onderzoekbaar."
+                },
+                {
+                  "min": 2,
+                  "max": 2,
+                  "title": "Matig",
+                  "text": "Onderzoekbare vraag zonder hypothese."
+                },
+                {
+                  "min": 3,
+                  "max": 3,
+                  "title": "Goed",
+                  "text": "Vraag met hypothese, niet onderbouwd."
+                },
+                {
+                  "min": 4,
+                  "max": 4,
+                  "title": "Uitstekend",
+                  "text": "Vraag met een onderbouwde, toetsbare hypothese."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Theorie",
+              "soort": "normaal",
+              "max": 8,
+              "score": 6,
+              "avg": 6.3,
+              "avg_pct": 78,
+              "dot_color": "#b3c85d",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 3,
+                  "title": "Matig",
+                  "text": "Theorie ontbreekt grotendeels of bevat fouten."
+                },
+                {
+                  "min": 2,
+                  "max": 5,
+                  "title": "Voldoende",
+                  "text": "De belangrijkste formules worden genoemd, maar niet toegepast."
+                },
+                {
+                  "min": 4,
+                  "max": 7,
+                  "title": "Goed",
+                  "text": "De formules worden toegepast op de eigen proef."
+                },
+                {
+                  "min": 6,
+                  "max": 8,
+                  "title": "Uitstekend",
+                  "text": "De theorie wordt verbonden met de resultaten."
+                }
+              ],
+              "comment": "Formules goed gekozen; de afleiding van g uit de helling ontbreekt.",
+              "observaties": [
+                {
+                  "icon": "➗",
+                  "naam": "Formule verkeerd omgeschreven",
+                  "uitleg": "Bij het omschrijven van een formule is een fout gemaakt.",
+                  "leeradvies": "Schrijf bij het omschrijven elke stap op een *nieuwe regel* en doe links en rechts van het =-teken hetzelfde. Controleer daarna met de eenheden."
+                }
+              ]
+            },
+            {
+              "name": "Meetopstelling",
+              "soort": "normaal",
+              "max": 6,
+              "score": 5,
+              "avg": 5.3,
+              "avg_pct": 88,
+              "dot_color": "#99c461",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 2,
+                  "title": "",
+                  "text": "Opstelling niet beschreven of niet na te bouwen."
+                },
+                {
+                  "min": 3,
+                  "max": 4,
+                  "title": "",
+                  "text": "Opstelling beschreven, enkele details ontbreken."
+                },
+                {
+                  "min": 5,
+                  "max": 6,
+                  "title": "",
+                  "text": "Opstelling volledig beschreven met een schets en de meetinstrumenten."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Figuren",
+              "soort": "normaal",
+              "max": 6,
+              "score": 4,
+              "avg": 4.3,
+              "avg_pct": 71,
+              "dot_color": "#cccc58",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 2,
+                  "title": "",
+                  "text": "Figuren ontbreken of zijn onleesbaar."
+                },
+                {
+                  "min": 3,
+                  "max": 4,
+                  "title": "",
+                  "text": "Figuren aanwezig, de assen zijn niet volledig."
+                },
+                {
+                  "min": 5,
+                  "max": 6,
+                  "title": "",
+                  "text": "Figuren volledig, met grootheden, eenheden en een bijschrift."
+                }
+              ],
+              "comment": "Grafiek 2 mist de eenheden op de y-as.",
+              "observaties": [
+                {
+                  "icon": "📈",
+                  "naam": "Grafiek: aslabels vergeten",
+                  "uitleg": "Bij een grafiek ontbreekt de grootheid of de eenheid op een as.",
+                  "leeradvies": "Zet bij elke as de grootheid en de eenheid, bijvoorbeeld $t$ (s)."
+                }
+              ]
+            },
+            {
+              "name": "Conclusie",
+              "soort": "normaal",
+              "max": 5,
+              "score": 3,
+              "avg": 3.3,
+              "avg_pct": 65,
+              "dot_color": "#e0d054",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "Geen conclusie, of een conclusie die niet uit de metingen volgt."
+                },
+                {
+                  "min": 2,
+                  "max": 3,
+                  "title": "Voldoende",
+                  "text": "Conclusie volgt uit de metingen, de onderzoeksvraag wordt half beantwoord."
+                },
+                {
+                  "min": 4,
+                  "max": 5,
+                  "title": "Goed",
+                  "text": "Conclusie beantwoordt de onderzoeksvraag met de metingen als onderbouwing."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Discussie",
+              "soort": "normaal",
+              "max": 4,
+              "score": 2,
+              "avg": 2.3,
+              "avg_pct": 56,
+              "dot_color": "#ffd54f",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "Geen discussie van de meetfouten."
+                },
+                {
+                  "min": 2,
+                  "max": 3,
+                  "title": "Voldoende",
+                  "text": "Meetfouten genoemd, zonder hun invloed op het resultaat."
+                },
+                {
+                  "min": 4,
+                  "max": 4,
+                  "title": "Goed",
+                  "text": "Meetfouten en hun invloed besproken, met een verbetering van de proef."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Originaliteit",
+              "soort": "bonus",
+              "max": 4,
+              "score": 2,
+              "avg": 2,
+              "avg_pct": 50,
+              "dot_color": "#ffd54f",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Standaard",
+                  "text": "Voert de proef uit zoals beschreven."
+                },
+                {
+                  "min": 2,
+                  "max": 4,
+                  "title": "Eigen inbreng",
+                  "text": "Een eigen variant van de proef of een extra meting."
+                }
+              ],
+              "comment": "Mooi dat jullie ook met een lichtsluis hebben gemeten.",
+              "observaties": []
+            },
+            {
+              "name": "Samenwerking",
+              "soort": "diagnostisch",
+              "max": 3,
+              "score": 2,
+              "avg": 2,
+              "avg_pct": 67,
+              "dot_color": "#cccc58",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "De taken zijn niet verdeeld."
+                },
+                {
+                  "min": 2,
+                  "max": 3,
+                  "title": "Goed",
+                  "text": "Iedereen had een eigen taak en hield zich eraan."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            }
+          ],
+          "lines": [
+            {
+              "voor": "Projectgroep",
+              "label": "Verslag een dag te laat ingeleverd",
+              "value": -0.5,
+              "text": "−0,5"
+            },
+            {
+              "voor": "Persoonlijk",
+              "label": "Extra meting met de lichtsluis gedaan",
+              "value": 0.3,
+              "text": "+0,3"
+            }
+          ],
+          "comment": "Een nette proef met een goed gekozen meetopstelling. Jullie conclusie volgt uit de metingen, maar laat de afleiding van g zien en zorg dat elke grafiek compleet is. Het verslag kwam een dag te laat binnen.",
+          "observaties": [
+            {
+              "icon": "📏",
+              "naam": "Eenheid vergeten / verkeerd",
+              "uitleg": "Bij een antwoord ontbreekt de eenheid of staat een verkeerde eenheid.",
+              "leeradvies": "Controleer bij elk antwoord of de eenheid erbij staat. Gebruik de GFBA-methode (Gegevens, Formule, Berekening en Antwoord)."
+            }
+          ]
+        },
+        {
+          "name": "Fleur de Wit",
+          "student_nr": "900104",
+          "klas": "5B",
+          "grade": "8,9",
+          "grade_overridden": false,
+          "grade_only": false,
+          "points": 32,
+          "max": 36,
+          "pct": 89,
+          "rubric_grade": "8,9",
+          "group_size": 1,
+          "projectgroep": {
+            "naam": "Projectgroep 2",
+            "members": [
+              {
+                "name": "Fleur de Wit",
+                "klas": "5B"
+              }
+            ]
+          },
+          "categories": [
+            {
+              "name": "Introductie",
+              "soort": "normaal",
+              "max": 3,
+              "score": 3,
+              "avg": 2.3,
+              "avg_pct": 75,
+              "dot_color": "#66bb6a",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "Achtergrondinformatie ontbreekt, de onderzoeksvraag is vaag."
+                },
+                {
+                  "min": 2,
+                  "max": 2,
+                  "title": "Redelijk",
+                  "text": "Onderzoeksvraag duidelijk, achtergrond beperkt."
+                },
+                {
+                  "min": 3,
+                  "max": 3,
+                  "title": "Goed",
+                  "text": "Heldere onderzoeksvraag met relevante achtergrond."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Onderzoeksvraag en hypothese",
+              "soort": "normaal",
+              "max": 4,
+              "score": 4,
+              "avg": 3.3,
+              "avg_pct": 81,
+              "dot_color": "#66bb6a",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 0,
+                  "title": "Ontbreekt",
+                  "text": "Geen onderzoeksvraag."
+                },
+                {
+                  "min": 1,
+                  "max": 1,
+                  "title": "Zwak",
+                  "text": "Vraag aanwezig, niet onderzoekbaar."
+                },
+                {
+                  "min": 2,
+                  "max": 2,
+                  "title": "Matig",
+                  "text": "Onderzoekbare vraag zonder hypothese."
+                },
+                {
+                  "min": 3,
+                  "max": 3,
+                  "title": "Goed",
+                  "text": "Vraag met hypothese, niet onderbouwd."
+                },
+                {
+                  "min": 4,
+                  "max": 4,
+                  "title": "Uitstekend",
+                  "text": "Vraag met een onderbouwde, toetsbare hypothese."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Theorie",
+              "soort": "normaal",
+              "max": 8,
+              "score": 7,
+              "avg": 6.3,
+              "avg_pct": 78,
+              "dot_color": "#8cc263",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 3,
+                  "title": "Matig",
+                  "text": "Theorie ontbreekt grotendeels of bevat fouten."
+                },
+                {
+                  "min": 2,
+                  "max": 5,
+                  "title": "Voldoende",
+                  "text": "De belangrijkste formules worden genoemd, maar niet toegepast."
+                },
+                {
+                  "min": 4,
+                  "max": 7,
+                  "title": "Goed",
+                  "text": "De formules worden toegepast op de eigen proef."
+                },
+                {
+                  "min": 6,
+                  "max": 8,
+                  "title": "Uitstekend",
+                  "text": "De theorie wordt verbonden met de resultaten."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Meetopstelling",
+              "soort": "normaal",
+              "max": 6,
+              "score": 6,
+              "avg": 5.3,
+              "avg_pct": 88,
+              "dot_color": "#66bb6a",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 2,
+                  "title": "",
+                  "text": "Opstelling niet beschreven of niet na te bouwen."
+                },
+                {
+                  "min": 3,
+                  "max": 4,
+                  "title": "",
+                  "text": "Opstelling beschreven, enkele details ontbreken."
+                },
+                {
+                  "min": 5,
+                  "max": 6,
+                  "title": "",
+                  "text": "Opstelling volledig beschreven met een schets en de meetinstrumenten."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Figuren",
+              "soort": "normaal",
+              "max": 6,
+              "score": 5,
+              "avg": 4.3,
+              "avg_pct": 71,
+              "dot_color": "#99c461",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 2,
+                  "title": "",
+                  "text": "Figuren ontbreken of zijn onleesbaar."
+                },
+                {
+                  "min": 3,
+                  "max": 4,
+                  "title": "",
+                  "text": "Figuren aanwezig, de assen zijn niet volledig."
+                },
+                {
+                  "min": 5,
+                  "max": 6,
+                  "title": "",
+                  "text": "Figuren volledig, met grootheden, eenheden en een bijschrift."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Conclusie",
+              "soort": "normaal",
+              "max": 5,
+              "score": 4,
+              "avg": 3.3,
+              "avg_pct": 65,
+              "dot_color": "#a3c55f",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "Geen conclusie, of een conclusie die niet uit de metingen volgt."
+                },
+                {
+                  "min": 2,
+                  "max": 3,
+                  "title": "Voldoende",
+                  "text": "Conclusie volgt uit de metingen, de onderzoeksvraag wordt half beantwoord."
+                },
+                {
+                  "min": 4,
+                  "max": 5,
+                  "title": "Goed",
+                  "text": "Conclusie beantwoordt de onderzoeksvraag met de metingen als onderbouwing."
+                }
+              ],
+              "comment": "Sterk: je koppelt de conclusie aan je hypothese.",
+              "observaties": []
+            },
+            {
+              "name": "Discussie",
+              "soort": "normaal",
+              "max": 4,
+              "score": 3,
+              "avg": 2.3,
+              "avg_pct": 56,
+              "dot_color": "#b3c85d",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "Geen discussie van de meetfouten."
+                },
+                {
+                  "min": 2,
+                  "max": 3,
+                  "title": "Voldoende",
+                  "text": "Meetfouten genoemd, zonder hun invloed op het resultaat."
+                },
+                {
+                  "min": 4,
+                  "max": 4,
+                  "title": "Goed",
+                  "text": "Meetfouten en hun invloed besproken, met een verbetering van de proef."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Originaliteit",
+              "soort": "bonus",
+              "max": 4,
+              "score": null,
+              "avg": 2,
+              "avg_pct": 50,
+              "dot_color": "#b0b8c1",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Standaard",
+                  "text": "Voert de proef uit zoals beschreven."
+                },
+                {
+                  "min": 2,
+                  "max": 4,
+                  "title": "Eigen inbreng",
+                  "text": "Een eigen variant van de proef of een extra meting."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            },
+            {
+              "name": "Samenwerking",
+              "soort": "diagnostisch",
+              "max": 3,
+              "score": null,
+              "avg": 2,
+              "avg_pct": 67,
+              "dot_color": "#b0b8c1",
+              "levels": [
+                {
+                  "min": 0,
+                  "max": 1,
+                  "title": "Matig",
+                  "text": "De taken zijn niet verdeeld."
+                },
+                {
+                  "min": 2,
+                  "max": 3,
+                  "title": "Goed",
+                  "text": "Iedereen had een eigen taak en hield zich eraan."
+                }
+              ],
+              "comment": "",
+              "observaties": []
+            }
+          ],
+          "lines": [],
+          "comment": "",
+          "observaties": []
+        }
+      ],
+      {
+        "name": "PO Onderzoek valbeweging",
+        "subject_display": "Natuurkunde",
+        "scale_max": 8
+      }
+    ]
+  },
+  "result": {
+    "success": true
+  },
+  "port": {
+    "blessed": "step 24: PO rapport (rapport-po.typ), visual check OK by the user 2026-11-12 (no Totaal row, 24pt between categories, 5pt under category titles)"
+  },
+  "pdf": {
+    "pageCount": 8,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5A — Sem Dijkstra (900101)\nJullie hebben 27 / 36 punten behaald en hadden dus 75% goed. De beoordeling van het groepswerk is \neen 7,5. Met bonus en malus voor de groep en je persoonlijke bonus en malus wordt je cijfer een \n7,3\n.\nProjectgroep Valtoren\nSem Dijkstra (5A), Emma Kok (5A) en Bas Vos (5B)\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n2 / 3\n2\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n3 / 4\n3\n3,3 / 4 (81%)\nTheorie\n6 / 8\n6\n6,3 / 8 (78%)\nMeetopstelling\n5 / 6\n5\n5,3 / 6 (88%)\nFiguren\n4 / 6\n4\n4,3 / 6 (71%)\nConclusie\n3 / 5\n3\n3,3 / 5 (65%)\nDiscussie\n2 / 4\n2\n2,3 / 4 (56%)\nOriginaliteit\nB\n2 / 4\n2\n2 / 4 (50%)\nSamenwerking\nD\n2 / 3\n2\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\nBonus / malus\nVoor\nOmschrijving\nCijfer\nProjectgroep\nVerslag een dag te laat ingeleverd\n−0,5\nPersoonlijk\nExtra meting met de lichtsluis gedaan\n+0,3\nOpmerking van de docent\nEen nette proef met een goed gekozen meetopstelling. Jullie conclusie volgt uit de metingen, maar laat \nde afleiding van g zien en zorg dat elke grafiek compleet is. Het verslag kwam een dag te laat binnen.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Sem Dijkstra"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Beoordeling per categorie\nIntroductie\n2 / 3\n0–1\n \nMatig\nAchtergrondinformatie ontbreekt, de \nonderzoeksvraag is vaag.\n2\n \nRedelijk\nOnderzoeksvraag duidelijk, \nachtergrond beperkt.\n3\n \nGoed\nHeldere onderzoeksvraag met \nrelevante achtergrond.\nOnderzoeksvraag en hypothese\n3 / 4\n0\n \nOntbreekt\nGeen \nonderzoeksvraag.\n1\n \nZwak\nVraag aanwezig, niet \nonderzoekbaar.\n2\n \nMatig\nOnderzoekbare vraag \nzonder hypothese.\n3\n \nGoed\nVraag met hypothese, \nniet onderbouwd.\n4\n \nUitstekend\nVraag met een \nonderbouwde, \ntoetsbare hypothese.\nTheorie\n6 / 8\n0–3\n \nMatig\nTheorie ontbreekt \ngrotendeels of bevat fouten.\n2–5\n \nVoldoende\nDe belangrijkste formules \nworden genoemd, maar niet \ntoegepast.\n4–7\n \nGoed\nDe formules worden \ntoegepast op de eigen proef.\n6–8\n \nUitstekend\nDe theorie wordt verbonden \nmet de resultaten.\nOpmerking:\n Formules goed gekozen; de afleiding van g uit de helling ontbreekt.\n➗\nFormule verkeerd omgeschreven\n — Bij het omschrijven van een formule is een fout gemaakt.\nLeeradvies:\n Schrijf bij het omschrijven elke stap op een \nnieuwe regel\n en doe links en rechts van het =-teken \nhetzelfde. Controleer daarna met de eenheden.\nMeetopstelling\n5 / 6\n0–2\nOpstelling niet beschreven of niet na \nte bouwen.\n3–4\nOpstelling beschreven, enkele details \nontbreken.\n5–6\nOpstelling volledig beschreven met \neen schets en de meetinstrumenten.\nFiguren\n4 / 6\n0–2\nFiguren ontbreken of zijn onleesbaar.\n3–4\nFiguren aanwezig, de assen zijn niet \nvolledig.\n5–6\nFiguren volledig, met grootheden, \neenheden en een bijschrift.\nOpmerking:\n Grafiek 2 mist de eenheden op de y-as.\n📈\nGrafiek: aslabels vergeten\n — Bij een grafiek ontbreekt de grootheid of de eenheid op een as.\nLeeradvies:\n Zet bij elke as de grootheid en de eenheid, bijvoorbeeld \n𝑡\n (s).\nConclusie\n3 / 5\n0–1\n \nMatig\nGeen conclusie, of een conclusie die \nniet uit de metingen volgt.\n2–3\n \nVoldoende\nConclusie volgt uit de metingen, de \nonderzoeksvraag wordt half \nbeantwoord.\n4–5\n \nGoed\nConclusie beantwoordt de \nonderzoeksvraag met de metingen als \nonderbouwing.\nDiscussie\n2 / 4\n0–1\n \nMatig\nGeen discussie van de meetfouten.\n2–3\n \nVoldoende\nMeetfouten genoemd, zonder hun \ninvloed op het resultaat.\n4\n \nGoed\nMeetfouten en hun invloed besproken, \nmet een verbetering van de proef.\n2 / 4\nNatuurkunde PO Onderzoek valbeweging — Sem Dijkstra"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Originaliteit\nbonus\n2 / 4\n0–1\n \nStandaard\nVoert de proef uit zoals beschreven.\n2–4\n \nEigen inbreng\nEen eigen variant van de proef of een extra meting.\nOpmerking:\n Mooi dat jullie ook met een lichtsluis hebben gemeten.\nSamenwerking\ndiagnostisch\n2 / 3\n0–1\n \nMatig\nDe taken zijn niet verdeeld.\n2–3\n \nGoed\nIedereen had een eigen taak en hield zich eraan.\nAlgemene observaties\n📏\nEenheid vergeten / verkeerd\n — Bij een antwoord ontbreekt de eenheid of staat een verkeerde eenheid.\nLeeradvies:\n Controleer bij elk antwoord of de eenheid erbij staat. Gebruik de GFBA-methode (Gegevens, \nFormule, Berekening en Antwoord).\n3 / 4\nNatuurkunde PO Onderzoek valbeweging — Sem Dijkstra"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "4 / 4\nNatuurkunde PO Onderzoek valbeweging — Sem Dijkstra"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n0\n2 / 4 (50%)\nSamenwerking\nD\n— / 3\n0\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Beoordeling per categorie\nIntroductie\n3 / 3\n0–1\n \nMatig\nAchtergrondinformatie ontbreekt, de \nonderzoeksvraag is vaag.\n2\n \nRedelijk\nOnderzoeksvraag duidelijk, \nachtergrond beperkt.\n3\n \nGoed\nHeldere onderzoeksvraag met \nrelevante achtergrond.\nOnderzoeksvraag en hypothese\n4 / 4\n0\n \nOntbreekt\nGeen \nonderzoeksvraag.\n1\n \nZwak\nVraag aanwezig, niet \nonderzoekbaar.\n2\n \nMatig\nOnderzoekbare vraag \nzonder hypothese.\n3\n \nGoed\nVraag met hypothese, \nniet onderbouwd.\n4\n \nUitstekend\nVraag met een \nonderbouwde, \ntoetsbare hypothese.\nTheorie\n7 / 8\n0–3\n \nMatig\nTheorie ontbreekt \ngrotendeels of bevat fouten.\n2–5\n \nVoldoende\nDe belangrijkste formules \nworden genoemd, maar niet \ntoegepast.\n4–7\n \nGoed\nDe formules worden \ntoegepast op de eigen proef.\n6–8\n \nUitstekend\nDe theorie wordt verbonden \nmet de resultaten.\nMeetopstelling\n6 / 6\n0–2\nOpstelling niet beschreven of niet na \nte bouwen.\n3–4\nOpstelling beschreven, enkele details \nontbreken.\n5–6\nOpstelling volledig beschreven met \neen schets en de meetinstrumenten.\nFiguren\n5 / 6\n0–2\nFiguren ontbreken of zijn onleesbaar.\n3–4\nFiguren aanwezig, de assen zijn niet \nvolledig.\n5–6\nFiguren volledig, met grootheden, \neenheden en een bijschrift.\nConclusie\n4 / 5\n0–1\n \nMatig\nGeen conclusie, of een conclusie die \nniet uit de metingen volgt.\n2–3\n \nVoldoende\nConclusie volgt uit de metingen, de \nonderzoeksvraag wordt half \nbeantwoord.\n4–5\n \nGoed\nConclusie beantwoordt de \nonderzoeksvraag met de metingen als \nonderbouwing.\nOpmerking:\n Sterk: je koppelt de conclusie aan je hypothese.\nDiscussie\n3 / 4\n0–1\n \nMatig\nGeen discussie van de meetfouten.\n2–3\n \nVoldoende\nMeetfouten genoemd, zonder hun \ninvloed op het resultaat.\n4\n \nGoed\nMeetfouten en hun invloed besproken, \nmet een verbetering van de proef.\nOriginaliteit\nbonus\n— / 4\n0–1\n \nStandaard\nVoert de proef uit zoals beschreven.\n2–4\n \nEigen inbreng\nEen eigen variant van de proef of een extra meting.\n2 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Samenwerking\ndiagnostisch\n— / 3\n0–1\n \nMatig\nDe taken zijn niet verdeeld.\n2–3\n \nGoed\nIedereen had een eigen taak en hield zich eraan.\n3 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "4 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+      }
+    ]
+  },
+  "png": [
+    {
+      "file": "p1.png",
+      "sha256": "85c04eb1a4ce295053216b6ed8f9cc6bdd9fefbf8d4754bb104e10d5d625407e",
+      "bytes": 89000
+    },
+    {
+      "file": "p2.png",
+      "sha256": "4a3bce6702cb60a2c063b7461a49152c54eba63ff52911ff11776bd45a00ec03",
+      "bytes": 136692
+    },
+    {
+      "file": "p3.png",
+      "sha256": "f491280af7ef24e6265f58746a7839379c247d34a8549fe0569fd9cefd737f8c",
+      "bytes": 46164
+    },
+    {
+      "file": "p4.png",
+      "sha256": "0b24b499d749b7b68d9df56eb538e7f1bc0d4fa939faac5cefe3a1a142a96e12",
+      "bytes": 11478
+    },
+    {
+      "file": "p5.png",
+      "sha256": "7b22a83887ebea27618c87bc72744946a0487865187d6023d99bc68fe05a7186",
+      "bytes": 54224
+    },
+    {
+      "file": "p6.png",
+      "sha256": "b05b7c9e3bf0c9f544ede353e7730dbc7bab8cf17e9d0751cb5589687d0a0037",
+      "bytes": 119147
+    },
+    {
+      "file": "p7.png",
+      "sha256": "cf5d22a2356cd88d09d8625a3104145a1794cf2185238547f1246be928268e4c",
+      "bytes": 18572
+    },
+    {
+      "file": "p8.png",
+      "sha256": "1542b78160a1281d3cc0e7c4b13ca01bdf1283ef7198c487594a642df495334a",
+      "bytes": 11519
+    }
+  ]
+}

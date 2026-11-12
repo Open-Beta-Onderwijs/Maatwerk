@@ -41,6 +41,9 @@ pub use project::{
     ProjectFileState, ProjectFileStatus, TypstProject, bundled_project_file, check_project_files,
     create_opdracht_folder, restore_project_file, v1_opdracht_id,
 };
-pub use rapport::{RapportData, rapport_world, render_rapport_pdf};
+pub use rapport::{
+    PoRapportData, RapportData, po_rapport_world, rapport_world, render_po_rapport_pdf,
+    render_rapport_pdf,
+};
 pub use vragen::{Vraag, Vragen, vragen};
 pub use world::MaatwerkWorld;

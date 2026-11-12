@@ -1,9 +1,69 @@
 # State
 
-Last updated: 2026-11-11 (step 23) Branch: `step/23-po-grading` (from `main` `3062568`)
-Last tags: `step-22`, `v0.13.0`, `step-21`, `v0.12.0`, `step-20`, `v0.11.0`
+Last updated: 2026-11-11 (after step 23) Branch: `step/24-po-rapport` (local, from `main`
+`6c144f5`; only this STATE commit)
+Last tags: `step-23`, `v0.14.0`, `step-22`, `v0.13.0`, `step-21`, `v0.12.0`
 
 ## Current step
+
+**Step 23 done and merged (2026-11-11):** PR #14 merged into `main` (`6c144f5`, merge commit);
+push CI (`43007836698`) and PR CI (`43013836802`) green on `727f8bb` on all three OSes, visual
+included (CI baselines of `modal-po-scores`/`modal-po-grade` from run `43005771776`, `727f8bb`).
+Tags `step-23`, `v0.14.0` on `727f8bb`, pushed.
+
+**User (2026-11-12):** manual test M-POB-1..6 on a copy of real data with the local exe 0.14.0:
+all pass (`docs/reviews/manual-test-step-23.md`). PO rapport design done (variant A, boards 19
+and 20, commit `62b608d`).
+
+**Next action:** step 24 (see "Step 24 progress" below).
+
+## Step 24 progress (PO d: PO rapport, 0.15)
+
+Baseline 2026-11-12 on `step/24-po-rapport` `62b608d`: cargo test all ok, 537 Vitest, 125 node
+(`npm ci` was needed first).
+
+1. **Done (24a, `3228af4`):** `rapport-po.typ` + `rapport-po-main.typ` (variant A, boards 19 and
+   20). Shared helpers factored out of `rapport.typ` (`section_label`, `zebra_stroke`/`_fill`,
+   `student_start`/`student_end`); toets goldens pixel-exact. Core `po_rapport_world`,
+   `render_po_rapport_pdf`, `PoRapportData` (shared private `world()`). UI
+   `domain/po-rapport.ts` (`buildPoRapportData`; numbers via wasm `calcResults`,
+   `classQuestions`, `mean`). Fixture `ui/tests/domain/po-rapport.fixture.ts` (Valtoren of 3 over
+   5A/5B with group −0,5 and own +0,3/−0,5 lines, a projectgroep of one, a placed ungraded and an
+   unplaced student; rubric with bonus, diagnostic, overlapping levels, 5 levels, no titles, two
+   category pages). Golden `tests/golden/typst/rapport-po` (Sem + Fleur, 6 pages, 50 ppi),
+   **blessed as a draft: needs the user's visual check (STOP)**; `po-rapport.test.ts` keeps its
+   data equal to the builder's (`MAATWERK_WRITE_PO_CASE=1` rewrites it). Rust
+   `tests/typst_po_rapport.rs` (7 + ignored `preview` writing 110-ppi PNGs to
+   `target/tmp/po-preview/`). `typst.test.mjs`/`regen-typst.mjs` accept Maatwerk-only goldens.
+2. **Done (24b, `b72cdd6`):** command `render_po_rapport_pdf`, bridge `renderPoRapportPdf`
+   (Tauri, mock; not in `PORTED_METHODS`), `services/rapport.ts` `compilePoRapport`; ⋮ Rapport
+   genereren enabled on a PO attempt. R-05: `modals/rapport.js` -> `modals/rapport.ts` +
+   `modals/rtti-uitleg.ts`. e2e `po-rapport.spec.ts` (2). Docs: manual checks M-POR-1..4,
+   typst-contract note.
+3. **Done:** version 0.15.0 (`afdaed1`; `bindings.ts` back to the generator's output after a
+   stray Prettier run). Gate green: fmt, clippy, cargo test, lint, typecheck, 550 Vitest, 127
+   node, 295 Chromium e2e, visual 141 unchanged, licences, cargo deny, SPDX. Review
+   `docs/reviews/step-24.md` (0/0/8/5): m1 (category scores and maxima now from the core) and m2
+   (no lines on an overwritten grade) fixed; the rest in `docs/backlog.md` "From Step 24".
+4. **User (2026-11-12):** wording of the sentence (vs board 19) and >100% with bonus are OK.
+   Changes asked: no Totaal row in the Scoretabel (data field `total` removed too), more space
+   between categories (14pt -> 24pt; spacing inside a block unchanged). Then: 5pt instead of 2pt
+   between a category title and its line (Fleur's rapport now 3 pages + 1 empty, 8 in all). Done, golden reblessed
+   ("visual check OK by the user"); the user confirms the new pages before the push.
+5. **Was STOP (user):** check the golden PNGs `tests/golden/typst/rapport-po/p1..p6.png` (50 ppi) or
+   the 110-ppi preview (`cargo test -p maatwerk-core --test typst_po_rapport -- --ignored` writes
+   `target/tmp/po-preview/`), and a real PDF from the exe. On OK: change the golden's
+   `port.blessed` text (rebless), push, CI, merge, tags `step-24`, `v0.15.0`, manual M-POR-1..4.
+
+**Choices made without asking (for the report):** "per student, per class, batch, as for a test"
+read as the toets rapport does it: one PDF of all graded students of the PO (attempt), sorted by
+class then achternaam; the data is built in the UI like the toets rapport's (numbers from
+`maatwerk-grades` via wasm), not by a new Rust loader; a projectgroep of one has no projectgroep
+line and "Je hebt …" wording; the sentence names group and/or personal bonus/malus as present;
+dots coloured as on the toets rapport (`scoreDotColor`); category averages over the graded
+students who have that category scored (as `class_questions`: empty left out); an invalid
+category score counts 0; positive lines green, negative red; the B / D footnote lists only what
+the rubric has; an overwritten grade without scores gets page 1 with the grade only.
 
 **Step 23 (PO c: PO beoordelen, 0.14), started 2026-11-11.** Steps 20-22 and the top bar are
 merged (user, 2026-11-11: macOS CI rerun green): PR #12 (`bf1821a`) and PR #13 (`3062568`, steps
@@ -16,9 +76,7 @@ are the baselines); local exe 0.14.0 built for the test on real data.
 
 **User (2026-11-11):** before/after table OK ("works like I expect"); go on to CI and the merge.
 
-**Next action:** push for CI (CI baselines of the two new
-views from CI's own run), merge, tags `step-23`/`v0.14.0`. Manual test M-POB-1..6 on real data
-with a local exe 0.14.0.
+Then: pushed for CI, CI baselines, merged, tagged (see above).
 
 ## Step 23 progress (PO c: PO beoordelen, 0.14)
 

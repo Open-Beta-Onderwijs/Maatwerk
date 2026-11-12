@@ -6,7 +6,7 @@ import { esc } from '../components/dialog';
 import { openExamModal, deleteExam } from '../modals/toets-edit';
 import { openResitModal, openSummaryEditModal } from '../modals/herkansing';
 import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren.js';
-import { openRapportModal } from '../modals/rapport.js';
+import { openRapportModal } from '../modals/rapport';
 import { examObsIds } from '../domain/opdrachten';
 import { isPo } from '../domain/po';
 import type { Exam } from '../domain/types';
@@ -53,7 +53,8 @@ async function deleteBlockReason(examId: string, year: string): Promise<string |
 
 /**
  * A PO's menu (spec 4.13): the test's items, Nieuwe poging is a herkansing only, and
- * Projectgroepen. Scores invoeren is the PO's score table (step 23); the PO rapport is step 24.
+ * Projectgroepen. Scores invoeren is the PO's score table (step 23); Rapport the PO rapport
+ * (step 24).
  */
 async function poMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {
   const summary = kind === 'summary';
@@ -70,7 +71,18 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
           label: 'Scores invoeren',
           run: () => openPoScoresModal(examId, year, openPoGrading),
         },
-    { icon: ICONS.rapport, label: 'Rapport genereren', disabled: PO_RAPPORT_LATER },
+    summary
+      ? {
+          icon: ICONS.rapport,
+          label: 'Rapport genereren',
+          disabled: 'Genereer het rapport per poging (origineel of herkansing).',
+        }
+      : {
+          icon: ICONS.rapport,
+          label: 'Rapport genereren',
+          // The PO rapport (step 24): every graded student of the PO.
+          run: () => openRapportModal(examId, year),
+        },
     {
       icon: ICONS.opdrachten,
       label: 'Opdrachten genereren',
@@ -125,8 +137,6 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
   }
   return items;
 }
-
-const PO_RAPPORT_LATER = 'Het rapport van een PO komt in een latere versie.';
 
 async function buildMenuItems(examId: string, kind: CardKind, year: string): Promise<MenuItem[]> {
   const summary = kind === 'summary';

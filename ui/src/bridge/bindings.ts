@@ -145,6 +145,12 @@ export const commands = {
 	 */
 	renderRapportPdf: (examId: string, students: Value, examInfo: Value) => typedError<RenderedPdf, CommandError>(__TAURI_INVOKE("render_rapport_pdf", { examId, students, examInfo })),
 	/**
+	 *  The PO rapport (step 24): all graded students of one PO in one PDF, from the data
+	 *  `ui/src/domain/po-rapport.ts` builds (passed through `normaliseForTypst`). `examId` is unused,
+	 *  as for the toets rapport.
+	 */
+	renderPoRapportPdf: (examId: string, students: Value, poInfo: Value) => typedError<RenderedPdf, CommandError>(__TAURI_INVOKE("render_po_rapport_pdf", { examId, students, poInfo })),
+	/**
 	 *  The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
 	 *  with the placeholder header, one SVG per page. (The old cursor marker is gone since
 	 *  `maatwerk-main 2`; the editor uses `editor_jump_from_cursor`.)

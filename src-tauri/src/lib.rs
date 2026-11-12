@@ -115,6 +115,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             auth::snapshot_for_file,
             auth::restore_from_snapshot,
             render::render_rapport_pdf,
+            render::render_po_rapport_pdf,
             render::render_assignment_svg,
             render::render_assignment_batch,
             render::open_path,

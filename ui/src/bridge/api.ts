@@ -200,6 +200,12 @@ export interface MaatwerkApi {
     students: unknown[],
     examInfo: Record<string, unknown>,
   ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>>;
+  /** The PO rapport (step 24): `students` and `poInfo` from `domain/po-rapport.ts`. */
+  renderPoRapportPdf(
+    examId: string,
+    students: unknown[],
+    poInfo: Record<string, unknown>,
+  ): Promise<RenderResult<{ pdfPath: string; warnings: string[] }>>;
   renderAssignmentSvg(
     opdrachtId: string,
     title: string,

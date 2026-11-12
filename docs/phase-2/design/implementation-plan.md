@@ -164,7 +164,7 @@ removed after load; visual baselines for the four login states.
 
 ## D9. Praktische opdrachten and rubrics (PLAN-2 steps 21-24)
 
-**Items:** F-20, F-22, F-23, spec 4.12 (toetstype) and 4.13; boards 15-18. The steps, data model
+**Items:** F-20, F-22, F-23, spec 4.12 (toetstype) and 4.13; boards 15-20. The steps, data model
 and decisions are in `PLAN-2.md` (steps 21-24, decisions 16-25); this section only points the
 design: reuse the dialog, card, chip, segmented, stepper and grade-cell components; the level
 display and the slider-with-levels are new components (unit tests for the coverage and

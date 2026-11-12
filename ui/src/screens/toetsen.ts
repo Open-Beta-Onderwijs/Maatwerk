@@ -22,7 +22,7 @@ import { openExamOverviewModal } from '../modals/toets-overzicht.js';
 import { openExamModal } from '../modals/toets-edit';
 import { openBestGradesOverviewModal } from '../modals/herkansing';
 import { openNewPoModal } from '../modals/po-gegevens';
-import { openRttiUitlegModal } from '../modals/rapport.js';
+import { openRttiUitlegModal } from '../modals/rtti-uitleg';
 import * as Presence from '../presence.js';
 import { Store } from '../store.js';
 import { perfSpan } from '../utils/perf';

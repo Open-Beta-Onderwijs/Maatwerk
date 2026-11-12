@@ -1,0 +1,102 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>PO-rapport: categorieën D</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2B5BA8}a:hover{color:#1F4A8F}
+.r-lbl{font-size:12px;letter-spacing:.9px;text-transform:uppercase;color:#5F6675}
+</style>
+</helmet>
+<div style="width: 794px; height: 1123px; box-sizing: border-box; padding: 60px 64px 0; position: relative; background: #FFFFFF; font-family: 'Source Serif 4', Georgia, serif; font-size: 13px; line-height: 1.4; color: #1D2330">
+  <h2 style="margin: 0 0 4px; font-size: 19px; font-weight: 600; color: #2B5BA8">Beoordeling per categorie</h2>
+  <sc-for list="{{cats}}" as="c" hint-placeholder-count="4">
+    <section style="display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 20px; padding: 12px 0 14px; border-bottom: 1px solid #D5D9E0">
+      <div>
+        <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px">
+          <h3 style="margin: 0; font-size: 15px; font-weight: 700; flex: 1">{{c.name}}<sc-if value="{{c.isBonus}}" hint-placeholder-val="{{ false }}"><span style="margin-left: 8px; font-size: 12px; font-weight: 600; color: #2B5BA8">bonus</span></sc-if></h3>
+          <span style="font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums">{{c.v}} / {{c.max}}</span>
+        </div>
+        <div style="display: flex; gap: 2px">
+          <sc-for list="{{c.nums}}" as="n" hint-placeholder-count="7"><span style="flex: 1; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 3px; font-size: 12px; font-weight: {{n.w}}; font-variant-numeric: tabular-nums; background: {{n.bg}}; color: {{n.fg}}">{{n.n}}</span></sc-for>
+        </div>
+        <div style="position: relative; height: {{c.bandsH}}; margin-top: 3px">
+          <sc-for list="{{c.bands}}" as="b" hint-placeholder-count="3">
+            <div style="position: absolute; top: {{b.top}}; left: {{b.left}}; width: {{b.width}}; height: 16px; box-sizing: border-box; padding: 0 2px">
+              <div style="height: 16px; border-radius: 3px; border: 1px solid {{b.bd}}; background: {{b.bg}}; color: {{b.fg}}; font-size: 12px; line-height: 14px; font-weight: {{b.w}}; padding: 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{b.label}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-for list="{{c.got}}" as="l" hint-placeholder-count="1">
+          <p style="margin: 6px 0 0"><b>{{l.head}}:</b> {{l.text}}</p>
+        </sc-for>
+      </div>
+      <aside style="font-size: 12px; line-height: 1.4; padding: 6px 10px; border-radius: 5px; background: {{c.asideBg}}">
+        <sc-if value="{{c.hasComment}}" hint-placeholder-val="{{ true }}">
+          <div class="r-lbl">Opmerking</div>
+          <p style="margin: 0 0 6px"><i>{{c.comment}}</i></p>
+        </sc-if>
+        <sc-for list="{{c.obs}}" as="o" hint-placeholder-count="1">
+          <div class="r-lbl">Leeradvies</div>
+          <p style="margin: 0"><span aria-hidden="true" style="font-size: 13px">{{o.e}}</span> <b>{{o.n}}.</b> {{o.advice}}</p>
+        </sc-for>
+      </aside>
+    </section>
+  </sc-for>
+  <section style="display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 20px; padding: 12px 0">
+    <div>
+      <h3 style="margin: 0; font-size: 15px; font-weight: 700">Algemeen</h3>
+      <p style="margin: 4px 0 0; color: #5F6675">Observaties die niet bij één categorie horen.</p>
+    </div>
+    <aside style="font-size: 12px; line-height: 1.4; padding: 6px 10px; border-radius: 5px; background: #F4F6F9">
+      <div class="r-lbl">Leeradvies</div>
+      <p style="margin: 0"><span aria-hidden="true" style="font-size: 13px">📏</span> <b>Eenheid vergeten.</b> Schrijf bij elk antwoord de eenheid en controleer of die past bij de grootheid.</p>
+    </aside>
+  </section>
+  <div style="position: absolute; left: 64px; right: 64px; bottom: 34px; display: flex; justify-content: space-between; font-size: 12px; color: #5F6675; border-top: 1px solid #E3E6EB; padding-top: 6px">
+    <span>2 / 3</span><span>Natuurkunde PO Onderzoek valbeweging — Sem Dijkstra</span><span style="width: 28px"></span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":794,"height":1123}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = [
+      { name: 'Introductie', kind: 'Normaal', max: 3, v: 2, comment: '', obs: [], levels: [[0, 1, 'Matige introductie', 'Achtergrondinformatie ontbreekt, onderzoeksvraag vaag.'], [2, 2, 'Redelijk', 'Onderzoeksvraag duidelijk, achtergrond beperkt.'], [3, 3, 'Goed', 'Heldere onderzoeksvraag met relevante achtergrond.']] },
+      { name: 'Theorie', kind: 'Normaal', max: 8, v: 6, comment: 'Formules goed gekozen; de afleiding van g uit de helling ontbreekt.', obs: [['➗', 'Formule verkeerd omgeschreven', 'Schrijf bij het omschrijven elke stap op een nieuwe regel en controleer de eenheden aan beide kanten.']], levels: [[0, 3, 'Matig', 'Theorie ontbreekt grotendeels of bevat fouten.'], [2, 5, 'Voldoende', 'Belangrijkste formules genoemd, niet toegepast.'], [4, 7, 'Goed', 'Formules toegepast op de eigen proef.'], [6, 8, 'Uitstekend', 'Theorie verbonden met de resultaten.']] },
+      { name: 'Figuren', kind: 'Normaal', max: 6, v: 4, comment: 'Grafiek 2 mist eenheden op de y-as.', obs: [['📈', 'Grafiek: aslabels vergeten', 'Zet bij elke as de grootheid en de eenheid, bijvoorbeeld t (s).']], levels: [[0, 2, '', 'Figuren ontbreken of zijn onleesbaar.'], [3, 4, '', 'Figuren aanwezig, assen niet volledig.'], [5, 6, '', 'Figuren volledig, met eenheden en bijschrift.']] },
+      { name: 'Originaliteit', kind: 'Bonus', max: 4, v: 2, comment: '', obs: [], levels: [[0, 1, 'Standaard', 'Voert de proef uit zoals beschreven.'], [2, 4, 'Eigen inbreng', 'Eigen variant of extra meting.']] },
+    ];
+    const pc = (x) => (Math.round(x * 10000) / 100) + '%';
+    const cats = C.map((c) => {
+      const n = c.max + 1;
+      // overlapping levels go on their own row; non-overlapping ones share a row
+      const rows = []; const bands = c.levels.map(([a, b, t], i) => {
+        let r = rows.findIndex((end) => end < a); if (r < 0) { r = rows.length; rows.push(-1); } rows[r] = b;
+        const on = a <= c.v && c.v <= b;
+        return { top: (r * 18) + 'px', left: pc(a / n), width: pc((b - a + 1) / n), label: t || 'niveau ' + (i + 1), bd: on ? '#2B5BA8' : '#C9CED8', bg: on ? '#2B5BA8' : '#FFFFFF', fg: on ? '#FFFFFF' : '#5F6675', w: on ? 600 : 400 };
+      });
+      return {
+        name: c.name, isBonus: c.kind === 'Bonus', v: c.v, max: c.max, comment: c.comment, hasComment: !!c.comment,
+        obs: c.obs.map(([e, nm, advice]) => ({ e, n: nm, advice })),
+        asideBg: c.comment || c.obs.length ? '#F4F6F9' : '#FFFFFF',
+        nums: Array.from({ length: n }, (_, i) => ({ n: String(i), bg: i === c.v ? '#2B5BA8' : i < c.v ? '#DCE6F5' : '#F4F6F9', fg: i === c.v ? '#FFFFFF' : '#1D2330', w: i === c.v ? 700 : 400 })),
+        bands, bandsH: (rows.length * 18) + 'px',
+        got: c.levels.map((l, i) => [l, i]).filter(([[a, b]]) => a <= c.v && c.v <= b).map(([[a, b, t, x], i]) => ({ head: t || 'Niveau ' + (i + 1), text: x })),
+      };
+    });
+    return { cats };
+  }
+}
+</script>
+</body>
+</html>

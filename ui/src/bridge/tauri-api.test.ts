@@ -298,6 +298,22 @@ describe('TauriApi', () => {
     });
   });
 
+  it('renderPoRapportPdf normalises the payload and maps errors (step 24)', async () => {
+    const f = fakeBackend(() => ({ pdfPath: '1-rapport_preview.pdf', warnings: [] }));
+    const students = [{ name: 'A', score: undefined }];
+    expect(await f.api.renderPoRapportPdf('po1', students, { name: 'PO' })).toEqual({
+      success: true,
+      pdfPath: '1-rapport_preview.pdf',
+      warnings: [],
+    });
+    expect(f.calls[0]?.args).toEqual(['po1', [{ name: 'A', score: null }], { name: 'PO' }]);
+    const bad = fakeBackend(() => err('typst', 'error: unknown variable'));
+    expect(await bad.api.renderPoRapportPdf('po1', [], {})).toEqual({
+      success: false,
+      error: 'error: unknown variable',
+    });
+  });
+
   it('renderAssignmentSvg: pages; preview content defaults to null; warnings are logged', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const f = fakeBackend(() => ({ pages: ['<svg/>'], warnings: ['warning: tofu'] }));

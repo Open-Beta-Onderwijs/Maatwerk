@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! The rapport (path A of `typst-contract.md`): all students of one toets in one PDF.
+//! The rapport (path A of `typst-contract.md`): all students of one toets in one PDF, and the
+//! PO rapport (step 24): all graded students of one PO.
 //!
-//! The World holds `/__maatwerk/main.typ` (entry), `/__maatwerk/rapport.typ` (template) and
+//! The World holds `/__maatwerk/main.typ` (entry), `/__maatwerk/rapport.typ` (template; the PO
+//! rapport also `rapport-po.typ`, which imports the shared parts of `rapport.typ`) and
 //! `/__maatwerk/data.json` (this request), and mounts only `/data/afbeeldingen` (the watermark,
 //! drawn only when it exists).
 
@@ -27,6 +29,14 @@ pub struct RapportData {
     pub students: serde_json::Value,
 }
 
+/// The data the UI builds for the PO rapport (`ui/src/domain/po-rapport.ts`; the field contract
+/// is at the top of `rapport-po.typ`). Passed to the template unchanged as JSON.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PoRapportData {
+    pub po_info: serde_json::Value,
+    pub students: serde_json::Value,
+}
+
 /// The school's watermark, relative to the data folder (`/data/afbeeldingen/...` in the
 /// template; `fotos/` before format v3).
 const WATERMARK: &str = "afbeeldingen/school-watermerk.svg";
@@ -34,11 +44,11 @@ const WATERMARK: &str = "afbeeldingen/school-watermerk.svg";
 /// A larger watermark file is left out of the rapport.
 const WATERMARK_MAX: u64 = 5 * 1024 * 1024;
 
-/// What `rapport-main.typ` reads from `data.json`.
+/// What the entry point reads from `data.json`.
 #[derive(Serialize)]
-struct Payload<'a> {
+struct Payload<'a, D> {
     #[serde(flatten)]
-    data: &'a RapportData,
+    data: &'a D,
     watermark: bool,
 }
 
@@ -46,6 +56,35 @@ struct Payload<'a> {
 pub fn rapport_world(
     fonts: Arc<FontStore>,
     data: &RapportData,
+    data_dir: &DataDir,
+    now: OffsetDateTime,
+) -> MaatwerkWorld {
+    world(fonts, assets::RAPPORT_MAIN_TYP, &[], data, data_dir, now)
+}
+
+/// The sandboxed World for one PO rapport.
+pub fn po_rapport_world(
+    fonts: Arc<FontStore>,
+    data: &PoRapportData,
+    data_dir: &DataDir,
+    now: OffsetDateTime,
+) -> MaatwerkWorld {
+    world(
+        fonts,
+        assets::RAPPORT_PO_MAIN_TYP,
+        &[("rapport-po.typ", assets::RAPPORT_PO_TYP)],
+        data,
+        data_dir,
+        now,
+    )
+}
+
+/// A rapport World: `main` as the entry, `rapport.typ` and `extra` templates beside it.
+fn world<D: Serialize>(
+    fonts: Arc<FontStore>,
+    main: &'static str,
+    extra: &[(&str, &'static str)],
+    data: &D,
     data_dir: &DataDir,
     now: OffsetDateTime,
 ) -> MaatwerkWorld {
@@ -60,18 +99,21 @@ pub fn rapport_world(
     let json =
         serde_json::to_vec(&Payload { data, watermark }).expect("JSON values always serialise");
     let file = |name: &str| format!("/{INTERNAL_DIR}/{name}");
+    let mut files = vec![
+        (file("main.typ"), Bytes::from_string(main)),
+        (file("rapport.typ"), Bytes::from_string(assets::RAPPORT_TYP)),
+        (file("data.json"), Bytes::new(json)),
+    ];
+    files.extend(
+        extra
+            .iter()
+            .map(|(name, text)| (file(name), Bytes::from_string(*text))),
+    );
     MaatwerkWorld::new(
         fonts,
         WorldSpec {
             main: file("main.typ"),
-            files: vec![
-                (
-                    file("main.typ"),
-                    Bytes::from_string(assets::RAPPORT_MAIN_TYP),
-                ),
-                (file("rapport.typ"), Bytes::from_string(assets::RAPPORT_TYP)),
-                (file("data.json"), Bytes::new(json)),
-            ],
+            files,
             mounts: vec![
                 // The folder as spelled on disk: a Windows-made `Afbeeldingen/` on Linux
                 // (security review n2).
@@ -96,4 +138,14 @@ pub fn render_rapport_pdf(
     now: OffsetDateTime,
 ) -> Result<Compiled<Vec<u8>>, CompileError> {
     compile_pdf(&rapport_world(fonts, data, data_dir, now))
+}
+
+/// Compiles the PO rapport to PDF.
+pub fn render_po_rapport_pdf(
+    fonts: Arc<FontStore>,
+    data: &PoRapportData,
+    data_dir: &DataDir,
+    now: OffsetDateTime,
+) -> Result<Compiled<Vec<u8>>, CompileError> {
+    compile_pdf(&po_rapport_world(fonts, data, data_dir, now))
 }
