@@ -200,11 +200,21 @@ export function createGroupGrid(
 
   // Recompute a student's row and the summary rows after a change, and redraw them (only
   // them: a modal can hold 10,000 cells).
+  // During one paste, cut or Delete the summary rows and the status line are recomputed once,
+  // at the end (review 25 m4); `batch` collects the changed rows meanwhile.
+  let batch: Set<number> | null = null;
   function refreshRow(row: number): void {
     rowStatus[row] = computeRowStatus(gridData[row], exam);
     recomputeRow(gridData, exam, row, O);
+    refreshSummary([row]);
+  }
+  function refreshSummary(rows: number[]): void {
+    if (batch) {
+      rows.forEach((r) => batch!.add(r));
+      return;
+    }
     recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O);
-    grid.render({ rows: [row, summaryIdx, stdIdx] });
+    grid.render({ rows: [...rows, summaryIdx, stdIdx] });
     updateInfo();
   }
 
@@ -258,8 +268,7 @@ export function createGroupGrid(
     const prevVal = gridData[row]![col] === true;
     const apply = (val: boolean) => {
       gridData[row]![col] = val;
-      recomputeSummaryRow(gridData, summaryIdx, stdIdx, exam, O); // the ticked count
-      grid.render({ rows: [row, summaryIdx] });
+      refreshSummary([row]); // the ticked count
       return save(row, col, () =>
         Store.setObservation(student.id, exam.id, obs.id, val, year, subject),
       );
@@ -334,14 +343,20 @@ export function createGroupGrid(
   // Edits from the grid: typed, pasted (also into observaties, U4), cut or cleared. One
   // paste, cut or Delete is one undo step.
   function onGridChange(changes: CellChange[]): void {
-    asOneStep(() => {
-      for (const { row, col, oldValue, newValue } of changes) {
-        if (row > lastDataRow) continue;
-        if (col === gradeCol) gradeTyped(row, oldValue, newValue);
-        else if (qCol(col)) scoreTyped(row, col, oldValue, newValue);
-        else if (obsCol(col)) setObs(row, col - obsStart, newValue === true);
-      }
-    });
+    const changed = (batch = new Set<number>());
+    try {
+      asOneStep(() => {
+        for (const { row, col, oldValue, newValue } of changes) {
+          if (row > lastDataRow) continue;
+          if (col === gradeCol) gradeTyped(row, oldValue, newValue);
+          else if (qCol(col)) scoreTyped(row, col, oldValue, newValue);
+          else if (obsCol(col)) setObs(row, col - obsStart, newValue === true);
+        }
+      });
+    } finally {
+      batch = null;
+    }
+    if (changed.size) refreshSummary([...changed]);
   }
 
   // Right-click on an overwritten grade: "Berekend cijfer herstellen".

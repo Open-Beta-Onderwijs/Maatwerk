@@ -93,15 +93,6 @@ const PASTEL_RED = '#f8d7da';
 const PASTEL_YELLOW = '#fff3cd';
 const PASTEL_GREEN = '#c3e6cb';
 
-/** Standard deviation cell: green (0) via yellow (1) to red (2 and more). */
-export function sdCellColor(sd: number | null): string | null {
-  if (sd === null || !Number.isFinite(sd)) return null;
-  const t = Math.min(1, sd / 2);
-  return t <= 0.5
-    ? mixHex(PASTEL_GREEN, PASTEL_YELLOW, t * 2)
-    : mixHex(PASTEL_YELLOW, PASTEL_RED, (t - 0.5) * 2);
-}
-
 /** RTTI percentage cell: red (0) via yellow (50) to green (100). */
 export function rttiPctCellColor(pct: number | null): string | null {
   if (pct === null || !Number.isFinite(pct)) return null;

@@ -203,7 +203,7 @@ Filled in as the user answers (2026-11-08).
     an unscored one counts 0; lines alone give no grade. An override still replaces the result.
 29. **The score grid's GEMIDDELDE row (user, 2026-11-12, step 25, board 13):** besides Totaal
     and Cijfer (unchanged), the row shows per question the class average of the toets rapport
-    (`class_questions`: N counts 0, empty is left out, one decimal; empty when nobody has an
+    (`class_questions`: N and an invalid score count 0, empty is left out, one decimal; empty when nobody has an
     entry), per observatie how many students have it ticked, and per R/T1/T2/I the mean of the
     students' percentages over the rows with a grade, NVT left out, whole percent (NVT when no
     such row has one). Display only: no stored number changes. The STANDAARDDEVIATIE row is

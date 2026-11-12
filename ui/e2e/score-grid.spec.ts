@@ -170,6 +170,28 @@ test.describe('entering scores', () => {
       .toEqual([0, 0, 0]);
   });
 
+  test('spec 4.10 a cell reached with the keyboard is not hidden under a sticky part (review 25 M1)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 760, height: 560 });
+    await openGrid(page, EXAMS.h2);
+    await select(page, 1, H2.q1);
+    await page.locator('#sc-grid-container').evaluate((el) => el.scrollTo(240, 80));
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowLeft');
+    const rect = (loc: ReturnType<typeof cell>) =>
+      loc.evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
+    await expect
+      .poll(async () => {
+        const td = await rect(cell(page, 0, H2.q1));
+        const th = await rect(page.locator('.dlg .score-grid-table thead th').nth(H2.q1));
+        const name = await rect(cell(page, 0, 1));
+        return [td.top >= th.bottom - 1, td.left >= name.right - 1];
+      })
+      .toEqual([true, true]);
+  });
+
   test('G16 row status marks the # and Naam cells; the group heading counts it', async ({
     page,
   }) => {

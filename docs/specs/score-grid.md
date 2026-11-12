@@ -23,13 +23,13 @@ against Handsontable and then against the own grid (the grid driver `ui/e2e/grid
 
 ## Layout
 
-| Id  | Rule                                                                                                                                                                                                            | Test   |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| G01 | Columns: `#` (leerlingnummer), Naam, one per question, spacer, one checkbox per observatie of the exam + spacer (only if there are observaties), Totaal, Cijfer, spacer, R%, T1%, T2%, I%.                      | e2e    |
-| G02 | Fixed column widths (72 / 150 / 32 / 20 / 28 / 72 / 52 / 44 px); no row headers; height grows with the rows (no inner scrollbar).                                                                               | manual |
-| G03 | Question header stacks RTTI tag, points (`2p`), section and number; bonus and diag headers are tinted italic with a tooltip ("Bonusvraag", "Diagnostische vraag"); observatie header = icon, title "naam (Fn)". | e2e    |
-| G04 | Two summary rows at the bottom: "Gemiddelde" (questions, observatie counts, Totaal, Cijfer, RTTI; decision 29) and "Standaarddeviatie" (Totaal, Cijfer); read-only, grey.                                       | e2e    |
-| G05 | No frozen rows or columns; the grid is centred and as wide as its table when narrower than the modal.                                                                                                           | manual |
+| Id  | Rule                                                                                                                                                                                                                                                          | Test   |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| G01 | Columns: `#` (leerlingnummer), Naam, one per question, spacer, one checkbox per observatie of the exam + spacer (only if there are observaties), Totaal, Cijfer, spacer, R%, T1%, T2%, I%.                                                                    | e2e    |
+| G02 | Fixed column widths (72 / 190 / 38 / 10 / 32 / 76 / 60 / 52 px, `COL_WIDTH` in `screens/scores/cells.ts`); no row headers; the grids scroll inside the modal (step 25).                                                                                       | manual |
+| G03 | Question header stacks RTTI tag, points (`2p`), section and number; bonus and diag headers are tinted italic with a tooltip ("Bonusvraag", "Diagnostische vraag"); observatie header = icon, title "naam (Fn)".                                               | e2e    |
+| G04 | Two summary rows at the bottom: "Gemiddelde" (questions, observatie counts, Totaal, Cijfer, RTTI; decision 29) and "Standaarddeviatie" (Totaal, Cijfer); read-only, grey.                                                                                     | e2e    |
+| G05 | Sticky (step 25, board 13): the group heading (name, "<n> leerlingen · <status>"), the column headings and the # / Naam columns; a cell reached with the keyboard scrolls clear of them (`scroll-padding`). The grids are centred, each as wide as its table. | e2e    |
 
 ## Entering scores
 
@@ -42,8 +42,8 @@ against Handsontable and then against the own grid (the grid driver `ui/e2e/grid
 | G14 | Anything else (text, negative, above max) is saved as typed, shown red, and raises a persistent error naming the question and the max.                                                                                             | e2e      |
 | G15 | After each change the row's Totaal (`scored / max`), Cijfer and RTTI % and both summary rows are recomputed (golden `scoregrid.json`: `recomputeRow`, `recomputeSummaryRow`).                                                      | e2e+unit |
 | G16 | Row status marks the `#` cell with a bar (invalid entry red, partly entered yellow, overwritten grade accent; tooltip) and an invalid row's name red (`computeRowStatus`); the group heading counts them (`groupStatus`, step 25). | e2e      |
-| G17 | Score colours: 0 light red, max light green, between light yellow, `N` grey bold; bonus columns blue italic, diag grey italic.                                                                                                     | manual   |
-| G18 | Cijfer, RTTI % and the std-dev row have background scales (`gradeColor`, `rttiPctColor`, `stdDevGradeColor`).                                                                                                                      | manual   |
+| G17 | Score tints (spec 4.10): max `#DFF1E5`, between `#FCF1CF`, 0 `#FBE1DE`, `N` `#EEF0F3` muted bold, invalid red with white text; bonus and diag cells italic (a faint fill when empty). The grid stays light in the dark theme.      | e2e      |
+| G18 | Cijfer cells (and the average Cijfer) have the grade background scale (`gradeCellColor`); R/T1/T2/I % ≥ 80 green, ≥ 55 yellow, else red, NVT muted; the summary rows are grey.                                                     | manual   |
 
 ## Grade override (Cijfer column)
 
@@ -99,6 +99,8 @@ Behaviour the own grid adds or defines where Handsontable had its own defaults.
 | G61 | F2 (when the exam has fewer than two observaties; otherwise F2 toggles observatie 2, G32) or a double-click edits the cell's current value; typing replaces it. While typing, arrows commit and move; after F2, Left/Right move the caret. | manual |
 | G62 | Clicking outside the grid commits an open edit; Escape cancels it and stays inside the score modal. Ctrl+Z inside an open edit undoes the typing, not the app history.                                                                     | e2e    |
 | G63 | The ↶/↷ buttons are disabled while their history is empty (U1).                                                                                                                                                                            | manual |
+| G64 | Footer (step 25): the colour legend and the save status ("● Alles opgeslagen", "Opslaan…", "● n scores niet opgeslagen" after a failed save; a conflict is reported by the reload notice).                                                 | manual |
+| G65 | The **?** in the header shows the shortcuts and the colour explanation on hover, keyboard focus or a click; a second click, Escape or a click elsewhere closes it.                                                                         | manual |
 
 Not reproduced (Handsontable details): fill handle, column resizing, context menu except G22,
 Handsontable's own undo, the `aria-hidden` workaround on its textarea. A fill handle would be new

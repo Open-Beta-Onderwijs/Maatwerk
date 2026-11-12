@@ -152,6 +152,27 @@ describe('score grid decision 29', () => {
     expect(rtti[2]).toBe('NVT');
   });
 
+  it('without observaties; an invalid score counts 0 in the question average', () => {
+    const w = N + 10;
+    const r = (cells: string[]): GridData[number] => {
+      const x: GridData[number] = Array(w).fill('');
+      x[0] = 'x';
+      cells.forEach((v, i) => (x[2 + i] = v));
+      return x;
+    };
+    const grid = [
+      r(['4', '6', '']),
+      r(['abc', '6', '']),
+      Array(w).fill(''),
+      Array(w).fill(''),
+    ] as GridData;
+    recomputeRow(grid, exam, 0);
+    recomputeRow(grid, exam, 1);
+    recomputeSummaryRow(grid, 2, 3, exam);
+    expect(grid[2]!.slice(2, 2 + N)).toEqual(['2,0', '6,0', '']);
+    expect(grid[2]![N + 2]).toBe(''); // spacer
+  });
+
   it('a question nobody has entered stays empty', () => {
     const grid = [
       row(['4', '', ''], false),

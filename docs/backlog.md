@@ -503,3 +503,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - Review 24 n1: the notice's Dutch ("Geen rapport voor niet ingedeeld in …") reads awkwardly.
 - Review 24 n3: an unscored category shows "—" but its dot shows 0 (as the toets rapport's "N").
 - Review 24 n5: a placed student outside the matching classes gets klas "—".
+
+## From Step 25
+
+- **Review 25 m3/m6:** e2e for the score modal's help popover and footer save status, and for
+  Ctrl+X over observatie and Cijfer cells (behaves as Delete).
+- **Review 25 n2:** `screens/scores/group-grid.ts` is ~525 lines; move the keyboard handler into
+  its own module when it next changes.

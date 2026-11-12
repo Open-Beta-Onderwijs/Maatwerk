@@ -51,12 +51,14 @@ interface SyncEvent {
 const HELP_ROWS: [string, string][] = [
   ['0-9, Enter', 'Punten invullen en naar het volgende veld'],
   ['. (numpad)', 'N invullen (niet gemaakt), als ". → N" aan staat'],
-  ['Tab, / en *', 'Volgende / vorige veld'],
+  ['Tab, Shift+Tab', 'Volgende / vorige veld'],
+  ['* en / (numpad)', 'Volgende / vorige veld'],
+  ['Home, End', 'Eerste / laatste vraag of observatie'],
   ['- en + (numpad)', 'Vorige / volgende leerling'],
   ['F1, F2, …', 'Eerste, tweede, … observatie aan of uit'],
   ['0 / 1 bij een observatie', 'Observatie uit / aan'],
   ['Ctrl+C, Ctrl+X, Ctrl+V', 'Kopiëren, knippen en plakken (ook uit Excel)'],
-  ['Delete', 'Gekozen scores wissen'],
+  ['Delete, Backspace', 'Gekozen scores wissen'],
   ['Ctrl+Z, Ctrl+Y', 'Ongedaan maken / opnieuw'],
 ];
 
@@ -69,7 +71,7 @@ const HELP_HTML = `
       herstelt het berekende cijfer.</p>
     <p>Kleuren: groen volle punten, geel deels, rood 0 punten, grijs N. Een balkje voor het
       nummer: scores ontbreken (geel), een ongeldige score (rood) of een overschreven cijfer
-      (blauw).</p>
+      (accentkleur).</p>
   </div>`;
 
 const UNDO_ICON =
@@ -119,7 +121,7 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
       <button type="button" class="btn btn--secondary btn--sm" id="sc-edit-exam">Toets bewerken</button>
       <span class="sc-nterm">N-term
         <span class="num-spinner spinner-wrap-sm" id="sc-nterm"
-          data-val="${exam.n_term ?? 1}" data-step="0.1" data-min="0" data-max="3">
+          data-val="${escHtml(String(exam.n_term ?? 1))}" data-step="0.1" data-min="0" data-max="3">
           <button type="button" class="spin-btn spin-minus" aria-label="N-term lager">&minus;</button>
           <input class="spin-val" aria-label="N-term" value="${formatNumber(exam.n_term ?? 1)}" />
           <button type="button" class="spin-btn spin-plus" aria-label="N-term hoger">+</button>
@@ -240,11 +242,16 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
         });
       }
 
+      const container = el.querySelector<HTMLElement>('#sc-grid-container')!;
       const shown = () => {
+        // Keyboard navigation scrolls a cell clear of the sticky parts (review 25 M1).
+        const thead = container.querySelector<HTMLElement>('.score-grid-table thead');
+        if (thead?.offsetHeight) {
+          container.style.setProperty('--sc-thead-h', `${thead.offsetHeight}px`);
+        }
         void renderPresence(el, examId, year);
         void afterPaint().then(endOpen);
       };
-      const container = el.querySelector<HTMLElement>('#sc-grid-container')!;
       if (pre) {
         // Later groups of the prebuild keep arriving in `grids`, now in the modal.
         container.appendChild(pre.grids);

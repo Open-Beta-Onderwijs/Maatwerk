@@ -66,7 +66,7 @@ export async function loadScoreGrid(
     const section = document.createElement('div');
     section.className = 'score-group-section';
     // The heading sticks to the top of the scroll area while its grid scrolls by (board 13).
-    section.innerHTML = `<div class="sc-group-head"><h3 class="group-heading">${escHtml(group.name)}</h3><span class="sc-group-info"></span></div><div class="score-grid-host"></div>`;
+    section.innerHTML = `<div class="sc-group-head"><div class="sc-group-title"><h3 class="group-heading">${escHtml(group.name)}</h3><span class="sc-group-info"></span></div></div><div class="score-grid-host"></div>`;
     container.appendChild(section);
 
     session.activeObs = examObservaties(exam);

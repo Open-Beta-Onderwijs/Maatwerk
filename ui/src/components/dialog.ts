@@ -15,6 +15,7 @@
 // - Cleanup on close: registered functions, then every CustomSelect inside
 //   (U12).
 
+import { esc } from '../utils/html';
 import { setBusy } from './button';
 
 export type DialogSize = 'sm' | 'md' | 'form' | 'lg' | 'xl' | 'full';
@@ -112,14 +113,7 @@ const DEFAULT_GUARD: Required<CloseGuardText> = {
 let stack: Dialog[] = [];
 let seq = 0;
 
-export function esc(s: unknown): string {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+export { esc };
 
 interface Destroyable {
   destroy(): void;

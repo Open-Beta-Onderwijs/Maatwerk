@@ -8,6 +8,7 @@
 @import './styles/rubrics.css';
 @import './styles/po.css';
 @import './styles/scores.css';
+@import './styles/score-grid.css';
 @import './styles/po-scores.css';
 @import './styles/po-grade.css';
 @import './styles/skeleton.css';
@@ -1012,7 +1013,8 @@ body::after {
   box-sizing: border-box;
   border: 3px solid var(--cursor-color);
   pointer-events: none;
-  z-index: 150;
+  /* Under the score modal's sticky heading and column headings (review 25 m7). */
+  z-index: 1;
 }
 .remote-cursor-flag {
   position: absolute;

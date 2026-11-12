@@ -4,7 +4,7 @@
 // sits, its heading and how its cells look. Row layout: docs at the top of domain/scoregrid.ts.
 // The looks are classes in styles/scores.css; only the grade cell's colour is computed.
 
-import { escHtml } from '../../app.js';
+import { esc } from '../../utils/html';
 import type { CellValue, Column } from '../../components/score-grid/score-grid';
 import { formatGrade, parseDecimalLoose } from '../../domain/format';
 import { gradeCellColor } from '../../domain/grade-colors';
@@ -24,7 +24,6 @@ export interface GridLayout {
   /** First observatie column (only meaningful when O > 0). */
   obsStart: number;
   lastObsCol: number;
-  totalCol: number;
   gradeCol: number;
   /** The GEMIDDELDE and STANDAARDDEVIATIE rows. */
   summaryIdx: number;
@@ -43,7 +42,6 @@ export function gridLayout(exam: Exam, O: number, data: GridData): GridLayout {
     lastQCol: N + 1,
     obsStart: N + 3,
     lastObsCol: O > 0 ? N + 3 + O - 1 : -1,
-    totalCol: N + 3 + TOFF,
     gradeCol: N + 4 + TOFF,
     summaryIdx,
     stdIdx: data.findIndex((r) => r[0] === '__std__'),
@@ -123,16 +121,16 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
           : '';
     return (
       `<span class="sc-qh"${title}>` +
-      `<span class="hdr-rtti">${escHtml(q.rtti)}</span>` +
-      `<span class="hdr-pts">${q.max_points}p</span>` +
-      `<span class="hdr-opgave">${escHtml(String(q.section ?? ''))}</span>` +
-      `<span class="hdr-vraag">${escHtml(String(q.number ?? ''))}</span></span>`
+      `<span class="hdr-rtti">${esc(q.rtti)}</span>` +
+      `<span class="hdr-pts">${esc(String(q.max_points))}p</span>` +
+      `<span class="hdr-opgave">${esc(String(q.section ?? ''))}</span>` +
+      `<span class="hdr-vraag">${esc(String(q.number ?? ''))}</span></span>`
     );
   };
   const qHeaderClass = (q: Question) =>
     qKind(q) === 'bonus' ? 'sg-hdr-bonus' : qKind(q) === 'diag' ? 'sg-hdr-diag' : undefined;
   const obsHeader = (o: Observatie, oi: number) =>
-    `<span class="hdr-obs" role="img" aria-label="${escHtml(o.naam ?? '')}" title="${escHtml(o.naam ?? '')}${oi < 12 ? ` (F${oi + 1})` : ''}">${escHtml(o.icon ?? '')}</span>`;
+    `<span class="hdr-obs" role="img" aria-label="${esc(o.naam ?? '')}" title="${esc(o.naam ?? '')}${oi < 12 ? ` (F${oi + 1})` : ''}">${esc(o.icon ?? '')}</span>`;
   const pctHeader = (k: string) =>
     `<span class="sc-pct-key sc-pct-key--${k.toLowerCase()}" aria-hidden="true"></span>${k}%`;
 
@@ -211,7 +209,7 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
       if (row === summaryIdx) summaryClass(td, row);
       const fill = gradeCellColor(cellNumber(value));
       if (fill) {
-        td.style.background = fill;
+        td.style.backgroundColor = fill; // keeps the cross-hair's background-image
         td.classList.add('sc-grade--filled');
       }
     }
