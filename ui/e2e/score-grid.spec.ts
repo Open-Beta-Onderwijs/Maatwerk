@@ -10,6 +10,7 @@ import {
   EXAMS,
   cell,
   copySelection,
+  cutSelection,
   header,
   headerTexts,
   isMarkedUnsaved,
@@ -492,6 +493,21 @@ test.describe('undo, saving, colleagues', () => {
     await select(page, 1, E.q1);
     await cell(page, 1, E.q2).click({ modifiers: ['Shift'] });
     expect(await copySelection(page)).toBe('1\t2');
+  });
+
+  test('F-03 Ctrl+X copies a range and empties it; one undo step', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await select(page, 0, E.q1);
+    await pasteText(page, '1\t2\t3');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 1, q2: 2, q3: 3 });
+    await select(page, 0, E.q1);
+    await cell(page, 0, E.q2).click({ modifiers: ['Shift'] });
+    expect(await cutSelection(page)).toBe('1\t2');
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q3: 3 });
+    await expect(cell(page, 0, E.q1)).toHaveText('');
+    await page.locator('#sc-undo').click();
+    await expect.poll(() => storedScores(page, id, EXAMS.empty)).toEqual({ q1: 1, q2: 2, q3: 3 });
   });
 
   test('G55 a colleague change updates the row and flashes it', async ({ page }) => {

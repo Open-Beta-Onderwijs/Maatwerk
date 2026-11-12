@@ -154,8 +154,7 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
 ## From Step 3b
 
-- **Cut (Ctrl+X) in the score grid (review 3b m5):** Handsontable had it; the own grid has copy,
-  paste and Delete. Add if teachers miss it (copy + Delete is the workaround).
+- ~~**Cut (Ctrl+X) in the score grid (review 3b m5):**~~ Done in step 25 (F-03).
 - **Licence ban covers production deps only (review 3b m8):** `tools/check-npm-licenses.mjs` walks
   `--omit=dev`; Vite would bundle a dev dependency if UI code imported it. Add a check on the
   built bundle (or an ESLint import rule) when the dependency list grows.
