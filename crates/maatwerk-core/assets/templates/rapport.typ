@@ -112,6 +112,34 @@
   body
 }
 
+// ── Shared with the PO rapport (rapport-po.typ) ────────────────────────────────
+// The italic grey label above a section.
+#let section_label(body) = text(9pt, style: "italic", fill: gray.darken(30%), body)
+// The tables: a line under the header, zebra rows.
+#let zebra_stroke = (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none }
+#let zebra_fill = (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") }
+
+// The start of a student's pages: page 1 and the footer text.
+#let student_start(i, footer_text) = {
+  counter(page).update(1)
+  _footer.update((text: footer_text, idx: i))
+}
+
+// The end of a student's pages (`n` students in all).
+#let student_end(i, n) = {
+  [#metadata(i) <rapport-student-end>]
+  // F-13: every student starts on an odd page, so a duplex print gives each student their
+  // own sheets: three pages get an empty fourth.
+  // The last student's padding asks where the end marker is: `here()` would be on the page
+  // after its own pagebreak.
+  if i < n - 1 { pagebreak(to: "odd") } else {
+    context {
+      let end = query(<rapport-student-end>).filter(m => m.value == i)
+      if end.len() > 0 and calc.odd(end.first().location().page()) { pagebreak() }
+    }
+  }
+}
+
 // ── Lollipop chart ─────────────────────────────────────────────────────────────
 // All x-coordinates are floats in cm (cetz default unit = 1 cm).
 // Circle radii and stroke thickness use pt via Typst length values.
@@ -225,15 +253,15 @@
 }
 
 #let lollipop_chart(vragen, global_max, dots) = {
-  text(9pt, style: "italic", fill: gray.darken(30%))[Scoretabel]
+  section_label[Scoretabel]
 
   set text(size: 9pt)
 
   table(
     columns: (1.4cm, 1.4cm, 1.4cm, 1.4cm, TRACK_W * 1cm + 1cm, 2.4cm),
     align:   (left + horizon, left + horizon, left + horizon, left + horizon, left + horizon, left + horizon),
-    stroke:  (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none },
-    fill:    (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") },
+    stroke:  zebra_stroke,
+    fill:    zebra_fill,
     inset:   (x: 4pt, y: 0pt),
 
     // ── Header ──
@@ -276,7 +304,7 @@
 
 // ── Observations section ───────────────────────────────────────────────────────
 #let obs_section(observaties) = {
-  text(9pt, style: "italic", fill: gray.darken(30%))[Observaties]
+  section_label[Observaties]
   v(0pt)
 
   if observaties.len() == 0 {
@@ -286,8 +314,8 @@
     table(
       columns: (1cm, 4cm, 1fr),
       align:   (center + horizon, left + horizon, left + horizon),
-      stroke:  (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none },
-      fill:    (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") },
+      stroke:  zebra_stroke,
+      fill:    zebra_fill,
       inset:   (x: 4pt, y: 4pt),
 
       [*Afk.*], [*Observatie*], [*Korte uitleg*],
@@ -310,7 +338,7 @@
 
 // ── Leeradvies section ─────────────────────────────────────────────────────────
 #let leeradvies_section(rows) = {
-  text(9pt, style: "italic", fill: gray.darken(30%))[Leeradvies]
+  section_label[Leeradvies]
 
   set text(size: 9pt)
   table(
@@ -318,8 +346,8 @@
     // 2026-11-08): up to "99,5 / 99 (100%)" fits; a category of 100+ points wraps.
     columns: (1cm, 2.5cm, 1fr),
     align:   (center + horizon, left + horizon, left + horizon),
-    stroke:  (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none },
-    fill:    (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") },
+    stroke:  zebra_stroke,
+    fill:    zebra_fill,
     inset:   (x: 4pt, y: 4pt),
 
     [*Cat.*], [*Score*], [*Leeradvies*],
@@ -391,7 +419,7 @@
   if total_max == 0.0 { return [] }
 
   align(center)[
-    #text(9pt, style: "italic", fill: gray.darken(30%))[Verdeling RTTI deze toets]
+    #section_label[Verdeling RTTI deze toets]
     #v(4pt)
     #canvas(length: 1cm, {
       import draw: arc, circle, rect, content
@@ -444,7 +472,7 @@
 // ── Bar chart: student RTTI scores as percentage correct ──────────────────────
 #let rtti_bar(totals, points) = {
   align(center)[
-    #text(9pt, style: "italic", fill: gray.darken(30%))[Jouw RTTI-scores]
+    #section_label[Jouw RTTI-scores]
     #v(4pt)
     #canvas(length: 1cm, {
       import draw: rect, content, line
@@ -509,14 +537,14 @@
     ("I",  "Inzicht",      uitleg.I),
   )
 
-  text(9pt, style: "italic", fill: gray.darken(30%))[Uitleg RTTI-categorieën]
+  section_label[Uitleg RTTI-categorieën]
 
   set text(size: 9pt)
   table(
     columns: (1cm, 2.5cm, 1fr),
     align:   (left + horizon, left + horizon, left + horizon),
-    stroke:  (x, y) => if y == 0 { (bottom: 0.5pt + gray) } else { none },
-    fill:    (x, y) => if y == 0 or calc.even(y) { white } else { rgb("#EDEEF0") },
+    stroke:  zebra_stroke,
+    fill:    zebra_fill,
     inset:   (x: 4pt, y: 4pt),
 
     [*Afk.*], [*Categorie*], [*Beschrijving*],
@@ -567,7 +595,7 @@
   let bar_w  = 1.0
   let bar_offset = (slot_w - bar_w) / 2.0
 
-  text(9pt, style: "italic", fill: gray.darken(30%))[Verdeling toetscijfers]
+  section_label[Verdeling toetscijfers]
   v(4pt)
 
   canvas(length: 1cm, {
@@ -655,12 +683,7 @@
   let dots = _dots(half)
   for (i, student) in student_data.enumerate() {
     let vragen = student.vragen.map(_guard_vraag)
-    // Reset page counter to 1 and set footer text for this student
-    counter(page).update(1)
-    _footer.update((
-      text: exam_info.subject_display + " " + exam_info.name + " \u{2014} " + student.name,
-      idx: i,
-    ))
+    student_start(i, exam_info.subject_display + " " + exam_info.name + " \u{2014} " + student.name)
     [= Toetsanalyse #exam_info.subject_display #exam_info.name
     == #student.group — #student.name (#student.student_nr)
 
@@ -697,16 +720,6 @@
       student.grade_num,
       student.at("ranking", default: none),
     )
-    [#metadata(i) <rapport-student-end>]
-    // F-13: every student starts on an odd page, so a duplex print gives each student their
-    // own sheets: three pages get an empty fourth.
-    // The last student's padding asks where the end marker is: `here()` would be on the page
-    // after its own pagebreak.
-    if i < n - 1 { pagebreak(to: "odd") } else {
-      context {
-        let end = query(<rapport-student-end>).filter(m => m.value == i)
-        if end.len() > 0 and calc.odd(end.first().location().page()) { pagebreak() }
-      }
-    }
+    student_end(i, n)
   }
 }

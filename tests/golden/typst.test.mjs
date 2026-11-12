@@ -21,6 +21,9 @@ const DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'typst');
 const cases = fs.readdirSync(DIR).filter((d) => fs.statSync(path.join(DIR, d)).isDirectory()).sort();
 const load = (id) => JSON.parse(fs.readFileSync(path.join(DIR, id, 'case.json'), 'utf8'));
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
+// A Maatwerk-only output (step 24: the PO rapport) has no reference render: its channel is the
+// bridge method, and it is a golden from the start (`port.blessed`, after the user's check).
+const nativeOnly = (c) => !c.call.channel.startsWith('app:');
 
 test('there are Typst goldens for paths A-D', () => {
   const paths = new Set(cases.map((id) => load(id).path));
@@ -32,7 +35,8 @@ for (const id of cases) {
     const c = load(id);
     assert.equal(c.format, 1);
     assert.equal(c.id, id);
-    assert.equal(c.reference.commit, REFERENCE_COMMIT);
+    if (nativeOnly(c)) assert.equal(typeof c.port?.blessed, 'string', 'a Maatwerk-only golden is blessed');
+    else assert.equal(c.reference.commit, REFERENCE_COMMIT);
     const pngs = fs.readdirSync(path.join(DIR, id)).filter((f) => f.endsWith('.png')).sort();
     assert.deepEqual(pngs, (c.png ?? []).map((p) => p.file));
     for (const p of c.png ?? []) assert.equal(sha256(fs.readFileSync(path.join(DIR, id, p.file))), p.sha256, p.file);
@@ -50,6 +54,7 @@ for (const id of cases) {
   test(`typst ${id}: wrapper sources follow from the call (verbatim builders)`, () => {
     const c = load(id);
     const args = decode(c.call.args);
+    if (nativeOnly(c)) return; // no reference wrapper
     const byFile = Object.fromEntries(c.wrappers.map((w) => [w.file, w.source]));
     switch (c.call.channel) {
       case 'app:renderRapportPdf':

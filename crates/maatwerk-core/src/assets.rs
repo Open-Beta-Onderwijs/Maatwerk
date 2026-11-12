@@ -9,6 +9,12 @@ pub const RAPPORT_TYP: &str = include_str!("../assets/templates/rapport.typ");
 /// Entry point of the rapport World: imports `rapport.typ` and reads `data.json`.
 pub const RAPPORT_MAIN_TYP: &str = include_str!("../assets/templates/rapport-main.typ");
 
+/// The PO rapport template (step 24); imports the shared parts of `rapport.typ`.
+pub const RAPPORT_PO_TYP: &str = include_str!("../assets/templates/rapport-po.typ");
+
+/// Entry point of the PO rapport World: imports `rapport-po.typ` and reads `data.json`.
+pub const RAPPORT_PO_MAIN_TYP: &str = include_str!("../assets/templates/rapport-po-main.typ");
+
 /// Entry point of an opdracht (`main.typ`): the old generated wrapper, driven by `sys.inputs`.
 pub const OPDRACHT_MAIN_TYP: &str = include_str!("../assets/templates/opdracht-main.typ");
 
@@ -218,5 +224,7 @@ mod tests {
         assert!(!LIB_TYP.contains("\"rtti-vraag"));
         assert!(LIB_TYP.contains("<__maatwerk_vraag>"));
         assert!(RAPPORT_MAIN_TYP.contains("\"rapport.typ\""));
+        assert!(RAPPORT_PO_MAIN_TYP.contains("\"rapport-po.typ\""));
+        assert!(RAPPORT_PO_TYP.contains("\"rapport.typ\""));
     }
 }
