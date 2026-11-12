@@ -1,26 +1,22 @@
 # State
 
-Last updated: 2026-11-12 (step 25 in progress) Branch: `step/25-score-entry` (from
-`step/24-po-rapport` `2bdac21`, which is merged into `main` as `c94f377`)
-Last tags: `step-24`, `v0.15.0`, `step-23`, `v0.14.0`, `step-22`, `v0.13.0`
+Last updated: 2026-11-12 (step 25 done) Branch: `main`
+Last tags: `v0.16.0` (merge `d066a6d`), `step-25` (`0e76028`), `step-24`, `v0.15.0`
 
 ## Current step
 
-**Step 24 done and merged (2026-11-12):** PR #15 merged into `main` (`c94f377`); PR CI run
-`43200670042` green on all three OSes (Windows and macOS first got no runner, rerun). Tags
-`step-24`, `v0.15.0` on `2bdac21`, pushed. Manual M-POR-1..4: the user, with a 0.15 exe.
+**Step 25 done and merged (2026-11-12):** user OK on the visual check (after the observatie
+count fix `b958b00`); PR #16 merged into `main` (`d066a6d`), PR CI `43225418533` green on all
+three OSes. CI baselines of `modal-scores`: macOS and Linux from run `43217796315`, Windows from
+`43220392381`. Local visual baselines updated. Tags `step-25` (`0e76028`), `v0.16.0` (merge
+commit, as `docs/release.md`), pushed.
 
-**User (2026-11-12, visual check):** the GEMIDDELDE row showed no observatie count: fixed
-(`b958b00`, the grid emptied read-only checkbox cells; G04 now checks it). Release notes: cover
-everything since 0.3.2; a **draft** release `Maatwerk 0.16.0` (tag `v0.16.0`, not yet created)
-exists on GitHub with Dutch notes, no files yet. CI on `main` / `v0.15.0` after the step 24
-merge had Windows and macOS cancelled (no runner); rerun 2026-11-12 (runs `43208689198`,
-`43208732019`).
+**Release 0.16.0:** a **draft** GitHub release "Maatwerk 0.16.0" (tag `v0.16.0`) with Dutch
+notes covering everything since 0.3.2 (user). The user publishes it.
 
-**Next action (STOP, user):** the user's OK on the fixed `modal-scores`. Then: local visual
-baselines, push `step/25-score-entry`, PR, CI baselines of `modal-scores` from CI's own run,
-merge, tags `step-25`, `v0.16.0`; when the tag's CI is green, attach its Windows, macOS and
-Linux files to the draft release (`docs/release.md` section 4) and leave it a draft for the user.
+**Next action:** attach the tag CI's files (`maatwerk-windows-x64`, `maatwerk-macos-universal`,
+`maatwerk-linux-x86_64`) to the draft when that run is green, if not done yet; then step 26
+(Login and splash). Manual checks M-POR-1..4 (0.15) are still the user's.
 
 ## Step 25 progress (Score entry, 0.16)
 

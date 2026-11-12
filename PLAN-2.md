@@ -99,7 +99,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done   |
 | 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done   |
 | 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done   |
-| 25   | Score entry                                                      | M            | 0.16    | doing  |
+| 25   | Score entry                                                      | M            | 0.16    | done   |
 | 26   | Login and splash                                                 | M            | 0.17    | todo   |
 | 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | todo   |
 | 28   | Beheer screens                                                   | M            | 0.19    | todo   |
