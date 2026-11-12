@@ -40,8 +40,15 @@ Baseline 2026-11-12 on `step/24-po-rapport` `62b608d`: cargo test all ok, 537 Vi
    genereren enabled on a PO attempt. R-05: `modals/rapport.js` -> `modals/rapport.ts` +
    `modals/rtti-uitleg.ts`. e2e `po-rapport.spec.ts` (2). Docs: manual checks M-POR-1..4,
    typst-contract note.
-3. Next: version 0.15.0, gate, reviewer subagent (`docs/reviews/step-24.md`), then STOP: the user
-   checks the golden PNGs / a real PDF.
+3. **Done:** version 0.15.0 (`afdaed1`; `bindings.ts` back to the generator's output after a
+   stray Prettier run). Gate green: fmt, clippy, cargo test, lint, typecheck, 550 Vitest, 127
+   node, 295 Chromium e2e, visual 141 unchanged, licences, cargo deny, SPDX. Review
+   `docs/reviews/step-24.md` (0/0/8/5): m1 (category scores and maxima now from the core) and m2
+   (no lines on an overwritten grade) fixed; the rest in `docs/backlog.md` "From Step 24".
+4. **STOP (user):** check the golden PNGs `tests/golden/typst/rapport-po/p1..p6.png` (50 ppi) or
+   the 110-ppi preview (`cargo test -p maatwerk-core --test typst_po_rapport -- --ignored` writes
+   `target/tmp/po-preview/`), and a real PDF from the exe. On OK: change the golden's
+   `port.blessed` text (rebless), push, CI, merge, tags `step-24`, `v0.15.0`, manual M-POR-1..4.
 
 **Choices made without asking (for the report):** "per student, per class, batch, as for a test"
 read as the toets rapport does it: one PDF of all graded students of the PO (attempt), sorted by

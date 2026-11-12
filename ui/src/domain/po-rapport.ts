@@ -82,10 +82,21 @@ export interface PoRapportData {
   skipped: { unplaced: string[]; ungraded: string[] };
 }
 
-/** A category score as the grade counts it: whole points 0..max; anything else entered is 0. */
-function countedScore(raw: unknown, max: number): number | null {
-  if (raw === undefined || raw === null || raw === '') return null;
-  return typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw <= max ? raw : 0;
+/**
+ * One category as the core counts it (review 24 m1: no second copy of the score rules): its
+ * max (`whole_max`) and the points a raw score earns (`ScoreValue`: "2" is 2, `null` and `N` are
+ * 0, a fraction or text is 0). Asked through `calcResults` on the rubric with only this category,
+ * as a normal one. No score at all, or an empty one, is `null`: not scored.
+ */
+function coreCategory(
+  exam: Exam,
+  cat: RubricCategory,
+  raw?: unknown,
+): { max: number; score: number | null } {
+  const rubric = { categories: [{ ...cat, soort: 'normaal' }] };
+  const scores = raw === undefined ? {} : { [cat.id]: raw };
+  const r = coreCall<Results>('calcResults', { ...exam, rubric }, scores, null, null);
+  return { max: r.normalMax, score: raw === undefined || raw === '' ? null : r.scored };
 }
 
 function observatie(o: Observatie): PoRapportObservatie {
@@ -104,8 +115,6 @@ function lines(voor: PoRapportLine['voor'], list: PoLine[]): PoRapportLine[] {
     .map((l) => ({ voor, label: l.label.trim(), value: l.value!, text: signedPoints(l.value!) }));
 }
 
-const catMax = (c: RubricCategory) => (Number.isInteger(c.max) && c.max! > 0 ? c.max! : 0);
-
 /**
  * The PO rapport's data: every student in a projectgroep with a grade, sorted by class, then
  * achternaam. Students without a projectgroep get no grade (decision 18), so no rapport; they
@@ -114,6 +123,7 @@ const catMax = (c: RubricCategory) => (Number.isInteger(c.max) && c.max! > 0 ? c
 export function buildPoRapportData(input: PoRapportInput): PoRapportData {
   const { exam, rubric, students, records, classTag, observaties } = input;
   const cats = rubric?.categories ?? [];
+  const maxes = cats.map((c) => coreCategory(exam, c).max);
   const graded = { ...exam, rubric };
   const nameOf = (id: string) => {
     const s = students.get(id);
@@ -156,7 +166,7 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
         continue;
       }
       const scores = Object.fromEntries(
-        cats.map((c) => [c.id, countedScore(rec?.scores?.[exam.id]?.[c.id], catMax(c))]),
+        cats.map((c) => [c.id, coreCategory(exam, c, rec?.scores?.[exam.id]?.[c.id]).score]),
       );
       entries.push({ id, group: { naam: groupName(g, i), ids }, rec, res, scores });
     }
@@ -164,7 +174,7 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
 
   // The averages over every graded student with scores (an overwritten grade alone has none).
   const withScores = entries.filter((e) => Object.values(e.scores).some((v) => v !== null));
-  const questions = cats.map((c) => ({ id: c.id, max_points: catMax(c) }) as unknown as Question);
+  const questions = cats.map((c, i) => ({ id: c.id, max_points: maxes[i] }) as unknown as Question);
   const classResults = classQuestions(
     questions,
     withScores.map((e) =>
@@ -200,7 +210,7 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
         members: [e.id, ...others].map((m) => ({ name: nameOf(m), klas: classTag(m) })),
       },
       categories: cats.map((c, i) => {
-        const max = catMax(c);
+        const max = maxes[i]!;
         const score = e.scores[c.id] ?? null;
         const { classAvg, classPct } = classResults[i]!;
         return {
@@ -225,10 +235,13 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
         avg: round1(totalAvg),
         avg_pct: normalMax > 0 ? round0((100 * totalAvg) / normalMax) : 0,
       },
-      lines: [
-        ...lines('Projectgroep', g.groupLines),
-        ...lines('Persoonlijk', ownLinesOf(e.rec, exam.id)),
-      ],
+      // An overwritten grade replaces the lines too: they did not count (review 24 m2).
+      lines: res.overridden
+        ? []
+        : [
+            ...lines('Projectgroep', g.groupLines),
+            ...lines('Persoonlijk', ownLinesOf(e.rec, exam.id)),
+          ],
       comment: g.comment.trim(),
       observaties: obsOf(g.observations),
     };
@@ -238,7 +251,7 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
     poInfo: {
       name: exam.title ?? '',
       subject_display: subjectDisplayName(exam.subject) ?? '',
-      scale_max: Math.max(1, ...cats.map(catMax)),
+      scale_max: Math.max(1, ...maxes),
     },
     students: studentData,
     skipped: { unplaced: unplaced.map(nameOf), ungraded: ungraded.sort(byName).map(nameOf) },

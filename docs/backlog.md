@@ -487,3 +487,20 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - Review 23 n4: `validate-data` could warn about a `po` entry under a test's id.
 - Local WebKit on Windows: Playwright's `dragTo` does not work (the step 22 and 23 drag tests fail
   there, also on `main`); CI runs WebKit on Linux and macOS, where they pass.
+
+## From Step 24
+
+- Review 24 m3: a partly graded projectgroep gets a PO rapport without a warning (status Bezig).
+- Review 24 m4: a member graded in another projectgroep ("andere groep" in the score table) gets
+  the rapport under the current group's name and members.
+- Review 24 m5: the category averages leave unscored students out, the Totaal average counts them
+  as 0 (as `class_questions` vs the grade), so the Gemiddeld column need not add up.
+- Review 24 m6: on a PO herkansing the "niet ingedeeld" notice lists every unplaced student of
+  the matching classes (most of the jaarlaag); limit it to students who made the original.
+- Review 24 m7: a category block or Algemene observaties taller than a page overflows into the
+  footer (unbreakable blocks); allow a break inside such a block.
+- Review 24 m8: tests for `skippedHtml`/`compilePoRapport`, the no-rubric message, a herkansing
+  PO, a category added after grading, the stale group.
+- Review 24 n1: the notice's Dutch ("Geen rapport voor niet ingedeeld in …") reads awkwardly.
+- Review 24 n3: an unscored category shows "—" but its dot shows 0 (as the toets rapport's "N").
+- Review 24 n5: a placed student outside the matching classes gets klas "—".

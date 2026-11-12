@@ -120,6 +120,43 @@ describe('buildPoRapportData', () => {
     expect(out.skipped.ungraded).toEqual([]);
   });
 
+  it('reads category scores with the core rules: "2" counts, null and N are 0 (review 24 m1)', () => {
+    const input = fixtureInput();
+    const records = new Map(input.records);
+    const rec = structuredClone(RECORDS['900102']!) as ScoreRecord;
+    Object.assign(rec.scores![EXAM_ID] as Record<string, unknown>, {
+      intro: '2',
+      vraag: null,
+      theorie: 'N',
+    });
+    records.set('900102', rec);
+    const emma = buildPoRapportData({ ...input, records }).students.find(
+      (s) => s.name === 'Emma Kok',
+    )!;
+    expect(emma.categories.slice(0, 3).map((c) => c.score)).toEqual([2, 0, 0]);
+    // 2 + 0 + 0 + 5 + 4 + 3 + 2 normal, 2 bonus: the same points as the grade.
+    expect(emma.points).toBe(18);
+  });
+
+  it('a category max the core does not accept counts as 0 (review 24 m1)', () => {
+    const input = fixtureInput();
+    const rubric = structuredClone(input.rubric!);
+    rubric.categories[0]!.max = 150;
+    const sem = buildPoRapportData({ ...input, rubric }).students[0]!;
+    expect(sem.categories[0]!.max).toBe(0);
+    expect(sem.max).toBe(33);
+  });
+
+  it('an overwritten grade shows no bonus/malus lines, which did not count (review 24 m2)', () => {
+    const input = fixtureInput();
+    const records = new Map(input.records);
+    const rec = structuredClone(RECORDS['900101']!) as ScoreRecord;
+    rec.overrides = { [EXAM_ID]: { cijfer: 6 } };
+    records.set('900101', rec);
+    const sem = buildPoRapportData({ ...input, records }).students[0]!;
+    expect(sem).toMatchObject({ grade: '6,0', grade_overridden: true, lines: [] });
+  });
+
   it('is the data of the rapport-po Typst golden', () => {
     const students = GOLDEN_STUDENTS.map((n) => data.students.find((s) => s.name === n));
     const args = normaliseForTypst(['rapport-po', students, data.poInfo]);
