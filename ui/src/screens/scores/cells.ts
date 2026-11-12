@@ -178,8 +178,17 @@ export function gridColumns(ctx: CellContext): GridColumn[] {
     decorate(td, row, col);
   }
 
-  function obsRenderer(td: HTMLTableCellElement, row: number, col: number): void {
-    if (isSummary(row)) summaryClass(td, row);
+  function obsRenderer(
+    td: HTMLTableCellElement,
+    row: number,
+    col: number,
+    value: CellValue,
+  ): void {
+    if (isSummary(row)) {
+      summaryClass(td, row);
+      // The grid empties read-only checkbox cells: write the ticked count (decision 29).
+      td.textContent = typeof value === 'string' ? value : '';
+    }
     decorate(td, row, col);
   }
 

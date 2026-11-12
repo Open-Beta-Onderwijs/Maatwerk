@@ -66,6 +66,11 @@ test.describe('layout', () => {
     const n = await rows(page).count();
     await expect(cell(page, n - 2, 1)).toHaveText('Gemiddelde');
     await expect(cell(page, n - 1, 1)).toHaveText('Standaarddeviatie');
+    // Decision 29: the average row counts the ticked observaties (user, step 25 visual check).
+    const ticked = await rows(page)
+      .locator(`td:nth-child(${H2.obs1 + 1}) input:checked`)
+      .count();
+    await expect(cell(page, n - 2, H2.obs1)).toHaveText(String(ticked));
   });
 });
 
