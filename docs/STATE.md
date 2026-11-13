@@ -10,7 +10,16 @@ version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-2
 release only at the end. STOPs collected for the report: the visual check of all three steps
 (baselines only after the user saw them) and the card numbers of step 27 (before/after table).
 
-**Next action:** the gate (PLAN.md 2.2) and the review of steps 26-28 (`docs/reviews/step-26-28.md`), then stop and report.
+**Gate (2026-11-13, on `494dabf` + test fixes `bbf637c`, `ef82bb0`):** fmt, clippy, cargo test, 629
+Vitest, 127 node, lint, typecheck, licences, cargo deny, SPDX green; Chromium e2e 327/327; WebKit
+login/cards/beheer/photo/shell 36/36 after the crop-test fix. Visual (light): 14 views differ from
+the 0.16 baselines, 39 unchanged; 6 new views. Review `docs/reviews/step-26-28.md` (0/2/8/7): M1,
+M2, m1, m3, m4, m5 fixed (`494dabf`), the rest in `docs/backlog.md`.
+
+**Next action (STOP, the user):** the visual check of steps 26-28 (before/after page shown to the
+user) and the OK on `docs/phase-2/step-27-card-numbers.md`. Then: update the local visual
+baselines, push the branch, CI and its visual baselines, PR, merge, tags `step-26`, `step-27`,
+`step-28`, `v0.19.0`.
 
 ## Step 28 progress (Beheer screens, 0.19)
 
