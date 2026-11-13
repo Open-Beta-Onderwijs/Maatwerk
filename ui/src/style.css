@@ -17,6 +17,7 @@
 @import './styles/avatar.css';
 @import './styles/splash.css';
 @import './styles/login.css';
+@import './styles/photo-crop.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,

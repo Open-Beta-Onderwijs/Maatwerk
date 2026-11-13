@@ -159,7 +159,7 @@ test.describe('user menu (F-17) and look per user (F-18, F-21)', () => {
     await expect(menu.locator('.user-menu__name')).toHaveText('Docent van Natuur');
     await expect(menu.locator('.user-menu__role')).toHaveText('Docent · Natuurkunde');
     await expect(menu.locator('.accent-swatch')).toHaveCount(21);
-    await expect(menu.locator('#acc-photo')).toBeDisabled();
+    await expect(menu.locator('#acc-photo')).toBeEnabled();
     await expect(menu.locator('#acc-codes')).toHaveCount(0); // admin only
     await expect(page.locator('#user-badge-btn')).toHaveAttribute('aria-expanded', 'true');
     const box = (await menu.boundingBox())!;

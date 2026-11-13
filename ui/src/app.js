@@ -10,6 +10,7 @@
 import { renderStartup } from './screens/login/login';
 import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderMigration } from './screens/migration';
+import { openFotoWijzigen } from './modals/foto-wijzigen';
 import { hideSplash, setSplashStatus } from './shell/splash';
 import { watchTopbar } from './shell/topbar-fit';
 import { renderChooseFolder } from './screens/choose-folder';
@@ -587,6 +588,16 @@ userBadgeBtn.addEventListener('click', () => {
       void Store.savePreferences({ theme: look.theme, accent: look.accent });
     },
     onChangePin: () => void changePinFlow(api, onUserChanged),
+    onChangePhoto: () =>
+      void openFotoWijzigen(user, api, (saved) => {
+        onUserChanged(saved);
+        void renderAvatar(
+          userBadgeBtn,
+          saved,
+          { size: 38, ring: 'accent', square: user.isAdmin || !!role },
+          readPhoto,
+        );
+      }),
     onRenewCodes: user.isAdmin ? () => void renewCodesFlow(user, api, onUserChanged) : undefined,
     onLogout: () => {
       void api.logout().catch((e) => console.warn('[pin]', e));

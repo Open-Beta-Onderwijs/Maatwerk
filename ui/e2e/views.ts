@@ -195,6 +195,16 @@ export const VIEWS: View[] = [
   },
   { name: 'modal-po-new', user: 'teacher', target: 'modal', open: poStep1 },
   {
+    name: 'modal-foto-wijzigen',
+    user: 'teacher',
+    target: 'modal',
+    open: async (p) => {
+      await p.locator('#user-badge-btn').click();
+      await p.locator('#acc-photo').click();
+      await p.locator('.photo-crop__frame').waitFor();
+    },
+  },
+  {
     name: 'modal-po-groepen',
     user: 'teacher',
     target: 'modal',
