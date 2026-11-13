@@ -1,9 +1,44 @@
 # State
 
-Last updated: 2026-11-12 (step 25 done) Branch: `main`
+Last updated: 2026-11-13 (steps 26-28 in one go; step 26 done) Branch: `step/26-login-splash`
 Last tags: `v0.16.0` (merge `d066a6d`), `step-25` (`0e76028`), `step-24`, `v0.15.0`
 
 ## Current step
+
+**Steps 26, 27 and 28 in one go (user, 2026-11-13):** one branch `step/26-login-splash`, a
+version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-28.md`) and
+release only at the end. STOPs collected for the report: the visual check of all three steps
+(baselines only after the user saw them) and the card numbers of step 27 (before/after table).
+
+**Next action:** step 27 (Leerlingen and Groepen cards), sub-task 1.
+
+## Step 26 progress (Login and splash, 0.17)
+
+Baseline 2026-11-13 on `95ac545`: cargo test all ok, 567 Vitest, 127 node.
+
+1. **Done (`aff852f`):** splash (F-06, spec 4.1): inline SVG in `index.html`, CSS in
+   `styles/splash.css` (part of the stylesheet in `<head>`, CSP stays strict), status line,
+   version via a Vite `transformIndexHtml`, `shell/splash.ts` removes it once the first screen is
+   there; window `backgroundColor` in `tauri.conf.json`. Login (V-04, spec 4.2):
+   `screens/login/login.ts` (stages start/vak/user, FLIP flight with the Web Animations API and its
+   reverse, stagger, keyboard, reduced motion = fades), `screens/login/pin-panel.ts` (inline PIN,
+   one or two fields, 168 px reserved), `domain/login.ts` (tiles, groups; tested). `pin.ts` keeps
+   only the dialogs (recovery, codes, change, renew); the recovery button is `#pin-recover-ok`.
+   R-05: `startup.js` removed. e2e `login.spec.ts` (6) and `chooseVak` helper; visual views
+   `splash`, `login-start`, `login-pin`.
+2. **Done (`c5acc2e`):** F-19: `components/photo-crop.ts` (board 12 field, shared with step 28),
+   `domain/crop.ts` (tested), `modals/foto-wijzigen.ts`, `Store.saveOwnPhoto` (merge, no rev);
+   "Foto wijzigen" in the user menu enabled; e2e `photo.spec.ts` (3); view `modal-foto-wijzigen`.
+3. **Done:** version 0.17.0; manual checks M-LOG-1..4 in `docs/manual-test.md`.
+
+**Choices made without asking (for the report):** the role line says "Beheerder" (board 5 says
+"Administrator"; spec 4.9 and the user menu say Beheerder); a vak tile is disabled only when it
+has no teachers while another vak has some (a fresh install keeps every tile, so the admin gets
+in); the remembered vak opens already chosen without animation; clicking a chosen tile goes back
+(spec), so the e2e helpers choose a vak only when it is not chosen; the splash fades out in
+0.25 s; the photo is saved as a square JPEG of at most 512 px named `<user id>.jpg` (an old
+`.png` stays as an unused file); `--brand` (light ink in the dark theme) is the accent on the
+login screen; splash and login use the light look before login as before (dev menu aside).
 
 **Step 25 done and merged (2026-11-12):** user OK on the visual check (after the observatie
 count fix `b958b00`); PR #16 merged into `main` (`d066a6d`), PR CI `43225418533` green on all
@@ -27,8 +62,7 @@ Checksums verified, attached: `Maatwerk-macos-universal.dmg` (SHA-256 `71b551a6â
 
 **Published (2026-11-13):** 0.16.0 is public and marked Latest (user).
 
-**Next action:** step 26 (Login and splash). Manual
-checks M-POR-1..4 (0.15) are still the user's.
+Manual checks M-POR-1..4 (0.15) are still the user's.
 
 ## Step 25 progress (Score entry, 0.16)
 

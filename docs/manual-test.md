@@ -190,6 +190,20 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       the footer counts the student's own pages; logo and watermark as on the toets rapport.
       The copy in `rapporten\<schooljaar>\` is named `… Rapport nat <klas> <PO>.pdf`.
 
+## Splash and login (M-LOG, 0.17)
+
+- [ ] **M-LOG-1** Start the exe: no white flash; the splash (wordmark, moving bar, "Gegevens
+      laden…", version at the bottom) shows until the vak tiles are there. On a slow PC or a slow
+      network share it stays longer; on a fast one it may only flicker.
+- [ ] **M-LOG-2** Login: the tiles move up and shrink when a vak is chosen, the users fade in per
+      group; clicking the chosen tile again goes back. A user: the avatar flies to the left of the
+      PIN block; "← Andere gebruiker" (or Escape) flies it back. First login: two fields, the
+      recovery codes for the admin. Windows "Animaties weergeven" off (reduced motion): fades only.
+- [ ] **M-LOG-3** Keyboard only: Tab to a tile, Enter, Tab to a user, Enter, type the PIN, Enter.
+- [ ] **M-LOG-4** User menu > Foto wijzigen with a wide photo (not square): drag the square,
+      scroll to zoom, Opslaan; the top bar, the login screen and the editor show the new photo;
+      the file is `afbeeldingen\<gebruiker-id>.jpg`. Verwijderen shows the initials again.
+
 ## Opdrachten and the editor (M-OPD)
 
 - [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the folder `opdrachten\<id>\` with
