@@ -20,9 +20,12 @@ checksums: `maatwerk.exe` (SHA-256 `7fc476df…2159`, in the notes), `maatwerk.e
 `LICENSE`, `THIRD_PARTY_NOTICES.txt`, the AppImage, the `.deb` and `SHA256SUMS-linux.txt`
 (renamed: macOS has its own `SHA256SUMS.txt`).
 
-**Next action:** when the macOS job of run `43233388996` is green, attach
-`Maatwerk-macos-universal.dmg`, the `.zip` and its `SHA256SUMS.txt` as `SHA256SUMS-macos.txt`
-(the notes name it so); the user publishes the draft. Then step 26 (Login and splash). Manual
+**macOS files (2026-11-13):** the tag run's macOS job stayed cancelled; per the user, taken from
+the green `main` run `43240489678` (`fe88ea0`, differs from the tag only in STATE/PLAN-2).
+Checksums verified, attached: `Maatwerk-macos-universal.dmg` (SHA-256 `71b551a6…4c40`), the
+`.zip` (`728458ff…7761`) and `SHA256SUMS-macos.txt`. The draft is complete (10 files).
+
+**Next action:** the user publishes the draft. Then step 26 (Login and splash). Manual
 checks M-POR-1..4 (0.15) are still the user's.
 
 ## Step 25 progress (Score entry, 0.16)
