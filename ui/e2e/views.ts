@@ -109,12 +109,18 @@ export const VIEWS: View[] = [
       open: (p) => screen(p, name),
     }),
   ),
-  ...['leerlingen', 'groepen', 'gebruikers', 'school'].map((name): View => ({
-    name: `admin-${name}`,
-    user: 'admin',
-    target: 'page',
-    open: (p) => screen(p, name),
-  })),
+  ...['leerlingen', 'groepen', 'gebruikers', 'school', 'gegevens', 'instellingen'].map(
+    (name): View => ({
+      name: `admin-${name}`,
+      user: 'admin',
+      target: 'page',
+      open: async (p) => {
+        // Gegevenscontrole shows the time of the check: a fixed clock keeps the image stable.
+        if (name === 'gegevens') await p.clock.setFixedTime(new Date(2026, 10, 4, 11, 18));
+        await screen(p, name);
+      },
+    }),
+  ),
   ...(
     [
       ['leerling-edit', click('leerlingen', '[data-action="edit-student"]')],

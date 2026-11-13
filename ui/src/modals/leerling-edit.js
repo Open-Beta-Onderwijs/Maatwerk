@@ -12,6 +12,7 @@ import {
 } from '../app.js';
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
 import { studentsFromCsvRows } from '../domain/csv';
+import { CSV_EXAMPLES, csvExampleHtml, wireCsvExample } from '../utils/csv-example';
 import { normalStudentId } from '../domain/v2';
 import {
   leerlingenState,
@@ -214,9 +215,7 @@ export async function openStudentCSVImport() {
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     `,
     body: `
-    <p class="u-mb-12 muted">
-      Verwachte kolommen: <code>Leerlingnummer, Voornaam, Tussenvoegsel, Achternaam, Geslacht, Stamklas, Jaarlaag, Schoolsoort</code>
-    </p>
+    ${csvExampleHtml(CSV_EXAMPLES.students)}
     <div class="form-group">
       <label>CSV-bestand</label>
       <input type="file" id="f-csv-students" accept=".csv,.txt" />
@@ -224,6 +223,7 @@ export async function openStudentCSVImport() {
     <div id="csv-preview"></div>
     `,
     onShow: (el) => {
+      wireCsvExample(el, CSV_EXAMPLES.students, window.maatwerk, toast);
       let parsed = null;
       el.querySelector('#f-csv-students').addEventListener('change', async (e) => {
         const file = e.target.files[0];

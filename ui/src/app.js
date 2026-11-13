@@ -21,7 +21,7 @@ import { renderObservaties } from './screens/observaties.js';
 import { renderRubrics } from './screens/rubrics';
 import { renderOpdrachten } from './screens/opdrachten.js';
 import { openEditor } from './modals/editor.js';
-import { renderGebruikers } from './screens/gebruikers.js';
+import { renderGebruikers } from './screens/gebruikers';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
 import { changePinFlow, renewCodesFlow } from './screens/pin';
@@ -621,8 +621,10 @@ function logOut() {
 }
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
-async function applyWatermerk() {
-  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('afbeeldingen/school-watermerk.svg');
+// The file school.json names (D29: an older folder may have a PNG), else the default name.
+export async function applyWatermerk() {
+  const rel = Store.getSchoolSync()?.watermerk || 'afbeeldingen/school-watermerk.svg';
+  const dataUrl = await window.maatwerk.readPhotoAsDataUrl(rel);
   if (dataUrl) document.documentElement.style.setProperty('--watermerk-url', `url("${dataUrl}")`);
 }
 

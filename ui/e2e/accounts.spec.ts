@@ -205,7 +205,8 @@ test('the admin sets the snapshot interval in Instellingen', async ({ page }) =>
   await pickUser(page, 'admin');
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="instellingen"]').click();
-  await expect(page.locator('.snapshot-list li')).toHaveText(['31-10-2026 08:15']);
+  await expect(page.locator('.snapshot-list .snapshot-date')).toHaveText(['31-10-2026 08:15']);
+  await expect(page.locator('.snapshot-list .snapshot-kind')).toHaveText(['dagelijks']);
   await page.locator('#inst-intervalHours').fill('0');
   await page.locator('#inst-save').click();
   await expect(page.locator('.toast').last()).toContainText('heel getal van 1 tot en met 744');

@@ -19,6 +19,7 @@
 @import './styles/login.css';
 @import './styles/photo-crop.css';
 @import './styles/cards.css';
+@import './styles/beheer.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -553,16 +554,27 @@ body::after {
   background: var(--bg);
   border-right: 1px solid var(--border);
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+.school-logo-wrap > .school-field-label {
+  align-self: flex-start;
 }
 
 .school-logo-area {
   position: relative;
   width: 100%;
+  flex: 1;
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+}
+.school-hint {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .school-logo-img {
@@ -577,18 +589,6 @@ body::after {
   font-style: italic;
   font-size: 13px;
   text-align: center;
-}
-
-.school-logo-edit-btn {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.school-logo-wrap:hover .school-logo-edit-btn {
-  opacity: 1;
 }
 
 /* Right: fields — remaining width */
@@ -665,10 +665,23 @@ body::after {
   font-style: italic;
 }
 
-/* Watermerk preview box */
+/* Watermerk: preview, explanation and button (board 12) */
+.school-watermark-wrap {
+  gap: 14px;
+}
 .school-watermark-preview {
   display: flex;
   align-items: center;
+}
+.school-watermark-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+/* The app inverts the watermark in the dark theme; the preview shows it so. */
+:root[data-theme='dark'] .school-watermark-img {
+  filter: var(--watermark-filter);
 }
 
 .school-watermark-img {
@@ -758,7 +771,8 @@ body::after {
   gap: 4px;
   margin-bottom: 12px;
 }
-.form-group label {
+.form-group label,
+.form-group .form-label {
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
@@ -1634,29 +1648,6 @@ code {
   opacity: 0.6;
 }
 
-/* ── Gebruikers screen ───────────────────────────────────────────────────── */
-.gebruiker-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.gebruiker-card-left {
-  flex-shrink: 0;
-}
-.gebruiker-card-body {
-  flex: 1;
-  min-width: 0;
-}
-.gebruiker-card-name {
-  font-weight: 600;
-}
-.gebruiker-card-vakken {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.gebruiker-card .card-actions {
-  flex-shrink: 0;
-}
 .vak-toggle-group {
   display: flex;
   flex-wrap: wrap;
@@ -2626,10 +2617,7 @@ td.grade-override-stale::after {
 .gegevens {
   max-width: 1100px;
 }
-.gegevens-summary {
-  margin: 16px 0 8px;
-  font-weight: 600;
-}
+
 .gegevens-table {
   width: 100%;
   border-collapse: collapse;
@@ -2698,19 +2686,4 @@ td.grade-override-stale::after {
     font-size: 14pt;
     white-space: pre-wrap;
   }
-}
-.instellingen {
-  max-width: 640px;
-}
-.snapshot-list {
-  columns: 3;
-  font-family: monospace;
-  font-size: 13px;
-}
-.voorzitter-list {
-  max-width: 520px;
-}
-.voorzitter-row {
-  align-items: center;
-  margin-bottom: 8px;
 }

@@ -113,3 +113,66 @@ test('Annuleren saves nothing', async ({ page }) => {
   expect(after.foto).toBe(before.foto);
   expect(await withMock(page, (m) => m.calls.some((c) => c[0] === 'savePhoto'))).toBe(false);
 });
+
+test.describe('Gebruiker bewerken (step 28, spec 4.9)', () => {
+  async function openEdit(page: Page, id: string | null) {
+    await login(page, 'nat', 'admin');
+    await page.locator('.nav-btn[data-screen="gebruikers"]').click();
+    if (id) await page.locator(`[data-action="edit-user"][data-id="${id}"]`).click();
+    else await page.locator('#btn-add-user').click();
+    await expect(page.locator('.dlg .photo-crop')).toBeVisible();
+  }
+
+  test('a colour swatch and a cropped photo are saved with the user', async ({ page }) => {
+    await openEdit(page, TEACHER);
+    // The 12 of board 12, and the fixture teacher's own colour (none of them) first, chosen.
+    await expect(page.locator('.ring-swatch')).toHaveCount(13);
+    await expect(page.getByRole('radio', { name: 'Huidige kleur' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await page.getByRole('radio', { name: 'Paars' }).click();
+    await expect(page.getByRole('radio', { name: 'Paars' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    // Arrow keys move the choice along the swatches.
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('radio', { name: 'Indigo' })).toBeFocused();
+    await page.locator('.photo-crop__file').setInputFiles({
+      name: 'hoog.png',
+      mimeType: 'image/png',
+      buffer: await pngOf(page, 100, 300),
+    });
+    await page.locator('#f-u-save').click();
+    await expect(page.locator('.toast').last()).toContainText('opgeslagen');
+    const user = await readMockJson<{ kleur: string; foto: string }>(
+      page,
+      `gebruikers/${TEACHER}.json`,
+    );
+    expect(user.kleur).toBe('#4F46C8');
+    expect(user.foto).toBe(`afbeeldingen/${TEACHER}.jpg`);
+  });
+
+  test('D28: a new user with a photo gets the photo under its own id', async ({ page }) => {
+    await openEdit(page, null);
+    await page.locator('#f-uvoornaam').fill('Nieuwe');
+    await page.locator('#f-uachter').fill('Collega');
+    await page.locator('.vak-toggle[data-vak="nat"]').click();
+    await page.locator('.photo-crop__file').setInputFiles({
+      name: 'foto.png',
+      mimeType: 'image/png',
+      buffer: await pngOf(page, 300, 200),
+    });
+    await page.locator('#f-u-save').click();
+    await expect(page.locator('.toast').last()).toHaveText('Nieuwe toegevoegd.');
+    // The new user's id from the card's edit button (one file per user, C16).
+    const card = page.locator('.gebruiker-card', { hasText: 'Nieuwe Collega' });
+    const id = await card.locator('[data-action="edit-user"]').getAttribute('data-id');
+    const saved = await readMockJson<{ id: string; foto: string }>(page, `gebruikers/${id}.json`);
+    expect(saved.id).toBe(id);
+    expect(saved.foto).toBe(`afbeeldingen/${id}.jpg`);
+    expect(await withMock(page, (m, p) => m.peek(p) !== null, saved.foto)).toBe(true);
+    await expect(card).toContainText('Nog geen pincode');
+  });
+});

@@ -9,7 +9,7 @@
 
 import type { MaatwerkApi } from '../bridge/api';
 
-type Api = Pick<MaatwerkApi, 'listSnapshots'>;
+type Api = Pick<MaatwerkApi, 'listSnapshots' | 'openPath'>;
 
 export interface SnapshotSettings {
   intervalHours: number;
@@ -79,29 +79,117 @@ export function snapshotLabel(name: string): string {
   return m ? `${m[3]}-${m[2]}-${m[1]} ${m[4]}:${m[5]}` : name;
 }
 
+/** The kind of a kept snapshot (spec 4.9), as maatwerk-core::snapshots::keep chooses them. */
+export type SnapshotKind = 'dagelijks' | 'wekelijks' | 'maandelijks';
+
+function snapshotTime(name: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/.exec(name);
+  return m ? new Date(+m[1]!, +m[2]! - 1, +m[3]!, +m[4]!, +m[5]!) : null;
+}
+
+/** ISO 8601 week as "year-week" (weeks start on Monday; week 1 holds 4 January). */
+export function isoWeek(d: Date): string {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = Date.UTC(t.getUTCFullYear(), 0, 1);
+  const week = Math.ceil(((t.getTime() - yearStart) / 86_400_000 + 1) / 7);
+  return `${t.getUTCFullYear()}-${week}`;
+}
+
+/**
+ * Per snapshot name: dagelijks, wekelijks or maandelijks, the first of these
+ * that keeps it (the newest of each of the last `daily` days, `weekly` ISO
+ * weeks and `monthly` months); null for one kept only as the newest.
+ */
+export function snapshotKinds(
+  names: string[],
+  settings: SnapshotSettings,
+): Map<string, SnapshotKind | null> {
+  const dated = names
+    .map((name) => ({ name, t: snapshotTime(name) }))
+    .filter((s): s is { name: string; t: Date } => s.t !== null)
+    .sort((a, b) => b.t.getTime() - a.t.getTime());
+  const newestPer = (count: number, key: (t: Date) => string) => {
+    const seen = new Set<string>();
+    const keep = new Set<string>();
+    for (const s of dated) {
+      if (seen.size >= count) break;
+      const k = key(s.t);
+      if (!seen.has(k)) {
+        seen.add(k);
+        keep.add(s.name);
+      }
+    }
+    return keep;
+  };
+  const daily = newestPer(settings.daily, (t) => t.toDateString());
+  const weekly = newestPer(settings.weekly, isoWeek);
+  const monthly = newestPer(settings.monthly, (t) => `${t.getFullYear()}-${t.getMonth()}`);
+  return new Map(
+    names.map((n) => [
+      n,
+      daily.has(n)
+        ? 'dagelijks'
+        : weekly.has(n)
+          ? 'wekelijks'
+          : monthly.has(n)
+            ? 'maandelijks'
+            : null,
+    ]),
+  );
+}
+
 interface Store {
   loadInstellingen(): Promise<Record<string, unknown> | null>;
   saveInstellingen(data: Record<string, unknown>, baseRev: number | undefined): Promise<unknown>;
 }
 
-const FIELDS: { key: keyof SnapshotSettings; label: string; hint: string }[] = [
+const FIELDS: { key: keyof SnapshotSettings; label: string; unit: string; hint: string }[] = [
   {
     key: 'intervalHours',
-    label: 'Nieuwe snapshot na (uren)',
+    label: 'Nieuwe snapshot na',
+    unit: 'uur',
     hint: 'De eerste Maatwerk die daarna start, maakt op de achtergrond een snapshot.',
   },
-  { key: 'daily', label: 'Bewaar dagelijkse snapshots (dagen)', hint: '' },
-  { key: 'weekly', label: 'Bewaar wekelijkse snapshots (weken)', hint: '' },
-  { key: 'monthly', label: 'Bewaar maandelijkse snapshots (maanden)', hint: '' },
+  { key: 'daily', label: 'Bewaar dagelijkse', unit: 'dagen', hint: '' },
+  { key: 'weekly', label: 'Bewaar wekelijkse', unit: 'weken', hint: '' },
+  { key: 'monthly', label: 'Bewaar maandelijkse', unit: 'maanden', hint: '' },
 ];
 
-const TIMEOUT_LABEL = 'Tijdslimiet voor het compileren in de editor (seconden)';
+const TIMEOUT_LABEL = 'Tijdslimiet voor het compileren';
 
 function el(tag: string, className = '', content = ''): HTMLElement {
   const node = document.createElement(tag);
   if (className) node.className = className;
   node.textContent = content;
   return node;
+}
+
+/** A labelled number field with its unit inside (board 12). */
+function unitField(
+  id: string,
+  label: string,
+  unit: string,
+  value: number,
+  [min, max]: [number, number],
+  hint: string,
+): { group: HTMLElement; input: HTMLInputElement } {
+  const group = el('div', 'form-group inst-field');
+  const lab = el('label', '', label) as HTMLLabelElement;
+  lab.htmlFor = id;
+  const wrap = el('span', 'unit-input');
+  const input = document.createElement('input');
+  input.id = id;
+  input.type = 'number';
+  input.inputMode = 'numeric';
+  input.min = String(min);
+  input.max = String(max);
+  input.value = String(value);
+  wrap.append(input, el('span', 'unit-input__unit', unit));
+  group.append(lab, wrap);
+  if (hint) group.append(el('span', 'form-hint muted', hint));
+  return { group, input };
 }
 
 /** Renders the tab into `container`. `toast` shows the outcome of a save. */
@@ -120,11 +208,20 @@ export async function renderInstellingen(
   const baseRev = (instellingen?._meta as { rev?: number } | undefined)?.rev;
 
   container.replaceChildren();
+  // "Opslaan" top right of the screen (spec 4.9).
   const header = el('div', 'screen-header');
-  header.append(el('h2', '', 'Instellingen'));
+  const save = el('button', 'btn btn--primary', 'Opslaan') as HTMLButtonElement;
+  save.id = 'inst-save';
+  const headerActions = el('div', 'header-actions');
+  headerActions.append(save);
+  header.append(el('h2', '', 'Instellingen'), headerActions);
+
   const box = el('div', 'instellingen');
-  box.append(el('h3', 'list-section-header', 'Snapshots'));
-  box.append(
+  const left = el('div', 'instellingen-col');
+
+  const snapCard = el('section', 'card inst-card');
+  snapCard.append(
+    el('h3', 'inst-card__title', 'Snapshots'),
     el(
       'p',
       'hint',
@@ -134,62 +231,60 @@ export async function renderInstellingen(
         'versiegeschiedenis van OneDrive.',
     ),
   );
-
+  const grid = el('div', 'inst-grid');
   const inputs = new Map<keyof SnapshotSettings, HTMLInputElement>();
   for (const f of FIELDS) {
-    const group = el('div', 'form-group');
-    const label = el('label', '', f.label) as HTMLLabelElement;
-    label.htmlFor = `inst-${f.key}`;
-    const input = document.createElement('input');
-    input.id = `inst-${f.key}`;
-    input.type = 'number';
-    input.min = String(LIMITS[f.key][0]);
-    input.max = String(LIMITS[f.key][1]);
-    input.value = String(current[f.key]);
-    input.className = 'u-w-110';
+    const { group, input } = unitField(
+      `inst-${f.key}`,
+      f.label,
+      f.unit,
+      current[f.key],
+      LIMITS[f.key],
+      f.hint,
+    );
     inputs.set(f.key, input);
-    group.append(label, input);
-    if (f.hint) group.append(el('span', 'u-d-block form-hint muted', f.hint));
-    box.append(group);
+    grid.append(group);
   }
+  snapCard.append(grid);
 
-  box.append(el('h3', 'list-section-header', 'Editor'));
-  const timeoutGroup = el('div', 'form-group');
-  const timeoutLabel = el('label', '', TIMEOUT_LABEL) as HTMLLabelElement;
-  timeoutLabel.htmlFor = 'inst-compileTimeoutSeconds';
-  const timeoutInput = document.createElement('input');
-  timeoutInput.id = 'inst-compileTimeoutSeconds';
-  timeoutInput.type = 'number';
-  timeoutInput.min = String(COMPILE_TIMEOUT_LIMITS[0]);
-  timeoutInput.max = String(COMPILE_TIMEOUT_LIMITS[1]);
-  timeoutInput.value = String(timeout);
-  timeoutInput.className = 'u-w-110';
-  timeoutGroup.append(
-    timeoutLabel,
-    timeoutInput,
-    el(
-      'span',
-      'u-d-block form-hint muted',
-      'Een opdracht die langer nodig heeft, wordt in de editor afgebroken met een melding. ' +
-        `Standaard ${COMPILE_TIMEOUT_DEFAULT} seconden; geldt voor editors die daarna worden geopend.`,
-    ),
+  const editorCard = el('section', 'card inst-card');
+  const { group: timeoutGroup, input: timeoutInput } = unitField(
+    'inst-compileTimeoutSeconds',
+    TIMEOUT_LABEL,
+    'seconden',
+    timeout,
+    COMPILE_TIMEOUT_LIMITS,
+    'Een opdracht die langer nodig heeft, wordt in de editor afgebroken met een melding. ' +
+      `Standaard ${COMPILE_TIMEOUT_DEFAULT} seconden; geldt voor editors die daarna worden geopend.`,
   );
-  box.append(timeoutGroup);
+  editorCard.append(el('h3', 'inst-card__title', 'Editor'), timeoutGroup);
+  left.append(snapCard, editorCard);
 
-  const save = el('button', 'btn btn--primary', 'Opslaan') as HTMLButtonElement;
-  save.id = 'inst-save';
-  const actions = el('div', 'form-actions');
-  actions.append(save);
-  box.append(actions);
-
-  box.append(el('h3', 'list-section-header', 'Aanwezige snapshots'));
+  // Right: the snapshots there are, with their kind, and "Map openen".
+  const listCard = el('section', 'card inst-card inst-snapshots');
+  const listHead = el('div', 'inst-card__head');
+  const openBtn = el('button', 'btn btn--text btn--sm', 'Map openen') as HTMLButtonElement;
+  openBtn.addEventListener('click', async () => {
+    const problem = await api.openPath('snapshots').catch((e) => String(e));
+    if (problem) toast(`Map openen mislukt: ${problem}`, 'error');
+  });
+  listHead.append(el('h3', 'inst-card__title', 'Aanwezige snapshots'), openBtn);
+  listCard.append(listHead);
   if (snapshots.length) {
+    const kinds = snapshotKinds(snapshots, current);
     const list = el('ul', 'snapshot-list');
-    for (const name of snapshots) list.append(el('li', '', snapshotLabel(name)));
-    box.append(list);
+    for (const name of snapshots) {
+      const li = el('li');
+      li.append(el('span', 'snapshot-date', snapshotLabel(name)));
+      const kind = kinds.get(name);
+      if (kind) li.append(el('span', 'snapshot-kind', kind));
+      list.append(li);
+    }
+    listCard.append(list);
   } else {
-    box.append(el('p', 'hint', 'Nog geen snapshots.'));
+    listCard.append(el('p', 'hint', 'Nog geen snapshots.'));
   }
+  box.append(left, listCard);
   container.append(header, box);
 
   save.addEventListener('click', async () => {
