@@ -101,7 +101,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done   |
 | 25   | Score entry                                                      | M            | 0.16    | done   |
 | 26   | Login and splash                                                 | M            | 0.17    | review |
-| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | todo   |
+| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | review |
 | 28   | Beheer screens                                                   | M            | 0.19    | todo   |
 | 29   | Overviews and profile                                            | L (29a, 29b) | 0.20    | todo   |
 | 30   | Observaties and opdrachten                                       | M            | 0.21    | todo   |

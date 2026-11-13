@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-13 (steps 26-28 in one go; step 26 done) Branch: `step/26-login-splash`
+Last updated: 2026-11-13 (steps 26-28 in one go; steps 26, 27 done) Branch: `step/26-login-splash`
 Last tags: `v0.16.0` (merge `d066a6d`), `step-25` (`0e76028`), `step-24`, `v0.15.0`
 
 ## Current step
@@ -10,7 +10,26 @@ version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-2
 release only at the end. STOPs collected for the report: the visual check of all three steps
 (baselines only after the user saw them) and the card numbers of step 27 (before/after table).
 
-**Next action:** step 27 (Leerlingen and Groepen cards), sub-task 1.
+**Next action:** step 28 (Beheer screens), sub-task 1.
+
+## Step 27 progress (Leerlingen and Groepen cards, 0.18)
+
+1. **Done (`b406765`):** `domain/cards.ts` (card numbers from the core's `yearAverage`,
+   `seAverage`, `trend`, `statsOfAverages`; tested), `screens/cards/card-html.ts` (markup, trend
+   arrow; tested), `screens/cards/student-grades.ts` (fills the grades after the cards, batched,
+   swaps in sync via `startTime = 0`), `screens/leerlingen.ts` and `screens/groepen.ts` (R-05,
+   from JS), `styles/cards.css`. V-02: separators in the group overview header (quirk U18
+   closed). e2e `cards.spec.ts` (4). Before/after on the fixture:
+   `docs/phase-2/step-27-card-numbers.md` (**STOP: the user's OK before the merge**).
+2. **Done:** version 0.18.0.
+
+**Choices made without asking (for the report):** a bar per test is its best attempt, in
+volgnummer order, a diagnostic test as a grey bar; "Nog geen cijfers" when there is no counted
+grade (also when only a diagnostic test has one); the onvoldoende line of an upper-school group
+counts the year averages (board 1 variant B); a group without a docent says "Geen docent";
+the admin also gets group cards with numbers (spec 4.9: only the students are a plain list); the
+student card shows the number, not the gender any more; cards are 66 px high (fixed, so the grades
+filling in later never move the list); the swap runs on all cards from time 0 (in sync).
 
 ## Step 26 progress (Login and splash, 0.17)
 
