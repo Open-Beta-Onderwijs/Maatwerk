@@ -7,9 +7,10 @@
  */
 
 // ── Screen imports ────────────────────────────────────────────────────────────
-import { renderStartup } from './screens/startup.js';
+import { renderStartup } from './screens/login/login';
 import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderMigration } from './screens/migration';
+import { hideSplash, setSplashStatus } from './shell/splash';
 import { watchTopbar } from './shell/topbar-fit';
 import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
@@ -777,7 +778,9 @@ async function init() {
   const container = document.getElementById('screen-startup');
   let status;
   try {
+    setSplashStatus('Gedeelde map openen…');
     status = await window.maatwerk.dataFolderStatus();
+    setSplashStatus('Gegevens laden…');
     if (!status.error) await Store.preload();
   } catch (e) {
     status = { dataDir: status?.dataDir ?? '', source: status?.source, error: asFolderError(e) };
@@ -801,7 +804,14 @@ async function init() {
   if (status.readOnly) noteReadOnly();
   applyWatermerk();
   initSelects();
+  setSplashStatus('Bijna klaar…');
+  // The login screen removes the splash once its vak tiles are there.
+  loginShown = true;
   navigateTo('startup');
 }
 
-init();
+// The splash (F-06) stays until the first screen is there, whatever it is.
+let loginShown = false;
+init().finally(() => {
+  if (!loginShown) hideSplash();
+});

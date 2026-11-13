@@ -1,0 +1,114 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Splash (F-06, design spec 4.1, board 6): shown while the app loads, above
+   everything, removed by shell/splash.ts. Part of the stylesheet linked in
+   <head>, so it paints before the JS bundle runs. */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  background: var(--bg);
+  color: var(--brand);
+  transition: opacity 0.25s ease;
+}
+
+/* Dark theme (dev builds only before login; board 6): light ink. */
+:root[data-theme='dark'] .splash {
+  color: var(--text);
+}
+
+.splash--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-mark {
+  width: min(520px, 70vw);
+  height: auto;
+  animation: splash-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes splash-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.splash-load {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.splash-bar {
+  width: 220px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.splash-bar > span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  animation: splash-bar 1.4s ease-in-out infinite;
+}
+
+@keyframes splash-bar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.splash-status {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.splash-version {
+  position: absolute;
+  bottom: 24px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-mark {
+    animation: splash-fade 0.4s ease both;
+  }
+
+  .splash-bar > span {
+    width: 100%;
+    animation: splash-pulse 1.6s ease-in-out infinite;
+  }
+}
+
+@keyframes splash-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes splash-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}

@@ -23,7 +23,7 @@ import {
   studentIdOf,
   typeInto,
 } from './grid-driver';
-import { TEACHER, YEAR, enterPin, logout, readMockJson, withMock } from './helpers';
+import { TEACHER, YEAR, enterPin, logout, readMockJson, withMock, chooseVak } from './helpers';
 
 // Column indices. Lege toets: 3 questions, no observaties.
 const E = { q1: 2, q2: 3, q3: 4, totaal: 6, cijfer: 7, columns: 13 };
@@ -513,7 +513,7 @@ test.describe('undo, saving, colleagues', () => {
     // Log in to another subject while the saves are still queued.
     await page.locator('.dlg-close').click();
     await logout(page);
-    await page.locator('.subject-card[data-subject="schk"]').click();
+    await chooseVak(page, 'schk');
     await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
     await enterPin(page);
     await expect

@@ -30,8 +30,11 @@ export interface AvatarUser {
   isAdmin?: boolean;
 }
 
-/** Sizes in px used by the design: presence 24, notices 30, top bar 38, menu 40, lists 56. */
-export type AvatarSize = 24 | 30 | 38 | 40 | 56;
+/**
+ * Sizes in px used by the design: presence 24, notices 30, top bar 38, menu 40,
+ * lists 56, login 80 and the chosen user at login 152 (spec 4.2).
+ */
+export type AvatarSize = 24 | 30 | 38 | 40 | 56 | 80 | 152;
 
 export interface AvatarOptions {
   size: AvatarSize;

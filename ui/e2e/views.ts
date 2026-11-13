@@ -70,6 +70,37 @@ export const VIEWS: View[] = [
       await p.locator('.subject-card[data-subject="nat"]').click();
     },
   },
+  {
+    // The splash alone (F-06): no script runs, as before the bundle loads.
+    name: 'splash',
+    user: 'none',
+    target: 'page',
+    open: async (p) => {
+      await p.route('**/*.js', (r) => r.abort());
+      await p.goto('/');
+      await p.locator('#splash').waitFor();
+    },
+  },
+  {
+    name: 'login-start',
+    user: 'none',
+    target: 'page',
+    open: async (p) => {
+      await p.goto('/');
+      await p.locator('.login[data-stage="start"]').waitFor();
+    },
+  },
+  {
+    name: 'login-pin',
+    user: 'none',
+    target: 'page',
+    open: async (p) => {
+      await p.goto('/');
+      await p.locator('.subject-card[data-subject="nat"]').click();
+      await p.locator('.user-badge[data-user-id="admin"]').click();
+      await p.locator('#pin-new').waitFor();
+    },
+  },
   ...['leerlingen', 'groepen', 'toetsen', 'rubrics', 'observaties', 'opdrachten'].map(
     (name): View => ({
       name: `screen-${name}`,

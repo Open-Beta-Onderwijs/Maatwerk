@@ -24,7 +24,16 @@ try {
 // Tauri expects a fixed dev port; see src-tauri/tauri.conf.json (devUrl).
 export default defineConfig({
   clearScreen: false,
-  plugins: [gradesWasm(), mockFixtures(), mockCsp()],
+  plugins: [
+    gradesWasm(),
+    mockFixtures(),
+    mockCsp(),
+    // The splash in index.html shows the version before any script runs (F-06).
+    {
+      name: 'maatwerk-version-html',
+      transformIndexHtml: (html) => html.replaceAll('%MAATWERK_VERSION%', version),
+    },
+  ],
   define: {
     __MAATWERK_VERSION__: JSON.stringify(version),
     __MAATWERK_BUILD__: JSON.stringify(build),

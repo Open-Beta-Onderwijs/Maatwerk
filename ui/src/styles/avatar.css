@@ -40,6 +40,14 @@
   --av: 56px;
   border-width: 3px;
 }
+.avatar--80 {
+  --av: 80px;
+  border-width: 3px;
+}
+.avatar--152 {
+  --av: 152px;
+  border-width: 5px;
+}
 .avatar--round {
   border-radius: 50%;
 }

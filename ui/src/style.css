@@ -15,6 +15,8 @@
 @import './styles/forms.css';
 @import './styles/render-warnings.css';
 @import './styles/avatar.css';
+@import './styles/splash.css';
+@import './styles/login.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -1583,48 +1585,6 @@ code {
   flex-wrap: wrap;
 }
 
-/* ── Startup screen ──────────────────────────────────────────────────────── */
-.startup-layout {
-  display: flex;
-  min-height: calc(100vh - 50px - 48px);
-}
-.startup-sidebar {
-  width: 170px;
-  flex-shrink: 0;
-  padding: 28px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-right: 1px solid var(--border);
-}
-.startup-sidebar-hint {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-.startup-main {
-  flex: 1;
-  padding: 32px 36px;
-}
-.startup-about-link {
-  margin-top: auto;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  font: inherit;
-  font-size: 12px;
-  color: var(--muted);
-  text-align: left;
-  cursor: pointer;
-}
-.startup-about-link:hover {
-  color: var(--text);
-  text-decoration: underline;
-}
-
 /* ── Over Maatwerk ───────────────────────────────────────────────────────── */
 .about-modal h3 {
   font-size: 17px;
@@ -1656,131 +1616,6 @@ code {
   font-size: 11px;
   white-space: pre-wrap;
 }
-.startup-main-hint {
-  font-size: 15px;
-  color: var(--muted);
-  margin-bottom: 20px;
-}
-.startup-main-hint--empty {
-  margin-top: 80px;
-  text-align: center;
-}
-.startup-hint {
-  font-size: 16px;
-  color: var(--muted);
-}
-.subject-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 200px);
-  gap: 16px;
-  margin-top: 12px;
-}
-.subject-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 100px;
-  border-radius: var(--r-btn);
-  border: 2px solid var(--border);
-  background: var(--surface);
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s,
-    transform 0.1s;
-  box-shadow: var(--shadow-card);
-}
-.subject-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
-}
-.subject-emoji {
-  font-size: 28px;
-  line-height: 1;
-}
-.subject-label {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
-}
-.startup-sidebar .subject-card {
-  height: 72px;
-  font-size: 14px;
-  gap: 4px;
-}
-.startup-sidebar .subject-emoji {
-  font-size: 20px;
-}
-.startup-sidebar .subject-label {
-  font-size: 13px;
-}
-.subject-card.selected {
-  border-color: var(--accent);
-  background: var(--accent);
-  box-shadow: none;
-}
-.subject-card.selected .subject-label,
-.subject-card.selected .subject-emoji {
-  color: var(--on-accent);
-  filter: none;
-}
-.subject-card.dimmed {
-  opacity: 0.35;
-  transform: none !important;
-  box-shadow: none !important;
-  border-color: var(--border) !important;
-}
-
-/* ── User badge grid ─────────────────────────────────────────────────────── */
-.user-badge-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
-}
-.badge-separator {
-  width: 100%;
-  height: 1px;
-  background: var(--border);
-  margin: 4px 0;
-}
-
-/* ── User badge ──────────────────────────────────────────────────────────── */
-.user-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 80px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.user-badge .avatar {
-  transition: transform 0.1s;
-}
-.user-badge:hover .avatar {
-  transform: scale(1.1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .user-badge .avatar {
-    transition: none;
-  }
-}
-.badge-name {
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-align: center;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ── Generic section header in card lists ────────────────────────────────── */
 .list-section-header {
   font-size: 0.75rem;
@@ -2848,10 +2683,6 @@ td.grade-override-stale::after {
   gap: 8px;
   align-items: center;
   margin: 8px 0;
-}
-.badge-voorzitter-label {
-  font-size: 11px;
-  color: var(--muted);
 }
 #print-sheet {
   display: none;

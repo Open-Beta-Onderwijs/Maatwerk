@@ -15,12 +15,13 @@ import {
   readMockJson,
   watchErrors,
   withMock,
+  chooseVak,
 } from './helpers';
 
 type User = { pinHash?: string; recoveryCodeHashes?: string[]; _meta: { rev: number } };
 
 async function pickUser(page: Page, userId: string, subject = 'nat') {
-  await page.locator(`.subject-card[data-subject="${subject}"]`).click();
+  await chooseVak(page, subject);
   await page.locator(`.user-badge[data-user-id="${userId}"]`).click();
 }
 
@@ -99,7 +100,7 @@ test('the admin gets recovery codes once and can log in with one', async ({ page
   await page.locator('#pin-code').fill(first.replace('-', '').toLowerCase());
   await page.locator('#pin-new').fill('24680');
   await page.locator('#pin-repeat').fill('24680');
-  await page.locator('#pin-ok').click();
+  await page.locator('#pin-recover-ok').click();
   await expect(page.locator('#user-badge-btn')).toBeVisible();
   const admin = await readMockJson<User>(page, 'gebruikers/admin.json');
   expect(admin.pinHash).toBe('mock$24680');
@@ -167,11 +168,13 @@ test('a sectievoorzitter edits only the composition and teachers of the vak grou
 
   // Through the sectievoorzitter badge (same PIN): edit button, locked fields.
   await logout(page);
-  await page.locator('.subject-card[data-subject="nat"]').click();
+  await chooseVak(page, 'nat');
   const badge = page.locator(`.badge-voorzitter[data-voorzitter-id="${TEACHER}"]`);
-  await expect(badge).toContainText('Sectievoorzitter');
+  await expect(page.locator('.login-group[data-role="voorzitter"] h2')).toHaveText(
+    'SECTIEVOORZITTER',
+  );
   await badge.click();
-  await expect(page.locator('.dlg-subtitle')).toHaveText('Sectievoorzitter Natuurkunde');
+  await expect(page.locator('.login-pin-role')).toHaveText('Sectievoorzitter · Natuurkunde');
   await enterPin(page);
   await page.locator('.nav-btn[data-screen="groepen"]').click();
   const group = `3a-nat-${YEAR}`;
@@ -190,7 +193,7 @@ test('a sectievoorzitter edits only the composition and teachers of the vak grou
   expect(saved._meta.updatedBy).toBe(TEACHER);
   // Not the schk groups (another vak).
   await logout(page);
-  await page.locator('.subject-card[data-subject="schk"]').click();
+  await chooseVak(page, 'schk');
   await expect(page.locator('.badge-voorzitter')).toHaveCount(0);
 });
 

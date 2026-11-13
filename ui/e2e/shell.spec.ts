@@ -14,6 +14,7 @@ import {
   readMockJson,
   seedFiles,
   withMock,
+  chooseVak,
 } from './helpers';
 import { EXAMS, openGrid, select } from './grid-driver';
 
@@ -108,10 +109,10 @@ test.describe('avatar (B-04, B-08)', () => {
   // The fixture's nat teacher has a photo (afbeeldingen/...); the biology teacher does not.
   test('the same photo on the login screen, in the top bar and in the editor', async ({ page }) => {
     await page.goto('/');
-    await page.locator('.subject-card[data-subject="nat"]').click();
+    await chooseVak(page, 'nat');
     const loginBadge = page.locator(`.user-badge[data-user-id="${TEACHER}"] .avatar`);
     await expect(loginBadge.locator('img.avatar-photo')).toBeVisible();
-    await expect(loginBadge).toHaveClass(/avatar--56/);
+    await expect(loginBadge).toHaveClass(/avatar--80/);
     await expect(loginBadge).toHaveClass(/avatar--round/);
 
     await login(page);
@@ -130,7 +131,7 @@ test.describe('avatar (B-04, B-08)', () => {
 
   test('without a photo: initials; the admin is square', async ({ page }) => {
     await page.goto('/');
-    await page.locator('.subject-card[data-subject="bio"]').click();
+    await chooseVak(page, 'bio');
     const avatars = page.locator('.user-badge .avatar');
     await expect(avatars.first()).toBeVisible();
     const admin = page.locator('.user-badge[data-user-id="admin"] .avatar');
@@ -193,7 +194,7 @@ test.describe('user menu (F-17) and look per user (F-18, F-21)', () => {
     // The login screen is in the base look again.
     await expect(html(page)).toHaveAttribute('data-theme', 'light');
     await expect(html(page)).toHaveAttribute('data-accent', 'blauw');
-    await page.locator('.subject-card[data-subject="nat"]').click();
+    await chooseVak(page, 'nat');
     await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
     await enterPin(page);
     await expect(page.locator('#topbar')).toBeVisible();
@@ -219,7 +220,7 @@ test.describe('user menu (F-17) and look per user (F-18, F-21)', () => {
     });
     await page.goto('/');
     await expect(html(page)).toHaveAttribute('data-theme', 'light'); // before login
-    await page.locator('.subject-card[data-subject="nat"]').click();
+    await chooseVak(page, 'nat');
     await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
     await enterPin(page);
     await expect(html(page)).toHaveAttribute('data-theme', 'dark');
@@ -309,7 +310,7 @@ test.describe('read-only while running (review 15 M1, M2)', () => {
     await seedFiles(page, { 'school.json': await schoolWith(page, '99.0.0') });
     await page.goto('/');
     await expect(page.locator('#read-only-banner')).toBeVisible();
-    await page.locator('.subject-card[data-subject="nat"]').click();
+    await chooseVak(page, 'nat');
     await page.locator('.user-badge[data-user-id="admin"]').click();
     // The admin has no PIN in the fixture: choosing one is a write, refused with the clear text.
     await page.locator('#pin-new').fill('24680');
