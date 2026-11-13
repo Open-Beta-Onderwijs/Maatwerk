@@ -16,10 +16,12 @@ login/cards/beheer/photo/shell 36/36 after the crop-test fix. Visual (light): 14
 the 0.16 baselines, 39 unchanged; 6 new views. Review `docs/reviews/step-26-28.md` (0/2/8/7): M1,
 M2, m1, m3, m4, m5 fixed (`494dabf`), the rest in `docs/backlog.md`.
 
-**Next action (STOP, the user):** the visual check of steps 26-28 (before/after page shown to the
-user) and the OK on `docs/phase-2/step-27-card-numbers.md`. Then: update the local visual
-baselines, push the branch, CI and its visual baselines, PR, merge, tags `step-26`, `step-27`,
-`step-28`, `v0.19.0`.
+**User (2026-11-13):** visual check of steps 26-28 OK and `docs/phase-2/step-27-card-numbers.md`
+OK. CI baselines from run `43420312853` (`ed1ffd4`); confirming run `43422907768` green on all
+three OSes. Local visual baselines updated.
+
+**Next action:** PR, merge, tags `step-26` (`d8c741c`), `step-27` (`33188e8`), `step-28`,
+`v0.19.0` (merge commit).
 
 ## Step 28 progress (Beheer screens, 0.19)
 
