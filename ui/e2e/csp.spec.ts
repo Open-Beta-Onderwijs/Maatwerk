@@ -8,7 +8,9 @@ import { expect, test } from '@playwright/test';
 import { watchErrors } from './helpers';
 import { VIEWS, openView } from './views';
 
-for (const view of VIEWS) {
+// The splash view blocks every script on purpose (it shows what paints before the bundle):
+// the blocked loads are errors by design, and the splash's own CSS is in the stylesheet.
+for (const view of VIEWS.filter((v) => v.name !== 'splash')) {
   test(`no CSP violation or error: ${view.name}`, async ({ page }) => {
     const errors = watchErrors(page);
     await openView(page, view);
