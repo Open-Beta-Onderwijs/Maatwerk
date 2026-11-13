@@ -1,7 +1,8 @@
 # State
 
-Last updated: 2026-11-13 (steps 26-28 in one go; all three done, gate and review next) Branch: `step/26-login-splash`
-Last tags: `v0.16.0` (merge `d066a6d`), `step-25` (`0e76028`), `step-24`, `v0.15.0`
+Last updated: 2026-11-13 (steps 26-28 merged, PR #17) Branch: `main`
+Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
+(`d8c741c`), `v0.16.0`, `step-25`
 
 ## Current step
 
@@ -20,8 +21,12 @@ M2, m1, m3, m4, m5 fixed (`494dabf`), the rest in `docs/backlog.md`.
 OK. CI baselines from run `43420312853` (`ed1ffd4`); confirming run `43422907768` green on all
 three OSes. Local visual baselines updated.
 
-**Next action:** PR, merge, tags `step-26` (`d8c741c`), `step-27` (`33188e8`), `step-28`,
-`v0.19.0` (merge commit).
+**Steps 26-28 done and merged (2026-11-13):** PR #17 merged into `main` (`a32e7fc`), PR CI
+`43431855294` and `43431890855` green on all three OSes. Tags `step-26`, `step-27`, `step-28`,
+`v0.19.0` (merge commit), pushed.
+
+**Next action:** the GitHub release 0.19.0 (`docs/release.md` section 4) when the user asks; then
+the next step of PLAN-2.
 
 ## Step 28 progress (Beheer screens, 0.19)
 
