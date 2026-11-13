@@ -165,6 +165,11 @@ export const commands = {
 	 */
 	openPath: (target: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_path", { target })),
 	/**
+	 *  "Map openen" (step 28): shows a folder of the data folder in the file manager. Folders only,
+	 *  path-checked in the core (`outputs::openable_folder`).
+	 */
+	openDataFolder: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_data_folder", { relPath })),
+	/**
 	 *  "Afdrukken": copies the output into `rapporten/<schooljaar>/` under a descriptive name, opens
 	 *  the copy with the OS and returns its data-relative path. If only the opening fails, the error
 	 *  says where the copy was saved.

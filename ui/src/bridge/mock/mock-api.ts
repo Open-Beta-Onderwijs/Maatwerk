@@ -54,7 +54,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.16.0';
+export const MOCK_APP_VERSION = '0.19.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -771,6 +771,13 @@ export class MockApi implements MaatwerkApi {
 
   async openPath(target: string): Promise<string> {
     this.record('openPath', [target]);
+    return '';
+  }
+
+  async openDataFolder(relPath: string): Promise<string> {
+    this.record('openDataFolder', [relPath]);
+    // As maatwerk-core::outputs::openable_folder: folders inside the data folder only.
+    if (relPath.split('/').includes('..') || /^([a-z]:|\/)/i.test(relPath)) return 'Ongeldig pad.';
     return '';
   }
 

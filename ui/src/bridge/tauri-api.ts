@@ -303,6 +303,10 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       const r = await c.openPath(target);
       return r.status === 'ok' ? '' : message(r.error);
     },
+    async openDataFolder(relPath) {
+      const r = await c.openDataFolder(relPath);
+      return r.status === 'ok' ? '' : message(r.error);
+    },
     printPdf: (pdfPath, name) => orThrow(c.printPdf(pdfPath, name)),
     async setWatchYear(year) {
       const r = await c.setWatchYear(year);

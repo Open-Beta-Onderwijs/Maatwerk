@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 import {
   SNAPSHOT_DEFAULTS,
   compileTimeoutSeconds,
+  isoWeek,
   settingProblem,
+  snapshotKinds,
   snapshotLabel,
   snapshotSettings,
 } from './instellingen';
+import { checkedLine, folderOf } from './gegevens';
 
 describe('Instellingen (Step 7b)', () => {
   it('reads the snapshot settings like maatwerk-core, with defaults', () => {
@@ -45,5 +48,45 @@ describe('Instellingen (Step 7b)', () => {
     expect(snapshotLabel('2026-10-31 0815.zip')).toBe('31-10-2026 08:15');
     expect(snapshotLabel('2026-10-31 0815 (2).zip')).toBe('31-10-2026 08:15');
     expect(snapshotLabel('raar.zip')).toBe('raar.zip');
+  });
+});
+
+describe('Aanwezige snapshots (step 28, spec 4.9)', () => {
+  it('ISO weeks start on Monday; 1 January can be in the last week of the year before', () => {
+    expect(isoWeek(new Date(2026, 10, 2))).toBe('2026-45'); // Monday
+    expect(isoWeek(new Date(2026, 10, 8))).toBe('2026-45'); // Sunday
+    expect(isoWeek(new Date(2027, 0, 1))).toBe('2026-53');
+  });
+
+  it('names each kept snapshot by the first rule that keeps it, as maatwerk-core::keep', () => {
+    const names = [
+      '2026-11-04 1118.zip',
+      '2026-11-04 0900.zip', // same day, older: only kept by nothing
+      '2026-11-03 0842.zip',
+      '2026-10-28 0905.zip',
+      '2026-09-15 0812.zip',
+    ];
+    const kinds = snapshotKinds(names, { intervalHours: 24, daily: 2, weekly: 2, monthly: 3 });
+    expect([...kinds.values()]).toEqual([
+      'dagelijks',
+      null,
+      'dagelijks',
+      'wekelijks',
+      'maandelijks',
+    ]);
+  });
+});
+
+describe('Gegevenscontrole cards (step 28)', () => {
+  it('opens the folder of a finding', () => {
+    expect(folderOf('2026-2027/scores/nat/106052.json')).toBe('2026-2027/scores/nat');
+    expect(folderOf('school.json')).toBe('');
+  });
+
+  it('says how many files were checked and when', () => {
+    expect(checkedLine(238, new Date(2026, 10, 4, 11, 8))).toBe(
+      '238 bestanden gecontroleerd · vandaag om 11:08',
+    );
+    expect(checkedLine(1, new Date(2026, 10, 4, 9, 30))).toContain('1 bestand gecontroleerd');
   });
 });

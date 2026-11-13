@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// PIN login (Step 7b): the dialogs on the login screen (first PIN, login, the
-// admin's "Pincode vergeten" with a recovery code), the recovery codes shown
-// once, and the PIN actions of the user menu (Pincode wijzigen, Nieuwe
-// herstelcodes; components/user-menu.ts). PINs are checked in Rust (maatwerk-core::auth); the
+// PIN dialogs (Step 7b): the admin's "Pincode vergeten" with a recovery code,
+// the recovery codes shown once, and the PIN actions of the user menu (Pincode
+// wijzigen, Nieuwe herstelcodes; components/user-menu.ts). The PIN entry itself
+// is inline on the login screen (screens/login/pin-panel.ts, V-04). PINs are checked in Rust (maatwerk-core::auth); the
 // UI only shows the outcome. The PIN guards the shared PC, not the files.
 
 import {
@@ -18,7 +18,6 @@ import { setBusy } from '../components/button';
 import { READ_ONLY_SAVE_TEXT, isReadOnlyError } from '../services/read-only';
 import type { Dialog, DialogOptions } from '../components/dialog';
 import {
-  fullUserName,
   newPinProblem,
   pinCheckMessage,
   recoveryCodesText,
@@ -32,7 +31,7 @@ const guardModalClose = guardModalCloseJs as (
   text?: { message: string; title: string; okLabel: string } | null,
 ) => void;
 
-type Api = Pick<
+export type PinApi = Pick<
   MaatwerkApi,
   | 'verifyPin'
   | 'setFirstPin'
@@ -64,7 +63,12 @@ function value(content: HTMLElement, id: string): string {
  * Disables `button` until a wait is over, counting down in the error box.
  * Returns at once when there is nothing to wait for.
  */
-function holdOff(button: HTMLButtonElement, box: HTMLElement, check: PinCheck, what: string) {
+export function holdOff(
+  button: HTMLButtonElement,
+  box: HTMLElement,
+  check: PinCheck,
+  what: string,
+) {
   box.textContent = pinCheckMessage(check, what);
   if (check.retryAfterMs <= 0) return;
   button.disabled = true;
@@ -86,7 +90,7 @@ function holdOff(button: HTMLButtonElement, box: HTMLElement, check: PinCheck, w
 }
 
 /** The Dutch text for a failed PIN action (the backend's messages are Dutch, except read-only). */
-function errorMessage(e: unknown): string {
+export function errorMessage(e: unknown): string {
   if (isReadOnlyError(e)) return READ_ONLY_SAVE_TEXT;
   return e instanceof Error ? e.message : String(e);
 }
@@ -160,34 +164,8 @@ function modal<T>(
 
 const ACTIONS_CANCEL = `<button class="btn btn--secondary" data-close-modal="1">Annuleren</button>`;
 
-/** First login: the user chooses a PIN. Resolves with the check (user written, codes). */
-function setFirstPinDialog(user: PinUser, api: Api, roleLabel: string): Promise<PinCheck | null> {
-  const spec = {
-    title: `Welkom, ${user.voornaam}`,
-    subtitle: roleLabel,
-    body: `
-    <p>Kies een pincode van 4 tot 8 cijfers. Daarmee log je voortaan in.</p>
-    ${pinInput('pin-new', 'Nieuwe pincode', true)}
-    ${pinInput('pin-repeat', 'Herhaal de pincode')}
-    <p class="pin-error" role="alert"></p>`,
-    footer: `<button class="btn btn--primary" id="pin-ok">Pincode instellen</button>${ACTIONS_CANCEL}`,
-  };
-  return modal<PinCheck>(spec, (content, finish) => {
-    const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
-    onSubmit(content, ok, async () => {
-      const pin = value(content, 'pin-new');
-      const problem = newPinProblem(pin, value(content, 'pin-repeat'));
-      if (problem) {
-        errorBox(content).textContent = problem;
-        return;
-      }
-      finish(await api.setFirstPin(user.id, pin));
-    });
-  });
-}
-
 /** "Pincode vergeten?" for the admin: a recovery code and a new PIN. */
-function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
+export function recoverDialog(user: PinUser, api: PinApi): Promise<PinCheck | null> {
   const spec = {
     title: 'Pincode vergeten',
     body: `
@@ -201,10 +179,10 @@ function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
     ${pinInput('pin-repeat', 'Herhaal de pincode')}
     <p class="pin-error" role="alert"></p>
     <p class="hint">Geen codes meer? Zie "Pincode beheerder kwijt" in het draaiboek.</p>`,
-    footer: `<button class="btn btn--primary" id="pin-ok">Inloggen</button>${ACTIONS_CANCEL}`,
+    footer: `<button class="btn btn--primary" id="pin-recover-ok">Inloggen</button>${ACTIONS_CANCEL}`,
   };
   return modal<PinCheck>(spec, (content, finish) => {
-    const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
+    const ok = content.querySelector('#pin-recover-ok') as HTMLButtonElement;
     onSubmit(content, ok, async () => {
       const pin = value(content, 'pin-new');
       const problem = newPinProblem(pin, value(content, 'pin-repeat'));
@@ -219,44 +197,8 @@ function recoverDialog(user: PinUser, api: Api): Promise<PinCheck | null> {
   });
 }
 
-type LoginResult = { check: PinCheck } | { forgot: true };
-
-function loginDialog(user: PinUser, api: Api, roleLabel: string): Promise<LoginResult | null> {
-  // The admin's "Pincode vergeten?" is a navigational action: footer, left.
-  const forgot = user.isAdmin
-    ? `<button type="button" class="btn btn--text" id="pin-forgot" data-align="start">Pincode vergeten?</button>`
-    : '';
-  const hint = user.isAdmin
-    ? ''
-    : '<p class="hint">Pincode vergeten? Vraag de beheerder om je pincode te resetten.</p>';
-  const spec = {
-    title: fullUserName(user),
-    subtitle: roleLabel,
-    body: `
-    ${pinInput('pin-input', 'Pincode', true)}
-    <p class="pin-error" role="alert"></p>
-    ${hint}`,
-    footer: `${forgot}<button class="btn btn--primary" id="pin-ok">Inloggen</button>${ACTIONS_CANCEL}`,
-  };
-  return modal<LoginResult>(spec, (content, finish) => {
-    const ok = content.querySelector('#pin-ok') as HTMLButtonElement;
-    content.querySelector('#pin-forgot')?.addEventListener('click', () => finish({ forgot: true }));
-    onSubmit(content, ok, async () => {
-      const input = content.querySelector('#pin-input') as HTMLInputElement;
-      const check = await api.verifyPin(user.id, input.value.trim());
-      if (check.outcome === 'ok' || check.outcome === 'noPin') {
-        finish({ check });
-        return;
-      }
-      input.value = '';
-      input.focus();
-      holdOff(ok, errorBox(content), check, 'pincode');
-    });
-  });
-}
-
 /** Shows new recovery codes once; resolves when the admin confirms they are kept. */
-export function showRecoveryCodes(user: PinUser, codes: string[], api: Api): Promise<void> {
+export function showRecoveryCodes(user: PinUser, codes: string[], api: PinApi): Promise<void> {
   const text = recoveryCodesText(user, codes, new Date());
   const body = `
     <p>Met deze codes kom je erin als je je pincode vergeten bent. Elke code werkt één keer.
@@ -316,56 +258,7 @@ function printText(text: string): void {
   }
 }
 
-/**
- * The login after a badge click: the PIN, or a new one at the first login.
- * Resolves with the user record to log in with (fresh from the backend when it
- * changed), or null when cancelled. `roleLabel`: e.g. "Sectievoorzitter Natuurkunde".
- */
-export async function pinLogin<U extends PinUser>(
-  user: U,
-  api: Api,
-  roleLabel = '',
-): Promise<U | null> {
-  let hasPin = Boolean(user.pinHash);
-  for (;;) {
-    if (!hasPin) {
-      let check: PinCheck | null;
-      try {
-        check = await setFirstPinDialog(user, api, roleLabel);
-      } catch (e) {
-        toast(errorMessage(e), 'error');
-        // Set on another PC meanwhile: log in with that PIN instead. Other errors end here.
-        if (String((e as Error)?.message).includes('al een pincode')) {
-          hasPin = true;
-          continue;
-        }
-        return null;
-      }
-      if (!check) return null;
-      const fresh = (check.user ?? user) as U;
-      if (check.recoveryCodes) await showRecoveryCodes(fresh, check.recoveryCodes, api);
-      return fresh;
-    }
-    const result = await loginDialog(user, api, roleLabel);
-    if (!result) return null;
-    if ('forgot' in result) {
-      const check = await recoverDialog(user, api);
-      if (check) {
-        toast('Nieuwe pincode ingesteld.', 'success');
-        return (check.user ?? user) as U;
-      }
-      continue;
-    }
-    if (result.check.outcome === 'noPin') {
-      // Reset by the admin meanwhile.
-      hasPin = false;
-      continue;
-    }
-    return user;
-  }
-}
-
-function changePinDialog(api: Api): Promise<PinCheck | null> {
+function changePinDialog(api: PinApi): Promise<PinCheck | null> {
   const spec = {
     title: 'Pincode wijzigen',
     body: `
@@ -391,7 +284,7 @@ function changePinDialog(api: Api): Promise<PinCheck | null> {
   });
 }
 
-function renewCodesDialog(api: Api): Promise<PinCheck | null> {
+function renewCodesDialog(api: PinApi): Promise<PinCheck | null> {
   const spec = {
     title: 'Nieuwe herstelcodes',
     body: `
@@ -412,7 +305,7 @@ function renewCodesDialog(api: Api): Promise<PinCheck | null> {
 
 /** "Pincode wijzigen" in the user menu (F-17); `onUserChanged` gets the record as written. */
 export async function changePinFlow(
-  api: Api,
+  api: PinApi,
   onUserChanged: (user: unknown) => void,
 ): Promise<void> {
   const check = await changePinDialog(api);
@@ -425,7 +318,7 @@ export async function changePinFlow(
 /** "Nieuwe herstelcodes" in the admin's user menu. */
 export async function renewCodesFlow(
   user: PinUser,
-  api: Api,
+  api: PinApi,
   onUserChanged: (user: unknown) => void,
 ): Promise<void> {
   const check = await renewCodesDialog(api);

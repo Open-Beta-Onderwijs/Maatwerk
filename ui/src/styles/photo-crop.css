@@ -1,0 +1,128 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Profile photo with a square crop (F-19, spec 4.9, board 12;
+   components/photo-crop.ts). Positions of the image and the square are set
+   through the CSSOM. */
+
+.photo-crop {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.photo-crop__area {
+  position: relative;
+  width: 300px;
+  height: 190px;
+  flex: none;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--surface-2);
+  user-select: none;
+  touch-action: none;
+}
+
+.photo-crop__img {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+
+/* The square; its huge shadow dims everything outside it. */
+.photo-crop__frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #ffffff;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 0 0 9999px rgba(16, 24, 40, 0.45);
+  cursor: move;
+}
+.photo-crop__frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px dashed rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+}
+.photo-crop__frame:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.photo-crop__empty {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.photo-crop--empty .photo-crop__empty {
+  display: flex;
+}
+.photo-crop--empty .photo-crop__frame {
+  display: none;
+}
+
+.photo-crop__preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.photo-crop__preview {
+  position: relative;
+  box-sizing: border-box;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid var(--badge-color, #888888);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 22px;
+}
+.photo-crop__preview canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.photo-crop__initials {
+  display: none;
+}
+.photo-crop--empty .photo-crop__initials {
+  display: block;
+}
+.photo-crop--empty .photo-crop__preview canvas {
+  display: none;
+}
+.photo-crop__caption {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.photo-crop__side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.photo-crop__actions {
+  display: flex;
+  gap: 8px;
+}
+.photo-crop__remove {
+  color: var(--danger);
+}

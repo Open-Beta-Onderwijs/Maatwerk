@@ -7,19 +7,21 @@
  */
 
 // ── Screen imports ────────────────────────────────────────────────────────────
-import { renderStartup } from './screens/startup.js';
+import { renderStartup } from './screens/login/login';
 import { asFolderError, renderStartupError } from './screens/startup-error';
 import { renderMigration } from './screens/migration';
+import { openFotoWijzigen } from './modals/foto-wijzigen';
+import { hideSplash, setSplashStatus } from './shell/splash';
 import { watchTopbar } from './shell/topbar-fit';
 import { renderChooseFolder } from './screens/choose-folder';
-import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen.js';
-import { renderGroepen, renderGroepenForYear } from './screens/groepen.js';
+import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen';
+import { renderGroepen, renderGroepenForYear } from './screens/groepen';
 import { renderToetsen, renderToetsenList } from './screens/toetsen';
 import { renderObservaties } from './screens/observaties.js';
 import { renderRubrics } from './screens/rubrics';
 import { renderOpdrachten } from './screens/opdrachten.js';
 import { openEditor } from './modals/editor.js';
-import { renderGebruikers } from './screens/gebruikers.js';
+import { renderGebruikers } from './screens/gebruikers';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
 import { changePinFlow, renewCodesFlow } from './screens/pin';
@@ -586,6 +588,16 @@ userBadgeBtn.addEventListener('click', () => {
       void Store.savePreferences({ theme: look.theme, accent: look.accent });
     },
     onChangePin: () => void changePinFlow(api, onUserChanged),
+    onChangePhoto: () =>
+      void openFotoWijzigen(user, api, (saved) => {
+        onUserChanged(saved);
+        void renderAvatar(
+          userBadgeBtn,
+          saved,
+          { size: 38, ring: 'accent', square: user.isAdmin || !!role },
+          readPhoto,
+        );
+      }),
     onRenewCodes: user.isAdmin ? () => void renewCodesFlow(user, api, onUserChanged) : undefined,
     onLogout: () => {
       void api.logout().catch((e) => console.warn('[pin]', e));
@@ -609,8 +621,10 @@ function logOut() {
 }
 
 // ── Watermerk ─────────────────────────────────────────────────────────────────
-async function applyWatermerk() {
-  const dataUrl = await window.maatwerk.readPhotoAsDataUrl('afbeeldingen/school-watermerk.svg');
+// The file school.json names (D29: an older folder may have a PNG), else the default name.
+export async function applyWatermerk() {
+  const rel = Store.getSchoolSync()?.watermerk || 'afbeeldingen/school-watermerk.svg';
+  const dataUrl = await window.maatwerk.readPhotoAsDataUrl(rel);
   if (dataUrl) document.documentElement.style.setProperty('--watermerk-url', `url("${dataUrl}")`);
 }
 
@@ -777,7 +791,9 @@ async function init() {
   const container = document.getElementById('screen-startup');
   let status;
   try {
+    setSplashStatus('Gedeelde map openen…');
     status = await window.maatwerk.dataFolderStatus();
+    setSplashStatus('Gegevens laden…');
     if (!status.error) await Store.preload();
   } catch (e) {
     status = { dataDir: status?.dataDir ?? '', source: status?.source, error: asFolderError(e) };
@@ -801,7 +817,14 @@ async function init() {
   if (status.readOnly) noteReadOnly();
   applyWatermerk();
   initSelects();
+  setSplashStatus('Bijna klaar…');
+  // The login screen removes the splash once its vak tiles are there.
+  loginShown = true;
   navigateTo('startup');
 }
 
-init();
+// The splash (F-06) stays until the first screen is there, whatever it is.
+let loginShown = false;
+init().finally(() => {
+  if (!loginShown) hideSplash();
+});

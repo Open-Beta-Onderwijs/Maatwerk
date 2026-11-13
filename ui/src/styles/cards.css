@@ -1,0 +1,368 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Student and group cards (F-07, F-08, F-09; design spec 4.3, 4.4, board 1).
+   screens/leerlingen.ts, screens/groepen.ts, screens/cards/. */
+
+/* ── Grids with full-width headings ───────────────────────────────────────── */
+.card-list.s-cards,
+.card-list.g-cards {
+  display: grid;
+  align-items: stretch;
+}
+.card-list.s-cards {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+}
+.card-list.g-cards {
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 12px;
+}
+.s-cards > .section-heading-jaarlaag,
+.s-cards > .section-heading-stamklas,
+.g-cards > .section-heading-jaarlaag {
+  grid-column: 1 / -1;
+}
+.s-cards > .section-heading-jaarlaag,
+.g-cards > .section-heading-jaarlaag {
+  margin: 22px 0 0;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.s-cards > .section-heading-jaarlaag:first-child,
+.g-cards > .section-heading-jaarlaag:first-child {
+  margin-top: 0;
+}
+.s-cards > .section-heading-stamklas {
+  margin: 4px 0 -2px;
+  padding: 0;
+  font-size: 13px;
+}
+
+/* ── Student card (variant C) ─────────────────────────────────────────────── */
+.card.s-card {
+  width: 100%;
+  height: 66px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+/* A fixed height: the grades fill in later and must not move the list (the
+   scroll position is restored right after a background refresh). */
+#student-list > .card.s-card {
+  contain-intrinsic-size: auto 66px;
+}
+.card.s-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+}
+.card.s-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.s-card__who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.s-card__name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.s-card__nr {
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.s-card__grades {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+}
+.s-card__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 28px;
+}
+.s-card__bar {
+  width: 7px;
+  border-radius: 2px;
+}
+.s-card__nums {
+  min-width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.s-card__avg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.s-card__avg-value {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 22px;
+}
+.s-card__small,
+.s-card__swap {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.s-card__none {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* Years 4-6: "laatste" and "SE" alternate, each ~3,8 s, 0,7 s cross-fade, 9 s
+   cycle; student-grades.ts starts every card's animation at time 0 (in sync). */
+.s-card__swap {
+  display: grid;
+  justify-items: end;
+}
+.s-card__swap > span {
+  grid-area: 1 / 1;
+}
+.s-card__swap-a {
+  animation: card-swap-a 9s ease-in-out infinite;
+}
+.s-card__swap-b {
+  opacity: 0;
+  animation: card-swap-b 9s ease-in-out infinite;
+}
+.s-card__swap-both {
+  display: none;
+}
+@keyframes card-swap-a {
+  0%,
+  42% {
+    opacity: 1;
+  }
+  50%,
+  92% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes card-swap-b {
+  0%,
+  42% {
+    opacity: 0;
+  }
+  50%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-card__swap-a,
+  .s-card__swap-b {
+    display: none;
+  }
+  .s-card__swap-both {
+    display: inline;
+  }
+  .card.s-card {
+    transition: none;
+  }
+  .card.s-card:hover {
+    transform: none;
+  }
+}
+
+/* ── Trend arrow (F-08, spec 2.4) ─────────────────────────────────────────── */
+.trend-arrow {
+  flex: none;
+  color: var(--muted);
+}
+.trend-arrow--strongUp {
+  color: #0e9f4f;
+  transform: rotate(-50deg);
+}
+.trend-arrow--slightUp {
+  color: #4e8f63;
+  transform: rotate(-25deg);
+}
+.trend-arrow--slightDown {
+  color: #b4654f;
+  transform: rotate(25deg);
+}
+.trend-arrow--strongDown {
+  color: #d92d20;
+  transform: rotate(50deg);
+}
+:root[data-theme='dark'] .trend-arrow--strongUp {
+  color: #3ddc84;
+}
+:root[data-theme='dark'] .trend-arrow--slightUp {
+  color: #86c99c;
+}
+:root[data-theme='dark'] .trend-arrow--slightDown {
+  color: #e6a08f;
+}
+:root[data-theme='dark'] .trend-arrow--strongDown {
+  color: #ff6b5e;
+}
+
+/* ── Group card (variant B) ───────────────────────────────────────────────── */
+.card.g-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'info grades'
+    'names actions';
+  align-items: start;
+  column-gap: 12px;
+  row-gap: 10px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.card.g-card:has(.g-card__open:not(:disabled)):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card-hover);
+}
+.g-card__info {
+  grid-area: info;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.g-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* The name opens the group; its ::after covers the card, so the whole card is
+   the button. The edit and delete buttons sit above it. */
+.g-card__open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  text-align: left;
+  cursor: pointer;
+}
+.g-card__open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.g-card__open:disabled {
+  cursor: default;
+}
+.g-card__open:focus-visible {
+  outline: none;
+}
+.g-card__open:focus-visible::after {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.g-card__type {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.g-card__meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+.g-card__grades {
+  grid-area: grades;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.g-card__line {
+  white-space: nowrap;
+}
+.g-card__mean {
+  font-size: 17px;
+}
+.g-card__sd,
+.g-card__tag {
+  color: var(--muted);
+}
+.g-card__tag {
+  font-size: 12px;
+  font-weight: 700;
+}
+.g-card__fails {
+  font-size: 12px;
+  color: var(--muted);
+}
+.g-card__fails--alarm {
+  color: var(--danger);
+}
+.g-card__names {
+  grid-area: names;
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.g-card__actions {
+  grid-area: actions;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  align-self: end;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.g-card {
+    transition: none;
+  }
+  .card.g-card:has(.g-card__open:not(:disabled)):hover {
+    transform: none;
+  }
+}
+
+/* ── Admin: the plain student list (spec 4.9) ─────────────────────────────── */
+.s-row__name {
+  font-weight: 600;
+}

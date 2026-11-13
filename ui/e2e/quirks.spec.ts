@@ -15,6 +15,7 @@ import {
   readMockJson,
   seedFiles,
   withMock,
+  chooseVak,
 } from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
@@ -41,7 +42,7 @@ test('U7: the login screen shows teacher names as text', async ({ page }) => {
   const user = await readMockJson<Record<string, unknown>>(page, file);
   await seedFiles(page, { [file]: { ...user, voornaam: NASTY, afkorting: '<i>', foto: null } });
   await page.goto('/');
-  await page.locator('.subject-card[data-subject="nat"]').click();
+  await chooseVak(page, 'nat');
   const badge = page.locator(`.user-badge[data-user-id="${TEACHER}"]`);
   await expect(badge.locator('.badge-name')).toHaveText(NASTY);
   await expect(badge.locator('.avatar-initials')).toHaveText('<i>');
@@ -391,7 +392,7 @@ test('U11: Alles/Niets in a filter popover act once, however often someone logge
   await login(page);
   for (let i = 0; i < 2; i++) {
     await logout(page);
-    await page.locator('.subject-card[data-subject="nat"]').click();
+    await chooseVak(page, 'nat');
     await page.locator(`.user-badge[data-user-id="${TEACHER}"]`).click();
     await enterPin(page);
     await expect(page.locator('#topbar')).toBeVisible();

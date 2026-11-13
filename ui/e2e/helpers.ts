@@ -79,10 +79,22 @@ export async function enterPin(page: Page, pin = PIN): Promise<void> {
   }
 }
 
+/**
+ * Chooses a vak on the login screen. The last vak is chosen already after a
+ * logout, and clicking a chosen tile again goes back (spec 4.2), so a chosen
+ * tile is left alone.
+ */
+export async function chooseVak(page: Page, subject: string): Promise<void> {
+  const tile = page.locator(`.subject-card[data-subject="${subject}"]`);
+  await expect(tile).toBeVisible();
+  if ((await tile.getAttribute('aria-pressed')) !== 'true') await tile.click();
+  await expect(tile).toHaveAttribute('aria-pressed', 'true');
+}
+
 /** Opens the app and logs in (default: the nat teacher). */
 export async function login(page: Page, subject = 'nat', userId = TEACHER): Promise<void> {
   await page.goto('/');
-  await page.locator(`.subject-card[data-subject="${subject}"]`).click();
+  await chooseVak(page, subject);
   await page.locator(`.user-badge[data-user-id="${userId}"]`).click();
   await enterPin(page);
   await expect(page.locator('#topbar')).toBeVisible();

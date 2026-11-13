@@ -1,9 +1,97 @@
 # State
 
-Last updated: 2026-11-12 (step 25 done) Branch: `main`
+Last updated: 2026-11-13 (steps 26-28 in one go; all three done, gate and review next) Branch: `step/26-login-splash`
 Last tags: `v0.16.0` (merge `d066a6d`), `step-25` (`0e76028`), `step-24`, `v0.15.0`
 
 ## Current step
+
+**Steps 26, 27 and 28 in one go (user, 2026-11-13):** one branch `step/26-login-splash`, a
+version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-28.md`) and
+release only at the end. STOPs collected for the report: the visual check of all three steps
+(baselines only after the user saw them) and the card numbers of step 27 (before/after table).
+
+**Gate (2026-11-13, on `494dabf` + test fixes `bbf637c`, `ef82bb0`):** fmt, clippy, cargo test, 629
+Vitest, 127 node, lint, typecheck, licences, cargo deny, SPDX green; Chromium e2e 327/327; WebKit
+login/cards/beheer/photo/shell 36/36 after the crop-test fix. Visual (light): 14 views differ from
+the 0.16 baselines, 39 unchanged; 6 new views. Review `docs/reviews/step-26-28.md` (0/2/8/7): M1,
+M2, m1, m3, m4, m5 fixed (`494dabf`), the rest in `docs/backlog.md`.
+
+**User (2026-11-13):** visual check of steps 26-28 OK and `docs/phase-2/step-27-card-numbers.md`
+OK. CI baselines from run `43420312853` (`ed1ffd4`); confirming run `43422907768` green on all
+three OSes. Local visual baselines updated.
+
+**Next action:** PR, merge, tags `step-26` (`d8c741c`), `step-27` (`33188e8`), `step-28`,
+`v0.19.0` (merge commit).
+
+## Step 28 progress (Beheer screens, 0.19)
+
+1. **Done (`c4d838d`):** Gebruikers (52 px avatars, amber pill, action order, sectievoorzitters
+   card) and Gebruiker bewerken (`modals/gebruiker-edit.ts`: 12 swatches as a radio group, the
+   crop of step 26, D28); School (logo panel, watermark text and buttons; D29); Gegevenscontrole
+   (`issueCards`, clean card, "Map openen" via `openPath`); Instellingen (unit fields, Opslaan top
+   right, `snapshotKinds`, "Map openen"); F-02 (`utils/csv-example.ts` in the three CSV imports).
+   R-05: `gebruikers.js` -> TS. e2e `beheer.spec.ts` (5), two in `photo.spec.ts`; views
+   `admin-gegevens` (fixed clock), `admin-instellingen`.
+2. **Done:** version 0.19.0; D28 and D29 closed in `quirks.md`; manual checks M-CARD-1..2 and
+   M-BEH-1..4.
+
+**Not done (for the report):** X-06 (`rapporten/` retention) has no decision, so it is not in this
+step. "Vergelijken" (a OneDrive conflict copy) and "Toets openen" (a broken reference) of board 12
+have no feature behind them yet; those findings get "Map openen". R-05 for `screens/school.js`
+(touched for the logo panel, the watermark and D29) is left as JS.
+
+**Choices made without asking (for the report):** a user colour that is none of the 12 swatches
+stays as an extra first swatch "Huidige kleur"; the new-user default colour is the first swatch
+(blauw, was `#4a90d9`); the sectievoorzitter rows follow the login order (nat, bio, schk, wi);
+the snapshot kinds are computed in the UI with the core's keep rule (display only); the check
+time says "vandaag om HH:MM" (it is always today: the check runs when the screen opens).
+
+## Step 27 progress (Leerlingen and Groepen cards, 0.18)
+
+1. **Done (`b406765`):** `domain/cards.ts` (card numbers from the core's `yearAverage`,
+   `seAverage`, `trend`, `statsOfAverages`; tested), `screens/cards/card-html.ts` (markup, trend
+   arrow; tested), `screens/cards/student-grades.ts` (fills the grades after the cards, batched,
+   swaps in sync via `startTime = 0`), `screens/leerlingen.ts` and `screens/groepen.ts` (R-05,
+   from JS), `styles/cards.css`. V-02: separators in the group overview header (quirk U18
+   closed). e2e `cards.spec.ts` (4). Before/after on the fixture:
+   `docs/phase-2/step-27-card-numbers.md` (**STOP: the user's OK before the merge**).
+2. **Done:** version 0.18.0.
+
+**Choices made without asking (for the report):** a bar per test is its best attempt, in
+volgnummer order, a diagnostic test as a grey bar; "Nog geen cijfers" when there is no counted
+grade (also when only a diagnostic test has one); the onvoldoende line of an upper-school group
+counts the year averages (board 1 variant B); a group without a docent says "Geen docent";
+the admin also gets group cards with numbers (spec 4.9: only the students are a plain list); the
+student card shows the number, not the gender any more; cards are 66 px high (fixed, so the grades
+filling in later never move the list); the swap runs on all cards from time 0 (in sync).
+
+## Step 26 progress (Login and splash, 0.17)
+
+Baseline 2026-11-13 on `95ac545`: cargo test all ok, 567 Vitest, 127 node.
+
+1. **Done (`aff852f`):** splash (F-06, spec 4.1): inline SVG in `index.html`, CSS in
+   `styles/splash.css` (part of the stylesheet in `<head>`, CSP stays strict), status line,
+   version via a Vite `transformIndexHtml`, `shell/splash.ts` removes it once the first screen is
+   there; window `backgroundColor` in `tauri.conf.json`. Login (V-04, spec 4.2):
+   `screens/login/login.ts` (stages start/vak/user, FLIP flight with the Web Animations API and its
+   reverse, stagger, keyboard, reduced motion = fades), `screens/login/pin-panel.ts` (inline PIN,
+   one or two fields, 168 px reserved), `domain/login.ts` (tiles, groups; tested). `pin.ts` keeps
+   only the dialogs (recovery, codes, change, renew); the recovery button is `#pin-recover-ok`.
+   R-05: `startup.js` removed. e2e `login.spec.ts` (6) and `chooseVak` helper; visual views
+   `splash`, `login-start`, `login-pin`.
+2. **Done (`c5acc2e`):** F-19: `components/photo-crop.ts` (board 12 field, shared with step 28),
+   `domain/crop.ts` (tested), `modals/foto-wijzigen.ts`, `Store.saveOwnPhoto` (merge, no rev);
+   "Foto wijzigen" in the user menu enabled; e2e `photo.spec.ts` (3); view `modal-foto-wijzigen`.
+3. **Done:** version 0.17.0; manual checks M-LOG-1..4 in `docs/manual-test.md`.
+
+**Choices made without asking (for the report):** the role line says "Beheerder" (board 5 says
+"Administrator"; spec 4.9 and the user menu say Beheerder); a vak tile is disabled only when it
+has no teachers while another vak has some (a fresh install keeps every tile, so the admin gets
+in); the remembered vak opens already chosen without animation; clicking a chosen tile goes back
+(spec), so the e2e helpers choose a vak only when it is not chosen; the splash fades out in
+0.25 s; the photo is saved as a square JPEG of at most 512 px named `<user id>.jpg` (an old
+`.png` stays as an unused file); `--brand` (light ink in the dark theme) is the accent on the
+login screen; splash and login use the light look before login as before (dev menu aside).
 
 **Step 25 done and merged (2026-11-12):** user OK on the visual check (after the observatie
 count fix `b958b00`); PR #16 merged into `main` (`d066a6d`), PR CI `43225418533` green on all
@@ -27,8 +115,7 @@ Checksums verified, attached: `Maatwerk-macos-universal.dmg` (SHA-256 `71b551a6â
 
 **Published (2026-11-13):** 0.16.0 is public and marked Latest (user).
 
-**Next action:** step 26 (Login and splash). Manual
-checks M-POR-1..4 (0.15) are still the user's.
+Manual checks M-POR-1..4 (0.15) are still the user's.
 
 ## Step 25 progress (Score entry, 0.16)
 

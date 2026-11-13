@@ -70,6 +70,37 @@ export const VIEWS: View[] = [
       await p.locator('.subject-card[data-subject="nat"]').click();
     },
   },
+  {
+    // The splash alone (F-06): no script runs, as before the bundle loads.
+    name: 'splash',
+    user: 'none',
+    target: 'page',
+    open: async (p) => {
+      await p.route('**/*.js', (r) => r.abort());
+      await p.goto('/');
+      await p.locator('#splash').waitFor();
+    },
+  },
+  {
+    name: 'login-start',
+    user: 'none',
+    target: 'page',
+    open: async (p) => {
+      await p.goto('/');
+      await p.locator('.login[data-stage="start"]').waitFor();
+    },
+  },
+  {
+    name: 'login-pin',
+    user: 'none',
+    target: 'page',
+    open: async (p) => {
+      await p.goto('/');
+      await p.locator('.subject-card[data-subject="nat"]').click();
+      await p.locator('.user-badge[data-user-id="admin"]').click();
+      await p.locator('#pin-new').waitFor();
+    },
+  },
   ...['leerlingen', 'groepen', 'toetsen', 'rubrics', 'observaties', 'opdrachten'].map(
     (name): View => ({
       name: `screen-${name}`,
@@ -78,12 +109,18 @@ export const VIEWS: View[] = [
       open: (p) => screen(p, name),
     }),
   ),
-  ...['leerlingen', 'groepen', 'gebruikers', 'school'].map((name): View => ({
-    name: `admin-${name}`,
-    user: 'admin',
-    target: 'page',
-    open: (p) => screen(p, name),
-  })),
+  ...['leerlingen', 'groepen', 'gebruikers', 'school', 'gegevens', 'instellingen'].map(
+    (name): View => ({
+      name: `admin-${name}`,
+      user: 'admin',
+      target: 'page',
+      open: async (p) => {
+        // Gegevenscontrole shows the time of the check: a fixed clock keeps the image stable.
+        if (name === 'gegevens') await p.clock.setFixedTime(new Date(2026, 10, 4, 11, 18));
+        await screen(p, name);
+      },
+    }),
+  ),
   ...(
     [
       ['leerling-edit', click('leerlingen', '[data-action="edit-student"]')],
@@ -163,6 +200,16 @@ export const VIEWS: View[] = [
     },
   },
   { name: 'modal-po-new', user: 'teacher', target: 'modal', open: poStep1 },
+  {
+    name: 'modal-foto-wijzigen',
+    user: 'teacher',
+    target: 'modal',
+    open: async (p) => {
+      await p.locator('#user-badge-btn').click();
+      await p.locator('#acc-photo').click();
+      await p.locator('.photo-crop__frame').waitFor();
+    },
+  },
   {
     name: 'modal-po-groepen',
     user: 'teacher',

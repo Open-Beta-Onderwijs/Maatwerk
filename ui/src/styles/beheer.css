@@ -1,0 +1,305 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Beheer screens (design spec 4.9, board 12): Gebruikers and Gebruiker
+   bewerken, School, Gegevenscontrole, Instellingen. */
+
+/* ── Gebruikers ───────────────────────────────────────────────────────────── */
+.gebruiker-card {
+  gap: 14px;
+  padding: 12px 16px;
+}
+.gebruiker-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gebruiker-card-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gebruiker-card-vakken {
+  font-size: 13px;
+  color: var(--muted);
+}
+.gebruiker-card .card-actions {
+  flex-shrink: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pill--amber {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.pill--danger {
+  background: var(--danger-soft, color-mix(in srgb, var(--danger) 12%, transparent));
+  color: var(--danger);
+}
+
+.voorzitter-list.card {
+  max-width: 560px;
+  display: block;
+  padding: 4px 16px;
+}
+.voorzitter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.voorzitter-row:first-child {
+  border-top: 0;
+}
+.voorzitter-row label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.voorzitter-row select {
+  flex: 1.4;
+}
+
+/* ── Gebruiker bewerken ───────────────────────────────────────────────────── */
+.user-form-badge {
+  align-items: flex-start;
+  gap: 20px;
+}
+.user-form-badge .form-group {
+  margin-bottom: 12px;
+}
+.user-form-afk {
+  width: 120px;
+}
+/* The swatches are centred on the field's height (spec 3.7). */
+.ring-swatches {
+  height: var(--h-control, 36px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ring-swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.ring-swatch[aria-checked='true'] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ring);
+}
+.ring-swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+
+/* ── School ───────────────────────────────────────────────────────────────── */
+/* (style.css: .school-card and its fields; the logo panel and the watermark
+   explanation follow board 12.) */
+
+/* ── Gegevenscontrole ─────────────────────────────────────────────────────── */
+.gegevens-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.gegevens-intro .hint {
+  flex: 1;
+  margin: 0;
+}
+.gegevens-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gegevens-cards > .gegevens-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.card.gegevens-card {
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.gegevens-card > .pill {
+  margin-top: 1px;
+}
+.gegevens-card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gegevens-card-text .gegevens-path {
+  font-size: 12px;
+  color: var(--muted);
+}
+.gegevens-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.card.gegevens-clean {
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--border));
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+.gegevens-clean-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text);
+}
+.gegevens-clean-text span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Instellingen ─────────────────────────────────────────────────────────── */
+.instellingen {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  align-items: start;
+  gap: 16px;
+  max-width: 1100px;
+}
+.instellingen-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.card.inst-card {
+  display: block;
+  padding: 18px 20px;
+}
+.inst-card__title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 650;
+}
+.inst-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.inst-card__head .inst-card__title {
+  margin: 0;
+}
+.inst-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  margin-top: 12px;
+}
+.inst-grid .inst-field:first-child {
+  grid-column: 1 / -1;
+}
+.unit-input {
+  display: inline-flex;
+  align-items: center;
+  width: 180px;
+  height: var(--h-control, 36px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-btn);
+  background: var(--surface);
+  overflow: hidden;
+}
+.unit-input:focus-within {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent-ring);
+}
+.unit-input input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 10px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.unit-input__unit {
+  padding: 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.snapshot-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+.snapshot-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.snapshot-date {
+  flex: 1;
+}
+.snapshot-kind {
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (max-width: 1000px) {
+  .instellingen {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── CSV import: the example (F-02) ───────────────────────────────────────── */
+.csv-example {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.csv-example p {
+  margin: 0;
+}
+.csv-example__text {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-btn);
+  background: var(--surface-2);
+  font-size: 12px;
+  line-height: 1.5;
+}

@@ -86,19 +86,18 @@ export async function openGroupStudentsModal(groupId, year) {
     .map((y) => y.slice(-2))
     .join('');
   // Row 1: Naam | Periode N (colspan) | ... | Jaar | PTA
-  // The reference gave these headers a second style="" (border-right per
-  // periode, border-left on Gemiddelde); browsers ignore a duplicate attribute,
-  // so only .gl-th ever applied. Kept as rendered (quirk U18).
+  // A line after every periode and before Gemiddelde, as the columns below
+  // have them (V-02; the reference meant these but never showed them, quirk U18).
   const nameTh = `<th rowspan="2" class="gl-name-th">Naam</th>`;
 
   const periodeCols =
     byPeriode
       .map(
         ({ p, families }) =>
-          `<th colspan="${families.reduce((sum, f) => sum + 2, 0)}" class="gl-th">
+          `<th colspan="${families.reduce((sum, f) => sum + 2, 0)}" class="gl-th u-border-r-light">
       Periode ${escHtml(String(p))}</th>`,
       )
-      .join('') + `<th colspan="2" class="gl-th">Gemiddelde</th>`;
+      .join('') + `<th colspan="2" class="gl-th u-border-l-2">Gemiddelde</th>`;
 
   // Row 2: exam badges per periode | Jaar | Dossier
   const examBadgeCols =

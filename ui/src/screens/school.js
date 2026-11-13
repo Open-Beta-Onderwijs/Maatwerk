@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { toast, escHtml } from '../app.js';
+import { toast, escHtml, applyWatermerk } from '../app.js';
 import { ICONS } from '../utils/icons.js';
 
 // Image types the data folder takes for afbeeldingen/ (maatwerk-core IMAGE_EXTS) and Typst can show.
@@ -38,11 +38,13 @@ function buildHtml(school, logoUrl, watermerkUrl) {
     </div>
     <div class="school-card">
       <div class="school-logo-wrap">
+        <span class="school-field-label">Logo</span>
         <div class="school-logo-area" id="school-logo-area">
           ${logoHtml(logoUrl)}
-          <button class="btn btn--icon school-logo-edit-btn" id="btn-edit-logo" title="Logo wijzigen">${ICONS.pen}</button>
-          <input type="file" id="input-logo" accept="${LOGO_ACCEPT}" class="hidden" />
         </div>
+        <span class="school-hint">Gebruikt in de rapporten. PNG of SVG.</span>
+        <button class="btn btn--secondary btn--sm" id="btn-edit-logo">Logo wijzigen…</button>
+        <input type="file" id="input-logo" accept="${LOGO_ACCEPT}" class="hidden" />
       </div>
       <div class="school-fields">
         ${textFieldRow('naam', school.naam ?? '')}
@@ -81,7 +83,7 @@ function schoolsoortRow(selected) {
   }).join('');
   return `
     <div class="school-field-row" data-field="schoolsoort">
-      <div class="school-field-label">Schoolsoort</div>
+      <div class="school-field-label">Schoolsoorten</div>
       <div class="school-field-value-wrap">
         <div class="vak-toggle-group">${buttons}</div>
       </div>
@@ -95,9 +97,12 @@ function watermerkRow(url) {
   return `
     <div class="school-field-row" data-field="watermerk">
       <div class="school-field-label">Watermerk</div>
-      <div class="school-field-value-wrap">
+      <div class="school-field-value-wrap school-watermark-wrap">
         <div class="school-watermark-preview" id="school-watermark-preview">${preview}</div>
-        <button class="btn btn--icon" data-action="edit-watermerk" title="Watermerk wijzigen">${ICONS.pen}</button>
+        <div class="school-watermark-side">
+          <span class="school-hint">Rechtsonder in de app; in het donkere thema geïnverteerd.</span>
+          <button class="btn btn--secondary btn--sm" data-action="edit-watermerk">Watermerk wijzigen…</button>
+        </div>
         <input type="file" id="input-watermerk" accept="image/svg+xml,.svg" class="hidden" />
       </div>
     </div>`;
@@ -283,6 +288,8 @@ async function saveImageField(file, fileBaseName, field, school, container) {
 
   try {
     await Store.updateSchool({ [field]: relPath });
+    // The background follows at once (D29: the file school.json names).
+    if (field === 'watermerk') void applyWatermerk();
     toast('Afbeelding opgeslagen.', 'success');
   } catch (_) {
     toast('Opslaan mislukt.', 'error');

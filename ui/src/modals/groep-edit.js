@@ -13,8 +13,9 @@ import {
   confirmDialog,
 } from '../app.js';
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
+import { CSV_EXAMPLES, csvExampleHtml, wireCsvExample } from '../utils/csv-example';
 import { groupOverwrites, withImportIds } from '../domain/groups';
-import { renderGroepen } from '../screens/groepen.js';
+import { renderGroepen } from '../screens/groepen';
 
 export async function openGroupModal(id) {
   const year = SEL.groupsYear.getValue() || Store.getConfigSync().activeYear;
@@ -534,9 +535,7 @@ export async function openGroupCSVImport() {
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     `,
     body: `
-    <p class="u-mb-12 muted">
-      Verwachte kolommen: <code>Naam, Schoolsoort, Vak, Leerjaar, Docent</code>
-    </p>
+    ${csvExampleHtml(CSV_EXAMPLES.groups)}
     <div class="form-group">
       <label>CSV-bestand</label>
       <input type="file" id="f-csv-groups" accept=".csv,.txt" />
@@ -544,6 +543,7 @@ export async function openGroupCSVImport() {
     <div id="csv-grp-preview"></div>
     `,
     onShow: (el) => {
+      wireCsvExample(el, CSV_EXAMPLES.groups, window.maatwerk, toast);
       let toImport = null;
 
       el.querySelector('#f-csv-groups').addEventListener('change', async (e) => {
@@ -678,9 +678,7 @@ export async function openGroupAssignmentCSVImport() {
       <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
     `,
     body: `
-    <p class="u-mb-12 muted">
-      Verwachte kolommen: <code>Naam, Leerlingnummer</code>
-    </p>
+    ${csvExampleHtml(CSV_EXAMPLES.assignment)}
     <div class="form-group">
       <label>CSV-bestand</label>
       <input type="file" id="f-csv-assignment" accept=".csv,.txt" />
@@ -688,6 +686,7 @@ export async function openGroupAssignmentCSVImport() {
     <div id="csv-assignment-preview"></div>
     `,
     onShow: (el) => {
+      wireCsvExample(el, CSV_EXAMPLES.assignment, window.maatwerk, toast);
       let assignments = null;
 
       el.querySelector('#f-csv-assignment').addEventListener('change', async (e) => {

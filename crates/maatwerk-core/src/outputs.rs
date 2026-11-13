@@ -133,6 +133,26 @@ pub fn shared_dir(storage: &Storage) -> Result<DataDir> {
     DataDir::open(parent)
 }
 
+/// A folder of the data folder to show in the file manager ("Map openen" in Gegevenscontrole and
+/// Instellingen, step 28): `""` is the data folder itself, else a data-relative path (no `..`,
+/// no absolute path, no symlink escape) that is an existing folder. Folders only: a file in the
+/// shared folder could run when opened (review 6a M1).
+pub fn openable_folder(storage: &Storage, target: &str) -> Result<PathBuf> {
+    let dir = storage.data_dir();
+    let path = if target.is_empty() {
+        dir.root().to_path_buf()
+    } else {
+        dir.resolve(&RelPath::parse(target)?)?
+    };
+    if path.is_dir() {
+        Ok(os_path(&path))
+    } else {
+        Err(Error::NotFound {
+            path: target.to_owned(),
+        })
+    }
+}
+
 /// What `open_path` may open with the OS (review 6a M1): an output ID, or a printed copy
 /// `rapporten/<schooljaar>/<name>.pdf` next to the data folder (C18) that exists. Nothing else
 /// in the shared folder, which could hold files that run when opened.
@@ -526,6 +546,32 @@ mod tests {
             "C:/Windows/notepad.exe",
         ] {
             assert!(openable_path(&storage, &outputs, bad).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn step28_only_folders_inside_the_data_folder_can_be_shown() {
+        let tmp = tempfile::tempdir().unwrap();
+        let storage =
+            Storage::open_with_lock_dir(tmp.path().join("data"), &tmp.path().join("locks"))
+                .unwrap();
+        fs::create_dir_all(tmp.path().join("data/2025-2026/scores/nat")).unwrap();
+        fs::write(tmp.path().join("data/school.json"), b"{}").unwrap();
+        fs::create_dir_all(tmp.path().join("outside")).unwrap();
+        assert!(openable_folder(&storage, "").unwrap().is_dir());
+        assert!(
+            openable_folder(&storage, "2025-2026/scores/nat")
+                .unwrap()
+                .is_dir()
+        );
+        for bad in [
+            "school.json",
+            "snapshots",
+            "../outside",
+            "C:/Windows",
+            "a/../../outside",
+        ] {
+            assert!(openable_folder(&storage, bad).is_err(), "{bad}");
         }
     }
 }

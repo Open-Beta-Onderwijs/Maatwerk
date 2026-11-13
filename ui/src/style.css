@@ -15,6 +15,11 @@
 @import './styles/forms.css';
 @import './styles/render-warnings.css';
 @import './styles/avatar.css';
+@import './styles/splash.css';
+@import './styles/login.css';
+@import './styles/photo-crop.css';
+@import './styles/cards.css';
+@import './styles/beheer.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -549,16 +554,27 @@ body::after {
   background: var(--bg);
   border-right: 1px solid var(--border);
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+.school-logo-wrap > .school-field-label {
+  align-self: flex-start;
 }
 
 .school-logo-area {
   position: relative;
   width: 100%;
+  flex: 1;
+  min-height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+}
+.school-hint {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .school-logo-img {
@@ -573,18 +589,6 @@ body::after {
   font-style: italic;
   font-size: 13px;
   text-align: center;
-}
-
-.school-logo-edit-btn {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.school-logo-wrap:hover .school-logo-edit-btn {
-  opacity: 1;
 }
 
 /* Right: fields — remaining width */
@@ -661,10 +665,23 @@ body::after {
   font-style: italic;
 }
 
-/* Watermerk preview box */
+/* Watermerk: preview, explanation and button (board 12) */
+.school-watermark-wrap {
+  gap: 14px;
+}
 .school-watermark-preview {
   display: flex;
   align-items: center;
+}
+.school-watermark-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+/* The app inverts the watermark in the dark theme; the preview shows it so. */
+:root[data-theme='dark'] .school-watermark-img {
+  filter: var(--watermark-filter);
 }
 
 .school-watermark-img {
@@ -754,7 +771,8 @@ body::after {
   gap: 4px;
   margin-bottom: 12px;
 }
-.form-group label {
+.form-group label,
+.form-group .form-label {
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
@@ -1583,48 +1601,6 @@ code {
   flex-wrap: wrap;
 }
 
-/* ── Startup screen ──────────────────────────────────────────────────────── */
-.startup-layout {
-  display: flex;
-  min-height: calc(100vh - 50px - 48px);
-}
-.startup-sidebar {
-  width: 170px;
-  flex-shrink: 0;
-  padding: 28px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-right: 1px solid var(--border);
-}
-.startup-sidebar-hint {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-.startup-main {
-  flex: 1;
-  padding: 32px 36px;
-}
-.startup-about-link {
-  margin-top: auto;
-  background: none;
-  border: none;
-  padding: 4px 0;
-  font: inherit;
-  font-size: 12px;
-  color: var(--muted);
-  text-align: left;
-  cursor: pointer;
-}
-.startup-about-link:hover {
-  color: var(--text);
-  text-decoration: underline;
-}
-
 /* ── Over Maatwerk ───────────────────────────────────────────────────────── */
 .about-modal h3 {
   font-size: 17px;
@@ -1656,131 +1632,6 @@ code {
   font-size: 11px;
   white-space: pre-wrap;
 }
-.startup-main-hint {
-  font-size: 15px;
-  color: var(--muted);
-  margin-bottom: 20px;
-}
-.startup-main-hint--empty {
-  margin-top: 80px;
-  text-align: center;
-}
-.startup-hint {
-  font-size: 16px;
-  color: var(--muted);
-}
-.subject-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 200px);
-  gap: 16px;
-  margin-top: 12px;
-}
-.subject-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 100px;
-  border-radius: var(--r-btn);
-  border: 2px solid var(--border);
-  background: var(--surface);
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s,
-    transform 0.1s;
-  box-shadow: var(--shadow-card);
-}
-.subject-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-card-hover);
-  transform: translateY(-2px);
-}
-.subject-emoji {
-  font-size: 28px;
-  line-height: 1;
-}
-.subject-label {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
-}
-.startup-sidebar .subject-card {
-  height: 72px;
-  font-size: 14px;
-  gap: 4px;
-}
-.startup-sidebar .subject-emoji {
-  font-size: 20px;
-}
-.startup-sidebar .subject-label {
-  font-size: 13px;
-}
-.subject-card.selected {
-  border-color: var(--accent);
-  background: var(--accent);
-  box-shadow: none;
-}
-.subject-card.selected .subject-label,
-.subject-card.selected .subject-emoji {
-  color: var(--on-accent);
-  filter: none;
-}
-.subject-card.dimmed {
-  opacity: 0.35;
-  transform: none !important;
-  box-shadow: none !important;
-  border-color: var(--border) !important;
-}
-
-/* ── User badge grid ─────────────────────────────────────────────────────── */
-.user-badge-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: flex-start;
-}
-.badge-separator {
-  width: 100%;
-  height: 1px;
-  background: var(--border);
-  margin: 4px 0;
-}
-
-/* ── User badge ──────────────────────────────────────────────────────────── */
-.user-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 80px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-}
-.user-badge .avatar {
-  transition: transform 0.1s;
-}
-.user-badge:hover .avatar {
-  transform: scale(1.1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .user-badge .avatar {
-    transition: none;
-  }
-}
-.badge-name {
-  font-size: 0.72rem;
-  color: var(--muted);
-  text-align: center;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* ── Generic section header in card lists ────────────────────────────────── */
 .list-section-header {
   font-size: 0.75rem;
@@ -1797,29 +1648,6 @@ code {
   opacity: 0.6;
 }
 
-/* ── Gebruikers screen ───────────────────────────────────────────────────── */
-.gebruiker-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.gebruiker-card-left {
-  flex-shrink: 0;
-}
-.gebruiker-card-body {
-  flex: 1;
-  min-width: 0;
-}
-.gebruiker-card-name {
-  font-weight: 600;
-}
-.gebruiker-card-vakken {
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.gebruiker-card .card-actions {
-  flex-shrink: 0;
-}
 .vak-toggle-group {
   display: flex;
   flex-wrap: wrap;
@@ -2789,10 +2617,7 @@ td.grade-override-stale::after {
 .gegevens {
   max-width: 1100px;
 }
-.gegevens-summary {
-  margin: 16px 0 8px;
-  font-weight: 600;
-}
+
 .gegevens-table {
   width: 100%;
   border-collapse: collapse;
@@ -2849,10 +2674,6 @@ td.grade-override-stale::after {
   align-items: center;
   margin: 8px 0;
 }
-.badge-voorzitter-label {
-  font-size: 11px;
-  color: var(--muted);
-}
 #print-sheet {
   display: none;
 }
@@ -2865,19 +2686,4 @@ td.grade-override-stale::after {
     font-size: 14pt;
     white-space: pre-wrap;
   }
-}
-.instellingen {
-  max-width: 640px;
-}
-.snapshot-list {
-  columns: 3;
-  font-family: monospace;
-  font-size: 13px;
-}
-.voorzitter-list {
-  max-width: 520px;
-}
-.voorzitter-row {
-  align-items: center;
-  margin-bottom: 8px;
 }

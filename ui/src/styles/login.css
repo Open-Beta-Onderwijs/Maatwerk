@@ -1,0 +1,426 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Login screen (V-04, design spec 4.2, board 5; screens/login/login.ts).
+   The stage is on .login[data-stage]: start, vak or user. No accent before
+   login, so --brand is the accent. */
+
+.login {
+  --login-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* --brand is the accent here (the user's own comes with the login). The
+     derived tokens are set again: they are computed where they are defined. */
+  --login-ink: var(--brand);
+  --accent: var(--login-ink);
+  --accent-text: var(--login-ink);
+  --accent-hover: color-mix(in srgb, var(--login-ink) 86%, #000);
+  --accent-soft: color-mix(in srgb, var(--login-ink) 8%, transparent);
+  --accent-ring: color-mix(in srgb, var(--login-ink) 20%, transparent);
+  --on-accent: #ffffff;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* Dark theme (dev builds; board 6): the light ink of the wordmark. */
+:root[data-theme='dark'] .login {
+  --login-ink: var(--text);
+  --accent-hover: color-mix(in srgb, var(--login-ink) 84%, #000);
+  --accent-soft: color-mix(in srgb, var(--login-ink) 18%, transparent);
+  --on-accent: #111418;
+}
+
+/* The remembered vak is shown at once, without the movement. */
+.login--instant,
+.login--instant * {
+  transition: none !important;
+}
+
+/* ── Small logo, top left (stages vak and user) ───────────────────────────── */
+.login-brand {
+  position: absolute;
+  top: 22px;
+  left: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.5s var(--login-ease);
+}
+.login-brand-icon {
+  width: 30px;
+  height: 30px;
+}
+.login-brand-word {
+  height: 19px;
+  width: auto;
+}
+.login:not([data-stage='start']) .login-brand {
+  opacity: 1;
+}
+
+/* ── Wordmark and "Kies je vak" (stage start) ─────────────────────────────── */
+.login-mark {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: max(24px, calc(50% - 250px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  pointer-events: none;
+  transition:
+    opacity 0.5s var(--login-ease),
+    transform 0.5s var(--login-ease);
+}
+.login-wordmark {
+  width: min(400px, 60vw);
+  height: auto;
+}
+.login-mark-hint {
+  margin: 0;
+  font-size: 16px;
+  color: var(--muted);
+}
+.login:not([data-stage='start']) .login-mark {
+  opacity: 0;
+  transform: translateY(-40px);
+}
+
+/* ── Vak tiles ────────────────────────────────────────────────────────────── */
+.login-tiles {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: max(300px, calc(50% + 30px));
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  transition:
+    top 0.5s var(--login-ease),
+    gap 0.5s var(--login-ease),
+    opacity 0.3s ease,
+    visibility 0s;
+}
+.login:not([data-stage='start']) .login-tiles {
+  top: 84px;
+  gap: 14px;
+}
+.login[data-stage='user'] .login-tiles {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s 0.3s;
+}
+
+.login-tile {
+  width: 200px;
+  height: 200px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0;
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition:
+    width 0.5s var(--login-ease),
+    height 0.5s var(--login-ease),
+    border-radius 0.5s var(--login-ease),
+    gap 0.5s var(--login-ease),
+    opacity 0.3s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+.login-tile:hover:not(:disabled) {
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.1);
+}
+.login-tile:focus-visible,
+.login-user:focus-visible {
+  outline: 2px solid var(--login-ink);
+  outline-offset: 3px;
+}
+.login-tile .subject-emoji {
+  font-size: 64px;
+  line-height: 1;
+  transition: font-size 0.5s var(--login-ease);
+}
+.login-tile .subject-label {
+  font-size: 18px;
+  font-weight: 600;
+  transition: font-size 0.5s var(--login-ease);
+}
+.login-tile-none {
+  font-size: 12px;
+  color: var(--muted);
+}
+.login-tile:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.login-tile[aria-pressed='true'] {
+  border-color: var(--login-ink);
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+.login:not([data-stage='start']) .login-tile {
+  width: 112px;
+  height: 112px;
+  border-radius: 14px;
+  gap: 6px;
+}
+.login:not([data-stage='start']) .login-tile .subject-emoji {
+  font-size: 32px;
+}
+.login:not([data-stage='start']) .login-tile .subject-label {
+  font-size: 13px;
+}
+.login:not([data-stage='start']) .login-tile-none {
+  display: none;
+}
+.login[data-stage='vak'] .login-tile:not([aria-pressed='true']):not(:disabled) {
+  opacity: 0.7;
+}
+
+/* ── Users of the chosen vak ──────────────────────────────────────────────── */
+.login-users {
+  position: absolute;
+  top: 236px;
+  bottom: 56px;
+  left: 50%;
+  width: min(960px, calc(100% - 64px));
+  transform: translateX(-50%);
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s 0.3s;
+}
+.login[data-stage='vak'] .login-users {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease;
+}
+.login-group {
+  display: flex;
+  gap: 32px;
+  padding: 26px 0;
+  border-top: 1px solid var(--border);
+}
+.login-group:first-child {
+  border-top-color: transparent;
+}
+.login-group-label {
+  margin: 12px 0 0;
+  width: 150px;
+  flex: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.login-group-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+}
+.login-user {
+  width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s var(--login-ease);
+  transition-delay: calc(120ms + var(--i, 0) * 45ms);
+}
+.login[data-stage='vak'] .login-user {
+  opacity: 1;
+  transform: none;
+}
+/* Returning from the PIN block: the users only fade back in. */
+.login[data-stage='user'] .login-user {
+  transform: none;
+}
+.login-users--enter .login-user {
+  opacity: 0 !important;
+  transform: translateY(18px) !important;
+  transition: none !important;
+}
+.login-user .avatar {
+  transition: transform 0.15s ease;
+}
+.login-user:hover .avatar {
+  transform: translateY(-2px);
+}
+.login-user.is-flying .avatar {
+  visibility: hidden;
+}
+.login-user .badge-name {
+  max-width: 96px;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── The chosen user and the PIN block ────────────────────────────────────── */
+.login-pin {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding-left: clamp(32px, 31%, calc(100% - 680px));
+  padding-right: 32px;
+}
+.login-pin[hidden] {
+  display: none;
+}
+.login-hero-slot {
+  width: 152px;
+  height: 152px;
+  flex: none;
+}
+.login-hero {
+  transform-origin: 0 0;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.14);
+}
+.login-pin-form {
+  width: min(440px, calc(100% - 200px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.login-pin-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.login-pin-name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+.login-pin-role {
+  color: var(--muted);
+}
+/* Always the height of two fields, so nothing shifts (spec 4.2 step 4). */
+.login-pin-fields {
+  min-height: 168px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.login-pin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.login-pin-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.login .login-pin-input {
+  width: 220px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  letter-spacing: 4px;
+}
+.login .login-pin-input:focus {
+  border-color: var(--login-ink);
+  outline: 3px solid color-mix(in srgb, var(--login-ink) 20%, transparent);
+}
+.login-pin-intro,
+.login-pin-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.login-pin-hint {
+  font-style: italic;
+}
+.login-pin-forgot {
+  padding-left: 0;
+}
+.login-pin-actions {
+  width: min(380px, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.login-back {
+  gap: 6px;
+  padding-left: 6px;
+}
+.login-pin-form .pin-error {
+  margin: 0;
+}
+
+.login-about {
+  position: absolute;
+  left: 28px;
+  bottom: 22px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.login-about:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+/* ── Reduced motion: fades only (spec 4.2, section 6) ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .login-mark,
+  .login-tiles,
+  .login-tile,
+  .login-tile *,
+  .login-user,
+  .login-user .avatar {
+    transition-property: opacity, visibility, border-color, box-shadow;
+    transition-delay: 0s;
+  }
+  .login-user,
+  .login-users--enter .login-user,
+  .login:not([data-stage='start']) .login-mark {
+    transform: none !important;
+  }
+}

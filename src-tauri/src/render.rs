@@ -315,6 +315,22 @@ pub async fn open_path(state: State<'_, Shared>, app: AppHandle, target: String)
     open_with_os(app, path).await
 }
 
+/// "Map openen" (step 28): shows a folder of the data folder in the file manager. Folders only,
+/// path-checked in the core (`outputs::openable_folder`).
+#[tauri::command]
+#[specta::specta]
+pub async fn open_data_folder(
+    state: State<'_, Shared>,
+    app: AppHandle,
+    rel_path: String,
+) -> Res<()> {
+    let path = blocking(state, move |c| {
+        Ok(outputs::openable_folder(c.storage()?, &rel_path)?)
+    })
+    .await?;
+    open_with_os(app, path).await
+}
+
 /// "Afdrukken": copies the output into `rapporten/<schooljaar>/` under a descriptive name, opens
 /// the copy with the OS and returns its data-relative path. If only the opening fails, the error
 /// says where the copy was saved.

@@ -319,6 +319,20 @@ const Store = (() => {
     }
   }
 
+  // F-19: the logged-in user's own photo (a path under afbeeldingen/, or null),
+  // merged into the latest user file like the preferences: no rev check, so an
+  // admin's change meanwhile is kept.
+  async function saveOwnPhoto(foto) {
+    const user = _activeUser;
+    if (!user?.id) return null;
+    const saved = await update(`gebruikers/${user.id}.json`, (current, onDisk) => {
+      if (!onDisk) throw new Error(`gebruikers/${user.id}.json ontbreekt`);
+      return stampMetaBy({ ...current, foto }, onDisk, user.id);
+    });
+    cacheUser(saved);
+    return saved;
+  }
+
   // One file per user (C16): saving checks the rev the edit started from, so
   // two admins editing the same user no longer overwrite each other silently.
   async function upsertUser(user, baseRev = user._meta?.rev) {
@@ -761,11 +775,13 @@ const Store = (() => {
     });
   }
 
-  async function getStudentHistory(studentId, subject = _activeSubject) {
+  // `loaded`: the caller loaded every year of the vak already (the cards load them once for a
+  // whole list instead of once per student, review 26-28 M2).
+  async function getStudentHistory(studentId, subject = _activeSubject, { loaded = false } = {}) {
     const years = listYearsSync();
     const results = [];
     for (const year of years) {
-      await loadYear(year, subject);
+      if (!loaded) await loadYear(year, subject);
       const exams = getExamsSync(year, subject);
       const record = await getStudentScores(studentId, year, subject);
       const examIds = new Set([
@@ -1413,6 +1429,7 @@ const Store = (() => {
     loadUsers,
     upsertUser,
     savePreferences,
+    saveOwnPhoto,
     cacheUser,
     forgetFile,
     loadSchool,

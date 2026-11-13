@@ -25,7 +25,7 @@ import {
   seAverage,
 } from '../domain/statistics';
 import { computeExamStats } from '../screens/toetsen';
-import { leerlingenState } from '../screens/leerlingen.js';
+import { leerlingenState } from '../screens/leerlingen';
 
 /**
  * Keep an open profile up to date: new scores and exam edits refresh it

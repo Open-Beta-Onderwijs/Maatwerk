@@ -2,7 +2,7 @@
 
 // The user menu (F-17, design spec 3.6): a dropdown under the avatar in the
 // top bar instead of the old account modal. Name and role, Thema (Licht /
-// Donker), Accentkleur (21 swatches, 7x3), Foto wijzigen (F-19, later),
+// Donker), Accentkleur (21 swatches, 7x3), Foto wijzigen (F-19),
 // Pincode wijzigen, Nieuwe herstelcodes (admin) and Uitloggen. A look change
 // applies at once; `onLook` saves it for the user.
 //
@@ -24,6 +24,8 @@ export interface UserMenuOptions {
   look: Look;
   onLook: (look: Look) => void;
   onChangePin: () => void;
+  /** "Foto wijzigen" (F-19). */
+  onChangePhoto: () => void;
   /** Only for the admin. */
   onRenewCodes?: () => void;
   onLogout: () => void;
@@ -93,8 +95,7 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
       </div>
     </div>
     <div class="user-menu__sep"></div>
-    <button type="button" class="user-menu__item" id="acc-photo" disabled
-      title="Je foto wijzigen kan in een volgende versie; vraag het tot dan aan de beheerder.">Foto wijzigen</button>
+    <button type="button" class="user-menu__item" id="acc-photo">Foto wijzigen</button>
     <button type="button" class="user-menu__item" id="acc-pin">Pincode wijzigen</button>
     ${opts.onRenewCodes ? `<button type="button" class="user-menu__item" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
     <div class="user-menu__sep"></div>
@@ -164,6 +165,7 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
     sync();
     opts.onLook({ ...look });
   });
+  el.querySelector('#acc-photo')!.addEventListener('click', act(opts.onChangePhoto));
   el.querySelector('#acc-pin')!.addEventListener('click', act(opts.onChangePin));
   if (opts.onRenewCodes)
     el.querySelector('#acc-codes')!.addEventListener('click', act(opts.onRenewCodes));
