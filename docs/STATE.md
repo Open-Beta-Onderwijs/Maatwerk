@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-13 (steps 26-28 in one go; steps 26, 27 done) Branch: `step/26-login-splash`
+Last updated: 2026-11-13 (steps 26-28 in one go; all three done, gate and review next) Branch: `step/26-login-splash`
 Last tags: `v0.16.0` (merge `d066a6d`), `step-25` (`0e76028`), `step-24`, `v0.15.0`
 
 ## Current step
@@ -10,7 +10,30 @@ version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-2
 release only at the end. STOPs collected for the report: the visual check of all three steps
 (baselines only after the user saw them) and the card numbers of step 27 (before/after table).
 
-**Next action:** step 28 (Beheer screens), sub-task 1.
+**Next action:** the gate (PLAN.md 2.2) and the review of steps 26-28 (`docs/reviews/step-26-28.md`), then stop and report.
+
+## Step 28 progress (Beheer screens, 0.19)
+
+1. **Done (`c4d838d`):** Gebruikers (52 px avatars, amber pill, action order, sectievoorzitters
+   card) and Gebruiker bewerken (`modals/gebruiker-edit.ts`: 12 swatches as a radio group, the
+   crop of step 26, D28); School (logo panel, watermark text and buttons; D29); Gegevenscontrole
+   (`issueCards`, clean card, "Map openen" via `openPath`); Instellingen (unit fields, Opslaan top
+   right, `snapshotKinds`, "Map openen"); F-02 (`utils/csv-example.ts` in the three CSV imports).
+   R-05: `gebruikers.js` -> TS. e2e `beheer.spec.ts` (5), two in `photo.spec.ts`; views
+   `admin-gegevens` (fixed clock), `admin-instellingen`.
+2. **Done:** version 0.19.0; D28 and D29 closed in `quirks.md`; manual checks M-CARD-1..2 and
+   M-BEH-1..4.
+
+**Not done (for the report):** X-06 (`rapporten/` retention) has no decision, so it is not in this
+step. "Vergelijken" (a OneDrive conflict copy) and "Toets openen" (a broken reference) of board 12
+have no feature behind them yet; those findings get "Map openen". R-05 for `screens/school.js`
+(touched for the logo panel, the watermark and D29) is left as JS.
+
+**Choices made without asking (for the report):** a user colour that is none of the 12 swatches
+stays as an extra first swatch "Huidige kleur"; the new-user default colour is the first swatch
+(blauw, was `#4a90d9`); the sectievoorzitter rows follow the login order (nat, bio, schk, wi);
+the snapshot kinds are computed in the UI with the core's keep rule (display only); the check
+time says "vandaag om HH:MM" (it is always today: the check runs when the screen opens).
 
 ## Step 27 progress (Leerlingen and Groepen cards, 0.18)
 

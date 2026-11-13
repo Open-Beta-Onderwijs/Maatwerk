@@ -204,6 +204,28 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
       scroll to zoom, Opslaan; the top bar, the login screen and the editor show the new photo;
       the file is `afbeeldingen\<gebruiker-id>.jpg`. Verwijderen shows the initials again.
 
+## Cards (M-CARD, 0.18)
+
+- [ ] **M-CARD-1** Leerlingen as a teacher on a copy of real data: cards per class; the year
+      average, "laatste" and the trend arrow match the profile (Cijferverloop) of a few students;
+      years 4-6 alternate "laatste" and "SE" in step on all cards (and show both with Windows
+      animations off). A long list scrolls smoothly; the grades fill in without the list moving.
+- [ ] **M-CARD-2** Groepen: mean ± SD and % onvoldoende match the group overview's GEMIDDELDE
+      row; upper-school groups show "SE … · R …". The whole card opens the overview; the
+      Periode headers have a line after them (V-02).
+
+## Beheer (M-BEH, 0.19)
+
+- [ ] **M-BEH-1** Gebruiker bewerken: a swatch changes the ring; a wide photo cropped and saved
+      shows on the Gebruikers card, at login and in the top bar. A new user with a photo: the file
+      in `afbeeldingen\` has the user's id as its name.
+- [ ] **M-BEH-2** School: Logo wijzigen and Watermerk wijzigen; the watermark in the corner changes
+      at once and is inverted in the dark theme.
+- [ ] **M-BEH-3** Gegevenscontrole on a copy with a broken file: a FOUT card; "Map openen" opens
+      the right folder in Verkenner / Finder.
+- [ ] **M-BEH-4** Instellingen: the snapshot list shows the kinds; "Map openen" opens `snapshots`.
+      CSV import: "Voorbeeld opslaan…" writes a file that Excel opens and that imports back.
+
 ## Opdrachten and the editor (M-OPD)
 
 - [ ] **M-OPD-1** "+ Opdracht toevoegen" creates the folder `opdrachten\<id>\` with

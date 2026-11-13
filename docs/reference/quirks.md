@@ -146,10 +146,14 @@ are relative to `_reference/` unless a section says otherwise.
 28. **D28 · Photo file name and user id can differ**
     - Where: `screens/gebruikers.js:220`, `:230`
     - Evidence: a new user gets `gebr-${Date.now()}` twice (photo path and user id), computed at different times.
+    - **Closed (step 28):** the id is made once; photos are saved as `afbeeldingen/<user id>.jpg`
+      (Gebruiker bewerken and the teacher's own Foto wijzigen).
 
 29. **D29 · Watermark always read as SVG**
     - Where: `app.js:957`; `screens/school.js:146`, `:230`
     - Evidence: `school.watermerk` can be `fotos/school-watermerk.png`, but the background reads `fotos/school-watermerk.svg` only.
+    - **Closed (step 28):** the background reads the file `school.watermerk` names (the default
+      name when it is empty) and is applied again after a change.
 
 30. **D30 · `temp` in watcher ignore list is a no-op**
     - Where: `sync.js:21`; `main.js:549`
