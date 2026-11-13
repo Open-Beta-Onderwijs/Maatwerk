@@ -510,3 +510,18 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   Ctrl+X over observatie and Cijfer cells (behaves as Delete).
 - **Review 25 n2:** `screens/scores/group-grid.ts` is ~525 lines; move the keyboard handler into
   its own module when it next changes.
+
+## From Steps 26-28
+
+- **Review 26-28 m2:** Gebruiker bewerken writes the photo before the user record (rev check); a
+  refused save leaves the new photo in place. Removing a photo (both dialogs) leaves the file.
+- **Review 26-28 m6:** the snapshot kinds in Instellingen repeat `maatwerk-core::snapshots::keep`
+  in TypeScript; let `listSnapshots` return the kind instead.
+- **Review 26-28 m7:** board 12 "Vergelijken" (OneDrive conflict copy) and "Toets openen" (a broken
+  reference) need features behind them; those findings get "Map openen" for now. The rapport
+  reads only the SVG watermark (D29 is closed for the app only).
+- **Review 26-28 m8:** e2e for the grade fill on upper-school cards (the fixture has no years
+  4-6), the CSV examples through the importers' own checks, Escape during the avatar flight.
+- **Review 26-28 nits:** see `docs/reviews/step-26-28.md` (n1-n6).
+- **R-05:** `screens/school.js` was touched in step 28 and is still JS.
+- **X-06** (`rapporten/` retention): waits for a decision.

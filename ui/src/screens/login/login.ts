@@ -201,12 +201,13 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
 
     const hero = slot.firstElementChild as HTMLElement;
     const opts = { duration: FLIGHT_MS, easing: EASE };
+    let flight: Animation;
     if (reducedMotion()) {
-      hero.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
+      flight = hero.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
       form.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
     } else {
       const to = hero.getBoundingClientRect();
-      hero.animate(
+      flight = hero.animate(
         [{ transform: flipTransform(from, to), boxShadow: 'none' }, { transform: 'none' }],
         opts,
       );
@@ -219,6 +220,8 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
       );
     }
     panelApi.focus();
+    // "Andere gebruiker" waits until the avatar has landed (review 26-28 m1).
+    await flight.finished.catch(() => undefined);
     busy = false;
   }
 

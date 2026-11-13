@@ -775,11 +775,13 @@ const Store = (() => {
     });
   }
 
-  async function getStudentHistory(studentId, subject = _activeSubject) {
+  // `loaded`: the caller loaded every year of the vak already (the cards load them once for a
+  // whole list instead of once per student, review 26-28 M2).
+  async function getStudentHistory(studentId, subject = _activeSubject, { loaded = false } = {}) {
     const years = listYearsSync();
     const results = [];
     for (const year of years) {
-      await loadYear(year, subject);
+      if (!loaded) await loadYear(year, subject);
       const exams = getExamsSync(year, subject);
       const record = await getStudentScores(studentId, year, subject);
       const examIds = new Set([

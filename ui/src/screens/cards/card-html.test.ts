@@ -45,6 +45,11 @@ describe('student card markup (F-07)', () => {
     expect(text(html)).toBe('Nog geen cijfers');
   });
 
+  it('no grade this year but an SE from earlier years: the SE only', () => {
+    const html = studentGradesHtml({ bars: [], average: null, last: null, trend: null, se: 6.4 });
+    expect(text(html)).toBe('SE 6,4');
+  });
+
   it('bar heights in proportion, 28 px for a 10', () => {
     expect([barHeight(10), barHeight(5), barHeight(0.4), barHeight(12)]).toEqual([28, 14, 3, 28]);
   });

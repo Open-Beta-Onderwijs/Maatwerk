@@ -48,7 +48,11 @@ function gradeB(g: number): string {
  * "laatste X,X" (upper school: alternating with "SE X,X").
  */
 export function studentGradesHtml(n: StudentCardNumbers): string {
-  if (n.average === null) return `<span class="s-card__none">Nog geen cijfers</span>`;
+  if (n.average === null && n.se === null)
+    return `<span class="s-card__none">Nog geen cijfers</span>`;
+  if (n.average === null)
+    // No grade this year yet, but an SE from earlier years (review 26-28 m5).
+    return `<span class="s-card__nums"><span class="s-card__small">SE ${gradeB(n.se!)}</span></span>`;
   const bars = n.bars
     .map(
       (b) =>

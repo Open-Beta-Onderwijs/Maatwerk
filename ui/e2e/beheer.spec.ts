@@ -74,7 +74,7 @@ test('Gegevenscontrole: a clean check is a green card; findings are cards with a
   await expect(page.locator('.gegevens-summary .pill')).toHaveText(['1 fout', '1 waarschuwing']);
   await cards.first().getByRole('button', { name: 'Map openen' }).click();
   const opened = await withMock(page, (m) =>
-    m.calls.filter((c) => c[0] === 'openPath').map((c) => c[1]),
+    m.calls.filter((c) => c[0] === 'openDataFolder').map((c) => c[1]),
   );
   expect(opened).toEqual(['2025-2026/scores/nat']);
 });
@@ -108,7 +108,7 @@ test('Instellingen: fields with units, Opslaan top right, the snapshots with the
   ]);
   await page.getByRole('button', { name: 'Map openen' }).click();
   const opened = await withMock(page, (m) =>
-    m.calls.filter((c) => c[0] === 'openPath').map((c) => c[1]),
+    m.calls.filter((c) => c[0] === 'openDataFolder').map((c) => c[1]),
   );
   expect(opened).toEqual(['snapshots']);
 });

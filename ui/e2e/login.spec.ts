@@ -10,6 +10,9 @@ import { PIN, TEACHER, enterPin, logout } from './helpers';
 const stage = (page: Page) => page.locator('.login');
 const tile = (page: Page, vak: string) => page.locator(`.login-tile[data-subject="${vak}"]`);
 const badge = (page: Page, id = TEACHER) => page.locator(`.user-badge[data-user-id="${id}"]`);
+/** The avatar has landed: "Andere gebruiker" and Escape wait for that (review 26-28 m1). */
+const landed = (page: Page) =>
+  page.waitForFunction(() => document.querySelector('.login-hero')?.getAnimations().length === 0);
 
 test('the splash shows the version and is gone once the vak tiles are there', async ({
   page,
@@ -59,6 +62,7 @@ test('a chosen user gets the PIN block inline; "Andere gebruiker" goes back', as
   expect(fields!.height).toBeGreaterThanOrEqual(168);
   await expect(page.locator('.dlg')).toHaveCount(0);
 
+  await landed(page);
   await page.getByRole('button', { name: 'Andere gebruiker' }).click();
   await expect(stage(page)).toHaveAttribute('data-stage', 'vak');
   await expect(page.locator('.login-pin')).toBeHidden();
@@ -76,6 +80,7 @@ test('keyboard: Enter on a tile and a user, Escape back out, Enter logs in', asy
   await badge(page).focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#pin-new')).toBeFocused();
+  await landed(page);
   await page.keyboard.press('Escape');
   await expect(stage(page)).toHaveAttribute('data-stage', 'vak');
   await expect(badge(page)).toBeFocused();

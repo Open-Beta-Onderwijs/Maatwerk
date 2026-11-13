@@ -152,8 +152,9 @@ are relative to `_reference/` unless a section says otherwise.
 29. **D29 · Watermark always read as SVG**
     - Where: `app.js:957`; `screens/school.js:146`, `:230`
     - Evidence: `school.watermerk` can be `fotos/school-watermerk.png`, but the background reads `fotos/school-watermerk.svg` only.
-    - **Closed (step 28):** the background reads the file `school.watermerk` names (the default
-      name when it is empty) and is applied again after a change.
+    - **Closed for the app (step 28):** the background reads the file `school.watermerk` names
+      (the default name when it is empty) and is applied again after a change. The rapport still
+      reads only the SVG (review 26-28 m7, `docs/backlog.md` "From Steps 26-28").
 
 30. **D30 · `temp` in watcher ignore list is a no-op**
     - Where: `sync.js:21`; `main.js:549`

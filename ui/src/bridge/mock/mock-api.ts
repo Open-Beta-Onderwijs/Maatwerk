@@ -774,6 +774,13 @@ export class MockApi implements MaatwerkApi {
     return '';
   }
 
+  async openDataFolder(relPath: string): Promise<string> {
+    this.record('openDataFolder', [relPath]);
+    // As maatwerk-core::outputs::openable_folder: folders inside the data folder only.
+    if (relPath.split('/').includes('..') || /^([a-z]:|\/)/i.test(relPath)) return 'Ongeldig pad.';
+    return '';
+  }
+
   async printPdf(pdfPath: string, name: PrintName): Promise<string> {
     this.record('printPdf', [pdfPath, name]);
     const bytes = this.pdfs.get(pdfPath);

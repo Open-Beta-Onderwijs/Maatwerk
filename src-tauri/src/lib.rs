@@ -119,6 +119,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             render::render_assignment_svg,
             render::render_assignment_batch,
             render::open_path,
+            render::open_data_folder,
             render::print_pdf,
             editor::editor_open,
             editor::editor_update,

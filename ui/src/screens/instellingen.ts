@@ -9,7 +9,7 @@
 
 import type { MaatwerkApi } from '../bridge/api';
 
-type Api = Pick<MaatwerkApi, 'listSnapshots' | 'openPath'>;
+type Api = Pick<MaatwerkApi, 'listSnapshots' | 'openDataFolder'>;
 
 export interface SnapshotSettings {
   intervalHours: number;
@@ -265,7 +265,7 @@ export async function renderInstellingen(
   const listHead = el('div', 'inst-card__head');
   const openBtn = el('button', 'btn btn--text btn--sm', 'Map openen') as HTMLButtonElement;
   openBtn.addEventListener('click', async () => {
-    const problem = await api.openPath('snapshots').catch((e) => String(e));
+    const problem = await api.openDataFolder('snapshots').catch((e) => String(e));
     if (problem) toast(`Map openen mislukt: ${problem}`, 'error');
   });
   listHead.append(el('h3', 'inst-card__title', 'Aanwezige snapshots'), openBtn);

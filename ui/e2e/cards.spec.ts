@@ -29,6 +29,30 @@ test('a student card shows bars, the year average with the trend and the last gr
   await expect(page.locator('.dlg')).toContainText('Sem van den Dekker');
 });
 
+test('a search keeps the numbers on the cards (computed once per data change)', async ({
+  page,
+}) => {
+  await login(page);
+  await screen(page, 'leerlingen');
+  await expect(page.locator('.s-card__avg-value').first()).toBeVisible();
+  const before = await page.evaluate(
+    () =>
+      (window as unknown as { __maatwerkMock: { calls: unknown[][] } }).__maatwerkMock.calls.length,
+  );
+  await page.locator('#student-search').fill('Sem');
+  // At once from the cache: no blank card, no new reads.
+  await expect(page.locator('.s-card')).toHaveCount(1);
+  await expect(page.locator('.s-card__avg-value')).toHaveText('8,3');
+  const reads = await page.evaluate(
+    (n) =>
+      (window as unknown as { __maatwerkMock: { calls: unknown[][] } }).__maatwerkMock.calls
+        .slice(n)
+        .filter((c) => ['ensureYear', 'readAllJson'].includes(String(c[0]))).length,
+    before,
+  );
+  expect(reads).toBe(0);
+});
+
 test('a group card shows mean ± SD and % onvoldoende; it opens the group overview', async ({
   page,
 }) => {

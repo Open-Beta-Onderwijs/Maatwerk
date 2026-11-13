@@ -218,10 +218,15 @@ export interface MaatwerkApi {
 
   // ── Shell ─────────────────────────────────────────────────────────────────
   /**
-   * Opens a render output (`pdfPath`) or a data-relative file with the OS;
-   * `''` on success, else an error text. Absolute paths are refused.
+   * Opens a render output (`pdfPath`) or a printed copy (`rapporten/<schooljaar>/<name>.pdf`)
+   * with the OS; `''` on success, else an error text. Nothing else (review 6a M1).
    */
   openPath(target: string): Promise<string>;
+  /**
+   * Shows a folder of the data folder in the file manager (`''` = the data folder itself);
+   * `''` on success, else an error text. Folders only (step 28).
+   */
+  openDataFolder(relPath: string): Promise<string>;
 
   // ── Events ────────────────────────────────────────────────────────────────
   onDataChanged(cb: (changes: DataChange[]) => void): Unsubscribe;

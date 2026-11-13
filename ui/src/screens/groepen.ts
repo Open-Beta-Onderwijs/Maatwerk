@@ -251,7 +251,10 @@ async function groupNumbers(group: Group, year: string) {
     students.map(async (s) => {
       const rec = (await Store.getStudentScores(s.id, year, subject)) as ScoreRecord;
       const se = upper
-        ? seAverage((await Store.getStudentHistory(s.id, subject)) as HistoryEntry[], allExams)
+        ? seAverage(
+            (await Store.getStudentHistory(s.id, subject, { loaded: true })) as HistoryEntry[],
+            allExams,
+          )
         : null;
       return { year: Store.studentYearAverage(rec, year, subject) as number | null, se };
     }),
@@ -260,19 +263,30 @@ async function groupNumbers(group: Group, year: string) {
   return groupCardNumbers(members, upper);
 }
 
+/** Each render starts a new fill; an older one stops (review 26-28 m4). */
+let fillRun = 0;
+
 async function fillGroupGradeStats(groups: Group[], year: string, container: HTMLElement) {
+  const run = ++fillRun;
   const end = perfSpan('groepen:stats');
   // One folder read per vak (and per year for the SE) instead of one read per student (Step 7c).
   const subjects = [...new Set(groups.map((g) => g.subject).filter((s): s is string => !!s))];
   const years = groups.some((g) => isUpperSchool(g.jaarlaag))
     ? (Store.listYearsSync() as string[])
     : [year];
+  // Every year once (not once per student, review 26-28 M2); the SE needs all of them.
   await Promise.all(
     subjects.flatMap((s) =>
-      years.map((y) => (Store.preloadScores(y, s) as Promise<void>).catch(() => {})),
+      years.map((y) =>
+        Promise.all([
+          (Store.loadYear(y, s) as Promise<void>).catch(() => {}),
+          (Store.preloadScores(y, s) as Promise<void>).catch(() => {}),
+        ]),
+      ),
     ),
   );
   for (const g of groups) {
+    if (run !== fillRun) return;
     const numbers = await groupNumbers(g, year);
     if (!numbers) continue;
     const el = container.querySelector<HTMLElement>(`[data-grade-stats="${CSS.escape(g.id)}"]`);

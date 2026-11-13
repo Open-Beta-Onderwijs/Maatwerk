@@ -166,14 +166,18 @@ export function mountPinPanel(form: HTMLFormElement, opts: PinPanelOptions): { f
     e.preventDefault();
     void submit();
   });
+  // Not while a PIN is checked or the session starts (review 26-28 m1).
+  const back = () => {
+    if (ok.getAttribute('aria-busy') !== 'true') opts.onBack();
+  };
   form.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
-      opts.onBack();
+      back();
     }
   });
-  form.querySelector('[data-action="back"]')!.addEventListener('click', () => opts.onBack());
+  form.querySelector('[data-action="back"]')!.addEventListener('click', back);
   showFields();
   return { focus };
 }

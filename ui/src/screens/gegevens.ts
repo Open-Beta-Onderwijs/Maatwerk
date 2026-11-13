@@ -10,7 +10,11 @@ import { snapshotLabel } from './instellingen';
 
 type Api = Pick<
   MaatwerkApi,
-  'validateDataFolder' | 'acceptStamp' | 'snapshotForFile' | 'restoreFromSnapshot' | 'openPath'
+  | 'validateDataFolder'
+  | 'acceptStamp'
+  | 'snapshotForFile'
+  | 'restoreFromSnapshot'
+  | 'openDataFolder'
 >;
 
 /** Asks the admin; resolves true for the confirm button (app.js confirmDialog). */
@@ -271,7 +275,7 @@ export async function renderGegevens(
     }
   };
   const openFolder = async (path: string) => {
-    const problem = await api.openPath(folderOf(path)).catch((e) => String(e));
+    const problem = await api.openDataFolder(folderOf(path)).catch((e) => String(e));
     if (problem) result.prepend(el('p', 'pin-error', `Map openen mislukt: ${problem}`));
   };
   const restore = async (path: string) => {
