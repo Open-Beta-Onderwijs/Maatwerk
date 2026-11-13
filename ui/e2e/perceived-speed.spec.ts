@@ -89,7 +89,8 @@ test('a long student list renders completely and every card works', async ({ pag
   await screen(page, 'leerlingen');
   const cards = page.locator('#student-list .card');
   await expect(cards).toHaveCount(many.students.length);
-  const last = cards.last().locator('[data-action="profile"]');
+  // A teacher's card is the profile button itself (F-07).
+  const last = page.locator('#student-list [data-action="profile"]').last();
   // Playwright's scrolling on WebKit does not reach into a `content-visibility: auto` card;
   // the browser's own scrollIntoView (as a user's scrolling) does.
   await last.evaluate((b) => b.scrollIntoView({ block: 'center' }));

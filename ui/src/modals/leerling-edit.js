@@ -19,7 +19,7 @@ import {
   renderStudentList,
   JAARLAGEN,
   SCHOOLSOORTEN,
-} from '../screens/leerlingen.js';
+} from '../screens/leerlingen';
 
 // The version of one student in a students-file change (before, after), as JSON.
 function studentVersions(ev, id) {

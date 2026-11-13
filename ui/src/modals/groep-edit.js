@@ -14,7 +14,7 @@ import {
 } from '../app.js';
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
 import { groupOverwrites, withImportIds } from '../domain/groups';
-import { renderGroepen } from '../screens/groepen.js';
+import { renderGroepen } from '../screens/groepen';
 
 export async function openGroupModal(id) {
   const year = SEL.groupsYear.getValue() || Store.getConfigSync().activeYear;

@@ -18,6 +18,7 @@
 @import './styles/splash.css';
 @import './styles/login.css';
 @import './styles/photo-crop.css';
+@import './styles/cards.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,

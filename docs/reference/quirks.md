@@ -981,6 +981,8 @@ Read from code only; "probable" means the code path is clear but not confirmed i
 - Port (Step 3a, inline styles -> classes): kept as rendered (`.gl-th` only), so the look does not
   change. If the separators were intended, adding them is a visual change for the user to approve
   (backlog).
+- **Closed (step 27, V-02):** the "Periode N" headers get the line after them and "Gemiddelde" the
+  line before it, matching the columns below (the 1 px bottom border stays the 2 px of `.gl-th`).
 
 ### U19. Score grid: a letter on an observatie cell opens Handsontable's text editor
 

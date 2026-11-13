@@ -10,7 +10,7 @@ import { TEACHER, login, readMockJson, withMock } from './helpers';
 /** A PNG of w x h px: left half red, right half blue. */
 async function pngOf(page: Page, w: number, h: number): Promise<Buffer> {
   const b64 = await page.evaluate(
-    ([w, h]) => {
+    ({ w, h }) => {
       const c = document.createElement('canvas');
       c.width = w;
       c.height = h;
@@ -21,7 +21,7 @@ async function pngOf(page: Page, w: number, h: number): Promise<Buffer> {
       x.fillRect(w / 2, 0, w / 2, h);
       return c.toDataURL('image/png').split(',')[1]!;
     },
-    [w, h],
+    { w, h },
   );
   return Buffer.from(b64, 'base64');
 }
