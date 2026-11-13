@@ -44,9 +44,10 @@ test('a teacher crops a wide image to a square photo', async ({ page }) => {
     buffer: await pngOf(page, 400, 200),
   });
   const frame = page.locator('.photo-crop__frame');
+  // 80% of the short side, centred: 160 of 200 px, at a scale of 0.75 (300 / 400). Polled: the
+  // new image is decoded asynchronously (WebKit shows the old photo a moment longer).
+  await expect.poll(async () => Math.round((await frame.boundingBox())!.width)).toBe(120);
   const before = (await frame.boundingBox())!;
-  // 80% of the short side, centred: 160 of 200 px, at a scale of 0.75 (300 / 400).
-  expect(Math.round(before.width)).toBe(120);
   // Drag it all the way left, then zoom in with the keyboard.
   await frame.hover();
   await page.mouse.down();
