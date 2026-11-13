@@ -11,8 +11,8 @@ three OSes. CI baselines of `modal-scores`: macOS and Linux from run `4321779631
 `43220392381`. Local visual baselines updated. Tags `step-25` (`0e76028`), `v0.16.0` (merge
 commit, as `docs/release.md`), pushed.
 
-**Release 0.16.0:** a **draft** GitHub release "Maatwerk 0.16.0" (tag `v0.16.0`) with Dutch
-notes covering everything since 0.3.2 (user). The user publishes it.
+**Release 0.16.0:** GitHub release "Maatwerk 0.16.0" (tag `v0.16.0`) with Dutch notes covering
+everything since 0.3.2 (user). Published 2026-11-13.
 
 **Release files (2026-11-12):** tag CI run `43233388996`: Windows and Linux green, macOS got no
 runner (rerun started; the user: leave it for now). Attached to the draft after checking
@@ -25,7 +25,9 @@ the green `main` run `43240489678` (`fe88ea0`, differs from the tag only in STAT
 Checksums verified, attached: `Maatwerk-macos-universal.dmg` (SHA-256 `71b551a6…4c40`), the
 `.zip` (`728458ff…7761`) and `SHA256SUMS-macos.txt`. The draft is complete (10 files).
 
-**Next action:** the user publishes the draft. Then step 26 (Login and splash). Manual
+**Published (2026-11-13):** 0.16.0 is public and marked Latest (user).
+
+**Next action:** step 26 (Login and splash). Manual
 checks M-POR-1..4 (0.15) are still the user's.
 
 ## Step 25 progress (Score entry, 0.16)
