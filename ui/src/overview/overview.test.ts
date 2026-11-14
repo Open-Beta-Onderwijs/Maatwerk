@@ -7,6 +7,7 @@ import { averagesStats, columnStats, sdText } from './sections';
 import { resitInfo, resitSubline } from './resit-dot';
 import { axisPct, pctOf } from './common';
 import type { Exam } from '../domain/types';
+import { mean, meanOfAverages } from '../domain/statistics';
 
 describe('histogram (decision 30)', () => {
   it('step 1 has ten bins from 0,5, labelled <1,5 ... ≤10,0', () => {
@@ -82,6 +83,13 @@ describe('section stats', () => {
     expect(s.mean).toBeCloseTo(6);
     expect(s.sd).toBeCloseTo(Math.sqrt(8 / 3));
     expect(sdText(s.sd)).toBe('± 1,6');
+  });
+
+  it('gives the means the old group overview footer showed (mean, meanOfAverages)', () => {
+    const grades = [3.7, 8.2, 5.5, 6.1, 9.9];
+    expect(columnStats(grades).mean).toBe(mean(grades));
+    const avgs = [5.449, 6.04, 7.15];
+    expect(averagesStats(avgs).mean).toBe(meanOfAverages(avgs));
   });
 
   it('is empty without grades', () => {

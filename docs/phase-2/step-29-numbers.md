@@ -1,0 +1,83 @@
+# Step 29: the numbers of the overviews (before/after)
+
+PLAN-2 section 2 ("Numbers"): the group overview (step 29a, board 45) shows new numbers: a
+STANDAARDDEVIATIE row, RTTI per test over the year and observatie counts "n (p%)". No grade rule
+changed: every number comes from the core functions the app already used (`stats`,
+`statsOfAverages`, `yearAverage`, `seAverage`, `pooledRtti`; decisions 9, 10, 12, 21 of
+`docs/phase-2/step-19-grade-rules.md`). **Needs the user's OK before the merge.**
+
+Fixture: the mock data folder (`tools/fixtures`, fixed seed), school year 2025-2026, nat, logged
+in as the nat teacher. Read from the app with Playwright (new group overview: the DOM; old exam
+overview: its Chart.js data). Groups: **3a nat** (8 students) and **3 nat cluster** (3 students,
+who are also in 3a).
+
+## 1. Resultaten: GEMIDDELDE and STANDAARDDEVIATIE
+
+GEMIDDELDE is unchanged: per test the mean of the grades that count (as the old footer, `mean`);
+under gem. and SE the mean of the students' averages as shown (`meanOfAverages`, decision 21).
+A unit test checks that the new footer gives exactly the old functions' values
+(`ui/src/overview/overview.test.ts`). New is the STANDAARDDEVIATIE row: the population SD (as
+the cards and the exam overview), of the grades per test and of the shown averages under gem. and
+SE.
+
+| Groep         |      | 301   | 302   | 350 | 351   | 303   | gem.  | SE    |
+| ------------- | ---- | ----- | ----- | --- | ----- | ----- | ----- | ----- |
+| 3a nat        | gem. | 5,6   | 4,5   | —   | 6,9   | 6,6   | 5,1   | 4,5   |
+| 3a nat        | SD   | ± 1,5 | ± 1,8 | —   | ± 0,0 | ± 1,0 | ± 1,3 | ± 1,8 |
+| 3 nat cluster | gem. | 6,5   | 5,6   | —   | 6,9   | 6,1   | 6,1   | 5,6   |
+| 3 nat cluster | SD   | ± 2,1 | ± 2,4 | —   | ± 0,0 | ± 0,8 | ± 1,6 | ± 2,4 |
+
+The 3a gem. row equals the card of step 27 (5,1 ± 1,3, approved 2026-11-13).
+
+**SE column:** shown when the group is upper school (jaarlaag 4-6, as the cards) or one of its
+tests is an SE test. Both fixture groups are jaarlaag 3 with SE test 302, so the column stays;
+a lower-school group without an SE test loses it (before: always shown).
+
+## 2. RTTI-analyse: RTTI per test (new)
+
+Before, RTTI per group existed only per test in the exam overview ("RTTI-scores per groep"). The
+group overview now shows it for every test of the year (PO's left out, decision 32). Two
+differences, both by design:
+
+- **Who:** the group overview counts **every member of the group**; the exam overview puts each
+  student in **one** group (`studentGroup`), so students of 3a who are also in the cluster were
+  counted only under the cluster there.
+- **Which attempt:** the group overview takes the attempt that counts (the best of original and
+  resits, as the grade column); the exam overview of the original takes the original only.
+
+| Groep         | Toets | Exam overview (before) R / T1 / T2 / I      | Group overview (after) R / T1 / T2 / I |
+| ------------- | ----- | ------------------------------------------- | -------------------------------------- |
+| 3a nat        | 301   | 37 / 43 / 55 / 17                           | 37 / 58 / 47 / 27                      |
+| 3a nat        | 302   | 44 / 28 / 58 / 54                           | 48 / 30 / 58 / 42                      |
+| 3a nat        | 303   | 50 / 51 / 50 / 44                           | 50 / 48 / 53 / 46                      |
+| 3a nat        | 351   | (its one student counted under the cluster) | 70 / 30 / 70 / 50                      |
+| 3 nat cluster | 301   | 44 / 56 / 46 / 33                           | 44 / 56 / 46 / 33                      |
+| 3 nat cluster | 302   | 54 / 33 / 57 / 21                           | 54 / 33 / 57 / 21                      |
+| 3 nat cluster | 303   | 50 / 44 / 59 / 48                           | 50 / 44 / 59 / 48                      |
+| 3 nat cluster | 351   | 70 / 30 / 70 / 50                           | 70 / 30 / 70 / 50                      |
+
+The cluster's rows are equal (its students are in no other group of these tests and have no
+resits). For 3a nat, 302 after equals the exam overview's "Alle" (every student who made 302 is
+in 3a); 301 after includes the inhaal and herkansing attempts that count. A test without RTTI
+points (350, no grades) is left out of the chart.
+
+## 3. Observaties: "n (p%)" per test (new)
+
+Students of the group with the observatie on the attempt that counts (without a grade: on any
+attempt), percentage of the group; Totaal = the sum over the tests ("times given this year").
+Before: the exam overview's "Observaties per groep" (one group per student, original only).
+
+| Groep         | Observatie             | 301 before → after | 302 before → after | 303 before → after | Totaal |
+| ------------- | ---------------------- | ------------------ | ------------------ | ------------------ | ------ |
+| 3a nat        | Eenheden vergeten      | 2 → 3 (38%)        | 1 → 1 (13%)        | 2 → 3 (38%)        | 7×     |
+| 3a nat        | Formule niet genoteerd | 0 → 2 (25%)        | 1 → 1 (13%)        | 0 → 1 (13%)        | 4×     |
+| 3a nat        | Rekenfout              | 0 → 1 (13%)        | 1 → 1 (13%)        | 1 → 2 (25%)        | 4×     |
+| 3 nat cluster | Eenheden vergeten      | 2 → 2 (67%)        | 0 → —              | 1 → 1 (33%)        | 3×     |
+| 3 nat cluster | Formule niet genoteerd | 2 → 2 (67%)        | 0 → —              | 1 → 1 (33%)        | 3×     |
+| 3 nat cluster | Rekenfout              | 1 → 1 (33%)        | 0 → —              | 1 → 1 (33%)        | 2×     |
+
+3a's higher counts are the cluster students (members of both groups) and, for 301, the inhaal
+attempt that counts (its "Eenheden vergeten", 1 in the old INHAAL overview).
+
+The exam overview (step 29b) keeps its own rule for "per groep" (one group per student, as the
+score grid's sections), so these two views can differ for students in two groups.
