@@ -365,7 +365,10 @@ test('U8: a resit description is shown as text in the group overview', async ({ 
   const badges = page.locator('.dlg .attempt-badge');
   await expect(page.locator('.dlg b.u8')).toHaveCount(0);
   // In the fixture the resit is the best grade of some 3a students.
-  await expect(badges.first()).toHaveAttribute('title', NASTY_DESC);
+  // The resit dot names the attempt (spec 3.10): "<word> (poging N)", the word as typed.
+  expect(await badges.first().getAttribute('title')).toMatch(
+    /^"><b class="u8">x<\/b> \(poging \d\)$/,
+  );
 });
 
 test('a migrated config.json without activeYear opens every tab on the current school year', async ({

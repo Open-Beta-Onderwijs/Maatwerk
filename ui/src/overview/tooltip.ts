@@ -49,8 +49,9 @@ export function installGradeTips(
   tip.className = 'ov-tip';
   tip.setAttribute('role', 'tooltip');
   tip.hidden = true;
-  // In the dialog, so it is above the sticky header and footer and inside the top layer.
-  (root.closest('dialog') ?? document.body).appendChild(tip);
+  // On the modal's backdrop (fixed, viewport coordinates): above the sticky header and footer,
+  // and not clipped by the dialog's rounded box.
+  (root.closest('.dlg-backdrop') ?? document.body).appendChild(tip);
   let current: HTMLElement | null = null;
 
   const hide = () => {
@@ -64,7 +65,6 @@ export function installGradeTips(
     current = cell;
     tip.innerHTML = tipHtml(content);
     tip.hidden = false;
-    const host = tip.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 };
     const r = cell.getBoundingClientRect();
     const w = tip.offsetWidth;
     const h = tip.offsetHeight;
@@ -73,8 +73,8 @@ export function installGradeTips(
     left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
     let top = r.bottom + 4;
     if (top + h > window.innerHeight - 8) top = r.top - h - 4;
-    tip.style.left = `${Math.round(left - host.left)}px`;
-    tip.style.top = `${Math.round(top - host.top)}px`;
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top = `${Math.round(top)}px`;
   };
   const cellOf = (e: Event) =>
     (e.target as HTMLElement | null)?.closest?.<HTMLElement>('[data-tip]') ?? null;

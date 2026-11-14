@@ -538,8 +538,8 @@ html[data-theme='dark'] .ov-box__box {
 
 /* ── Grade tooltip ─────────────────────────────────────────────────────────── */
 .ov-tip {
-  position: absolute;
-  z-index: 50;
+  position: fixed;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -731,4 +731,26 @@ html[data-theme='dark'] .ov-tip__mute {
 .ov-heat__tot {
   color: var(--muted);
   font-weight: 600;
+}
+
+/* ── Group overview (modals/group-overview, board 45) ──────────────────────── */
+.gl-table thead tr.ov-head-group th.gl-th {
+  border-left: 8px solid var(--surface);
+}
+.gl-table thead th.ov-name-th {
+  text-align: left;
+}
+.gl-table thead th.gl-col {
+  width: 76px;
+  text-align: center;
+}
+.gl-table thead th.gl-col--jaar {
+  width: 70px;
+  color: var(--muted);
+}
+.gl-table td.gl-cell {
+  position: relative;
+}
+.ov-grid--flush {
+  padding-top: 0;
 }

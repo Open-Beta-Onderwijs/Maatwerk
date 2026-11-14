@@ -60,6 +60,9 @@ function watchProfile(dialog, { studentId, year, peers, activeTab }) {
 /**
  * Opens a student's profile. From a group overview it stacks on top of it, so
  * closing returns there; Vorige/Volgende (peers) replace it in place.
+ * @param {string} studentId
+ * @param {any[] | null} [peers]
+ * @param {string} [activeTab]
  */
 export async function openProfielModal(studentId, peers = null, activeTab = 'cijferverloop') {
   const year = leerlingenState.year || Store.getConfigSync().activeYear;

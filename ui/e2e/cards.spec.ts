@@ -68,10 +68,10 @@ test('a group card shows mean ± SD and % onvoldoende; it opens the group overvi
   const box = (await card.boundingBox())!;
   await page.mouse.click(box.x + box.width - 30, box.y + box.height - 12);
   await expect(page.locator('.dlg .gl-th').first()).toBeVisible();
-  // V-02: a line after each periode header and before Gemiddelde.
-  await expect(page.locator('.dlg .gl-th', { hasText: 'Gemiddelde' })).toHaveCSS(
+  // Board 45 (decision 27, replaces V-02's lines): a gap before every periode and before JAAR.
+  await expect(page.locator('.dlg .gl-th', { hasText: 'JAAR' })).toHaveCSS(
     'border-left-width',
-    '2px',
+    '8px',
   );
 });
 

@@ -24,7 +24,7 @@ import { Store } from '../store.js';
 import { fillStudentGrades, type GradeFill } from './cards/student-grades';
 
 // Re-export modals so existing consumers keep working
-export { openGroupStudentsModal } from '../modals/groep-leerlingen.js';
+export { openGroupStudentsModal } from '../modals/group-overview';
 export { openProfielModal } from '../modals/profiel.js';
 export { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals/leerling-edit.js';
 
