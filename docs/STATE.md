@@ -10,6 +10,9 @@ Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188
 design branch (done: `455fc90` on `main`, pushed), then 29a and 29b on `step/29-overviews`;
 **stop after 29b** and show the results (visual check, numbers table) before 29c.
 
+Still open from steps 26-28 (merged, PR #17): the GitHub release 0.19.0 (`docs/release.md`
+section 4) when the user asks.
+
 Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 
 ## Step 29 progress
