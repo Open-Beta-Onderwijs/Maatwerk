@@ -25,8 +25,14 @@ three OSes. Local visual baselines updated.
 `43431855294` and `43431890855` green on all three OSes. Tags `step-26`, `step-27`, `step-28`,
 `v0.19.0` (merge commit), pushed.
 
-**Next action:** the GitHub release 0.19.0 (`docs/release.md` section 4) when the user asks; then
-the next step of PLAN-2.
+**Step 29 design (2026-11-14, branch `design/step-29-overviews`):** design rounds 8-11 with the
+user on the canvas; decisions 27-40 in `PLAN-2.md`; spec 2.6 (RTTI names), 3.10, 4.5, 4.6, 4.14,
+4.15; mocks of boards 25-46 in `docs/phase-2/design/mocks/` (final: 43-46); ROADMAP F-24 to F-26;
+step 29 now split in 29a (shared parts, group overview), 29b (exam overview), 29c (PO overview,
+profile).
+
+**Next action:** the GitHub release 0.19.0 (`docs/release.md` section 4) when the user asks;
+merge `design/step-29-overviews`; then step 29a.
 
 ## Step 28 progress (Beheer screens, 0.19)
 

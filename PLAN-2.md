@@ -50,6 +50,26 @@ Praktische opdrachten (PO) with rubrics (user, 2026-11-08; ROADMAP F-20, F-22, F
 | 25  | The Rubrics tab is for teachers and sectievoorzitters, not the admin; the PO rapport gets its own design round (step 24)                                                                                                                                                                 | user   |
 | 26  | PO rapport (2026-11-12): an overview page, then the categories as level cards (variant A); no RTTI, no grade histogram; layout in step 24                                                                                                                                                | user   |
 
+Overviews and profile (user, 2026-11-14; design rounds 8-11, boards 43-46; spec 3.10, 4.5, 4.6,
+4.14, 4.15):
+
+| #   | Decision                                                                                                                                                                                                                                                                                                                                     | Source |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 27  | Group overview: tabs Resultaten, Cijferverdeling, Boxplot, RTTI-analyse, Observaties (no Vraaganalyse); board 45 replaces the content of board 3                                                                                                                                                                                             | user   |
+| 28  | Group overview Resultaten: JAAR "gem." is the weighted year average (decision 12, as card and rapport); an SE column only for groups whose tests count for an examendossier; one column per original test with the attempt that counts and the I/H resit dot right of the pill (pills stay aligned); a student without projectgroep gets "—" | user   |
+| 29  | Grade tooltip on hover (group and PO overview): the student's observaties for that cell, plus attempt, projectgroep or category level; cells with observaties get a dotted underline                                                                                                                                                         | user   |
+| 30  | Histograms everywhere use the program's bins (step 1 from 0,5; step 0,5 from 1,0), a count above every bar and a dashed line at 5,5; the 0,5 / 1 toggle only on "Alle leerlingen"; per-test cards in the group overview three per row                                                                                                        | user   |
+| 31  | Boxplots: type colour, every student a dot, dashed 5,5 line                                                                                                                                                                                                                                                                                  | user   |
+| 32  | RTTI charts skip PO's (with a note). RTTI-verloop: badges on the x-axis, y-axis in %, dashed lines, percentage at every point (labels kept 14 px apart), legend                                                                                                                                                                              | user   |
+| 33  | RTTI names everywhere in the UI: reproductie, training, transfer, inzicht (R, T1, T2, I), as the rapport (F-26)                                                                                                                                                                                                                              | user   |
+| 34  | Group overview Observaties: observaties alphabetically × test/PO badges, "n (p%)" with a heat tint, Totaal = times given this year; PO observaties count every member                                                                                                                                                                        | user   |
+| 35  | Exam overview Resultaten: one table with a heading row per group and GEMIDDELDE/STANDAARDDEVIATIE under each group; icon and R/T1/T2/I columns stay; verzameloverzicht: I/H dot right of the grade, the last three tabs disabled as today                                                                                                    | user   |
+| 36  | Exam overview: Cijferverdeling and Boxplot as decisions 30-31; Vraaganalyse restyled only; RTTI cards (all, per group) and the year verloop with this test highlighted; Observaties as three cards: all students, per group, per grade group (a vertical histogram card per observatie)                                                      | user   |
+| 37  | PO overview (F-24): "Overzicht openen" on PO cards works; tabs Resultaten, Cijferverdeling, Boxplot, Categorieën, Observaties                                                                                                                                                                                                                | user   |
+| 38  | PO overview Resultaten: one table "Per klas" (default, alphabetical) with a "Per projectgroep" toggle; columns per category, Punten, Bonus/malus, Cijfer; tooltip with level, observaties and grade build-up; average and SD per section                                                                                                     | user   |
+| 39  | PO overview: distributions of the final grade only; Categorieën as a table with a stacked bar of students per level (overlapping levels count twice); Observaties as bars per category                                                                                                                                                       | user   |
+| 40  | Student profile (F-25): restyle, same content. Cijferverloop as a bar chart without toetsgemiddelde (PO tooltip with categories); test and year comparisons as dot vs average with a ±1 SD band; Analyse with RTTI cards per test (PO's left out) and an observaties table per school year                                                   | user   |
+
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
 ## 2. Working rules
@@ -100,10 +120,10 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done   |
 | 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done   |
 | 25   | Score entry                                                      | M            | 0.16    | done   |
-| 26   | Login and splash                                                 | M            | 0.17    | review |
-| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | review |
-| 28   | Beheer screens                                                   | M            | 0.19    | review |
-| 29   | Overviews and profile                                            | L (29a, 29b) | 0.20    | todo   |
+| 26   | Login and splash                                                 | M            | 0.17    | done   |
+| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done   |
+| 28   | Beheer screens                                                   | M            | 0.19    | done   |
+| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | todo   |
 | 30   | Observaties and opdrachten                                       | M            | 0.21    | todo   |
 | 31   | Opdrachten-editor                                                | M            | 0.22    | todo   |
 | 32   | AI assistant                                                     | L (32a, 32b) | 0.23    | todo   |
@@ -375,17 +395,44 @@ Gebruikers (card actions order, Gebruiker bewerken with Afkorting + Kleur swatch
 School, Gegevenscontrole (findings as cards with actions), Instellingen (units, snapshot list),
 CSV import example.
 
-### Step 29: Overviews and profile (L)
+### Step 29: Overviews and profile (L+, three sessions)
 
-Items: F-10, F-11, B-05 (check), profile restyle, B15/B16 (if not done in 19b). Design: spec 4.5,
-4.6; board 3.
+Items: F-10, F-11, F-24 (PO overview), F-25 (profile restyle), F-26 (RTTI names), V-11 in charts;
+checks only: B-05 (fixed in step 20b), B15 and B16 (fixed in step 19, `quirks.md`). Decisions
+27-40. Design: spec 2.6, 3.10, 4.5, 4.6, 4.14, 4.15; boards 43-46 (`POOverzicht.dc.html`,
+`Profiel.dc.html`, `Groepsoverzicht2.dc.html`, `Toetsoverzicht.dc.html`). Boards 25-42 are
+history: do not read them. R-05: `toets-overzicht.js` (1232 lines), `groep-leerlingen.js` and
+`profiel.js` (1091 lines) to TS, split into cohesive modules.
 
-- **29a:** group overview modal: five tabs over the year, lazy with skeletons, 30 px rows, sticky
-  `tfoot`, observaties "n (p%)".
-- **29b:** exam overview (SD row, sticky footer, type colours in charts) and the student profile
-  restyled on the dialog component.
-- **PO:** the RTTI tabs and RTTI charts skip PO's; the results, distribution and boxplot include
-  them (striped type colour); the profile shows a PO's categories instead of RTTI.
+The split changed (2026-11-14): the four modals share the chart parts of spec 3.10, so those come
+first; the PO overview is new. Each part is one session and ends in a `step-29a/b/c` tag; one
+release 0.20 at the end.
+
+- **29a, shared parts and the group overview**
+  1. Overview components per spec 3.10 (e.g. `ui/src/overview/`): histogram card (bins from
+     `maatwerk-grades` `histogram` via WASM; counts; 5,5 line; Stapgrootte toggle), boxplot with
+     dots, RTTI-verloop (badges on the axis, % axis, dashed lines, labels kept apart, legend),
+     RTTI card, observatie bars, grade tooltip, resit dot, group-section rows with average and
+     SD. Unit tests: bins and labels, label spacing, section stats.
+  2. RTTI names (decision 33): one constant module; replace "toepassen bekend/nieuw" in the UI.
+  3. Group overview modal (spec 4.5), `groep-leerlingen.js` to TS: five tabs, lazy with
+     skeletons, SE column rule, PO column, Observaties with toetstype fit.
+  4. Stop and ask: a before/after table on the fixtures for the new numbers (SD row, SE average
+     column, RTTI over the year, observatie counts "n (p%)").
+- **29b, exam overview** (spec 4.6): `toets-overzicht.js` onto the 29a components and split
+  (R-05); one table with group sections and a footer per group; Vraaganalyse restyle; RTTI cards
+  and verloop; the three observatie cards (per grade group with `grade_group`); verzameloverzicht
+  (resit dot, disabled tabs). Check B-05.
+- **29c, PO overview and profile:** the PO overview modal (spec 4.14) and "Overzicht openen" on
+  PO cards (remove `PO_OVERVIEW_LATER`); a PO herkansing opens the same overview for its own
+  attempt (a PO verzameloverzicht is not designed: backlog). The profile restyle (spec 4.15),
+  `profiel.js` to TS; check B15 and B16 against the step-19 rules.
+- **End of step:** gate, review, stop and ask for the visual check before updating the
+  baselines, release 0.20.
+
+**Done when:** the four modals match boards 43-46 in both themes; e2e covers tab switching, Per
+klas / Per projectgroep, the Stapgrootte toggle, the tooltips and the verzameloverzicht; the user
+approved the numbers table.
 
 ### Step 30: Observaties and opdrachten (M)
 
