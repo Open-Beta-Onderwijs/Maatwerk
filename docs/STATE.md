@@ -1,38 +1,37 @@
 # State
 
-Last updated: 2026-11-13 (steps 26-28 merged, PR #17) Branch: `main`
+Last updated: 2026-11-14 (step 29a in progress) Branch: `step/29-overviews`
 Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
 ## Current step
 
-**Steps 26, 27 and 28 in one go (user, 2026-11-13):** one branch `step/26-login-splash`, a
-version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-28.md`) and
-release only at the end. STOPs collected for the report: the visual check of all three steps
-(baselines only after the user saw them) and the card numbers of step 27 (before/after table).
+**Step 29 (Overviews and profile, 0.20), sessions 29a and 29b (user, 2026-11-14):** merge the
+design branch (done: `455fc90` on `main`, pushed), then 29a and 29b on `step/29-overviews`;
+**stop after 29b** and show the results (visual check, numbers table) before 29c.
 
-**Gate (2026-11-13, on `494dabf` + test fixes `bbf637c`, `ef82bb0`):** fmt, clippy, cargo test, 629
-Vitest, 127 node, lint, typecheck, licences, cargo deny, SPDX green; Chromium e2e 327/327; WebKit
-login/cards/beheer/photo/shell 36/36 after the crop-test fix. Visual (light): 14 views differ from
-the 0.16 baselines, 39 unchanged; 6 new views. Review `docs/reviews/step-26-28.md` (0/2/8/7): M1,
-M2, m1, m3, m4, m5 fixed (`494dabf`), the rest in `docs/backlog.md`.
+Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 
-**User (2026-11-13):** visual check of steps 26-28 OK and `docs/phase-2/step-27-card-numbers.md`
-OK. CI baselines from run `43420312853` (`ed1ffd4`); confirming run `43422907768` green on all
-three OSes. Local visual baselines updated.
+## Step 29 progress
 
-**Steps 26-28 done and merged (2026-11-13):** PR #17 merged into `main` (`a32e7fc`), PR CI
-`43431855294` and `43431890855` green on all three OSes. Tags `step-26`, `step-27`, `step-28`,
-`v0.19.0` (merge commit), pushed.
+1. **Done (`7f5cb2c`):** shared overview parts in `ui/src/overview/` (spec 3.10): histogram
+   (core bins, counts, 5,5 line, Stapgrootte toggle), boxplot with dots, RTTI-verloop (labels
+   14 px apart), RTTI card, observatie bars, grade tooltip, resit dot, section rows with mean and
+   SD; `styles/overview.css`; style data `data-left`/`data-top`; `--foot` token. Tested.
+2. **Done (`7606a13`):** RTTI names (`domain/rtti-names.ts`, decision 33): "Toepassen 1/2" in
+   the RTTI uitleg placeholders replaced; names as tooltips on the RTTI buttons.
+3. **Done (`b7ba18f`):** group overview (spec 4.5, board 45) in TS:
+   `modals/group-overview/` (model, resultaten, charts, observaties, index); R-05
+   `groep-leerlingen.js` removed. e2e `overviews.spec.ts` (4); `cards.spec` and `quirks.spec`
+   U8 follow the new header gap and the dot title.
+4. Next: the before/after numbers table (STOP item for the report), then 29b (exam overview).
 
-**Step 29 design (2026-11-14, branch `design/step-29-overviews`):** design rounds 8-11 with the
-user on the canvas; decisions 27-40 in `PLAN-2.md`; spec 2.6 (RTTI names), 3.10, 4.5, 4.6, 4.14,
-4.15; mocks of boards 25-46 in `docs/phase-2/design/mocks/` (final: 43-46); ROADMAP F-24 to F-26;
-step 29 now split in 29a (shared parts, group overview), 29b (exam overview), 29c (PO overview,
-profile).
-
-**Next action:** the GitHub release 0.19.0 (`docs/release.md` section 4) when the user asks;
-merge `design/step-29-overviews`; then step 29a.
+**Choices made without asking (for the report):** SE column when the group is upper school
+(jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
+Herkansing | own word> (poging N)" and the cell tooltip adds ", origineel X,X"; RTTI per test in
+the group overview pools the attempts that count; the Observaties rows are the observaties linked
+to a column (a PO: the rubric's too) or given in one; tests without a periode go under "GEEN
+PERIODE"; the tooltip is fixed on the modal backdrop (it may leave the dialog box).
 
 ## Step 28 progress (Beheer screens, 0.19)
 
