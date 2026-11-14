@@ -27,14 +27,34 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
    `modals/group-overview/` (model, resultaten, charts, observaties, index); R-05
    `groep-leerlingen.js` removed. e2e `overviews.spec.ts` (4); `cards.spec` and `quirks.spec`
    U8 follow the new header gap and the dot title.
-4. Next: the before/after numbers table (STOP item for the report), then 29b (exam overview).
+4. **Done (`40ffc6d`, tag `step-29a`):** numbers table `docs/phase-2/step-29-numbers.md`
+   sections 1-3 (**STOP: the user's OK before the merge**). Gate run: 669 Vitest, Chromium e2e
+   331/331.
+5. **Done (`1a3ab76`):** exam overview (spec 4.6, board 46) in TS: `modals/exam-overview/`
+   (data = the old loader typed, resultaten, charts, rtti-obs, index); R-05
+   `toets-overzicht.js` removed (no Chart.js there any more). e2e `overviews.spec.ts` +4.
+   Numbers: section 4 of the numbers doc (`eb243f9`). B-05 checked: the verzameloverzicht reads
+   the observaties of the attempt that counts (`toetsen.spec` B-05 tests green).
+6. Checks on `eb243f9`: 676 Vitest, Chromium e2e 334/335 (G53 in `score-grid.spec` failed once
+   under load, 3/3 alone; not touched), lint, typecheck, SPDX green. Visual baselines not
+   updated (the user's check first).
+
+**Next action:** STOP after 29b (user, 2026-11-14): show the user the screenshots, the numbers
+doc and the choices below; after their OK, 29c (PO overview, profile), then the step-29 gate,
+review and release 0.20.
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
 Herkansing | own word> (poging N)" and the cell tooltip adds ", origineel X,X"; RTTI per test in
 the group overview pools the attempts that count; the Observaties rows are the observaties linked
 to a column (a PO: the rubric's too) or given in one; tests without a periode go under "GEEN
-PERIODE"; the tooltip is fixed on the modal backdrop (it may leave the dialog box).
+PERIODE"; the tooltip is fixed on the modal backdrop (it may leave the dialog box). 29b: the
+exam overview's names open the profile (board 46 shows them as links); the per-group charts keep
+one group per student (`studentGroup`) while the Resultaten sections are the exam's groups (as
+before); the "Observaties, alle leerlingen" percentage is of the students with a score; the
+RTTI-verloop has the originals of the jaarlaag only (no resits, no PO's); the chart "RTTI per
+cijfergroep" is gone (not on board 46); a resit's overview highlights its original in the
+verloop; group colours are accent shades (board 46) instead of the old 8-colour palette.
 
 ## Step 28 progress (Beheer screens, 0.19)
 
