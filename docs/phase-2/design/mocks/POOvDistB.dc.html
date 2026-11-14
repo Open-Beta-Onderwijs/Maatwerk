@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>PO-overzicht: Verdeling B</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-row:hover td{background:rgba(127,140,160,.07)}
+</style>
+</helmet>
+<div style="width: 1120px; height: 864px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; background: {{t.surface}}; color: {{t.text}}">
+  <div style="flex: none; padding: 20px 28px 0; border-bottom: 1px solid {{t.border}}; background: {{t.surface}}">
+    <div style="display: flex; align-items: flex-start; gap: 16px">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 12px; font-weight: 700; color: {{P.on}}; background: {{P.badgeBg}}; border: 1.5px solid {{P.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{P.shadow}}; white-space: nowrap">{{P.code}}</span><h2 style="margin: 0; font-size: 22px; font-weight: 700; color: {{a.text}}">Onderzoeksverslag Valbeweging</h2><span style="font-size: 12px; line-height: 18px; padding: 1px 8px; border-radius: 999px; background: {{t.surface2}}; color: {{t.muted}}">SE · praktische opdracht</span></div>
+        <span style="font-size: 13px; color: {{t.muted}}">5 havo · 2025-2026 · rubric Onderzoeksverslag · 5 categorieën · 17 punten · bonus 4 · 5 projectgroepen · 13 leerlingen</span>
+      </div>
+      <button aria-label="Sluiten" style="width: 36px; height: 36px; border-radius: 8px; border: 0; background: transparent; color: {{t.muted}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+    <nav role="tablist" aria-label="Weergave" style="display: flex; gap: 4px; margin-top: 14px"><button role="tab" aria-selected="false" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; color: {{t.muted}}">Resultaten</button><button role="tab" aria-selected="true" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; font-weight: 600; color: {{t.text}}; box-shadow: inset 0 -3px 0 {{a.text}}">Verdeling</button><button role="tab" aria-selected="false" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; color: {{t.muted}}">Categorieën</button><button role="tab" aria-selected="false" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; color: {{t.muted}}">Observaties</button></nav>
+  </div>
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 28px 24px; background: {{t.surface}}">
+<div style="display: flex; align-items: center; gap: 12px; padding: 16px 0 6px">
+  <div role="group" style="display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: {{t.surface2}}"><button aria-pressed="true" style="border: 0; font: inherit; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 7px; background: {{t.surface}}; color: {{t.text}}; box-shadow: 0 1px 2px rgba(16,24,40,.12); cursor: pointer">Eindcijfer</button><button aria-pressed="false" style="border: 0; font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 7px; background: transparent; color: {{t.muted}}; cursor: pointer">Projectgroepcijfer</button></div>
+  <span style="font-size: 13px; color: {{t.muted}}">Histogram en boxplot op dezelfde schaal 1–10</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px; padding-top: 10px">
+  <sc-for list="{{sets}}" as="e" hint-placeholder-count="3">
+  <div style="display: flex; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px solid {{t.line}}">
+    <div style="width: 220px; flex: none; display: flex; flex-direction: column; gap: 4px">
+      <div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 12px; font-weight: 700; color: {{P.on}}; background: {{P.badgeBg}}; border: 1.5px solid {{P.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{P.shadow}}; white-space: nowrap">{{P.code}}</span><span style="font-weight: 600">{{e.label}}</span></div>
+      <span style="color: {{t.muted}}; font-size: 12px">{{e.n}}</span>
+      <span style="color: {{t.muted}}; font-size: 12px">gem. <b style="color: {{e.meanColor}}">{{e.mean}}</b> ± {{e.sd}} · {{e.fail}} onv.</span>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+      <div role="img" aria-label="{{e.histLabel}}" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 2px; align-items: end; height: 72px; border-bottom: 1px solid {{t.border}}">
+        <sc-for list="{{e.bins}}" as="b" hint-placeholder-count="9"><div title="{{b.t}}" style="height: {{b.h}}px; background: {{b.c}}; border-radius: 3px 3px 0 0"></div></sc-for>
+      </div>
+      <div style="position: relative; height: 36px">
+          <div style="position: absolute; top: 0; bottom: 0; left: {{passPct}}%; border-left: 1px dashed {{t.border}}"></div>
+          <div style="position: absolute; top: 17px; height: 2px; left: {{e.minPct}}%; width: {{e.rangePct}}%; background: {{P.color}}"></div>
+          <div style="position: absolute; top: 10px; height: 16px; width: 2px; left: {{e.minPct}}%; background: {{P.color}}"></div>
+          <div style="position: absolute; top: 10px; height: 16px; width: 2px; left: {{e.maxPct}}%; background: {{P.color}}"></div>
+          <div title="{{e.boxLabel}}" style="position: absolute; top: 2px; height: 32px; left: {{e.q1Pct}}%; width: {{e.iqrPct}}%; background: {{P.tint}}; border: 2px solid {{P.color}}; border-radius: 6px; box-sizing: border-box"></div>
+          <div style="position: absolute; top: 2px; height: 32px; width: 3px; left: {{e.medPct}}%; background: {{P.color}}"></div>
+      </div>
+    </div>
+    <span style="width: 110px; flex: none; font-size: 12px; color: {{t.muted}}">mediaan <b style="color: {{t.text}}">{{e.med}}</b></span>
+  </div>
+  </sc-for>
+  <div style="display: flex; gap: 16px">
+    <div style="width: 220px; flex: none"></div>
+    <div style="flex: 1; display: flex; justify-content: space-between; font-size: 11px; color: {{t.muted}}; border-top: 1px solid {{t.border}}; padding-top: 4px"><sc-for list="{{axis}}" as="x" hint-placeholder-count="10"><span>{{x}}</span></sc-for></div>
+    <div style="width: 110px; flex: none"></div>
+  </div>
+</div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["licht", "donker"], "default": "licht"}, "accent": {"editor": "enum", "options": ["rood", "oranje", "geel", "groen", "blauw", "indigo", "paars", "turquoise", "roze", "grafiet"], "default": "blauw"}, "$preview": {"width": 1120, "height": 864}}'>
+class Component extends DCLogic {
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, k) { k = Math.max(0, Math.min(1, k)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join(''); }
+  renderVals() {
+
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const accName = ACC[this.props.accent] ? this.props.accent : 'blauw';
+    const ac = ACC[accName];
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F') };
+    const anti = ANTI[accName];
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', foot: '#22272F', tint: '#181B21' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', foot: '#F7F8FA', tint: '#F7F8FA' };
+    const L = (x, y, k) => this.lerp(x, y, k);
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const stripes = (c, w) => `repeating-linear-gradient(135deg, ${c} 0 ${w}px, ${L(c, '#FFFFFF', c === '#E5AE0B' ? 0.6 : 0.5)} ${w}px ${w * 2}px)`;
+    const typeStyle = (type) => {
+      if (type === 'diag') return { color: '#8A93A3', light: '#C9CED6', on: t.muted, badgeBg: t.surface2, badgeBorder: '#9AA1AD', tint: '#8A93A333', shadow: 'none', bar: '#9AA1AD' };
+      const c = type === 'se' || type === 'sepo' ? anti : ac[0];
+      const striped = type === 'po' || type === 'sepo';
+      return {
+        color: c, light: L(c, '#FFFFFF', 0.5), on: onOf(c), badgeBorder: c,
+        shadow: striped && onOf(c) === '#FFFFFF' ? `0 0 2px ${L(c, '#000000', 0.4)}, 0 0 3px ${L(c, '#000000', 0.4)}` : 'none',
+        badgeBg: striped ? stripes(c, 4) : c,
+        bar: striped ? stripes(c, 5) : c,
+        tint: striped ? `repeating-linear-gradient(135deg, ${c}AA 0 6px, ${c}1A 6px 12px)` : c + (dark ? '40' : '26'),
+      };
+    };
+    const fmt = (g) => (Math.round(g * 10) / 10).toFixed(1).replace('.', ',');
+    const sgn = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + fmt(Math.abs(x));
+    const gc = (g) => (g < 5.5 ? (dark ? '#FF8A80' : '#B42318') : dark ? L('#E2BD45', '#6CCB8A', (g - 5.5) / 4) : L('#8A6A00', '#1E7B3C', (g - 5.5) / 4));
+    const gb = (g) => (g < 5.5 ? '#E5736B' : L('#F2C94C', '#5DB97B', (g - 5.5) / 4));
+    const pill = (g) => (g == null ? { v: '—', color: t.muted, border: t.border, weight: 400 } : { v: fmt(g), color: gc(g), border: gb(g), weight: g < 5.5 ? 700 : 500 });
+    const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(mean(xs.map((x) => (x - m) * (x - m)))); };
+    const qt = (xs, p) => { const s = [...xs].sort((x, y) => x - y), i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo); };
+    const pct1 = (g) => ((g - 1) / 9) * 100;
+    const hist = (xs) => { const c = Array(9).fill(0); xs.forEach((g) => { c[Math.min(8, Math.max(0, Math.floor(g - 1)))]++; }); return c; };
+    const binLabels = ['1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10'];
+    const failPct = (xs) => Math.round((xs.filter((g) => g < 5.5).length / xs.length) * 100) + '%';
+    const box = (xs) => { const q1 = qt(xs, 0.25), q3 = qt(xs, 0.75), md = qt(xs, 0.5), mn = Math.min(...xs), mx = Math.max(...xs); return { minPct: pct1(mn), maxPct: pct1(mx), rangePct: Math.max(0.4, pct1(mx) - pct1(mn)), q1Pct: pct1(q1), iqrPct: Math.max(0.8, pct1(q3) - pct1(q1)), medPct: pct1(md) - 0.15, med: fmt(md), boxLabel: 'Kwartielen ' + fmt(q1) + ' – ' + fmt(q3) + ', mediaan ' + fmt(md) }; };
+    const hx = (n, max) => Math.round(24 + (n / max) * 190).toString(16).padStart(2, '0');
+    const heat = (n, max) => ({ bg: n ? a.fill + hx(n, max) : 'transparent', fg: n / max > 0.55 ? '#FFFFFF' : t.text });
+    const base = { t, a, axis: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], binLabels, passPct: pct1(5.5), neg: dark ? '#FF8A80' : '#B42318', pos: dark ? '#6CCB8A' : '#1E7B3C' };
+
+
+    const P = Object.assign({ code: '503' }, typeStyle('sepo'));
+    const CATS = [
+      { k: 'Introductie', max: 3, kind: '', levels: [[0, 1, 'Matige introductie'], [2, 2, 'Redelijk'], [3, 3, 'Goed']] },
+      { k: 'Theorie', max: 8, kind: '', levels: [[0, 3, 'Matig'], [2, 5, 'Voldoende'], [4, 7, 'Goed'], [6, 8, 'Uitstekend']] },
+      { k: 'Figuren', max: 6, kind: '', levels: [[0, 2, ''], [3, 4, ''], [5, 6, '']] },
+      { k: 'Originaliteit', max: 4, kind: 'bonus', levels: [[0, 1, 'Standaard'], [2, 3, 'Eigen opzet'], [4, 4, 'Vernieuwend']] },
+      { k: 'Planning', max: 3, kind: 'diagnostisch', levels: [[0, 1, 'Onvoldoende'], [2, 3, 'Op orde']] },
+    ];
+    const MAX = 17;
+    const PG = [
+      ['Valtoren', [2, 6, 4, 2, 2], [], [['Sem Dijkstra', '5A', [['Niet meegewerkt aan de metingen', -0.5]]], ['Emma Kok', '5A', []], ['Bas Vos', '5B', []]]],
+      ['Projectgroep 1', [3, 7, 5, 1, 3], [], [['Julia Hendriks', '5A', []], ['Amira Haddou', '5B', []]]],
+      ['Slinger', [1, 5, 3, 0, 1], [['Extra meetserie', 0.3]], [['Noah de Wit', '5A', []], ['Lisa Meijer', '5A', []], ['Finn Bakker', '5B', []], ['Zoë Jacobs', '5B', [['Verslag te laat ingeleverd', -0.5]]]]],
+      ['Katapult', [2, 5, 5, 3, 2], [], [['Tim Smits', '5B', []], ['Eva Mulder', '5B', []]]],
+      ['Projectgroep 5', [2, 3, 2, 0, 1], [], [['Luuk Peters', '5A', [['Extra meting zelfstandig gedaan', 0.5]]]]],
+    ];
+    const UNPLACED = [['Ravi Sharma', '5B']];
+    const r1 = (x) => Math.round(x * 10) / 10;
+    const clamp = (g) => Math.max(1, Math.min(10, g));
+    const groups = PG.map(([name, sc, gl, mem], gi) => {
+      const pts = sc.reduce((s, v, i) => s + (CATS[i].kind === 'diagnostisch' ? 0 : v), 0);
+      const gg = clamp(r1((10 * pts) / MAX));
+      const glSum = gl.reduce((s, l) => s + l[1], 0);
+      const pg = clamp(r1(gg + glSum));
+      const members = mem.map(([n, klas, own]) => { const os = own.reduce((s, l) => s + l[1], 0); return { name: n, klas, own, os, final: clamp(r1(gg + glSum + os)) }; });
+      return { gi, name, sc, pts, gg, gl, glSum, pg, members };
+    });
+    const studs = groups.flatMap((g) => g.members.map((m) => Object.assign({}, m, { g })));
+    const finals = studs.map((s) => s.final);
+    const NS = studs.length;
+    const nTxt = (n) => n + (n === 1 ? ' leerling' : ' leerlingen');
+    const lineTitle = (ls) => ls.map((l) => l[0] + ' ' + sgn(l[1])).join(' · ');
+    const catHead = CATS.map((c) => ({ k: c.k, max: c.max, kind: c.kind, hasTag: !!c.kind, tag: c.kind === 'bonus' ? 'B' : 'D', kindLabel: c.kind === 'bonus' ? 'bonus' : 'diagnostisch · telt niet mee', tagBg: c.kind === 'bonus' ? a.tint : t.surface2, tagFg: c.kind === 'bonus' ? a.text : t.muted }));
+    const OBS = [
+      ['❓', 'Onderzoeksvraag onduidelijk', 0, [2, 4]],
+      ['🔬', 'Hypothese ontbreekt', 0, [2]],
+      ['➗', 'Formule verkeerd omgeschreven', 1, [0, 2]],
+      ['📈', 'Grafiek: aslabels vergeten', 2, [0, 2, 4]],
+      ['📉', 'Geen foutmarges in de grafiek', 2, [1, 3]],
+      ['📏', 'Eenheid vergeten', null, [0, 2, 3]],
+      ['🎯', 'Significantie antwoord verkeerd', null, [4]],
+      ['🧮', 'Rekenfout', null, [2]],
+    ];
+    const OR = OBS.map(([ic, name, ci, gs]) => { const n = gs.reduce((s, gi) => s + groups[gi].members.length, 0); return { ic, name, ci, gs, n, p: Math.round((n / NS) * 100), nTxt: n + ' (' + Math.round((n / NS) * 100) + '%)', groupsTxt: gs.length + ' van ' + groups.length, groupNames: gs.map((gi) => groups[gi].name).join(', ') }; });
+    const sections = [0, 1, 2, 3, 4, null].map((ci) => ({ ci, name: ci == null ? 'Algemene observaties' : CATS[ci].k, tag: ci == null ? '' : CATS[ci].kind, rows: OR.filter((r) => r.ci === ci) })).filter((s) => s.rows.length);
+    const PV = { P, catHead, NS, nGroups: groups.length, nUnplaced: UNPLACED.length };
+
+
+    const setsOf = (pick) => [['Alle leerlingen', studs], ['5A', studs.filter((s) => s.klas === '5A')], ['5B', studs.filter((s) => s.klas === '5B')]].map(([label, ss]) => ({ label, xs: ss.map(pick) }));
+    const histSet = (label, xs, hmax) => {
+      const c = hist(xs), mx = Math.max(...c), m = mean(xs);
+      return Object.assign({ label, n: nTxt(xs.length), mean: fmt(m), meanColor: gc(m), sd: fmt(sd(xs)), fail: failPct(xs), histLabel: 'Cijferverdeling ' + label,
+        bins: c.map((n, k) => ({ h: n ? Math.round((n / mx) * (hmax - 6)) + 4 : 2, c: n ? gb(k + 1.5) : t.border, t: binLabels[k] + ': ' + nTxt(n) })) }, box(xs));
+    };
+
+    const V = { sets: setsOf((s) => s.final).map((s) => histSet(s.label, s.xs, 72)) };
+
+    return Object.assign({}, base, PV, V);
+  }
+}
+</script>
+</body>
+</html>

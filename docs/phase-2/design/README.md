@@ -17,28 +17,34 @@ UI text stays Dutch, decimal comma, as everywhere in the app.
 
 ## 1. Boards and roadmap items
 
-| Board (mock file)            | Covers                                                                                      | Roadmap                            |
-| ---------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------- |
-| 1 Fundament (`Main.dc.html`) | tab bar, user menu, theme + accent, student and group cards                                 | V-05, F-17, F-18, F-07, F-08, F-09 |
-| 2 Kaartvarianten             | history: card variants A/B/C (C chosen)                                                     | F-07                               |
-| 3 Groepsoverzicht            | modal position, sticky header, placeholders, five tabs                                      | V-08..V-10, F-10                   |
-| 4 Knoppen                    | buttons, inputs, chips, dialog buttons, test-type badges                                    | V-06, V-11                         |
-| 5 Login                      | login flow with inline PIN                                                                  | V-04                               |
-| 6 Splash                     | splash screen                                                                               | F-06                               |
-| 7 Logo, 9 Logo B             | wordmark (7 = final; 9 is history)                                                          | V-12                               |
-| 8 Tabbalk                    | tab-bar wordmark variants (4 chosen)                                                        | V-12                               |
-| 10 Editor                    | editor header, toolbar, divider, status, AI rail                                            | V-07, F-16, F-05, B-08, F-01       |
-| 11 Toetsen                   | test-type badges, attempts as a tree, "+ PO toevoegen"                                      | V-11, F-12                         |
-| 12 Beheer                    | admin tab bar, Gebruikers (+ edit, photo crop), School, Gegevenscontrole, Instellingen      | V-05, F-19, B-04                   |
-| 13 Scores                    | score-entry modal: sticky parts, centred                                                    | V-06, V-10                         |
-| 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                              | V-11, F-12                         |
-| 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                             | F-15                               |
-| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                                | F-22                               |
-| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                              | F-20, F-22                         |
-| 18 POScores                  | PO score table, projectgroep grading modal                                                  | F-22                               |
-| 19 PORapport1                | PO rapport page 1: grade sentence, projectgroep, lollipop score table, bonus/malus, comment | F-22                               |
-| 20 PORapportA                | PO rapport category pages (chosen): level cards, comment, observaties with leeradvies       | F-22                               |
-| 21-24 PORapportB-E           | history: category page variants B-E (not chosen)                                            | F-22                               |
+| Board (mock file)            | Covers                                                                                       | Roadmap                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 1 Fundament (`Main.dc.html`) | tab bar, user menu, theme + accent, student and group cards                                  | V-05, F-17, F-18, F-07, F-08, F-09 |
+| 2 Kaartvarianten             | history: card variants A/B/C (C chosen)                                                      | F-07                               |
+| 3 Groepsoverzicht            | modal position, sticky header, placeholders (content superseded by board 45)                 | V-08..V-10                         |
+| 4 Knoppen                    | buttons, inputs, chips, dialog buttons, test-type badges                                     | V-06, V-11                         |
+| 5 Login                      | login flow with inline PIN                                                                   | V-04                               |
+| 6 Splash                     | splash screen                                                                                | F-06                               |
+| 7 Logo, 9 Logo B             | wordmark (7 = final; 9 is history)                                                           | V-12                               |
+| 8 Tabbalk                    | tab-bar wordmark variants (4 chosen)                                                         | V-12                               |
+| 10 Editor                    | editor header, toolbar, divider, status, AI rail                                             | V-07, F-16, F-05, B-08, F-01       |
+| 11 Toetsen                   | test-type badges, attempts as a tree, "+ PO toevoegen"                                       | V-11, F-12                         |
+| 12 Beheer                    | admin tab bar, Gebruikers (+ edit, photo crop), School, Gegevenscontrole, Instellingen       | V-05, F-19, B-04                   |
+| 13 Scores                    | score-entry modal: sticky parts, centred                                                     | V-06, V-10                         |
+| 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                               | V-11, F-12                         |
+| 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                              | F-15                               |
+| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                                 | F-22                               |
+| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                               | F-20, F-22                         |
+| 18 POScores                  | PO score table, projectgroep grading modal                                                   | F-22                               |
+| 19 PORapport1                | PO rapport page 1: grade sentence, projectgroep, lollipop score table, bonus/malus, comment  | F-22                               |
+| 20 PORapportA                | PO rapport category pages (chosen): level cards, comment, observaties with leeradvies        | F-22                               |
+| 21-24 PORapportB-E           | history: category page variants B-E (not chosen)                                             | F-22                               |
+| 25-36 POOv*                  | history: PO overview, three alternatives per tab (chosen: Res C, Dist A and C, Cat B, Obs B) | F-24                               |
+| 37-42 Profiel*               | history: profile, three alternatives per tab (chosen: Cijferverloop C, Analyse B)            | F-25                               |
+| 43 POOverzicht               | PO overview (final, interactive): Per klas / Per projectgroep, tooltips, five tabs           | F-24                               |
+| 44 Profiel                   | student profile (final, interactive): bar chart, SD bands, RTTI cards                        | F-25                               |
+| 45 Groepsoverzicht2          | group overview (final, interactive; replaces board 3's content)                              | F-10, F-26                         |
+| 46 Toetsoverzicht            | exam overview (final, interactive) with the verzameloverzicht toggle                         | F-11, F-26                         |
 
 ## 2. Design tokens
 
@@ -167,6 +173,10 @@ UI: R `#3A9A4A`, T1 `#2A9FC4`, T2 `#E0922F`, I `#D24A45` (the existing `#5cb85c/
 #d9534f`, deepened for contrast on white). The rapport keeps its own colours unless the user
 decides otherwise (rapport output change).
 
+**Names (user, 2026-11-14, F-26):** R = reproductie, T1 = training, T2 = transfer, I = inzicht,
+everywhere in the UI (legends, tooltips, headings, help text), as the rapport already does
+(`rapport.typ`). Never "toepassen bekend" / "toepassen nieuw".
+
 ### 2.7 Type, spacing, radii, shadows
 
 - **Font:** `'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif`. Numbers
@@ -283,6 +293,41 @@ Single yes/no fields in forms (PTA, D) use a label above a 36×36 tick box (radi
 `--accent` fill with a white ✓ 22 px; unchecked: white with `--border-strong`). A tooltip spells
 out a short label ("D" = "Diagnostisch: telt niet mee voor rapport of SE").
 
+### 3.10 Overview charts and tables (step 29)
+
+Shared by the group, exam and PO overviews and the profile (boards 43-46). Mocks draw them in
+HTML/CSS; the app may use Chart.js where it gives the same result.
+
+- **Histogram:** the bins of `maatwerk-grades::histogram`, as the current program: step 1 starts
+  at 0,5 (0,5-1,5 ... 9,5-10), step 0,5 at 1,0 (18 bins); labels "<1,5" ... "≤10,0". Bar colour =
+  the grade colour of the bin centre; an empty bin is a 2 px line. The **count above every bar**
+  (0 in `--muted`). A 2 px dashed `#E5736B` line at the 5,5 bin boundary. The "Stapgrootte:
+  0,5 punten / 1 punt" toggle (default 0,5) only on an "Alle leerlingen" histogram; smaller
+  cards use 1 point. Header: "gem. X ± SD · p% onvoldoende".
+- **Boxplot:** a row per set (label 260 px): box Q1-Q3 in the type colour (tint fill, 2 px
+  border; striped for a PO), median 3 px, whiskers to min and max, **every student a dot** (8 px,
+  tooltip name and grade), dashed 5,5 line, axis 1-10 below, "mediaan X,X" right.
+- **RTTI-verloop:** one point per test in date order (PO's skipped, with a note; diagnostic
+  tests included), the test badges (2.5) on the x-axis, a y-axis 0/25/50/75/100%, lines dashed
+  (5 5, 75% opacity), a dot per value and **its percentage always shown** in the line colour,
+  right of the dot. Per test the four labels are sorted and pushed apart to at least 14 px (the
+  stack moves up if it would cross the axis). Legend with the names of 2.6. The current test
+  gets an accent-tint band where the chart sits in that test's overview.
+- **RTTI card:** badge and title, four bars (2.6) with the percentage above, R/T1/T2/I below.
+- **Observatie bars:** a row per observatie: icon, name, bar, "n (p%)"; alphabetical unless
+  grouped by category.
+- **Grade tooltip:** hovering a grade or score cell shows a tooltip under the cell (aligned left
+  in the left columns, right in the right ones): a title (test or category and grade), a sub line
+  (attempt, projectgroep, "diagnostisch, telt niet mee"), the observaties (icon and name) or
+  "Geen observaties". Dark surface in the light theme, light in the dark theme. Cells with
+  observaties get a 1 px dotted underline.
+- **Resit dot:** the existing `.attempt-badge` (16 px accent circle, I or H), placed directly to
+  the right of the grade pill **without moving the pill** (grades stay aligned); tooltip
+  "Herkansing (poging 2)" / "Inhaal (poging 2)".
+- **Group sections in a table:** a heading row per group (or klas, projectgroep); GEMIDDELDE and
+  STANDAARDDEVIATIE rows **directly under each group's students**. A single sticky `tfoot` only
+  when the table has one group (group overview).
+
 ## 4. Screens
 
 ### 4.1 Splash (F-06)
@@ -342,31 +387,58 @@ movement with a fade.
     onvoldoende line.
 - No trend per group.
 
-### 4.5 Group overview modal (F-10)
+### 4.5 Group overview modal (F-10, board 45)
 
-Modal per 3.3, width 1120, fixed height. Header: group name + schoolsoort, "<docent> · <n>
-leerlingen · klik een naam om het leerlingprofiel te openen". Tabs over the whole year:
+Modal per 3.3, width 1120, fixed height. Header: group name, schoolsoort pill, "<docent> · <n>
+leerlingen · klik een naam om het leerlingprofiel te openen". Tabs over the whole year, each
+lazy-loaded with placeholders (3.4):
 
-1. **Resultaten:** rows 30 px high (a class of 30 fits on a 1080p screen); columns per test
-   grouped by PERIODE, then JAAR (gem.). Names as links with the
-   trend arrow. Grade pills; diagnostic tests grey italic and left out of the year average.
-   Sticky `tfoot`: GEMIDDELDE (pills) and STANDAARDDEVIATIE ("± 1,3", muted).
-2. **Cijferverdeling:** one card per test, stacked: badge + title + "gem. 7,4 ± 1,2 · 9%
-   onvoldoende"; histogram with 9 bins (1-2 … 9-10) in grade colours, empty bins as a 2 px line.
-3. **Boxplot:** one row per test (badge + title left, 260 px), box from Q1 to Q3 in the test's
-   type colour (tint fill, 2 px border), median 3 px, whiskers to min/max, dashed 5,5 line,
-   axis 1–10 below, "mediaan X,X" right.
-4. **RTTI-analyse:** one card per test in a 2-column grid; four bars (R, T1, T2, I) in the RTTI
-   colours with the percentage above.
-5. **Observaties:** table: observatie (icon + name) × tests; each cell "5 (42%)" = number of
-   students and percentage of the group, whole percentages, accent tint by intensity; "—" for
-   none; a sparkline per row.
+1. **Resultaten:** rows 30 px; columns per test grouped by PERIODE, then JAAR with "gem." (the
+   weighted year average, as on the card and the rapport, decision 12) and "SE" (examendossier
+   average; only for groups whose tests count for an examendossier). JAAR columns on `--foot`.
+   Names as links with "· leerlingnummer" and the trend arrow. Grade pills; diagnostic tests
+   grey italic and out of the averages. One column per original test with the attempt that
+   counts and the resit dot (3.10). A PO cell is the student's PO grade; a student not in a
+   projectgroep gets "—" with the tooltip "Niet ingedeeld in een projectgroep". Grade tooltip
+   (3.10). Sticky `tfoot`: GEMIDDELDE (pills) and STANDAARDDEVIATIE ("± 1,3", muted).
+2. **Cijferverdeling:** a card per test, three per row: badge and title, "gem. ... onvoldoende" on
+   its own line, histogram with 1 point (3.10).
+3. **Boxplot:** a row per test in its type colour, students as dots (3.10).
+4. **RTTI-analyse:** RTTI-verloop over the year (3.10), then an RTTI card per test (PO's
+   skipped), two per row.
+5. **Observaties:** table: observatie (alphabetical; icon and name) × test and PO badges; cell
+   "n (p%)" (students, percentage of the group) with an accent tint by intensity; empty when the
+   observatie's toetstype does not fit the test; "—" for none. Last column Totaal: times given
+   this year. PO observaties count every member of the projectgroep.
 
-Each tab lazy-loads with placeholders per 3.4.
+### 4.6 Exam overview modal (F-11, board 46)
 
-### 4.6 Exam overview modal (F-11)
+Title "Overzicht: <toets>" with the test badge, subtitle "Jaarlaag <n> · <jaar>", summary line
+"<n> leerlingen · ● 6,4 ± 1,4 · 30% onvoldoende". Tabs: Resultaten, Cijferverdeling, Boxplot
+cijfers, Vraaganalyse, RTTI-analyse, Observaties.
 
-Resultaten: the GEMIDDELDE row at the bottom plus a STANDAARDDEVIATIE row, same as 4.5.1.
+1. **Resultaten:** one table with a sticky `thead`; a heading row per group ("Groep 5A · 12
+   leerlingen"); columns Naam, Totaal ("34 / 50"), Cijfer, an icon column per linked observatie
+   (3.8), R/T1/T2/I percentages. GEMIDDELDE and STANDAARDDEVIATIE under each group (3.10).
+2. **Cijferverdeling:** "Alle leerlingen" with the Stapgrootte toggle, then a card per group,
+   two per row (3.10).
+3. **Boxplot cijfers:** rows Alle leerlingen and each group, students as dots (3.10).
+4. **Vraaganalyse:** restyle only. Card "Score per vraag, alle leerlingen": a row per question
+   (name, max points, bar in the question's RTTI colour, percentage). Card "Score per vraag, per
+   groep": a thin bar per group under each question, group legend.
+5. **RTTI-analyse:** RTTI cards for Alle leerlingen and each group (three per row), then the
+   RTTI-verloop of the jaarlaag over this school year with this test highlighted (3.10).
+6. **Observaties:** three cards. "Observaties, alle leerlingen": observatie bars (percentage of
+   the students with a score). "Observaties per groep": a bar per group under each observatie,
+   "n (p%)" of that group, group legend. "Observaties per cijfergroep": legend <4, 4-5, 5-6,
+   6-7, 7-8, ≥8 (as `maatwerk-grades::grade_group`) with the group sizes, then a card per
+   observatie (three per row) with a vertical histogram of the six grade groups, counts above,
+   one shared scale; colours `#C62828 #E5736B #F2C94C #CFC255 #A6C266 #6DBE77`.
+
+**Verzameloverzicht** (best attempt over the original and its resits): the same modal; Cijfer
+shows the resit dot directly right of the grade, an empty column keeps space before the
+observatie icons; Vraaganalyse, RTTI-analyse and Observaties are disabled with the existing
+tooltip.
 
 ### 4.7 Toetsen (V-11, F-12)
 
@@ -546,6 +618,61 @@ Boards 16-18. Decisions: `PLAN-2.md` 16-25.
   cards side by side (achieved levels outlined in blue), "Opmerking:", and per observatie the
   icon, **name** — short description, "Leeradvies:" on the next line; "Algemene observaties"
   last. No RTTI parts, no grade histogram; duplex as the toets rapport.
+
+### 4.14 PO overview modal (F-24, board 43)
+
+Opened from "Overzicht openen" on a PO card (enabled now). Header: striped PO badge, PO name, kind
+pill ("SE · praktische opdracht"), subtitle "<jaarlaag> · <jaar> · rubric <naam> · <n>
+categorieën · <max> punten · bonus <b> · <n> projectgroepen · <n> leerlingen". Tabs:
+Resultaten, Cijferverdeling, Boxplot, Categorieën, Observaties.
+
+1. **Resultaten:** segmented control "Per klas" (default) / "Per projectgroep".
+   - Per klas: a section per klas, students alphabetical; label column Projectgroep (chip; a
+     dashed "niet ingedeeld" chip for a student without one).
+   - Per projectgroep: a section per projectgroep (heading: projectgroepcijfer, the group's
+     bonus/malus lines, number of members), label column Klas; last "Niet ingedeeld · geen
+     cijfer, geen rapport".
+   - Columns: Naam, label, one per category (name, "/ max", B or D tag; diagnostic scores italic
+     and muted), Punten "/ max", Bonus / malus (group and own lines summed, signed), Cijfer pill.
+   - Grade tooltip (3.10). On a category score: "<categorie>: s / max", "Niveau <range title> ·
+     projectgroep <naam>" and that category's observaties. On Punten, Bonus / malus and Cijfer:
+     the grade build-up (projectgroepcijfer, group and personal lines) and all the student's
+     observaties (category observaties prefixed with the category name).
+   - GEMIDDELDE and STANDAARDDEVIATIE per section (3.10); none for "Niet ingedeeld".
+2. **Cijferverdeling:** final grades only; "Alle leerlingen" with the Stapgrootte toggle, then a
+   card per klas (3.10).
+3. **Boxplot:** final grades; rows Alle leerlingen and each klas, students as dots (3.10).
+4. **Categorieën:** a line "<n> ingedeelde leerlingen; bij overlappende niveaus telt een leerling
+   twee keer", then a table: Categorie (name, pill "bonus" or "diagnostisch · telt niet mee"),
+   Gem. "s / max", "Van het maximum" (bar and percentage), "Leerlingen per niveau" (a stacked bar
+   with a segment per level and its count, accent shades from light to dark, grey shades for a
+   diagnostic category; a legend "range title count"). Footer TOTAAL PUNTEN "gem / max · % ·
+   incl. bonus, excl. diagnostisch". Only placed students count.
+5. **Observaties:** a card per category, then "Algemene observaties"; a row per observatie: icon,
+   name, bar (percentage of the placed students), "n (p%)", "<k> van <m> groepen". Every member
+   of a projectgroep counts.
+
+### 4.15 Student profile (F-25, board 44)
+
+Restyle on the dialog component with the same content and tabs (Cijferverloop, Analyse); tinted
+body; footer "← Vorige (<naam>)" and "Volgende (<naam>) →". Header: name, stamklas pill,
+"<leerlingnummer> · ...".
+
+1. **Cijferverloop**
+   - Card "Cijferverloop" (Onderbouw / Bovenbouw): a **bar chart**, one bar per test, grouped
+     per school year (year label and divider); bar in the test type colour (PO striped,
+     diagnostic grey with a border), the grade above the bar in the grade colour, badges under
+     the axis, gridlines 2-10 and a dashed 5,5 line. **No toetsgemiddelde.** Hover: badge and
+     title, "Cijfer x"; for a PO also "projectgroep <naam> <cijfer> · persoonlijk ±x" and the
+     category scores; for a diagnostic test "telt niet mee".
+   - Card "Ten opzichte van het toetsgemiddelde" (school-year toggle): a row per test: badge and
+     title; a 1-10 track with a grey **±1 SD band** around the test average (◇), the student's
+     dot in the grade colour and a green or red line between them; text "7,7 vs 7,3 ± 0,9 +0,4".
+   - Card "Gemiddeld cijfer per jaar, ten opzichte van de jaarlaag": the same per school year,
+     against the jaarlaag average ± SD.
+2. **Analyse:** "RTTI-scores per toets" (school-year toggle and Examendossier): an RTTI card per
+   test (PO's left out, with a note) and a "Gemiddeld <jaar>" card with an accent border;
+   "Observaties per schooljaar": table observatie × schooljaar with heat cells "n×" and Totaal.
 
 ## 5. Logo (V-12)
 

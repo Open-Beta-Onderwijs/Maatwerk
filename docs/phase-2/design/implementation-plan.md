@@ -100,6 +100,9 @@ removed after load; visual baselines for the four login states.
 
 ## D4. Overviews (ROADMAP "Overzicht and profiel" area)
 
+> Superseded 2026-11-14 by `PLAN-2.md` step 29 (decisions 27-40) and spec 3.10, 4.5, 4.6, 4.14 and
+> 4.15. Kept as history.
+
 **Items:** F-10, F-11, B-05 (after D5's F-12), V-11 in charts.
 
 1. **Group overview (F-10):** spec 4.5, five tabs, lazy-loaded per tab with skeletons, fixed

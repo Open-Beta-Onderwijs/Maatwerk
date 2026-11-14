@@ -76,4 +76,5 @@ opdracht; vraag = question in an opgave; observatie = reusable observation; leer
 advice; groep = class; vak (`nat`, `bio`, `schk`, `wi`) = subject; jaarlaag = year level;
 schoolsoort = school type; herkansing / inhaal = resit / make-up; cijfer = grade; n-term =
 normalisation term; rapport = per-student report; sectie = department; gebruiker = teacher account;
-school = school settings.
+school = school settings; RTTI = reproductie, training, transfer, inzicht (R, T1, T2, I; use these
+names in the UI, never "toepassen bekend/nieuw").

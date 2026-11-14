@@ -1,0 +1,176 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Leerlingprofiel: Analyse A</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-row:hover td{background:rgba(127,140,160,.07)}
+</style>
+</helmet>
+<div style="width: 1200px; height: 864px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; background: {{t.surface}}; color: {{t.text}}">
+  <div style="flex: none; padding: 20px 28px 0; border-bottom: 1px solid {{t.border}}; background: {{t.surface}}">
+    <div style="display: flex; align-items: flex-start; gap: 16px">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; align-items: center; gap: 10px"><h2 style="margin: 0; font-size: 22px; font-weight: 700; color: {{a.text}}">Sem Dijkstra</h2><span style="font-size: 12px; line-height: 18px; padding: 1px 8px; border-radius: 999px; background: {{t.surface2}}; color: {{t.muted}}">5A</span></div>
+        <span style="font-size: 13px; color: {{t.muted}}">105202 · 5 havo · natuurkunde · bovenbouw sinds 2024-2025</span>
+      </div>
+      <button aria-label="Sluiten" style="width: 36px; height: 36px; border-radius: 8px; border: 0; background: transparent; color: {{t.muted}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+    </div>
+    <nav role="tablist" aria-label="Weergave" style="display: flex; gap: 4px; margin-top: 14px"><button role="tab" aria-selected="false" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; color: {{t.muted}}">Cijferverloop</button><button role="tab" aria-selected="true" style="border: 0; background: transparent; font: inherit; cursor: pointer; padding: 10px 12px; font-weight: 600; color: {{t.text}}; box-shadow: inset 0 -3px 0 {{a.text}}">Analyse</button></nav>
+  </div>
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 28px 24px; background: {{t.tint}}">
+<div style="display: flex; flex-direction: column; gap: 14px; padding-top: 18px">
+  <div style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; padding: 16px 18px">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">RTTI-scores per toets</h3><span style="flex: 1"></span><div role="group" style="display: inline-flex; gap: 2px; padding: 3px; border-radius: 9px; background: {{t.surface2}}"><button aria-pressed="false" style="border: 0; font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 7px; background: transparent; color: {{t.muted}}; cursor: pointer">2024-2025</button><button aria-pressed="true" style="border: 0; font: inherit; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 7px; background: {{t.surface}}; color: {{t.text}}; box-shadow: 0 1px 2px rgba(16,24,40,.12); cursor: pointer">2025-2026</button><button aria-pressed="false" style="border: 0; font: inherit; font-size: 13px; padding: 5px 12px; border-radius: 7px; background: transparent; color: {{t.muted}}; cursor: pointer">Examendossier</button></div></div>
+    <div style="display: flex; gap: 18px; margin-bottom: 10px; font-size: 13px">
+  <sc-for list="{{rttiLegend}}" as="r" hint-placeholder-count="4"><span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: {{r.c}}"></span>{{r.k}} <span style="color: {{t.muted}}">{{r.desc}}</span></span></sc-for>
+</div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; align-items: end; height: 200px; border-bottom: 1px solid {{t.border}}; padding: 0 12px">
+  <sc-for list="{{rg}}" as="g" hint-placeholder-count="4"><div style="display: flex; gap: 6px; align-items: flex-end; justify-content: center; height: 100%">
+    <sc-for list="{{g.bars}}" as="b" hint-placeholder-count="4"><div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%"><span style="font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums">{{b.v}}</span><div title="{{b.k}} {{b.v}}" style="width: 30px; height: {{b.h}}px; background: {{b.c}}; border-radius: 4px 4px 0 0"></div></div></sc-for>
+  </div></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; padding: 6px 12px 0">
+  <sc-for list="{{rg}}" as="g" hint-placeholder-count="4"><div style="display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0"><sc-if value="{{g.hasBadge}}" hint-placeholder-val="{{ true }}"><span style="font-size: 12px; font-weight: 700; color: {{g.on}}; background: {{g.badgeBg}}; border: 1.5px solid {{g.badgeBorder}}; padding: 1px 6px; border-radius: 5px; text-shadow: {{g.shadow}}; white-space: nowrap">{{g.code}}</span></sc-if><span style="font-size: 12px; font-weight: {{g.fw}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{g.title}}</span></div></sc-for>
+</div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12px; color: {{t.muted}}">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg>
+  <span>503 Onderzoeksverslag Valbeweging is een praktische opdracht en heeft geen RTTI-verdeling; die staat niet in deze grafiek.</span>
+</div>
+  </div>
+  <div style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; padding: 16px 18px">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px"><h3 style="margin: 0; font-size: 15px; font-weight: 600">Observaties per schooljaar</h3><span style="flex: 1"></span></div>
+    <div style="display: flex; gap: 18px; font-size: 12px; color: {{t.muted}}; margin-bottom: 8px">
+  <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: {{yc0}}"></span>2024-2025</span>
+  <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: {{yc1}}"></span>2025-2026</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; align-items: end; height: 150px; border-bottom: 1px solid {{t.border}}; padding: 0 12px">
+  <sc-for list="{{og}}" as="o" hint-placeholder-count="5"><div style="display: flex; gap: 6px; align-items: flex-end; justify-content: center; height: 100%">
+    <sc-for list="{{o.bars}}" as="b" hint-placeholder-count="2"><div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%"><span style="font-size: 12px; font-weight: 650">{{b.n}}</span><div title="{{b.t}}" style="width: 32px; height: {{b.h}}px; background: {{b.c}}; border-radius: 4px 4px 0 0"></div></div></sc-for>
+  </div></sc-for>
+</div>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; padding: 6px 12px 0">
+  <sc-for list="{{og}}" as="o" hint-placeholder-count="5"><div style="display: flex; gap: 6px; justify-content: center; font-size: 12px; text-align: center"><span aria-hidden="true">{{o.ic}}</span><span>{{o.name}}</span></div></sc-for>
+</div>
+  </div>
+</div>
+  </div>
+  <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 28px; border-top: 1px solid {{t.border}}; background: {{t.surface}}">
+    <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid {{t.border}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">← Vorige (Bas Vos)</button><span style="flex: 1"></span><button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid {{t.border}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Volgende (Emma Kok) →</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["licht", "donker"], "default": "licht"}, "accent": {"editor": "enum", "options": ["rood", "oranje", "geel", "groen", "blauw", "indigo", "paars", "turquoise", "roze", "grafiet"], "default": "blauw"}, "$preview": {"width": 1200, "height": 864}}'>
+class Component extends DCLogic {
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, k) { k = Math.max(0, Math.min(1, k)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join(''); }
+  renderVals() {
+
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const accName = ACC[this.props.accent] ? this.props.accent : 'blauw';
+    const ac = ACC[accName];
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F') };
+    const anti = ANTI[accName];
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', foot: '#22272F', tint: '#181B21' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', foot: '#F7F8FA', tint: '#F7F8FA' };
+    const L = (x, y, k) => this.lerp(x, y, k);
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const stripes = (c, w) => `repeating-linear-gradient(135deg, ${c} 0 ${w}px, ${L(c, '#FFFFFF', c === '#E5AE0B' ? 0.6 : 0.5)} ${w}px ${w * 2}px)`;
+    const typeStyle = (type) => {
+      if (type === 'diag') return { color: '#8A93A3', light: '#C9CED6', on: t.muted, badgeBg: t.surface2, badgeBorder: '#9AA1AD', tint: '#8A93A333', shadow: 'none', bar: '#9AA1AD' };
+      const c = type === 'se' || type === 'sepo' ? anti : ac[0];
+      const striped = type === 'po' || type === 'sepo';
+      return {
+        color: c, light: L(c, '#FFFFFF', 0.5), on: onOf(c), badgeBorder: c,
+        shadow: striped && onOf(c) === '#FFFFFF' ? `0 0 2px ${L(c, '#000000', 0.4)}, 0 0 3px ${L(c, '#000000', 0.4)}` : 'none',
+        badgeBg: striped ? stripes(c, 4) : c,
+        bar: striped ? stripes(c, 5) : c,
+        tint: striped ? `repeating-linear-gradient(135deg, ${c}AA 0 6px, ${c}1A 6px 12px)` : c + (dark ? '40' : '26'),
+      };
+    };
+    const fmt = (g) => (Math.round(g * 10) / 10).toFixed(1).replace('.', ',');
+    const sgn = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + fmt(Math.abs(x));
+    const gc = (g) => (g < 5.5 ? (dark ? '#FF8A80' : '#B42318') : dark ? L('#E2BD45', '#6CCB8A', (g - 5.5) / 4) : L('#8A6A00', '#1E7B3C', (g - 5.5) / 4));
+    const gb = (g) => (g < 5.5 ? '#E5736B' : L('#F2C94C', '#5DB97B', (g - 5.5) / 4));
+    const pill = (g) => (g == null ? { v: '—', color: t.muted, border: t.border, weight: 400 } : { v: fmt(g), color: gc(g), border: gb(g), weight: g < 5.5 ? 700 : 500 });
+    const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(mean(xs.map((x) => (x - m) * (x - m)))); };
+    const qt = (xs, p) => { const s = [...xs].sort((x, y) => x - y), i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo); };
+    const pct1 = (g) => ((g - 1) / 9) * 100;
+    const hist = (xs) => { const c = Array(9).fill(0); xs.forEach((g) => { c[Math.min(8, Math.max(0, Math.floor(g - 1)))]++; }); return c; };
+    const binLabels = ['1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10'];
+    const failPct = (xs) => Math.round((xs.filter((g) => g < 5.5).length / xs.length) * 100) + '%';
+    const box = (xs) => { const q1 = qt(xs, 0.25), q3 = qt(xs, 0.75), md = qt(xs, 0.5), mn = Math.min(...xs), mx = Math.max(...xs); return { minPct: pct1(mn), maxPct: pct1(mx), rangePct: Math.max(0.4, pct1(mx) - pct1(mn)), q1Pct: pct1(q1), iqrPct: Math.max(0.8, pct1(q3) - pct1(q1)), medPct: pct1(md) - 0.15, med: fmt(md), boxLabel: 'Kwartielen ' + fmt(q1) + ' – ' + fmt(q3) + ', mediaan ' + fmt(md) }; };
+    const hx = (n, max) => Math.round(24 + (n / max) * 190).toString(16).padStart(2, '0');
+    const heat = (n, max) => ({ bg: n ? a.fill + hx(n, max) : 'transparent', fg: n / max > 0.55 ? '#FFFFFF' : t.text });
+    const base = { t, a, axis: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], binLabels, passPct: pct1(5.5), neg: dark ? '#FF8A80' : '#B42318', pos: dark ? '#6CCB8A' : '#1E7B3C' };
+
+
+    const TT = [
+      ['401', 'Toets H1 Krachten', 'toets', 0, 6.8, 6.9],
+      ['402', 'Toets H2 Energie', 'toets', 0, 7.4, 6.6],
+      ['403', 'Diagnostische toets H3', 'diag', 0, 5.9, 6.1],
+      ['404', 'SE-toets H1-H3', 'se', 0, 7.1, 6.7],
+      ['501', 'Toets H5 Elektriciteit', 'toets', 1, 6.2, 6.5],
+      ['502', 'SE-toets H4-H6', 'se', 1, 6.9, 6.4],
+      ['503', 'Onderzoeksverslag Valbeweging', 'sepo', 1, 7.7, 7.3],
+      ['504', 'Toets H7 Golven', 'toets', 1, 7.8, 6.8],
+    ];
+    const tests = TT.map(([code, title, type, yr, g, avg], i) => Object.assign({ code, title, type, yr, g, avg, i }, typeStyle(type)));
+    const RT = { '401': [85, 72, 60, 45], '402': [88, 80, 66, 52], '403': [70, 61, 50, 38], '404': [84, 75, 63, 55], '501': [78, 64, 55, 40], '502': [82, 73, 62, 51], '504': [90, 81, 70, 58] };
+    const RC = [['R', 'reproductie', '#3A9A4A'], ['T1', 'toepassen bekend', '#2A9FC4'], ['T2', 'toepassen nieuw', '#E0922F'], ['I', 'inzicht', '#D24A45']];
+    const YEARS = ['2024-2025', '2025-2026'];
+    const YAVG = [[7.2, 6.8], [7.1, 6.7]];
+    const OBSY = [['📏', 'Eenheid vergeten', [3, 1]], ['➗', 'Formule verkeerd omgeschreven', [2, 2]], ['🧮', 'Rekenfout', [1, 2]], ['🎯', 'Significantie antwoord verkeerd', [2, 0]], ['📈', 'Grafiek: aslabels vergeten', [0, 1]]];
+    const PO = tests.find((x) => x.type === 'sepo');
+    const tipCats = [['Introductie', '2 / 3'], ['Theorie', '6 / 8'], ['Figuren', '4 / 6'], ['Originaliteit (bonus)', '2 / 4'], ['Planning (diagnostisch)', '2 / 3']].map(([k, v]) => ({ k, v }));
+    const tipT = dark ? { bg: '#E7EAF0', fg: '#1B2230', mute: '#4A5363', line: 'rgba(0,0,0,.14)' } : { bg: '#1B2230', fg: '#FFFFFF', mute: '#C3C9D4', line: 'rgba(255,255,255,.16)' };
+    const cur = tests.filter((x) => x.yr === 1);
+    const badgeOf = (x) => ({ code: x.code, title: x.title, on: x.on, badgeBg: x.badgeBg, badgeBorder: x.badgeBorder, shadow: x.shadow });
+    const mkLine = (CW, CH) => {
+      const X0 = 52, X1 = CW - 28, Yt = 22, Yb = CH - 34;
+      const xi = (i) => X0 + (i * (X1 - X0)) / (tests.length - 1);
+      const yg = (g) => Yb - ((g - 1) / 9) * (Yb - Yt);
+      const counted = tests.filter((x) => x.type !== 'diag');
+      const dots = tests.filter((x) => x.type !== 'sepo' && x.type !== 'po').map((x) => ({ cx: xi(x.i).toFixed(1), cy: yg(x.g).toFixed(1), fill: x.type === 'diag' ? t.surface : x.color, stroke: x.type === 'diag' ? '#9AA1AD' : t.surface, sw: x.type === 'diag' ? 2 : 2, tip: x.code + ' ' + x.title + ': ' + fmt(x.g) }));
+      const dias = tests.filter((x) => x.type === 'sepo' || x.type === 'po').map((x) => ({ x: (xi(x.i) - 7).toFixed(1), y: (yg(x.g) - 7).toFixed(1), cx: xi(x.i).toFixed(1), cy: yg(x.g).toFixed(1) }));
+      const grid = [2, 4, 6, 8, 10].map((g) => ({ y: yg(g).toFixed(1), ty: (yg(g) + 4).toFixed(1), l: String(g) }));
+      const codes = tests.map((x) => ({ x: xi(x.i).toFixed(1), l: x.code, c: x.type === 'diag' ? t.muted : t.text, left: Math.round(xi(x.i) - 20), ...badgeOf(x) }));
+      const sepX = ((xi(3) + xi(4)) / 2).toFixed(1);
+      return {
+        CW, CH, stud: counted.map((x) => xi(x.i).toFixed(1) + ',' + yg(x.g).toFixed(1)).join(' '), avg: tests.map((x) => xi(x.i).toFixed(1) + ',' + yg(x.avg).toFixed(1)).join(' '),
+        dots, dias, grid, codes, sepX, passY: yg(5.5).toFixed(1), x0: X0, x1: X1, yb: Yb, codeY: CH - 12, y0L: (Number(sepX) - 12).toFixed(1), y1L: (Number(sepX) + 12).toFixed(1),
+        tipX: Math.round(xi(PO.i) - 330), tipY: 18, ringX: xi(PO.i).toFixed(1), ringY: yg(PO.g).toFixed(1),
+      };
+    };
+    const PRV = { P: Object.assign({ code: PO.code }, typeStyle('sepo')), tipCats, tipT, rttiLegend: RC.map(([k, desc, c]) => ({ k, desc, c })), poGrade: fmt(PO.g) };
+
+
+    const rtCur = cur.filter((x) => RT[x.code]);
+    const rbars = (vs, scale) => RC.map(([k, , c], i) => ({ k, c, v: vs[i] + '%', h: Math.round(vs[i] * scale) }));
+    const gemVs = RC.map((_, i) => Math.round(mean(rtCur.map((x) => RT[x.code][i]))));
+    const yc = [dark ? '#6B7380' : '#B9BFC9', a.fill];
+    const omax = Math.max(...OBSY.flatMap((o) => o[2]));
+
+    const og = OBSY.map(([ic, name, ns]) => ({ ic, name, bars: ns.map((n, i) => ({ n, h: n ? Math.round((n / omax) * 110) + 4 : 2, c: n ? yc[i] : t.border, t: name + ', ' + YEARS[i] + ': ' + n + ' keer' })) }));
+
+    const rg = rtCur.map((x) => Object.assign(badgeOf(x), { hasBadge: true, fw: 400, bars: rbars(RT[x.code], 1.6) })).concat([{ hasBadge: false, code: '', on: t.text, badgeBg: 'transparent', badgeBorder: 'transparent', shadow: 'none', title: 'Gemiddeld 2025-2026', fw: 600, bars: rbars(gemVs, 1.6) }]);
+    const V = { rg, og, yc0: yc[0], yc1: yc[1] };
+
+    return Object.assign({}, base, PRV, V);
+  }
+}
+</script>
+</body>
+</html>

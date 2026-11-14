@@ -181,6 +181,186 @@
       "w": 1440,
       "x": 3040,
       "y": 6960
+    },
+    "POOvResA.dc.html": {
+      "x": 0,
+      "y": 11220,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "25 · PO-overzicht · Resultaten A: tabel per projectgroep, groepsrij met rubricscores, leden eronder"
+    },
+    "POOvResB.dc.html": {
+      "x": 1200,
+      "y": 11220,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "26 · PO-overzicht · Resultaten B: kaart per projectgroep met categoriebalkjes"
+    },
+    "POOvResC.dc.html": {
+      "x": 2400,
+      "y": 11220,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "27 · PO-overzicht · Resultaten C: één lijst op naam, projectgroep als label"
+    },
+    "POOvDistA.dc.html": {
+      "x": 0,
+      "y": 12204,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "28 · PO-overzicht · Cijferverdeling A: histogram per klas (Boxplot blijft een eigen tab)"
+    },
+    "POOvDistB.dc.html": {
+      "x": 1200,
+      "y": 12204,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "29 · PO-overzicht · Verdeling B: histogram en boxplot samen in één tab, zelfde schaal"
+    },
+    "POOvDistC.dc.html": {
+      "x": 2400,
+      "y": 12204,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "30 · PO-overzicht · Boxplot C: projectgroepcijfer naast eindcijfer, leerlingen als stippen"
+    },
+    "POOvCatA.dc.html": {
+      "x": 0,
+      "y": 13188,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "31 · PO-overzicht · Categorieën A: kaart per categorie met niveaukaarten en aantallen"
+    },
+    "POOvCatB.dc.html": {
+      "x": 1200,
+      "y": 13188,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "32 · PO-overzicht · Categorieën B: tabel met een gestapelde niveaubalk"
+    },
+    "POOvCatC.dc.html": {
+      "x": 2400,
+      "y": 13188,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "33 · PO-overzicht · Categorieën C: scorematrix met niveaubanden erboven"
+    },
+    "POOvObsA.dc.html": {
+      "x": 0,
+      "y": 14172,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "34 · PO-overzicht · Observaties A: tabel per categorie, n (p%) en projectgroepen"
+    },
+    "POOvObsB.dc.html": {
+      "x": 1200,
+      "y": 14172,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "35 · PO-overzicht · Observaties B: balken per categorie"
+    },
+    "POOvObsC.dc.html": {
+      "x": 2400,
+      "y": 14172,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "title": "36 · PO-overzicht · Observaties C: matrix observatie × projectgroep"
+    },
+    "ProfielCvA.dc.html": {
+      "x": 0,
+      "y": 15520,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "title": "37 · Leerlingprofiel · Cijferverloop A: de huidige drie grafieken in de nieuwe stijl, PO-tooltip"
+    },
+    "ProfielCvB.dc.html": {
+      "x": 1280,
+      "y": 15520,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "title": "38 · Leerlingprofiel · Cijferverloop B: kerngetallen bovenaan, twee grafieken naast elkaar"
+    },
+    "ProfielCvC.dc.html": {
+      "x": 2560,
+      "y": 15520,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "title": "39 · Leerlingprofiel · Cijferverloop C: toetscodes als badges op de as, halters in plaats van staven"
+    },
+    "ProfielAnA.dc.html": {
+      "x": 0,
+      "y": 16504,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "title": "40 · Leerlingprofiel · Analyse A: de huidige grafieken in de nieuwe stijl (PO niet in RTTI)"
+    },
+    "ProfielAnB.dc.html": {
+      "x": 1280,
+      "y": 16504,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "title": "41 · Leerlingprofiel · Analyse B: RTTI per toets als kaartjes, observaties als tabel"
+    },
+    "ProfielAnC.dc.html": {
+      "x": 2560,
+      "y": 16504,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "title": "42 · Leerlingprofiel · Analyse C: RTTI-verloop als lijnen, observaties als liggende balken"
+    },
+    "POOverzicht.dc.html": {
+      "x": 0,
+      "y": 17840,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "is_interactive": true,
+      "title": "43 · PO-overzicht (gekozen): Resultaten per klas (27), Cijferverdeling (28), Boxplot (30), Categorieën (32), Observaties (35)"
+    },
+    "Profiel.dc.html": {
+      "x": 1200,
+      "y": 17840,
+      "w": 1200,
+      "h": 864,
+      "radius": 14,
+      "is_interactive": true,
+      "title": "44 · Leerlingprofiel (gekozen): Cijferverloop als staafdiagram (39), Analyse (41)"
+    },
+    "Groepsoverzicht2.dc.html": {
+      "x": 0,
+      "y": 19100,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "is_interactive": true,
+      "title": "45 · Groepsoverzicht (nieuw): JAAR + SE, verschoven klassen, stippen in boxplot, tooltips, RTTI-verloop, observaties per toets"
+    },
+    "Toetsoverzicht.dc.html": {
+      "x": 1200,
+      "y": 19100,
+      "w": 1120,
+      "h": 864,
+      "radius": 14,
+      "is_interactive": true,
+      "title": "46 · Toetsoverzicht (nieuw): één tabel met groepen, stijl van het PO-overzicht, verzameloverzicht als schakelaar"
     }
   },
   "createdOnFiles": {
@@ -198,7 +378,15 @@
     "r3",
     "r4",
     "r5",
-    "r6"
+    "r6",
+    "r8",
+    "r9",
+    "k8",
+    "k9",
+    "r10",
+    "k10",
+    "r11",
+    "k11"
   ],
   "notes": {
     "r1": {
@@ -256,6 +444,66 @@
       "w": 240,
       "x": 0,
       "y": 9360
+    },
+    "r8": {
+      "kind": "title1",
+      "maxW": 3520,
+      "text": "Ronde 8: PO-overzicht, drie varianten per tab (kies per rij)",
+      "w": 240,
+      "x": 0,
+      "y": 10980
+    },
+    "r9": {
+      "kind": "title1",
+      "maxW": 3760,
+      "text": "Ronde 9: leerlingprofiel, drie varianten per tab (kies per rij)",
+      "w": 240,
+      "x": 0,
+      "y": 15280
+    },
+    "k8": {
+      "x": 3600,
+      "y": 11220,
+      "w": 340,
+      "fill": "blue",
+      "text": "Elke rij is één tab, A / B / C naast elkaar. Voorbeeld: PO 503 Onderzoeksverslag Valbeweging, 5 projectgroepen, 1 leerling niet ingedeeld. Thema en accent via Tweaks."
+    },
+    "k9": {
+      "x": 3840,
+      "y": 15520,
+      "w": 340,
+      "fill": "blue",
+      "text": "Zelfde inhoud als het huidige profiel, nieuwe stijl. Sem Dijkstra zit in projectgroep Valtoren van ronde 8, dus de PO-tooltip klopt met die cijfers."
+    },
+    "r10": {
+      "kind": "title1",
+      "maxW": 2400,
+      "text": "Ronde 10: gekozen PO-overzicht en leerlingprofiel",
+      "w": 240,
+      "x": 0,
+      "y": 17600
+    },
+    "k10": {
+      "x": 2480,
+      "y": 17840,
+      "w": 340,
+      "fill": "blue",
+      "text": "Beide borden zijn klikbaar (Play): tabs, Per klas / Per projectgroep, Stapgrootte, en tooltips bij het bewegen over scores en staven."
+    },
+    "r11": {
+      "kind": "title1",
+      "maxW": 2320,
+      "text": "Ronde 11: groepsoverzicht en toetsoverzicht",
+      "w": 240,
+      "x": 0,
+      "y": 18860
+    },
+    "k11": {
+      "x": 2400,
+      "y": 19100,
+      "w": 340,
+      "fill": "blue",
+      "text": "Board 45 vervangt board 3 (Groepsoverzicht). Board 46: rechtsboven de schakelaar Toets / Verzameloverzicht; in het verzameloverzicht zijn de laatste drie tabs uitgeschakeld."
     }
   },
   "order": [
@@ -282,7 +530,29 @@
     "PORapportB.dc.html",
     "PORapportC.dc.html",
     "PORapportD.dc.html",
-    "PORapportE.dc.html"
+    "PORapportE.dc.html",
+    "POOvResA.dc.html",
+    "POOvResB.dc.html",
+    "POOvResC.dc.html",
+    "POOvDistA.dc.html",
+    "POOvDistB.dc.html",
+    "POOvDistC.dc.html",
+    "POOvCatA.dc.html",
+    "POOvCatB.dc.html",
+    "POOvCatC.dc.html",
+    "POOvObsA.dc.html",
+    "POOvObsB.dc.html",
+    "POOvObsC.dc.html",
+    "ProfielCvA.dc.html",
+    "ProfielCvB.dc.html",
+    "ProfielCvC.dc.html",
+    "ProfielAnA.dc.html",
+    "ProfielAnB.dc.html",
+    "ProfielAnC.dc.html",
+    "POOverzicht.dc.html",
+    "Profiel.dc.html",
+    "Groepsoverzicht2.dc.html",
+    "Toetsoverzicht.dc.html"
   ],
   "pages": [],
   "title": "Maatwerk redesign"
