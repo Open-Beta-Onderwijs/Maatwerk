@@ -81,3 +81,35 @@ attempt that counts (its "Eenheden vergeten", 1 in the old INHAAL overview).
 
 The exam overview (step 29b) keeps its own rule for "per groep" (one group per student, as the
 score grid's sections), so these two views can differ for students in two groups.
+
+## 4. Exam overview (step 29b): GEMIDDELDE and STANDAARDDEVIATIE per group (new)
+
+Before, the Resultaten tab had a table per group without footer; the summary line above it is
+unchanged. Each group now gets the score grid's footer (step 25, decision 29 of the grade
+rules): Totaal and Cijfer mean ± SD, the number of ticked students per observatie, and per RTTI
+category the mean of the graded rows' percentages (whole percent; NVT left out). The sections
+are the exam's groups as in the score modal (a student in two groups is in both sections).
+
+| Toets                  | Groep         | Totaal     | Cijfer    | Observaties 📏 ✏️ 🧮 | R / T1 / T2 / I    |
+| ---------------------- | ------------- | ---------- | --------- | -------------------- | ------------------ |
+| 301 Toets H1           | 3 nat cluster | 7,8 ± 2,2  | 6,5 ± 2,1 | 2 2 1                | 44 / 55 / 46 / 33  |
+| 301 Toets H1           | 3a nat        | 7,1 ± 1,8  | 5,4 ± 1,6 | 4 2 1                | 40 / 48 / 52 / 23  |
+| 301 HERKANSING         | 3 nat cluster | 8,0 ± 0,0  | 5,5 ± 0,0 | 0 0 0                | 17 / 67 / 38 / 100 |
+| 301 HERKANSING         | 3a nat        | 7,5 ± 0,5  | 5,2 ± 0,3 | 0 0 0                | 13 / 84 / 19 / 75  |
+| 301 INHAAL             | 3 nat cluster | 5,0 ± 0,0  | 4,8 ± 0,0 | 0 0 0                | 13 / 50 / 50 / 20  |
+| 301 INHAAL             | 3a nat        | 3,3 ± 1,8  | 3,8 ± 1,1 | 1 0 0                | 13 / 30 / 25 / 15  |
+| 302 Toets H2           | 3 nat cluster | 12,0 ± 1,9 | 5,6 ± 2,4 | 0 0 0                | 54 / 33 / 53 / 21  |
+| 302 Toets H2           | 3a nat        | 12,5 ± 2,8 | 4,5 ± 1,8 | 1 1 1                | 49 / 30 / 56 / 42  |
+| 303 Toets H3           | 3 nat cluster | 19,3 ± 0,8 | 6,1 ± 0,8 | 1 1 1                | 50 / 44 / 56 / 51  |
+| 303 Toets H3           | 3a nat        | 19,9 ± 3,8 | 6,6 ± 1,0 | 3 1 2                | 51 / 48 / 53 / 47  |
+| 351 Toets één leerling | both          | 10,5 ± 0,0 | 6,9 ± 0,0 | (none linked)        | 70 / 30 / 70 / 50  |
+| 301 verzameloverzicht  | 3 nat cluster | 7,8 ± 2,2  | 6,5 ± 2,1 | 2 2 1                | 44 / 55 / 46 / 33  |
+| 301 verzameloverzicht  | 3a nat        | 7,4 ± 1,7  | 5,6 ± 1,5 | 3 2 1                | 38 / 58 / 47 / 27  |
+
+The footer's RTTI is the mean of the students' percentages (as the score grid); the RTTI cards
+of the RTTI-analyse tab keep the pooled points (unchanged), so the two can differ.
+
+**RTTI-verloop:** one point per original test of the jaarlaag (the same pooled values as
+before for those tests: 301 is 40 / 48 / 52 / 23 as the old chart and the "Alle leerlingen"
+card). Before, every resit was a point of its own; resits and PO's are now left out (spec 3.10:
+one point per test). The chart "RTTI-scores per cijfergroep" is not on board 46 and is gone.
