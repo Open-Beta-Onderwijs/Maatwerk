@@ -1056,10 +1056,6 @@ body::after {
 }
 /* Legacy size classes on the dialog component (styles/dialog.css): all open at
    the fixed top; the ones with tabs or lazy content have a fixed height. */
-.dlg.modal-overview {
-  width: 960px;
-  height: var(--dlg-max-h);
-}
 .dlg.modal-profile {
   width: min(100%, 1400px);
   height: var(--dlg-max-h);
@@ -1992,47 +1988,6 @@ code {
 .obs-icon-op-btn.selected {
   background: var(--accent);
   border-color: var(--accent);
-}
-
-/* Exam overview — Resultaten tab */
-.results-table-wrap {
-  overflow-x: auto;
-  margin-bottom: 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-btn);
-  background: var(--surface);
-}
-.results-table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-  font-size: 12px;
-}
-.results-table th,
-.results-table td {
-  border-bottom: 1px solid var(--border);
-  padding: 3px 6px;
-  text-align: center;
-  white-space: nowrap;
-}
-.results-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.results-table th {
-  background: var(--surface-2);
-  font-weight: 600;
-  vertical-align: bottom;
-}
-.results-table .res-name {
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.results-table .res-sep {
-  border-left: 2px solid var(--border-strong);
-}
-.results-table .res-grade {
-  font-weight: 600;
 }
 
 /* Round badge marking a grade that came from a resit (letter of its description) */

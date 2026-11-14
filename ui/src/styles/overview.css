@@ -633,12 +633,13 @@ html[data-theme='dark'] .ov-tip__mute {
 .ov-table tbody tr.ov-row:hover td.ov-col-jaar {
   background: color-mix(in srgb, var(--foot) 93%, rgb(127, 140, 160));
 }
-.ov-section__head {
-  padding: 14px 8px 6px;
+.ov-table th.ov-section__head {
+  padding: 16px 8px 6px;
   border-bottom: 1px solid var(--border);
-  color: var(--accent-text);
-  font-size: 13px;
-  font-weight: 700;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 650;
   text-align: left;
 }
 .ov-foot td {
@@ -753,4 +754,165 @@ html[data-theme='dark'] .ov-tip__mute {
 }
 .ov-grid--flush {
   padding-top: 0;
+}
+
+/* ── Exam overview (modals/exam-overview, board 46) ────────────────────────── */
+.xo-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.xo-summary b {
+  color: var(--text);
+}
+.xo-summary__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.xo-table thead th.xo-col-tot {
+  width: 84px;
+}
+.xo-table thead th.xo-col-grade {
+  width: 70px;
+}
+.xo-table thead th.xo-col-dot {
+  width: 30px;
+}
+.xo-table thead th.xo-col-obs {
+  width: 34px;
+  font-size: 16px;
+  font-weight: 400;
+}
+.xo-table thead th.xo-col-rtti {
+  width: 54px;
+}
+.xo-rtti--r {
+  color: var(--rtti-r);
+}
+.xo-rtti--t1 {
+  color: var(--rtti-t1);
+}
+.xo-rtti--t2 {
+  color: var(--rtti-t2);
+}
+.xo-rtti--i {
+  color: var(--rtti-i);
+}
+.xo-table td.xo-obs {
+  font-size: 15px;
+}
+.xo-table td.xo-muted {
+  color: var(--muted);
+}
+.xo-table .ov-foot td.xo-num {
+  font-weight: 600;
+}
+.ov-section__extra {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.ov-card__count {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ov-card__spacer {
+  flex: 1;
+}
+.ov-card__head .ov-card__h3 {
+  margin: 0;
+}
+.ov-legend--inline {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ov-legend--inline .ov-meanline {
+  font-size: 12px;
+}
+.xo-gg__head {
+  flex-wrap: wrap;
+  margin: 4px 0 0;
+}
+.xo-gg {
+  gap: 6px;
+}
+.xo-gg__labels {
+  gap: 6px;
+}
+.xo-q {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 30px;
+}
+.xo-q--groups {
+  height: auto;
+  padding: 4px 0;
+}
+.xo-q__label {
+  width: 40px;
+  font-weight: 600;
+}
+.xo-q__max {
+  width: 70px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.xo-q__track {
+  flex: 1;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+.xo-q__track--thin {
+  height: 9px;
+  border-radius: 3px;
+}
+.xo-q__bar {
+  height: 100%;
+}
+.xo-q__pct {
+  width: 48px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.xo-q__stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+.xo-q__thin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.xo-q__gpct {
+  width: 44px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+.ov-table thead th.ov-name-th {
+  text-align: left;
+}
+/* The test badge left of the title, centred on its first line (board 46). */
+.modal-exam-overview .dlg-head-row > .test-badge {
+  margin-top: 6px;
+  margin-right: -6px;
+}
+.ov-box__label > .ov-card__count {
+  font-weight: 400;
+}
+.ov-box__name {
+  font-weight: 600;
 }

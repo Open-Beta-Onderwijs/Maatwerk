@@ -24,7 +24,7 @@ import {
   wirePeriode,
 } from './exam-fields';
 import { showExamEditor } from './toets-edit';
-import { openExamOverviewModal } from './toets-overzicht.js';
+import { openExamOverviewModal } from './exam-overview';
 
 /** The kinds of attempt; `word` fills the locked Beschrijving, Anders is typed. */
 const ATTEMPT_KINDS = [
