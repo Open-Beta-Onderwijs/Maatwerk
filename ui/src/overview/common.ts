@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+// Small parts shared by the overview charts and tables (design spec 3.10, step 29): the test
+// badge, the grade pill of the overviews, the axis position of a grade and the "gem. ± SD"
+// line. Values computed at render time go through the style data attributes (the CSP forbids
+// style="", legacy/style-data.ts).
+
+import { attemptCode } from '../domain/exam-info';
+import { formatFixed, formatGrade } from '../domain/format';
+import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
+import { testBadgeClass, testKind, type TestKind } from '../domain/test-type';
+import type { Stats } from '../domain/statistics';
+import type { Exam } from '../domain/types';
+import { esc } from '../utils/html';
+
+/** The type badge of a test (spec 2.5), with an optional tooltip. */
+export function examBadgeHtml(exam: Exam, title?: string): string {
+  const t = title ? ` title="${esc(title)}"` : '';
+  return `<span class="${testBadgeClass(exam)}"${t}>${esc(attemptCode(exam))}</span>`;
+}
+
+/** The kind class of a chart part in the test's type colour (`ov-kind--se`, ...). */
+export function kindClass(kind: TestKind): string {
+  return `ov-kind--${kind}`;
+}
+
+export { testKind };
+
+/**
+ * A grade pill of the overviews (board 45): `—` muted for no grade, grey italic for a diagnostic
+ * test (it counts for nothing), bold below 5,5.
+ */
+export function ovPillHtml(g: number | null, diagnostic = false): string {
+  if (g === null) return '<span class="ov-pill ov-pill--none">—</span>';
+  if (diagnostic) return `<span class="ov-pill ov-pill--diag">${formatGrade(g)}</span>`;
+  const fail = isFail(g) ? ' ov-pill--fail' : '';
+  return `<span class="ov-pill${fail}" data-border-color="${gradeBarColor(g)}" data-color="${gradeTextColor(g)}">${formatGrade(g)}</span>`;
+}
+
+/** Position of a grade on a 1-10 axis, in percent (clamped). */
+export function axisPct(g: number): number {
+  return Math.max(0, Math.min(100, ((g - 1) / 9) * 100));
+}
+
+/** "gem. 6,4 ± 1,4 · 30% onvoldoende", the mean in its grade colour (spec 3.10). */
+export function meanLineHtml(s: Stats | null): string {
+  if (!s) return '<span class="ov-meanline">Nog geen cijfers</span>';
+  return (
+    `<span class="ov-meanline">gem. <b data-color="${gradeTextColor(s.mean)}">${formatFixed(s.mean)}</b>` +
+    ` ± ${formatFixed(s.sd)} · ${s.fails}% onvoldoende</span>`
+  );
+}
+
+/** "1 leerling" / "12 leerlingen". */
+export function studentCount(n: number): string {
+  return `${n} ${n === 1 ? 'leerling' : 'leerlingen'}`;
+}
+
+/** A whole percentage of `n` out of `of` (0 when `of` is 0). */
+export function pctOf(n: number, of: number): number {
+  return of > 0 ? Math.round((100 * n) / of) : 0;
+}
+
+/** The empty state of a tab or card. */
+export function emptyHtml(text: string): string {
+  return `<p class="ov-empty hint">${esc(text)}</p>`;
+}
