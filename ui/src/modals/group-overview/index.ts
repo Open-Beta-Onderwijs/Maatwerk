@@ -20,6 +20,7 @@ import { seAverage } from '../../domain/statistics';
 import type { Exam, Group, Observatie, ScoreRecord, Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
 import { installGradeTips } from '../../overview/tooltip';
+import { emptyHtml, LOAD_FAILED } from '../../overview/common';
 import { Store } from '../../store.js';
 import { openProfielModal } from '../profile';
 import { boxHtml, rttiHtml, verdelingHtml } from './charts';
@@ -192,17 +193,26 @@ export async function openGroupStudentsModal(
   // The scores of the year, and for the SE column every year's history (decision 10).
   const yearExams = Store.getExamsSync(year) as Exam[];
   const records = new Map<string, ScoreRecord | null>();
-  for (const s of students)
-    records.set(String(s.id), (await Store.getStudentScores(s.id, year)) as ScoreRecord);
-  const first = buildGroupModel({ group, students, yearExams, records });
+  let first: ReturnType<typeof buildGroupModel>;
   let seAverages: Map<string, number | null> | undefined;
-  if (first.showSe) {
-    const allExams = Store.getAllExamsSync() as Exam[];
-    seAverages = new Map();
-    for (const s of students) {
-      const history = (await Store.getStudentHistory(s.id)) as HistoryEntry[];
-      seAverages.set(String(s.id), seAverage(history, allExams));
+  try {
+    for (const s of students)
+      records.set(String(s.id), (await Store.getStudentScores(s.id, year)) as ScoreRecord);
+    first = buildGroupModel({ group, students, yearExams, records });
+    if (first.showSe) {
+      const allExams = Store.getAllExamsSync() as Exam[];
+      seAverages = new Map();
+      for (const s of students) {
+        const history = (await Store.getStudentHistory(s.id)) as HistoryEntry[];
+        seAverages.set(String(s.id), seAverage(history, allExams));
+      }
     }
+  } catch {
+    if (dialog.isOpen)
+      dialog.el
+        .querySelectorAll<HTMLElement>('[role="tabpanel"]')
+        .forEach((p) => (p.innerHTML = emptyHtml(LOAD_FAILED)));
+    return;
   }
   if (!dialog.isOpen) return;
   model = seAverages ? buildGroupModel({ group, students, yearExams, records, seAverages }) : first;

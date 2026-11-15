@@ -171,7 +171,12 @@ export function resultatenHtml(m: PoModel, view: PoView): string {
         `<tbody class="po-ov-section"><tr class="ov-section"><th class="ov-section__head" colspan="${nCols}" scope="colgroup">` +
         `${esc(s.name)} <span class="ov-section__extra">· ${esc(s.extra)}</span></th></tr>` +
         s.rows.map((r) => rowHtml(m, r, view)).join('') +
-        (s.foot ? footHtml(m, s.rows) : '') +
+        (s.foot
+          ? footHtml(
+              m,
+              s.rows.filter((r) => r.group),
+            )
+          : '') +
         `</tbody>`,
     )
     .join('');

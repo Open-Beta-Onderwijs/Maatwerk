@@ -7,6 +7,12 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **PO verzameloverzicht:** a PO with an inhaal or herkansing has no summary overview over the
   attempts that count (not designed; PLAN-2 step 29c). The PO verzamelkaart's "Overzicht openen"
   stays disabled with a tooltip; each attempt opens its own PO overview.
+- **Review 29 (deferred minors):** m1 exam overview Observaties counts students without a score
+  but takes the percentage of those with one (asked the user which population to use); m4 a
+  silent refresh of the group and exam overviews shows skeletons (load before `openModal`); m5
+  per-student reads without `preloadScores` / `{ loaded: true }`, `examStats` not memoised; m6
+  duplication (histogram card, heat tint, info icon, `signed`, obs sort); m7 test gaps; nits
+  n1-n7 (`docs/reviews/step-29.md`), among them ~45 unused utility classes in `style.css`.
 - **Profile observaties:** "Observaties per schooljaar" counts the observaties linked to a test
   (`obs_ids`), as before; a PO's rubric and category observaties are not in it yet.
 

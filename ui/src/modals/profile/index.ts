@@ -11,7 +11,7 @@ import type { Dialog } from '../../components/dialog';
 import { skelBlock, skelRegion } from '../../components/skeleton';
 import type { Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
-import { examBadgeHtml } from '../../overview/common';
+import { emptyHtml, examBadgeHtml, LOAD_FAILED } from '../../overview/common';
 import { installGradeTips } from '../../overview/tooltip';
 import { leerlingenState } from '../../screens/leerlingen';
 import { Store } from '../../store.js';
@@ -222,13 +222,13 @@ export async function openProfielModal(
         `</div>`;
       applyStyleData(pane);
       renderBars();
-      void renderTests();
-      void yearComparisons(d!).then((rows) =>
-        fill(
-          pane.querySelector<HTMLElement>('.pf-years-host'),
-          yearRowsHtml(rows, yearLabel, first),
-        ),
+      void renderTests().catch(() =>
+        fill(root?.querySelector<HTMLElement>('.pf-tests-host'), emptyHtml(LOAD_FAILED)),
       );
+      const years = pane.querySelector<HTMLElement>('.pf-years-host');
+      void yearComparisons(d!)
+        .then((rows) => fill(years, yearRowsHtml(rows, yearLabel, first)))
+        .catch(() => fill(years, emptyHtml(LOAD_FAILED)));
     } else {
       pane.innerHTML =
         `<div class="ov-stack">` +
@@ -300,7 +300,9 @@ export async function openProfielModal(
           renderBars();
         } else if (btn.dataset.jaar) {
           jaar = btn.dataset.jaar;
-          void renderTests();
+          void renderTests().catch(() =>
+            fill(el.querySelector<HTMLElement>('.pf-tests-host'), emptyHtml(LOAD_FAILED)),
+          );
         } else if (btn.dataset.rtti) {
           rttiKey = btn.dataset.rtti;
           fill(

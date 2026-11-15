@@ -61,6 +61,9 @@ export function pctOf(n: number, of: number): number {
   return of > 0 ? Math.round((100 * n) / of) : 0;
 }
 
+/** A tab or card whose data could not be read (review 29 m3). */
+export const LOAD_FAILED = 'Kon de gegevens niet laden. Sluit het venster en probeer het opnieuw.';
+
 /** The empty state of a tab or card. */
 export function emptyHtml(text: string): string {
   return `<p class="ov-empty hint">${esc(text)}</p>`;

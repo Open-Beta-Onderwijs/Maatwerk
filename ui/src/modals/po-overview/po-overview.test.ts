@@ -165,6 +165,18 @@ describe('PO overview model (spec 4.14)', () => {
     expect(groep.match(/GEMIDDELDE/g)).toHaveLength(2);
   });
 
+  it('leaves an unplaced student’s stale category score out of the footer (review 29 m2)', () => {
+    records.set('4', { scores: { po: { th: 8 } } });
+    try {
+      const html = resultatenHtml(model(), 'klas');
+      // Klas 3a: Bas and Anna have Theorie 3; Dirk's stale 8 does not count.
+      expect(html).toContain('<td class="po-ov-num po-ov-foot-v">3,0</td>');
+      expect(html).not.toContain('<td class="po-ov-num po-ov-foot-v">4,7</td>');
+    } finally {
+      records.set('4', {});
+    }
+  });
+
   it('shades the levels from light to dark', () => {
     expect(levelColor(0, 3, false)).toContain('22%');
     expect(levelColor(2, 3, false)).toContain('100%');

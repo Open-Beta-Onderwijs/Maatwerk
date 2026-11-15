@@ -13,7 +13,7 @@ import { gradeBarColor } from '../../domain/grade-colors';
 import { stats } from '../../domain/statistics';
 import type { Exam, ScoreRecord, Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
-import { examBadgeHtml } from '../../overview/common';
+import { emptyHtml, examBadgeHtml, LOAD_FAILED } from '../../overview/common';
 import type { HistStep } from '../../overview/histogram';
 import { Store } from '../../store.js';
 import { examGroups, groupStudentsOf } from '../../screens/scores/roster';
@@ -108,11 +108,15 @@ export async function openExamOverviewModal(
           String(exam!.jaarlaag ?? ''),
           d.students,
           async (s) => (await Store.getStudentScores(s.id, year)) as ScoreRecord | null,
-        ).then((points) => {
-          if (!host.isConnected) return;
-          host.innerHTML = verloopHtml(points, width, current);
-          applyStyleData(host);
-        });
+        )
+          .then((points) => {
+            if (!host.isConnected) return;
+            host.innerHTML = verloopHtml(points, width, current);
+            applyStyleData(host);
+          })
+          .catch(() => {
+            if (host.isConnected) host.innerHTML = emptyHtml(LOAD_FAILED);
+          });
       }
     }
     applyStyleData(pane);
@@ -176,7 +180,15 @@ export async function openExamOverviewModal(
     },
   });
 
-  data = await loadExamOverview(exam, year, scoreOverride, isSummary);
+  try {
+    data = await loadExamOverview(exam, year, scoreOverride, isSummary);
+  } catch {
+    if (dialog.isOpen)
+      dialog.el
+        .querySelectorAll<HTMLElement>('.xo-pane')
+        .forEach((p) => (p.innerHTML = emptyHtml(LOAD_FAILED)));
+    return;
+  }
   if (!dialog.isOpen) return;
   const summary = dialog.el.querySelector<HTMLElement>('.xo-summary-host');
   if (summary) {
