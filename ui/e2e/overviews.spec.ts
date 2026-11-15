@@ -127,6 +127,19 @@ test.describe('exam overview (board 46)', () => {
     await expect(d.locator('.xo-summary')).toContainText(/\d+ leerlingen · .*onvoldoende/);
   });
 
+  test('the name column is 360px wide, narrower in a narrow window so the table fits', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const d = await openExamOverview(page);
+    const nameTh = d.locator('.xo-table thead th.ov-name-th');
+    expect((await nameTh.boundingBox())!.width).toBeGreaterThanOrEqual(360);
+    await page.setViewportSize({ width: 800, height: 800 });
+    await expect.poll(async () => (await nameTh.boundingBox())!.width).toBeLessThan(200);
+    const pane = d.locator('.xo-pane').first();
+    expect(await pane.evaluate((p) => p.scrollWidth <= p.clientWidth)).toBe(true);
+  });
+
   test('the Stapgrootte toggle switches Alle leerlingen between 18 and 10 bins', async ({
     page,
   }) => {

@@ -851,10 +851,11 @@ html[data-theme='dark'] .ov-tip__mute {
   padding-right: 24px;
   padding-left: 8px;
 }
-/* A wide name column, like the group overview's: clear air before the second column. */
+/* A wide name column, like the group overview's: clear air before the second column; it
+   shrinks in a narrow window (360px from a window of 1000px). */
 .ov-table.xo-table thead th.ov-name-th,
 .ov-table.po-ov-table thead th.ov-name-th {
-  min-width: 360px;
+  min-width: clamp(160px, calc(100vw - 640px), 360px);
 }
 /* Room between Cijfer and the observaties, and between the observaties and R. */
 .ov-table.xo-table th.xo-sep,
