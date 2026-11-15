@@ -1,0 +1,1475 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Overview charts and tables (design spec 3.10, boards 43-46, step 29): src/overview/. Values
+ * computed at render time (heights, positions, colours) come in as style data attributes. */
+
+/* ── Test-type colour of a chart part (spec 2.5) ───────────────────────────── */
+.ov-kind--toets,
+.ov-kind--po {
+  --k: var(--accent);
+}
+.ov-kind--se,
+.ov-kind--se-po {
+  --k: var(--anti);
+}
+.ov-kind--diagnostic {
+  --k: var(--grade-diagnostic-border);
+}
+
+/* ── Grade pill of the overviews ───────────────────────────────────────────── */
+.ov-pill {
+  display: inline-block;
+  min-width: 44px;
+  padding: 0 6px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  line-height: 19px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ov-pill--fail {
+  font-weight: 700;
+}
+.ov-pill--none {
+  color: var(--muted);
+  font-weight: 400;
+}
+.ov-pill--diag {
+  border-color: var(--grade-diagnostic-border);
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* A grade with the resit dot hanging right of it (pills stay aligned). */
+.ov-grade {
+  position: relative;
+  display: inline-block;
+}
+.ov-grade__pill {
+  display: inline-block;
+  padding-bottom: 1px;
+}
+/* A grade with a tooltip worth reading (observaties, an overwritten grade): a solid triangle in
+   the pill's border colour squares off its bottom-right corner (user 2026-11-15). */
+.ov-pill--tip,
+.ov-grade__pill--obs .ov-pill {
+  position: relative;
+  border-bottom-right-radius: 0;
+}
+/* Inside the square corner, flush with the border, so it never overhangs the pill; with the
+   border it reads as a 9px triangle. */
+.ov-pill--tip::after,
+.ov-grade__pill--obs .ov-pill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  border-top: 7.5px solid transparent;
+  border-right: 7.5px solid;
+  border-right-color: inherit;
+}
+.ov-grade__dot {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  display: flex;
+  transform: translateY(-50%);
+}
+/* A grade overwritten by hand (exam overview): the pill in the accent, its border thicker. */
+.xo-grade--override .ov-pill {
+  border-width: 2.5px;
+  border-color: var(--accent) !important;
+  color: var(--accent-text) !important;
+  line-height: 17px;
+}
+.xo-grade--override .ov-pill::after {
+  border-top-width: 6.5px;
+  border-right-width: 6.5px;
+}
+.ov-dot {
+  margin-left: 3px;
+  font-size: 9px;
+}
+
+/* ── Cards, headings, legends ──────────────────────────────────────────────── */
+.ov-card {
+  min-width: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card-lg);
+  background: var(--surface);
+}
+.ov-card--small {
+  padding: 12px 14px;
+}
+.ov-card__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+.ov-card__title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-card__h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ov-card__sub {
+  margin: -4px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-meanline {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-grid {
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+}
+.ov-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.ov-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+/* Four small cards on one line (RTTI per cijfergroep); two per line in a narrow window. */
+.ov-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 900px) {
+  .ov-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ov-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 18px;
+}
+.ov-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-intro {
+  margin: 16px 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ov-empty {
+  padding-top: 18px;
+}
+.ov-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.ov-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ov-legend__key {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* The dashed 5,5 line of histograms and boxplots. */
+.ov-pass-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed #e5736b;
+}
+
+/* ── Histogram ─────────────────────────────────────────────────────────────── */
+.ov-hist__plot {
+  position: relative;
+}
+.ov-hist__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  border-bottom: 1px solid var(--border);
+}
+.ov-hist__col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+  height: 100%;
+}
+.ov-hist__n {
+  font-size: 10px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.ov-hist__n--zero {
+  color: var(--muted);
+  font-weight: 400;
+}
+.ov-hist__bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+}
+.ov-hist__bar--empty {
+  border-radius: 0;
+  background: var(--border);
+}
+.ov-hist__pass {
+  top: -6px;
+}
+.ov-hist__labels {
+  display: flex;
+  gap: 3px;
+  padding-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+.ov-hist__labels > span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+}
+.ov-step {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ov-step__label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ── Boxplot ───────────────────────────────────────────────────────────────── */
+.ov-box__legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.ov-box__legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ov-box__key-box {
+  width: 22px;
+  height: 12px;
+  border: 2px solid var(--muted);
+  border-radius: 3px;
+}
+.ov-box__key-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text);
+}
+.ov-box__key-pass {
+  height: 12px;
+  border-left: 2px dashed #e5736b;
+}
+.ov-box {
+  display: flex;
+  flex-direction: column;
+}
+.ov-box__row,
+.ov-box__axis-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ov-box__row {
+  height: 64px;
+  border-bottom: 1px solid var(--line);
+}
+.ov-box__label {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  width: 260px;
+  min-width: 0;
+}
+.ov-box__label > :last-child {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-box__plot {
+  position: relative;
+  flex: 1;
+  height: 40px;
+}
+.ov-box__med {
+  flex: none;
+  width: 110px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-box__med b {
+  color: var(--text);
+}
+.ov-box__whisker {
+  position: absolute;
+  top: 19px;
+  height: 2px;
+  background: var(--k);
+}
+.ov-box__cap {
+  position: absolute;
+  top: 12px;
+  width: 2px;
+  height: 16px;
+  background: var(--k);
+}
+.ov-box__box {
+  position: absolute;
+  top: 4px;
+  height: 32px;
+  border: 2px solid var(--k);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--k) 15%, transparent);
+}
+html[data-theme='dark'] .ov-box__box {
+  background: color-mix(in srgb, var(--k) 25%, transparent);
+}
+.ov-kind--po .ov-box__box,
+.ov-kind--se-po .ov-box__box {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--k) 67%, transparent) 0 6px,
+    color-mix(in srgb, var(--k) 10%, transparent) 6px 12px
+  );
+}
+.ov-box__median {
+  position: absolute;
+  top: 4px;
+  width: 3px;
+  height: 32px;
+  background: var(--k);
+}
+.ov-box__dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border: 1.5px solid var(--surface);
+  border-radius: 50%;
+  background: var(--text);
+  box-sizing: content-box;
+}
+.ov-box__axis {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  padding-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* ── RTTI ──────────────────────────────────────────────────────────────────── */
+.ov-rtti--r {
+  background: var(--rtti-r);
+}
+.ov-rtti--t1 {
+  background: var(--rtti-t1);
+}
+.ov-rtti--t2 {
+  background: var(--rtti-t2);
+}
+.ov-rtti--i {
+  background: var(--rtti-i);
+}
+.ov-rtti-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.ov-rtti-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ov-rtti-legend__name {
+  color: var(--muted);
+}
+.ov-rtti-key {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.ov-rline {
+  position: relative;
+}
+.ov-rline__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.ov-rline__hl {
+  fill: var(--accent-ring);
+}
+.ov-rline__grid {
+  stroke: var(--line);
+}
+.ov-rline__axis {
+  stroke: var(--border);
+}
+.ov-rline__ylabel {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.ov-rline__dot {
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+.ov-rline__value {
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.ov-rline__codes {
+  position: absolute;
+  right: 0;
+  bottom: 8px;
+  left: 0;
+  height: 22px;
+}
+.ov-rline__code {
+  position: absolute;
+  transform: translateX(-50%);
+}
+.ov-rcard__bars {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 18px;
+  height: 170px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ov-rcard__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+.ov-rcard__v {
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.ov-rcard__v--nvt {
+  color: var(--muted);
+  font-weight: 400;
+}
+.ov-rcard__bar {
+  width: 100%;
+  max-width: 56px;
+  border-radius: 4px 4px 0 0;
+}
+.ov-rcard__keys {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  padding: 4px 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* ── Observatie bars ───────────────────────────────────────────────────────── */
+.ov-obs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ov-obs__row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 260px) minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+}
+.ov-obs__row--head {
+  grid-template-columns: 22px minmax(0, 1fr);
+}
+.ov-obs__row--thin {
+  grid-template-columns: 22px minmax(0, 260px) minmax(0, 1fr) 76px;
+  min-height: 18px;
+  font-size: 12px;
+}
+.ov-obs__row--thin .ov-obs__series {
+  grid-column: 2;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-obs__group {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ov-obs__icon {
+  font-size: 17px;
+  text-align: center;
+}
+.ov-obs__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ov-obs__track {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+.ov-obs__row--thin .ov-obs__track {
+  height: 8px;
+}
+.ov-obs__bar {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 6px;
+  background: var(--accent);
+}
+.ov-obs__n {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── Grade tooltip ─────────────────────────────────────────────────────────── */
+.ov-tip {
+  position: fixed;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 290px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #1b2230;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.28);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+}
+.ov-tip[hidden] {
+  display: none;
+}
+html[data-theme='dark'] .ov-tip {
+  background: #e7eaf0;
+  color: #1b2230;
+}
+.ov-tip__head {
+  font-size: 13px;
+}
+.ov-tip__mute {
+  color: #c3c9d4;
+}
+html[data-theme='dark'] .ov-tip__mute {
+  color: #4a5363;
+}
+.ov-tip__rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.ov-tip__obs {
+  display: flex;
+  gap: 8px;
+}
+.ov-tip__icon {
+  flex: none;
+  width: 18px;
+  text-align: center;
+}
+[data-tip] {
+  cursor: help;
+}
+
+/* ── Tables with group sections ────────────────────────────────────────────── */
+.ov-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.ov-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+.ov-table thead th {
+  padding: 8px;
+  border-bottom: 2px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ov-table thead tr.ov-head-group th {
+  padding: 10px 8px 2px;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-align: left;
+}
+.ov-table thead tr.ov-head-group th.ov-head-gap {
+  border-bottom: 0;
+}
+.ov-table tbody td {
+  height: 29px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+  white-space: nowrap;
+}
+.ov-table tbody tr.ov-row:hover td {
+  background: rgba(127, 140, 160, 0.07);
+}
+.ov-table .ov-col-jaar {
+  background: var(--foot);
+}
+.ov-table tbody tr.ov-row:hover td.ov-col-jaar {
+  background: color-mix(in srgb, var(--foot) 93%, rgb(127, 140, 160));
+}
+.ov-table th.ov-section__head {
+  padding: 16px 8px 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 650;
+  text-align: left;
+}
+.ov-foot td {
+  background: var(--foot);
+  text-align: center;
+}
+.ov-foot--mean td {
+  height: 32px;
+  border-top: 2px solid var(--border);
+}
+.ov-foot--sd td {
+  height: 28px;
+  color: var(--muted);
+}
+.ov-foot td.ov-foot__label {
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-align: left;
+}
+.ov-table tfoot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+.ov-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ov-name__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ov-name__link:hover {
+  text-decoration: underline;
+}
+.ov-name__nr {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-table td.ov-name-td {
+  padding: 0 8px;
+  text-align: left;
+}
+
+/* The heat-tinted counts of the group overview's Observaties table. */
+.ov-heat {
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+.ov-heat th {
+  padding: 0 4px;
+  font-weight: 600;
+}
+.ov-heat th.ov-heat__name {
+  padding: 0 8px;
+  text-align: left;
+}
+.ov-heat td {
+  height: 38px;
+  text-align: center;
+}
+.ov-heat td.ov-heat__name {
+  padding: 0 8px;
+  text-align: left;
+}
+.ov-heat__cell {
+  display: inline-block;
+  width: 88px;
+  padding: 6px 0;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.ov-heat-wrap {
+  overflow-x: auto;
+}
+.ov-heat--compact .ov-heat__pct {
+  display: none;
+}
+.ov-heat--compact .ov-heat__cell {
+  width: 44px;
+}
+.ov-heat__cell--none {
+  color: var(--muted);
+}
+.ov-heat__cell--strong {
+  color: #fff;
+}
+.ov-heat__tot {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ── Group overview (modals/group-overview, board 45) ──────────────────────── */
+.gl-table thead tr.ov-head-group th.gl-th {
+  border-left: 8px solid var(--surface);
+}
+.gl-table thead th.ov-name-th {
+  text-align: left;
+}
+.gl-table thead th.gl-col {
+  width: 76px;
+  text-align: center;
+}
+.gl-table thead th.gl-col--jaar {
+  width: 70px;
+  color: var(--muted);
+}
+.gl-table td.gl-cell {
+  position: relative;
+}
+.ov-grid--flush {
+  padding-top: 0;
+}
+
+/* ── Exam overview (modals/exam-overview, board 46) ────────────────────────── */
+.xo-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.xo-summary b {
+  color: var(--text);
+}
+.xo-summary__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+/* As wide as the contents, not the window (user 2026-11-15). */
+.ov-table.xo-table,
+.ov-table.po-ov-table {
+  width: auto;
+}
+/* More air between the columns now the tables are narrow (user 2026-11-15). */
+.ov-table.xo-table thead th,
+.ov-table.xo-table tbody td,
+.ov-table.po-ov-table thead th,
+.ov-table.po-ov-table tbody td {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+.ov-table.xo-table thead th.ov-name-th,
+.ov-table.xo-table tbody td.ov-name-td,
+.ov-table.xo-table tbody td.ov-foot__label,
+.ov-table.po-ov-table thead th.ov-name-th,
+.ov-table.po-ov-table tbody td.ov-name-td,
+.ov-table.po-ov-table tbody td.ov-foot__label {
+  padding-right: 24px;
+  padding-left: 8px;
+}
+/* A wide name column, like the group overview's: clear air before the second column. In a
+   narrow window `overview/fit-name.ts` gives it the room the pane has left; this is the
+   fallback until then. */
+.ov-table.xo-table thead th.ov-name-th,
+.ov-table.po-ov-table thead th.ov-name-th {
+  min-width: clamp(160px, calc(100vw - 640px), 360px);
+}
+/* Room between Cijfer and the observaties, and between the observaties and R. */
+.ov-table.xo-table th.xo-sep,
+.ov-table.xo-table td.xo-sep {
+  padding-left: 28px;
+}
+.xo-table thead th.xo-col-tot {
+  width: 84px;
+}
+.xo-table thead th.xo-col-grade {
+  width: 70px;
+}
+.xo-table thead th.xo-col-dot {
+  width: 30px;
+}
+.xo-table thead th.xo-col-obs {
+  width: 34px;
+  font-size: 16px;
+  font-weight: 400;
+}
+.xo-table thead th.xo-col-rtti {
+  width: 54px;
+}
+.xo-rtti--r {
+  color: var(--rtti-r);
+}
+.xo-rtti--t1 {
+  color: var(--rtti-t1);
+}
+.xo-rtti--t2 {
+  color: var(--rtti-t2);
+}
+.xo-rtti--i {
+  color: var(--rtti-i);
+}
+.xo-table td.xo-obs {
+  font-size: 15px;
+}
+.xo-table td.xo-muted {
+  color: var(--muted);
+}
+.xo-table .ov-foot td.xo-num {
+  font-weight: 600;
+}
+.ov-section__extra {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.ov-card__count {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ov-card__spacer {
+  flex: 1;
+}
+.ov-card__head .ov-card__h3 {
+  margin: 0;
+}
+.ov-legend--inline {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ov-legend--inline .ov-meanline {
+  font-size: 12px;
+}
+.xo-gg__head {
+  flex-wrap: wrap;
+  margin: 4px 0 0;
+}
+.xo-gg {
+  gap: 6px;
+}
+.xo-gg__labels {
+  gap: 6px;
+}
+.xo-q {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 30px;
+}
+.xo-q--groups {
+  height: auto;
+  padding: 4px 0;
+}
+.xo-q__label {
+  width: 40px;
+  font-weight: 600;
+}
+.xo-q__max {
+  width: 70px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.xo-q__track {
+  flex: 1;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+.xo-q__track--thin {
+  height: 9px;
+  border-radius: 3px;
+}
+.xo-q__bar {
+  height: 100%;
+}
+.xo-q__pct {
+  width: 48px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.xo-q__stack {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+.xo-q__thin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.xo-q__gpct {
+  width: 44px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+.ov-table thead th.ov-name-th {
+  text-align: left;
+}
+/* The test badge left of the title, centred on its first line (board 46). */
+.modal-exam-overview .dlg-head-row > .test-badge {
+  margin-top: 6px;
+  margin-right: -6px;
+}
+.ov-box__label > .ov-card__count {
+  font-weight: 400;
+}
+.ov-box__name {
+  font-weight: 600;
+}
+
+/* ── PO overview (modals/po-overview, board 43) ────────────────────────────── */
+.po-ov-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 4px;
+}
+.po-ov-table thead th.po-ov-col-label {
+  width: 132px;
+  text-align: left;
+}
+.po-ov-table thead th.po-ov-col-pts {
+  width: 66px;
+}
+.po-ov-table thead th.po-ov-col-bm {
+  width: 86px;
+}
+.po-ov-table thead th.po-ov-col-grade {
+  width: 70px;
+}
+.po-ov-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.po-ov-chip {
+  display: inline-block;
+  max-width: 124px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: 12px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.po-ov-chip--none {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+}
+.ov-table td.po-ov-num {
+  text-align: center;
+}
+.po-ov-muted {
+  color: var(--muted);
+}
+.ov-table td.po-ov-diag {
+  color: var(--muted);
+  font-style: italic;
+}
+.ov-table td.po-ov-pts {
+  font-weight: 600;
+}
+.ov-table td.po-ov-minus {
+  color: var(--danger);
+}
+.po-ov-tipv {
+  border-bottom: 1px dotted var(--muted);
+}
+.ov-foot td.po-ov-foot-v {
+  font-weight: 600;
+}
+.po-ov-cats {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.po-ov-cats th {
+  padding: 10px 8px;
+  border-bottom: 2px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.po-ov-cats th.po-ov-cats__name {
+  width: 220px;
+}
+.po-ov-cats th.po-ov-cats__mean {
+  width: 90px;
+  text-align: center;
+}
+.po-ov-cats th.po-ov-cats__share {
+  width: 170px;
+}
+.po-ov-cats tbody td {
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.po-ov-cats tfoot td {
+  padding: 12px 8px;
+  border-top: 2px solid var(--border);
+}
+.po-ov-cats td.po-ov-num {
+  text-align: center;
+}
+.po-ov-cat__name {
+  font-weight: 600;
+}
+.po-ov-pill {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.po-ov-pill--bonus {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.po-ov-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-ov-share__track {
+  flex: 1;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--surface-2);
+}
+.po-ov-share__bar {
+  height: 10px;
+}
+.po-ov-share__bar--diag {
+  background: var(--grade-diagnostic-border);
+}
+.po-ov-share__bar--bonus {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--accent) 0 4px,
+    color-mix(in srgb, var(--accent) 50%, #fff) 4px 8px
+  );
+}
+.po-ov-share__pct {
+  width: 38px;
+  font-weight: 600;
+  text-align: right;
+}
+.po-ov-segs {
+  display: flex;
+  gap: 2px;
+  height: 26px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.po-ov-seg {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.po-ov-seg--dark {
+  color: #fff;
+}
+.po-ov-legend {
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.po-ov-legend b {
+  color: var(--text);
+}
+.po-ov-obs__title {
+  font-size: 15px;
+}
+.po-ov-obs__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 38px;
+}
+.po-ov-obs__row .ov-obs__name {
+  flex: 1;
+  min-width: 0;
+}
+.po-ov-obs__track {
+  flex: none;
+  width: 300px;
+}
+.po-ov-obs__row .ov-obs__n {
+  width: 70px;
+  text-align: right;
+}
+.po-ov-obs__groups {
+  width: 110px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-table td.po-ov-label {
+  text-align: left;
+}
+.po-ov-cats td.po-ov-cats__foot {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+/* ── Student profile (modals/profile, board 44) ────────────────────────────── */
+.pf-card .ov-card__head {
+  margin-bottom: 12px;
+}
+.pf-head {
+  margin: 0;
+}
+.pf-legend {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.pf-key {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--k);
+}
+.pf-key.ov-kind--po,
+.pf-bar.ov-kind--po,
+.pf-bar.ov-kind--se-po {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--k) 0 5px,
+    color-mix(in srgb, var(--k) 50%, #fff) 5px 10px
+  );
+}
+.pf-key.ov-kind--diagnostic,
+.pf-bar.ov-kind--diagnostic {
+  border: 1.5px solid var(--grade-diagnostic-border);
+  background: var(--surface-2);
+  box-sizing: border-box;
+}
+.pf-bars {
+  display: flex;
+  gap: 10px;
+}
+.pf-bars__y {
+  position: relative;
+  flex: none;
+  width: 26px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.pf-bars__tick {
+  position: absolute;
+  right: 0;
+}
+.pf-bars__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.pf-bars__plot {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+.pf-bars__grid {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--line);
+}
+.pf-bars__pass {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 2px dashed #e5736b;
+}
+.pf-bars__year {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.pf-bars__year > span {
+  position: absolute;
+  top: -2px;
+  left: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pf-bars__year--sep {
+  border-left: 1px solid var(--border);
+}
+.pf-bars__slots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+.pf-bars__slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+  outline-offset: 2px;
+}
+.pf-bars__v {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.pf-bar {
+  width: min(46px, 70%);
+  border-radius: 5px 5px 0 0;
+  background: var(--k);
+}
+.pf-bars__badges {
+  display: flex;
+}
+.pf-bars__badge {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+  padding-top: 6px;
+}
+.pf-key-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.pf-key-diamond {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--muted);
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
+.pf-key-sd {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+}
+.pf-dumb__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+.pf-dumb__axis-row {
+  height: auto;
+  border-bottom: 0;
+}
+.pf-dumb__label {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  width: 280px;
+  min-width: 0;
+}
+.pf-dumb__title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-dumb__track {
+  position: relative;
+  flex: 1;
+  height: 24px;
+}
+.pf-dumb__axis {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  padding-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.pf-dumb__line {
+  position: absolute;
+  top: 11px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--line);
+}
+.pf-dumb__pass {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--border);
+}
+.pf-dumb__sd {
+  position: absolute;
+  top: 3px;
+  height: 18px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+}
+.pf-dumb__diff {
+  position: absolute;
+  top: 10px;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+.pf-dumb__diff--up {
+  background: color-mix(in srgb, var(--ok) 40%, transparent);
+}
+.pf-dumb__avg {
+  position: absolute;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border: 2px solid var(--muted);
+  background: var(--surface);
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
+.pf-dumb__dot {
+  position: absolute;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.pf-dumb__text {
+  flex: none;
+  width: 170px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.pf-dumb__delta {
+  margin-left: 24px;
+  color: var(--danger);
+  font-weight: 600;
+}
+.pf-dumb__delta--up {
+  color: var(--ok);
+}
+.pf-rgrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.ov-card.pf-rcard--avg {
+  border-color: var(--accent);
+}

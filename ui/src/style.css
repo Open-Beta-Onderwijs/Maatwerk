@@ -20,6 +20,7 @@
 @import './styles/photo-crop.css';
 @import './styles/cards.css';
 @import './styles/beheer.css';
+@import './styles/overview.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -1055,10 +1056,6 @@ body::after {
 }
 /* Legacy size classes on the dialog component (styles/dialog.css): all open at
    the fixed top; the ones with tabs or lazy content have a fixed height. */
-.dlg.modal-overview {
-  width: 960px;
-  height: var(--dlg-max-h);
-}
 .dlg.modal-profile {
   width: min(100%, 1400px);
   height: var(--dlg-max-h);
@@ -1993,47 +1990,6 @@ code {
   border-color: var(--accent);
 }
 
-/* Exam overview — Resultaten tab */
-.results-table-wrap {
-  overflow-x: auto;
-  margin-bottom: 18px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-btn);
-  background: var(--surface);
-}
-.results-table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-  font-size: 12px;
-}
-.results-table th,
-.results-table td {
-  border-bottom: 1px solid var(--border);
-  padding: 3px 6px;
-  text-align: center;
-  white-space: nowrap;
-}
-.results-table tbody tr:last-child td {
-  border-bottom: none;
-}
-.results-table th {
-  background: var(--surface-2);
-  font-weight: 600;
-  vertical-align: bottom;
-}
-.results-table .res-name {
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.results-table .res-sep {
-  border-left: 2px solid var(--border-strong);
-}
-.results-table .res-grade {
-  font-weight: 600;
-}
-
 /* Round badge marking a grade that came from a resit (letter of its description) */
 .attempt-badge {
   display: inline-flex;
@@ -2434,71 +2390,6 @@ td.grade-override-stale::after {
 .obs-icon-btn.selected {
   border-color: var(--accent);
   background: var(--accent-soft);
-}
-
-/* Group students modal (modals/groep-leerlingen.js) */
-.grade-pill--wide {
-  text-align: center;
-  min-width: 36px;
-}
-.gl-th {
-  text-align: center;
-  padding: 3px 6px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  border-bottom: 2px solid var(--border);
-}
-.gl-name-th {
-  text-align: left;
-  padding: 4px 12px 4px 4px;
-  font-weight: 600;
-  border-bottom: 2px solid var(--border);
-  white-space: nowrap;
-  vertical-align: bottom;
-}
-.gl-badge-th {
-  text-align: center;
-  padding: 4px 3px;
-  border-bottom: 2px solid var(--border);
-}
-.gl-bg-even {
-  background: color-mix(in srgb, var(--surface-2) 50%, var(--surface));
-}
-.gl-bg-odd {
-  background: var(--surface);
-}
-.gl-name-td {
-  padding: 5px 12px 5px 4px;
-  white-space: nowrap;
-}
-.gl-badge-td {
-  text-align: left;
-  vertical-align: top;
-  padding: 3px 1px 3px 2px;
-  width: 30px;
-}
-.gl-grade-td {
-  text-align: right;
-  padding: 3px 4px;
-  width: 50px;
-}
-.gl-avg-td {
-  text-align: center;
-  padding: 3px 4px;
-  width: 70px;
-}
-.gl-foot-label {
-  padding: 5px 12px 5px 4px;
-  white-space: nowrap;
-  background: var(--accent-soft);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
 }
 
 /* ── Group import: old vs new per overwritten group (D34) ─────────────────── */

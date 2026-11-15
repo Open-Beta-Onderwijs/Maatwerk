@@ -15,7 +15,7 @@ import {
   getJaarlagKlasFilter,
   getEigenOnly,
 } from '../app.js';
-import { openProfielModal } from '../modals/profiel.js';
+import { openProfielModal } from '../modals/profile';
 import { inIdleSlices, type IdleJob } from '../utils/idle';
 import { perfSpan } from '../utils/perf';
 import { SUBJECT_DISPLAY } from '../domain/rapport';
@@ -24,8 +24,8 @@ import { Store } from '../store.js';
 import { fillStudentGrades, type GradeFill } from './cards/student-grades';
 
 // Re-export modals so existing consumers keep working
-export { openGroupStudentsModal } from '../modals/groep-leerlingen.js';
-export { openProfielModal } from '../modals/profiel.js';
+export { openGroupStudentsModal } from '../modals/group-overview';
+export { openProfielModal } from '../modals/profile';
 export { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals/leerling-edit.js';
 
 interface Student {
@@ -47,9 +47,8 @@ interface CustomSelect {
 
 // Read when used: app.js fills SEL after this module (a circular import) is loaded.
 const sel = () => SEL as unknown as { studentYear: CustomSelect };
-// store.js and profiel.js are untyped: their parameter types are guesses.
+// store.js is untyped: its parameter types are guesses.
 const fullName = Store.fullName as (s: object) => string;
-const openProfiel = openProfielModal as unknown as (id: string, peers: Student[]) => Promise<void>;
 const filters = {
   schoolsoort: () => getSchoolsoortFilter() as Set<string>,
   jaarlaag: () => getJaarlagFilter() as Set<string>,
@@ -233,7 +232,7 @@ export function renderStudentList({ staged = true } = {}): void {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
     if (!b || b.disabled || !container.contains(b)) return;
     const id = b.dataset.id!;
-    if (b.dataset.action === 'profile') void openProfiel(id, peers);
+    if (b.dataset.action === 'profile') void openProfielModal(id, peers);
     else if (b.dataset.action === 'edit-student') void openStudentModal(id);
     else if (b.dataset.action === 'del-student') void deleteStudent(id);
   };

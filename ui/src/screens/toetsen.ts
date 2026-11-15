@@ -18,7 +18,8 @@ import { mean, stats } from '../domain/statistics';
 import { TEST_KINDS, testKindBadgeClass } from '../domain/test-type';
 import type { Exam, ScoreValue } from '../domain/types';
 import { applyStyleData } from '../legacy/style-data';
-import { openExamOverviewModal } from '../modals/toets-overzicht.js';
+import { openExamOverviewModal } from '../modals/exam-overview';
+import { openPoOverviewModal } from '../modals/po-overview';
 import { openExamModal } from '../modals/toets-edit';
 import { openBestGradesOverviewModal } from '../modals/herkansing';
 import { openNewPoModal } from '../modals/po-gegevens';
@@ -287,7 +288,16 @@ export async function renderToetsenList() {
     b.addEventListener('click', () => void toggleExamMenu(b, year)),
   );
   buttons('exam-overview').forEach((b) =>
-    b.addEventListener('click', () => openExamOverviewModal(b.dataset.examid, currentYear())),
+    b.addEventListener(
+      'click',
+      () => void openExamOverviewModal(b.dataset.examid ?? '', currentYear()),
+    ),
+  );
+  buttons('po-overview').forEach((b) =>
+    b.addEventListener(
+      'click',
+      () => void openPoOverviewModal(b.dataset.examid ?? '', currentYear()),
+    ),
   );
   buttons('exam-overview-best').forEach((b) =>
     b.addEventListener('click', () =>

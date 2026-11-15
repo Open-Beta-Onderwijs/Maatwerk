@@ -14,6 +14,9 @@ const PROPS: Record<string, string> = {
   'data-w': 'width',
   'data-h': 'height',
   'data-min-w': 'min-width',
+  // Chart positions (overview charts, spec 3.10).
+  'data-left': 'left',
+  'data-top': 'top',
   // Initially hidden elements that JS shows with el.style.display = ''.
   'data-display': 'display',
 };

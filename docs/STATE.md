@@ -1,38 +1,108 @@
 # State
 
-Last updated: 2026-11-13 (steps 26-28 merged, PR #17) Branch: `main`
+Last updated: 2026-11-15 (step 29c) Branch: `step/29-overviews`
 Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
 ## Current step
 
-**Steps 26, 27 and 28 in one go (user, 2026-11-13):** one branch `step/26-login-splash`, a
-version per step (0.17.0, 0.18.0, 0.19.0); gate, review (`docs/reviews/step-26-28.md`) and
-release only at the end. STOPs collected for the report: the visual check of all three steps
-(baselines only after the user saw them) and the card numbers of step 27 (before/after table).
+**Step 29 (Overviews and profile, 0.20):** 29a and 29b done (user OK on the visual check and the
+numbers table, 2026-11-15); 29c (PO overview, profile) on `step/29-overviews`, then the step-29
+gate, review and release 0.20.
 
-**Gate (2026-11-13, on `494dabf` + test fixes `bbf637c`, `ef82bb0`):** fmt, clippy, cargo test, 629
-Vitest, 127 node, lint, typecheck, licences, cargo deny, SPDX green; Chromium e2e 327/327; WebKit
-login/cards/beheer/photo/shell 36/36 after the crop-test fix. Visual (light): 14 views differ from
-the 0.16 baselines, 39 unchanged; 6 new views. Review `docs/reviews/step-26-28.md` (0/2/8/7): M1,
-M2, m1, m3, m4, m5 fixed (`494dabf`), the rest in `docs/backlog.md`.
+Still open from steps 26-28 (merged, PR #17): the GitHub release 0.19.0 (`docs/release.md`
+section 4) when the user asks.
 
-**User (2026-11-13):** visual check of steps 26-28 OK and `docs/phase-2/step-27-card-numbers.md`
-OK. CI baselines from run `43420312853` (`ed1ffd4`); confirming run `43422907768` green on all
-three OSes. Local visual baselines updated.
+Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 
-**Steps 26-28 done and merged (2026-11-13):** PR #17 merged into `main` (`a32e7fc`), PR CI
-`43431855294` and `43431890855` green on all three OSes. Tags `step-26`, `step-27`, `step-28`,
-`v0.19.0` (merge commit), pushed.
+## Step 29 progress
 
-**Step 29 design (2026-11-14, branch `design/step-29-overviews`):** design rounds 8-11 with the
-user on the canvas; decisions 27-40 in `PLAN-2.md`; spec 2.6 (RTTI names), 3.10, 4.5, 4.6, 4.14,
-4.15; mocks of boards 25-46 in `docs/phase-2/design/mocks/` (final: 43-46); ROADMAP F-24 to F-26;
-step 29 now split in 29a (shared parts, group overview), 29b (exam overview), 29c (PO overview,
-profile).
+1. **Done (`7f5cb2c`):** shared overview parts in `ui/src/overview/` (spec 3.10): histogram
+   (core bins, counts, 5,5 line, Stapgrootte toggle), boxplot with dots, RTTI-verloop (labels
+   14 px apart), RTTI card, observatie bars, grade tooltip, resit dot, section rows with mean and
+   SD; `styles/overview.css`; style data `data-left`/`data-top`; `--foot` token. Tested.
+2. **Done (`7606a13`):** RTTI names (`domain/rtti-names.ts`, decision 33): "Toepassen 1/2" in
+   the RTTI uitleg placeholders replaced; names as tooltips on the RTTI buttons.
+3. **Done (`b7ba18f`):** group overview (spec 4.5, board 45) in TS:
+   `modals/group-overview/` (model, resultaten, charts, observaties, index); R-05
+   `groep-leerlingen.js` removed. e2e `overviews.spec.ts` (4); `cards.spec` and `quirks.spec`
+   U8 follow the new header gap and the dot title.
+4. **Done (`40ffc6d`, tag `step-29a`):** numbers table `docs/phase-2/step-29-numbers.md`
+   sections 1-3 (**STOP: the user's OK before the merge**). Gate run: 669 Vitest, Chromium e2e
+   331/331.
+5. **Done (`1a3ab76`):** exam overview (spec 4.6, board 46) in TS: `modals/exam-overview/`
+   (data = the old loader typed, resultaten, charts, rtti-obs, index); R-05
+   `toets-overzicht.js` removed (no Chart.js there any more). e2e `overviews.spec.ts` +4.
+   Numbers: section 4 of the numbers doc (`eb243f9`). B-05 checked: the verzameloverzicht reads
+   the observaties of the attempt that counts (`toetsen.spec` B-05 tests green).
+6. Checks on `eb243f9`: 676 Vitest, Chromium e2e 334/335 (G53 in `score-grid.spec` failed once
+   under load, 3/3 alone; not touched), lint, typecheck, SPDX green. Visual baselines not
+   updated (the user's check first).
+7. **User OK (2026-11-15):** visual check and numbers table of 29a/29b.
+8. **Done (`de6bf8e`):** PO overview (spec 4.14, board 43): `modals/po-overview/` (model,
+   resultaten, charts, index); "Overzicht openen" and the title on a PO card open it (each attempt
+   its own; the PO verzamelkaart's button stays disabled: backlog). e2e `overviews.spec` +2.
+9. **Done (`ca1dc5c`):** profile (spec 4.15, board 44) in TS: `modals/profile/` (data,
+   cijferverloop, analyse, index); R-05 `profiel.js` removed. B15/B16 checked, kept
+   (`quirks.md`). e2e `overviews.spec` +2; views `modal-po-overzicht-*` (6) added.
+10. **Done (`d5b526d`):** Chart.js and its annotation plugin removed (no canvas chart left);
+    licences and notices updated.
+11. Numbers doc sections 5 (PO overview) and 6 (profile). Checks: 695 Vitest, lint, typecheck;
+    Chromium e2e overviews/dialog/cards/po 100% green.
 
-**Next action:** the GitHub release 0.19.0 (`docs/release.md` section 4) when the user asks;
-merge `design/step-29-overviews`; then step 29a.
+12. **Gate (2026-11-15):** cargo fmt, clippy, test, deny, SPDX green; 696 Vitest; Chromium e2e
+    356/357 (topbar narrow test raced a resize: now polled, `f3486a4`, 32/32). Visual: 51 diffs,
+    all expected (8 approved 29a/29b views, 6 new PO overview views, 2 profile views,
+    `screen-toetsen-po` with the enabled button; × 3 looks). Review `docs/reviews/step-29.md`: 0
+    blockers, 0 majors; m2, m3 fixed (`d65c7c0`), the rest in the backlog.
+
+13. **User (2026-11-15):** numbers OK (sections 5-6); m1: count only students with a score.
+    Visual feedback on 29a-c, done: RTTI per cijfergroep back (exam overview, layout of the
+    observaties per cijfergroep, 2×2 cards); group Observaties drop the percentages when the table
+    does not fit, then scroll sideways; a grade with observaties gets a triangle in the pill's
+    corner instead of the dotted line; RTTI-verloop has room left and right; the profile's
+    comparison text without the SD and with space before the difference; the PO table has no
+    category columns (scores in the tooltips of Punten, Bonus / malus and Cijfer, also in the
+    profile's PO bar tooltip); an overwritten grade in the exam overview is a blue pill with a
+    thicker border, blue text and the triangle; the resit dot is centred on the pill.
+    Second round (same day): the exam overview's and PO overview's tables are as wide as their
+    contents (not the window), more room after the name, between Cijfer and the observaties and
+    between the observaties and R; RTTI per cijfergroep as four cards on one line (two below
+    900 px). The group Observaties' compact view keeps the PO's (the earlier shots used the
+    seed without a PO). Third round: the observatie triangle sits inside the pill's square
+    corner (flush, no overhang; 9px with the border after the fourth round); more column
+    padding (10px) in both tables; fourth round: the name column at least 360px (as the group
+    overview's); in a narrower pane `overview/fit-name.ts` gives it the room left beside the
+    other columns (never below the names), so the table fills the pane (e2e test at 1280/800;
+    the exam table at 900, Linux WebKit's fonts need it).
+
+14. **User (2026-11-15): baselines and merge.** Local `visual` baselines updated (13 views × 3
+    looks, all intended: overviews, profile, RTTI names F-26). CI baselines of those views
+    dropped and rewritten by CI (runs 43738672588: Windows, macOS; 43740662685: Linux), 17
+    files per platform (with the four new PO overview views), reviewed and committed. Merged
+    into `main`, tagged `step-29`.
+
+**Next action:** release 0.20 when the user asks; then step 30 (`PLAN-2.md`).
+
+**Choices made without asking (for the report):** SE column when the group is upper school
+(jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
+Herkansing | own word> (poging N)" and the cell tooltip adds ", origineel X,X"; RTTI per test in
+the group overview pools the attempts that count; the Observaties rows are the observaties linked
+to a column (a PO: the rubric's too) or given in one; tests without a periode go under "GEEN
+PERIODE"; the tooltip is fixed on the modal backdrop (it may leave the dialog box). 29b: the
+exam overview's names open the profile (board 46 shows them as links); the per-group charts keep
+one group per student (`studentGroup`) while the Resultaten sections are the exam's groups (as
+before); the "Observaties, alle leerlingen" percentage is of the students with a score; the
+RTTI-verloop has the originals of the jaarlaag only (no resits, no PO's); the chart "RTTI per
+cijfergroep" is gone (not on board 46); a resit's overview highlights its original in the
+verloop; group colours are accent shades (board 46) instead of the old 8-colour palette. 29c:
+the PO overview's klas is the first matching class (as the PO score table), so a student in two
+classes is in one section; category means are over the students with a score in
+that category; observaties rows are the linked and the given ones; a cell's dotted underline only
+when it has observaties; the profile's "Ten opzichte van het toetsgemiddelde" lists every graded
+attempt of the year (as the old chart), the bars only the attempts that count; the year rows add
+an "Examendossier (SE)" row (the old chart's SE bar); the profile header shows "<id> · jaarlaag N ·
+schoolsoort · vak"; Chart.js removed.
 
 ## Step 28 progress (Beheer screens, 0.19)
 

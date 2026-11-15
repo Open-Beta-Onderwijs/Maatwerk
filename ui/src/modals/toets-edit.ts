@@ -32,6 +32,7 @@ import {
   secIndexOf,
   sectionLabels,
 } from '../domain/question-structure';
+import { rttiLabel } from '../domain/rtti-names';
 import { testBadgeClass } from '../domain/test-type';
 import type { Exam, QuestionKind, Rtti } from '../domain/types';
 import { renderToetsen } from '../screens/toetsen';
@@ -133,7 +134,7 @@ function questionRow(q: NumberedQuestion, i: number, mode: string, hasScores: bo
   const rttiBtns = (['R', 'T1', 'T2', 'I'] as const)
     .map(
       (cat) =>
-        `<button type="button" class="tog-btn rtti-btn${q.rtti === cat ? ' selected' : ''}" data-qi="${i}" data-rtti="${cat}">${cat}</button>`,
+        `<button type="button" class="tog-btn rtti-btn${q.rtti === cat ? ' selected' : ''}" data-qi="${i}" data-rtti="${cat}" title="${rttiLabel(cat)}">${cat}</button>`,
     )
     .join('');
   const del = hasScores

@@ -11,6 +11,7 @@ import {
   guardModalClose,
   requestCloseModal,
 } from '../app.js';
+import { rttiLabel } from '../domain/rtti-names';
 import { GRADE_BAR } from '../domain/grade-colors';
 import { setBusy } from '../components/button';
 import { defaultTabData, rttiExplFilePath, type AdviesData } from '../domain/rapport';
@@ -29,7 +30,7 @@ function q<T extends Element = HTMLElement>(root: ParentNode, selector: string):
 }
 import { Store } from '../store.js';
 
-const RTTI_CATS = ['R', 'T1', 'T2', 'I'] as const;
+const RTTI_CATS = ['R', 'T1', 'T2', 'I'] as const; // as domain/rtti-names.ts, typed as a tuple
 
 const RTTI_PLACEHOLDERS: Record<(typeof RTTI_CATS)[number], Record<'uitleg' | Bracket, string>> = {
   R: {
@@ -42,19 +43,19 @@ const RTTI_PLACEHOLDERS: Record<(typeof RTTI_CATS)[number], Record<'uitleg' | Br
   },
   T1: {
     uitleg:
-      'Bijvoorbeeld: Toepassen-1-vragen zijn vragen die erg lijken op de huiswerkopgaven, maar dan bijvoorbeeld met andere getallen. Je oefent door het huiswerk bij te houden.',
-    laag: 'Bijvoorbeeld: Je hebt veel punten laten liggen op Toepassen 1. Zorg dat je het huiswerk bijhoudt en oefen de standaardopgaven goed. Je kunt het!',
+      'Bijvoorbeeld: Trainingsvragen zijn vragen die erg lijken op de huiswerkopgaven, maar dan bijvoorbeeld met andere getallen. Je oefent door het huiswerk bij te houden.',
+    laag: 'Bijvoorbeeld: Je hebt veel punten laten liggen op Training. Zorg dat je het huiswerk bijhoudt en oefen de standaardopgaven goed. Je kunt het!',
     midden:
-      'Bijvoorbeeld: Je laat nog wat punten liggen op Toepassen 1. Maak de oefenopgaven zorgvuldig en controleer je antwoorden. Tandje erbij!',
-    hoog: 'Bijvoorbeeld: Je hebt goed gescoord op Toepassen 1! Lekker blijven oefenen!',
+      'Bijvoorbeeld: Je laat nog wat punten liggen op Training. Maak de oefenopgaven zorgvuldig en controleer je antwoorden. Tandje erbij!',
+    hoog: 'Bijvoorbeeld: Je hebt goed gescoord op Training! Lekker blijven oefenen!',
   },
   T2: {
     uitleg:
-      'Bijvoorbeeld: Toepassen-2-vragen zijn lastigere vragen waarvoor je iets dat je hebt geleerd in een nieuwe context toe moet passen of twee dingen die je hebt geleerd samen moet gebruiken om een oplossing te vinden. Je oefent doordat je veel oefenopgaven maakt, zodat je je de stof echt eigen hebt gemaakt.',
-    laag: 'Bijvoorbeeld: Je hebt veel punten laten liggen op Toepassen 2. Maak extra oefenopgaven en probeer de stof vanuit verschillende invalshoeken te bekijken. Ga ervoor!',
+      'Bijvoorbeeld: Transfervragen zijn lastigere vragen waarvoor je iets dat je hebt geleerd in een nieuwe context toe moet passen of twee dingen die je hebt geleerd samen moet gebruiken om een oplossing te vinden. Je oefent doordat je veel oefenopgaven maakt, zodat je je de stof echt eigen hebt gemaakt.',
+    laag: 'Bijvoorbeeld: Je hebt veel punten laten liggen op Transfer. Maak extra oefenopgaven en probeer de stof vanuit verschillende invalshoeken te bekijken. Ga ervoor!',
     midden:
-      'Bijvoorbeeld: Je laat nog wat punten liggen op Toepassen 2. Oefen met gevarieerde opgaven om de stof echt eigen te maken. Ga ervoor!',
-    hoog: 'Bijvoorbeeld: Je hebt goed gescoord op Toepassen 2! Lekker bezig en scherp blijven!',
+      'Bijvoorbeeld: Je laat nog wat punten liggen op Transfer. Oefen met gevarieerde opgaven om de stof echt eigen te maken. Ga ervoor!',
+    hoog: 'Bijvoorbeeld: Je hebt goed gescoord op Transfer! Lekker bezig en scherp blijven!',
   },
   I: {
     uitleg:
@@ -109,7 +110,7 @@ function buildTabHtml(data: AdviesData, tabs: Tab[], activeTab: number): string 
   const uitlegRows = RTTI_CATS.map(
     (cat) => `
     <tr>
-      <td>${cat}</td>
+      <td title="${rttiLabel(cat)}">${cat}</td>
       <td><textarea rows="3" data-uitleg="${cat}" placeholder="${RTTI_PLACEHOLDERS[cat].uitleg}">${escHtml(data.uitleg[cat])}</textarea></td>
     </tr>`,
   ).join('');
@@ -118,7 +119,7 @@ function buildTabHtml(data: AdviesData, tabs: Tab[], activeTab: number): string 
     .map(
       (cat) => `
     <tr>
-      <td>${cat}</td>
+      <td title="${rttiLabel(cat)}">${cat}</td>
       <td><textarea rows="5" data-adv="${cat}-laag" placeholder="${RTTI_PLACEHOLDERS[cat].laag}">${escHtml(data.leeradvies[cat]?.laag)}</textarea></td>
       <td><textarea rows="5" data-adv="${cat}-midden" placeholder="${RTTI_PLACEHOLDERS[cat].midden}">${escHtml(data.leeradvies[cat]?.midden)}</textarea></td>
       <td><textarea rows="5" data-adv="${cat}-hoog" placeholder="${RTTI_PLACEHOLDERS[cat].hoog}">${escHtml(data.leeradvies[cat]?.hoog)}</textarea></td>

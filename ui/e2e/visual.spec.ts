@@ -18,7 +18,7 @@
 import { expect, test } from '@playwright/test';
 import { VIEWS, openView } from './views';
 
-const SETTLE = 1300; // Chart.js animations last 1000 ms
+const SETTLE = 1300; // lazy tabs and averages read after the modal opens
 
 // Tall window: modals show most of their content without scrolling.
 test.use({ viewport: { width: 1280, height: 2000 } });
