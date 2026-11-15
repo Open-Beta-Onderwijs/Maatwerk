@@ -50,9 +50,15 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 11. Numbers doc sections 5 (PO overview) and 6 (profile). Checks: 695 Vitest, lint, typecheck;
     Chromium e2e overviews/dialog/cards/po 100% green.
 
-**Next action:** step-29 gate (full e2e, visual run: expect diffs for the profile and new PO
-overview views), reviewer subagent `docs/reviews/step-29.md`, fix blockers/majors, then STOP:
-the user's visual check (baselines) and the OK on numbers sections 5-6, then release 0.20.
+12. **Gate (2026-11-15):** cargo fmt, clippy, test, deny, SPDX green; 696 Vitest; Chromium e2e
+    356/357 (topbar narrow test raced a resize: now polled, `f3486a4`, 32/32). Visual: 51 diffs,
+    all expected (8 approved 29a/29b views, 6 new PO overview views, 2 profile views,
+    `screen-toetsen-po` with the enabled button; × 3 looks). Review `docs/reviews/step-29.md`: 0
+    blockers, 0 majors; m2, m3 fixed (`d65c7c0`), the rest in the backlog.
+
+**Next action:** STOP (user): visual check of the 29c views and the OK on numbers sections 5-6;
+answer on review m1 (which students the exam overview's observatie percentage is of). Then
+update the visual baselines, merge, tag `step-29`, release 0.20.
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
