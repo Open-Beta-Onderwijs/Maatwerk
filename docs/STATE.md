@@ -70,8 +70,9 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
     between the observaties and R; RTTI per cijfergroep as four cards on one line (two below
     900 px). The group Observaties' compact view keeps the PO's (the earlier shots used the
     seed without a PO). Third round: the observatie triangle sits inside the pill's square
-    corner (flush, no overhang; 8px with the border); more column padding (10px) in both
-    tables.
+    corner (flush, no overhang; 9px with the border after the fourth round); more column
+    padding (10px) in both tables; fourth round: the name column at least 360px (as the group
+    overview's).
 
 **Next action:** STOP (user): look at the new screenshots; then update the visual baselines,
 merge, tag `step-29`, release 0.20.

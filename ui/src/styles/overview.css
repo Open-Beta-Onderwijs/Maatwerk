@@ -60,15 +60,15 @@
   border-bottom-right-radius: 0;
 }
 /* Inside the square corner, flush with the border, so it never overhangs the pill; with the
-   border it reads as an 8px triangle. */
+   border it reads as a 9px triangle. */
 .ov-pill--tip::after,
 .ov-grade__pill--obs .ov-pill::after {
   content: '';
   position: absolute;
   right: 0;
   bottom: 0;
-  border-top: 6.5px solid transparent;
-  border-right: 6.5px solid;
+  border-top: 7.5px solid transparent;
+  border-right: 7.5px solid;
   border-right-color: inherit;
 }
 .ov-grade__dot {
@@ -86,8 +86,8 @@
   line-height: 17px;
 }
 .xo-grade--override .ov-pill::after {
-  border-top-width: 5.5px;
-  border-right-width: 5.5px;
+  border-top-width: 6.5px;
+  border-right-width: 6.5px;
 }
 .ov-dot {
   margin-left: 3px;
@@ -850,6 +850,11 @@ html[data-theme='dark'] .ov-tip__mute {
 .ov-table.po-ov-table tbody td.ov-foot__label {
   padding-right: 24px;
   padding-left: 8px;
+}
+/* A wide name column, like the group overview's: clear air before the second column. */
+.ov-table.xo-table thead th.ov-name-th,
+.ov-table.po-ov-table thead th.ov-name-th {
+  min-width: 360px;
 }
 /* Room between Cijfer and the observaties, and between the observaties and R. */
 .ov-table.xo-table th.xo-sep,
