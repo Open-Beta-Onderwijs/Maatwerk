@@ -132,7 +132,7 @@ test.describe('exam overview (board 46)', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const d = await openExamOverview(page);
-    await expectNameColumn(d, '.xo-table');
+    await expectNameColumn(d, '.xo-table', 900);
   });
 
   test('the Stapgrootte toggle switches Alle leerlingen between 18 and 10 bins', async ({
@@ -202,10 +202,11 @@ test.describe('exam overview (board 46)', () => {
 });
 
 /**
- * The name column of `table` (user 2026-11-15): 360px in a 1280px window; at 800px it takes the
+ * The name column of `table` (user 2026-11-15): 360px in a 1280px window; in a narrow one it takes the
  * room left, so the table fills the pane without scrolling; back to 360px when wide again.
+ * `narrow` leaves margin for wider fonts (Linux WebKit): the exam table needs more room.
  */
-async function expectNameColumn(d: Locator, table: string) {
+async function expectNameColumn(d: Locator, table: string, narrow: number) {
   const page = d.page();
   const th = d.locator(`${table} thead th.ov-name-th`);
   const width = async () => Math.round((await th.boundingBox())!.width);
@@ -215,7 +216,7 @@ async function expectNameColumn(d: Locator, table: string) {
       return { over: pane.scrollWidth - pane.clientWidth, gap: pane.clientWidth - t.offsetWidth };
     });
   expect(await width()).toBe(360);
-  await page.setViewportSize({ width: 800, height: 800 });
+  await page.setViewportSize({ width: narrow, height: 800 });
   await expect.poll(width).toBeLessThan(360);
   const f = await fill();
   expect(f.over).toBe(0);
@@ -285,7 +286,7 @@ test.describe('PO overview (board 43)', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const d = await openPoOverview(page);
-    await expectNameColumn(d, '.po-ov-table');
+    await expectNameColumn(d, '.po-ov-table', 800);
   });
 
   test('every tab renders: verdeling, boxplot, categorieën, observaties', async ({ page }) => {
