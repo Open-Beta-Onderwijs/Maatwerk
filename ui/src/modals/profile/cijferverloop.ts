@@ -64,12 +64,12 @@ export function barTip(t: ProfileTest): TipContent {
         : '') +
       (t.po?.groupLines?.length ? ` · groep ${signed(group)}` : '') +
       (t.po?.ownLines?.length ? ` · persoonlijk ${signed(own)}` : '');
-    const extra = (rubric?.categories ?? []).map((c) => {
+    const rows = (rubric?.categories ?? []).map((c): [string, string] => {
       const v = t.questionScores[c.id];
       const kind = c.soort === 'normaal' ? '' : ` (${c.soort})`;
-      return `${c.naam}${kind}: ${typeof v === 'number' ? v : '—'} / ${c.max ?? 0}`;
+      return [`${c.naam}${kind}`, `${typeof v === 'number' ? v : '—'} / ${c.max ?? 0}`];
     });
-    return { head, sub, extra, obs: null };
+    return { head, sub, obs: null, rows };
   }
   const se = t.exam.type === 'pta' ? ' · telt mee voor het examendossier' : '';
   return { head, sub: `Cijfer ${g}${se}`, obs: null };
@@ -169,7 +169,7 @@ export function dumbRowHtml(
     `<div class="pf-dumb__diff${up ? ' pf-dumb__diff--up' : ''}" data-left="${a.toFixed(2)}%" data-w="${w.toFixed(2)}%"></div>` +
     `<div class="pf-dumb__avg" title="${esc(`${avgLabel} ${formatFixed(avg.mean)}`)}" data-left="${pct(avg.mean)}%"></div>` +
     `<div class="pf-dumb__dot" title="${esc(`${who} ${formatGrade(g)}`)}" data-left="${pct(g)}%" data-bg="${gradeTextColor(g)}"></div></div>` +
-    `<div class="pf-dumb__text"><b data-color="${gradeTextColor(g)}">${formatGrade(g)}</b> <span class="po-ov-muted">vs ${avgText}</span> ` +
+    `<div class="pf-dumb__text"><b data-color="${gradeTextColor(g)}">${formatGrade(g)}</b> <span class="po-ov-muted">vs ${formatFixed(avg.mean)}</span>` +
     `<span class="pf-dumb__delta${up ? ' pf-dumb__delta--up' : ''}">${signed(Math.round(diff * 10) / 10)}</span></div></div>`
   );
 }

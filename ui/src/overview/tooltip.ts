@@ -15,6 +15,8 @@ export interface TipContent {
   extra?: string[];
   /** null: no observaties line at all (a cell without a grade). */
   obs: { icon?: string; naam?: string }[] | null;
+  /** Label and value rows after the observaties (a PO's category scores), under a line. */
+  rows?: [string, string][];
 }
 
 export function tipHtml(t: TipContent): string {
@@ -33,7 +35,10 @@ export function tipHtml(t: TipContent): string {
     `<b class="ov-tip__head">${esc(t.head)}</b>` +
     (t.sub ? `<span class="ov-tip__mute">${esc(t.sub)}</span>` : '') +
     (t.extra ?? []).map((l) => `<span>${esc(l)}</span>`).join('') +
-    obs
+    obs +
+    (t.rows?.length
+      ? `<div class="ov-tip__rows">${t.rows.map(([k, v]) => `<span>${esc(k)}</span><b>${esc(v)}</b>`).join('')}</div>`
+      : '')
   );
 }
 

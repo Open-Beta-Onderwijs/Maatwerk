@@ -153,7 +153,8 @@ export async function loadExamOverview(
           obs: studentObs,
         });
       }
-      countObs(null);
+      // Not counted in the Observaties tab: its percentages are of the students with a score
+      // (user 2026-11-15, review 29 m1). The Resultaten row still shows the icons.
       continue;
     }
     const results = hasScores || override ? calcResults(evalExam, qs, override) : null;

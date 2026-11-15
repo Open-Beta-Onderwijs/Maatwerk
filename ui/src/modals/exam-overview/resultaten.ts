@@ -45,9 +45,10 @@ function gradeCell(d: StudentData | undefined, isSummary: boolean): string {
           (r!.overrideStale ? '\nHet berekende cijfer is gewijzigd sinds het overschrijven.' : ''),
       )}"`
     : '';
-  const cls = `xo-grade${overridden ? ' grade-override' : ''}${r?.overrideStale ? ' grade-override-stale' : ''}`;
+  const cls = `xo-grade${overridden ? ' xo-grade--override' : ''}${r?.overrideStale ? ' grade-override-stale' : ''}`;
   const dot = isSummary ? resitInfo(d?.attempt) : null;
-  return `<td class="${cls}"${title}>${gradeWithDotHtml(ovPillHtml(grade), dot)}</td>`;
+  const pill = ovPillHtml(grade);
+  return `<td class="${cls}"${title}>${gradeWithDotHtml(overridden ? pill.replace('class="ov-pill', 'class="ov-pill ov-pill--tip') : pill, dot)}</td>`;
 }
 
 function footHtml(data: ExamOverviewData, list: StudentData[], isSummary: boolean): string {

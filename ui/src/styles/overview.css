@@ -52,13 +52,40 @@
   display: inline-block;
   padding-bottom: 1px;
 }
-.ov-grade__pill--obs {
-  border-bottom: 1px dotted var(--muted);
+/* A grade with a tooltip worth reading (observaties, an overwritten grade): a solid triangle in
+   the pill's border colour squares off its bottom-right corner (user 2026-11-15). */
+.ov-pill--tip,
+.ov-grade__pill--obs .ov-pill {
+  position: relative;
+  border-bottom-right-radius: 0;
+}
+.ov-pill--tip::after,
+.ov-grade__pill--obs .ov-pill::after {
+  content: '';
+  position: absolute;
+  right: -1.5px;
+  bottom: -1.5px;
+  border-top: 7px solid transparent;
+  border-right: 7px solid;
+  border-right-color: inherit;
 }
 .ov-grade__dot {
   position: absolute;
+  top: 50%;
   left: 100%;
-  top: 2px;
+  display: flex;
+  transform: translateY(-50%);
+}
+/* A grade overwritten by hand (exam overview): the pill in the accent, its border thicker. */
+.xo-grade--override .ov-pill {
+  border-width: 2.5px;
+  border-color: var(--accent) !important;
+  color: var(--accent-text) !important;
+  line-height: 17px;
+}
+.xo-grade--override .ov-pill::after {
+  right: -2.5px;
+  bottom: -2.5px;
 }
 .ov-dot {
   margin-left: 3px;
@@ -572,6 +599,14 @@ html[data-theme='dark'] .ov-tip {
 html[data-theme='dark'] .ov-tip__mute {
   color: #4a5363;
 }
+.ov-tip__rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  font-variant-numeric: tabular-nums;
+}
 .ov-tip__obs {
   display: flex;
   gap: 8px;
@@ -722,6 +757,15 @@ html[data-theme='dark'] .ov-tip__mute {
   padding: 6px 0;
   border-radius: 8px;
   font-weight: 600;
+}
+.ov-heat-wrap {
+  overflow-x: auto;
+}
+.ov-heat--compact .ov-heat__pct {
+  display: none;
+}
+.ov-heat--compact .ov-heat__cell {
+  width: 44px;
 }
 .ov-heat__cell--none {
   color: var(--muted);
@@ -928,9 +972,6 @@ html[data-theme='dark'] .ov-tip__mute {
   width: 132px;
   text-align: left;
 }
-.po-ov-table thead th.po-ov-col-cat {
-  width: 74px;
-}
 .po-ov-table thead th.po-ov-col-pts {
   width: 66px;
 }
@@ -947,18 +988,6 @@ html[data-theme='dark'] .ov-tip__mute {
   gap: 4px;
   color: var(--muted);
   font-weight: 400;
-}
-.po-ov-tag {
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-}
-.po-ov-tag--bonus {
-  background: var(--accent-soft);
-  color: var(--accent-text);
 }
 .po-ov-chip {
   display: inline-block;
@@ -1381,10 +1410,12 @@ html[data-theme='dark'] .ov-tip__mute {
 }
 .pf-dumb__text {
   flex: none;
-  width: 190px;
+  width: 170px;
+  white-space: nowrap;
   font-size: 13px;
 }
 .pf-dumb__delta {
+  margin-left: 24px;
   color: var(--danger);
   font-weight: 600;
 }

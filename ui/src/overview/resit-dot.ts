@@ -41,7 +41,7 @@ export function resitDotHtml(info: ResitInfo | null): string {
 
 /**
  * A grade with its dot: the pill in an inline box, the dot hanging right of it out of the flow.
- * `tipKey` hooks the grade tooltip; `dotted` underlines a grade that has observaties.
+ * `dotted`: the grade has observaties in its tooltip, marked by a triangle in the pill's corner.
  */
 export function gradeWithDotHtml(
   pillHtml: string,

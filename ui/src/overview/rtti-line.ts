@@ -79,8 +79,12 @@ export function rttiLineModel(
   const x1 = W - 28;
   const yt = 24;
   const yb = H - 36;
+  // Room inside the axes (user 2026-11-15): the first and last test are not on the border; the
+  // right side also holds the value labels.
+  const p0 = x0 + 32;
+  const p1 = x1 - 44;
   const xr = (j: number) =>
-    points.length === 1 ? (x0 + x1) / 2 : x0 + (j * (x1 - x0)) / (points.length - 1);
+    points.length === 1 ? (p0 + p1) / 2 : p0 + (j * (p1 - p0)) / (points.length - 1);
   const yr = (v: number) => yb - (v / 100) * (yb - yt);
   const lines = RTTI_CATS.map((cat, ci) => ({
     cat,

@@ -56,9 +56,18 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
     `screen-toetsen-po` with the enabled button; × 3 looks). Review `docs/reviews/step-29.md`: 0
     blockers, 0 majors; m2, m3 fixed (`d65c7c0`), the rest in the backlog.
 
-**Next action:** STOP (user): visual check of the 29c views and the OK on numbers sections 5-6;
-answer on review m1 (which students the exam overview's observatie percentage is of). Then
-update the visual baselines, merge, tag `step-29`, release 0.20.
+13. **User (2026-11-15):** numbers OK (sections 5-6); m1: count only students with a score.
+    Visual feedback on 29a-c, done: RTTI per cijfergroep back (exam overview, layout of the
+    observaties per cijfergroep, 2×2 cards); group Observaties drop the percentages when the table
+    does not fit, then scroll sideways; a grade with observaties gets a triangle in the pill's
+    corner instead of the dotted line; RTTI-verloop has room left and right; the profile's
+    comparison text without the SD and with space before the difference; the PO table has no
+    category columns (scores in the tooltips of Punten, Bonus / malus and Cijfer, also in the
+    profile's PO bar tooltip); an overwritten grade in the exam overview is a blue pill with a
+    thicker border, blue text and the triangle; the resit dot is centred on the pill.
+
+**Next action:** STOP (user): look at the new screenshots; then update the visual baselines,
+merge, tag `step-29`, release 0.20.
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |

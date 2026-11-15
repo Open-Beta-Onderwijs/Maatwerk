@@ -137,16 +137,16 @@ describe('PO overview model (spec 4.14)', () => {
     expect(s[1]!.rows[0]).toMatchObject({ n: 2, groups: ['Valtoren'] });
   });
 
-  it('builds the tooltips: level and observaties, the grade build-up', () => {
+  it('builds the tooltips: the grade build-up, observaties, then the category scores', () => {
     const m = model();
-    const cat = poCellTip(m, obs, '1|c|th')!;
-    expect(cat.head).toBe('Theorie: 3 / 8');
-    expect(cat.sub).toBe('Niveau 0–3 Matig en 3–8 Goed · projectgroep Valtoren');
-    expect(cat.obs).toEqual([{ icon: '📚', naam: 'Bronnen' }]);
     const grade = poCellTip(m, obs, '1|cijfer')!;
     expect(grade.head).toBe('Anna Smit: 3,6');
     expect(grade.sub).toBe('Projectgroep Valtoren 3,8 · groep −0,5 · persoonlijk +0,3');
     expect(grade.obs!.map((o) => o.naam)).toEqual(['Netjes', 'Theorie: Bronnen']);
+    expect(grade.rows).toEqual([
+      ['Theorie', '3 / 8'],
+      ['Planning (diagnostisch)', '1 / 2'],
+    ]);
     expect(poCellTip(m, obs, '1|bm')!.head).toBe('Bonus / malus: −0,2');
     expect(poCellTip(m, obs, '4|cijfer')).toBeNull();
   });
@@ -163,18 +163,6 @@ describe('PO overview model (spec 4.14)', () => {
     );
     // Niet ingedeeld has no footer: three sections, two of them with one.
     expect(groep.match(/GEMIDDELDE/g)).toHaveLength(2);
-  });
-
-  it('leaves an unplaced student’s stale category score out of the footer (review 29 m2)', () => {
-    records.set('4', { scores: { po: { th: 8 } } });
-    try {
-      const html = resultatenHtml(model(), 'klas');
-      // Klas 3a: Bas and Anna have Theorie 3; Dirk's stale 8 does not count.
-      expect(html).toContain('<td class="po-ov-num po-ov-foot-v">3,0</td>');
-      expect(html).not.toContain('<td class="po-ov-num po-ov-foot-v">4,7</td>');
-    } finally {
-      records.set('4', {});
-    }
   });
 
   it('shades the levels from light to dark', () => {

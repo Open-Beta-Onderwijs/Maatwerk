@@ -77,7 +77,10 @@ describe('profile Cijferverloop (spec 4.15.1)', () => {
     const tip = barTip(t);
     expect(tip.head).toBe('309 PO');
     expect(tip.sub).toBe('Cijfer 8,6 · projectgroep Valtoren 8,8 · groep −0,5 · persoonlijk +0,3');
-    expect(tip.extra).toEqual(['Theorie: 6 / 8', 'Planning (diagnostisch): — / 3']);
+    expect(tip.rows).toEqual([
+      ['Theorie', '6 / 8'],
+      ['Planning (diagnostisch)', '— / 3'],
+    ]);
     expect(barTip(test({ diagnostic: true }, 5)).sub).toBe(
       'Cijfer 5,0 · diagnostisch, telt niet mee',
     );
@@ -85,7 +88,8 @@ describe('profile Cijferverloop (spec 4.15.1)', () => {
 
   it('draws a track: the SD band, the average and the difference', () => {
     const html = dumbRowHtml('x', 7.7, { mean: 7.3, sd: 0.9 } as never, 'Toetsgemiddelde', 'Sem');
-    expect(html).toContain('vs 7,3 ± 0,9');
+    expect(html).toContain('vs 7,3</span>');
+    expect(html).toContain('title="Toetsgemiddelde 7,3 ± 0,9"');
     expect(html).toContain('+0,4');
     expect(html).toContain('pf-dumb__diff pf-dumb__diff--up');
     expect(dumbRowHtml('x', null, null, 'T', 'Sem')).toContain('Geen cijfer');

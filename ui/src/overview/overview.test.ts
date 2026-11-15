@@ -70,7 +70,8 @@ describe('RTTI-verloop labels (decision 32)', () => {
     );
     expect(m.dots).toHaveLength(7);
     expect(m.lines.find((l) => l.cat === 'I')!.points.split(' ')).toHaveLength(1);
-    expect(m.codes.map((c) => Math.round(c.leftPct))).toEqual([5, 97]);
+    // Inside the axes (x 52-972) with room: the first at 84 px, the last at 928 px.
+    expect(m.codes.map((c) => Math.round(c.leftPct))).toEqual([8, 93]);
     expect(m.highlight).not.toBeNull();
     expect(m.dots.filter((d) => d.r === 6)).toHaveLength(4);
     expect(m.grid.map((g) => g.label)).toEqual(['0%', '25%', '50%', '75%', '100%']);

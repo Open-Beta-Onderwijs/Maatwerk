@@ -160,6 +160,14 @@ test.describe('exam overview (board 46)', () => {
     await d.locator('[data-tab="rtti-analyse"]').click();
     await expect(d.locator('#tab-rtti-analyse .ov-rcard').first()).toContainText('Alle leerlingen');
     await expect(d.locator('#tab-rtti-analyse .ov-rline__hl')).toBeAttached();
+    // RTTI per cijfergroep: a card per category, a bar per grade group (user 2026-11-15).
+    await expect(d.locator('#tab-rtti-analyse .ov-card__h3').last()).toHaveText(
+      'RTTI per cijfergroep',
+    );
+    await expect(d.locator('#tab-rtti-analyse .ov-grid--2 .xo-gg')).toHaveCount(4);
+    await expect(
+      d.locator('#tab-rtti-analyse .ov-grid--2 .xo-gg').first().locator('.ov-hist__col'),
+    ).toHaveCount(6);
     await d.locator('[data-tab="observaties"]').click();
     await expect(d.locator('#tab-observaties .ov-card__h3')).toContainText([
       'Observaties, alle leerlingen',
@@ -229,9 +237,16 @@ test.describe('PO overview (board 43)', () => {
     await expect(tip.locator('.ov-tip__head')).toHaveText('Noor Bakker: 8,6');
     await expect(tip).toContainText('Projectgroep Valtoren 8,8 · groep −0,5 · persoonlijk +0,3');
     await expect(tip).toContainText('Theorie: ');
-    await row.locator('[data-tip$="|c|cat-theorie"]').hover();
-    await expect(tip.locator('.ov-tip__head')).toHaveText('Theorie: 6 / 8');
-    await expect(tip).toContainText('Niveau 6–8 Goed · projectgroep Valtoren');
+    // No column per category: the scores are in the tooltip, under the observaties.
+    await expect(d.locator('.po-ov-table thead th')).toHaveText([
+      'Naam',
+      'Klas',
+      'Punten/ 17',
+      'Bonus / malus',
+      'Cijfer',
+    ]);
+    await expect(tip.locator('.ov-tip__rows')).toContainText('Theorie6 / 8');
+    await expect(tip.locator('.ov-tip__rows')).toContainText('Samenwerken (diagnostisch)3 / 3');
   });
 
   test('every tab renders: verdeling, boxplot, categorieën, observaties', async ({ page }) => {
@@ -295,8 +310,8 @@ test.describe('student profile (board 44)', () => {
     const tip = page.locator('.ov-tip');
     await expect(tip.locator('.ov-tip__head')).toHaveText('309 PO Onderzoek valbeweging');
     await expect(tip).toContainText('Cijfer 8,3 · projectgroep Valtoren 8,8 · groep −0,5');
-    await expect(tip).toContainText('Theorie: 6 / 8');
-    await expect(tip).toContainText('Samenwerken (diagnostisch): 3 / 3');
+    await expect(tip.locator('.ov-tip__rows')).toContainText('Theorie6 / 8');
+    await expect(tip.locator('.ov-tip__rows')).toContainText('Samenwerken (diagnostisch)3 / 3');
     // Bovenbouw has no tests for a jaarlaag-3 student.
     await d.locator('.pf-tog[data-bouw="bovenbouw"]').click();
     await expect(d.locator('.pf-bars-host')).toContainText('Geen cijfers in deze bouw.');

@@ -25,7 +25,7 @@ import { Store } from '../../store.js';
 import { openProfielModal } from '../profile';
 import { boxHtml, rttiHtml, verdelingHtml } from './charts';
 import { buildGroupModel, type GroupModel } from './model';
-import { observatiesHtml } from './observaties';
+import { fitHeat, observatiesHtml } from './observaties';
 import { cellTip, resultatenHtml } from './resultaten';
 
 type TabId = 'resultaten' | 'cijferverdeling' | 'boxplot' | 'rtti' | 'observaties';
@@ -108,8 +108,12 @@ export async function openGroupStudentsModal(
     if (tab === 'resultaten') pane.innerHTML = resultatenHtml(model, nameOf);
     else if (tab === 'cijferverdeling') pane.innerHTML = verdelingHtml(model);
     else if (tab === 'boxplot') pane.innerHTML = boxHtml(model, nameOf);
-    else if (tab === 'observaties') pane.innerHTML = observatiesHtml(model, observaties());
-    else pane.innerHTML = rttiHtml(model, Math.max(400, pane.clientWidth - 38));
+    else if (tab === 'observaties') {
+      pane.innerHTML = observatiesHtml(model, observaties());
+      fitHeat(pane);
+      const wrap = pane.querySelector('.ov-heat-wrap');
+      if (wrap) new ResizeObserver(() => fitHeat(pane)).observe(wrap);
+    } else pane.innerHTML = rttiHtml(model, Math.max(400, pane.clientWidth - 38));
     applyStyleData(pane);
   }
 

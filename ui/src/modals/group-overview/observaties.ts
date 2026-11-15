@@ -37,7 +37,7 @@ export function observatiesHtml(m: GroupModel, observaties: Observatie[]): strin
             return `<td><span class="ov-heat__cell ov-heat__cell--none" title="0 van ${size} leerlingen">—</span></td>`;
           const pct = heatPct(n, size);
           const strong = n / (size * 0.5) > 0.55 ? ' ov-heat__cell--strong' : '';
-          return `<td><span class="ov-heat__cell${strong}" title="${n} van ${size} leerlingen" data-bg="color-mix(in srgb, var(--accent) ${pct}%, transparent)">${n} (${pctOf(n, size)}%)</span></td>`;
+          return `<td><span class="ov-heat__cell${strong}" title="${n} van ${size} leerlingen" data-bg="color-mix(in srgb, var(--accent) ${pct}%, transparent)">${n}<span class="ov-heat__pct"> (${pctOf(n, size)}%)</span></span></td>`;
         })
         .join('');
       return (
@@ -48,6 +48,18 @@ export function observatiesHtml(m: GroupModel, observaties: Observatie[]): strin
     .join('');
   return (
     `<p class="ov-intro">Aantal leerlingen per toets bij wie de observatie is aangevinkt, met het percentage van de groep. Bij een PO telt elk lid van de projectgroep.</p>` +
-    `<table class="ov-heat"><thead>${head}</thead><tbody>${body}</tbody></table>`
+    `<div class="ov-heat-wrap"><table class="ov-heat"><thead>${head}</thead><tbody>${body}</tbody></table></div>`
   );
+}
+
+/**
+ * Many tests (user 2026-11-15): first the percentages go (narrower cells), then the table
+ * scrolls sideways. With room enough it stays as it is. Call again when the width changes.
+ */
+export function fitHeat(pane: HTMLElement): void {
+  const wrap = pane.querySelector<HTMLElement>('.ov-heat-wrap');
+  const table = wrap?.querySelector<HTMLElement>('.ov-heat');
+  if (!wrap || !table || !wrap.clientWidth) return;
+  table.classList.remove('ov-heat--compact');
+  if (wrap.scrollWidth > wrap.clientWidth + 1) table.classList.add('ov-heat--compact');
 }

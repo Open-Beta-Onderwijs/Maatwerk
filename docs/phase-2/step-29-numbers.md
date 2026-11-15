@@ -112,7 +112,9 @@ of the RTTI-analyse tab keep the pooled points (unchanged), so the two can diffe
 **RTTI-verloop:** one point per original test of the jaarlaag (the same pooled values as
 before for those tests: 301 is 40 / 48 / 52 / 23 as the old chart and the "Alle leerlingen"
 card). Before, every resit was a point of its own; resits and PO's are now left out (spec 3.10:
-one point per test). The chart "RTTI-scores per cijfergroep" is not on board 46 and is gone.
+one point per test). The chart "RTTI-scores per cijfergroep" is back (user 2026-11-15) in the layout of
+"Observaties per cijfergroep": a card per RTTI category, a bar per grade group, with the same core
+function as the old chart (`rttiByGradeGroup`, pooled points of the normal questions).
 
 ## 5. PO overview (step 29c, board 43; new)
 
@@ -169,3 +171,10 @@ and RTTI cards use every graded attempt, RTTI "Gemiddeld" the pooled attempts th
 peers come from the student's last school year. The Cijferverloop bars are the attempts that
 count, as before; the grey toetsgemiddelde and jaarlaag bars are now the ◇ on a track (spec
 4.15).
+
+## 7. Exam overview Observaties: the population (review 29 m1, user 2026-11-15)
+
+The percentages of the Observaties tab are of the students with a score; a student with an
+observatie but no score (and no overwritten grade) is no longer counted in the bars, per group or
+per grade group (the Resultaten row still shows the icon). On the fixture nothing changes: no
+student has an observatie without a score.
