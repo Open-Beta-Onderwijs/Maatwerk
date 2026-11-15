@@ -2,6 +2,14 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From step 29c (overviews, 2026-11-15)
+
+- **PO verzameloverzicht:** a PO with an inhaal or herkansing has no summary overview over the
+  attempts that count (not designed; PLAN-2 step 29c). The PO verzamelkaart's "Overzicht openen"
+  stays disabled with a tooltip; each attempt opens its own PO overview.
+- **Profile observaties:** "Observaties per schooljaar" counts the observaties linked to a test
+  (`obs_ids`), as before; a PO's rubric and category observaties are not in it yet.
+
 ## From the Step 10 manual test (`docs/reviews/manual-test-step-10.md`, 2026-11-03)
 
 - ~~**M-OPD-9** "Herstel standaardversie" did not ask first; "Bekijk verschillen" missing~~

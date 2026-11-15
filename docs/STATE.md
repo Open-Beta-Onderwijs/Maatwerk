@@ -1,14 +1,14 @@
 # State
 
-Last updated: 2026-11-14 (step 29a in progress) Branch: `step/29-overviews`
+Last updated: 2026-11-15 (step 29c) Branch: `step/29-overviews`
 Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
 ## Current step
 
-**Step 29 (Overviews and profile, 0.20), sessions 29a and 29b (user, 2026-11-14):** merge the
-design branch (done: `455fc90` on `main`, pushed), then 29a and 29b on `step/29-overviews`;
-**stop after 29b** and show the results (visual check, numbers table) before 29c.
+**Step 29 (Overviews and profile, 0.20):** 29a and 29b done (user OK on the visual check and the
+numbers table, 2026-11-15); 29c (PO overview, profile) on `step/29-overviews`, then the step-29
+gate, review and release 0.20.
 
 Still open from steps 26-28 (merged, PR #17): the GitHub release 0.19.0 (`docs/release.md`
 section 4) when the user asks.
@@ -38,10 +38,21 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 6. Checks on `eb243f9`: 676 Vitest, Chromium e2e 334/335 (G53 in `score-grid.spec` failed once
    under load, 3/3 alone; not touched), lint, typecheck, SPDX green. Visual baselines not
    updated (the user's check first).
+7. **User OK (2026-11-15):** visual check and numbers table of 29a/29b.
+8. **Done (`de6bf8e`):** PO overview (spec 4.14, board 43): `modals/po-overview/` (model,
+   resultaten, charts, index); "Overzicht openen" and the title on a PO card open it (each attempt
+   its own; the PO verzamelkaart's button stays disabled: backlog). e2e `overviews.spec` +2.
+9. **Done (`ca1dc5c`):** profile (spec 4.15, board 44) in TS: `modals/profile/` (data,
+   cijferverloop, analyse, index); R-05 `profiel.js` removed. B15/B16 checked, kept
+   (`quirks.md`). e2e `overviews.spec` +2; views `modal-po-overzicht-*` (6) added.
+10. **Done (`d5b526d`):** Chart.js and its annotation plugin removed (no canvas chart left);
+    licences and notices updated.
+11. Numbers doc sections 5 (PO overview) and 6 (profile). Checks: 695 Vitest, lint, typecheck;
+    Chromium e2e overviews/dialog/cards/po 100% green.
 
-**Next action:** STOP after 29b (user, 2026-11-14): show the user the screenshots, the numbers
-doc and the choices below; after their OK, 29c (PO overview, profile), then the step-29 gate,
-review and release 0.20.
+**Next action:** step-29 gate (full e2e, visual run: expect diffs for the profile and new PO
+overview views), reviewer subagent `docs/reviews/step-29.md`, fix blockers/majors, then STOP:
+the user's visual check (baselines) and the OK on numbers sections 5-6, then release 0.20.
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
@@ -54,7 +65,14 @@ one group per student (`studentGroup`) while the Resultaten sections are the exa
 before); the "Observaties, alle leerlingen" percentage is of the students with a score; the
 RTTI-verloop has the originals of the jaarlaag only (no resits, no PO's); the chart "RTTI per
 cijfergroep" is gone (not on board 46); a resit's overview highlights its original in the
-verloop; group colours are accent shades (board 46) instead of the old 8-colour palette.
+verloop; group colours are accent shades (board 46) instead of the old 8-colour palette. 29c:
+the PO overview's klas is the first matching class (as the PO score table), so a student in two
+classes is in one section; category means are over the students with a score in
+that category; observaties rows are the linked and the given ones; a cell's dotted underline only
+when it has observaties; the profile's "Ten opzichte van het toetsgemiddelde" lists every graded
+attempt of the year (as the old chart), the bars only the attempts that count; the year rows add
+an "Examendossier (SE)" row (the old chart's SE bar); the profile header shows "<id> · jaarlaag N ·
+schoolsoort · vak"; Chart.js removed.
 
 ## Step 28 progress (Beheer screens, 0.19)
 

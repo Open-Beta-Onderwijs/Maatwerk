@@ -113,3 +113,59 @@ of the RTTI-analyse tab keep the pooled points (unchanged), so the two can diffe
 before for those tests: 301 is 40 / 48 / 52 / 23 as the old chart and the "Alle leerlingen"
 card). Before, every resit was a point of its own; resits and PO's are now left out (spec 3.10:
 one point per test). The chart "RTTI-scores per cijfergroep" is not on board 46 and is gone.
+
+## 5. PO overview (step 29c, board 43; new)
+
+There was no PO overview before ("Overzicht openen" was disabled), so every number here is new.
+Seed: the e2e PO (`ui/e2e/po-seed.ts`, `grading: true`): PO 309 on rubric Onderzoeksverslag (17
+points, bonus 4), Valtoren (D'Angelo O'Neill, Noor Bakker) 15 points = 8,8 with a group line
+−0,5 and Noor +0,3; Projectgroep 2 (Marie-Claire 't Hart, Olivia ter Østergaard) Theorie 4 = 2,4;
+the other students of the classes are not placed. Grades are the grade rules' (`examResults`,
+decision 28); means and SD with `stats` (population SD, as everywhere).
+
+| Section (Resultaten)          | Theorie   | Uitvoering | Extra (B) | Samenwerken (D) | Punten     | Cijfer    |
+| ----------------------------- | --------- | ---------- | --------- | --------------- | ---------- | --------- |
+| Klas 3 nat cluster (1 graded) | 6,0 ± 0,0 | 7,0 ± 0,0  | 2,0 ± 0,0 | 3,0 ± 0,0       | 15,0 ± 0,0 | 8,3 ± 0,0 |
+| Klas 3a nat (2 graded)        | 4,0 ± 0,0 | —          | —         | —               | 4,0 ± 0,0  | 2,4 ± 0,0 |
+| Klas 3b nat (1 graded)        | 6,0 ± 0,0 | 7,0 ± 0,0  | 2,0 ± 0,0 | 3,0 ± 0,0       | 15,0 ± 0,0 | 8,6 ± 0,0 |
+| Valtoren                      | 6,0 ± 0,0 | 7,0 ± 0,0  | 2,0 ± 0,0 | 3,0 ± 0,0       | 15,0 ± 0,0 | 8,5 ± 0,2 |
+| Projectgroep 2                | 4,0 ± 0,0 | —          | —         | —               | 4,0 ± 0,0  | 2,4 ± 0,0 |
+
+A student's klas is the first matching class by name (as the PO score table's Klas column), so
+D'Angelo, who is in 3a nat and 3 nat cluster, is under 3 nat cluster only. A category mean is
+over the students with a score for it; "Niet ingedeeld" has no footer.
+
+- **Cijferverdeling:** Alle leerlingen 4, gem. 5,4 ± 3,0, 50% onvoldoende (the same as the PO
+  card's stats line); per klas 8,3 / 2,4 / 8,6.
+- **Categorieën** (the 4 placed students): Theorie 5,0 / 8 (63%), levels 0 / 2 / 2; Uitvoering
+  7,0 / 9 (78%); Extra onderzoek 2,0 / 4 (50%); Samenwerken 3,0 / 3 (100%, diagnostic); TOTAAL
+  PUNTEN 9,5 / 17 = 56% (incl. bonus, excl. diagnostisch). A category's mean counts only the
+  students with a score in it, the total counts every graded student.
+- **Observaties:** Bronnen ontbreken (Theorie) 2 (50%), 1 van 2 groepen; Netjes gewerkt 2 (50%),
+  1 van 2 groepen; Goed samengewerkt and Planning niet gehaald 0.
+
+## 6. Student profile (step 29c, board 44)
+
+D'Angelo O'Neill (900001), with the seed of section 5. The averages are the same functions as
+before, so only the SD (and the PO bar) is new.
+
+| Row                              | Student | Before: average | After: average ± SD |
+| -------------------------------- | ------- | --------------- | ------------------- |
+| 301 Toets H1                     | 6,9     | 5,4             | 5,4 ± 1,6           |
+| 301-H Herkansing                 | 5,5     | 5,2             | 5,2 ± 0,3           |
+| 301-I Inhaal                     | 4,8     | 3,8             | 3,8 ± 1,1           |
+| 302 Toets H2                     | 3,5     | 4,5             | 4,5 ± 1,8           |
+| 303 Toets H3                     | 6,7     | 6,6             | 6,6 ± 1,0           |
+| 309 PO Onderzoek valbeweging     | 8,3     | 5,4             | 5,4 ± 3,0           |
+| 351 Toets één leerling           | 6,9     | 6,9             | 6,9 ± 0,0           |
+| 2025-2026 jaarlaag 3 (year avg.) | 6,3     | 5,4             | 5,4 ± 1,8           |
+| Examendossier (SE)               | 7,5     | 5,2             | 5,2 ± 2,4           |
+
+"Before" for a test is `computeExamStats` (the old chart's toetsgemiddelde, also the Toetsen
+card's stats line); for the year and SE rows `meanOfAverages`, now `statsOfAverages` (decision
+21: the same mean). The SD band was drawn for the tests before (an error band) without a number;
+the year and SE rows had no SD. B15 (decision 7) and B16 (decision 12) are kept: per-year rows
+and RTTI cards use every graded attempt, RTTI "Gemiddeld" the pooled attempts that count, the SE
+peers come from the student's last school year. The Cijferverloop bars are the attempts that
+count, as before; the grey toetsgemiddelde and jaarlaag bars are now the ◇ on a track (spec
+4.15).

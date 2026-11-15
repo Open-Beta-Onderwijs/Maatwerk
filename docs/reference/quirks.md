@@ -1034,6 +1034,11 @@ B14 (17), B15 (7), B16 (12), B19, B31 (17), B28 (18), B29 (1: the min/max form, 
 3 on 453,840 combinations), T9 (16). New, found in step 19: an exact half such as 8,65 could be
 computed just below and round down (3).
 
+Step 29c checked B15 and B16 again when `profiel.js` became `modals/profile/` (TypeScript): the
+per-year rows and RTTI cards use every graded attempt, the RTTI "Gemiddeld" card pools the attempts
+that count (decision 7), and the jaarlaag SE average takes the peers of the student's last school
+year (decision 12). Unchanged; the code is `modals/profile/data.ts` and `analyse.ts`.
+
 Later steps: B17, B18, B20, B23, B30. Checked, not changed: **D4** (`locked` is still not retried),
 **D16** (`setExamNTerm` still bumps `rev`) and **D17** (`upsertExam` still merges over the cache).
 They concern saving, not numbers: nothing is lost, the teacher sees a conflict or an error.
