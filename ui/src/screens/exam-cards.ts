@@ -57,19 +57,21 @@ function menuButton(examId: string, kind: CardKind): string {
 }
 
 function overviewButton(action: 'exam-overview' | 'exam-overview-best', e: Exam): string {
-  if (isPo(e))
-    return `<span title="${esc(PO_OVERVIEW_LATER)}"><button class="btn btn--secondary btn--sm exam-card-btn" disabled>Overzicht openen</button></span>`;
-  return `<button class="btn btn--secondary btn--sm exam-card-btn" data-action="${action}" data-examid="${esc(e.id)}">Overzicht openen</button>`;
+  if (isPo(e) && action === 'exam-overview-best')
+    return `<span title="${esc(PO_SUMMARY_LATER)}"><button class="btn btn--secondary btn--sm exam-card-btn" disabled>Overzicht openen</button></span>`;
+  const act = isPo(e) ? 'po-overview' : action;
+  return `<button class="btn btn--secondary btn--sm exam-card-btn" data-action="${act}" data-examid="${esc(e.id)}">Overzicht openen</button>`;
 }
 
-/** A PO's overview comes with its own design (steps 23, 29): until then the link is plain text. */
-const PO_OVERVIEW_LATER = 'Het overzicht van een praktische opdracht komt in een latere versie.';
+/** A PO's verzameloverzicht is not designed yet (step 29c, backlog); each attempt has its own. */
+const PO_SUMMARY_LATER =
+  'Een verzameloverzicht van een PO is er nog niet. Open het overzicht van een poging hieronder.';
 
-/** The title: a link to the overview, or plain text for a PO. */
+/** The title: a link to the overview (plain text for a PO's verzamelkaart). */
 function titleLink(e: Exam, action: string, cls: string, text: string): string {
-  return isPo(e)
-    ? `<span class="${cls}">${esc(text)}</span>`
-    : `<button class="${cls}" data-action="${action}" data-examid="${esc(e.id)}">${esc(text)}</button>`;
+  if (isPo(e) && action === 'exam-overview-best') return `<span class="${cls}">${esc(text)}</span>`;
+  const act = isPo(e) ? 'po-overview' : action;
+  return `<button class="${cls}" data-action="${act}" data-examid="${esc(e.id)}">${esc(text)}</button>`;
 }
 
 /** Where a test shows its points and RTTI split, a PO shows its rubric (spec 4.13). */

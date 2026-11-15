@@ -5,7 +5,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { login, seedFiles } from './helpers';
-import { poSeed } from './po-seed';
+import { PO_ID, poSeed } from './po-seed';
 import { screen } from './views';
 
 async function openGroupOverview(page: Page, withPo = false) {
@@ -181,6 +181,82 @@ test.describe('exam overview (board 46)', () => {
     await expect(d.locator('[data-tab="vraaganalyse"]')).toHaveAttribute(
       'title',
       /alleen beschikbaar voor individuele toetsen/,
+    );
+  });
+});
+
+async function openPoOverview(page: Page) {
+  await page.goto('/');
+  await seedFiles(page, await poSeed(page, { grading: true }));
+  await login(page);
+  await screen(page, 'toetsen');
+  await page.locator(`[data-exam-card="${PO_ID}"] .exam-card-btn`).click();
+  const d = page.locator('.modal-po-overview');
+  await expect(d.locator('.po-ov-table')).toBeVisible();
+  return d;
+}
+
+test.describe('PO overview (board 43)', () => {
+  test('Resultaten per klas and per projectgroep, with the grade build-up', async ({ page }) => {
+    const d = await openPoOverview(page);
+    await expect(d.locator('.dlg-badge')).toHaveText('SE · praktische opdracht');
+    await expect(d.locator('.dlg-subtitle')).toContainText(
+      'rubric Onderzoeksverslag · 4 categorieën · 17 punten · bonus 4 · 2 projectgroepen · 4 leerlingen',
+    );
+    await expect(d.locator('[role="tab"]')).toHaveText([
+      'Resultaten',
+      'Cijferverdeling',
+      'Boxplot',
+      'Categorieën',
+      'Observaties',
+    ]);
+    // Per klas: unplaced students have a dashed chip and no grade.
+    await expect(d.locator('.po-ov-chip--none').first()).toHaveText('niet ingedeeld');
+    await expect(d.locator('.po-ov-view.selected')).toHaveText('Per klas');
+
+    await d.getByRole('button', { name: 'Per projectgroep' }).click();
+    const heads = d.locator('.ov-section__head');
+    await expect(heads.first()).toContainText(
+      'Valtoren · projectgroepcijfer 8,8 · Te laat ingeleverd −0,5 · 2 leerlingen',
+    );
+    await expect(heads.last()).toContainText('Niet ingedeeld · geen cijfer, geen rapport');
+
+    // Noor Bakker (900101): 8,8 − 0,5 + 0,3 = 8,6.
+    const row = d.locator('.ov-row', { hasText: 'Noor Bakker' });
+    await row.locator('[data-tip$="|cijfer"]').hover();
+    const tip = page.locator('.ov-tip');
+    await expect(tip).toBeVisible();
+    await expect(tip.locator('.ov-tip__head')).toHaveText('Noor Bakker: 8,6');
+    await expect(tip).toContainText('Projectgroep Valtoren 8,8 · groep −0,5 · persoonlijk +0,3');
+    await expect(tip).toContainText('Theorie: ');
+    await row.locator('[data-tip$="|c|cat-theorie"]').hover();
+    await expect(tip.locator('.ov-tip__head')).toHaveText('Theorie: 6 / 8');
+    await expect(tip).toContainText('Niveau 6–8 Goed · projectgroep Valtoren');
+  });
+
+  test('every tab renders: verdeling, boxplot, categorieën, observaties', async ({ page }) => {
+    const d = await openPoOverview(page);
+    await d.locator('[data-tab="cijferverdeling"]').click();
+    await expect(d.locator('#tab-cijferverdeling .ov-hist').first()).toBeVisible();
+    await d.locator('#tab-cijferverdeling .hist-bin-btn[data-bin="1"]').click();
+    await expect(d.locator('#tab-cijferverdeling .po-ov-hist-all .ov-hist__n')).toHaveCount(10);
+    await d.locator('[data-tab="boxplot"]').click();
+    await expect(d.locator('#tab-boxplot .ov-box__row').first()).toContainText('Alle leerlingen');
+    await d.locator('[data-tab="categorieen"]').click();
+    await expect(d.locator('#tab-categorieen .ov-intro')).toContainText('4 ingedeelde leerlingen');
+    await expect(d.locator('#tab-categorieen .po-ov-cat__name')).toHaveText([
+      'Theorie',
+      'Uitvoering',
+      'Extra onderzoek',
+      'Samenwerken',
+    ]);
+    await expect(d.locator('#tab-categorieen tfoot')).toContainText('TOTAAL PUNTEN');
+    await d.locator('[data-tab="observaties"]').click();
+    await expect(d.locator('#tab-observaties .po-ov-obs__title').last()).toHaveText(
+      'Algemene observaties',
+    );
+    await expect(d.locator('#tab-observaties .po-ov-obs__groups').first()).toHaveText(
+      /^\d van 2 groepen$/,
     );
   });
 });

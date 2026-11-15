@@ -327,8 +327,8 @@ test.describe('a PO on the Toetsen screen', () => {
     );
     // 17/17 = 10,0 twice and 14/17 = 8,2 twice (decision 16): mean 9,1.
     await expect(card.locator('.exam-stats b')).toHaveText('9,1');
-    // No overview for a PO yet.
-    await expect(card.locator('.exam-card-btn')).toBeDisabled();
+    // The PO overview opens from the card (step 29c).
+    await expect(card.locator('.exam-card-btn')).toHaveAttribute('data-action', 'po-overview');
 
     // A re-render of the list can close the menu: open it again until its items are seen.
     const items = page.locator('.exam-menu-item');

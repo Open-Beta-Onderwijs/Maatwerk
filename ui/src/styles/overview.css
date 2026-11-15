@@ -916,3 +916,234 @@ html[data-theme='dark'] .ov-tip__mute {
 .ov-box__name {
   font-weight: 600;
 }
+
+/* ── PO overview (modals/po-overview, board 43) ────────────────────────────── */
+.po-ov-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0 4px;
+}
+.po-ov-table thead th.po-ov-col-label {
+  width: 132px;
+  text-align: left;
+}
+.po-ov-table thead th.po-ov-col-cat {
+  width: 74px;
+}
+.po-ov-table thead th.po-ov-col-pts {
+  width: 66px;
+}
+.po-ov-table thead th.po-ov-col-bm {
+  width: 86px;
+}
+.po-ov-table thead th.po-ov-col-grade {
+  width: 70px;
+}
+.po-ov-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.po-ov-tag {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.po-ov-tag--bonus {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.po-ov-chip {
+  display: inline-block;
+  max-width: 124px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: 12px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.po-ov-chip--none {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+}
+.ov-table td.po-ov-num {
+  text-align: center;
+}
+.po-ov-muted {
+  color: var(--muted);
+}
+.ov-table td.po-ov-diag {
+  color: var(--muted);
+  font-style: italic;
+}
+.ov-table td.po-ov-pts {
+  font-weight: 600;
+}
+.ov-table td.po-ov-minus {
+  color: var(--danger);
+}
+.po-ov-tipv {
+  border-bottom: 1px dotted var(--muted);
+}
+.ov-foot td.po-ov-foot-v {
+  font-weight: 600;
+}
+.po-ov-cats {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.po-ov-cats th {
+  padding: 10px 8px;
+  border-bottom: 2px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.po-ov-cats th.po-ov-cats__name {
+  width: 220px;
+}
+.po-ov-cats th.po-ov-cats__mean {
+  width: 90px;
+  text-align: center;
+}
+.po-ov-cats th.po-ov-cats__share {
+  width: 170px;
+}
+.po-ov-cats tbody td {
+  padding: 14px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.po-ov-cats tfoot td {
+  padding: 12px 8px;
+  border-top: 2px solid var(--border);
+}
+.po-ov-cats td.po-ov-num {
+  text-align: center;
+}
+.po-ov-cat__name {
+  font-weight: 600;
+}
+.po-ov-pill {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.po-ov-pill--bonus {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.po-ov-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.po-ov-share__track {
+  flex: 1;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: var(--surface-2);
+}
+.po-ov-share__bar {
+  height: 10px;
+}
+.po-ov-share__bar--diag {
+  background: var(--grade-diagnostic-border);
+}
+.po-ov-share__bar--bonus {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--accent) 0 4px,
+    color-mix(in srgb, var(--accent) 50%, #fff) 4px 8px
+  );
+}
+.po-ov-share__pct {
+  width: 38px;
+  font-weight: 600;
+  text-align: right;
+}
+.po-ov-segs {
+  display: flex;
+  gap: 2px;
+  height: 26px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.po-ov-seg {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.po-ov-seg--dark {
+  color: #fff;
+}
+.po-ov-legend {
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.po-ov-legend b {
+  color: var(--text);
+}
+.po-ov-obs__title {
+  font-size: 15px;
+}
+.po-ov-obs__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 38px;
+}
+.po-ov-obs__row .ov-obs__name {
+  flex: 1;
+  min-width: 0;
+}
+.po-ov-obs__track {
+  flex: none;
+  width: 300px;
+}
+.po-ov-obs__row .ov-obs__n {
+  width: 70px;
+  text-align: right;
+}
+.po-ov-obs__groups {
+  width: 110px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ov-table td.po-ov-label {
+  text-align: left;
+}
+.po-ov-cats td.po-ov-cats__foot {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
