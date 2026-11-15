@@ -164,9 +164,9 @@ test.describe('exam overview (board 46)', () => {
     await expect(d.locator('#tab-rtti-analyse .ov-card__h3').last()).toHaveText(
       'RTTI per cijfergroep',
     );
-    await expect(d.locator('#tab-rtti-analyse .ov-grid--2 .xo-gg')).toHaveCount(4);
+    await expect(d.locator('#tab-rtti-analyse .ov-grid--4 .xo-gg')).toHaveCount(4);
     await expect(
-      d.locator('#tab-rtti-analyse .ov-grid--2 .xo-gg').first().locator('.ov-hist__col'),
+      d.locator('#tab-rtti-analyse .ov-grid--4 .xo-gg').first().locator('.ov-hist__col'),
     ).toHaveCount(6);
     await d.locator('[data-tab="observaties"]').click();
     await expect(d.locator('#tab-observaties .ov-card__h3')).toContainText([

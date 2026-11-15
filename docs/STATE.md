@@ -65,6 +65,11 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
     category columns (scores in the tooltips of Punten, Bonus / malus and Cijfer, also in the
     profile's PO bar tooltip); an overwritten grade in the exam overview is a blue pill with a
     thicker border, blue text and the triangle; the resit dot is centred on the pill.
+    Second round (same day): the exam overview's and PO overview's tables are as wide as their
+    contents (not the window), more room after the name, between Cijfer and the observaties and
+    between the observaties and R; RTTI per cijfergroep as four cards on one line (two below
+    900 px). The group Observaties' compact view keeps the PO's (the earlier shots used the
+    seed without a PO).
 
 **Next action:** STOP (user): look at the new screenshots; then update the visual baselines,
 merge, tag `step-29`, release 0.20.

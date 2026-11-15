@@ -109,7 +109,7 @@ export function rttiGradeGroupsHtml(data: ExamOverviewData): string {
   ).join('');
   return (
     `<div class="ov-card__head xo-gg__head"><h3 class="ov-card__h3">RTTI per cijfergroep</h3><span class="ov-card__spacer"></span><div class="ov-legend ov-legend--inline">${gradeGroupLegend(data.grades)}</div><span class="ov-meanline">· percentage van de punten; tussen haakjes de groepsgrootte</span></div>` +
-    `<div class="ov-grid ov-grid--2 ov-grid--flush">${cards}</div>`
+    `<div class="ov-grid ov-grid--4 ov-grid--flush">${cards}</div>`
   );
 }
 
