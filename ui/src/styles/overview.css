@@ -59,14 +59,16 @@
   position: relative;
   border-bottom-right-radius: 0;
 }
+/* Inside the square corner, flush with the border, so it never overhangs the pill; with the
+   border it reads as an 8px triangle. */
 .ov-pill--tip::after,
 .ov-grade__pill--obs .ov-pill::after {
   content: '';
   position: absolute;
-  right: -1.5px;
-  bottom: -1.5px;
-  border-top: 7px solid transparent;
-  border-right: 7px solid;
+  right: 0;
+  bottom: 0;
+  border-top: 6.5px solid transparent;
+  border-right: 6.5px solid;
   border-right-color: inherit;
 }
 .ov-grade__dot {
@@ -84,8 +86,8 @@
   line-height: 17px;
 }
 .xo-grade--override .ov-pill::after {
-  right: -2.5px;
-  bottom: -2.5px;
+  border-top-width: 5.5px;
+  border-right-width: 5.5px;
 }
 .ov-dot {
   margin-left: 3px;
@@ -832,14 +834,27 @@ html[data-theme='dark'] .ov-tip__mute {
 .ov-table.po-ov-table {
   width: auto;
 }
-.xo-table td.ov-name-td,
-.po-ov-table td.ov-name-td {
-  padding-right: 20px;
+/* More air between the columns now the tables are narrow (user 2026-11-15). */
+.ov-table.xo-table thead th,
+.ov-table.xo-table tbody td,
+.ov-table.po-ov-table thead th,
+.ov-table.po-ov-table tbody td {
+  padding-right: 10px;
+  padding-left: 10px;
+}
+.ov-table.xo-table thead th.ov-name-th,
+.ov-table.xo-table tbody td.ov-name-td,
+.ov-table.xo-table tbody td.ov-foot__label,
+.ov-table.po-ov-table thead th.ov-name-th,
+.ov-table.po-ov-table tbody td.ov-name-td,
+.ov-table.po-ov-table tbody td.ov-foot__label {
+  padding-right: 24px;
+  padding-left: 8px;
 }
 /* Room between Cijfer and the observaties, and between the observaties and R. */
-.xo-table th.xo-sep,
-.xo-table td.xo-sep {
-  padding-left: 22px;
+.ov-table.xo-table th.xo-sep,
+.ov-table.xo-table td.xo-sep {
+  padding-left: 28px;
 }
 .xo-table thead th.xo-col-tot {
   width: 84px;
