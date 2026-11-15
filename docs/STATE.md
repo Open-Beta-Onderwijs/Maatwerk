@@ -73,10 +73,16 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
     corner (flush, no overhang; 9px with the border after the fourth round); more column
     padding (10px) in both tables; fourth round: the name column at least 360px (as the group
     overview's); in a narrower pane `overview/fit-name.ts` gives it the room left beside the
-    other columns (never below the names), so the table fills the pane (e2e test at 1280/800).
+    other columns (never below the names), so the table fills the pane (e2e test at 1280/800;
+    the exam table at 900, Linux WebKit's fonts need it).
 
-**Next action:** STOP (user): look at the new screenshots; then update the visual baselines,
-merge, tag `step-29`, release 0.20.
+14. **User (2026-11-15): baselines and merge.** Local `visual` baselines updated (13 views × 3
+    looks, all intended: overviews, profile, RTTI names F-26). CI baselines of those views
+    dropped and rewritten by CI (runs 43738672588: Windows, macOS; 43740662685: Linux), 17
+    files per platform (with the four new PO overview views), reviewed and committed. Merged
+    into `main`, tagged `step-29`.
+
+**Next action:** release 0.20 when the user asks; then step 30 (`PLAN-2.md`).
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
