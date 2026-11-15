@@ -73,15 +73,19 @@ test('still too narrow: inactive tabs show only their icon, the active tab its n
   // The active tab keeps its name; an inactive one shows its icon, its name a tooltip and the
   // accessible name.
   await expect(groepen).toBeVisible();
-  expect((await groepen.boundingBox())?.width ?? 0).toBeGreaterThan(20);
-  const label = await gebruikers.locator('span').boundingBox();
-  expect(label?.width ?? 0).toBeLessThanOrEqual(1);
+  // Polled: the bar re-measures after the resize (a frame later under load).
+  await expect.poll(async () => (await groepen.boundingBox())?.width ?? 0).toBeGreaterThan(20);
+  await expect
+    .poll(async () => (await gebruikers.locator('span').boundingBox())?.width ?? 0)
+    .toBeLessThanOrEqual(1);
   await expect(gebruikers).toHaveAttribute('title', 'Gebruikers');
   await expect(gebruikers).toHaveAccessibleName('Gebruikers');
   // Back to wide: every name returns, no tooltips.
   await page.setViewportSize({ width: 1280, height: 800 });
   await expect(gebruikers.locator('span')).toBeVisible();
-  expect((await gebruikers.locator('span').boundingBox())?.width ?? 0).toBeGreaterThan(20);
+  await expect
+    .poll(async () => (await gebruikers.locator('span').boundingBox())?.width ?? 0)
+    .toBeGreaterThan(20);
   await expect(gebruikers).not.toHaveAttribute('title', /./);
 });
 
