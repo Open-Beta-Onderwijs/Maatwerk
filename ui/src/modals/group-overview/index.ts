@@ -21,7 +21,7 @@ import type { Exam, Group, Observatie, ScoreRecord, Student } from '../../domain
 import { applyStyleData } from '../../legacy/style-data';
 import { installGradeTips } from '../../overview/tooltip';
 import { Store } from '../../store.js';
-import { openProfielModal } from '../profiel.js';
+import { openProfielModal } from '../profile';
 import { boxHtml, rttiHtml, verdelingHtml } from './charts';
 import { buildGroupModel, type GroupModel } from './model';
 import { observatiesHtml } from './observaties';

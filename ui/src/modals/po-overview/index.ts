@@ -15,7 +15,7 @@ import type { HistStep } from '../../overview/histogram';
 import { installGradeTips } from '../../overview/tooltip';
 import { Store } from '../../store.js';
 import { loadPoContext } from '../po-scores';
-import { openProfielModal } from '../profiel.js';
+import { openProfielModal } from '../profile';
 import { allHistHtml, boxHtml, categorieenHtml, observatiesHtml, verdelingHtml } from './charts';
 import { buildPoModel, type PoModel } from './model';
 import { poCellTip, resultatenHtml, type PoView } from './resultaten';

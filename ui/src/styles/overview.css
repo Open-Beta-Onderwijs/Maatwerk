@@ -1147,3 +1147,253 @@ html[data-theme='dark'] .ov-tip__mute {
   font-weight: 700;
   letter-spacing: 0.8px;
 }
+
+/* ── Student profile (modals/profile, board 44) ────────────────────────────── */
+.pf-card .ov-card__head {
+  margin-bottom: 12px;
+}
+.pf-head {
+  margin: 0;
+}
+.pf-legend {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.pf-key {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--k);
+}
+.pf-key.ov-kind--po,
+.pf-bar.ov-kind--po,
+.pf-bar.ov-kind--se-po {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--k) 0 5px,
+    color-mix(in srgb, var(--k) 50%, #fff) 5px 10px
+  );
+}
+.pf-key.ov-kind--diagnostic,
+.pf-bar.ov-kind--diagnostic {
+  border: 1.5px solid var(--grade-diagnostic-border);
+  background: var(--surface-2);
+  box-sizing: border-box;
+}
+.pf-bars {
+  display: flex;
+  gap: 10px;
+}
+.pf-bars__y {
+  position: relative;
+  flex: none;
+  width: 26px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.pf-bars__tick {
+  position: absolute;
+  right: 0;
+}
+.pf-bars__main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.pf-bars__plot {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+.pf-bars__grid {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--line);
+}
+.pf-bars__pass {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 2px dashed #e5736b;
+}
+.pf-bars__year {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.pf-bars__year > span {
+  position: absolute;
+  top: -2px;
+  left: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.pf-bars__year--sep {
+  border-left: 1px solid var(--border);
+}
+.pf-bars__slots {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+.pf-bars__slot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+  outline-offset: 2px;
+}
+.pf-bars__v {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.pf-bar {
+  width: min(46px, 70%);
+  border-radius: 5px 5px 0 0;
+  background: var(--k);
+}
+.pf-bars__badges {
+  display: flex;
+}
+.pf-bars__badge {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+  padding-top: 6px;
+}
+.pf-key-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.pf-key-diamond {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--muted);
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
+.pf-key-sd {
+  width: 22px;
+  height: 12px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+}
+.pf-dumb__row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+.pf-dumb__axis-row {
+  height: auto;
+  border-bottom: 0;
+}
+.pf-dumb__label {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  width: 280px;
+  min-width: 0;
+}
+.pf-dumb__title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pf-dumb__track {
+  position: relative;
+  flex: 1;
+  height: 24px;
+}
+.pf-dumb__axis {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  padding-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.pf-dumb__line {
+  position: absolute;
+  top: 11px;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: var(--line);
+}
+.pf-dumb__pass {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--border);
+}
+.pf-dumb__sd {
+  position: absolute;
+  top: 3px;
+  height: 18px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+}
+.pf-dumb__diff {
+  position: absolute;
+  top: 10px;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--danger) 40%, transparent);
+}
+.pf-dumb__diff--up {
+  background: color-mix(in srgb, var(--ok) 40%, transparent);
+}
+.pf-dumb__avg {
+  position: absolute;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border: 2px solid var(--muted);
+  background: var(--surface);
+  box-sizing: border-box;
+  transform: rotate(45deg);
+}
+.pf-dumb__dot {
+  position: absolute;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.pf-dumb__text {
+  flex: none;
+  width: 190px;
+  font-size: 13px;
+}
+.pf-dumb__delta {
+  color: var(--danger);
+  font-weight: 600;
+}
+.pf-dumb__delta--up {
+  color: var(--ok);
+}
+.pf-rgrid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.ov-card.pf-rcard--avg {
+  border-color: var(--accent);
+}

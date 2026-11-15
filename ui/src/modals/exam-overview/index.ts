@@ -17,7 +17,7 @@ import { examBadgeHtml } from '../../overview/common';
 import type { HistStep } from '../../overview/histogram';
 import { Store } from '../../store.js';
 import { examGroups, groupStudentsOf } from '../../screens/scores/roster';
-import { openProfielModal } from '../profiel.js';
+import { openProfielModal } from '../profile';
 import { allHistHtml, boxHtml, verdelingHtml, vraagHtml } from './charts';
 import { loadExamOverview, type BestEntry, type ExamOverviewData } from './data';
 import { resultatenHtml } from './resultaten';

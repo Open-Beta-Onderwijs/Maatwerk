@@ -260,3 +260,67 @@ test.describe('PO overview (board 43)', () => {
     );
   });
 });
+
+test.describe('student profile (board 44)', () => {
+  async function openProfile(page: Page) {
+    await page.goto('/');
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await screen(page, 'leerlingen');
+    await page.locator('[data-action="profile"]').first().click();
+    const d = page.locator('.modal-profile');
+    await expect(d.locator('.pf-bars__slot').first()).toBeVisible();
+    return d;
+  }
+
+  test('Cijferverloop: bars per test, a PO tooltip with its build-up, the comparisons', async ({
+    page,
+  }) => {
+    const d = await openProfile(page);
+    await expect(d.locator('.dlg-title')).toHaveText("D'Angelo O'Neill");
+    await expect(d.locator('.dlg-badge')).toHaveText('3a');
+    await expect(d.locator('.pf-bars__year')).toContainText(['2025-2026 · jaarlaag 3']);
+    // No toetsgemiddelde in the bar chart: one bar per test.
+    const slots = d.locator('.pf-bars__slot');
+    await expect(d.locator('.pf-bar')).toHaveCount(await slots.count());
+    // The PO (309): Valtoren 8,8 with the group line −0,5.
+    const po = d.locator('.pf-bars__badges .test-badge--se-po');
+    const i = await d
+      .locator('.pf-bars__badge')
+      .evaluateAll(
+        (els, el) => els.findIndex((e) => e.contains(el as Node)),
+        await po.elementHandle(),
+      );
+    await slots.nth(i).hover();
+    const tip = page.locator('.ov-tip');
+    await expect(tip.locator('.ov-tip__head')).toHaveText('309 PO Onderzoek valbeweging');
+    await expect(tip).toContainText('Cijfer 8,3 · projectgroep Valtoren 8,8 · groep −0,5');
+    await expect(tip).toContainText('Theorie: 6 / 8');
+    await expect(tip).toContainText('Samenwerken (diagnostisch): 3 / 3');
+    // Bovenbouw has no tests for a jaarlaag-3 student.
+    await d.locator('.pf-tog[data-bouw="bovenbouw"]').click();
+    await expect(d.locator('.pf-bars-host')).toContainText('Geen cijfers in deze bouw.');
+    // Per test: the student against the test average ± SD; per year against the jaarlaag.
+    await expect(d.locator('.pf-tests-host .pf-dumb__sd').first()).toBeAttached();
+    await expect(d.locator('.pf-years-host .pf-dumb__title')).toContainText([
+      '2025-2026 · jaarlaag 3',
+    ]);
+  });
+
+  test('Analyse: an RTTI card per test without the PO, Gemiddeld, observaties', async ({
+    page,
+  }) => {
+    const d = await openProfile(page);
+    await d.locator('[data-tab="analyse"]').click();
+    await expect(d.locator('.pf-rcard--avg .ov-card__title')).toHaveText(
+      'Gemiddeld 2025-2026 · jaarlaag 3',
+    );
+    await expect(d.locator('#tab-analyse .ov-note')).toContainText(
+      '309 PO Onderzoek valbeweging is een praktische opdracht',
+    );
+    await expect(d.locator('#tab-analyse .test-badge--se-po')).toHaveCount(0);
+    await d.locator('.pf-tog[data-rtti="se"]').click();
+    await expect(d.locator('.pf-rcard--avg .ov-card__title')).toHaveText('Gemiddeld examendossier');
+    await expect(d.locator('#tab-analyse .ov-heat')).toBeVisible();
+  });
+});

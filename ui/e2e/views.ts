@@ -251,6 +251,23 @@ export const VIEWS: View[] = [
       await expect(p.locator('.dlg--po-grade #po-gr-points')).toContainText('8,3');
     },
   },
+  // Step 29c: the PO overview (board 43), every tab; Resultaten also Per projectgroep.
+  ...['resultaten', 'groep', 'cijferverdeling', 'boxplot', 'categorieen', 'observaties'].map(
+    (tab): View => ({
+      name: `modal-po-overzicht-${tab}`,
+      user: 'teacher',
+      target: 'modal',
+      seed: (p) => poSeed(p, { grading: true }),
+      open: async (p) => {
+        await screen(p, 'toetsen');
+        await p.locator('[data-exam-card="po-valbeweging"] .exam-card-btn').click();
+        const d = p.locator('.modal-po-overview');
+        await expect(d.locator('.po-ov-table')).toBeVisible();
+        if (tab === 'groep') await d.getByRole('button', { name: 'Per projectgroep' }).click();
+        else if (tab !== 'resultaten') await d.locator(`[data-tab="${tab}"]`).click();
+      },
+    }),
+  ),
   {
     name: 'exam-menu',
     user: 'teacher',
