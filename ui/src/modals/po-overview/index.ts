@@ -11,6 +11,7 @@ import { checkRubric, totalsText } from '../../domain/rubric';
 import type { Observatie, Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
 import { examBadgeHtml } from '../../overview/common';
+import { keepNameColumnFitted } from '../../overview/fit-name';
 import type { HistStep } from '../../overview/histogram';
 import { installGradeTips } from '../../overview/tooltip';
 import { Store } from '../../store.js';
@@ -79,8 +80,10 @@ export async function openPoOverviewModal(
     const pane = root.querySelector<HTMLElement>(`#tab-${tab}`);
     if (!pane) return;
     rendered.add(tab);
-    if (tab === 'resultaten') pane.innerHTML = resultatenHtml(model, view);
-    else if (tab === 'cijferverdeling') pane.innerHTML = verdelingHtml(model, step);
+    if (tab === 'resultaten') {
+      pane.innerHTML = resultatenHtml(model, view);
+      keepNameColumnFitted(pane);
+    } else if (tab === 'cijferverdeling') pane.innerHTML = verdelingHtml(model, step);
     else if (tab === 'boxplot') pane.innerHTML = boxHtml(model);
     else if (tab === 'categorieen') pane.innerHTML = categorieenHtml(model);
     else pane.innerHTML = observatiesHtml(model, allObs);

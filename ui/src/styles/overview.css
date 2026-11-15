@@ -851,8 +851,9 @@ html[data-theme='dark'] .ov-tip__mute {
   padding-right: 24px;
   padding-left: 8px;
 }
-/* A wide name column, like the group overview's: clear air before the second column; it
-   shrinks in a narrow window (360px from a window of 1000px). */
+/* A wide name column, like the group overview's: clear air before the second column. In a
+   narrow window `overview/fit-name.ts` gives it the room the pane has left; this is the
+   fallback until then. */
 .ov-table.xo-table thead th.ov-name-th,
 .ov-table.po-ov-table thead th.ov-name-th {
   min-width: clamp(160px, calc(100vw - 640px), 360px);

@@ -14,6 +14,7 @@ import { stats } from '../../domain/statistics';
 import type { Exam, ScoreRecord, Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
 import { emptyHtml, examBadgeHtml, LOAD_FAILED } from '../../overview/common';
+import { keepNameColumnFitted } from '../../overview/fit-name';
 import type { HistStep } from '../../overview/histogram';
 import { Store } from '../../store.js';
 import { examGroups, groupStudentsOf } from '../../screens/scores/roster';
@@ -93,6 +94,7 @@ export async function openExamOverviewModal(
         students: groupStudentsOf(g, students),
       }));
       pane.innerHTML = resultatenHtml(d, sections, nameOf);
+      keepNameColumnFitted(pane);
     } else if (tab === 'cijferverdeling') pane.innerHTML = verdelingHtml(d, step);
     else if (tab === 'boxplots') pane.innerHTML = boxHtml(d, nameOf);
     else if (tab === 'vraaganalyse') pane.innerHTML = vraagHtml(d);

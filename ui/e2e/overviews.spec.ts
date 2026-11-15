@@ -3,7 +3,7 @@
 // The overview modals of step 29 (design spec 3.10, 4.5, 4.6; boards 45, 46): tabs, the grade
 // tooltip, the resit dot and the Stapgrootte toggle.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { login, seedFiles } from './helpers';
 import { PO_ID, poSeed } from './po-seed';
 import { screen } from './views';
@@ -132,12 +132,7 @@ test.describe('exam overview (board 46)', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     const d = await openExamOverview(page);
-    const nameTh = d.locator('.xo-table thead th.ov-name-th');
-    expect((await nameTh.boundingBox())!.width).toBeGreaterThanOrEqual(360);
-    await page.setViewportSize({ width: 800, height: 800 });
-    await expect.poll(async () => (await nameTh.boundingBox())!.width).toBeLessThan(200);
-    const pane = d.locator('.xo-pane').first();
-    expect(await pane.evaluate((p) => p.scrollWidth <= p.clientWidth)).toBe(true);
+    await expectNameColumn(d, '.xo-table');
   });
 
   test('the Stapgrootte toggle switches Alle leerlingen between 18 and 10 bins', async ({
@@ -206,6 +201,29 @@ test.describe('exam overview (board 46)', () => {
   });
 });
 
+/**
+ * The name column of `table` (user 2026-11-15): 360px in a 1280px window; at 800px it takes the
+ * room left, so the table fills the pane without scrolling; back to 360px when wide again.
+ */
+async function expectNameColumn(d: Locator, table: string) {
+  const page = d.page();
+  const th = d.locator(`${table} thead th.ov-name-th`);
+  const width = async () => Math.round((await th.boundingBox())!.width);
+  const fill = () =>
+    d.locator(table).evaluate((t: HTMLElement) => {
+      const pane = t.closest<HTMLElement>('.tab-pane')!;
+      return { over: pane.scrollWidth - pane.clientWidth, gap: pane.clientWidth - t.offsetWidth };
+    });
+  expect(await width()).toBe(360);
+  await page.setViewportSize({ width: 800, height: 800 });
+  await expect.poll(width).toBeLessThan(360);
+  const f = await fill();
+  expect(f.over).toBe(0);
+  expect(f.gap).toBeLessThanOrEqual(2);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect.poll(width).toBe(360);
+}
+
 async function openPoOverview(page: Page) {
   await page.goto('/');
   await seedFiles(page, await poSeed(page, { grading: true }));
@@ -260,6 +278,14 @@ test.describe('PO overview (board 43)', () => {
     ]);
     await expect(tip.locator('.ov-tip__rows')).toContainText('Theorie6 / 8');
     await expect(tip.locator('.ov-tip__rows')).toContainText('Samenwerken (diagnostisch)3 / 3');
+  });
+
+  test('the name column is 360px wide, narrower in a narrow window so the table fits', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const d = await openPoOverview(page);
+    await expectNameColumn(d, '.po-ov-table');
   });
 
   test('every tab renders: verdeling, boxplot, categorieën, observaties', async ({ page }) => {

@@ -72,7 +72,8 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
     seed without a PO). Third round: the observatie triangle sits inside the pill's square
     corner (flush, no overhang; 9px with the border after the fourth round); more column
     padding (10px) in both tables; fourth round: the name column at least 360px (as the group
-    overview's), shrinking to 160px in a window below 1000px (e2e test at 1280 and 800).
+    overview's); in a narrower pane `overview/fit-name.ts` gives it the room left beside the
+    other columns (never below the names), so the table fills the pane (e2e test at 1280/800).
 
 **Next action:** STOP (user): look at the new screenshots; then update the visual baselines,
 merge, tag `step-29`, release 0.20.
