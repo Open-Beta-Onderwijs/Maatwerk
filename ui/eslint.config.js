@@ -55,7 +55,6 @@ export default defineConfig(
         Store: 'readonly',
         qKind: 'readonly',
         CustomSelect: 'readonly',
-        Chart: 'readonly',
       },
     },
     rules: {

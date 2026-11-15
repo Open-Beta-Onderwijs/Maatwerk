@@ -221,7 +221,7 @@ export function modalOpen() {
  */
 export function openModal({ onShow, ...opts }) {
   const prev = currentModal();
-  // U15: the replaced modal closes properly (cleanups, charts, its onClose).
+  // U15: the replaced modal closes properly (cleanups, its onClose).
   if (opts.key && prev?.key === opts.key) prev.close();
   const d = openDialog({
     ...opts,
@@ -234,7 +234,7 @@ export function openModal({ onShow, ...opts }) {
     },
   });
   _modals.push(d);
-  // Before any measuring (charts): see src/legacy/style-data.ts.
+  // Before any measuring: see src/legacy/style-data.ts.
   applyStyleData(d.el);
   // After the push, so guardModalClose/onModalSync inside act on this modal.
   onShow?.(d.el, d);
@@ -249,18 +249,6 @@ export function closeModal() {
 /** Close the current modal through its close guard (like ✕). */
 export function requestCloseModal() {
   return currentModal()?.requestClose() ?? Promise.resolve(false);
-}
-
-/** Register a Chart.js instance to be destroyed when the current modal closes. */
-export function pushModalChart(chart) {
-  const d = currentModal();
-  const destroy = () => {
-    try {
-      chart.destroy();
-    } catch (_) {}
-  };
-  if (d) d.onCleanup(destroy);
-  else destroy();
 }
 
 // ── Unsaved changes ───────────────────────────────────────────────────────────

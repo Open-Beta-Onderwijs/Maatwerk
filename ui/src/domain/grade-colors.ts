@@ -4,7 +4,7 @@
 //
 // - Text colours return CSS that follows the theme (token mixes), for DOM
 //   only (data-color, element.style).
-// - Bar colours are theme-independent hex, also for Chart.js canvases.
+// - Bar colours are theme-independent hex.
 // - Cell backgrounds are the score-entry grid's red-yellow-green fills.
 //
 // Pass is from 5,5 after rounding to one decimal; the pass gradients run

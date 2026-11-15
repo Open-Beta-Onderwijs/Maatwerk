@@ -151,18 +151,7 @@ export function installLook(dev: boolean): void {
   });
 }
 
-/** Colours for text and grid lines drawn on a chart canvas (follow the theme). */
-export function chartInk() {
-  return {
-    text: cssToken('--text'),
-    muted: cssToken('--muted'),
-    disabled: cssToken('--disabled'),
-    grid: cssToken('--border'),
-    gridMinor: cssToken('--line'),
-  };
-}
-
-/** The current value of a colour token, for canvases (Chart.js) that cannot use var(). */
+/** The current value of a colour token, for values that cannot use var() (colour mixing in code). */
 export function cssToken(name: string, root: HTMLElement = document.documentElement): string {
   if (root !== document.documentElement)
     return getComputedStyle(root).getPropertyValue(name).trim();
