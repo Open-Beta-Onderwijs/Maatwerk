@@ -903,6 +903,13 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   the proxy; builds are not reproducible (version drift). The main window similarly runs jsdelivr
   scripts with full `window.rtti` access and no SRI (`index.html:308-310`).
 - Dead branch: `rtti-render-assignment` (`modals/editor.js:68-70`) is never sent by the editor.
+- **Fixed (step 31, ROADMAP 4.6 "Refactor"):** CodeMirror is bundled from npm since step 3 (no
+  CDN). The proxy is `modals/editor.ts` with typed messages (`editor/protocol.ts`): the iframe
+  names one of its opdracht's three files (`opdracht.typ`, `main.typ`, `lib.typ`) and the main
+  window builds the path for the opdracht it opened; the image calls always use that opdracht;
+  unknown message types are answered with an error; the iframe accepts answers only from
+  `window.parent`. The unused `maatwerk-read-text` (no hash) is gone. Test: e2e
+  `editor-shell.spec` "U10".
 
 ### U11. Filter popover "Alles/Niets" listeners pile up on every login
 

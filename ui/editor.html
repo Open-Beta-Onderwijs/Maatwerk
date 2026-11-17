@@ -7,228 +7,36 @@
     <link rel="stylesheet" href="/src/editor.css" />
   </head>
   <body>
-    <div id="editor-topbar">
-      <button id="btn-app-title" title="Terug naar de opdrachtenlijst">Maatwerk</button>
-      <span id="editor-title"
-        >Opdracht bewerken: <strong><em id="editor-title-naam"></em></strong
-      ></span>
-      <span id="editor-status"></span>
+    <header id="editor-topbar">
+      <button id="btn-app-title" class="editor-back" type="button">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M19 12H5M11 6l-6 6 6 6"></path>
+        </svg>
+        Terug naar opdrachten
+      </button>
+      <span class="editor-topbar-sep" aria-hidden="true"></span>
+      <div class="editor-heading">
+        <h1 id="editor-title-naam"></h1>
+        <span id="editor-subtitle">Opdracht</span>
+      </div>
+      <span class="editor-topbar-spacer"></span>
+      <div id="editor-status" class="status-pill" role="status" aria-live="polite"></div>
       <button
         id="editor-badge-btn"
         class="avatar avatar--30 avatar--round avatar--ring-accent"
         aria-label="Gebruikersmenu"
       ></button>
-    </div>
-    <div id="editor-toolbar">
-      <!-- Group 1: Text formatting -->
-      <div class="tb-group" id="tb-text">
-        <button class="tb-btn" data-action="bold" title="Vet"><b>B</b></button>
-        <button class="tb-btn" data-action="italic" title="Cursief"><i>I</i></button>
-        <button class="tb-btn" data-action="underline" title="Onderstrepen"><u>U</u></button>
-        <button
-          class="tb-btn"
-          data-action="more-text"
-          title="Meer opties"
-          data-popup="popup-more-text"
-        >
-          ···
-        </button>
-      </div>
-      <div id="popup-more-text" class="tb-popup" data-display="none">
-        <div class="tb-popup-grid">
-          <button class="tb-btn" data-action="overline" title="Bovenlijn">Ā</button>
-          <button class="tb-btn" data-action="strike" title="Doorhalen"><s>S</s></button>
-          <button class="tb-btn" data-action="highlight" title="Markeren">
-            <span class="tb-icon-highlight">A</span>
-          </button>
-          <button class="tb-btn" data-action="lower" title="Kleine letters">↓a</button>
-          <button class="tb-btn" data-action="upper" title="Hoofdletters">↑A</button>
-          <button class="tb-btn" data-action="smallcaps" title="Kleine kapitalen">Aᴀ</button>
-          <button class="tb-btn" data-action="sub" title="Subscript">x₂</button>
-          <button class="tb-btn" data-action="super" title="Superscript">x²</button>
-          <button class="tb-btn" data-action="quote" title="Citaat">“ ”</button>
-        </div>
-      </div>
-
-      <div class="tb-divider"></div>
-
-      <!-- Group 2: Block & structure -->
-      <div class="tb-group" id="tb-block">
-        <button class="tb-btn" data-action="list" title="Opsomming">•≡</button>
-        <button class="tb-btn" data-action="enumerate" title="Genummerde lijst">1≡</button>
-        <button class="tb-btn" data-action="math" title="Wiskundige formule">$x$</button>
-        <button class="tb-btn" data-action="codeblock" title="Codeblok">&lt;/&gt;</button>
-        <button
-          class="tb-btn"
-          data-action="reference"
-          title="Verwijzing"
-          data-popup="popup-reference"
-        >
-          @
-        </button>
-      </div>
-      <div id="popup-reference" class="tb-popup" data-display="none">
-        <div class="tb-ref-panel">
-          <div class="tb-ref-list" id="ref-list"></div>
-        </div>
-      </div>
-
-      <div class="tb-divider"></div>
-
-      <!-- Group 2a: Content blocks -->
-      <div class="tb-group" id="tb-blocks">
-        <button class="tb-btn tb-btn-wide" data-action="blok-formule" title="Formule-blok">
-          🧮
-        </button>
-        <button class="tb-btn tb-btn-wide" data-action="blok-voorbeeld" title="Voorbeeld-blok">
-          💡
-        </button>
-        <button class="tb-btn tb-btn-wide" data-action="blok-context" title="Context-blok">
-          📖
-        </button>
-        <button class="tb-btn tb-btn-wide" data-action="blok-belangrijk" title="Belangrijk-blok">
-          ❗
-        </button>
-      </div>
-
-      <div class="tb-divider"></div>
-
-      <!-- Group 2a': Exercises -->
-      <div class="tb-group" id="tb-opgaven">
-        <button class="tb-btn tb-btn-wide" data-action="opgave-add" title="Nieuwe opgave">
-          ➕
-        </button>
-        <button class="tb-btn tb-btn-wide" data-action="vraag-add" title="Nieuwe vraag">❓</button>
-      </div>
-
-      <div class="tb-divider"></div>
-
-      <!-- Group 2b: Insert -->
-      <div class="tb-group" id="tb-insert">
-        <button class="tb-btn tb-btn-wide" data-action="figure" title="Figuur toevoegen">🖼️</button>
-        <button
-          class="tb-btn tb-btn-wide"
-          data-action="tabel-open"
-          data-popup="popup-tabel"
-          title="Nieuwe tabel…"
-        >
-          🗓️
-        </button>
-        <button
-          class="tb-btn tb-btn-wide"
-          data-action="grid-open"
-          data-popup="popup-grid"
-          title="Nieuw grid…"
-        >
-          🪟
-        </button>
-      </div>
-      <div id="popup-figure" class="tb-popup" data-display="none">
-        <div class="tb-fig-panel"></div>
-      </div>
-      <div id="popup-tabel" class="tb-popup" data-display="none"></div>
-      <div id="popup-grid" class="tb-popup" data-display="none"></div>
-
-      <div class="tb-divider"></div>
-
-      <!-- Group 3: Math elements -->
-      <div class="tb-group" id="tb-math">
-        <button class="tb-btn" data-action="math-accent" title="Accent">â</button>
-        <button class="tb-btn" data-action="math-binom" title="Binomiaalcoëfficiënt">(ⁿₖ)</button>
-        <button class="tb-btn" data-action="math-cancel" title="Doorstrepen">x̸</button>
-        <button class="tb-btn" data-action="math-cases" title="Gevallen">{⋯</button>
-        <button
-          class="tb-btn tb-math-extra"
-          data-action="math-numeq"
-          title="Genummerde vergelijking"
-        >
-          (1)
-        </button>
-        <button class="tb-btn tb-math-extra" data-action="math-frac" title="Breuk">½</button>
-        <button class="tb-btn tb-math-extra" data-action="math-lr" title="Haakjes aanpassen">
-          ⟨⟩
-        </button>
-        <button class="tb-btn tb-math-extra" data-action="math-mat" title="Matrix">(⋱)</button>
-        <button class="tb-btn tb-math-extra" data-action="math-primes" title="Priemnotatie">
-          f′
-        </button>
-        <button class="tb-btn tb-math-extra" data-action="math-root" title="Wortel">ⁿ√</button>
-        <button class="tb-btn tb-math-extra" data-action="math-sizes" title="Formaat">↕</button>
-        <button class="tb-btn tb-math-extra" data-action="math-op" title="Tekstoperator">
-          sin
-        </button>
-        <button
-          class="tb-btn tb-math-extra"
-          data-action="math-variants"
-          title="Lettertypevarianten"
-        >
-          𝔸
-        </button>
-        <button class="tb-btn tb-math-extra" data-action="math-vec" title="Vector">(⋮)</button>
-        <button
-          class="tb-btn tb-math-more"
-          data-action="math-more"
-          data-popup="popup-math-extra"
-          title="Meer wiskundige elementen"
-        >
-          ···
-        </button>
-      </div>
-      <div id="popup-math-extra" class="tb-popup" data-display="none">
-        <div class="u-grid-4x28 tb-popup-grid">
-          <button class="tb-btn" data-action="math-numeq" title="Genummerde vergelijking">
-            (1)
-          </button>
-          <button class="tb-btn" data-action="math-frac" title="Breuk">½</button>
-          <button class="tb-btn" data-action="math-lr" title="Haakjes aanpassen">⟨⟩</button>
-          <button class="tb-btn" data-action="math-mat" title="Matrix">(⋱)</button>
-          <button class="tb-btn" data-action="math-primes" title="Priemnotatie">f′</button>
-          <button class="tb-btn" data-action="math-root" title="Wortel">ⁿ√</button>
-          <button class="tb-btn" data-action="math-sizes" title="Formaat">↕</button>
-          <button class="tb-btn" data-action="math-op" title="Tekstoperator">sin</button>
-          <button class="tb-btn" data-action="math-variants" title="Lettertypevarianten">𝔸</button>
-          <button class="tb-btn" data-action="math-vec" title="Vector">(⋮)</button>
-        </div>
-      </div>
-
-      <div class="tb-divider"></div>
-
-      <!-- Group 4: Symbol pickers -->
-      <div class="tb-group" id="tb-symbols">
-        <button
-          class="tb-btn"
-          data-action="sym-letterlike"
-          title="Letterachtige symbolen"
-          data-popup="popup-sym-letterlike"
-        >
-          ℝ
-        </button>
-        <button
-          class="tb-btn"
-          data-action="sym-math"
-          title="Wiskundige symbolen"
-          data-popup="popup-sym-math"
-        >
-          ∈
-        </button>
-        <button
-          class="tb-btn"
-          data-action="sym-misc"
-          title="Overige symbolen"
-          data-popup="popup-sym-misc"
-        >
-          ☆
-        </button>
-        <button class="tb-btn" data-action="sym-emoji" title="Emoji" data-popup="popup-sym-emoji">
-          🙂
-        </button>
-      </div>
-      <div id="popup-sym-letterlike" class="tb-popup" data-display="none"></div>
-      <div id="popup-sym-math" class="tb-popup" data-display="none"></div>
-      <div id="popup-sym-misc" class="tb-popup" data-display="none"></div>
-      <div id="popup-sym-emoji" class="tb-popup" data-display="none"></div>
-    </div>
-
+    </header>
     <div id="conflict-bar" role="alert" data-display="none">
       <span
         >Intussen gewijzigd door een collega. Jouw wijzigingen sinds die tijd zijn niet
@@ -238,7 +46,266 @@
       <button id="btn-conflict-copy">Mijn versie bewaren als kopie</button>
     </div>
     <div id="editor-body">
-      <div id="editor-left">
+      <section id="editor-left" aria-label="Editor">
+        <div id="editor-toolbar" role="toolbar" aria-label="Opmaak">
+          <div class="tb-group" id="tb-text">
+            <button class="tb-btn" data-action="bold" title="Vet"><b>B</b></button>
+            <button class="tb-btn" data-action="italic" title="Cursief"><i>I</i></button>
+            <button class="tb-btn" data-action="underline" title="Onderstrepen"><u>U</u></button>
+            <button
+              class="tb-btn"
+              data-action="more-text"
+              title="Meer opties"
+              data-popup="popup-more-text"
+              aria-haspopup="true"
+            >
+              ⋯
+            </button>
+          </div>
+          <div id="popup-more-text" class="tb-popup" data-display="none">
+            <div class="tb-popup-grid">
+              <button class="tb-btn" data-action="overline" title="Bovenlijn">Ā</button>
+              <button class="tb-btn" data-action="strike" title="Doorhalen"><s>S</s></button>
+              <button class="tb-btn" data-action="highlight" title="Markeren">
+                <span class="tb-icon-highlight">A</span>
+              </button>
+              <button class="tb-btn" data-action="lower" title="Kleine letters">↓a</button>
+              <button class="tb-btn" data-action="upper" title="Hoofdletters">↑A</button>
+              <button class="tb-btn" data-action="smallcaps" title="Kleine kapitalen">Aᴀ</button>
+              <button class="tb-btn" data-action="sub" title="Subscript">x₂</button>
+              <button class="tb-btn" data-action="super" title="Superscript">x²</button>
+              <button class="tb-btn" data-action="quote" title="Citaat">“ ”</button>
+            </div>
+          </div>
+
+          <span class="tb-divider" aria-hidden="true"></span>
+
+          <div class="tb-group" id="tb-block">
+            <button class="tb-btn" data-action="list" title="Opsomming">•≡</button>
+            <button class="tb-btn" data-action="enumerate" title="Genummerde lijst">1≡</button>
+            <button class="tb-btn" data-action="math" title="Wiskundige formule">$x$</button>
+            <button class="tb-btn" data-action="codeblock" title="Codeblok">&lt;/&gt;</button>
+            <button
+              class="tb-btn"
+              data-action="reference"
+              title="Verwijzing"
+              data-popup="popup-reference"
+              aria-haspopup="true"
+            >
+              @
+            </button>
+          </div>
+          <div id="popup-reference" class="tb-popup" data-display="none">
+            <div class="tb-ref-panel">
+              <div class="tb-ref-list" id="ref-list"></div>
+            </div>
+          </div>
+
+          <span class="tb-divider" aria-hidden="true"></span>
+
+          <div class="tb-group" id="tb-blocks">
+            <button class="tb-btn tb-btn-text" data-action="blok-formule" title="Formule-blok">
+              <span class="tb-swatch tb-swatch--formule" aria-hidden="true"></span>Formule
+            </button>
+            <button class="tb-btn tb-btn-text" data-action="blok-voorbeeld" title="Voorbeeld-blok">
+              <span class="tb-swatch tb-swatch--voorbeeld" aria-hidden="true"></span>Voorbeeld
+            </button>
+            <button class="tb-btn tb-btn-text" data-action="blok-context" title="Context-blok">
+              <span class="tb-swatch tb-swatch--context" aria-hidden="true"></span>Context
+            </button>
+            <button
+              class="tb-btn tb-btn-text"
+              data-action="blok-belangrijk"
+              title="Belangrijk-blok"
+            >
+              <span class="tb-swatch tb-swatch--belangrijk" aria-hidden="true"></span>Belangrijk
+            </button>
+          </div>
+
+          <span class="tb-divider" aria-hidden="true"></span>
+
+          <div class="tb-group" id="tb-opgaven">
+            <button
+              class="tb-btn tb-btn-text tb-btn-accent"
+              data-action="opgave-add"
+              title="Nieuwe opgave"
+            >
+              + Opgave
+            </button>
+            <button
+              class="tb-btn tb-btn-text tb-btn-accent"
+              data-action="vraag-add"
+              title="Nieuwe vraag"
+            >
+              + Vraag
+            </button>
+          </div>
+
+          <span class="tb-divider" aria-hidden="true"></span>
+
+          <div class="tb-group" id="tb-insert">
+            <button class="tb-btn tb-btn-text" data-action="figure" title="Figuur toevoegen">
+              Figuur
+            </button>
+            <button
+              class="tb-btn tb-btn-text"
+              data-action="tabel-open"
+              data-popup="popup-tabel"
+              title="Nieuwe tabel"
+              aria-haspopup="true"
+            >
+              Tabel
+            </button>
+            <button
+              class="tb-btn tb-btn-text"
+              data-action="grid-open"
+              data-popup="popup-grid"
+              title="Nieuw grid"
+              aria-haspopup="true"
+            >
+              Grid
+            </button>
+          </div>
+          <div id="popup-figure" class="tb-popup" data-display="none">
+            <div class="tb-fig-panel"></div>
+          </div>
+          <div id="popup-tabel" class="tb-popup" data-display="none"></div>
+          <div id="popup-grid" class="tb-popup" data-display="none"></div>
+
+          <span class="tb-divider" aria-hidden="true"></span>
+
+          <div class="tb-group" id="tb-menus">
+            <button
+              class="tb-btn tb-btn-text"
+              data-action="menu-wiskunde"
+              data-popup="popup-wiskunde"
+              title="Wiskundige elementen"
+              aria-haspopup="menu"
+            >
+              Wiskunde ▾
+            </button>
+            <button
+              class="tb-btn tb-btn-text"
+              data-action="menu-symbolen"
+              data-popup="popup-symbolen"
+              title="Symbolen"
+              aria-haspopup="menu"
+            >
+              Symbolen ▾
+            </button>
+            <button
+              class="tb-btn tb-btn-text"
+              data-action="menu-opmaak"
+              data-popup="popup-opmaak"
+              title="Opmaak van formules: formaat, lettertype, operator"
+              aria-haspopup="menu"
+            >
+              Opmaak ▾
+            </button>
+          </div>
+          <div
+            id="popup-wiskunde"
+            class="tb-popup tb-menu"
+            role="menu"
+            aria-label="Wiskundige elementen"
+            data-display="none"
+          >
+            <button class="tb-btn tb-menu-item" data-action="math-frac" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">½</span>Breuk
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-root" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">ⁿ√</span>Wortel
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-accent" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">â</span>Accent
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-binom" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">(ⁿₖ)</span>Binomiaalcoëfficiënt
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-cancel" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">x̸</span>Doorstrepen
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-cases" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">{⋯</span>Gevallen
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-numeq" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">(1)</span>Genummerde vergelijking
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-lr" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">⟨⟩</span>Haakjes aanpassen
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-mat" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">(⋱)</span>Matrix
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-primes" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">f′</span>Priemnotatie
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-vec" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">(⋮)</span>Vector
+            </button>
+          </div>
+          <div
+            id="popup-symbolen"
+            class="tb-popup tb-menu"
+            role="menu"
+            aria-label="Symbolen"
+            data-display="none"
+          >
+            <button
+              class="tb-btn tb-menu-item"
+              data-action="sym-letterlike"
+              data-popup="popup-sym-letterlike"
+              role="menuitem"
+            >
+              <span class="tb-menu-icon" aria-hidden="true">ℝ</span>Letterachtige symbolen
+            </button>
+            <button
+              class="tb-btn tb-menu-item"
+              data-action="sym-math"
+              data-popup="popup-sym-math"
+              role="menuitem"
+            >
+              <span class="tb-menu-icon" aria-hidden="true">∈</span>Wiskundige symbolen
+            </button>
+            <button
+              class="tb-btn tb-menu-item"
+              data-action="sym-misc"
+              data-popup="popup-sym-misc"
+              role="menuitem"
+            >
+              <span class="tb-menu-icon" aria-hidden="true">☆</span>Overige symbolen
+            </button>
+            <button
+              class="tb-btn tb-menu-item"
+              data-action="sym-emoji"
+              data-popup="popup-sym-emoji"
+              role="menuitem"
+            >
+              <span class="tb-menu-icon" aria-hidden="true">🙂</span>Emoji
+            </button>
+          </div>
+          <div
+            id="popup-opmaak"
+            class="tb-popup tb-menu"
+            role="menu"
+            aria-label="Opmaak van formules"
+            data-display="none"
+          >
+            <button class="tb-btn tb-menu-item" data-action="math-sizes" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">↕</span>Formaat
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-variants" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">𝔸</span>Lettertypevarianten
+            </button>
+            <button class="tb-btn tb-menu-item" data-action="math-op" role="menuitem">
+              <span class="tb-menu-icon" aria-hidden="true">sin</span>Tekstoperator
+            </button>
+          </div>
+          <div id="popup-sym-letterlike" class="tb-popup" data-display="none"></div>
+          <div id="popup-sym-math" class="tb-popup" data-display="none"></div>
+          <div id="popup-sym-misc" class="tb-popup" data-display="none"></div>
+          <div id="popup-sym-emoji" class="tb-popup" data-display="none"></div>
+        </div>
         <div id="file-tabs" role="tablist" aria-label="Bestanden van de opdracht">
           <button class="file-tab active" role="tab" data-file="opdracht.typ">opdracht.typ</button>
           <button
@@ -255,12 +322,21 @@
         </div>
         <div id="file-banner" role="note" data-display="none"></div>
         <div id="cm-container"></div>
+      </section>
+      <div
+        id="editor-divider"
+        aria-label="Breedte editor en voorbeeld"
+        title="Sleep om de breedte te wijzigen; dubbelklik voor 50%"
+      >
+        <span class="divider-grip" aria-hidden="true"></span>
       </div>
-      <div id="pdf-panel">
+      <section id="pdf-panel" aria-label="Voorbeeld">
         <div id="preview-bar">
-          <button class="pv-btn" id="pv-zoom-out" title="Uitzoomen">−</button>
+          <button class="pv-btn" id="pv-zoom-out" title="Uitzoomen" aria-label="Uitzoomen">
+            −
+          </button>
           <span id="pv-zoom-label">100%</span>
-          <button class="pv-btn" id="pv-zoom-in" title="Inzoomen">+</button>
+          <button class="pv-btn" id="pv-zoom-in" title="Inzoomen" aria-label="Inzoomen">+</button>
           <button class="pv-btn" id="pv-fit-width" title="Paginabreedte">Paginabreedte</button>
           <span class="pv-spacer"></span>
           <button
@@ -275,7 +351,7 @@
         <div id="vragen-panel" data-display="none"></div>
         <div id="pdf-placeholder">Bezig met renderen…</div>
         <div id="svg-viewer" data-display="none"></div>
-      </div>
+      </section>
     </div>
     <div
       id="diff-modal"

@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
-import { isSchoolYear, savedActiveYear, savedLook, withPreferences } from './preferences';
+import {
+  clampEditorSplit,
+  isSchoolYear,
+  savedActiveYear,
+  savedEditorSplit,
+  savedLook,
+  withPreferences,
+} from './preferences';
 
 describe('preferences (F-18, F-21)', () => {
   it('reads a saved look; none saved is null', () => {
@@ -42,5 +49,17 @@ describe('preferences (F-18, F-21)', () => {
       preferences: { theme: 'dark', editorSplit: 0.4, accent: 'groen' },
     });
     expect(user.preferences).toEqual({ theme: 'dark', editorSplit: 0.4 }); // not changed
+  });
+});
+
+describe('editor divider position (F-16)', () => {
+  it('reads a saved split between 25% and 75%; anything else is not set', () => {
+    expect(savedEditorSplit({ preferences: { editorSplit: 0.4 } })).toBe(0.4);
+    expect(savedEditorSplit({ preferences: { editorSplit: 0.9 } })).toBe(0.75);
+    expect(savedEditorSplit({ preferences: { editorSplit: 0.1 } })).toBe(0.25);
+    expect(savedEditorSplit({ preferences: { editorSplit: '0.4' } })).toBeNull();
+    expect(savedEditorSplit({ preferences: { editorSplit: Number.NaN } })).toBeNull();
+    expect(savedEditorSplit({})).toBeNull();
+    expect(clampEditorSplit(0.4567)).toBe(0.46);
   });
 });

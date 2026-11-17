@@ -6,7 +6,7 @@
  * Loaded as an ES module inside editor.html (which runs inside the #editor-frame
  * iframe). Does NOT have access to window.maatwerk directly; all file I/O and
  * compilation is done by posting messages to the parent window, which proxies
- * the calls via modals/editor.js. The preview comes from a live compile session
+ * the calls via modals/editor.ts (protocol: editor/protocol.ts). The preview comes from a live compile session
  * in Rust (Step 8b, editor-live.ts): edits go to it as they happen, changed
  * pages and diagnostics come back as `maatwerk-editor-update` messages.
  *
@@ -45,6 +45,8 @@ import { applyStyleData } from './legacy/style-data';
 import { renderAvatar } from './components/avatar';
 import editorCmCss from './editor-cm.css?inline';
 import { blockFileDrops } from './utils/no-file-drop';
+import { hasRenderError, initStatus, setCompiling, setStatus } from './editor/status';
+import { mountDivider } from './editor/divider';
 import {
   clickPoint,
   diagnosticsText,
@@ -102,7 +104,9 @@ function askConfirm(message, { okLabel = 'OK', danger = false } = {}) {
   );
 }
 
+// U10: only the main window answers (not another frame or a script in this one).
 window.addEventListener('message', (evt) => {
+  if (evt.source !== window.parent) return;
   const msg = evt.data;
   if (msg?.type === 'maatwerk-response' && _pending[msg.id]) {
     const { resolve, reject } = _pending[msg.id];
@@ -326,9 +330,34 @@ const opdrachtId = params.get('id') ?? '';
 const naam = params.get('naam') ?? 'Opdracht';
 const MAIN_FILE = 'opdracht.typ';
 const LAYOUT_FILES = ['main.typ', 'lib.typ'];
-const filePath = (file) => `opdrachten/${opdrachtId}/${file}`;
 
 document.getElementById('editor-title-naam').textContent = naam;
+document.title = `${naam} · Opdracht bewerken`;
+
+// The divider (F-16) starts at 50% until the saved position arrives.
+const divider = mountDivider({
+  host: document.getElementById('editor-body'),
+  left: document.getElementById('editor-left'),
+  divider: document.getElementById('editor-divider'),
+  initial: 0.5,
+  save: (split) => {
+    postToParent('maatwerk-set-split', { split }).catch((e) =>
+      console.warn('[editor] divider position not saved', e),
+    );
+  },
+  // Next frame: the first call comes before the preview code below has run.
+  onChange: () =>
+    requestAnimationFrame(() => {
+      if (zoomMode === 'fit') applyZoom();
+    }),
+});
+postToParent('maatwerk-editor-info')
+  .then((info) => {
+    if (!info) return;
+    document.getElementById('editor-subtitle').textContent = info.subtitle;
+    divider.set(info.split);
+  })
+  .catch((e) => console.warn('[editor] info', e));
 
 document.getElementById('btn-app-title').addEventListener('click', () => {
   closeAfterSave('editor-close');
@@ -354,58 +383,9 @@ let view = null;
 let dataDir = null;
 let saveTimer = null;
 
-// ── Error popover ─────────────────────────────────────────────────────────────
+// ── Status pill (F-05): editor/status.ts ──────────────────────────────────────
 
-const _popover = document.getElementById('error-popover');
-let _popoverOpen = false;
-
-function openErrorPopover(anchorEl) {
-  _popoverOpen = true;
-  _popover.style.display = '';
-  const rect = anchorEl.getBoundingClientRect();
-  const pw = Math.min(560, window.innerWidth - 20);
-  let left = rect.left;
-  if (left + pw > window.innerWidth - 10) left = window.innerWidth - pw - 10;
-  _popover.style.left = Math.max(10, left) + 'px';
-  _popover.style.top = rect.bottom + 4 + 'px';
-  _popover.style.maxWidth = pw + 'px';
-  setTimeout(() => {
-    document.addEventListener('mousedown', _dismissPopover);
-  }, 0);
-}
-
-function closeErrorPopover() {
-  _popoverOpen = false;
-  _popover.style.display = 'none';
-  document.removeEventListener('mousedown', _dismissPopover);
-}
-
-function _dismissPopover(e) {
-  if (!_popover.contains(e.target)) closeErrorPopover();
-}
-
-function setStatus(msg, errorText = null) {
-  const el = document.getElementById('editor-status');
-  closeErrorPopover();
-  if (errorText) {
-    _popover.textContent = errorText;
-    const btn = document.createElement('button');
-    btn.id = 'btn-render-error';
-    btn.textContent = msg;
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (_popoverOpen) {
-        closeErrorPopover();
-        return;
-      }
-      openErrorPopover(btn);
-    });
-    el.innerHTML = '';
-    el.appendChild(btn);
-  } else {
-    el.textContent = msg;
-  }
-}
+initStatus(document.getElementById('editor-status'), document.getElementById('error-popover'));
 
 // ── Files ─────────────────────────────────────────────────────────────────────
 // One EditorState per file (own undo history); the view shows the current one.
@@ -471,7 +451,7 @@ function renderBanner() {
 async function loadFile(file) {
   const entry = files.get(file);
   if (entry.state) return entry.state;
-  const read = await postToParent('maatwerk-read-text-versioned', { path: filePath(file) });
+  const read = await postToParent('maatwerk-read-text-versioned', { file });
   // No file yet: the first save must not overwrite one a colleague made meanwhile ('').
   entry.baseHash = read?.hash ?? '';
   entry.state = createState(stripBom(read?.text ?? ''));
@@ -645,17 +625,31 @@ let editSeq = 0; // edits sent, also those whose generation is not known yet
 let previewGeneration = null;
 let lastUpdate = null;
 
-/** A live editor bridge method through the parent (allowlist in modals/editor.js). */
+/** A live editor bridge method through the parent (allowlist in modals/editor.ts). */
 function callEditor(method, ...args) {
   return postToParent('maatwerk-editor', { method, args });
+}
+
+// F-05: compiling while an edit is on its way or its result has not come back.
+let inFlight = 0;
+let lastResult = 0; // the newest generation a result came back for
+
+function updateCompiling() {
+  setCompiling(session !== null && (inFlight > 0 || lastSent > lastResult));
 }
 
 function sendText(file, text) {
   if (session === null) return;
   editSeq += 1;
+  inFlight += 1;
+  updateCompiling();
   callEditor('editorUpdate', session, file, text)
     .then((g) => (lastSent = Math.max(lastSent, g)))
-    .catch((err) => setStatus('Fout bij renderen', err.message));
+    .catch((err) => setStatus('Fout bij renderen', err.message))
+    .finally(() => {
+      inFlight -= 1;
+      updateCompiling();
+    });
 }
 
 const liveHost = {
@@ -671,12 +665,15 @@ function applyDiagnostics() {
 }
 
 window.addEventListener('message', (evt) => {
+  if (evt.source !== window.parent) return;
   const msg = evt.data;
   if (msg?.type !== 'maatwerk-editor-update' || msg.update?.session !== session) return;
   applyUpdate(msg.update);
 });
 
 function applyUpdate(u) {
+  lastResult = Math.max(lastResult, u.generation);
+  updateCompiling();
   if (u.pages.length || u.pageCount !== svgViewer.querySelectorAll('.svg-page').length) {
     patchPages(svgViewer, u);
     if (u.pageCount > 0) {
@@ -713,7 +710,7 @@ function showCompileResult(u) {
     applyDiagnostics();
     if (u.diagnostics.some((d) => d.severity === 'error')) {
       setStatus('Fout bij renderen', diagnosticsText(u.diagnostics));
-    } else if (document.getElementById('btn-render-error')) {
+    } else if (hasRenderError()) {
       setStatus('');
     }
   };
@@ -812,25 +809,25 @@ function saveNow(file = current) {
   const content = (file === current ? view.state : entry.state).doc.toString();
   saving = saving.then(async () => {
     if (inConflict) {
-      setStatus('Niet opgeslagen: kies hierboven wat er moet gebeuren');
+      setStatus('Niet opgeslagen: kies hierboven wat er moet gebeuren', null, true);
       return false;
     }
     try {
       const writeResult = await postToParent('maatwerk-write-text', {
-        path: filePath(file),
+        file,
         content,
         expectedHash: entry.baseHash,
       });
       if (writeResult?.reason === 'conflict') {
         showConflict(true, file);
-        setStatus('Niet opgeslagen');
+        setStatus('Niet opgeslagen', null, true);
         lastSaveFailed = true;
         return false;
       }
       if (!writeResult?.ok) throw new Error('niet opgeslagen');
       entry.baseHash = writeResult.hash;
       // A compile error stays in view: saving does not fix it.
-      if (!document.getElementById('btn-render-error')) setStatus('Opgeslagen');
+      if (!hasRenderError()) setStatus('Opgeslagen');
       lastSaveFailed = false;
       return true;
     } catch (err) {
@@ -853,7 +850,7 @@ function replaceDoc(text) {
 async function loadTheirs() {
   const file = conflictFile ?? current;
   await switchTo(file);
-  const read = await postToParent('maatwerk-read-text-versioned', { path: filePath(file) });
+  const read = await postToParent('maatwerk-read-text-versioned', { file });
   replaceDoc(read?.text ?? '');
   files.get(file).baseHash = read?.hash ?? '';
   lastSaveFailed = false;
@@ -924,7 +921,7 @@ const changeListener = EditorView.updateListener.of((update) => {
     clearTimeout(errorTimer);
     sendText(current, update.state.doc.toString());
     if (replacingDoc) return;
-    setStatus('Niet opgeslagen…');
+    if (!hasRenderError()) setStatus('Niet opgeslagen…');
     scheduleSave();
   } else if (update.selectionSet) {
     scheduleCursorSync();
@@ -1210,11 +1207,15 @@ function openPopup(triggerEl, popupEl) {
     closeActivePopup();
     return;
   }
+  const menu = triggerEl.closest('.tb-popup');
+  const anchor = menu
+    ? (document.querySelector(`#editor-toolbar [data-popup="${menu.id}"]`) ?? triggerEl)
+    : triggerEl;
   closeActivePopup();
 
   // Position popup below the trigger button
   const toolbarEl = document.getElementById('editor-toolbar');
-  const triggerRect = triggerEl.getBoundingClientRect();
+  const triggerRect = anchor.getBoundingClientRect();
   const toolbarRect = toolbarEl.getBoundingClientRect();
 
   popupEl.style.display = '';
@@ -1232,7 +1233,7 @@ function openPopup(triggerEl, popupEl) {
   _activePopup = popupEl;
   setTimeout(() => {
     _dismissHandler = (e) => {
-      if (!popupEl.contains(e.target) && e.target !== triggerEl) {
+      if (!popupEl.contains(e.target) && !anchor.contains(e.target)) {
         closeActivePopup();
       }
     };
@@ -1509,7 +1510,7 @@ function showFigurePopup() {
 
 // First free "afbeelding-N" for a pasted image.
 async function nextImageName() {
-  const images = (await askParent('maatwerk-list-images', { opdrachtId }, [])) ?? [];
+  const images = (await askParent('maatwerk-list-images', {}, [])) ?? [];
   const taken = new Set(images.map((i) => i.name));
   let n = 1;
   while (taken.has(`afbeelding-${n}`)) n++;
@@ -1521,7 +1522,7 @@ async function showFigureMenu() {
   showFigurePopup();
   const panel = figPanel();
   panel.innerHTML = '<div class="tb-fig-hint">Laden…</div>';
-  const images = (await askParent('maatwerk-list-images', { opdrachtId }, [])) ?? [];
+  const images = (await askParent('maatwerk-list-images', {}, [])) ?? [];
   const items = images
     .map(
       (img) => `
@@ -1588,7 +1589,6 @@ async function saveNamedImage(overwrite) {
       ? await askParent(
           'maatwerk-save-image',
           {
-            opdrachtId,
             name,
             ext: source.ext,
             base64: source.base64,
@@ -1599,7 +1599,6 @@ async function saveNamedImage(overwrite) {
       : await askParent(
           'maatwerk-import-image',
           {
-            opdrachtId,
             token: source.token,
             name,
             overwrite,
@@ -1957,25 +1956,4 @@ function setupContextMenu() {
   });
 }
 
-// ── Math group responsive layout ──────────────────────────────────────────────
-// The extra math buttons collapse into a "more" button when the full toolbar
-// would wrap onto a second row. Measured instead of a fixed width, so adding or
-// removing toolbar buttons needs no adjustment here.
-
 setupContextMenu();
-
-(function setupMathLayout() {
-  const toolbar = document.getElementById('editor-toolbar');
-  const items = [...toolbar.children].filter((el) => !el.classList.contains('tb-popup'));
-  let lastWidth = -1;
-  function update() {
-    if (toolbar.offsetWidth === lastWidth) return; // height changes come from this toggle
-    lastWidth = toolbar.offsetWidth;
-    toolbar.classList.remove('tb-math-compact');
-    const top = items[0].offsetTop;
-    const wraps = items.some((el) => el.offsetTop > top + el.offsetHeight / 2);
-    toolbar.classList.toggle('tb-math-compact', wraps);
-  }
-  new ResizeObserver(update).observe(toolbar);
-  update();
-})();
