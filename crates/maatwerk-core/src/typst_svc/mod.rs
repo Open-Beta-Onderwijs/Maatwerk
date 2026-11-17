@@ -18,8 +18,8 @@ mod vragen;
 pub(crate) mod world;
 
 pub use batch::{
-    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, JobWarning, batch_workers,
-    render_assignment_batch,
+    BatchError, BatchJob, BatchOptions, BatchOutput, BatchProgress, FAILURE_SEPARATOR, JobFailure,
+    JobFailureKind, JobWarning, batch_workers, render_assignment_batch,
 };
 pub use compile::{
     CompileError, Compiled, compile_document, compile_pdf, compile_svg_pages, local_now,
