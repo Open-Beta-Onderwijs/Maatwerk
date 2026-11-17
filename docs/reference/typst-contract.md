@@ -276,7 +276,7 @@ The SVG is Typst's standard output: root `<svg class="typst-doc" viewBox="0 0 59
 1. Validate that every `job.typFile` and `outputName` is a bare basename. An empty job list gives "Er is niets om te genereren.".
 2. `runDir = temp/opdrachten_run/` (kept). `prefix = b<seq>-`.
 3. Run `BATCH_PARALLEL = max(2, min(4, cpus-1))` workers. Each takes the next index `i`, writes `runDir/<prefix><i>.typ` = `buildAssignmentWrapper('/data/opdrachten/'+typFile, job.header ?? {}, {includeAnswers, mode})`, compiles it to `runDir/<prefix><i>.pdf`, unlinks the wrapper, and sends progress `assignment:progress {done, total}` (also sent once at start with `done: 0`).
-4. The first failure stops new jobs. Running jobs finish. The error is `Fout in opdracht "<label ?? typFile>":\n\n<stderr>`.
+4. The first failure stops new jobs. Running jobs finish. The error is `Fout in opdracht "<label ?? typFile>":\n\n<stderr>`. **Port (step 30, T23):** the batch goes on; every failed opdracht is reported once, in job order (under `N opdrachten bevatten een fout.` when there are several); its other jobs are skipped.
 5. **Merge with pdf-lib** (`:896-907`):
    ```js
    merged = PDFDocument.create()
