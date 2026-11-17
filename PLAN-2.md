@@ -138,7 +138,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 28   | Beheer screens                                                   | M            | 0.19    | done   |
 | 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
 | 30   | Observaties and opdrachten                                       | M            | 0.21    | gate   |
-| 31   | Opdrachten-editor                                                | M            | 0.22    | todo   |
+| 31   | Opdrachten-editor                                                | M            | 0.22    | gate   |
 | 32   | AI assistant                                                     | L (32a, 32b) | 0.23    | todo   |
 | 33   | Toetsen as cards                                                 | M            | 0.24    | todo   |
 | 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |

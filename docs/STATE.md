@@ -30,6 +30,30 @@ Baseline 2026-11-17 on `e89ad1d`: cargo test all ok, `npm test` ok.
 4. Step 30 complete except the gate (shared with step 31). Version not bumped: 0.20 (step 29)
    is not released yet either ("release when the user asks").
 
+## Step 31 progress (Opdrachten-editor, 0.22; branch `step/31-editor` from step 30)
+
+1. **Done (`56dfb56`):** spec 4.8, board 10: header (V-07: "Terug naar opdrachten", title,
+   subtitle `domain/editor-header.ts`), status pill (F-05, `editor/status.ts`), toolbar on top of
+   the editor pane with Wiskunde/Symbolen/Opmaak menus and block swatches, file tabs below it,
+   divider (F-16, `editor/divider.ts`, saved as `preferences.editorSplit`), smooth preview
+   sync (V-03), U10 (typed proxy `modals/editor.ts`, `editor/protocol.ts`; files not paths).
+   e2e `editor-shell.spec` (5); mock `MockEditor.compileDelayMs`. Visual: `editor` (× 3
+   looks) differs, expected.
+2. Next: the gate for steps 30 and 31, the reviewer (`docs/reviews/step-30-31.md`), then stop
+   and report (visual baselines and the merge wait for the user).
+
+**Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,
+Lettertypevarianten, Tekstoperator), "Wiskunde ▾" the structures (Breuk, Wortel, …), "Symbolen ▾"
+the four symbol panels (a panel opens under the Symbolen button); the ⋯ text options stay; the
+spinner appears only after 200 ms (no flicker); "Opgeslagen" and an empty message both show
+"Opgeslagen · PDF bijgewerkt"; while a render error shows, typing keeps it (not "Niet
+opgeslagen…") until the next good compile; the divider saves 0,5 s after the last key press;
+Home/End jump to 25%/75%; the editor stays in the light look (it has no theme yet, as before).
+
+**Not done in step 31 (for the report):** R-05 for `editor-init.js` (1950 lines, JS): the new
+parts are TS modules (`editor/`), the rest stays for step 35 ("the remaining R-05 files"). The AI
+rail is step 32. T19/T20 kept (ROADMAP 4.6).
+
 **Not done in step 30 (for the report):** R-05 for `screens/observaties.js` and
 `screens/opdrachten.js`: only their modals moved to TS; the lists become cards in step 34, which
 converts them (PLAN-2 step 34). T19/T20 stay (ROADMAP 4.6: keep).
