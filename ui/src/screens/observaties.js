@@ -2,8 +2,6 @@
 
 import { ICONS } from '../utils/icons.js';
 import {
-  openModal,
-  closeModal,
   toast,
   escHtml,
   getSchoolsoortFilter,
@@ -11,81 +9,19 @@ import {
   getJaarlagKlasFilter,
   getEigenOnly,
   confirmDialog,
-  guardModalClose,
-  formSnapshot,
 } from '../app.js';
 import { obsToetstypes } from '../domain/rubric';
-import {
-  obsUsedInRubric,
-  toetstypeFilterChip,
-  toetstypeField,
-  readToetstypes,
-} from './observatie-toetstype';
+import { obsUsedInRubric, toetstypeFilterChip } from './observatie-toetstype';
+import { openObsModal as openObsModalTs } from '../modals/observatie-edit';
+
+/** Observatie bewerken (modals/observatie-edit.ts); the list re-renders after a save. */
+export function openObsModal(existingId) {
+  openObsModalTs(existingId, renderObservaties);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCREEN: Observaties
 // ═══════════════════════════════════════════════════════════════════════════════
-
-export const OBS_PRESET_ICONS = [
-  // Meten & rekenen
-  { icon: '📏' },
-  { icon: '📐' },
-  { icon: '🔢' },
-  { icon: '🧮' },
-  { icon: '➗' },
-  { icon: '➕' },
-  { icon: '➖' },
-  { icon: '📊' },
-  { icon: '📈' },
-  { icon: '📉' },
-  // Schrijven & noteren
-  { icon: '✏️' },
-  { icon: '📝' },
-  { icon: '📌' },
-  { icon: '📎' },
-  { icon: '🔖' },
-  { icon: '📋' },
-  { icon: '📓' },
-  { icon: '📚' },
-  { icon: '🗒️' },
-  { icon: '📖' },
-  // Denken & analyseren
-  { icon: '🔍' },
-  { icon: '🔎' },
-  { icon: '💡' },
-  { icon: '💬' },
-  { icon: '🎯' },
-  { icon: '✅' },
-  { icon: '❌' },
-  { icon: '⚠️' },
-  { icon: '❓' },
-  { icon: '🧠' },
-  // Scheikunde & fysica
-  { icon: '⚗️' },
-  { icon: '🧪' },
-  { icon: '🧫' },
-  { icon: '🧬' },
-  { icon: '🔬' },
-  { icon: '🔭' },
-  { icon: '🌡️' },
-  { icon: '⚡' },
-  { icon: '🧲' },
-  { icon: '💧' },
-  // Biologie & natuur
-  { icon: '🌱' },
-  { icon: '🦠' },
-  { icon: '🌿' },
-  { icon: '🦋' },
-  { icon: '🐚' },
-  // Overige
-  { icon: '🔄' },
-  { icon: '🔗' },
-  { icon: '🎲' },
-  { icon: '⏱️' },
-  { icon: '🚀' },
-];
-
-const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
 
 export function renderObservaties() {
   let obs = Store.getObservatiesSync();
@@ -206,203 +142,4 @@ export async function deleteObs(id) {
   await Store.deleteObservation(id);
   toast('Observatie verwijderd.', 'info');
   renderObservaties();
-}
-
-export async function openObsModal(existingId) {
-  const allObs = Store.getObservatiesSync();
-  const obs = existingId
-    ? JSON.parse(JSON.stringify(allObs.find((o) => o.id === existingId) ?? {}))
-    : {
-        id: 'obs-' + Date.now(),
-        naam: '',
-        icon: OBS_PRESET_ICONS[0].icon,
-        uitleg: '',
-        leeradvies: '',
-        schoolsoort: [],
-        subjects: [Store.getActiveSubject()],
-        jaarlagen: [],
-      };
-  const isEdit = !!existingId;
-
-  // Normalize legacy single-subject field to array
-  if (!Array.isArray(obs.subjects) || obs.subjects.length === 0) {
-    obs.subjects = obs.subject ? [obs.subject] : [Store.getActiveSubject()];
-  }
-
-  const jlAll = ['1', '2', '3', '4', '5', '6'];
-
-  const schoolSS = Store.getSchoolSync().schoolsoort ?? [];
-  const schoolSSFilter = schoolSS.length > 0;
-  const schoolsoortHtml = SCHOOLSOORTEN.map((ss) => {
-    const sel = (obs.schoolsoort ?? []).includes(ss);
-    const disabled = schoolSSFilter && !schoolSS.includes(ss);
-    const cls = `tog-btn ss-obs-btn${sel ? ' selected' : ''}${disabled ? ' tog-btn-disabled' : ''}`;
-    return `<button type="button" class="u-h-30 ${cls}" data-ss="${ss}"${disabled ? ' disabled' : ''}>${ss}</button>`;
-  }).join('');
-
-  const SUBJECT_BTNS = [
-    { code: 'bio', label: 'Biologie' },
-    { code: 'nat', label: 'Natuurkunde' },
-    { code: 'schk', label: 'Scheikunde' },
-    { code: 'wisob', label: 'Wis OB' },
-    { code: 'wisa', label: 'WisA' },
-    { code: 'wisb', label: 'WisB' },
-    { code: 'wisc', label: 'WisC' },
-    { code: 'wisd', label: 'WisD' },
-  ];
-
-  const iconBtn = (p) =>
-    `<button type="button" class="obs-icon-btn${p.icon === obs.icon ? ' selected' : ''}"
-      data-icon="${escHtml(p.icon)}"
-      >${escHtml(p.icon)}</button>`;
-
-  openModal({
-    title: isEdit ? 'Observatie bewerken' : 'Observatie toevoegen',
-    key: 'obs-edit', // a second open replaces it (double click)
-    footerHtml: `
-      <button class="btn btn--primary" id="f-osave">${isEdit ? 'Opslaan' : 'Toevoegen'}</button>
-      <button class="btn btn--secondary" data-close-modal="1">Annuleren</button>
-    `,
-    body: `
-    <div class="form-group">
-      <label>Naam</label>
-      <input id="f-onam" type="text" value="${escHtml(obs.naam)}" placeholder="bijv. Eenheid vergeten" />
-    </div>
-    <div class="form-group">
-      <label>Icoon</label>
-      <div id="obs-icon-grid" class="u-d-flex u-flex-wrap u-gap-6 u-mt-4">
-        ${OBS_PRESET_ICONS.slice(0, 12).map(iconBtn).join('')}
-        <details class="obs-icon-more">
-          <summary class="obs-icon-more-summary">Meer iconen ▾</summary>
-          <div class="obs-icon-more-grid">
-            ${OBS_PRESET_ICONS.slice(12).map(iconBtn).join('')}
-          </div>
-        </details>
-      </div>
-      <div class="u-mt-6 u-fs-12 u-text-muted">
-        Geselecteerd: <span id="obs-icon-preview" class="u-fs-16">${escHtml(obs.icon)}</span>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Korte uitleg</label>
-      <textarea id="f-ouit" rows="3"
-        placeholder="Bijvoorbeeld: Leerling is bij het beantwoorden van rekenvragen de eenheid vergeten."
-      >${escHtml(obs.uitleg)}</textarea>
-    </div>
-    <div class="form-group">
-      <label>Leeradvies (voor de leerling bij de toetsanalyse)</label>
-      <textarea id="f-oleeradvies" rows="4"
-        placeholder="Bijvoorbeeld: Vergeet bij het beantwoorden van vragen nooit te controleren of je de eenheid vergeten bent. Gebruik de GFBA-methode (Gegevens, Formule, Berekening &amp; Antwoord). In de Antwoordstap controleer je of het antwoord de juiste eenheid heeft. Maak nu opgave 1 en 2 van H1 nog eens volgens de GFBA-methode."
-      >${escHtml(obs.leeradvies ?? '')}</textarea>
-    </div>
-    ${toetstypeField(obsToetstypes(obs), isEdit && Store.obsIsUsedInAnyExam(obs.id), isEdit ? obs.id : undefined)}
-    <div class="form-group">
-      <label>Schoolsoort</label>
-      <div class="btn-toggle-group" id="obs-ss-group">
-        ${schoolsoortHtml}
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Vakken</label>
-      <div class="btn-toggle-group" id="obs-subj-group">
-        ${SUBJECT_BTNS.map(
-          (s) =>
-            `<button type="button" class="tog-btn subj-btn${obs.subjects.includes(s.code) ? ' selected' : ''}" data-subj="${s.code}">${escHtml(s.label)}</button>`,
-        ).join('')}
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Jaarlagen</label>
-      <div class="btn-toggle-group" id="obs-jl-group">
-        ${jlAll
-          .map(
-            (j) =>
-              `<button type="button" class="tog-btn jl-btn${(obs.jaarlagen ?? []).includes(j) ? ' selected' : ''}" data-jl="${j}">${j}</button>`,
-          )
-          .join('')}
-      </div>
-    </div>
-    `,
-    onShow: (el) => {
-      let selectedIcon = obs.icon;
-      el.querySelector('#obs-icon-grid').addEventListener('click', (e) => {
-        const btn = e.target.closest('.obs-icon-btn');
-        if (!btn) return;
-        selectedIcon = btn.dataset.icon;
-        el.querySelectorAll('.obs-icon-btn').forEach((b) => {
-          const active = b.dataset.icon === selectedIcon;
-          b.classList.toggle('selected', active); // colours: .obs-icon-btn.selected
-        });
-        el.querySelector('#obs-icon-preview').textContent = selectedIcon;
-      });
-
-      el.querySelectorAll('.ss-obs-btn').forEach((b) =>
-        b.addEventListener('click', () => b.classList.toggle('selected')),
-      );
-
-      el.querySelectorAll('.subj-btn').forEach((b) =>
-        b.addEventListener('click', () => b.classList.toggle('selected')),
-      );
-
-      el.querySelectorAll('.jl-btn').forEach((b) =>
-        b.addEventListener('click', () => b.classList.toggle('selected')),
-      );
-      // Toetstype: one or both, never none (the last selected one stays on).
-      el.querySelectorAll('.tt-btn:not(:disabled)').forEach((b) =>
-        b.addEventListener('click', () => {
-          const others = [...el.querySelectorAll('.tt-btn.selected')].filter((x) => x !== b);
-          if (b.classList.contains('selected') && others.length === 0) return;
-          b.classList.toggle('selected');
-          b.setAttribute('aria-pressed', String(b.classList.contains('selected')));
-        }),
-      );
-
-      el.querySelector('#f-osave').addEventListener('click', async () => {
-        const naam = el.querySelector('#f-onam').value.trim();
-        const uitleg = el.querySelector('#f-ouit').value.trim();
-        const leeradvies = el.querySelector('#f-oleeradvies').value.trim();
-        const schoolsoort = [...el.querySelectorAll('.ss-obs-btn.selected')].map(
-          (b) => b.dataset.ss,
-        );
-        const subjects = [...el.querySelectorAll('.subj-btn.selected')].map((b) => b.dataset.subj);
-        const jaarlagen = [...el.querySelectorAll('.jl-btn.selected')].map((b) => b.dataset.jl);
-        const toetstypes = readToetstypes(el);
-        if (!naam) {
-          toast('Vul een naam in.', 'error');
-          return;
-        }
-        if (schoolsoort.length === 0) {
-          toast('Selecteer minstens één schoolsoort.', 'error');
-          return;
-        }
-        if (subjects.length === 0) {
-          toast('Selecteer minstens één vak.', 'error');
-          return;
-        }
-        if (jaarlagen.length === 0) {
-          toast('Selecteer minstens één jaarlaag.', 'error');
-          return;
-        }
-        const updated = {
-          ...obs,
-          naam,
-          icon: selectedIcon,
-          uitleg,
-          leeradvies,
-          schoolsoort,
-          subjects,
-          jaarlagen,
-          toetstypes,
-        };
-        delete updated.subject;
-        await Store.upsertObservation(updated);
-        closeModal();
-        toast('Observatie opgeslagen.', 'success');
-        renderObservaties();
-      });
-
-      const initialForm = formSnapshot(el);
-      guardModalClose(() => formSnapshot(el) !== initialForm);
-    },
-  });
 }
