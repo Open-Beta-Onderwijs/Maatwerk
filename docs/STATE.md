@@ -164,7 +164,6 @@ Observaties and Opdrachten as cards with the preview panel, decisions 46-47, spe
 mocks of boards 57-58; step 34 written out (34a, 34b).
 
 **Next action (then):** release 0.20 when the user asks; `design/toetsen-cards` is merged through step 30; step 30 done (see above).
-(`PLAN-2.md`).
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |
