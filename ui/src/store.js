@@ -49,6 +49,7 @@ import {
   opdrachtCijferCards,
   opdrachtCoupling,
   opdrachtMatchesExam as opdrachtMatchesExamFor,
+  opdrachtVraagCards,
 } from './domain/opdrachten';
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
@@ -1155,20 +1156,28 @@ const Store = (() => {
     return opdrachtCijferCards(exam, getOpdrachtenSync());
   }
 
-  // Saves the coupling (and the grade cards) into the latest version of the exam
-  // on disk (like the N-term: only these fields, so other edits are never lost).
+  function getOpdrachtVraagCards(exam) {
+    return opdrachtVraagCards(exam, getOpdrachtenSync());
+  }
+
+  // Saves the coupling (and the grade and question cards) into the latest version
+  // of the exam on disk (like the N-term: only these fields, so other edits are
+  // never lost). Empty card lists remove their key.
   async function setExamOpdrachten(
     examId,
     coupling,
     year,
     subject = _activeSubject,
     cijferCards = [],
+    vraagCards = [],
   ) {
     const saved = await update(ypExam(year, examId), (exam, onDisk) => {
       if (!onDisk) throw new Error(`Toets ${examId} bestaat niet meer.`);
       exam.opdrachten = coupling;
       if (cijferCards.length) exam.opdrachtenCijfer = cijferCards;
       else delete exam.opdrachtenCijfer;
+      if (vraagCards.length) exam.opdrachtenVraag = vraagCards;
+      else delete exam.opdrachtenVraag;
       return stampMeta(exam, onDisk);
     });
     putCachedExam(`${year}/exams/${saved.subject ?? subject}`, saved);
@@ -1177,17 +1186,19 @@ const Store = (() => {
 
   /**
    * Who gets which opdracht for `exam`, given `coupling` ({ obsId: [opdrachtId] })
-   * and the grade cards `cijferCards` ([{ id, onder, opdrachten }]).
+   * the grade cards `cijferCards` ([{ id, onder, opdrachten }]) and the question
+   * cards `vraagCards` ([{ id, vraag, onder, opdrachten }], F-14).
    * Returns {
    *   students: [{ student, group, items: [{ opdracht, obs: [reason, …] }] }]
    *             — only students that receive something, sorted by group then name;
    *             a reason is an observatie or a grade card ({ icon, naam });
    *   obsStudents: { [obsId]: [studentId, …] } — every student with that observatie;
-   *   cijferStudents: { [cardId]: [studentId, …] } — every student below that grade.
+   *   cijferStudents: { [cardId]: [studentId, …] } — every student below that grade;
+   *   vraagStudents: { [cardId]: [studentId, …] } — every student below that question card.
    * }
    * An opdracht coupled to several reasons of one student is listed once.
    */
-  async function getOpdrachtAssignments(exam, year, coupling, cijferCards = []) {
+  async function getOpdrachtAssignments(exam, year, coupling, cijferCards = [], vraagCards = []) {
     const subject = exam.subject ?? _activeSubject;
     await Promise.all([
       loadYear(year, subject),
@@ -1208,6 +1219,7 @@ const Store = (() => {
       groups: getGroupsSync(year, subject),
       coupling,
       cijferCards,
+      vraagCards,
     });
   }
 
@@ -1500,6 +1512,7 @@ const Store = (() => {
     opdrachtMatchesExam,
     getOpdrachtCoupling,
     getOpdrachtCijferCards,
+    getOpdrachtVraagCards,
     cijferCardReason,
     setExamOpdrachten,
     getOpdrachtAssignments,

@@ -49,7 +49,9 @@ when it is absent or lower (decision 5), so later additive changes can use the r
   observaties before and after (`notes`; the start screen and `migrate --dry-run` show them before
   anything changes). The app copies the original's observaties when it creates a resit; locking
   them in the edit screen is step 20.
-- `opdrachtenVraag` is defined now (data part of F-14); the screen that sets it is step 26.
+- `opdrachtenVraag` is defined now (data part of F-14); Opdrachten genereren sets it since step
+  30 ("+ Vraag onder … punten toevoegen"; key removed when empty, like `opdrachtenCijfer`). A
+  score kept as typed that is not a number never matches.
   Matching (user 2026-11-07): `onder: 2` matches 0, 1 and `"N"` (not attempted); an empty
   score (not entered) never matches. The link is on the exam, not in `opdracht.json` (the
   ROADMAP F-14 text): the question exists only in that exam, it sits next to `opdrachten` and

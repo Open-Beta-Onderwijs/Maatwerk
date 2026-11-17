@@ -1161,8 +1161,22 @@ body::after {
 .og-cijfer-remove:hover {
   color: var(--danger);
 }
-.og-cijfer-add {
+.og-card-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 14px;
+}
+.og-cijfer-head {
+  flex-wrap: wrap;
+}
+.og-vraag-select {
+  height: var(--h-control-sm);
+  font-weight: 600;
+}
+.og-vraag-max {
+  font-weight: 400;
+  font-size: 12px;
 }
 .og-op-item {
   flex-wrap: wrap;

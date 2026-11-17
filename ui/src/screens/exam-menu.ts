@@ -5,7 +5,7 @@
 import { esc } from '../components/dialog';
 import { openExamModal, deleteExam } from '../modals/toets-edit';
 import { openResitModal, openSummaryEditModal } from '../modals/herkansing';
-import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren.js';
+import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren';
 import { openRapportModal } from '../modals/rapport';
 import { examObsIds } from '../domain/opdrachten';
 import { isPo } from '../domain/po';

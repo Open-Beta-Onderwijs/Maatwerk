@@ -11,7 +11,8 @@
 // that list the observatie in their observaties[].
 
 import { round1 } from './core';
-import { formatFixed } from './format';
+import { formatFixed, formatNumber, parseDecimal } from './format';
+import { guessStructureMode, type NumberedQuestion, questionLabel } from './question-structure';
 import { examResults } from './grades';
 import { fullName } from './ids';
 import { isPo, rubricOf } from './po';
@@ -24,8 +25,10 @@ import {
   type Observatie,
   type Opdracht,
   type ScoreRecord,
+  type ScoreValue,
   type Student,
   type StudentId,
+  type VraagCard,
 } from './types';
 
 /** Wiskunde sub-variants: wisob = onderbouw (jaarlaag 1-3), wisa/b/c/d = bovenbouw. */
@@ -108,7 +111,60 @@ export function cijferCardReason(card: Pick<CijferCard, 'onder'>): { icon: strin
   };
 }
 
-/** A reason for an opdracht: an observatie or a grade card. */
+/**
+ * Question cards of the exam (exam.opdrachtenVraag, F-14), without deleted opdrachten and without
+ * cards whose question is gone. A PO has none (it has no questions).
+ */
+export function opdrachtVraagCards(exam: Exam, opdrachten: Opdracht[]): VraagCard[] {
+  if (isPo(exam)) return [];
+  const exists = new Set(opdrachten.map((o) => o.id));
+  const questions = new Set((exam.questions ?? []).map((q) => q.id));
+  return (exam.opdrachtenVraag ?? [])
+    .filter((c) => questions.has(c.vraag))
+    .map((c) => ({ ...c, opdrachten: (c.opdrachten ?? []).filter((id) => exists.has(id)) }));
+}
+
+/**
+ * A score on a question card's question matches when it is below `onder` points or `N` (not
+ * attempted: `null` or the string `N`). An empty score (not entered) and a score kept as typed
+ * that is not a number never match (user 2026-11-07).
+ */
+export function vraagScoreMatches(value: ScoreValue | undefined, onder: number): boolean {
+  if (value === undefined) return false;
+  if (value === null) return true;
+  if (typeof value === 'number') return value < onder;
+  const raw = value.trim();
+  if (raw === '') return false;
+  if (raw.toUpperCase() === 'N') return true;
+  const n = parseDecimal(raw);
+  return !isNaN(n) && n < onder;
+}
+
+/** The question's label as the exam numbers it (`II3`, `1a`, `7`), else its id. */
+export function vraagLabel(exam: Pick<Exam, 'questions' | 'structureMode'>, vraag: string): string {
+  const q = (exam.questions ?? []).find((x) => x.id === vraag) as NumberedQuestion | undefined;
+  if (!q || q.number === undefined) return vraag;
+  const first = (exam.questions?.[0] as NumberedQuestion | undefined)?.section;
+  return questionLabel(q, exam.structureMode ?? guessStructureMode(first));
+}
+
+/** "1 punt", "1,5 punten". */
+export function puntenText(n: number): string {
+  return `${formatNumber(n)} ${n === 1 ? 'punt' : 'punten'}`;
+}
+
+/** The reason shown for a question card (chip in the modal, header of the opdracht). */
+export function vraagCardReason(
+  card: Pick<VraagCard, 'vraag' | 'onder'>,
+  exam: Pick<Exam, 'questions' | 'structureMode'>,
+): { icon: string; naam: string } {
+  return {
+    icon: '🔢',
+    naam: `Vraag ${vraagLabel(exam, card.vraag)} onder ${puntenText(Number(card.onder))}`,
+  };
+}
+
+/** A reason for an opdracht: an observatie, a grade card or a question card. */
 export type Reason = Observatie | { icon: string; naam: string };
 
 export interface Assignment {
@@ -124,11 +180,13 @@ export interface Assignments {
   obsStudents: Record<string, StudentId[]>;
   /** Every student below that grade card. */
   cijferStudents: Record<string, StudentId[]>;
+  /** Every student below that question card (F-14). */
+  vraagStudents: Record<string, StudentId[]>;
 }
 
 /**
  * Who gets which opdracht for `exam`, given `coupling` ({ obsId: [opdrachtId] })
- * and the grade cards. An opdracht coupled to several reasons of one student
+ * the grade cards and the question cards. An opdracht coupled to several reasons of one student
  * is listed once. `recordOf` returns the student's score record.
  * Group membership compares student ids as strings (ADR-0003 C8).
  */
@@ -141,6 +199,7 @@ export function assignOpdrachten({
   groups,
   coupling,
   cijferCards = [],
+  vraagCards = [],
 }: {
   exam: Exam;
   students: Student[];
@@ -150,6 +209,7 @@ export function assignOpdrachten({
   groups: Group[];
   coupling: Record<string, string[] | undefined>;
   cijferCards?: CijferCard[];
+  vraagCards?: VraagCard[];
 }): Assignments {
   const obsById = Object.fromEntries(observaties.map((o) => [o.id, o]));
   const opById = Object.fromEntries(opdrachten.map((o) => [o.id, o]));
@@ -161,6 +221,10 @@ export function assignOpdrachten({
   const cijferStudents: Record<string, StudentId[]> = Object.fromEntries(
     cijferCards.map((c) => [c.id, []]),
   );
+  const vraagStudents: Record<string, StudentId[]> = Object.fromEntries(
+    vraagCards.map((c) => [c.id, []]),
+  );
+  const scoresOf = (rec: ScoreRecord | null | undefined) => rec?.scores?.[exam.id] ?? {};
   const result: Assignment[] = [];
   for (const s of students) {
     const rec = recordOf(s.id);
@@ -187,6 +251,11 @@ export function assignOpdrachten({
         give(card.opdrachten, cijferCardReason(card));
       }
     }
+    for (const card of vraagCards) {
+      if (!vraagScoreMatches(scoresOf(rec)[card.vraag], card.onder)) continue;
+      vraagStudents[card.id]!.push(s.id);
+      give(card.opdrachten, vraagCardReason(card, exam));
+    }
     if (!items.size) continue;
     // The one rule for the student's group (decision 17).
     const groupId = studentGroup(s.id, exam, groups);
@@ -204,5 +273,5 @@ export function assignOpdrachten({
       cmp(a.student.voornaam, b.student.voornaam) ||
       cmp(fullName(a.student), fullName(b.student)),
   );
-  return { students: result, obsStudents, cijferStudents };
+  return { students: result, obsStudents, cijferStudents, vraagStudents };
 }
