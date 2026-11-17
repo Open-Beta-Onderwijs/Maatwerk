@@ -112,9 +112,17 @@ function askConfirm(message, { okLabel = 'OK', danger = false } = {}) {
   );
 }
 
-// U10: only the main window answers (not another frame or a script in this one).
+/**
+ * U10: only the app's own pages may answer (the same origin; no other origin can post here).
+ * Not by `evt.source`: WebKit reports answers that the main window posts from a promise callback
+ * with this frame itself as the source (seen on CI, Linux and macOS, and in local WebKit).
+ */
+function fromApp(evt) {
+  return evt.origin === window.location.origin;
+}
+
 window.addEventListener('message', (evt) => {
-  if (evt.source !== window.parent) return;
+  if (!fromApp(evt)) return;
   const msg = evt.data;
   if (msg?.type === 'maatwerk-response' && _pending[msg.id]) {
     const { resolve, reject } = _pending[msg.id];
@@ -674,7 +682,7 @@ function applyDiagnostics() {
 }
 
 window.addEventListener('message', (evt) => {
-  if (evt.source !== window.parent) return;
+  if (!fromApp(evt)) return;
   const msg = evt.data;
   if (msg?.type !== 'maatwerk-editor-update' || msg.update?.session !== session) return;
   applyUpdate(msg.update);

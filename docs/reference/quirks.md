@@ -912,8 +912,9 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   CDN). The proxy is `modals/editor.ts` with typed messages (`editor/protocol.ts`): the iframe
   names one of its opdracht's three files (`opdracht.typ`, `main.typ`, `lib.typ`) and the main
   window builds the path for the opdracht it opened; the image calls always use that opdracht;
-  unknown message types are answered with an error; the iframe accepts answers only from
-  `window.parent`. The unused `maatwerk-read-text` (no hash) is gone. Test: e2e
+  unknown message types are answered with an error; the iframe accepts answers only from the
+  app's own origin (not by `event.source`: WebKit reports the frame itself as the source of the
+  main window's answers). The unused `maatwerk-read-text` (no hash) is gone. Test: e2e
   `editor-shell.spec` "U10".
 
 ### U11. Filter popover "Alles/Niets" listeners pile up on every login
