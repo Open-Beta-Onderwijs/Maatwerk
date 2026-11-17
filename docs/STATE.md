@@ -21,13 +21,30 @@ Baseline 2026-11-17 on `e89ad1d`: cargo test all ok, `npm test` ok.
 2. **Done (`0462e91`):** F-14: question cards in Opdrachten genereren (`opdrachtenVraag`);
    domain `vraagScoreMatches`, `opdrachtVraagCards`, `vraagCardReason`; R-05: the modal in TS
    (`modals/opdrachten-genereren/`). e2e `rapport.spec` +1.
-3. Next: Observatie bewerken (spec 4.12, board 15) with the icon picker (F-15), then Opdracht
-   bewerken; both modals in TS (`modals/observatie-edit.ts`, `modals/opdracht-edit.ts`).
+3. **Done (`a122f3d`):** Observatie bewerken (spec 4.12, board 15) with the icon picker (F-15:
+   224 emoji, `domain/obs-icons.ts`, Dutch search words) and Opdracht bewerken (emoji chips,
+   "Inhoud bewerken in de editor"); `modals/observatie-edit.ts`, `modals/opdracht-edit.ts`,
+   shared `modals/obs-opd-fields.ts`, `styles/obs-opd.css`. e2e `obs-opd.spec` (4). Visual:
+   `modal-observatie-new`, `modal-opdracht-edit`, `modal-opdrachten-genereren` differ (× 3
+   looks), expected; baselines wait for the user's check.
+4. Step 30 complete except the gate (shared with step 31). Version not bumped: 0.20 (step 29)
+   is not released yet either ("release when the user asks").
+
+**Not done in step 30 (for the report):** R-05 for `screens/observaties.js` and
+`screens/opdrachten.js`: only their modals moved to TS; the lists become cards in step 34, which
+converts them (PLAN-2 step 34). T19/T20 stay (ROADMAP 4.6: keep).
 
 **Choices made without asking (for the report):** a vraag card's default is the first question,
 below half its points rounded up (at least 1); the limit may be fractional (two decimals); the
 reason icon is 🔢; a PO has no question cards (no questions); a score kept as typed that is not
-a number never matches.
+a number never matches. T23: the failed opdracht's other jobs are skipped (they would fail the
+same way); several failures are separated by a line under "N opdrachten bevatten een fout.".
+F-15: icons only up to Emoji 12.0 and no ZWJ sequences (the window uses the system emoji font,
+Windows 10 too); an observatie whose icon is not in the list shows it in a "Huidig" group;
+category filters are pressed buttons, not tabs; Vakken keeps the eight vak codes (wiskunde
+variants), so it gets its own row. Opdracht bewerken: "Inhoud bewerken in de editor" saves
+first (a new opdracht needs its folder), a missing field keeps the modal open; observaties
+hidden by the chosen fields are dropped on save (as before).
 
 ## Step 29 (done)
 

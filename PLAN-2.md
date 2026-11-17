@@ -137,7 +137,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done   |
 | 28   | Beheer screens                                                   | M            | 0.19    | done   |
 | 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
-| 30   | Observaties and opdrachten                                       | M            | 0.21    | todo   |
+| 30   | Observaties and opdrachten                                       | M            | 0.21    | gate   |
 | 31   | Opdrachten-editor                                                | M            | 0.22    | todo   |
 | 32   | AI assistant                                                     | L (32a, 32b) | 0.23    | todo   |
 | 33   | Toetsen as cards                                                 | M            | 0.24    | todo   |
