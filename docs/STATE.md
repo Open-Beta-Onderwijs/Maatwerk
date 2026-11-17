@@ -1,10 +1,35 @@
 # State
 
-Last updated: 2026-11-15 (step 29c) Branch: `step/29-overviews`
+Last updated: 2026-11-17 (step 30) Branch: `step/30-observaties` (from `design/toetsen-cards`,
+so the step merge brings the round 12-14 docs into `main`)
 Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
 ## Current step
+
+**Steps 30 and 31 in one go (user, 2026-11-17):** step 30 (Observaties and opdrachten, 0.21) on
+`step/30-observaties`, then step 31 (Opdrachten-editor, 0.22) on `step/31-editor`; one gate and
+one review at the end of step 31.
+
+Baseline 2026-11-17 on `e89ad1d`: cargo test all ok, `npm test` ok.
+
+## Step 30 progress
+
+1. **Done (`eac10c3`):** T23: the batch goes on after a failure, skips the failed opdracht's
+   other jobs (counted in the progress) and reports every failed opdracht once
+   (`BatchError::Failed`, `BatchJob.opdracht`).
+2. **Done (`0462e91`):** F-14: question cards in Opdrachten genereren (`opdrachtenVraag`);
+   domain `vraagScoreMatches`, `opdrachtVraagCards`, `vraagCardReason`; R-05: the modal in TS
+   (`modals/opdrachten-genereren/`). e2e `rapport.spec` +1.
+3. Next: Observatie bewerken (spec 4.12, board 15) with the icon picker (F-15), then Opdracht
+   bewerken; both modals in TS (`modals/observatie-edit.ts`, `modals/opdracht-edit.ts`).
+
+**Choices made without asking (for the report):** a vraag card's default is the first question,
+below half its points rounded up (at least 1); the limit may be fractional (two decimals); the
+reason icon is 🔢; a PO has no question cards (no questions); a score kept as typed that is not
+a number never matches.
+
+## Step 29 (done)
 
 **Step 29 (Overviews and profile, 0.20):** 29a and 29b done (user OK on the visual check and the
 numbers table, 2026-11-15); 29c (PO overview, profile) on `step/29-overviews`, then the step-29
