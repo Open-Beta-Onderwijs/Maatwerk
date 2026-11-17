@@ -49,7 +49,8 @@ UI text stays Dutch, decimal comma, as everywhere in the app.
 | 51-54 ToetsenStapelA-D       | history: the stack as one outlined shape, four variants (chosen: A)                          | F-27                               |
 | 55 ToetsenStapelA2           | Toetsen as cards (final): a stack with two attempts, tray centred under the stack            | F-27                               |
 | 56 ToetsenStapelA3           | Toetsen as cards (final): card layout and a stack with three attempts                        | F-27                               |
-| 57-58 (reserved)             | Observaties as cards; Opdrachten as cards with a preview panel (design pending)              | F-28                               |
+| 57 ObservatiesKaarten        | Observaties as cards (final)                                                                 | F-28                               |
+| 58 OpdrachtenVoorbeeld       | Opdrachten as cards with the preview panel (final, interactive)                              | F-28                               |
 
 ## 2. Design tokens
 
@@ -709,6 +710,45 @@ body; footer "← Vorige (<naam>)" and "Volgende (<naam>) →". Header: name, st
 2. **Analyse:** "RTTI-scores per toets" (school-year toggle and Examendossier): an RTTI card per
    test (PO's left out, with a note) and a "Gemiddeld <jaar>" card with an accent border;
    "Observaties per schooljaar": table observatie × schooljaar with heat cells "n×" and Totaal.
+
+### 4.16 Observaties as cards (F-28, board 57)
+
+- **Header and filters:** title, "+ Observatie toevoegen" (primary); filter chips Alle toetstypes,
+  Alle schoolsoorten, Alle jaarlagen, Alle observaties; the number of observaties on the right.
+- **Grid:** three cards per row, gaps as Toetsen (row 16 px, column 36 px), alphabetical.
+- **Card** (fixed height, 210 px in the mock; radius 12):
+  - top: a 42 px tile (`--surface-2`, radius 10) with the emoji (22 px); the name (15/650,
+    accent text, at most two lines); ⋮ with Bewerken and Verwijderen (disabled with the reason
+    when the observatie is used in a test, as today).
+  - the toetstype pills: "Toets" (accent tint) and/or "PO" (striped, as the PO badge).
+  - the description (13, muted), at most three lines.
+  - bottom row (top border): the schoolsoort pill; the jaarlagen as six 20 px boxes 1-6, the
+    active ones in accent tint; right "<n> toetsen · <m> opdrachten" (tests of the active school
+    year that link it; opdrachten linked to it; tooltip with the opdracht names), "nog niet
+    gebruikt" when unused.
+  - a click on the card opens Observatie bewerken (spec 4.12).
+
+### 4.17 Opdrachten as cards with a preview (F-28, board 58)
+
+- **Header and filters:** title, "+ Opdracht toevoegen" (primary); filter chips Alle
+  schoolsoorten, Alle jaarlagen, Alle observaties; the number of opdrachten on the right.
+- **Grid:** three cards per row as Toetsen. **Card** (fixed height, 196 px in the mock): the name
+  (15/650, accent text), ⋮ (Openen in de editor, Bewerken, Kopiëren, Verwijderen); the
+  description (at most three lines); "<schoolsoort> · <vakken>"; bottom row: the jaarlagen
+  boxes (as 4.16) and the linked observatie icons on the right (tooltip with the names).
+- **Preview:** a click on a card opens a preview of the opdracht:
+  - the cards move to the left half in two narrower columns (description at most two lines);
+    left, top and width animate (350 ms, ease-out); the selected card gets a 2 px accent border.
+  - a panel slides in on the right half (from 60 px to the right, fading in): header with the
+    name (17/700, accent), "<schoolsoort> · <vakken> · jaarlagen ... · <N> pagina's",
+    "Kopiëren" (secondary), "Openen in editor" (primary) and ✕; the body (`--surface-2`) shows
+    the rendered pages (Typst, the same render as the editor preview of step 31), page 1 first,
+    scrolling for the rest; footer "Pagina x van N".
+  - the panel stays in view while the list scrolls; clicking another card switches the preview
+    in place; the selected card again, ✕ or Escape closes it and the cards move back.
+  - rendering happens on demand (`spawn_blocking`), cached per opdracht until it changes, with a
+    page-sized placeholder (3.4) meanwhile; a render error shows the message in the panel.
+  - with `prefers-reduced-motion` the layout switches without transitions.
 
 ## 5. Logo (V-12)
 

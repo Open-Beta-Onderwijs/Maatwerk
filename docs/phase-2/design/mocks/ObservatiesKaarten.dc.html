@@ -1,0 +1,111 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Observaties als kaarten</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+@media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1180px; position: relative; overflow: hidden; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; background: {{t.bg}}; color: {{t.text}}">
+  <header style="height: 56px; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+    <span style="font-weight: 700; font-size: 17px">Maatwerk</span><span style="color: {{t.muted}}">Leerlingen</span><span style="color: {{t.muted}}">Groepen</span><span style="color: {{t.muted}}">Toetsen</span><span style="color: {{t.muted}}">Rubrics</span><span style="font-weight: 600; height: 56px; display: flex; align-items: center; box-shadow: inset 0 -3px 0 {{a.text}}">Observaties</span><span style="color: {{t.muted}}">Opdrachten</span>
+  </header>
+  <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 650; color: {{a.text}}">Observaties</h1><span style="flex: 1"></span>
+      <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 0; background: {{a.fill}}; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">+ Observatie toevoegen</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap"><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle toetstypes</span><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle schoolsoorten</span><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle jaarlagen</span><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle observaties</span><span style="flex: 1"></span><span style="font-size: 13px; color: {{t.muted}}">{{countLabel}}</span></div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 36px; margin-top: 22px"><sc-for list="{{cards}}" as="c" hint-placeholder-count="9"><div title="Klik om te bewerken" style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,.04); box-sizing: border-box; cursor: pointer; padding: 14px 16px; height: 210px; display: flex; flex-direction: column; gap: 8px"><div style="display: flex; align-items: center; gap: 12px; min-width: 0"><span aria-hidden="true" style="width: 42px; height: 42px; flex: none; border-radius: 10px; background: {{t.surface2}}; display: flex; align-items: center; justify-content: center; font-size: 22px">{{c.ic}}</span><span style="flex: 1; min-width: 0; font-size: 15px; font-weight: 650; color: {{a.text}}; line-height: 1.3">{{c.naam}}</span><button aria-label="Meer acties" title="{{c.actions}}" style="width: 32px; height: 32px; flex: none; border: 0; border-radius: 8px; background: transparent; color: {{t.muted}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button></div><div style="display: flex; gap: 6px"><sc-for list="{{c.tts}}" as="p" hint-placeholder-count="2"><span style="font-size: 12px; font-weight: 600; line-height: 20px; padding: 0 8px; border-radius: 999px; background: {{p.bg}}; color: {{p.fg}}; text-shadow: {{p.sh}}">{{p.label}}</span></sc-for></div><div style="flex: 1; min-height: 0; font-size: 13px; line-height: 1.45; color: {{t.muted}}; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden">{{c.uitleg}}</div><div style="display: flex; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px solid {{t.line}}"><span style="font-size: 12px; line-height: 20px; padding: 0 8px; border-radius: 999px; background: {{t.surface2}}; color: {{t.muted}}">Gymnasium</span><div title="Jaarlagen" style="display: flex; gap: 3px"><sc-for list="{{c.jl}}" as="j" hint-placeholder-count="6"><span style="width: 20px; height: 20px; border-radius: 5px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: {{j.bg}}; color: {{j.fg}}">{{j.n}}</span></sc-for></div><span style="flex: 1"></span><span style="font-size: 12px; color: {{t.muted}}; white-space: nowrap">{{c.useToets}}</span><span title="{{c.opdTitle}}" style="font-size: 12px; color: {{t.muted}}; white-space: nowrap">· {{c.useOpd}}</span></div></div></sc-for></div>
+  </div>
+  
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["licht", "donker"], "default": "licht"}, "accent": {"editor": "enum", "options": ["rood", "oranje", "geel", "groen", "blauw", "indigo", "paars", "turquoise", "roze", "grafiet"], "default": "blauw"}, "$preview": {"width": 1440, "height": 1180}}'>
+class Component extends DCLogic {
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, k) { k = Math.max(0, Math.min(1, k)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join(''); }
+  renderVals() {
+
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const accName = ACC[this.props.accent] ? this.props.accent : 'blauw';
+    const ac = ACC[accName];
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F') };
+    const anti = ANTI[accName];
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', foot: '#22272F', tint: '#181B21' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', foot: '#F7F8FA', tint: '#F7F8FA' };
+    const L = (x, y, k) => this.lerp(x, y, k);
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const stripes = (c, w) => `repeating-linear-gradient(135deg, ${c} 0 ${w}px, ${L(c, '#FFFFFF', c === '#E5AE0B' ? 0.6 : 0.5)} ${w}px ${w * 2}px)`;
+    const typeStyle = (type) => {
+      if (type === 'diag') return { color: '#8A93A3', light: '#C9CED6', on: t.muted, badgeBg: t.surface2, badgeBorder: '#9AA1AD', tint: '#8A93A333', shadow: 'none', bar: '#9AA1AD' };
+      const c = type === 'se' || type === 'sepo' ? anti : ac[0];
+      const striped = type === 'po' || type === 'sepo';
+      return {
+        color: c, light: L(c, '#FFFFFF', 0.5), on: onOf(c), badgeBorder: c,
+        shadow: striped && onOf(c) === '#FFFFFF' ? `0 0 2px ${L(c, '#000000', 0.4)}, 0 0 3px ${L(c, '#000000', 0.4)}` : 'none',
+        badgeBg: striped ? stripes(c, 4) : c,
+        bar: striped ? stripes(c, 5) : c,
+        tint: striped ? `repeating-linear-gradient(135deg, ${c}AA 0 6px, ${c}1A 6px 12px)` : c + (dark ? '40' : '26'),
+      };
+    };
+    const fmt = (g) => (Math.round(g * 10) / 10).toFixed(1).replace('.', ',');
+    const sgn = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + fmt(Math.abs(x));
+    const gc = (g) => (g < 5.5 ? (dark ? '#FF8A80' : '#B42318') : dark ? L('#E2BD45', '#6CCB8A', (g - 5.5) / 4) : L('#8A6A00', '#1E7B3C', (g - 5.5) / 4));
+    const gb = (g) => (g < 5.5 ? '#E5736B' : L('#F2C94C', '#5DB97B', (g - 5.5) / 4));
+    const pill = (g) => (g == null ? { v: '—', color: t.muted, border: t.border, weight: 400 } : { v: fmt(g), color: gc(g), border: gb(g), weight: g < 5.5 ? 700 : 500 });
+    const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(mean(xs.map((x) => (x - m) * (x - m)))); };
+    const qt = (xs, p) => { const s = [...xs].sort((x, y) => x - y), i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo); };
+    const pct1 = (g) => ((g - 1) / 9) * 100;
+    const hist = (xs) => { const c = Array(9).fill(0); xs.forEach((g) => { c[Math.min(8, Math.max(0, Math.floor(g - 1)))]++; }); return c; };
+    const binLabels = ['1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10'];
+    const failPct = (xs) => Math.round((xs.filter((g) => g < 5.5).length / xs.length) * 100) + '%';
+    const box = (xs) => { const q1 = qt(xs, 0.25), q3 = qt(xs, 0.75), md = qt(xs, 0.5), mn = Math.min(...xs), mx = Math.max(...xs); return { minPct: pct1(mn), maxPct: pct1(mx), rangePct: Math.max(0.4, pct1(mx) - pct1(mn)), q1Pct: pct1(q1), iqrPct: Math.max(0.8, pct1(q3) - pct1(q1)), medPct: pct1(md) - 0.15, med: fmt(md), boxLabel: 'Kwartielen ' + fmt(q1) + ' – ' + fmt(q3) + ', mediaan ' + fmt(md) }; };
+    const hx = (n, max) => Math.round(24 + (n / max) * 190).toString(16).padStart(2, '0');
+    const heat = (n, max) => ({ bg: n ? a.fill + hx(n, max) : 'transparent', fg: n / max > 0.55 ? '#FFFFFF' : t.text });
+    const base = { t, a, axis: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], binLabels, passPct: pct1(5.5), neg: dark ? '#FF8A80' : '#B42318', pos: dark ? '#6CCB8A' : '#1E7B3C' };
+
+
+    const OBS = [
+      ['📏', 'Eenheid vergeten / verkeerd', 'Leerling is bij het beantwoorden van een vraag de eenheid vergeten of heeft een verkeerde eenheid opgeschreven.', ['toets', 'po'], [2, 3, 4, 5, 6], 9, ['GFBA bovenbouw (+ significantie)']],
+      ['➗', 'Formule verkeerd omgeschreven', 'Leerling heeft een formule verkeerd omgeschreven.', ['toets'], [2, 3, 4, 5, 6], 7, ['Formules omschrijven']],
+      ['📈', 'Grafiek: aslabels vergeten', 'Leerling vergeet bij grafieken de assen te labelen of een eenheid toe te voegen.', ['toets', 'po'], [2, 3, 4], 5, ['Grafiek tekenen & dichtheid bepalen']],
+      ['📉', 'Grafiek: helling niet (goed) bepaald', 'Leerling heeft de helling van een lijn in een grafiek niet goed bepaald.', ['toets'], [2, 3, 4], 3, ['Grafiek tekenen & dichtheid bepalen', 'Helling bepalen uit een grafiek']],
+      ['📐', 'Grafiek: verkeerde schaal gekozen', 'Leerling heeft een verkeerde schaal gekozen, meetpunten passen niet of staan op een te klein deel van de grafiek.', ['toets'], [2, 3, 4], 2, ['Grafiek tekenen & dichtheid bepalen', 'Schaal kiezen bij grafieken']],
+      ['❓', 'Grootheden door elkaar gehaald', 'Leerling heeft de verkeerde grootheid aan het verkeerde symbool gekoppeld en zo bijvoorbeeld een formule verkeerd gebruikt.', ['toets'], [2, 3], 0, []],
+      ['🔬', 'Hypothese ontbreekt', 'Het onderzoeksverslag bevat geen (toetsbare) hypothese.', ['po'], [4, 5, 6], 2, []],
+      ['🔄', 'Meetwaarde verkeerd omgerekend', 'Leerling heeft een meetwaarde verkeerd omgerekend naar een andere eenheid.', ['toets'], [2, 3, 4, 5, 6], 4, ['Eenheden omrekenen']],
+      ['❔', 'Onderzoeksvraag onduidelijk', 'De onderzoeksvraag is niet eenduidig of niet te beantwoorden met de gekozen opzet.', ['po'], [4, 5, 6], 3, []],
+      ['🧮', 'Rekenfout', 'Leerling heeft de juiste berekening opgeschreven, maar het antwoord verkeerd uitgerekend.', ['toets'], [2, 3, 4, 5, 6], 8, ['Rekenen met machten van tien']],
+      ['🎯', 'Significantie antwoord verkeerd', 'Leerling heeft het antwoord in een verkeerd aantal significante cijfers gegeven.', ['toets'], [4, 5, 6], 6, ['GFBA bovenbouw (+ significantie)', 'Significantie oefenen']],
+    ];
+    const TT = { toets: 'Toets', po: 'PO' };
+    const cards = OBS.map(([ic, naam, uitleg, tts, jls, nToets, opd]) => {
+      const used = nToets > 0;
+      return { ic, naam, uitleg, tts: tts.map((k) => ({ label: TT[k], bg: k === 'po' ? typeStyle('po').badgeBg : a.tint, fg: k === 'po' ? '#FFFFFF' : a.text, sh: k === 'po' ? typeStyle('po').shadow : 'none' })),
+        jl: [1, 2, 3, 4, 5, 6].map((n) => ({ n, bg: jls.includes(n) ? a.tint : 'transparent', fg: jls.includes(n) ? a.text : t.border })),
+        useToets: nToets ? nToets + (nToets === 1 ? ' toets' : ' toetsen') : 'nog niet gebruikt', useToetsC: nToets ? t.muted : t.muted,
+        useOpd: opd.length + (opd.length === 1 ? ' opdracht' : ' opdrachten'), opdTitle: opd.length ? 'Gekoppelde opdrachten: ' + opd.join(', ') : 'Geen gekoppelde opdrachten',
+        actions: 'Bewerken · ' + (used ? 'Verwijderen (kan niet: gebruikt in ' + nToets + ' toetsen)' : 'Verwijderen') };
+    });
+    const V = { cards, countLabel: OBS.length + ' observaties' };
+
+    return Object.assign({}, base, V);
+  }
+}
+</script>
+</body>
+</html>

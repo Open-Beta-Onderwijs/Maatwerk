@@ -441,6 +441,21 @@
       "h": 1660,
       "is_interactive": true,
       "title": "56 · Toetsen als kaarten (gekozen): cijfer ± SD rechtsonder, observaties linksonder, stapel met drie pogingen"
+    },
+    "ObservatiesKaarten.dc.html": {
+      "x": 0,
+      "y": 26340,
+      "w": 1440,
+      "h": 1180,
+      "title": "57 · Observaties als kaarten: icoon, toetstype, uitleg, schoolsoort, jaarlagen, gebruik in toetsen en opdrachten"
+    },
+    "OpdrachtenVoorbeeld.dc.html": {
+      "x": 1520,
+      "y": 26340,
+      "w": 1440,
+      "h": 1100,
+      "is_interactive": true,
+      "title": "58 · Opdrachten als kaarten met voorbeeld: klik een kaart, de kaarten schuiven naar links, rechts het PDF-voorbeeld"
     }
   },
   "createdOnFiles": {
@@ -470,7 +485,9 @@
     "r12",
     "k12",
     "r13",
-    "k13"
+    "k13",
+    "r14",
+    "k14"
   ],
   "notes": {
     "r1": {
@@ -618,6 +635,21 @@
       "w": 360,
       "fill": "blue",
       "text": "Play: klik op \"Inklappen\" / \"3 pogingen\" bij 502. Openen: de pogingen zakken eerst onder de Verzamelkaart en schuiven dan uit naar links en rechts; alles eronder schuift mee omlaag. Tweak \"Stapel\" zet de begintoestand."
+    },
+    "r14": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Ronde 14: Observaties en Opdrachten als kaarten",
+      "w": 240,
+      "x": 0,
+      "y": 26100
+    },
+    "k14": {
+      "x": 3040,
+      "y": 26340,
+      "w": 360,
+      "fill": "blue",
+      "text": "Board 58 (Play): klik een opdracht voor het voorbeeld, nog eens of ✕ om te sluiten. Tweak \"Voorbeeld\" zet de begintoestand."
     }
   },
   "order": [
@@ -676,7 +708,9 @@
     "ToetsenStapelC.dc.html",
     "ToetsenStapelD.dc.html",
     "ToetsenStapelA2.dc.html",
-    "ToetsenStapelA3.dc.html"
+    "ToetsenStapelA3.dc.html",
+    "ObservatiesKaarten.dc.html",
+    "OpdrachtenVoorbeeld.dc.html"
   ],
   "pages": [],
   "title": "Maatwerk redesign"
