@@ -333,7 +333,7 @@
       "h": 864,
       "radius": 14,
       "is_interactive": true,
-      "title": "43 · PO-overzicht (gekozen): Resultaten per klas (27), Cijferverdeling (28), Boxplot (30), Categorieën (32), Observaties (35)"
+      "title": "43 · PO-overzicht (gekozen): Resultaten per klas (27), Cijferverdeling (28), Boxplot (30), Categorieën (32), Observaties"
     },
     "Profiel.dc.html": {
       "x": 1200,
@@ -351,7 +351,7 @@
       "h": 864,
       "radius": 14,
       "is_interactive": true,
-      "title": "45 · Groepsoverzicht (nieuw): JAAR + SE, verschoven klassen, stippen in boxplot, tooltips, RTTI-verloop, observaties per toets"
+      "title": "45 · Groepsoverzicht (nieuw): JAAR + SE, verschoven klassen, stippen in boxplot, tooltips, RTTI-verloop, observaties per"
     },
     "Toetsoverzicht.dc.html": {
       "x": 1200,
@@ -361,6 +361,86 @@
       "radius": 14,
       "is_interactive": true,
       "title": "46 · Toetsoverzicht (nieuw): één tabel met groepen, stijl van het PO-overzicht, verzameloverzicht als schakelaar"
+    },
+    "ToetsenKaartA.dc.html": {
+      "x": 0,
+      "y": 20440,
+      "w": 1440,
+      "h": 1500,
+      "is_interactive": true,
+      "title": "47 · Toetsen als kaarten A: pogingen schuiven als kaarten in het raster; histogram naast de cijfers"
+    },
+    "ToetsenKaartB.dc.html": {
+      "x": 1520,
+      "y": 20440,
+      "w": 1440,
+      "h": 1500,
+      "is_interactive": true,
+      "title": "48 · Toetsen als kaarten B: pogingen in een brede rij onder de stapel; histogram als strook"
+    },
+    "ToetsenKaartC.dc.html": {
+      "x": 3040,
+      "y": 20440,
+      "w": 1440,
+      "h": 1500,
+      "is_interactive": true,
+      "title": "49 · Toetsen als kaarten C: pogingen waaieren over het raster (niets verschuift); compacte kaart"
+    },
+    "ToetsenKaartD.dc.html": {
+      "x": 4560,
+      "y": 20440,
+      "w": 1440,
+      "h": 1500,
+      "is_interactive": true,
+      "title": "50 · Toetsen als kaarten D: de stapel wordt een brede kaart met de pogingen ernaast; voetband"
+    },
+    "ToetsenStapelA.dc.html": {
+      "x": 0,
+      "y": 22420,
+      "w": 1440,
+      "h": 1660,
+      "is_interactive": true,
+      "title": "51 · Toetsen, stapel A (jouw voorstel): periodes lopen door met een grijze streep, open stapel als één omlijning met de Verzamelkaart"
+    },
+    "ToetsenStapelB.dc.html": {
+      "x": 1520,
+      "y": 22420,
+      "w": 1440,
+      "h": 1660,
+      "is_interactive": true,
+      "title": "52 · Toetsen, stapel B: als A, met compacte pogingkaarten (minder verschuiving)"
+    },
+    "ToetsenStapelC.dc.html": {
+      "x": 3040,
+      "y": 22420,
+      "w": 1440,
+      "h": 1660,
+      "is_interactive": true,
+      "title": "53 · Toetsen, stapel C: periode als label op de kaart, pijlen tussen de pogingen"
+    },
+    "ToetsenStapelD.dc.html": {
+      "x": 4560,
+      "y": 22420,
+      "w": 1440,
+      "h": 1660,
+      "is_interactive": true,
+      "title": "54 · Toetsen, stapel D: als A, met een tijdlijn met data boven de pogingen"
+    },
+    "ToetsenStapelA2.dc.html": {
+      "x": 0,
+      "y": 24200,
+      "w": 1440,
+      "h": 1660,
+      "is_interactive": true,
+      "title": "55 · Toetsen als kaarten (gekozen): stapel met twee pogingen, symmetrisch onder de Verzamelkaart"
+    },
+    "ToetsenStapelA3.dc.html": {
+      "x": 1520,
+      "y": 24200,
+      "w": 1440,
+      "h": 1660,
+      "is_interactive": true,
+      "title": "56 · Toetsen als kaarten (gekozen): cijfer ± SD rechtsonder, observaties linksonder, stapel met drie pogingen"
     }
   },
   "createdOnFiles": {
@@ -386,7 +466,11 @@
     "r10",
     "k10",
     "r11",
-    "k11"
+    "k11",
+    "r12",
+    "k12",
+    "r13",
+    "k13"
   ],
   "notes": {
     "r1": {
@@ -504,6 +588,36 @@
       "w": 340,
       "fill": "blue",
       "text": "Board 45 vervangt board 3 (Groepsoverzicht). Board 46: rechtsboven de schakelaar Toets / Verzameloverzicht; in het verzameloverzicht zijn de laatste drie tabs uitgeschakeld."
+    },
+    "r12": {
+      "kind": "title1",
+      "maxW": 5920,
+      "text": "Ronde 12: Toetsen als kaarten, vier varianten voor pogingen",
+      "w": 240,
+      "x": 0,
+      "y": 20200
+    },
+    "k12": {
+      "x": 6080,
+      "y": 20440,
+      "w": 360,
+      "fill": "blue",
+      "text": "Klik op \"3 pogingen\" bij 502 om de stapel te openen (Play). Tweak \"Stapel\" zet de begintoestand. Een klik op een kaart opent het overzicht; Overzicht openen staat nu in het ⋮-menu."
+    },
+    "r13": {
+      "kind": "title1",
+      "maxW": 5920,
+      "text": "Ronde 13: Toetsen als kaarten (stijl 49), stapel als omlijnde vorm",
+      "w": 240,
+      "x": 0,
+      "y": 22180
+    },
+    "k13": {
+      "x": 6080,
+      "y": 22420,
+      "w": 360,
+      "fill": "blue",
+      "text": "Play: klik op \"Inklappen\" / \"3 pogingen\" bij 502. Openen: de pogingen zakken eerst onder de Verzamelkaart en schuiven dan uit naar links en rechts; alles eronder schuift mee omlaag. Tweak \"Stapel\" zet de begintoestand."
     }
   },
   "order": [
@@ -552,7 +666,17 @@
     "POOverzicht.dc.html",
     "Profiel.dc.html",
     "Groepsoverzicht2.dc.html",
-    "Toetsoverzicht.dc.html"
+    "Toetsoverzicht.dc.html",
+    "ToetsenKaartA.dc.html",
+    "ToetsenKaartB.dc.html",
+    "ToetsenKaartC.dc.html",
+    "ToetsenKaartD.dc.html",
+    "ToetsenStapelA.dc.html",
+    "ToetsenStapelB.dc.html",
+    "ToetsenStapelC.dc.html",
+    "ToetsenStapelD.dc.html",
+    "ToetsenStapelA2.dc.html",
+    "ToetsenStapelA3.dc.html"
   ],
   "pages": [],
   "title": "Maatwerk redesign"

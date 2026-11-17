@@ -45,6 +45,11 @@ UI text stays Dutch, decimal comma, as everywhere in the app.
 | 44 Profiel                   | student profile (final, interactive): bar chart, SD bands, RTTI cards                        | F-25                               |
 | 45 Groepsoverzicht2          | group overview (final, interactive; replaces board 3's content)                              | F-10, F-26                         |
 | 46 Toetsoverzicht            | exam overview (final, interactive) with the verzameloverzicht toggle                         | F-11, F-26                         |
+| 47-50 ToetsenKaartA-D        | history: Toetsen as cards, four ways to open attempts (chosen: card C, tray idea of B)       | F-27                               |
+| 51-54 ToetsenStapelA-D       | history: the stack as one outlined shape, four variants (chosen: A)                          | F-27                               |
+| 55 ToetsenStapelA2           | Toetsen as cards (final): a stack with two attempts, tray centred under the stack            | F-27                               |
+| 56 ToetsenStapelA3           | Toetsen as cards (final): card layout and a stack with three attempts                        | F-27                               |
+| 57-58 (reserved)             | Observaties as cards; Opdrachten as cards with a preview panel (design pending)              | F-28                               |
 
 ## 2. Design tokens
 
@@ -440,21 +445,52 @@ shows the resit dot directly right of the grade, an empty column keeps space bef
 observatie icons; Vraaganalyse, RTTI-analyse and Observaties are disabled with the existing
 tooltip.
 
-### 4.7 Toetsen (V-11, F-12)
+### 4.7 Toetsen (V-11, F-12, F-27; boards 55, 56)
 
-- Header: title, "RTTI uitleg / leeradvies" (secondary), "+ Toets toevoegen" (primary),
-  schooljaar select. Filter bar with a legend of the five test types on the right.
-- **Exam card:** badge (3.5), title (15/650, accent text; diagnostic grey italic), kind pill
-  ("Toets", "Praktische opdracht", "SE-toets", "SE praktische opdracht", "Diagnostisch"), meta
-  line, points line, stats line ("6,4 ± 1,7 · 30% onvoldoende", mean in grade colour). Right:
-  "Overzicht openen" (small secondary) and ⋮ (icon).
-- **Attempts:** a test with resits shows "N pogingen ▾" on the main card (toggle, **open by
-  default**). Its stats are over the best attempt per student (no extra label). Below it the
-  attempts hang on a tree line (2 px `#D5DAE1`), indented 28 px: Origineel, Inhaal (`501-I`),
-  Herkansing (`501-H`), each with the badge, label, "<n> leerlingen", points line and stats line,
-  and the same two buttons.
-- Inhaal and herkansing show a lock pill "Observaties van 501" with a tooltip ("worden bij het
-  aanmaken overgenomen van het origineel en kunnen niet los worden gewijzigd").
+Cards since step 33 (user, 2026-11-17); the list design of step 20 is replaced.
+
+- **Header and filters:** title, "RTTI uitleg / leeradvies" (secondary), "+ PO toevoegen"
+  (secondary), "+ Toets toevoegen" (primary), schooljaar select; the filter bar with the legend of
+  the five test types on the right.
+- **Grid:** a section per jaarlaag ("JAARLAAG 5", 12/700 accent), three cards per row, column gap
+  36 px, row gap 16 px. The periodes of a jaarlaag continue in reading order (left to right, then
+  down): a 20 px label row above every card shows "Periode N" on the first card of a periode; when
+  that card is not in the first column, a 2 px `--border` divider stands in the middle of the gap
+  to its left.
+- **Card** (fixed height, 214 px in the mock; radius 12):
+  - top: badge (2.5), title (15/650, accent text; diagnostic grey italic), ⋮. A click on the card
+    opens the overview; "Overzicht openen" moves into the ⋮ menu.
+  - middle left: kind pill ("Toets", "Praktische opdracht", "SE-toets", "SE praktische opdracht",
+    "Diagnostisch"; an attempt adds its label pill and the lock pill); line 1 "48 punten · weging
+    rapport 2 · SE 10" (no SE part without SE weging; diagnostic: "30 punten · telt niet mee");
+    line 2 the points per RTTI category "R 12p · T1 14p · T2 13p · I 9p", the letters in the RTTI
+    colours (2.6), the names in the tooltip. A PO has no line 2 (rubrics can have many
+    categories).
+  - middle right: a mini histogram (104 × 46) against the right edge, centred vertically between
+    the top row and the bottom block: the bins of 3.10 with step 1, grade colours, the dashed 5,5
+    line, the count per bin in the tooltip.
+  - bottom left: "<n> leerlingen" (a Verzamelkaart: "beste poging · <n> leerlingen") and under it
+    the three most given observaties (icon and count; tooltip with the name).
+  - bottom right: the average ± SD (average 20 px in its grade colour) and under it
+    "<p>% onvoldoende".
+- **Attempts (stack):** a test with resits is a stack with the Verzamelkaart on top (its numbers
+  over the best attempt per student).
+  - Closed (default; open or closed remembered per session): the attempt cards, the same size as
+    the Verzamelkaart, lie behind it, each 5 px further right and down, at 85%, 60% and 40%
+    opacity. A pill "<N> pogingen ▾" sits on the bottom edge, right ("Inklappen ▴" when open).
+  - Open: a tray row is inserted under the row of the stack. The attempts slide down out from
+    under the Verzamelkaart while the tray grows and everything below moves down (400 ms); 200 ms
+    after the start they spread to their columns (380 ms). Closing is the reverse (gather, then
+    slide up under the Verzamelkaart after 220 ms). Cards left, right and above never move. With
+    `prefers-reduced-motion` the states switch without transitions.
+  - One outline around the Verzamelkaart and the tray: 2 px `--accent`, `--accent` tint fill,
+    8 px outside the cards, radius 16 on every corner, the inner (concave) corners included; drawn
+    as one shape so the lines join exactly. Tray title "Pogingen van <code> · de beste poging per
+    leerling telt".
+  - The tray is centred under the Verzamelkaart (two attempts spread evenly to the left and
+    right) and shifted only to stay inside the grid; three attempts use the full width.
+  - Attempt cards: the same card with the label pill (Origineel, Inhaal, Herkansing) and, for a
+    resit, the lock pill "Observaties van 502" with the tooltip of step 20.
 
 ### 4.8 Opdrachten-editor (V-07, F-16, F-05, B-08, F-01)
 

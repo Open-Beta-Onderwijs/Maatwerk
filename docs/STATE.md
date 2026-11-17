@@ -82,7 +82,13 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
     files per platform (with the four new PO overview views), reviewed and committed. Merged
     into `main`, tagged `step-29`.
 
-**Next action:** release 0.20 when the user asks; then step 30 (`PLAN-2.md`).
+**Design rounds 12-14 (2026-11-17, branch `design/toetsen-cards`):** Toetsen as cards, decisions
+41-45 in `PLAN-2.md`, spec 4.7 rewritten, mocks of boards 47-56 (final: 55, 56); new step 33
+(Toetsen as cards) and step 34 (Observaties and Opdrachten as cards, design pending, boards
+57-58); hardening and 1.0 move to step 35. ROADMAP F-27, F-28.
+
+**Next action:** release 0.20 when the user asks; merge `design/toetsen-cards`; then step 30
+(`PLAN-2.md`).
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |

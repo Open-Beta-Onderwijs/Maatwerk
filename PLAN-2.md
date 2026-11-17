@@ -1,4 +1,4 @@
-# Maatwerk: phase 2 plan (steps 12-33)
+# Maatwerk: phase 2 plan (steps 12-35)
 
 Phase 2 turns the intake in `ROADMAP.md` section 4 and the design in `docs/phase-2/design/` into
 steps that each fit one Claude Code session of at most 5 hours (**M**), or two sessions with a
@@ -70,6 +70,17 @@ Overviews and profile (user, 2026-11-14; design rounds 8-11, boards 43-46; spec 
 | 39  | PO overview: distributions of the final grade only; Categorieën as a table with a stacked bar of students per level (overlapping levels count twice); Observaties as bars per category                                                                                                                                                       | user   |
 | 40  | Student profile (F-25): restyle, same content. Cijferverloop as a bar chart without toetsgemiddelde (PO tooltip with categories); test and year comparisons as dot vs average with a ±1 SD band; Analyse with RTTI cards per test (PO's left out) and an observaties table per school year                                                   | user   |
 
+Cards for Toetsen, Observaties and Opdrachten (user, 2026-11-17; design rounds 12-14, boards
+55-56, 57-58 reserved; spec 4.7):
+
+| #   | Decision                                                                                                                                                                                                                                            | Source |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 41  | Toetsen becomes a card grid (F-27): per jaarlaag, three per row (column gap 36 px), the periodes continue in reading order with a "Periode N" label and a divider in the gap; a click on a card opens the overview, "Overzicht openen" moves into ⋮ | user   |
+| 42  | Exam card: line 1 points, weging rapport and SE; line 2 points per RTTI category (none for a PO); mini histogram right; "n leerlingen" with the top observaties bottom left; average ± SD with % onvoldoende bottom right                           | user   |
+| 43  | A test with resits is a stack: the Verzamelkaart on top, the attempt cards behind it (5 px steps right and down, fading), closed by default, remembered per session                                                                                 | user   |
+| 44  | Opening a stack: a tray row under it, one rounded outline around Verzamelkaart and tray; the attempts slide down from under the Verzamelkaart, then spread (200 ms overlap); the tray is centred under the stack; only content below moves          | user   |
+| 45  | Observaties and Opdrachten become cards too; Opdrachten opens a preview (PDF/SVG) on the right half while the cards move aside (F-28; design pending, boards 57-58)                                                                                 | user   |
+
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
 ## 2. Working rules
@@ -123,11 +134,13 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 26   | Login and splash                                                 | M            | 0.17    | done   |
 | 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done   |
 | 28   | Beheer screens                                                   | M            | 0.19    | done   |
-| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | todo   |
+| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
 | 30   | Observaties and opdrachten                                       | M            | 0.21    | todo   |
 | 31   | Opdrachten-editor                                                | M            | 0.22    | todo   |
 | 32   | AI assistant                                                     | L (32a, 32b) | 0.23    | todo   |
-| 33   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
+| 33   | Toetsen as cards                                                 | M            | 0.24    | todo   |
+| 34   | Observaties and Opdrachten as cards, preview panel               | M            | 0.25    | design |
+| 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
 
 ## 4. Steps
 
@@ -456,7 +469,28 @@ Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 optio
 - **32b:** the rail and chat panel (spec 4.8), Bekijken/Toepassen on the diff card, a setting to
   turn it off; provider logos per their brand rules, recorded in `THIRD_PARTY_LICENSES.md`.
 
-### Step 33: Hardening, dependencies, 1.0 (M)
+### Step 33: Toetsen as cards (M)
+
+Items: F-27. Decisions 41-44. Design: spec 4.7 (and 3.10 for the histogram bins); boards 56 (card
+and a stack with three attempts) and 55 (two attempts). Boards 47-54 are history.
+
+1. Card component for a test, PO and attempt (spec 4.7): the two lines, the mini histogram (bins
+   from `maatwerk-grades`), observaties, average block; "Overzicht openen" into the ⋮ menu; a
+   click on the card opens the overview (the verzameloverzicht for a stack).
+2. Grid per jaarlaag with periodes in reading order, labels and dividers.
+3. Stack: attempts behind the Verzamelkaart, the toggle pill, open state per session; the tray row
+   with the outline (one SVG path with rounded inner corners, recomputed on resize), the two-step
+   animation and the reduced-motion fallback.
+4. e2e: open and close a stack, click a card, the ⋮ actions; visual baselines after the user's
+   check (stop and ask).
+
+### Step 34: Observaties and Opdrachten as cards (M, design pending)
+
+Items: F-28. Decision 45. Design: boards 57 (Observaties) and 58 (Opdrachten with the preview
+panel), to be drawn and decided with the user first; then spec sections and this step's
+sub-tasks. Builds on step 30 (the edit modals) and step 31 (the opdracht preview render).
+
+### Step 35: Hardening, dependencies, 1.0 (M)
 
 Items: X-01 (Typst upgrade, golden diff with the user), X-02, X-05, the remaining R-05 files and
 compat layer, backlog cleanup, `/security-review`, whole-codebase review by a fresh reviewer,

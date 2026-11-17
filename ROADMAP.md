@@ -104,6 +104,8 @@ from the inventory keep their old ID in "Source".
 | F-24 | PO overview modal: "Overzicht openen" on a PO card; Resultaten per klas or per projectgroep with category scores and tooltips, Cijferverdeling, Boxplot, Categorieën (students per level), Observaties per category                                                                                                                                                                                                                            | Overzicht                 | P2  | M    | yes (design)                | user 2026-11-14                    |
 | F-25 | Student profile restyled with the same content: Cijferverloop as a bar chart, comparisons with a ±1 SD band, RTTI cards per test, observaties per school year                                                                                                                                                                                                                                                                                  | Overzicht                 | P2  | M    | yes (design)                | user 2026-11-14                    |
 | F-26 | RTTI category names reproductie, training, transfer, inzicht everywhere in the UI (as the rapport)                                                                                                                                                                                                                                                                                                                                             | Overzicht                 | P2  | S    |                             | user 2026-11-14                    |
+| F-27 | Toetsen as cards: grid per jaarlaag with periodes in reading order, exam card with RTTI points, mini histogram and top observaties, attempts as a stack that opens into an outlined tray (spec 4.7, boards 55-56)                                                                                                                                                                                                                              | Toetsen                   | P2  | M    | yes (design)                | user 2026-11-17                    |
+| F-28 | Observaties and Opdrachten as cards; Opdrachten opens a preview (PDF/SVG) on the right half while the cards move aside                                                                                                                                                                                                                                                                                                                         | Observaties, Opdrachten   | P2  | M    | yes (design)                | user 2026-11-17                    |
 
 ### 4.2 Bugs and quirks (B)
 
@@ -193,6 +195,8 @@ does it.
 | F-24 | P2   | 29           |
 | F-25 | P2   | 29           |
 | F-26 | P2   | 29           |
+| F-27 | P2   | 33           |
+| F-28 | P2   | 34           |
 | B-01 | Done | 10           |
 | B-02 | P1   | 19           |
 | B-03 | P1   | 19           |
@@ -218,11 +222,11 @@ does it.
 | R-03 | P1   | 13, 14       |
 | R-04 | P1   | 19           |
 | R-05 | P2   | every step   |
-| X-01 | P2   | 33           |
-| X-02 | P3   | 33           |
+| X-01 | P2   | 35           |
+| X-02 | P3   | 35           |
 | X-03 | P3   | after 1.0    |
 | X-04 | P2   | 16           |
-| X-05 | P2   | 33 + ongoing |
+| X-05 | P2   | 35 + ongoing |
 | X-06 | P3   | 28           |
 | X-07 | P2   | 18           |
 | X-08 | P2   | 19           |
@@ -262,7 +266,7 @@ does it.
 | U13, U16                                                   | Verify superseded, remove dead code                                        | 15   |
 | U17 (smaller observations)                                 | Ask the user what is meant                                                 | 30   |
 | U18                                                        | = V-02                                                                     | 27   |
-| Backlog robustness, Typst, tests (inventory section 2)     | Into step 29 unless a step above names them                                | 33   |
+| Backlog robustness, Typst, tests (inventory section 2)     | Into step 29 unless a step above names them                                | 35   |
 
 ## 5. Areas
 
@@ -282,13 +286,13 @@ Steps are cut along these areas. The files listed are the current main ones.
 
 ## 6. Steps
 
-The steps are in `PLAN-2.md` (steps 12-33, each one or two 5-hour sessions). This file keeps the
+The steps are in `PLAN-2.md` (steps 12-35, each one or two 5-hour sessions). This file keeps the
 item lists; `PLAN-2.md` decides the order and the scope per session.
 
 ## 7. Decisions
 
 All decided (2026-11-04); details in `PLAN-2.md` section 1 and
-`docs/adr/0010-phase-2-decisions.md`: 1 Rust core; 2 0.x per step, 1.0 at the end (step 33); 3 real-data
+`docs/adr/0010-phase-2-decisions.md`: 1 Rust core; 2 0.x per step, 1.0 at the end (step 35); 3 real-data
 test only for steps that touch data; 4 minimum app version in `school.json`; 5 old goldens
 replaced step by step; 6 AI assistant in step 32; 7 theme, accent, divider and active year per
 user in `gebruikers/<id>.json`; 8 data v3 renames `fotos/` and `users/`; 9 trend arrow = best
