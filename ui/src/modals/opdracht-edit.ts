@@ -176,8 +176,14 @@ export async function openOpdrachtModal(
           onSaved();
         });
       });
-      // Saves first (a new opdracht needs its folder), then opens the editor.
+      // Saves first (a new opdracht needs its folder, a change must not be lost), then opens the
+      // editor. An unchanged opdracht is not written again (review 30-31 m2).
       el.querySelector('#f-opeditor')!.addEventListener('click', () => {
+        if (existing && snapshot() === initial) {
+          closeModal();
+          void openEditor(existing);
+          return;
+        }
         void save().then((saved) => {
           if (!saved) return;
           closeModal();

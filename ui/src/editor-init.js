@@ -45,7 +45,14 @@ import { applyStyleData } from './legacy/style-data';
 import { renderAvatar } from './components/avatar';
 import editorCmCss from './editor-cm.css?inline';
 import { blockFileDrops } from './utils/no-file-drop';
-import { hasRenderError, initStatus, setCompiling, setStatus } from './editor/status';
+import {
+  hasActionError,
+  initStatus,
+  setCompiling,
+  setDirty,
+  setRenderError,
+  setStatus,
+} from './editor/status';
 import { mountDivider } from './editor/divider';
 import {
   clickPoint,
@@ -671,7 +678,13 @@ window.addEventListener('message', (evt) => {
   applyUpdate(msg.update);
 });
 
+let gotResult = false; // the pill says "Laden…" until the first compile result
+
 function applyUpdate(u) {
+  if (!gotResult) {
+    gotResult = true;
+    setStatus('');
+  }
   lastResult = Math.max(lastResult, u.generation);
   updateCompiling();
   if (u.pages.length || u.pageCount !== svgViewer.querySelectorAll('.svg-page').length) {
@@ -708,11 +721,10 @@ function showCompileResult(u) {
   const show = () => {
     lastUpdate = u;
     applyDiagnostics();
-    if (u.diagnostics.some((d) => d.severity === 'error')) {
-      setStatus('Fout bij renderen', diagnosticsText(u.diagnostics));
-    } else if (hasRenderError()) {
-      setStatus('');
-    }
+    // The compile error of the current text; an action error (a failed save) stays apart.
+    setRenderError(
+      u.diagnostics.some((d) => d.severity === 'error') ? diagnosticsText(u.diagnostics) : null,
+    );
   };
   if (u.ok) {
     show();
@@ -826,8 +838,10 @@ function saveNow(file = current) {
       }
       if (!writeResult?.ok) throw new Error('niet opgeslagen');
       entry.baseHash = writeResult.hash;
-      // A compile error stays in view: saving does not fix it.
-      if (!hasRenderError()) setStatus('Opgeslagen');
+      // Saved: unless the text changed while it was written (then the next save follows).
+      setStatus('Opgeslagen');
+      const now = (file === current ? view.state : entry.state).doc.toString();
+      if (now === content && saveTimer === null) setDirty(false);
       lastSaveFailed = false;
       return true;
     } catch (err) {
@@ -855,6 +869,7 @@ async function loadTheirs() {
   files.get(file).baseHash = read?.hash ?? '';
   lastSaveFailed = false;
   showConflict(false);
+  setDirty(false);
   setStatus('Versie van je collega geladen');
 }
 
@@ -921,7 +936,9 @@ const changeListener = EditorView.updateListener.of((update) => {
     clearTimeout(errorTimer);
     sendText(current, update.state.doc.toString());
     if (replacingDoc) return;
-    if (!hasRenderError()) setStatus('Niet opgeslagen…');
+    setDirty(true);
+    // A passing message makes room for the unsaved state; an error (a failed save) stays.
+    if (!hasActionError()) setStatus('');
     scheduleSave();
   } else if (update.selectionSet) {
     scheduleCursorSync();

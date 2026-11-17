@@ -1,7 +1,8 @@
 # State
 
-Last updated: 2026-11-17 (step 30) Branch: `step/30-observaties` (from `design/toetsen-cards`,
-so the step merge brings the round 12-14 docs into `main`)
+Last updated: 2026-11-17 (steps 30-31, gate done) Branch: `step/31-editor` (on top of
+`step/30-observaties`, which started from `design/toetsen-cards`, so the merge brings the round
+12-14 docs into `main`)
 Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -39,8 +40,15 @@ Baseline 2026-11-17 on `e89ad1d`: cargo test all ok, `npm test` ok.
    sync (V-03), U10 (typed proxy `modals/editor.ts`, `editor/protocol.ts`; files not paths).
    e2e `editor-shell.spec` (5); mock `MockEditor.compileDelayMs`. Visual: `editor` (× 3
    looks) differs, expected.
-2. Next: the gate for steps 30 and 31, the reviewer (`docs/reviews/step-30-31.md`), then stop
-   and report (visual baselines and the merge wait for the user).
+2. **Gate (2026-11-17):** cargo fmt, clippy, test, deny, SPDX, npm licences green; 725 Vitest;
+   Chromium e2e 369/369. Visual: `editor`, `modal-observatie-new`, `modal-opdracht-edit`,
+   `modal-opdrachten-genereren` differ (× 3 looks), all intended; baselines not updated.
+3. **Review** `docs/reviews/step-30-31.md`: 0 blockers, 1 major (M1, fixed), 8 minors (m1, m2
+   fixed, m6 partly; the rest in the review's backlog list), 12 nits.
+
+**Next action (STOP, user):** look at the four changed views (visual diffs) and the editor; then
+update the visual baselines (local and CI), merge `step/30-observaties` and `step/31-editor` into
+`main` (tags `step-30`, `step-31`), and the releases 0.20-0.22 when the user asks. Then step 32.
 
 **Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,
 Lettertypevarianten, Tekstoperator), "Wiskunde ▾" the structures (Breuk, Wortel, …), "Symbolen ▾"
@@ -155,7 +163,7 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 Observaties and Opdrachten as cards with the preview panel, decisions 46-47, spec 4.16 and 4.17,
 mocks of boards 57-58; step 34 written out (34a, 34b).
 
-**Next action:** release 0.20 when the user asks; merge `design/toetsen-cards`; then step 30
+**Next action (then):** release 0.20 when the user asks; `design/toetsen-cards` is merged through step 30; step 30 done (see above).
 (`PLAN-2.md`).
 
 **Choices made without asking (for the report):** SE column when the group is upper school

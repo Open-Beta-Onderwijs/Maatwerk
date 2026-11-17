@@ -96,5 +96,12 @@ export function mountDivider({ host, left, divider, initial, save, onChange }: D
       commit();
     }, KEY_SAVE_DELAY_MS);
   });
-  return { set };
+  // A position from outside (the saved one) is the saved state: a double click back to 50% then
+  // counts as a change (review 30-31 m1).
+  return {
+    set: (v: number) => {
+      set(v);
+      saved = split;
+    },
+  };
 }

@@ -47,6 +47,30 @@ test('header: back button, title and subtitle; the status pill ends on all done'
   expect(errors).toEqual([]);
 });
 
+// Review 30-31 M1: "Opgeslagen" only when saved; a failed save is not covered by a good compile.
+test('a failed save stays in the pill after a good compile; "Opgeslagen" only once saved', async ({
+  page,
+}) => {
+  await login(page);
+  const { frame } = await openEditor(page);
+  const pill = frame.getByRole('status');
+  await expect(pill).toHaveAttribute('data-kind', 'ok');
+  await withMock(page, (m) => m.fail('writeTextFile', 'opdrachten/'));
+  await frame.locator('.cm-content').click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.type('\nEen regel die niet wordt opgeslagen');
+  await expect(pill).toHaveText('Fout bij opslaan');
+  await expect(pill).toHaveAttribute('data-kind', 'error');
+  // The compile of that text is long done; the pill still says the save failed.
+  await page.waitForTimeout(1000);
+  await expect(pill).toHaveText('Fout bij opslaan');
+
+  await withMock(page, (m) => m.clearFaults());
+  await page.keyboard.type('!');
+  await expect(pill).toHaveText('Opgeslagen · PDF bijgewerkt');
+  await expect(pill).toHaveAttribute('data-kind', 'ok');
+});
+
 test('a slow compile shows "Compileren…" with a spinner', async ({ page }) => {
   await login(page);
   const { frame } = await openEditor(page);
