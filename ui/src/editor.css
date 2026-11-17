@@ -17,7 +17,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 14px;
   background: #f5f6f8;
   color: #1b2230;
@@ -566,7 +566,7 @@ body {
   border-radius: 8px 8px 0 0;
   background: none;
   color: #5d6675;
-  font-family: Consolas, 'Cascadia Mono', ui-monospace, Menlo, monospace;
+  font-family: 'Maatwerk Emoji', Consolas, 'Cascadia Mono', ui-monospace, Menlo, monospace;
   font-size: 13px;
   cursor: pointer;
 }
@@ -698,7 +698,7 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   padding: 3px 0;
   min-width: 170px;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 13px;
 }
 
@@ -713,7 +713,7 @@ body {
   background: none;
   cursor: pointer;
   color: #2c3e50;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 13px;
 }
 
@@ -811,7 +811,7 @@ body {
   font-size: 12px;
   color: #2c3e50;
   white-space: nowrap;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
 }
 
 #pdf-panel {
@@ -1016,7 +1016,8 @@ body {
   max-height: 320px;
   overflow-y: auto;
   font-family:
-    'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
+    'Maatwerk Emoji', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, Menlo,
+    'DejaVu Sans Mono', monospace;
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;

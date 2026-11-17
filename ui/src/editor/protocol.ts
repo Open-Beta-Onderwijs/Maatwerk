@@ -18,6 +18,8 @@ export interface EditorInfo {
   subtitle: string;
   /** The editor's share of the width (F-16), saved per user. */
   split: number;
+  /** The embedded emoji font (`utils/emoji-font.ts`); the frame has no bridge to ask. */
+  emojiFontUrl: string;
 }
 
 /** A request from the iframe; every one is answered with `maatwerk-response` and its `id`. */

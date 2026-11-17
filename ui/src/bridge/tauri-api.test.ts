@@ -366,6 +366,7 @@ describe('TauriApi', () => {
     expect(f.api.pdfUrl('1-rapport_preview.pdf')).toBe(
       'http://maatwerk-out.localhost/1-rapport_preview.pdf',
     );
+    expect(f.api.emojiFontUrl()).toBe('http://maatwerk-out.localhost/maatwerk-emoji.ttf');
     expect(await f.api.openPath('1-rapport_preview.pdf')).toBe('');
     const name = {
       schooljaar: '2025-2026',

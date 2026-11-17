@@ -60,9 +60,11 @@ html[data-theme='dark'] .score-grid {
   --rtti-i: #d24a45;
 
   /* Type (2.7). */
+  /* 'Maatwerk Emoji' first: the embedded emoji font, for emoji code points only (utils/emoji-font.ts). */
   --font-ui:
-    'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; /* SF on macOS, the desktop font on Linux */
-  --font-code: Consolas, 'Cascadia Mono', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
+    'Maatwerk Emoji', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; /* SF on macOS, the desktop font on Linux */
+  --font-code:
+    'Maatwerk Emoji', Consolas, 'Cascadia Mono', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
   --fs-title: 24px;
   --fs-modal-title: 22px;
   --fs-body: 14px;

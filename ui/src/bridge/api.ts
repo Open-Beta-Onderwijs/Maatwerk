@@ -241,6 +241,11 @@ export interface MaatwerkApi {
    */
   pdfUrl(pdfPath: string): string;
   /**
+   * URL of the embedded emoji font (Noto Color Emoji, the same copy the PDFs use), for
+   * `utils/emoji-font.ts`. Served from the binary, not the data folder.
+   */
+  emojiFontUrl(): string;
+  /**
    * "Afdrukken": copies a render output into `rapporten/` next to the data
    * folder under a descriptive name and opens the copy with the OS (ADR-0002
    * section 9, C15, C18). Resolves to the copy's path relative to that shared

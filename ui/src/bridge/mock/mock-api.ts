@@ -1298,6 +1298,11 @@ export class MockApi implements MaatwerkApi {
     return () => this.progressListeners.delete(cb);
   }
 
+  /** The mock build copies the core's font next to the pages (ui/vite/emoji-font.ts). */
+  emojiFontUrl(): string {
+    return '/maatwerk-emoji.ttf';
+  }
+
   pdfUrl(pdfPath: string): string {
     let url = this.pdfUrls.get(pdfPath);
     if (!url) {

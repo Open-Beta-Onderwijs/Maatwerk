@@ -91,6 +91,7 @@ function editorInfo(opdracht: Opdracht): EditorInfo {
   return {
     subtitle: editorSubtitle(latest ?? opdracht),
     split: savedEditorSplit(Store.getActiveUser()) ?? EDITOR_SPLIT.initial,
+    emojiFontUrl: window.maatwerk.emojiFontUrl(),
   };
 }
 

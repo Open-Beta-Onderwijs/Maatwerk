@@ -46,8 +46,17 @@ Baseline 2026-11-17 on `e89ad1d`: cargo test all ok, `npm test` ok.
 3. **Review** `docs/reviews/step-30-31.md`: 0 blockers, 1 major (M1, fixed), 8 minors (m1, m2
    fixed, m6 partly; the rest in the review's backlog list), 12 nits.
 
+**Emoji font in the window (user 2026-11-17, branch `fix/ui-emoji-font` on `step/31-editor`):** the
+window draws emoji with the embedded Noto Color Emoji, the one copy in the binary served by the
+`maatwerk-out` scheme (`EMOJI_FONT_PATH`), registered by `utils/emoji-font.ts` for emoji code
+points only and only where the webview draws COLRv1 (WebView2); macOS keeps Apple's emoji. The
+mock build copies the font (`ui/vite/emoji-font.ts`). The picker stays at Emoji 12.0 (user: it
+must work on macOS 12). Checks: clippy, cargo scheme tests, 726 Vitest, Chromium e2e 371/371.
+Visual: 69 diffs in 23 views (the step 30/31 views plus every view with an emoji), all emoji
+glyphs or the intended step 30/31 changes.
+
 **Next action (STOP, user):** look at the four changed views (visual diffs) and the editor; then
-update the visual baselines (local and CI), merge `step/30-observaties` and `step/31-editor` into
+update the visual baselines (local and CI), merge `step/30-observaties`, `step/31-editor` and `fix/ui-emoji-font` into
 `main` (tags `step-30`, `step-31`), and the releases 0.20-0.22 when the user asks. Then step 32.
 
 **Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,

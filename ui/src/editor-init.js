@@ -54,6 +54,7 @@ import {
   setStatus,
 } from './editor/status';
 import { mountDivider } from './editor/divider';
+import { registerEmojiFont } from './utils/emoji-font';
 import {
   clickPoint,
   diagnosticsText,
@@ -362,6 +363,7 @@ postToParent('maatwerk-editor-info')
   .then((info) => {
     if (!info) return;
     document.getElementById('editor-subtitle').textContent = info.subtitle;
+    registerEmojiFont(info.emojiFontUrl);
     divider.set(info.split);
   })
   .catch((e) => console.warn('[editor] info', e));
