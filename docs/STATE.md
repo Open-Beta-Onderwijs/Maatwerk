@@ -65,8 +65,10 @@ Run 44158096575: Windows and Linux wrote their 23 files (no real diffs), checked
 `CSS.supports`, `baf706b`) and skipped the visual step. Run 44265647594 wrote the 23 macOS
 files (checked, committed). **Run 44273623560: green on all targets.**
 
-**Next action:** merge `step/30-observaties` and `step/31-editor` into `main` (merge commits), tags
-`step-30`, `step-31`; push `main`. Releases 0.20-0.22 when the user asks. Then step 32.
+**Merged (2026-11-18, user OK):** `step/30-observaties` and `step/31-editor` into `main` (merge
+commits), tags `step-30`, `step-31`, pushed.
+
+**Next action:** releases 0.20-0.22 when the user asks. Then step 32.
 
 **Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,
 Lettertypevarianten, Tekstoperator), "Wiskunde ▾" the structures (Breuk, Wortel, …), "Symbolen ▾"
