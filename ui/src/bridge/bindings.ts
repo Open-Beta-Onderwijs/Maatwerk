@@ -280,6 +280,11 @@ export const commands = {
 	 *  found, decision 72).
 	 */
 	aiPresets: () => __TAURI_INVOKE<Value>("ai_presets"),
+	/**
+	 *  The paperclip (decision 53): picks one or more files; per file a token for `ai_send`, the
+	 *  name and the size in bytes (the UI refuses files over 25 MB before sending).
+	 */
+	aiPickAttachments: () => typedError<Value, CommandError>(__TAURI_INVOKE("ai_pick_attachments")),
 };
 
 /** Events */

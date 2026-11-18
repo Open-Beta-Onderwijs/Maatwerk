@@ -4,6 +4,8 @@
 // U10: typed, and no paths: the iframe names one of its opdracht's three files and the main
 // window builds the path for the opdracht it opened; the image calls always use that opdracht.
 
+import type { AiRequestMessage } from './ai-protocol';
+
 /** The files of an opdracht folder the editor may read and write (C14, ADR-0002 5a). */
 export const EDITOR_FILES = ['opdracht.typ', 'main.typ', 'lib.typ'] as const;
 export type EditorFile = (typeof EDITOR_FILES)[number];
@@ -37,7 +39,8 @@ export type EditorRequest =
   | { type: 'maatwerk-get-data-dir' }
   | { type: 'maatwerk-user-avatar' }
   | { type: 'maatwerk-editor-info' }
-  | { type: 'maatwerk-set-split'; split: number };
+  | { type: 'maatwerk-set-split'; split: number }
+  | AiRequestMessage;
 
 /** A notice from the iframe (no answer). */
 export type EditorNotice = { type: 'editor-close' } | { type: 'editor-logout' };

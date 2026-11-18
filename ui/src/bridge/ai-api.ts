@@ -245,6 +245,14 @@ export interface AiConversations {
   running: ProviderKey | null;
 }
 
+/** A file chosen with the paperclip (decision 53); `token` goes into `AiAttachmentRequest`. */
+export interface PickedAttachment {
+  token: string;
+  name: string;
+  /** Bytes. */
+  size: number;
+}
+
 export interface SyllabusList {
   folder: string;
   files: string[];
@@ -302,4 +310,6 @@ export interface AiApi {
   syllabusList(): Promise<SyllabusList>;
   openSyllabusFolder(): Promise<void>;
   presets(): Promise<AiPreset[]>;
+  /** The paperclip's file dialog (images, PDF, text); empty when cancelled. */
+  pickAttachments(): Promise<PickedAttachment[]>;
 }

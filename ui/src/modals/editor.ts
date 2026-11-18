@@ -12,7 +12,7 @@
 import { confirmDialog } from '../app.js';
 import { editorSubtitle } from '../domain/editor-header';
 import { EDITOR_SPLIT, clampEditorSplit, savedEditorSplit } from '../domain/preferences';
-import type { Opdracht } from '../domain/types';
+import type { Observatie, Opdracht } from '../domain/types';
 import {
   isEditorFile,
   type EditorFile,
@@ -21,6 +21,7 @@ import {
   type EditorResponse,
 } from '../editor/protocol';
 import { Store } from '../store.js';
+import { handleAiRequest } from './editor-ai';
 
 /** Live editor methods the iframe may call (ADR-0002 section 6: method allowlist). */
 const EDITOR_METHODS = new Set([
@@ -109,6 +110,30 @@ function closeEditor(): void {
     window.maatwerk.editorClose(session).catch(() => {});
     session = null;
   }
+}
+
+/** The AI requests' view of the main window (step 32b): the teacher, the opdracht, its data. */
+function aiContext(frame: HTMLIFrameElement, opdracht: Opdracht) {
+  const user = Store.getActiveUser() as { id?: string } | null;
+  const opdrachten = Store.getOpdrachtenSync() as Opdracht[];
+  const latest = opdrachten.find((o) => o.id === opdracht.id) ?? opdracht;
+  const observaties = (latest.vakken ?? []).flatMap(
+    (v) => Store.getObservatiesSync(v) as Observatie[],
+  );
+  return {
+    ai: window.maatwerk.ai,
+    opdracht: latest,
+    gebruiker: user?.id ?? null,
+    opdrachten,
+    observaties,
+    async preview(text: string) {
+      const r = await window.maatwerk.renderAssignmentSvg(latest.id, latest.naam ?? '', text);
+      return r.success ? { pages: r.pages } : { error: r.error };
+    },
+    emit(runId: string, event: unknown) {
+      frame.contentWindow?.postMessage({ type: 'maatwerk-ai-event', runId, event }, '*');
+    },
+  };
 }
 
 /** Throws for a file the editor may not touch (U10). */
@@ -221,6 +246,8 @@ function handleEditorMessage(
         await Store.savePreferences({ editorSplit: clampEditorSplit(msg.split) });
         return true;
       });
+    case 'maatwerk-ai':
+      return answer(() => handleAiRequest(msg.method, msg.args, aiContext(frame, opdracht)));
     default:
       return send({ error: `not allowed: ${String((msg as { type: string }).type)}` });
   }

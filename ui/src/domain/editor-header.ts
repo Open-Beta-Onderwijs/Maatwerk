@@ -5,7 +5,7 @@
 
 import type { Opdracht } from './types';
 
-const VAK_LABEL: Record<string, string> = {
+export const VAK_LABEL: Record<string, string> = {
   bio: 'Biologie',
   nat: 'Natuurkunde',
   schk: 'Scheikunde',

@@ -746,3 +746,52 @@ pub fn ai_presets() -> Value {
             .collect(),
     )
 }
+
+/// File types the paperclip offers (spec 4.8.1): the opdracht image types, PDFs and plain text.
+pub const ATTACHMENT_EXTS: [&str; 12] = [
+    "png", "jpg", "jpeg", "gif", "svg", "webp", "pdf", "txt", "md", "typ", "csv", "json",
+];
+
+/// The paperclip (decision 53): picks one or more files; per file a token for `ai_send`, the
+/// name and the size in bytes (the UI refuses files over 25 MB before sending).
+#[tauri::command]
+#[specta::specta]
+pub async fn ai_pick_attachments(
+    state: State<'_, Shared>,
+    app: AppHandle,
+    window: tauri::Window,
+) -> Res<Value> {
+    use tauri_plugin_dialog::DialogExt;
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .set_title("Bijlage kiezen")
+            .add_filter("Afbeeldingen, PDF en tekst", &ATTACHMENT_EXTS)
+            .set_parent(&window)
+            .blocking_pick_files()
+    })
+    .await
+    .map_err(|e| CommandError::internal(format!("dialog task failed: {e}")))?;
+    let paths: Vec<PathBuf> = picked
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|p| p.into_path().ok())
+        .collect();
+    blocking(state, move |c| {
+        let files = paths
+            .into_iter()
+            .map(|path| {
+                let name = path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or_default()
+                    .to_owned();
+                let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+                let token = c.picked().add(path);
+                json!({ "token": token, "name": name, "size": size })
+            })
+            .collect();
+        Ok(Value::Array(files))
+    })
+    .await
+}

@@ -156,6 +156,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             ai::ai_syllabus_list,
             ai::ai_open_syllabus_folder,
             ai::ai_presets,
+            ai::ai_pick_attachments,
         ])
         .events(collect_events![
             DataChanged,

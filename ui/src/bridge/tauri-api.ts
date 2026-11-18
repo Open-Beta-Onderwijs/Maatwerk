@@ -131,6 +131,7 @@ function createAiApi(c: Commands): Ai.AiApi {
       await orThrow(c.aiOpenSyllabusFolder());
     },
     presets: async () => (await c.aiPresets()) as unknown as Ai.AiPreset[],
+    pickAttachments: () => asJson(c.aiPickAttachments()),
   };
 }
 

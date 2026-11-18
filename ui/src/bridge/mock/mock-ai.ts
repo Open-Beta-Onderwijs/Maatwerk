@@ -21,6 +21,7 @@ import type {
   HunkStatus,
   Proposal,
   ProposalView,
+  PickedAttachment,
   ProviderKey,
   SyllabusList,
   TurnResult,
@@ -67,6 +68,8 @@ export class MockAi implements AiApi {
   installed: Builtin[] = ['claude'];
   /** The next turn's script; consumed by `send`. */
   nextTurn: MockTurn | null = null;
+  /** What the next paperclip dialog returns (consumed). */
+  nextPick: PickedAttachment[] = [];
   /** Delay between streamed events (ms). */
   stepDelayMs = 0;
   readonly calls: { method: string; args: unknown[] }[] = [];
@@ -321,6 +324,13 @@ export class MockAi implements AiApi {
 
   async presets(): Promise<AiPreset[]> {
     return structuredClone(PRESETS);
+  }
+
+  async pickAttachments(): Promise<PickedAttachment[]> {
+    this.record('pickAttachments', []);
+    const picked = this.nextPick;
+    this.nextPick = [];
+    return picked;
   }
 }
 
