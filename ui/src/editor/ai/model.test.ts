@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { CheckReport, Proposal, RunSummary } from '../../bridge/ai-api';
 import {
   addEvent,
+  applyHunks,
   appliedText,
   attachmentError,
   chipsFrom,
@@ -198,5 +199,23 @@ describe('diff card', () => {
       '1 waarschuwing blijft · regel 131: ongebruikte variabele',
     );
     expect(remainingDiagnostics(null)).toBeNull();
+  });
+});
+
+describe('applyHunks', () => {
+  it('applies chosen clean hunks bottom-up and skips conflicts', () => {
+    const hunks = [
+      { id: 0, baseStart: 0, baseLines: ['a\n'], newLines: ['A\n'] },
+      { id: 1, baseStart: 2, baseLines: [], newLines: ['x\n'] },
+      { id: 2, baseStart: 1, baseLines: ['b\n'], newLines: [] },
+    ];
+    const statuses = [
+      { kind: 'clean' as const, at: 1 },
+      { kind: 'clean' as const, at: 4 },
+      { kind: 'conflict' as const },
+    ];
+    const text = 'new\na\nb\nc';
+    expect(applyHunks(text, hunks, statuses, new Set([0, 1, 2]))).toBe('new\nA\nb\nc\nx\n');
+    expect(applyHunks(text, hunks, statuses, new Set([1]))).toBe('new\na\nb\nc\nx\n');
   });
 });

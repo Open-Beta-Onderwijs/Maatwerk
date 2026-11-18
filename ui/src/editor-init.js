@@ -50,9 +50,12 @@ import {
   initStatus,
   setCompiling,
   setDirty,
+  setAiBusy,
   setRenderError,
   setStatus,
 } from './editor/status';
+import { createEditorAi } from './editor/ai/client';
+import { AiPanel } from './editor/ai/panel';
 import { mountDivider } from './editor/divider';
 import { registerEmojiFont } from './utils/emoji-font';
 import {
@@ -1017,7 +1020,88 @@ async function init() {
   }
 }
 
-init();
+init().then(initAi);
+
+// ── AI assistant (step 32b, spec 4.8.1) ───────────────────────────────────────
+
+/** Editor text by file name: every file loaded in this editor (decision 55: newer than disk). */
+function aiBuffers() {
+  const out = {};
+  for (const [file, entry] of files) {
+    const state = file === current && view ? view.state : entry.state;
+    if (state) out[file] = state.doc.toString();
+  }
+  return out;
+}
+
+/** Replaces the text of `file` with `text` as one undoable change, touching only what differs. */
+async function aiApplyText(file, text) {
+  await switchTo(file);
+  if (!view || current !== file) throw new Error(`${file} kan niet worden geopend`);
+  const old = view.state.doc.toString();
+  if (old === text) return;
+  let from = 0;
+  while (from < old.length && from < text.length && old[from] === text[from]) from += 1;
+  let endOld = old.length;
+  let endNew = text.length;
+  while (endOld > from && endNew > from && old[endOld - 1] === text[endNew - 1]) {
+    endOld -= 1;
+    endNew -= 1;
+  }
+  view.dispatch({
+    changes: { from, to: endOld, insert: text.slice(from, endNew) },
+    scrollIntoView: true,
+    userEvent: 'input.ai',
+  });
+}
+
+const aiCopyBar = document.getElementById('ai-copy-bar');
+
+function aiSetBusy(naam) {
+  setAiBusy(naam ? `${naam} is bezig` : null);
+  aiCopyBar.hidden = !naam;
+  aiCopyBar.textContent = naam
+    ? `${naam} werkt op een kopie. Je kunt gewoon verder typen; wat de AI ook wil veranderen, zie je bij Toepassen als conflict.`
+    : '';
+}
+
+async function initAi() {
+  if (!view) return;
+  const ai = createEditorAi(
+    (type, data) => postToParent(type, data),
+    (handler) =>
+      window.addEventListener('message', (evt) => {
+        if (fromApp(evt)) handler(evt.data);
+      }),
+  );
+  const panel = new AiPanel(
+    ai,
+    {
+      buffers: aiBuffers,
+      applyText: aiApplyText,
+      errorCount: () =>
+        lastUpdate ? lastUpdate.diagnostics.filter((d) => d.severity === 'error').length : 0,
+      setBusy: aiSetBusy,
+      refreshPreview: () => {
+        if (session !== null)
+          callEditor('editorRefresh', session).catch((err) =>
+            setStatus('Fout bij renderen', err.message),
+          );
+      },
+      layoutChanged: () => {
+        if (zoomMode === 'fit') applyZoom();
+      },
+    },
+    document.getElementById('ai-rail'),
+    document.getElementById('ai-panel'),
+  );
+  try {
+    await panel.init();
+  } catch (err) {
+    // Without the AI the editor works as before; the reason goes to the console only.
+    console.warn('AI-assistent niet beschikbaar:', err);
+  }
+}
 
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 

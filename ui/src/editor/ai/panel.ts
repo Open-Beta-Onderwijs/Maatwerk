@@ -1,0 +1,740 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+// The AI rail and chat panel in the editor (step 32b, spec 4.8.1, boards 59-61, decisions
+// 48-75). One conversation per provider per opdracht; one run per opdracht at a time, while
+// the editor stays editable (decision 63). The bridge calls go through the main window
+// (client.ts); the editor's text and undo history stay in editor-init.js (PanelHost).
+
+import type {
+  AiMessage,
+  AiProvider,
+  AiSendRequest,
+  AiSettings,
+  Conversation,
+  ProposalView,
+  ProviderKey,
+  Starter,
+  SyllabusList,
+  TurnResult,
+} from '../../bridge/ai-api';
+import type { AiEditorInfo } from '../ai-protocol';
+import {
+  StatusCard,
+  diffCard,
+  endingCard,
+  endingOf,
+  summaryRow,
+  transcriptCard,
+  type DiffCardState,
+  type Ending,
+} from './cards';
+import type { EditorAi } from './client';
+import { Composer, type PendingAttachment } from './composer';
+import { append, h, icon, monogram } from './dom';
+import {
+  MAX_ATTACHMENTS,
+  addEvent,
+  chipsFrom,
+  chipsToSave,
+  contextRequest,
+  finishRun,
+  formatSize,
+  fromHistory,
+  newRun,
+  preselectSyllabus,
+  starters,
+  type Chips,
+  type LiveRun,
+} from './model';
+import { openReview } from './review';
+
+/** What the panel needs from the editor. */
+export interface PanelHost {
+  /** Editor text by file name (`opdracht.typ`, and `main.typ`/`lib.typ` when loaded). */
+  buffers(): Record<string, string>;
+  /** Replaces the text of `file` as one undoable change (switching to its tab). */
+  applyText(file: string, text: string): Promise<void>;
+  /** Compile errors in the current text (Fouten oplossen). */
+  errorCount(): number;
+  /** "<naam> werkt op een kopie" bar and the header pill; null when the run ends. */
+  setBusy(naam: string | null): void;
+  /** Compile again after images changed on disk. */
+  refreshPreview(): void;
+  /** The panel opened or closed (the preview refits). */
+  layoutChanged(): void;
+  /** AI-instellingen (board 62; step 32c). */
+  openSettings?(): void;
+}
+
+interface Applied {
+  before: Record<string, string>;
+  after: Record<string, string>;
+  images: string[];
+  hunks: number;
+  conflicts: number;
+}
+
+interface LiveState {
+  provider: ProviderKey;
+  run: LiveRun;
+  card: StatusCard;
+  timer: ReturnType<typeof setInterval>;
+}
+
+export class AiPanel {
+  private info!: AiEditorInfo;
+  private providers: AiProvider[] = [];
+  private settings: AiSettings | null = null;
+  private open = new Set<ProviderKey>();
+  private selected: ProviderKey | null = null;
+  private conv: Conversation | null = null;
+  private chips!: Chips;
+  private composer!: Composer;
+  private live: LiveState | null = null;
+  private lastTurn = new Map<ProviderKey, TurnResult>();
+  private lastRequest = new Map<ProviderKey, AiSendRequest>();
+  private applied = new Map<ProviderKey, Applied>();
+  private cardState = new Map<ProviderKey, DiffCardState>();
+  private readonly messagesEl: HTMLElement;
+  private readonly headerEl: HTMLElement;
+  private readonly dropEl: HTMLElement;
+
+  constructor(
+    private readonly ai: EditorAi,
+    private readonly host: PanelHost,
+    private readonly rail: HTMLElement,
+    private readonly panel: HTMLElement,
+  ) {
+    this.headerEl = h('header', { class: 'ai-head' });
+    this.messagesEl = h('div', { class: 'ai-messages', 'aria-live': 'polite' });
+    this.dropEl = h('div', { class: 'ai-drop', hidden: true });
+  }
+
+  async init(): Promise<void> {
+    this.info = await this.ai.info();
+    if (!this.info.available) return;
+    const detection = await this.ai.detect(false);
+    this.settings = detection.settings;
+    if (!detection.settings.enabled) return;
+    this.providers = detection.providers.filter((p) => p.found);
+    const syllabus = await this.ai
+      .syllabusList()
+      .catch((): SyllabusList => ({ folder: '', files: [] }));
+    const preselected = preselectSyllabus(syllabus.files, this.info.vakken, this.info.schoolsoort);
+    const saved = await this.ai.context().catch(() => null);
+    this.chips = chipsFrom(saved, preselected);
+    // A remembered syllabus that is gone from the folder counts as "Geen".
+    if (this.chips.syllabus && !syllabus.files.includes(this.chips.syllabus))
+      this.chips.syllabus = null;
+    this.composer = new Composer({
+      ai: this.ai,
+      info: this.info,
+      syllabus,
+      preselected,
+      chipsChanged: (chips) => {
+        this.chips = chips;
+        void this.ai.saveContext(chipsToSave(chips)).catch(() => {});
+      },
+      send: (message, starter, attachments, chips) =>
+        void this.send(message, starter, attachments, chips),
+      usedAttachments: () => this.usedAttachments(),
+    });
+    this.composer.setChips(this.chips);
+    this.panel.append(this.headerEl, this.messagesEl, this.composer.el, this.dropEl);
+    this.setupDrop();
+    const convs = await this.ai.conversations().catch(() => ({ open: [], running: null }));
+    this.open = new Set(convs.open);
+    this.rail.hidden = false;
+    this.renderRail();
+  }
+
+  private provider(key: ProviderKey | null): AiProvider | undefined {
+    return this.providers.find((p) => p.key === key);
+  }
+
+  private limitMs(): number {
+    return (this.settings?.timeLimitMinutes ?? 5) * 60_000;
+  }
+
+  private usedAttachments(): number {
+    return (this.conv?.messages ?? []).reduce((n, m) => n + (m.attachments?.length ?? 0), 0);
+  }
+
+  // ── Rail (board 59) ───────────────────────────────────────────────────────
+
+  private renderRail(): void {
+    const buttons: HTMLElement[] = [h('span', { class: 'ai-rail-label' }, 'AI')];
+    if (this.providers.length === 0) {
+      buttons.push(
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'ai-rail-btn is-missing',
+            title: 'Geen AI-programma gevonden',
+            'aria-label': 'Geen AI-programma gevonden',
+            onclick: () => this.showInstallHelp(),
+          },
+          '?',
+        ),
+      );
+    }
+    for (const p of this.providers) {
+      const m = monogram(p.key, p.name);
+      const selected = this.selected === p.key;
+      const running = this.live?.provider === p.key;
+      const state = running ? ' · bezig' : this.open.has(p.key) ? ' · gesprek open' : '';
+      const btn = h(
+        'button',
+        {
+          type: 'button',
+          class: `ai-rail-btn${selected ? ' is-selected' : ''}`,
+          title: `${p.name}${state}`,
+          'aria-label': `${p.name}${state}`,
+          'aria-pressed': String(selected),
+          onclick: () => void this.select(p.key),
+        },
+        m.text,
+      );
+      btn.style.setProperty('--provider', m.colour);
+      if (!selected && (running || this.open.has(p.key)))
+        btn.append(h('span', { class: `ai-rail-dot${running ? ' is-running' : ''}` }));
+      buttons.push(btn);
+    }
+    this.rail.replaceChildren(...buttons);
+  }
+
+  private showInstallHelp(): void {
+    this.selected = null;
+    this.panel.hidden = false;
+    this.headerEl.replaceChildren(
+      h('div', { class: 'ai-head-text' }, h('strong', {}, 'Geen AI-programma gevonden')),
+      this.closeButton(),
+    );
+    this.messagesEl.replaceChildren(
+      h(
+        'p',
+        { class: 'ai-intro-text' },
+        'Maatwerk werkt met een AI-programma op de command line van deze computer (Claude Code, Codex, Gemini CLI, Antigravity, Mistral Vibe of Copilot CLI). Installeer er een, log in met je eigen account en open de editor opnieuw.',
+      ),
+    );
+    this.composer.el.hidden = true;
+    this.host.layoutChanged();
+  }
+
+  private closeButton(): HTMLElement {
+    return h(
+      'button',
+      {
+        type: 'button',
+        class: 'ai-icon-btn',
+        'aria-label': 'Chat sluiten',
+        title: 'Chat sluiten',
+        onclick: () => this.close(),
+      },
+      icon('x', 18),
+    );
+  }
+
+  private close(): void {
+    this.selected = null;
+    this.conv = null;
+    this.panel.hidden = true;
+    this.renderRail();
+    this.host.layoutChanged();
+  }
+
+  /** Opens the conversation of `key`; clicking the open one closes the panel. */
+  async select(key: ProviderKey): Promise<void> {
+    if (this.selected === key) return this.close();
+    this.selected = key;
+    this.conv = { provider: key, messages: [] };
+    this.composer.reset();
+    this.composer.el.hidden = false;
+    this.panel.hidden = false;
+    this.renderRail();
+    this.render();
+    this.host.layoutChanged();
+    try {
+      const conv = await this.ai.conversation(key);
+      if (this.selected === key) this.conv = conv;
+    } catch {
+      /* an unreadable history starts empty */
+    }
+    if (this.selected === key) this.render();
+    this.composer.focus();
+  }
+
+  // ── Panel ─────────────────────────────────────────────────────────────────
+
+  private renderHeader(p: AiProvider): void {
+    const m = monogram(p.key, p.name);
+    const avatar = h('span', { class: 'ai-avatar' }, m.text);
+    avatar.style.setProperty('--provider', m.colour);
+    this.headerEl.replaceChildren();
+    append(
+      this.headerEl,
+      avatar,
+      h(
+        'div',
+        { class: 'ai-head-text' },
+        h('strong', {}, p.name),
+        h('span', {}, 'via de command line op deze computer'),
+      ),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'ai-new',
+          title: 'Nieuw gesprek',
+          disabled: this.live?.provider === p.key,
+          onclick: () => void this.newConversation(p.key),
+        },
+        icon('plus', 15),
+        'Nieuw gesprek',
+      ),
+      this.host.openSettings
+        ? h(
+            'button',
+            {
+              type: 'button',
+              class: 'ai-icon-btn',
+              'aria-label': 'AI-instellingen',
+              title: 'AI-instellingen',
+              onclick: () => this.host.openSettings?.(),
+            },
+            icon('gear', 18, 1.9),
+          )
+        : null,
+      this.closeButton(),
+    );
+  }
+
+  private async newConversation(key: ProviderKey): Promise<void> {
+    await this.ai.newConversation(key).catch(() => {});
+    this.open.delete(key);
+    this.lastTurn.delete(key);
+    this.lastRequest.delete(key);
+    this.applied.delete(key);
+    this.cardState.delete(key);
+    if (this.selected === key) {
+      this.conv = { provider: key, messages: [] };
+      this.composer.reset();
+      this.render();
+    }
+    this.renderRail();
+  }
+
+  private render(): void {
+    const p = this.provider(this.selected);
+    if (!p || !this.conv) return;
+    this.renderHeader(p);
+    const busy = this.live !== null;
+    this.composer.setBusy(busy, this.provider(this.live?.provider ?? null)?.name ?? '');
+    const msgs = this.conv.messages;
+    const children: HTMLElement[] = [];
+    if (msgs.length === 0 && !(busy && this.live?.provider === p.key)) {
+      children.push(this.emptyState(p));
+    }
+    let lastProposal = -1;
+    msgs.forEach((m, i) => {
+      if (!m.fromTeacher && m.run?.proposal) lastProposal = i;
+    });
+    msgs.forEach((m, i) => {
+      if (m.fromTeacher) children.push(this.teacherBubble(m));
+      else children.push(this.aiMessage(p, m, i === lastProposal, i === msgs.length - 1));
+    });
+    const live = this.live;
+    if (live && live.provider === p.key) {
+      children.push(live.card.el);
+    } else if (msgs.at(-1)?.fromTeacher && this.lastTurn.has(p.key)) {
+      // The turn failed before a run was recorded (CLI missing, bad request).
+      const r = this.lastTurn.get(p.key)!;
+      const ending = this.endingOfTurn(r);
+      if (ending) children.push(this.ending(p, ending));
+    }
+    const atBottom =
+      this.messagesEl.scrollHeight - this.messagesEl.scrollTop - this.messagesEl.clientHeight < 40;
+    this.messagesEl.replaceChildren(...children);
+    if (atBottom || busy) this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+  }
+
+  private emptyState(p: AiProvider): HTMLElement {
+    return h(
+      'div',
+      { class: 'ai-empty' },
+      h(
+        'div',
+        { class: 'ai-intro' },
+        h('h3', {}, `Waar kan ${p.name} mee helpen?`),
+        h(
+          'p',
+          { class: 'ai-intro-text' },
+          'De AI werkt op een kopie van deze opdracht en stelt wijzigingen voor. Jij kiest wat je toepast.',
+        ),
+      ),
+      h(
+        'div',
+        { class: 'ai-starters' },
+        ...starters(this.host.errorCount()).map((s) =>
+          h(
+            'button',
+            {
+              type: 'button',
+              class: `ai-starter${s.key === 'fixErrors' ? ' is-danger' : ''}`,
+              onclick: () => this.composer.fill(s.text, s.key, s.select),
+            },
+            h(
+              'span',
+              { class: 'ai-starter-icon' },
+              icon(
+                s.key === 'fixErrors'
+                  ? 'warn'
+                  : s.key === 'completeAnswers'
+                    ? 'pencil'
+                    : s.key === 'rewrite'
+                      ? 'swap'
+                      : 'plus',
+                16,
+              ),
+            ),
+            h(
+              'span',
+              { class: 'ai-starter-text' },
+              h('span', { class: 'ai-starter-label' }, s.label),
+              h('span', { class: 'ai-starter-sub' }, s.subtitle),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  private teacherBubble(m: AiMessage): HTMLElement {
+    return h(
+      'div',
+      { class: 'ai-msg is-teacher' },
+      h('div', { class: 'ai-bubble' }, m.text),
+      m.attachments?.length
+        ? h(
+            'div',
+            { class: 'ai-msg-attachments' },
+            ...m.attachments.map((a) =>
+              h('span', { class: 'ai-attachment is-sent' }, icon('file', 13), a),
+            ),
+          )
+        : null,
+    );
+  }
+
+  private aiMessage(
+    p: AiProvider,
+    m: AiMessage,
+    withProposal: boolean,
+    last: boolean,
+  ): HTMLElement {
+    const el = h('div', { class: 'ai-msg is-ai' });
+    const run = m.run;
+    if (run) {
+      const ended = run.end === 'stopped' ? 'stopped' : run.end === 'timedOut' ? 'timedOut' : null;
+      el.append(
+        summaryRow(run, () =>
+          transcriptCard(p.command, fromHistory(run.steps), run.lines, ended, this.limitMs()),
+        ),
+      );
+    }
+    if (m.text.trim()) el.append(h('div', { class: 'ai-bubble' }, m.text));
+    if (run && withProposal) {
+      const host = h('div', { class: 'ai-diff-host' });
+      el.append(host);
+      void this.fillDiffCard(p.key, host, run.applied && !this.applied.has(p.key));
+    } else if (run) {
+      const ending = endingOf(run, this.limitMs());
+      // Only the last message offers Opnieuw proberen; older ones keep their card.
+      if (ending) el.append(this.ending(p, ending, last));
+    }
+    return el;
+  }
+
+  private endingOfTurn(r: TurnResult): Ending | null {
+    switch (r.outcome) {
+      case 'proposal':
+        return null;
+      case 'noChanges':
+        return { kind: 'noChanges' };
+      case 'notLoggedIn':
+        return { kind: 'notLoggedIn' };
+      case 'timedOut':
+        return { kind: 'timedOut', limitMs: this.limitMs() };
+      case 'stopped':
+        return { kind: 'stopped', elapsedMs: r.elapsedMs };
+      case 'notFound':
+        return { kind: 'notFound' };
+      default:
+        return { kind: 'cliError', tail: r.tail.length ? r.tail : [r.answer ?? ''] };
+    }
+  }
+
+  private ending(p: AiProvider, e: Ending, withRetry = true): HTMLElement {
+    const card = endingCard(e, p.name, p.command, {
+      retry: () => this.retry(p.key),
+      ...(this.host.openSettings ? { settings: () => this.host.openSettings!() } : {}),
+    });
+    if (!withRetry || this.live) card.querySelector('.ai-end-buttons')?.remove();
+    return card;
+  }
+
+  /** Opnieuw proberen: the last request again, else its text back in the input. */
+  private retry(key: ProviderKey): void {
+    if (this.live) return;
+    const req = this.lastRequest.get(key);
+    if (req) {
+      void this.run(key, { ...req, buffers: this.host.buffers() });
+      return;
+    }
+    const lastText = [...(this.conv?.messages ?? [])].reverse().find((m) => m.fromTeacher)?.text;
+    if (lastText) this.composer.fill(lastText, null);
+  }
+
+  // ── Sending and running (decisions 55, 63, 66) ────────────────────────────
+
+  private async send(
+    message: string,
+    starter: Starter | null,
+    attachments: PendingAttachment[],
+    chips: Chips,
+  ): Promise<void> {
+    const key = this.selected;
+    if (!key || this.live) return;
+    const request: AiSendRequest = {
+      message,
+      starter,
+      context: contextRequest(chips, this.info.metadata),
+      attachments: Composer.requests(attachments),
+      buffers: this.host.buffers(),
+    };
+    this.chips = { ...chips, images: false };
+    this.conv?.messages.push({
+      fromTeacher: true,
+      text: message,
+      at: new Date().toISOString(),
+      attachments: attachments.map((a) => `${a.name} ${formatSize(a.size)}`),
+    });
+    await this.run(key, request);
+  }
+
+  private async run(key: ProviderKey, request: AiSendRequest): Promise<void> {
+    const p = this.provider(key);
+    if (!p || this.live) return;
+    this.lastRequest.set(key, request);
+    this.lastTurn.delete(key);
+    this.cardState.delete(key);
+    this.applied.delete(key);
+    const run = newRun(Date.now());
+    const card = new StatusCard(p.name, p.command, this.limitMs(), () => void this.stop());
+    card.update(run, Date.now());
+    const timer = setInterval(() => card.update(run, Date.now()), 1000);
+    this.live = { provider: key, run, card, timer };
+    this.open.add(key);
+    this.host.setBusy(p.name);
+    this.renderRail();
+    this.render();
+    let result: TurnResult;
+    try {
+      result = await this.ai.send(key, request, (event) => {
+        addEvent(run, event, Date.now());
+        card.update(run, Date.now());
+      });
+    } catch (err) {
+      const message = (err as Error).message ?? String(err);
+      result = {
+        outcome: 'cliError',
+        answer: message,
+        proposal: null,
+        check: null,
+        tail: [message],
+        fixRounds: 0,
+        elapsedMs: Date.now() - run.startMs,
+      };
+    }
+    finishRun(run, Date.now(), result.outcome !== 'proposal' && result.outcome !== 'noChanges');
+    clearInterval(timer);
+    this.live = null;
+    this.host.setBusy(null);
+    this.lastTurn.set(key, result);
+    try {
+      const conv = await this.ai.conversation(key);
+      if (this.selected === key) this.conv = conv;
+    } catch {
+      /* keep what is shown */
+    }
+    this.renderRail();
+    this.render();
+  }
+
+  private async stop(): Promise<void> {
+    await this.ai.stop().catch(() => {});
+  }
+
+  // ── Proposal (decisions 56, 68, 69) ───────────────────────────────────────
+
+  private async fillDiffCard(key: ProviderKey, host: HTMLElement, appliedEarlier: boolean) {
+    if (appliedEarlier) {
+      host.replaceChildren(
+        h(
+          'div',
+          { class: 'ai-diff-card' },
+          h('div', { class: 'ai-diff-foot is-applied' }, icon('check', 14, 2.6), 'Toegepast'),
+        ),
+      );
+      return;
+    }
+    let view: ProposalView;
+    try {
+      view = await this.ai.proposal(key, this.host.buffers());
+    } catch (err) {
+      host.replaceChildren(
+        h(
+          'div',
+          { class: 'ai-diff-card' },
+          h('p', { class: 'ai-diff-note' }, String((err as Error).message)),
+        ),
+      );
+      return;
+    }
+    const check = this.lastTurn.get(key)?.check ?? null;
+    const state = this.cardState.get(key) ?? { kind: 'ready' };
+    host.replaceChildren(
+      diffCard(view, check, state, {
+        review: () =>
+          void openReview({
+            ai: this.ai,
+            provider: this.provider(key)!,
+            view,
+            check,
+            buffers: this.host.buffers(),
+            apply: (hunks, images) => this.apply(key, hunks, images),
+          }),
+        apply: () => void this.applyAll(key),
+        undo: () => void this.undo(key),
+      }),
+    );
+  }
+
+  /** Toepassen on the card: every hunk that still fits, and the new images. */
+  private async applyAll(key: ProviderKey): Promise<void> {
+    const view = await this.ai.proposal(key, this.host.buffers());
+    const hunks: Record<string, number[]> = {};
+    for (const f of view.proposal.files) {
+      const statuses = view.statuses[f.path] ?? [];
+      hunks[f.path] = f.hunks.filter((_, i) => statuses[i]?.kind === 'clean').map((x) => x.id);
+    }
+    await this.apply(
+      key,
+      hunks,
+      view.proposal.images.map((i) => i.path),
+    );
+  }
+
+  /** Applies the chosen hunks and images as one undo step per file (decision 68). */
+  async apply(key: ProviderKey, hunks: Record<string, number[]>, images: string[]): Promise<void> {
+    const before = this.host.buffers();
+    try {
+      const result = await this.ai.apply(key, before, hunks, images);
+      const after: Record<string, string> = {};
+      let applied = 0;
+      let conflicts = 0;
+      for (const [file, a] of Object.entries(result.files)) {
+        applied += a.applied.length;
+        conflicts += a.conflicts.length;
+        if (a.text !== before[file]) {
+          await this.host.applyText(file, a.text);
+          after[file] = a.text;
+        }
+      }
+      const stored = result.images.map((i) => i.path);
+      if (stored.length) this.host.refreshPreview();
+      this.applied.set(key, { before, after, images: stored, hunks: applied, conflicts });
+      this.cardState.set(key, {
+        kind: 'applied',
+        hunks: applied,
+        images: stored.length,
+        conflicts,
+      });
+    } catch (err) {
+      this.cardState.set(key, { kind: 'error', message: (err as Error).message });
+    }
+    if (this.selected === key) this.render();
+  }
+
+  /** Ongedaan maken: the texts from before Toepassen and the images removed or restored. */
+  private async undo(key: ProviderKey): Promise<void> {
+    const a = this.applied.get(key);
+    if (!a) return;
+    const now = this.host.buffers();
+    const changed = Object.keys(a.after).filter((f) => now[f] !== a.after[f]);
+    if (changed.length) {
+      this.cardState.set(key, {
+        kind: 'error',
+        message:
+          'Je hebt de opdracht na het toepassen nog aangepast. Gebruik Ctrl+Z in de editor om terug te gaan.',
+      });
+      this.render();
+      return;
+    }
+    for (const file of Object.keys(a.after)) await this.host.applyText(file, a.before[file] ?? '');
+    if (a.images.length) {
+      await this.ai.undoImages(key, a.images).catch(() => {});
+      this.host.refreshPreview();
+    }
+    this.applied.delete(key);
+    this.cardState.set(key, { kind: 'ready' });
+    this.render();
+  }
+
+  // ── Drop (board 60) ───────────────────────────────────────────────────────
+
+  private setupDrop(): void {
+    this.panel.setAttribute('data-file-drop', '');
+    let depth = 0;
+    const isFiles = (e: DragEvent) => e.dataTransfer?.types.includes('Files') ?? false;
+    const show = (on: boolean) => {
+      this.dropEl.hidden = !on;
+      if (on)
+        this.dropEl.replaceChildren(
+          icon('upload', 34, 1.8),
+          h('strong', {}, 'Laat los om toe te voegen'),
+          h(
+            'span',
+            {},
+            'Afbeeldingen, PDF of tekst · max. 25 MB per bestand',
+            h('br'),
+            `Nog ${this.composer.remaining()} van ${MAX_ATTACHMENTS} bijlagen in dit gesprek`,
+          ),
+        );
+    };
+    const usable = () => this.selected !== null && this.live === null && !this.composer.el.hidden;
+    this.panel.addEventListener('dragenter', (e) => {
+      if (!isFiles(e) || !usable()) return;
+      e.preventDefault();
+      depth += 1;
+      show(true);
+    });
+    this.panel.addEventListener('dragover', (e) => {
+      if (!isFiles(e)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = usable() ? 'copy' : 'none';
+    });
+    this.panel.addEventListener('dragleave', () => {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) show(false);
+    });
+    this.panel.addEventListener('drop', (e) => {
+      if (!isFiles(e)) return;
+      e.preventDefault();
+      depth = 0;
+      show(false);
+      if (usable() && e.dataTransfer) void this.composer.addFiles(e.dataTransfer.files);
+    });
+  }
+}

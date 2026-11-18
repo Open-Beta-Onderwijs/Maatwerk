@@ -198,7 +198,13 @@ export class MockAi implements AiApi {
         text: answer ?? '',
         at: new Date().toISOString(),
         run: {
-          end: run.stop ? 'stopped' : outcome === 'cliError' ? 'failed' : 'finished',
+          end: run.stop
+            ? 'stopped'
+            : outcome === 'timedOut'
+              ? 'timedOut'
+              : outcome === 'cliError' || outcome === 'notLoggedIn'
+                ? 'failed'
+                : 'finished',
           elapsedMs: Date.now() - started,
           steps: [],
           lines: [],

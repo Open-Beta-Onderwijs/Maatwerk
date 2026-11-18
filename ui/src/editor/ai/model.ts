@@ -11,6 +11,7 @@ import type {
   CheckReport,
   FileProposal,
   Hunk,
+  HunkStatus,
   Proposal,
   RunSummary,
   Starter,
@@ -450,4 +451,39 @@ export function hunkTitle(h: Hunk, index: number): string {
     .find((l) => l && !l.startsWith('//'));
   if (!line) return `Wijziging ${index + 1}`;
   return line.length > 48 ? `${line.slice(0, 47)}…` : line;
+}
+
+const splitLines = (text: string) => text.match(/[^\n]*\n|[^\n]+$/g) ?? [];
+
+/**
+ * The text with the chosen hunks applied at their rebased places (as `ai::diff::apply`), for
+ * the "Voorstel" preview of the dialog; conflicts are skipped.
+ */
+export function applyHunks(
+  current: string,
+  hunks: Hunk[],
+  statuses: HunkStatus[],
+  chosen: Set<number>,
+): string {
+  const cur = splitLines(current);
+  const todo = hunks
+    .map((h, i) => ({ h, s: statuses[i] }))
+    .filter(
+      (x): x is { h: Hunk; s: { kind: 'clean'; at: number } } =>
+        chosen.has(x.h.id) && x.s?.kind === 'clean',
+    )
+    .sort((a, b) => b.s.at - a.s.at || b.h.id - a.h.id);
+  for (const { h, s } of todo) {
+    const end = Math.min(s.at + h.baseLines.length, cur.length);
+    if (
+      end === cur.length &&
+      h.baseLines.length === 0 &&
+      h.newLines.length > 0 &&
+      cur.length > 0 &&
+      !cur[cur.length - 1]!.endsWith('\n')
+    )
+      cur[cur.length - 1] += '\n';
+    cur.splice(s.at, end - s.at, ...h.newLines);
+  }
+  return cur.join('');
 }
