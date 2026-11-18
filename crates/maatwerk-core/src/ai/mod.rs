@@ -20,5 +20,6 @@ pub mod detect;
 pub mod events;
 pub mod provider;
 pub mod run;
+pub mod workspace;
 
 pub use provider::{AiSettings, Builtin, ProviderKey};
