@@ -287,6 +287,20 @@ pub fn check(
     report
 }
 
+/// Runs `work` on its own thread and waits at most `limit` (Step 9 m3: the headless check and
+/// render get a time limit). `None` on a time-out: Typst cannot cancel a compile, so the thread
+/// is abandoned; callers are short-lived processes that exit soon after.
+pub fn with_time_limit<T: Send + 'static>(
+    limit: std::time::Duration,
+    work: impl FnOnce() -> T + Send + 'static,
+) -> Option<T> {
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    std::thread::spawn(move || {
+        let _ = tx.send(work());
+    });
+    rx.recv_timeout(limit).ok()
+}
+
 /// Compiles the opdracht to PDF, with the placeholder header.
 pub fn render_pdf(
     assignment: &Assignment,

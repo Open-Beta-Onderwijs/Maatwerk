@@ -15,6 +15,7 @@
 //! other opdrachten the teacher picks) goes into a workspace; images only when the teacher
 //! switched them on, otherwise same-size placeholders so the opdracht still compiles.
 
+pub mod check;
 pub mod detect;
 pub mod events;
 pub mod provider;

@@ -29,8 +29,24 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32a (bridge, no UI).
-Releases 0.20-0.22 still wait for the user.
+**Next action:** 32a sub-task 3 (workspace), see "Step 32a progress".
+
+## Step 32a progress (bridge, no UI)
+
+Baseline 2026-11-18 on `64d5b54`: cargo test all ok.
+
+1. **Done (`f9e4411`):** `maatwerk_core::ai`: `provider` (six presets per ADR-0009, custom
+   CLIs, per-teacher `AiSettings` in local app data, `split_args`, placeholders `{prompt}`
+   `{request}` `{workdir}` `{session}` `{check}` `{images}` `{run}` `{secs}`; two argument
+   strings per CLI: first message and later messages), `detect` (PATH + login-shell PATH +
+   installer folders, `--version`), `events` (per-format parsers into `AiEvent`, `Collected`
+   with session, answer, error, auth failure), `run` (thread runner, time limit, Stop, tree
+   kill via `taskkill /T` or process group). Fake CLI `src/bin/maatwerk-fake-ai.rs`, tests in
+   `tests/ai_fake_cli.rs`.
+2. **Done:** bundled check: `maatwerk --ai-check <dir>` (app `main.rs`, `ai::check`), JSON
+   report, exit 0/1/2/3, editor time limit; `assignment::with_time_limit`; `maatwerk-cli
+assignment check|render --timeout` (default 30 s, exit 3) closes Step 9 m3.
+   Releases 0.20-0.22 still wait for the user.
 
 ## Previous step (30-31)
 
