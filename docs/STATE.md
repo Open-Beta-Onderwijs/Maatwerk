@@ -62,7 +62,7 @@ editor dropped every answer (U10 checked `event.source`); fixed by an origin che
 Run 44158096575: Windows and Linux wrote their 23 files (no real diffs), checked and committed
 (`5cd76c1`). macOS: no hosted runner on 2026-11-17. 2026-11-18 rerun: macOS WebKit failed
 `emoji-font.spec.ts` (no COLRv1 there, so no font registered, as designed; the test now follows
-`CSS.supports`, `2f…` see log) and skipped the visual step. Run 44265647594 wrote the 23 macOS
+`CSS.supports`, `baf706b`) and skipped the visual step. Run 44265647594 wrote the 23 macOS
 files (checked, committed). **Run 44273623560: green on all targets.**
 
 **Next action:** merge `step/30-observaties` and `step/31-editor` into `main` (merge commits), tags
