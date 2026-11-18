@@ -1,12 +1,19 @@
 # State
 
-Last updated: 2026-11-17 (steps 30-31, gate done) Branch: `step/31-editor` (on top of
-`step/30-observaties`, which started from `design/toetsen-cards`, so the merge brings the round
-12-14 docs into `main`)
-Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
-(`d8c741c`), `v0.16.0`, `step-25`
+Last updated: 2026-11-18 (step 32 decisions) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
+(`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
 ## Current step
+
+**Step 32 (AI assistant, L+, 32a-32c):** decisions taken with the user 2026-11-18 (`PLAN-2.md`
+decisions 48-61, ADR-0009 "Amendment (step 32)"); the step section is rewritten as a design round
+plus CLI research, then 32a bridge, 32b editor UI, 32c settings/entry points/gate. No code yet.
+
+**Next action:** design round for step 32 (boards listed in the step section); releases 0.20-0.22
+still wait for the user.
+
+## Previous step (30-31)
 
 **Steps 30 and 31 in one go (user, 2026-11-17):** step 30 (Observaties and opdrachten, 0.21) on
 `step/30-observaties`, then step 31 (Opdrachten-editor, 0.22) on `step/31-editor`; one gate and

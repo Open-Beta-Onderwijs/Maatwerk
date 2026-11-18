@@ -151,3 +151,28 @@ passes the CLI's sandbox/permission flags where they exist and documents the res
   cancel), the temp-copy workspace, the diff/accept panel and Dutch error texts (CLI missing, not
   logged in, time-out, no change). Options A (API) and B (external only) are not pursued; B stays
   possible for anyone with `export-lib` and the CLI.
+
+## Amendment (step 32, user 2026-11-18)
+
+The user refined option D before step 32 (`PLAN-2.md` decisions 48-61). Changes to the text
+above:
+
+- **Answer 1 reversed in part:** besides the per-teacher switch, the admin can turn the assistant
+  off for the whole school (an additive `school.json` field).
+- **More context than the opdracht folder,** each switchable by the teacher: opdracht metadata,
+  current diagnostics, rendered PDF pages, a syllabus PDF (local `syllabus/` folder), other
+  opdrachten the teacher picks, and the teacher's own attachments. Constraint 1 stays: no student,
+  toets or score data, not even aggregates.
+- **Web search allowed** for the CLI (step 2 of the decision said "no network tools beyond the
+  model"); other shell commands stay denied where the CLI allows it.
+- **Writable files:** only `opdracht.typ` and `images/`; changes to `main.typ` and `lib.typ` are
+  dropped from the diff.
+- **Multi-turn:** one conversation per provider per opdracht, the CLI session resumed; the temp
+  dir lives as long as the conversation (not one request); history in local app data.
+- **Apply:** per file or hunk, rebased onto the current buffer (the teacher may keep typing),
+  one undo step.
+- **Entry points** besides the editor: Opdracht toevoegen "met AI" and "Laat AI dit oplossen"
+  after a failed Opdrachten genereren.
+- **Launch CLIs:** Claude Code, OpenAI Codex CLI, Gemini CLI, and Mistral Vibe and GitHub Copilot
+  CLI if usable non-interactively; DeepSeek dropped. The invocation research is recorded here in
+  step 32.

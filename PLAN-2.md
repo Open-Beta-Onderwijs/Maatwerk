@@ -83,6 +83,25 @@ Cards for Toetsen, Observaties and Opdrachten (user, 2026-11-17; design rounds 1
 | 46  | Observaties as cards (board 57): icon tile, toetstype pills, description, schoolsoort, jaarlagen boxes, use in tests and opdrachten; a click opens Observatie bewerken                                                                              | user   |
 | 47  | Opdrachten as cards (board 58); a click opens the rendered PDF on the right half while the cards move to the left half in two columns; the selected card is outlined; Kopiëren and Openen in editor in the panel                                    | user   |
 
+AI assistant (user, 2026-11-18; amends ADR-0009, see its "Amendment (step 32)"):
+
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                                                          | Source |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 48  | Multi-turn chat, one conversation per provider per opdracht (the CLI session is resumed); history kept per opdracht in local app data (never the shared folder), "Nieuw gesprek" clears it                                                                                                                                                                                                                        | user   |
+| 49  | The rail shows only CLIs found on `PATH` (none: one "?" button with install help). Launch set: Claude Code, OpenAI Codex CLI (ChatGPT logo), Gemini CLI, and Mistral Vibe and GitHub Copilot CLI if research shows a usable non-interactive mode; DeepSeek dropped (no official CLI). Model: the CLI's own default (override via the command preset)                                                              | user   |
+| 50  | The CLI works agentically in the temp copy: edits files, runs the bundled check, may use web search; other shell commands are denied where the CLI allows it. It may change only `opdracht.typ` and `images/`; changes to `main.typ`/`lib.typ` are dropped from the diff with a note                                                                                                                              | user   |
+| 51  | Context, each a chip the teacher switches on or off, remembered per user per opdracht (defaults for a new opdracht): authoring guide and examples, opdracht metadata (title, vak, schoolsoort, jaarlagen, linked observaties), current diagnostics, rendered PDF pages, syllabus, other opdrachten (teacher picks 1-3, off by default), opdracht images (off; per request with the ADR warning, never remembered) | user   |
+| 52  | Syllabus: PDFs in `syllabus/` next to the exe on Windows, in the app's local data dir on macOS/Linux ("Map openen" in the settings); preselected by vak and schoolsoort from the file name, changeable in a dropdown; the whole PDF goes into the temp folder                                                                                                                                                     | user   |
+| 53  | Own attachments (paperclip, drag-and-drop, paste of images or text): max 25 MB per file, 10 per chat; an attached image the AI uses may be copied into `images/` on Toepassen (shown in the diff)                                                                                                                                                                                                                 | user   |
+| 54  | No toets or score data as context, not even aggregates (ADR-0009 constraint 1 stays)                                                                                                                                                                                                                                                                                                                              | user   |
+| 55  | While running: a compact status line, expandable to the full streamed transcript; Stop button; time limit 5 min by default (setting). The teacher may keep typing; Toepassen rebases the hunks on the current buffer and marks hunks that no longer fit as conflicts                                                                                                                                              | user   |
+| 56  | Diff card: Bekijken (side-by-side diff with a PDF preview of the proposal), Toepassen per file or hunk, one undo step; saving stays the normal flow                                                                                                                                                                                                                                                               | user   |
+| 57  | Empty chat shows starter buttons: Fouten oplossen (only with errors), Antwoorden en punten aanvullen, Herschrijven voor ander niveau, Nieuwe opgave toevoegen. Answers in Dutch; opdracht content in the opdracht's own language                                                                                                                                                                                  | user   |
+| 58  | Entry points: the editor rail; Opdracht toevoegen "met AI" (creates the opdracht, opens the editor with the description as the first message); "Laat AI dit oplossen" after a failed Opdrachten genereren (opens the editor with a prefilled chat; the batch is rerun by hand)                                                                                                                                    | user   |
+| 59  | Off switch per teacher, plus an admin switch for the whole school (additive `school.json` field; reverses ADR-0009 answer 1). Settings via a gear in the chat panel: command and arguments per CLI (Standaard herstellen), time limit, syllabus folder                                                                                                                                                            | user   |
+| 60  | Privacy and cost: a one-time notice per user on first use plus a permanent footer line under the input                                                                                                                                                                                                                                                                                                            | user   |
+| 61  | Step 32 starts with a design round (context chips, attachments, status/transcript, diff view with hunk choice, settings, notices); tests use a scripted fake CLI, plus a manual check of each real CLI the user has before the release                                                                                                                                                                            | user   |
+
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
 ## 2. Working rules
@@ -139,7 +158,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
 | 30   | Observaties and opdrachten                                       | M            | 0.21    | gate   |
 | 31   | Opdrachten-editor                                                | M            | 0.22    | gate   |
-| 32   | AI assistant                                                     | L (32a, 32b) | 0.23    | todo   |
+| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | design |
 | 33   | Toetsen as cards                                                 | M            | 0.24    | todo   |
 | 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |
 | 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
@@ -462,14 +481,29 @@ Items: V-07, F-05, F-16, V-03, T19/T20 (if kept), U10. Design: spec 4.8; board 1
 button, toolbar on top with dropdown groups, file tabs below it, status pill, draggable divider
 (saved per user), smooth preview sync.
 
-### Step 32: AI assistant (L)
+### Step 32: AI assistant (L+, three sessions)
 
-Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 option D.
+Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 option D as amended,
+decisions 48-61.
 
-- **32a:** the CLI bridge: detect installed CLIs, run them with the opdracht as context in a
-  sandboxed temp folder, time limit, cancel; the result is a diff, never a direct write.
-- **32b:** the rail and chat panel (spec 4.8), Bekijken/Toepassen on the diff card, a setting to
-  turn it off; provider logos per their brand rules, recorded in `THIRD_PARTY_LICENSES.md`.
+- **Design round first:** boards for the context chips, attachments, status line and transcript,
+  diff view with hunk choice and PDF preview, AI settings dialog, first-use notice and footer, the
+  "met AI" option in Opdracht toevoegen; user OK, then spec 4.8 updated.
+- **Research:** the non-interactive invocation, streaming output, session resume, permission and
+  web-search flags and image input of each launch CLI (decision 49); record in ADR-0009.
+- **32a (bridge, no UI):** CLI detection and presets with per-user overrides (local settings),
+  temp workspace (copy, context assembly per chip, syllabus, attachments, bundled check command),
+  async process with streamed events, time limit and cancel (also for headless check/render),
+  per-provider session and local history, result as a diff restricted to `opdracht.typ` and
+  `images/`, hunk rebase onto the current buffer with conflicts. Scripted fake CLI for tests.
+- **32b (editor UI):** rail and chat panel (spec 4.8), context chips remembered per user per
+  opdracht, attachments (picker, drop, paste, limits), status line with expandable transcript,
+  Stop, starter buttons, diff card with Bekijken (diff + PDF preview) and Toepassen per file or
+  hunk as one undo step.
+- **32c (rest):** AI settings dialog (gear), teacher and admin off switches (`school.json`
+  additive field, version guard, fixture test), first-use notice and footer, Opdracht toevoegen
+  "met AI", "Laat AI dit oplossen" after a failed batch, provider logos per their brand rules in
+  `THIRD_PARTY_LICENSES.md`, manual check with real CLIs, gate and review.
 
 ### Step 33: Toetsen as cards (M)
 
