@@ -3,6 +3,7 @@
 //! Tauri shell. Command handlers parse arguments, call `maatwerk_core` and map
 //! errors; they hold no business logic.
 
+mod ai;
 mod auth;
 mod commands;
 mod data;
@@ -138,6 +139,23 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             problems::problem_info,
             problems::open_log_folder,
             problems::log_ui_error,
+            ai::ai_detect,
+            ai::ai_save_settings,
+            ai::ai_login_check,
+            ai::ai_send,
+            ai::ai_stop,
+            ai::ai_conversations,
+            ai::ai_conversation,
+            ai::ai_new_conversation,
+            ai::ai_proposal,
+            ai::ai_apply,
+            ai::ai_undo_images,
+            ai::ai_proposal_image,
+            ai::ai_context,
+            ai::ai_save_context,
+            ai::ai_syllabus_list,
+            ai::ai_open_syllabus_folder,
+            ai::ai_presets,
         ])
         .events(collect_events![
             DataChanged,
@@ -283,6 +301,7 @@ pub fn run() {
             );
             app.manage::<state::Shared>(slot);
             app.manage(editor::Editors::default());
+            app.manage(std::sync::Arc::new(ai::AiState::default()));
             Ok(())
         })
         .build(context);

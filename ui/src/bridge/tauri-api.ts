@@ -5,7 +5,8 @@
 // errors into each method's reference result shape (docs/reference/ipc-api.md),
 // so the legacy screens run unchanged.
 
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { Channel, convertFileSrc } from '@tauri-apps/api/core';
+import type * as Ai from './ai-api';
 import { normaliseForTypst } from '../domain/rapport';
 import {
   PORTED_METHODS,
@@ -88,6 +89,51 @@ async function orThrow<T>(call: Promise<Result<T>>): Promise<T> {
   return r.data;
 }
 
+/** The command's JSON in the shape `ai-api.ts` declares for it. */
+async function asJson<T>(call: Promise<Result<Value>>): Promise<T> {
+  return (await orThrow(call)) as unknown as T;
+}
+
+/** `window.maatwerk.ai` over the `ai_*` commands (src-tauri/src/ai.rs). */
+function createAiApi(c: Commands): Ai.AiApi {
+  const json = (v: unknown) => v as Value;
+  return {
+    detect: (gebruiker, refresh) => asJson(c.aiDetect(gebruiker, refresh)),
+    saveSettings: (gebruiker, settings) => asJson(c.aiSaveSettings(gebruiker, json(settings))),
+    loginCheck: (gebruiker, provider) => orThrow(c.aiLoginCheck(gebruiker, provider)),
+    send(gebruiker, opdrachtId, provider, request, onEvent) {
+      const channel = new Channel<Value>();
+      channel.onmessage = (event) => onEvent(event as unknown as Ai.AiEvent);
+      return asJson(c.aiSend(gebruiker, opdrachtId, provider, json(request), channel));
+    },
+    stop: (opdrachtId) => c.aiStop(opdrachtId),
+    conversations: (gebruiker, opdrachtId) => asJson(c.aiConversations(gebruiker, opdrachtId)),
+    conversation: (gebruiker, opdrachtId, provider) =>
+      asJson(c.aiConversation(gebruiker, opdrachtId, provider)),
+    async newConversation(gebruiker, opdrachtId, provider) {
+      await orThrow(c.aiNewConversation(gebruiker, opdrachtId, provider));
+    },
+    proposal: (gebruiker, opdrachtId, provider, current) =>
+      asJson(c.aiProposal(gebruiker, opdrachtId, provider, current)),
+    apply: (gebruiker, opdrachtId, provider, current, hunks, images) =>
+      asJson(c.aiApply(gebruiker, opdrachtId, provider, current, hunks, images)),
+    async undoImages(gebruiker, opdrachtId, provider, images) {
+      await orThrow(c.aiUndoImages(gebruiker, opdrachtId, provider, images));
+    },
+    proposalImage: (gebruiker, opdrachtId, provider, path) =>
+      orThrow(c.aiProposalImage(gebruiker, opdrachtId, provider, path)),
+    context: (gebruiker, opdrachtId) => orThrow(c.aiContext(gebruiker, opdrachtId)),
+    async saveContext(gebruiker, opdrachtId, context) {
+      await orThrow(c.aiSaveContext(gebruiker, opdrachtId, json(context)));
+    },
+    syllabusList: () => asJson(c.aiSyllabusList()),
+    async openSyllabusFolder() {
+      await orThrow(c.aiOpenSyllabusFolder());
+    },
+    presets: async () => (await c.aiPresets()) as unknown as Ai.AiPreset[],
+  };
+}
+
 /**
  * The data or a fallback: for methods whose reference handler never rejects.
  * An unusable data folder still throws: an empty app without a message would
@@ -152,6 +198,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
   // logout overtaken by a heartbeat would leave the teacher online (review 4b m3).
   let presenceQueue: Promise<unknown> = Promise.resolve();
   const api: Partial<MaatwerkApi> = {
+    ai: createAiApi(c),
+
     // ── JSON storage ────────────────────────────────────────────────────────
     // Missing and corrupt both give null (D2); store.js reads through
     // readJsonVersioned where the difference matters.

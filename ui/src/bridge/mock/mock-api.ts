@@ -40,6 +40,7 @@ import type {
   ProjectFileInfo,
   Value,
 } from '../bindings';
+import { MockAi } from './mock-ai';
 import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
@@ -152,6 +153,8 @@ function checkOpdrachtId(id: string): void {
 }
 
 export class MockApi implements MaatwerkApi {
+  /** The AI assistant against a scripted fake (`mock-ai.ts`). */
+  readonly ai = new MockAi();
   private files = new Map<string, Uint8Array>();
   private dirs = new Set<string>();
   private session: Record<string, unknown> | null = null;
