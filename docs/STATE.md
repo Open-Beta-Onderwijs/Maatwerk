@@ -60,13 +60,12 @@ updated (177/177). CI baselines of 23 views dropped (`e296fcb` and before) and p
 `step/31-editor` (which now includes `fix/ui-emoji-font`). The first run found a WebKit bug: the
 editor dropped every answer (U10 checked `event.source`); fixed by an origin check (`e296fcb`).
 Run 44158096575: Windows and Linux wrote their 23 files (no real diffs), checked and committed
-(`5cd76c1`, local, not pushed). macOS: no hosted runner ("not acquired by Runner … capacity"),
-twice, also on a rerun of the job.
+(`5cd76c1`). macOS: no hosted runner on 2026-11-17. 2026-11-18 rerun: macOS WebKit failed
+`emoji-font.spec.ts` (no COLRv1 there, so no font registered, as designed; the test now follows
+`CSS.supports`, `2f…` see log) and skipped the visual step. Run 44265647594 wrote the 23 macOS
+files (checked, committed). **Run 44273623560: green on all targets.**
 
-**Next action (user 2026-11-17: rerun macOS in the morning):** `gh run rerun 44158096575 --job
-<macOS job id>` (do not push before: a push cancels it). Copy the 23 new files of
-`visual-ci-webkit-darwin` from the artifact `visual-macos` (after a look), commit, push, wait for a
-green run; then merge `step/30-observaties` and `step/31-editor` into `main` (merge commits), tags
+**Next action:** merge `step/30-observaties` and `step/31-editor` into `main` (merge commits), tags
 `step-30`, `step-31`; push `main`. Releases 0.20-0.22 when the user asks. Then step 32.
 
 **Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,
