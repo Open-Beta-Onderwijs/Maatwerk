@@ -635,6 +635,11 @@ Paths in this section are relative to `_reference/renderer/`.
 
 - `main.js:875-877`.
 - Evidence: `failure = failure ?? …`. The other workers stop after their current job. The user fixes one opdracht at a time.
+- **Fixed (step 30, ROADMAP 4.6):** a failure no longer stops the batch. The other opdrachten
+  still compile; the remaining jobs of a failed opdracht are skipped (they would fail the same
+  way) and count as done in the progress. The error lists every failed opdracht once, in job
+  order (`N opdrachten bevatten een fout.`, then each `Fout in opdracht "<label>":` block).
+  Tests: `typst_svc::batch` `t23_*`.
 
 ### T24. pdf-lib merge discards Typst metadata, outlines and named destinations
 

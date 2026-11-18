@@ -83,13 +83,14 @@ export interface BatchJob {
   /** The opdracht folder `opdrachten/<id>/`. */
   opdrachtId: string;
   label?: string;
-  header?: {
+  /** Missing fields are empty (the answer key sends only the title). */
+  header?: Partial<{
     title: string;
     student: string;
     group: string;
     exam: string;
     observaties: { icon: string; name: string }[];
-  };
+  }>;
   mode?: 'student' | 'answers';
 }
 

@@ -21,6 +21,7 @@
 @import './styles/cards.css';
 @import './styles/beheer.css';
 @import './styles/overview.css';
+@import './styles/obs-opd.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,
@@ -1161,8 +1162,22 @@ body::after {
 .og-cijfer-remove:hover {
   color: var(--danger);
 }
-.og-cijfer-add {
+.og-card-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 14px;
+}
+.og-cijfer-head {
+  flex-wrap: wrap;
+}
+.og-vraag-select {
+  height: var(--h-control-sm);
+  font-weight: 600;
+}
+.og-vraag-max {
+  font-weight: 400;
+  font-size: 12px;
 }
 .og-op-item {
   flex-wrap: wrap;
@@ -1539,36 +1554,6 @@ code {
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
-}
-
-/* ── Obs icon picker ──────────────────────────────────────────────────────── */
-.obs-icon-btn:hover {
-  border-color: var(--accent) !important;
-  background: var(--accent-soft) !important;
-}
-
-/* Collapsible "Meer iconen" panel */
-.obs-icon-more {
-  width: 100%;
-  margin-top: 4px;
-}
-.obs-icon-more-summary {
-  font-size: 12px;
-  color: var(--accent-text);
-  cursor: pointer;
-  user-select: none;
-  list-style: none;
-  display: inline-block;
-  padding: 2px 4px;
-}
-.obs-icon-more-summary::-webkit-details-marker {
-  display: none;
-}
-.obs-icon-more-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
 }
 
 /* Textarea inside form-group */
@@ -1963,33 +1948,6 @@ code {
   display: block;
 }
 
-/* ── Obs icon toggle buttons in Opdrachten modal ─────────────────────────── */
-.obs-icon-op-btn {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
-  cursor: pointer;
-  font-size: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  transition:
-    border-color 0.1s,
-    background 0.1s;
-}
-.obs-icon-op-btn:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-.obs-icon-op-btn.selected {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
 /* Round badge marking a grade that came from a resit (letter of its description) */
 .attempt-badge {
   display: inline-flex;
@@ -2374,22 +2332,6 @@ td.grade-override-stale::after {
 }
 .u-p-4-6 {
   padding: 4px 6px !important;
-}
-
-/* Icon picker of the observatie modal (screens/observaties.js) */
-.obs-icon-btn {
-  font-size: 18px;
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  border: 2px solid var(--border);
-  background: var(--bg);
-  cursor: pointer;
-  transition: all 0.1s;
-}
-.obs-icon-btn.selected {
-  border-color: var(--accent);
-  background: var(--accent-soft);
 }
 
 /* ── Group import: old vs new per overwritten group (D34) ─────────────────── */

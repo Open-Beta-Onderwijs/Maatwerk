@@ -1,0 +1,145 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Opdrachten met voorbeeld</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+@media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1100px; position: relative; overflow: hidden; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; background: {{t.bg}}; color: {{t.text}}">
+  <header style="height: 56px; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+    <span style="font-weight: 700; font-size: 17px">Maatwerk</span><span style="color: {{t.muted}}">Leerlingen</span><span style="color: {{t.muted}}">Groepen</span><span style="color: {{t.muted}}">Toetsen</span><span style="color: {{t.muted}}">Rubrics</span><span style="color: {{t.muted}}">Observaties</span><span style="font-weight: 600; height: 56px; display: flex; align-items: center; box-shadow: inset 0 -3px 0 {{a.text}}">Opdrachten</span>
+  </header>
+  <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 650; color: {{a.text}}">Opdrachten</h1><span style="flex: 1"></span>
+      <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 0; background: {{a.fill}}; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">+ Opdracht toevoegen</button>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap"><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle schoolsoorten</span><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle jaarlagen</span><span style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 999px; border: 1px solid {{t.border}}; background: {{t.surface}}; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18l-7 8v7l-4 2v-9z"></path></svg>Alle observaties</span><span style="flex: 1"></span><span style="font-size: 13px; color: {{t.muted}}">{{countLabel}}</span></div>
+    <div style="position: relative; margin-top: 22px; height: 880px"><sc-for list="{{cards}}" as="c" hint-placeholder-count="8"><div style="position: absolute; left: {{c.x}}px; top: {{c.y}}px; width: {{c.w}}px; transition: left .35s cubic-bezier(.2,.8,.2,1), top .35s cubic-bezier(.2,.8,.2,1), width .35s cubic-bezier(.2,.8,.2,1)"><div onClick="{{c.pickI}}" title="Klik voor een voorbeeld" style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,40,.04); box-sizing: border-box; cursor: pointer; border: {{c.ring}}; padding: 14px 16px; height: 196px; display: flex; flex-direction: column; gap: 8px"><div style="display: flex; align-items: center; gap: 10px; min-width: 0"><span style="flex: 1; min-width: 0; font-size: 15px; font-weight: 650; color: {{a.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{c.naam}}</span><button aria-label="Meer acties" title="Openen in de editor · Bewerken · Kopiëren · Verwijderen" style="width: 32px; height: 32px; flex: none; border: 0; border-radius: 8px; background: transparent; color: {{t.muted}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button></div><div style="flex: 1; min-height: 0; font-size: 13px; line-height: 1.45; color: {{t.muted}}; display: -webkit-box; -webkit-line-clamp: {{c.clamp}}; -webkit-box-orient: vertical; overflow: hidden">{{c.beschr}}</div><div style="font-size: 12px; color: {{t.muted}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Gymnasium · {{c.vak}}</div><div style="display: flex; align-items: center; gap: 10px; padding-top: 8px; border-top: 1px solid {{t.line}}"><div title="Jaarlagen" style="display: flex; gap: 3px"><sc-for list="{{c.jl}}" as="j" hint-placeholder-count="6"><span style="width: 20px; height: 20px; border-radius: 5px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; background: {{j.bg}}; color: {{j.fg}}">{{j.n}}</span></sc-for></div><span style="flex: 1"></span><span style="display: flex; gap: 6px; font-size: 16px"><sc-for list="{{c.obs}}" as="o" hint-placeholder-count="3"><span>{{o.ic}}</span></sc-for></span></div></div></div></sc-for><div style="position: absolute; top: 0; left: 698px; width: 662px; height: 860px; opacity: {{panelOp}}; visibility: {{panelVis}}; transform: translateX({{panelX}}px); transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .25s ease; display: flex; flex-direction: column; background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 14px; box-shadow: 0 12px 32px rgba(16,24,40,.12); overflow: hidden">
+  <div style="flex: none; padding: 14px 16px; border-bottom: 1px solid {{t.border}}; display: flex; align-items: center; gap: 10px">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 17px; font-weight: 700; color: {{a.text}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{pv.naam}}</span>
+      <span style="font-size: 12px; color: {{t.muted}}">Gymnasium · {{pv.vak}} · jaarlagen {{pv.jls}} · {{pv.pages}} pagina's</span>
+    </div>
+    <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid {{t.border}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Kopiëren</button>
+    <button style="height: 34px; padding: 0 12px; border-radius: 8px; border: 0; background: {{a.fill}}; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Openen in editor</button>
+    <button onClick="{{close}}" aria-label="Voorbeeld sluiten" style="width: 34px; height: 34px; border-radius: 8px; border: 0; background: transparent; color: {{t.muted}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+  </div>
+  <div style="flex: 1; min-height: 0; overflow: hidden; background: {{t.surface2}}; display: flex; justify-content: center; padding: 20px 0">
+    <div role="img" aria-label="Voorbeeld van de opdracht (pagina 1)" style="width: 520px; height: 735px; flex: none; background: #FFFFFF; color: #1B2230; box-shadow: 0 2px 10px rgba(16,24,40,.18); padding: 44px 48px; box-sizing: border-box; font-family: Georgia, 'Times New Roman', serif; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; font-family: 'Segoe UI', sans-serif; font-size: 10px; color: #5D6675; border-bottom: 1px solid #E1E4EA; padding-bottom: 6px"><span>Maatwerk · natuurkunde</span><span>Naam: ______________________</span></div>
+      <div style="font-size: 20px; font-weight: 700">{{pv.naam}}</div>
+      <div style="font-size: 12px; line-height: 1.5; color: #333B48">{{pv.beschr}}</div>
+      <sc-for list="{{pv.opgaven}}" as="o" hint-placeholder-count="3"><div style="display: flex; flex-direction: column; gap: 4px"><b style="font-size: 13px">{{o.n}}</b><span style="font-size: 12px; line-height: 1.5">{{o.tx}}</span></div></sc-for>
+      <sc-if value="{{pv.graph}}" hint-placeholder-val="{{ true }}"><svg width="300" height="170" viewBox="0 0 300 170" aria-hidden="true" style="align-self: center"><path d="M30 10V150H290" fill="none" stroke="#1B2230" stroke-width="1.5"></path><path d="M30 150L270 30" fill="none" stroke="#2F6FD6" stroke-width="1.5" stroke-dasharray="5 4"></path><circle cx="70" cy="128" r="3" fill="#1B2230"></circle><circle cx="120" cy="106" r="3" fill="#1B2230"></circle><circle cx="170" cy="78" r="3" fill="#1B2230"></circle><circle cx="220" cy="58" r="3" fill="#1B2230"></circle><circle cx="260" cy="34" r="3" fill="#1B2230"></circle><text x="290" y="166" text-anchor="end" font-size="10">V (cm³)</text><text x="34" y="14" font-size="10">m (g)</text></svg></sc-if>
+      <span style="flex: 1"></span>
+      <div style="display: flex; justify-content: center; font-family: 'Segoe UI', sans-serif; font-size: 10px; color: #5D6675">1</div>
+    </div>
+  </div>
+  <div style="flex: none; padding: 8px 16px; border-top: 1px solid {{t.border}}; display: flex; align-items: center; gap: 10px; font-size: 13px; color: {{t.muted}}">
+    <span>Pagina 1 van {{pv.pages}}</span><span style="flex: 1"></span><span>PDF · gegenereerd uit de opdracht (Typst)</span>
+  </div>
+</div></div>
+  </div>
+  
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["licht", "donker"], "default": "licht"}, "accent": {"editor": "enum", "options": ["rood", "oranje", "geel", "groen", "blauw", "indigo", "paars", "turquoise", "roze", "grafiet"], "default": "blauw"}, "voorbeeld": {"editor": "enum", "options": ["open", "dicht"], "default": "open"}, "$preview": {"width": 1440, "height": 1100}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: (p.voorbeeld ?? 'open') === 'open' ? 0 : null }; }
+  componentWillUnmount() { clearTimeout(this.tm); }
+  hx(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
+  lerp(a, b, k) { k = Math.max(0, Math.min(1, k)); const A = this.hx(a), B = this.hx(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, '0')).join(''); }
+  renderVals() {
+
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const ANTI = { rood: '#0F7F86', oranje: '#2F6FD6', geel: '#4F46C8', groen: '#C2387A', blauw: '#C2540F', indigo: '#E5AE0B', paars: '#4E7A0E', turquoise: '#C93636', roze: '#24804E', grafiet: '#C2540F' };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const accName = ACC[this.props.accent] ? this.props.accent : 'blauw';
+    const ac = ACC[accName];
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F') };
+    const anti = ANTI[accName];
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', foot: '#22272F', tint: '#181B21' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', foot: '#F7F8FA', tint: '#F7F8FA' };
+    const L = (x, y, k) => this.lerp(x, y, k);
+    const onOf = (c) => (c === '#E5AE0B' ? '#2A2000' : '#FFFFFF');
+    const stripes = (c, w) => `repeating-linear-gradient(135deg, ${c} 0 ${w}px, ${L(c, '#FFFFFF', c === '#E5AE0B' ? 0.6 : 0.5)} ${w}px ${w * 2}px)`;
+    const typeStyle = (type) => {
+      if (type === 'diag') return { color: '#8A93A3', light: '#C9CED6', on: t.muted, badgeBg: t.surface2, badgeBorder: '#9AA1AD', tint: '#8A93A333', shadow: 'none', bar: '#9AA1AD' };
+      const c = type === 'se' || type === 'sepo' ? anti : ac[0];
+      const striped = type === 'po' || type === 'sepo';
+      return {
+        color: c, light: L(c, '#FFFFFF', 0.5), on: onOf(c), badgeBorder: c,
+        shadow: striped && onOf(c) === '#FFFFFF' ? `0 0 2px ${L(c, '#000000', 0.4)}, 0 0 3px ${L(c, '#000000', 0.4)}` : 'none',
+        badgeBg: striped ? stripes(c, 4) : c,
+        bar: striped ? stripes(c, 5) : c,
+        tint: striped ? `repeating-linear-gradient(135deg, ${c}AA 0 6px, ${c}1A 6px 12px)` : c + (dark ? '40' : '26'),
+      };
+    };
+    const fmt = (g) => (Math.round(g * 10) / 10).toFixed(1).replace('.', ',');
+    const sgn = (x) => (x > 0 ? '+' : x < 0 ? '−' : '') + fmt(Math.abs(x));
+    const gc = (g) => (g < 5.5 ? (dark ? '#FF8A80' : '#B42318') : dark ? L('#E2BD45', '#6CCB8A', (g - 5.5) / 4) : L('#8A6A00', '#1E7B3C', (g - 5.5) / 4));
+    const gb = (g) => (g < 5.5 ? '#E5736B' : L('#F2C94C', '#5DB97B', (g - 5.5) / 4));
+    const pill = (g) => (g == null ? { v: '—', color: t.muted, border: t.border, weight: 400 } : { v: fmt(g), color: gc(g), border: gb(g), weight: g < 5.5 ? 700 : 500 });
+    const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : 0);
+    const sd = (xs) => { const m = mean(xs); return Math.sqrt(mean(xs.map((x) => (x - m) * (x - m)))); };
+    const qt = (xs, p) => { const s = [...xs].sort((x, y) => x - y), i = (s.length - 1) * p, lo = Math.floor(i); return s[lo] + (s[Math.ceil(i)] - s[lo]) * (i - lo); };
+    const pct1 = (g) => ((g - 1) / 9) * 100;
+    const hist = (xs) => { const c = Array(9).fill(0); xs.forEach((g) => { c[Math.min(8, Math.max(0, Math.floor(g - 1)))]++; }); return c; };
+    const binLabels = ['1-2', '2-3', '3-4', '4-5', '5-6', '6-7', '7-8', '8-9', '9-10'];
+    const failPct = (xs) => Math.round((xs.filter((g) => g < 5.5).length / xs.length) * 100) + '%';
+    const box = (xs) => { const q1 = qt(xs, 0.25), q3 = qt(xs, 0.75), md = qt(xs, 0.5), mn = Math.min(...xs), mx = Math.max(...xs); return { minPct: pct1(mn), maxPct: pct1(mx), rangePct: Math.max(0.4, pct1(mx) - pct1(mn)), q1Pct: pct1(q1), iqrPct: Math.max(0.8, pct1(q3) - pct1(q1)), medPct: pct1(md) - 0.15, med: fmt(md), boxLabel: 'Kwartielen ' + fmt(q1) + ' – ' + fmt(q3) + ', mediaan ' + fmt(md) }; };
+    const hx = (n, max) => Math.round(24 + (n / max) * 190).toString(16).padStart(2, '0');
+    const heat = (n, max) => ({ bg: n ? a.fill + hx(n, max) : 'transparent', fg: n / max > 0.55 ? '#FFFFFF' : t.text });
+    const base = { t, a, axis: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'], binLabels, passPct: pct1(5.5), neg: dark ? '#FF8A80' : '#B42318', pos: dark ? '#6CCB8A' : '#1E7B3C' };
+
+
+    const st = this.state;
+    const OPD = [
+      ['Grafiek tekenen & dichtheid bepalen', 'Leerling leert om vanuit meetwaarden een grafiek te tekenen van de massa tegen het volume. Vervolgens leert de leerling hoe uit de helling van de trendlijn de dichtheid kan worden bepaald.', ['Natuurkunde'], [2], ['📈', '📐', '📉'], 3, true],
+      ['GFBA bovenbouw (+ significantie)', 'Leerling leert om bij berekeningen altijd de relevante gegevens, formule, berekening en antwoord te noteren. In de antwoordstap controleert de leerling ook de significantie en de eenheid van het antwoord.', ['Natuurkunde'], [4, 5, 6], ['📏', '🎯'], 2, false],
+      ['Eenheden omrekenen', 'Oefenen met het omrekenen van meetwaarden tussen eenheden met voorvoegsels (milli, kilo, mega) en samengestelde eenheden zoals m/s en km/h.', ['Natuurkunde', 'Scheikunde'], [2, 3], ['🔄', '📏'], 2, false],
+      ['Formules omschrijven', 'Stap voor stap een formule omschrijven naar de gevraagde grootheid, eerst met getallen en daarna met letters.', ['Natuurkunde'], [3, 4], ['➗'], 2, false],
+      ['Helling bepalen uit een grafiek', 'De helling van een rechte lijn en van een raaklijn bepalen met een hellingsdriehoek, inclusief eenheid.', ['Natuurkunde'], [3, 4], ['📉', '📈'], 1, true],
+      ['Rekenen met machten van tien', 'Rekenen met de wetenschappelijke notatie op de rekenmachine en uit het hoofd.', ['Natuurkunde', 'Scheikunde'], [3, 4, 5], ['🧮'], 2, false],
+      ['Schaal kiezen bij grafieken', 'Een handige schaal kiezen zodat de meetpunten het grootste deel van het grafiekpapier vullen.', ['Natuurkunde'], [2, 3, 4], ['📐'], 1, true],
+      ['Significantie oefenen', 'Bepalen hoeveel significante cijfers een antwoord krijgt bij vermenigvuldigen, delen, optellen en aftrekken.', ['Natuurkunde', 'Scheikunde'], [4, 5, 6], ['🎯'], 2, false],
+    ];
+    const CW = (1360 - 2 * 36) / 3, H = 196, RG = 16;
+    const sel = st.sel;
+    const open = sel != null;
+    // closed: three columns over the full width; open: the cards move to the left half in one column of two narrow cards
+    const LW = 1360 / 2 - 18, CW2 = (LW - 24) / 2;
+    const pick = (i) => () => this.setState({ sel: st.sel === i ? null : i });
+    const cards = OPD.map(([naam, beschr, vakken, jls, obs, pages, graph], i) => {
+      const col = open ? i % 2 : i % 3, row = open ? Math.floor(i / 2) : Math.floor(i / 3);
+      const w = open ? CW2 : CW, x = open ? col * (CW2 + 24) : col * (CW + 36);
+      return { naam, beschr, vak: vakken.join(', '), obs: obs.map((ic) => ({ ic })), jl: [1, 2, 3, 4, 5, 6].map((n) => ({ n, bg: jls.includes(n) ? a.tint : 'transparent', fg: jls.includes(n) ? a.text : t.border })),
+        x: +x.toFixed(2), y: row * (H + RG), w: +w.toFixed(2), on: sel === i, ring: sel === i ? '2px solid ' + a.fill : '1px solid ' + t.border, pick, pickI: pick(i), clamp: open ? 2 : 3,
+        notch: sel === i ? 1 : 0 };
+    });
+    const rows = Math.ceil(OPD.length / (open ? 2 : 3));
+    const s = open ? OPD[sel] : OPD[0];
+    const pv = { naam: s[0], beschr: s[1], vak: s[2].join(', '), pages: s[5], graph: s[6], jls: s[3].join(', '),
+      opgaven: (s[6] ? ['Zet de meetwaarden uit de tabel in een grafiek. Kies eerst een geschikte schaal op beide assen.', 'Teken de trendlijn door de meetpunten.', 'Bepaal de helling van de trendlijn met een hellingsdriehoek en geef de eenheid.']
+        : ['Lees de vraag en schrijf de gegevens op die je nodig hebt.', 'Kies de formule en schrijf hem om naar de gevraagde grootheid.', 'Reken uit en controleer de eenheid en het aantal significante cijfers.']).map((tx, k) => ({ n: 'Opgave ' + (k + 1), tx })) };
+    const V = { cards, open, panelX: open ? 0 : 60, panelOp: open ? 1 : 0, panelVis: open ? 'visible' : 'hidden', gridH: rows * (H + RG), pv, close: () => this.setState({ sel: null }),
+      countLabel: OPD.length + ' opdrachten', notchY: open ? Math.floor(sel / 2) * (H + RG) + 40 : 0 };
+
+    return Object.assign({}, base, V);
+  }
+}
+</script>
+</body>
+</html>

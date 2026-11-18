@@ -52,7 +52,7 @@ export function toetstypeField(
   const btn = (value: Toetstype, label: string, locked: boolean, why: string): string => {
     const on = selected.includes(value);
     const lock = locked && on;
-    return `<button type="button" class="tog-btn tt-btn${on ? ' selected' : ''}${lock ? ' tog-btn-disabled' : ''}" data-tt="${value}" aria-pressed="${on}"${lock ? ` disabled title="${esc(why)}"` : ''}>${label}</button>`;
+    return `<button type="button" class="tog-btn chip-btn tt-btn${on ? ' selected' : ''}${lock ? ' tog-btn-disabled' : ''}" data-tt="${value}" aria-pressed="${on}"${lock ? ` disabled title="${esc(why)}"` : ''}>${label}</button>`;
   };
   return `<div class="form-group">
       <label>Toetstype</label>

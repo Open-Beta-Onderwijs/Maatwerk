@@ -561,6 +561,7 @@ fn golden_batch(case: &Value, dir: &DataDir) -> (Vec<BatchJob>, BatchOptions) {
             BatchJob {
                 key: job["key"].as_str().unwrap().to_owned(),
                 label: job["label"].as_str().unwrap().to_owned(),
+                opdracht: job["typFile"].as_str().unwrap().to_owned(),
                 project,
                 inputs,
             }
@@ -673,7 +674,7 @@ fn batch_error_reports_the_failing_opdracht_by_label() {
     let (result, _) = run_batch(jobs, options);
     let err = result.unwrap_err();
     assert!(
-        matches!(&err, BatchError::Compile { index: 1, .. }),
+        matches!(&err, BatchError::Failed(f) if f.len() == 1 && f[0].index == 1),
         "{err}"
     );
     let text = err.to_string();
@@ -704,6 +705,7 @@ fn batch_order_is_job_order_with_any_number_of_workers() {
     let job = |key: &str, file: &str, student: &str| BatchJob {
         key: key.into(),
         label: file.into(),
+        opdracht: file.into(),
         project: TypstProject::opdracht_v1(&dir, file).unwrap(),
         inputs: OpdrachtInputs {
             header: OpdrachtHeader {

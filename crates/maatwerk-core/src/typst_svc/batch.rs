@@ -4,8 +4,9 @@
 //! own compile, because opdracht files share function names and labels. Jobs run on a few worker
 //! threads that share the font store and the embedded packages; the PDFs are merged in job order.
 
+use std::collections::HashSet;
 use std::panic::AssertUnwindSafe;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use time::OffsetDateTime;
@@ -24,6 +25,9 @@ pub struct BatchJob {
     pub key: String,
     /// Shown in the error text (`label ?? typFile` in the reference).
     pub label: String,
+    /// The opdracht this job compiles. After a job of an opdracht fails, its other jobs are
+    /// skipped: they would fail the same way (T23).
+    pub opdracht: String,
     pub project: TypstProject,
     pub inputs: OpdrachtInputs,
 }
@@ -57,33 +61,68 @@ pub struct BatchOutput {
     pub warnings: Vec<JobWarning>,
 }
 
+/// Why one job failed.
+#[derive(Debug)]
+pub enum JobFailureKind {
+    /// The opdracht text does not compile.
+    Compile(CompileError),
+    /// A panic inside the job (a bug in Maatwerk or Typst, not in the opdracht text); caught per
+    /// job (review 5b n1). The panic itself is in the log.
+    Panic(String),
+}
+
+/// The first failed job of one opdracht.
+#[derive(Debug)]
+pub struct JobFailure {
+    pub index: usize,
+    pub label: String,
+    pub kind: JobFailureKind,
+}
+
+impl std::fmt::Display for JobFailure {
+    /// The reference's `Fout in opdracht "<label>":\n\n<stderr>`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Fout in opdracht \"{}\":\n\n", self.label)?;
+        match &self.kind {
+            JobFailureKind::Compile(error) => f.write_str(&error.to_text()),
+            JobFailureKind::Panic(message) => write!(
+                f,
+                "Interne fout bij het maken van de PDF ({message}). Meld dit probleem bij de \
+                 beheerder (Over Maatwerk > Probleem melden)."
+            ),
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum BatchError {
     /// The reference's text for an empty job list.
     #[error("Er is niets om te genereren.")]
     Empty,
-    /// The reference's `Fout in opdracht "<label>":\n\n<stderr>`.
-    #[error("Fout in opdracht \"{label}\":\n\n{}", .error.to_text())]
-    Compile {
-        index: usize,
-        label: String,
-        error: CompileError,
-    },
-    /// A panic inside one job (a bug in Maatwerk or Typst, not in the opdracht text); caught
-    /// per job so it ends the batch like a compile error (review 5b n1). The panic itself is in
-    /// the log.
-    #[error(
-        "Fout in opdracht \"{label}\":
-
-Interne fout bij het maken van de PDF ({message}).          Meld dit probleem bij de beheerder (Over Maatwerk > Probleem melden)."
-    )]
-    Panic {
-        index: usize,
-        label: String,
-        message: String,
-    },
+    /// Every opdracht that failed, once each, in job order (T23: the reference reported only the
+    /// first). Never empty.
+    #[error("{}", failures_text(.0))]
+    Failed(Vec<JobFailure>),
     #[error(transparent)]
     Merge(#[from] MergeError),
+}
+
+/// Separates the failures of several opdrachten in the error text.
+pub const FAILURE_SEPARATOR: &str = "\n\n────────\n\n";
+
+/// One failure as the reference wrote it; several under a count line.
+fn failures_text(failures: &[JobFailure]) -> String {
+    match failures {
+        [one] => one.to_string(),
+        many => {
+            let parts: Vec<String> = many.iter().map(ToString::to_string).collect();
+            format!(
+                "{} opdrachten bevatten een fout.{FAILURE_SEPARATOR}{}",
+                many.len(),
+                parts.join(FAILURE_SEPARATOR)
+            )
+        }
+    }
 }
 
 /// `BATCH_PARALLEL = max(2, min(4, cpus - 1))` (`main.js:813-917`).
@@ -92,9 +131,10 @@ pub fn batch_workers() -> usize {
     cpus.saturating_sub(1).clamp(2, 4)
 }
 
-/// Compiles every job and merges the PDFs in job order. The first failure stops the batch:
-/// running jobs finish, no new job starts, and the failed job with the lowest index is reported
-/// (the reference reported the first to fail in time, which depends on scheduling; T23).
+/// Compiles every job and merges the PDFs in job order. A failure does not stop the batch: the
+/// other opdrachten still compile, the remaining jobs of the failed opdracht are skipped, and
+/// every failed opdracht is reported with its lowest-index job, in job order (T23; the reference
+/// reported only the first to fail in time).
 pub fn render_assignment_batch(
     fonts: Arc<FontStore>,
     jobs: Vec<BatchJob>,
@@ -120,6 +160,7 @@ fn run_batch(
     }
     let keys: Vec<String> = jobs.iter().map(|j| j.key.clone()).collect();
     let labels: Vec<String> = jobs.iter().map(|j| j.label.clone()).collect();
+    let opdrachten: Vec<String> = jobs.iter().map(|j| j.opdracht.clone()).collect();
     let queue: Vec<Mutex<Option<BatchJob>>> =
         jobs.into_iter().map(|j| Mutex::new(Some(j))).collect();
     let results: Vec<Mutex<Option<Result<JobResult, String>>>> =
@@ -127,7 +168,8 @@ fn run_batch(
     let next = AtomicUsize::new(0);
     // Counted and reported under one lock, so `done` never goes backwards (review 5b m4).
     let done = Mutex::new(0usize);
-    let failed = AtomicBool::new(false);
+    // Opdrachten with a failed job; their later jobs are skipped.
+    let failed: Mutex<HashSet<String>> = Mutex::new(HashSet::new());
 
     progress(BatchProgress { done: 0, total });
     let workers = options
@@ -137,18 +179,21 @@ fn run_batch(
     std::thread::scope(|scope| {
         for _ in 0..workers {
             scope.spawn(|| {
-                while !failed.load(Ordering::SeqCst) {
+                loop {
                     let index = next.fetch_add(1, Ordering::SeqCst);
                     let Some(slot) = queue.get(index) else {
                         break;
                     };
                     let job = lock(slot).take().expect("each job is taken once");
-                    let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
-                        .map_err(|payload| panic_message(payload.as_ref()));
-                    if !matches!(result, Ok(Ok(_))) {
-                        failed.store(true, Ordering::SeqCst);
+                    if !lock(&failed).contains(&opdrachten[index]) {
+                        let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
+                            .map_err(|payload| panic_message(payload.as_ref()));
+                        if !matches!(result, Ok(Ok(_))) {
+                            lock(&failed).insert(opdrachten[index].clone());
+                        }
+                        *lock(&results[index]) = Some(result);
                     }
-                    *lock(&results[index]) = Some(result);
+                    // A skipped job counts as done, so the progress reaches the total (T23).
                     let mut finished = lock(&done);
                     *finished += 1;
                     progress(BatchProgress {
@@ -162,8 +207,10 @@ fn run_batch(
 
     let mut pdfs = Vec::with_capacity(total);
     let mut warnings = Vec::new();
+    let mut failures: Vec<JobFailure> = Vec::new();
+    let mut reported: HashSet<&str> = HashSet::new();
     for (index, slot) in results.into_iter().enumerate() {
-        match slot.into_inner().unwrap_or_else(|e| e.into_inner()) {
+        let kind = match slot.into_inner().unwrap_or_else(|e| e.into_inner()) {
             Some(Ok(Ok(compiled))) => {
                 warnings.extend(compiled.warnings.into_iter().map(|diagnostic| JobWarning {
                     index,
@@ -171,31 +218,27 @@ fn run_batch(
                     diagnostic,
                 }));
                 pdfs.push(compiled.output);
+                continue;
             }
-            Some(Ok(Err(error))) => {
-                return Err(BatchError::Compile {
-                    index,
-                    label: labels[index].clone(),
-                    error,
-                });
-            }
-            Some(Err(message)) => {
-                return Err(BatchError::Panic {
-                    index,
-                    label: labels[index].clone(),
-                    message,
-                });
-            }
-            // Not started because an earlier job failed; that failure has a lower index or is
-            // reported further on.
+            Some(Ok(Err(error))) => JobFailureKind::Compile(error),
+            Some(Err(message)) => JobFailureKind::Panic(message),
+            // Skipped: another job of this opdracht failed.
             None => continue,
+        };
+        // Jobs of one opdracht that were running at the same time may all fail; the opdracht is
+        // reported once, with its first job.
+        if reported.insert(opdrachten[index].as_str()) {
+            failures.push(JobFailure {
+                index,
+                label: labels[index].clone(),
+                kind,
+            });
         }
     }
-    debug_assert_eq!(
-        pdfs.len(),
-        total,
-        "a missing result means a failure was returned"
-    );
+    if !failures.is_empty() {
+        return Err(BatchError::Failed(failures));
+    }
+    debug_assert_eq!(pdfs.len(), total, "no failure means every job compiled");
     let parts: Vec<MergePart<'_>> = keys
         .iter()
         .zip(&pdfs)
@@ -226,50 +269,140 @@ mod tests {
     use super::*;
     use crate::paths::{DataDir, RelPath};
 
-    fn jobs(dir: &DataDir, n: usize) -> Vec<BatchJob> {
-        (0..n)
-            .map(|i| BatchJob {
+    /// One job per entry: key = its index, `opdracht` and label = the entry.
+    fn jobs(dir: &DataDir, opdrachten: &[&str]) -> Vec<BatchJob> {
+        opdrachten
+            .iter()
+            .enumerate()
+            .map(|(i, op)| BatchJob {
                 key: i.to_string(),
-                label: format!("opdracht {i}"),
+                label: format!("opdracht {op}"),
+                opdracht: (*op).to_owned(),
                 project: TypstProject::folder(dir.root(), &RelPath::parse("main.typ").unwrap()),
                 inputs: OpdrachtInputs::default(),
             })
             .collect()
     }
 
-    /// Review 5b n1: a panic in one job is that job's error; no new job starts after it.
-    #[test]
-    fn n1_a_panic_in_one_job_is_reported_as_that_jobs_error() {
+    fn one_worker() -> BatchOptions {
+        BatchOptions {
+            duplex: false,
+            workers: Some(1),
+        }
+    }
+
+    /// Runs `ops` with one worker; the jobs of the opdrachten in `broken` panic. Returns the
+    /// result, the keys of the jobs that ran, and the last progress.
+    fn run_with_broken(
+        ops: &[&str],
+        broken: &[&str],
+    ) -> (
+        Result<BatchOutput, BatchError>,
+        Vec<String>,
+        Option<BatchProgress>,
+    ) {
         let tmp = tempfile::tempdir().unwrap();
         let dir = DataDir::open(tmp.path()).unwrap();
         let started = Mutex::new(Vec::new());
-        let options = BatchOptions {
-            duplex: false,
-            workers: Some(1),
-        };
-        let result = run_batch(jobs(&dir, 3), options, &|_| {}, &|job: BatchJob| {
-            lock(&started).push(job.key.clone());
-            if job.key == "1" {
-                panic!("layout bug");
-            }
-            Ok(Compiled {
-                output: Vec::new(),
-                warnings: Vec::new(),
-            })
-        });
+        let last = Mutex::new(None);
+        let result = run_batch(
+            jobs(&dir, ops),
+            one_worker(),
+            &|p| *lock(&last) = Some(p),
+            &|job: BatchJob| {
+                lock(&started).push(job.key.clone());
+                if broken.contains(&job.opdracht.as_str()) {
+                    panic!("layout bug in {}", job.opdracht);
+                }
+                Ok(Compiled {
+                    output: Vec::new(),
+                    warnings: Vec::new(),
+                })
+            },
+        );
+        let started = lock(&started).clone();
+        let last = *lock(&last);
+        (result, started, last)
+    }
+
+    /// Review 5b n1: a panic in one job is that job's error.
+    #[test]
+    fn n1_a_panic_in_one_job_is_reported_as_that_jobs_error() {
+        let (result, _, _) = run_with_broken(&["a", "b", "c"], &["b"]);
         let err = result.unwrap_err();
+        let BatchError::Failed(failures) = &err else {
+            panic!("{err:?}");
+        };
+        assert_eq!(failures.len(), 1);
+        assert_eq!(failures[0].index, 1);
         assert!(
-            matches!(&err, BatchError::Panic { index: 1, message, .. } if message == "layout bug"),
+            matches!(&failures[0].kind, JobFailureKind::Panic(m) if m == "layout bug in b"),
             "{err:?}"
         );
-        assert!(
-            err.to_string().starts_with(
-                "Fout in opdracht \"opdracht 1\":
-
-Interne fout"
-            ),
-            "{err}"
+        assert_eq!(
+            err.to_string(),
+            "Fout in opdracht \"opdracht b\":\n\nInterne fout bij het maken van de PDF (layout \
+             bug in b). Meld dit probleem bij de beheerder (Over Maatwerk > Probleem melden)."
         );
-        assert_eq!(*lock(&started), ["0", "1"]);
+    }
+
+    /// T23: every failed opdracht is reported (once, in job order), the other opdrachten still
+    /// compile, a failed opdracht's later jobs are skipped, and the progress reaches the total.
+    #[test]
+    fn t23_every_failed_opdracht_is_reported_once() {
+        let (result, started, last) =
+            run_with_broken(&["a", "a", "b", "c", "c", "a", "b"], &["a", "c"]);
+        let err = result.unwrap_err();
+        let BatchError::Failed(failures) = &err else {
+            panic!("{err:?}");
+        };
+        let reported: Vec<(usize, &str)> = failures
+            .iter()
+            .map(|f| (f.index, f.label.as_str()))
+            .collect();
+        assert_eq!(reported, [(0, "opdracht a"), (3, "opdracht c")]);
+        assert_eq!(started, ["0", "2", "3", "6"], "1, 4 and 5 are skipped");
+        assert_eq!(last, Some(BatchProgress { done: 7, total: 7 }));
+        let text = err.to_string();
+        assert!(
+            text.starts_with(
+                "2 opdrachten bevatten een fout.\n\n────────\n\nFout in opdracht \"opdracht a\":"
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains(&format!(
+                "{FAILURE_SEPARATOR}Fout in opdracht \"opdracht c\":"
+            )),
+            "{text}"
+        );
+    }
+
+    /// T23: with several workers, jobs of one opdracht may fail at the same time; the opdracht
+    /// is still reported once, with its first job.
+    #[test]
+    fn t23_parallel_failures_of_one_opdracht_are_reported_once() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = DataDir::open(tmp.path()).unwrap();
+        let options = BatchOptions {
+            duplex: false,
+            workers: Some(3),
+        };
+        let result = run_batch(
+            jobs(&dir, &["a", "a", "a", "b", "a"]),
+            options,
+            &|_| {},
+            &|_job: BatchJob| {
+                Err(CompileError {
+                    diagnostics: Vec::new(),
+                })
+            },
+        );
+        let Err(BatchError::Failed(failures)) = result else {
+            panic!("expected failures");
+        };
+        let reported: Vec<&str> = failures.iter().map(|f| f.label.as_str()).collect();
+        assert_eq!(reported, ["opdracht a", "opdracht b"]);
+        assert_eq!(failures[0].index, 0);
     }
 }

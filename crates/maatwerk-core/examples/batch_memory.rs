@@ -36,6 +36,7 @@ fn main() {
             jobs.push(BatchJob {
                 key: s.to_string(),
                 label: file.to_owned(),
+                opdracht: file.to_owned(),
                 project: TypstProject::opdracht_v1(&dir, file).expect("fixture opdracht"),
                 inputs: OpdrachtInputs {
                     header: OpdrachtHeader {

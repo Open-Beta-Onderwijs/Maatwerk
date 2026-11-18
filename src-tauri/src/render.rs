@@ -249,6 +249,7 @@ pub async fn render_assignment_batch(
             batch.push(BatchJob {
                 key: job.key.clone(),
                 label: job.label.clone().unwrap_or_else(|| job.opdracht_id.clone()),
+                opdracht: job.opdracht_id.clone(),
                 project: opdracht_project(c, &job.opdracht_id)?,
                 inputs: OpdrachtInputs {
                     mode: match job.mode.as_deref() {

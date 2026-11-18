@@ -42,6 +42,47 @@ test("the rapport shows Typst's warnings, folded, above the PDF", async ({ page 
   expect(errors).toEqual([]);
 });
 
+// F-14 (step 30): a score on one question below X points (or N) gets the linked opdrachten.
+test('Opdrachten genereren: a question card links opdrachten to a low score on one question', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await login(page);
+  await examMenu(page, 'Opdrachten genereren');
+  await page.locator('[data-action="og-show-all"]').check();
+  await page.getByRole('button', { name: '+ Vraag onder … punten toevoegen' }).click();
+  const card = page.locator('[data-vraag-card]');
+  await expect(card).toHaveCount(1);
+  // Every score on the question is below 100 points: every student with a score or N.
+  const onder = card.getByLabel('Puntengrens');
+  await onder.fill('100');
+  await onder.press('Tab');
+  await card.locator('[data-action="og-couple-vraag"]').first().check();
+  await expect(card.locator('.og-obs-head > .muted')).toHaveText(/^\d+ leerling(en)?$/);
+  await expect(
+    page.locator('.og-student .og-chip').filter({ hasText: '🔢' }).first(),
+  ).toBeVisible();
+  await page.locator('[data-action="og-generate"]').click();
+  await expect(page.locator('.og-result .rapport-pdf-frame')).toBeVisible();
+  // A call is [method, ...args]: the jobs are the first argument.
+  const jobs = await withMock(
+    page,
+    (m) =>
+      m.calls.filter((c) => c[0] === 'renderAssignmentBatch').at(-1)?.[1] as {
+        header?: { observaties?: { name: string }[] };
+      }[],
+  );
+  const reasons = jobs.flatMap((j) => j.header?.observaties?.map((o) => o.name) ?? []);
+  expect(reasons.some((r) => /^Vraag \S+ onder 100 punten$/.test(r))).toBe(true);
+
+  // Saved on the exam: the card is back after reopening.
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.og-root')).toHaveCount(0);
+  await examMenu(page, 'Opdrachten genereren');
+  await expect(page.locator('[data-vraag-card]').getByLabel('Puntengrens')).toHaveValue('100');
+  expect(errors).toEqual([]);
+});
+
 test('the answer key in Opdrachten genereren shows the warnings too', async ({ page }) => {
   const errors = watchErrors(page);
   await login(page);
