@@ -1,7 +1,8 @@
 # State
 
-Last updated: 2026-11-17 (step 30) Branch: `step/30-observaties` (from `design/toetsen-cards`,
-so the step merge brings the round 12-14 docs into `main`)
+Last updated: 2026-11-17 (steps 30-31, gate done) Branch: `step/31-editor` (on top of
+`step/30-observaties`, which started from `design/toetsen-cards`, so the merge brings the round
+12-14 docs into `main`)
 Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -29,6 +30,55 @@ Baseline 2026-11-17 on `e89ad1d`: cargo test all ok, `npm test` ok.
    looks), expected; baselines wait for the user's check.
 4. Step 30 complete except the gate (shared with step 31). Version not bumped: 0.20 (step 29)
    is not released yet either ("release when the user asks").
+
+## Step 31 progress (Opdrachten-editor, 0.22; branch `step/31-editor` from step 30)
+
+1. **Done (`56dfb56`):** spec 4.8, board 10: header (V-07: "Terug naar opdrachten", title,
+   subtitle `domain/editor-header.ts`), status pill (F-05, `editor/status.ts`), toolbar on top of
+   the editor pane with Wiskunde/Symbolen/Opmaak menus and block swatches, file tabs below it,
+   divider (F-16, `editor/divider.ts`, saved as `preferences.editorSplit`), smooth preview
+   sync (V-03), U10 (typed proxy `modals/editor.ts`, `editor/protocol.ts`; files not paths).
+   e2e `editor-shell.spec` (5); mock `MockEditor.compileDelayMs`. Visual: `editor` (× 3
+   looks) differs, expected.
+2. **Gate (2026-11-17):** cargo fmt, clippy, test, deny, SPDX, npm licences green; 725 Vitest;
+   Chromium e2e 369/369. Visual: `editor`, `modal-observatie-new`, `modal-opdracht-edit`,
+   `modal-opdrachten-genereren` differ (× 3 looks), all intended; baselines not updated.
+3. **Review** `docs/reviews/step-30-31.md`: 0 blockers, 1 major (M1, fixed), 8 minors (m1, m2
+   fixed, m6 partly; the rest in the review's backlog list), 12 nits.
+
+**Emoji font in the window (user 2026-11-17, branch `fix/ui-emoji-font` on `step/31-editor`):** the
+window draws emoji with the embedded Noto Color Emoji, the one copy in the binary served by the
+`maatwerk-out` scheme (`EMOJI_FONT_PATH`), registered by `utils/emoji-font.ts` for emoji code
+points only and only where the webview draws COLRv1 (WebView2); macOS keeps Apple's emoji. The
+mock build copies the font (`ui/vite/emoji-font.ts`). The picker stays at Emoji 12.0 (user: it
+must work on macOS 12). Checks: clippy, cargo scheme tests, 726 Vitest, Chromium e2e 371/371.
+Visual: 69 diffs in 23 views (the step 30/31 views plus every view with an emoji), all emoji
+glyphs or the intended step 30/31 changes.
+
+**Visual baselines and merge (user approved the diffs 2026-11-17):** local `visual` baselines
+updated (177/177). CI baselines of 23 views dropped (`e296fcb` and before) and pushed on
+`step/31-editor` (which now includes `fix/ui-emoji-font`). The first run found a WebKit bug: the
+editor dropped every answer (U10 checked `event.source`); fixed by an origin check (`e296fcb`).
+Run 44158096575: Windows and Linux wrote their 23 files (no real diffs), checked and committed
+(`5cd76c1`). macOS: no hosted runner on 2026-11-17. 2026-11-18 rerun: macOS WebKit failed
+`emoji-font.spec.ts` (no COLRv1 there, so no font registered, as designed; the test now follows
+`CSS.supports`, `baf706b`) and skipped the visual step. Run 44265647594 wrote the 23 macOS
+files (checked, committed). **Run 44273623560: green on all targets.**
+
+**Next action:** merge `step/30-observaties` and `step/31-editor` into `main` (merge commits), tags
+`step-30`, `step-31`; push `main`. Releases 0.20-0.22 when the user asks. Then step 32.
+
+**Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,
+Lettertypevarianten, Tekstoperator), "Wiskunde ▾" the structures (Breuk, Wortel, …), "Symbolen ▾"
+the four symbol panels (a panel opens under the Symbolen button); the ⋯ text options stay; the
+spinner appears only after 200 ms (no flicker); "Opgeslagen" and an empty message both show
+"Opgeslagen · PDF bijgewerkt"; while a render error shows, typing keeps it (not "Niet
+opgeslagen…") until the next good compile; the divider saves 0,5 s after the last key press;
+Home/End jump to 25%/75%; the editor stays in the light look (it has no theme yet, as before).
+
+**Not done in step 31 (for the report):** R-05 for `editor-init.js` (1950 lines, JS): the new
+parts are TS modules (`editor/`), the rest stays for step 35 ("the remaining R-05 files"). The AI
+rail is step 32. T19/T20 kept (ROADMAP 4.6).
 
 **Not done in step 30 (for the report):** R-05 for `screens/observaties.js` and
 `screens/opdrachten.js`: only their modals moved to TS; the lists become cards in step 34, which
@@ -131,8 +181,7 @@ Baseline 2026-11-14 on `455fc90`: cargo test all ok, 629 Vitest.
 Observaties and Opdrachten as cards with the preview panel, decisions 46-47, spec 4.16 and 4.17,
 mocks of boards 57-58; step 34 written out (34a, 34b).
 
-**Next action:** release 0.20 when the user asks; merge `design/toetsen-cards`; then step 30
-(`PLAN-2.md`).
+**Next action (then):** release 0.20 when the user asks; `design/toetsen-cards` is merged through step 30; step 30 done (see above).
 
 **Choices made without asking (for the report):** SE column when the group is upper school
 (jaarlaag 4-6, as the cards) or any column test is PTA; the resit dot's tooltip says "<Inhaal |

@@ -2,8 +2,9 @@
 
 // The observatie icons (F-15, design spec 4.12, board 15): 200+ emoji in six categories, each
 // with Dutch search words. Every icon of the old list (~50) is still here. Only emoji up to
-// Unicode Emoji 12.0 and no ZWJ sequences: the window draws them with the system's emoji font
-// (Windows 10 included); the PDFs use the bundled Noto Color Emoji.
+// Unicode Emoji 12.0 and no ZWJ sequences: on Windows the window and the PDFs draw them with the
+// embedded Noto Color Emoji (utils/emoji-font.ts), but a Mac keeps Apple's emoji font, which on
+// macOS 12 (the oldest Maatwerk supports) lacks Emoji 14 and newer (user 2026-11-17).
 
 export interface IconCategory {
   label: string;

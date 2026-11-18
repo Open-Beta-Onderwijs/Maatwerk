@@ -20,7 +20,7 @@ import { renderToetsen, renderToetsenList } from './screens/toetsen';
 import { renderObservaties } from './screens/observaties.js';
 import { renderRubrics } from './screens/rubrics';
 import { renderOpdrachten } from './screens/opdrachten.js';
-import { openEditor } from './modals/editor.js';
+import { openEditor } from './modals/editor';
 import { renderGebruikers } from './screens/gebruikers';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
@@ -198,7 +198,7 @@ export function renderScreen(name) {
 // The helpers below act on the current modal: the top one opened that way
 // (confirms and notices do not count).
 
-/** Open the full-screen Typst editor for an assignment. Imported from modals/editor.js. */
+/** Open the full-screen Typst editor for an assignment. Imported from modals/editor.ts. */
 export { openEditor };
 export { confirmDialog, alertDialog };
 

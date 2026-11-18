@@ -509,6 +509,11 @@ Paths in this section are relative to `_reference/renderer/`.
 - Evidence: `pdffonts` shows `SegoeUIEmoji` in opdracht and rapport PDFs. With `--ignore-system-fonts` the exit code is 0, there is no warning, and ❌/5️⃣ render as tofu boxes (verified PNGs `inject.png` / `inject_nosys.png`).
 - Why it matters: a sandboxed World with only bundled fonts loses every observatie icon without any error. Parity needs the same emoji font.
 - Resolution (2026-10-28, user decision, PLAN section 9 decision 2): Maatwerk bundles Noto Color Emoji (COLRv1, OFL-1.1) and uses it on every machine. Segoe UI Emoji and other system fonts are never the fallback for code points it has (`typst_svc/fonts.rs`, `without_emoji`; Typst's fallback would otherwise prefer the shorter family name), and a system font asked for by name still works. **Visible change:** emoji look like Noto, not Segoe, and are narrower, so the text after them on a line moves a little. The Typst goldens record the reference CLI with this font added to `include/fonts` and `--ignore-system-fonts` for the PNGs (`tests/reference-harness`), and are otherwise unchanged (page count, sizes, text). Characters no font has still warn (tofu, ADR-0002 section 5).
+- **The window too (user 2026-11-17, branch `fix/ui-emoji-font`):** the app window draws emoji
+  with the same embedded copy (served by the `maatwerk-out` scheme, `utils/emoji-font.ts`, only
+  for emoji code points), where the webview can draw COLRv1 fonts (WebView2 on Windows). macOS
+  and older WebKitGTK keep the system emoji font. **Visible change:** emoji in the window look like
+  Noto instead of Segoe, the same as on the rapport.
 
 ### T3. The rapport also uses Typst's embedded Libertinus Serif
 
@@ -903,6 +908,14 @@ Read from code only; "probable" means the code path is clear but not confirmed i
   the proxy; builds are not reproducible (version drift). The main window similarly runs jsdelivr
   scripts with full `window.rtti` access and no SRI (`index.html:308-310`).
 - Dead branch: `rtti-render-assignment` (`modals/editor.js:68-70`) is never sent by the editor.
+- **Fixed (step 31, ROADMAP 4.6 "Refactor"):** CodeMirror is bundled from npm since step 3 (no
+  CDN). The proxy is `modals/editor.ts` with typed messages (`editor/protocol.ts`): the iframe
+  names one of its opdracht's three files (`opdracht.typ`, `main.typ`, `lib.typ`) and the main
+  window builds the path for the opdracht it opened; the image calls always use that opdracht;
+  unknown message types are answered with an error; the iframe accepts answers only from the
+  app's own origin (not by `event.source`: WebKit reports the frame itself as the source of the
+  main window's answers). The unused `maatwerk-read-text` (no hash) is gone. Test: e2e
+  `editor-shell.spec` "U10".
 
 ### U11. Filter popover "Alles/Niets" listeners pile up on every login
 

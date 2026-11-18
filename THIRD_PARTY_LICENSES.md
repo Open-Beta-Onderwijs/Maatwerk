@@ -77,7 +77,9 @@ The Typst-embedded fonts are kept for parity: the reference CLI had them too (ra
 Sans Mono, the rapport's bold table header uses Libertinus Serif for `●`/`◇`). Emoji come from the
 bundled Noto Color Emoji (Google), not from the system (PLAN section 9, decision 2): file
 `2D/fonts/Noto-COLRv1.ttf` of github.com/googlefonts/noto-emoji, tag `v2026-09-24-unicode18_0`
-(Unicode 18), SHA-256 `b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c`.
+(Unicode 18), SHA-256 `b8e25ea68db82f9e4d0aee921f4420be2be39887bd5c893a2ad98710531f9d0c`. The
+same copy is served to the window for emoji (`maatwerk-out` scheme, `ui/src/utils/emoji-font.ts`)
+where the webview draws COLRv1 fonts; the mock test build copies the file next to its pages.
 
 ### Typst packages (embedded, `crates/maatwerk-core/assets/packages/preview/`)
 

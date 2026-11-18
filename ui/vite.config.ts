@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { mockCsp } from './vite/csp.ts';
+import { mockEmojiFont } from './vite/emoji-font.ts';
 import { gradesWasm } from './vite/grades-wasm.ts';
 import { mockFixtures } from './vite/mock-fixtures.ts';
 
@@ -28,6 +29,7 @@ export default defineConfig({
     gradesWasm(),
     mockFixtures(),
     mockCsp(),
+    mockEmojiFont(),
     // The splash in index.html shows the version before any script runs (F-06).
     {
       name: 'maatwerk-version-html',

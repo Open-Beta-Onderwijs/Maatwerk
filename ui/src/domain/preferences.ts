@@ -8,7 +8,8 @@
 // Additive: an app before 0.6 keeps the field when it saves the user (the
 // Gebruikers form spreads the loaded record; the PIN commands edit the JSON
 // object), and ignores it. Unknown or invalid values read as "not set".
-// The editor divider position joins later (step 27).
+// The editor divider position (`editorSplit`: the editor's share of the width, 0,25-0,75) joined
+// in step 31 (F-16).
 
 import { isAccent, isTheme, type Look } from './look';
 
@@ -16,6 +17,22 @@ export interface Preferences {
   theme?: string;
   accent?: string;
   activeYear?: string;
+  editorSplit?: number;
+}
+
+/** The editor divider's range and default (spec 4.8). */
+export const EDITOR_SPLIT = { min: 0.25, max: 0.75, initial: 0.5 } as const;
+
+/** `v` within the divider's range, to two decimals. */
+export function clampEditorSplit(v: number): number {
+  const c = Math.min(EDITOR_SPLIT.max, Math.max(EDITOR_SPLIT.min, v));
+  return Math.round(c * 100) / 100;
+}
+
+/** The user's saved editor divider position, or null (then 50%). */
+export function savedEditorSplit(user: unknown): number | null {
+  const v = prefsOf(user).editorSplit;
+  return typeof v === 'number' && Number.isFinite(v) ? clampEditorSplit(v) : null;
 }
 
 const YEAR = /^(\d{4})-(\d{4})$/;

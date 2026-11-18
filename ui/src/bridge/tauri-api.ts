@@ -32,6 +32,8 @@ type Progress = { done: number; total: number };
 
 /** The URI scheme that serves render outputs (src-tauri/src/scheme.rs). */
 export const OUTPUT_SCHEME = 'maatwerk-out';
+/** The emoji font on the output scheme (`EMOJI_FONT_PATH` in src-tauri/src/scheme.rs). */
+export const EMOJI_FONT_PATH = 'maatwerk-emoji.ttf';
 
 /** What the API needs from Tauri; tests pass a fake. */
 export interface Backend {
@@ -369,6 +371,7 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     onAssignmentProgress: (cb) =>
       subscribe((f) => backend.listenAssignmentProgress(f), cb, 'assignment progress'),
     pdfUrl: (pdfPath) => backend.outputUrl(pdfPath),
+    emojiFontUrl: () => backend.outputUrl(EMOJI_FONT_PATH),
   };
   for (const method of PORTED_METHODS) {
     if (!(method in api)) throw new Error(`TauriApi misses ${method}`);

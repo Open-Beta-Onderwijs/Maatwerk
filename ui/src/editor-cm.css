@@ -16,7 +16,8 @@
 :host(#cm-container) .cm-scroller {
   overflow: auto;
   font-family:
-    'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
+    'Maatwerk Emoji', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, Menlo,
+    'DejaVu Sans Mono', monospace;
 }
 
 :host(#cm-container) .cm-content {
@@ -97,7 +98,7 @@
 }
 
 :host(#cm-container) .cm-typst-hover-text {
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
 }
 
 :host(#cm-container) .cm-tooltip {

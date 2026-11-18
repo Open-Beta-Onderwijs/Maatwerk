@@ -211,6 +211,8 @@ export class MockEditor {
   private sessions = new Map<number, Session>();
   private listeners = new Set<(u: EditorUpdateEvent) => void>();
   private next = 0;
+  /** Extra time before a compile result (tests of the "Compileren…" state, F-05). */
+  compileDelayMs = 0;
   /** Compile time limit in seconds (the `instellingen.json` setting). */
   timeoutSeconds = 30;
   /** The latest update per session, for tests. */
@@ -250,7 +252,7 @@ export class MockEditor {
     const s = this.get(id);
     change(s);
     s.generation += 1;
-    this.schedule(s, DEBOUNCE_MS);
+    this.schedule(s, DEBOUNCE_MS + this.compileDelayMs);
     return s.generation;
   }
 

@@ -17,54 +17,73 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 14px;
-  background: #f4f6f9;
-  color: #2c3e50;
+  background: #f5f6f8;
+  color: #1b2230;
 }
 
-/* ── Topbar — mirrors the main app's #topbar ──────────────────────────── */
+/* ── Header (V-07, spec 4.8, board 10) ─────────────────────────────────── */
 #editor-topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: #2c3e50;
-  color: #fff;
-  padding: 0 20px;
-  height: 50px;
+  gap: 14px;
+  height: 52px;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  padding: 0 16px 0 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #e1e4ea;
 }
-
-#btn-app-title {
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.5px;
-  margin-left: -14px;
-  margin-right: 8px;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+.editor-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border: 0;
+  border-radius: 8px;
   background: transparent;
-  border: none;
-  color: #fff;
-  cursor: pointer;
-  padding: 0 14px;
-  height: 50px;
+  color: #2560bf;
+  font: inherit;
+  font-weight: 600;
   white-space: nowrap;
-  transition: background 0.15s;
+  cursor: pointer;
 }
-
-#btn-app-title:hover {
-  background: rgba(255, 255, 255, 0.1);
+.editor-back:hover {
+  background: #eef0f3;
 }
-
-#editor-title {
-  font-size: 13px;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
-  color: rgba(255, 255, 255, 0.7);
-  flex: 1;
+.editor-back:focus-visible {
+  outline: 2px solid #2f6fd6;
+  outline-offset: 1px;
+}
+.editor-topbar-sep {
+  width: 1px;
+  height: 24px;
+  flex-shrink: 0;
+  background: #e1e4ea;
+}
+.editor-heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+#editor-title-naam {
   overflow: hidden;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+#editor-subtitle {
+  overflow: hidden;
+  color: #5d6675;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-topbar-spacer {
+  flex: 1;
 }
 
 /* ── Save conflict (C17) ───────────────────────────────────────────────── */
@@ -91,10 +110,55 @@ body {
   cursor: pointer;
 }
 
-#editor-status {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+/* Status pill (F-05): editor/status.ts sets data-kind. */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  max-width: 40vw;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #eef0f3;
+  color: #5d6675;
+  font-size: 13px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.status-pill:empty {
+  display: none;
+}
+.status-pill[data-kind='busy'] {
+  background: #eaf1fc;
+  color: #2560bf;
+}
+.status-pill[data-kind='ok'] {
+  background: #eaf6ee;
+  color: #1e7b3c;
+}
+.status-pill[data-kind='error'] {
+  background: #fdecea;
+  color: #b42318;
+}
+.status-pill svg {
+  flex-shrink: 0;
+}
+.status-spin {
+  animation: status-spin 0.9s linear infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes status-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-spin {
+    animation: none;
+  }
 }
 
 /* The user's avatar: styles/avatar.css (B-08). */
@@ -102,15 +166,15 @@ body {
   margin-left: 8px;
 }
 
-/* ── Toolbar ─────────────────────────────────────────────────────────── */
+/* ── Toolbar: on top of the left pane, wraps (spec 4.8) ────────────────── */
 #editor-toolbar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 5px 12px;
-  background: #f0f2f5;
-  border-bottom: 1px solid #d0d5de;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #ffffff;
+  border-bottom: 1px solid #e1e4ea;
   flex-shrink: 0;
   position: relative;
   z-index: 10;
@@ -119,65 +183,77 @@ body {
 .tb-group {
   display: flex;
   align-items: center;
-  border-radius: 3px;
-  overflow: hidden;
+  gap: 2px;
 }
 
 .tb-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid #b8c0cc;
-  background: #fff;
-  color: #2c3e50;
+  height: 30px;
+  min-width: 30px;
+  padding: 0 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #1b2230;
   font-size: 13px;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: inherit;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0;
-  transition:
-    background 0.1s,
-    color 0.1s;
+  gap: 5px;
   flex-shrink: 0;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .tb-btn:hover {
-  background: #e8edf4;
+  background: #eef0f3;
+  border-color: #e1e4ea;
 }
 
 .tb-btn:active,
 .tb-btn.active {
-  background: #4a90d9;
+  background: #2f6fd6;
+  border-color: #2f6fd6;
   color: #fff;
-  border-color: #357abd;
-  z-index: 1;
 }
 
-/* Collapse shared borders between adjacent buttons */
-.tb-group > .tb-btn + .tb-btn {
-  margin-left: -1px;
+.tb-btn:focus-visible {
+  outline: 2px solid #2f6fd6;
+  outline-offset: 1px;
 }
 
-/* Math group responsive layout */
-#tb-math .tb-math-more {
-  display: none;
+.tb-btn-accent {
+  color: #2560bf;
+  font-weight: 600;
 }
-.tb-math-compact #tb-math .tb-math-extra {
-  display: none;
+
+/* The content blocks: a swatch in the block's colour (lib.typ). */
+.tb-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
-.tb-math-compact #tb-math .tb-math-more {
-  display: flex;
+.tb-swatch--formule {
+  background: #f6d96b;
+}
+.tb-swatch--voorbeeld {
+  background: #a9c4eb;
+}
+.tb-swatch--context {
+  background: #cfe6c8;
+}
+.tb-swatch--belangrijk {
+  background: #f2b8b5;
 }
 
 .tb-divider {
   width: 1px;
-  height: 18px;
-  background: #c0c8d4;
+  height: 20px;
+  background: #e1e4ea;
   flex-shrink: 0;
-  margin: 0 2px;
+  margin: 0 4px;
 }
 
 /* Popup menus */
@@ -187,15 +263,37 @@ body {
   left: 0;
   z-index: 200;
   background: #fff;
-  border: 1px solid #d0d5de;
-  border-radius: 4px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e1e4ea;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.16);
   padding: 4px;
+}
+
+/* Wiskunde ▾, Symbolen ▾, Opmaak ▾: a list of named items. */
+.tb-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+}
+.tb-menu[data-display='none'] {
+  display: none;
+}
+.tb-menu .tb-menu-item {
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 0 10px;
+}
+.tb-menu-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: 32px;
+  color: #5d6675;
 }
 
 .tb-popup-grid {
   display: grid;
-  grid-template-columns: repeat(3, 28px);
+  grid-template-columns: repeat(3, 30px);
   gap: 2px;
 }
 
@@ -395,14 +493,52 @@ body {
   min-height: 0;
   overflow: hidden;
 }
+/* While dragging the divider nothing inside selects or takes the pointer. */
+#editor-body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+#editor-body.is-resizing #cm-container,
+#editor-body.is-resizing #pdf-panel {
+  pointer-events: none;
+}
 
 #editor-left {
-  width: 50%;
+  flex: 0 0 50%;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #d8d8d8;
   background: #ffffff;
+}
+
+#editor-divider {
+  flex: none;
+  width: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef0f3;
+  border-left: 1px solid #e1e4ea;
+  border-right: 1px solid #e1e4ea;
+  cursor: col-resize;
+  touch-action: none;
+}
+.divider-grip {
+  width: 4px;
+  height: 44px;
+  border-radius: 4px;
+  background: #b8bfca;
+  transition: background 0.15s;
+}
+#editor-divider:hover .divider-grip,
+#editor-divider:focus-visible .divider-grip,
+#editor-body.is-resizing .divider-grip {
+  background: #2560bf;
+}
+#editor-divider:focus-visible {
+  outline: 2px solid #2f6fd6;
+  outline-offset: -2px;
 }
 
 #cm-container {
@@ -416,33 +552,31 @@ body {
 /* ── Files of the opdracht (Step 8b) ───────────────────────────────────── */
 #file-tabs {
   display: flex;
+  align-items: flex-end;
   gap: 2px;
-  padding: 4px 8px 0;
-  background: #f0f2f4;
-  border-bottom: 1px solid #d0d7de;
+  padding: 8px 10px 0;
+  background: #fafbfc;
+  border-bottom: 1px solid #e1e4ea;
   flex-shrink: 0;
 }
 .file-tab {
-  font:
-    13px 'Segoe UI',
-    system-ui,
-    Arial,
-    sans-serif;
-  padding: 4px 12px;
+  padding: 7px 14px;
   border: 1px solid transparent;
   border-bottom: none;
-  border-radius: 4px 4px 0 0;
+  border-radius: 8px 8px 0 0;
   background: none;
-  color: #57606a;
+  color: #5d6675;
+  font-family: 'Maatwerk Emoji', Consolas, 'Cascadia Mono', ui-monospace, Menlo, monospace;
+  font-size: 13px;
   cursor: pointer;
 }
 .file-tab:hover {
-  background: #e4e7ea;
+  background: #eef0f3;
 }
 .file-tab.active {
   background: #fff;
-  border-color: #d0d7de;
-  color: #24292e;
+  border-color: #e1e4ea;
+  color: #1b2230;
   margin-bottom: -1px;
 }
 .file-tab.needs-attention::after {
@@ -554,13 +688,6 @@ body {
   font-weight: 600;
 }
 
-/* Wide buttons (insert group) — emoji labels need room */
-.tb-btn-wide {
-  width: auto;
-  padding: 0 6px;
-  font-size: 16px;
-}
-
 /* ── Context menu ────────────────────────────────────────────────────── */
 #cm-context-menu {
   position: fixed;
@@ -571,7 +698,7 @@ body {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   padding: 3px 0;
   min-width: 170px;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 13px;
 }
 
@@ -586,7 +713,7 @@ body {
   background: none;
   cursor: pointer;
   color: #2c3e50;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
   font-size: 13px;
 }
 
@@ -684,14 +811,15 @@ body {
   font-size: 12px;
   color: #2c3e50;
   white-space: nowrap;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: 'Maatwerk Emoji', 'Segoe UI', system-ui, Arial, sans-serif;
 }
 
 #pdf-panel {
-  width: 50%;
+  flex: 1;
+  min-width: 0;
   height: 100%;
   overflow: hidden;
-  background: #525659;
+  background: #e9ecf0;
   display: flex;
   flex-direction: column;
 }
@@ -699,32 +827,35 @@ body {
 #preview-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  background: #3c3f41;
+  gap: 6px;
+  height: 44px;
+  padding: 0 12px;
+  background: #ffffff;
+  border-bottom: 1px solid #e1e4ea;
   flex-shrink: 0;
 }
 
 .pv-btn {
-  height: 24px;
-  min-width: 24px;
+  height: 30px;
+  min-width: 30px;
   padding: 0 8px;
-  border: 1px solid #5a5d60;
-  border-radius: 3px;
-  background: #4a4d50;
-  color: #e8e8e8;
+  border: 1px solid #e1e4ea;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1b2230;
   font-size: 13px;
-  font-family: 'Segoe UI', system-ui, Arial, sans-serif;
+  font-family: inherit;
   cursor: pointer;
 }
 
 .pv-btn:hover {
-  background: #5a5d60;
+  background: #eef0f3;
 }
 
 #pv-zoom-label {
-  color: #ccc;
-  font-size: 12px;
+  color: #1b2230;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
   min-width: 44px;
   text-align: center;
 }
@@ -733,9 +864,17 @@ body {
   flex: 1;
 }
 
+/* The "Vragen" button; with checks to look at it is the amber pill of board 10. */
+#pv-vragen {
+  height: 28px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
 #pv-vragen.has-checks {
-  border-color: #d9a400;
-  color: #ffd75e;
+  border-color: #f0c36d;
+  background: #fff6e0;
+  color: #7a5300;
 }
 
 /* ── Vragen panel (Step 8b) ────────────────────────────────────────────── */
@@ -847,24 +986,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: #5d6675;
   font-size: 14px;
 }
 
+/* A render error in the status pill: opens the diagnostics. */
 #btn-render-error {
   background: none;
   border: none;
   padding: 0;
-  font-size: 12px;
-  font-family: inherit;
-  color: #ff6b6b;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
   cursor: pointer;
   text-decoration: underline dotted;
   white-space: nowrap;
-}
-
-#btn-render-error:hover {
-  color: #ff4444;
 }
 
 #error-popover {
@@ -880,7 +1016,8 @@ body {
   max-height: 320px;
   overflow-y: auto;
   font-family:
-    'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, Menlo, 'DejaVu Sans Mono', monospace;
+    'Maatwerk Emoji', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, Menlo,
+    'DejaVu Sans Mono', monospace;
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;

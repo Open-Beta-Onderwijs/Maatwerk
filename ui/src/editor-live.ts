@@ -229,6 +229,10 @@ export function clickPoint(event: MouseEvent): { page: number; x: number; y: num
  * Scrolls `point` into view (about a third from the top) unless it is visible,
  * and marks it briefly.
  */
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+}
+
 export function showPoint(viewer: HTMLElement, point: EditorPoint, always = false): void {
   const pageEl = viewer.querySelectorAll<HTMLElement>('.svg-page')[point.page];
   const svg = pageEl?.querySelector('svg');
@@ -241,7 +245,11 @@ export function showPoint(viewer: HTMLElement, point: EditorPoint, always = fals
   const yPx = rect.top + y * scale;
   const v = viewer.getBoundingClientRect();
   if (always || yPx < v.top + 8 || yPx > v.bottom - 8) {
-    viewer.scrollTop += yPx - v.top - viewer.clientHeight / 3;
+    // V-03: glide instead of jump; at once when the teacher asked for less motion (spec 6).
+    viewer.scrollBy({
+      top: yPx - v.top - viewer.clientHeight / 3,
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    });
   }
   let mark = viewer.querySelector<HTMLElement>('.preview-mark');
   if (!mark) {
