@@ -176,7 +176,8 @@ above:
   after a failed Opdrachten genereren.
 - **Launch CLIs:** Claude Code, OpenAI Codex CLI, Gemini CLI, and Mistral Vibe and GitHub Copilot
   CLI if usable non-interactively; DeepSeek dropped. The invocation research is recorded here in
-  step 32.
+  step 32. After the research the user added Antigravity CLI and a teacher-defined "Eigen CLI"
+  (`PLAN-2.md` decisions 76-77, sections below).
 
 ## CLI research (step 32, 2026-11-18)
 
@@ -253,8 +254,8 @@ Sources: [non-interactive mode](https://learn.chatgpt.com/docs/non-interactive-m
 **Caveat:** the Gemini CLI docs say that for unpaid-tier and Google One users Gemini CLI "was
 replaced by Antigravity CLI on June 18th, 2026", and that it is not optimised for the newest
 Gemini model. Gemini CLI still works with a paid Code Assist licence or an API key, but many
-teachers with a free Google account cannot use it. Antigravity CLI is not in the launch set
-(decision 49); adding it is the user's call.
+teachers with a free Google account cannot use it. The user therefore added Antigravity CLI to
+the launch set (decision 76, below).
 
 Sources: [headless](https://geminicli.com/docs/cli/headless/),
 [CLI reference](https://geminicli.com/docs/cli/cli-reference/),
@@ -304,6 +305,56 @@ Sources: [programmatic reference](https://docs.github.com/en/copilot/reference/c
 [using Copilot CLI](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli),
 [installing](https://docs.github.com/en/copilot/how-tos/set-up/install-copilot-cli).
 
+### Antigravity CLI (Google)
+
+Added by the user on 2026-11-18 (decision 76), after the research showed that Gemini CLI is gone
+for free Google accounts.
+
+| Topic           | Finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Non-interactive | `agy -p "<prompt>"` (`--print`, `--prompt`); diagnostics on stderr; `--print-timeout` exists. Exit 0 on success, non-zero with the reason on stderr; permission soft-denials still exit 0. Community reports of `-p` hanging or dropping stdout when not run in a TTY (GitHub issue #76): _verify_ on the current version, since Maatwerk always pipes                                                                                                                                                                                                                                                                                        |
+| Streaming       | `--output-format stream-json`: NDJSON `init`, `step_update` (step types `user_input`, `agent_response`, `tool` with `tool_info`, `checkpoint`), `result` with a status (`SUCCESS`, `ERROR`, `CANCELED`, `INTERRUPTED`, ...)                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Resume          | `--conversation <id>` (runs are stateless by default), `-c` for the latest; the id from `init` (_verify_)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Permissions     | Rules `action(target)` with actions `read_file`, `write_file`, `read_url`, `execute_url`, `command`, `mcp` in lists deny > ask > allow, but **only in the user's global** `~/.gemini/antigravity-cli/settings.json` (no per-run settings flag or project file documented). Reads and writes inside the project dir are allowed, outside it they ask; in headless mode anything that asks is soft-denied (stderr notice, run goes on). So shell commands, the check included, are denied unless the teacher allowed them globally. `--sandbox` (OS containment, macOS/Linux, Windows from 1.4.4). `--dangerously-skip-permissions`: never used |
+| Web search      | Not documented as a tool; page fetches are `read_url` (asks, so denied headless) (_verify_)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Images          | Not documented; images are copied into the temp dir and named in the request (_verify_)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Detection       | `agy`; installed to `~/.local/bin/agy` (macOS/Linux) and `%LOCALAPPDATA%\agy\bin` (Windows); `agy --version`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Not logged in   | Headless runs need cached credentials from one interactive `agy` session; without them the run "exits with an `authentication required` error instead of hanging". Personal Google account (Free, Pro, Ultra), Gemini Enterprise, or an API key with `modelProvider` set in the settings file. **Google Workspace accounts (most school accounts) do not include Antigravity**                                                                                                                                                                                                                                                                |
+| Install         | Windows (PowerShell): `irm https://antigravity.google/cli/install.ps1 \| iex`; macOS/Linux: `curl -fsSL https://antigravity.google/cli/install.sh \| bash`. No Node needed                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Default args    | `-p {prompt} --output-format stream-json`; later turns add `--conversation {session}`. The check runs on Maatwerk's side after the turn (finding 9)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+Sources: [headless](https://antigravity.google/docs/cli/headless),
+[CLI reference](https://antigravity.google/docs/cli/reference),
+[permissions](https://antigravity.google/docs/permissions?tab=cli),
+[install and auth](https://antigravity.google/docs/install?tab=cli),
+[getting started](https://antigravity.google/docs/getting-started),
+[issue #76](https://github.com/google-antigravity/antigravity-cli/issues/76) (community report).
+
+### Custom CLI (decision 77)
+
+The user asked for a "Eigen CLI" option: a teacher adds an AI CLI that is not in the list by
+entering its command and arguments. Maatwerk cannot know its output format or permission flags,
+so a custom CLI gets the lowest common denominator:
+
+- **Fields** (per teacher, local settings, like the preset overrides; several allowed): name
+  (shown on the rail as a monogram, never a vendor logo), command (a name on PATH or an absolute
+  path), arguments for the first turn, and optionally arguments for later turns. The placeholders
+  of the presets are available (`{prompt}`, `{workdir}`, `{session}`, `{check}`, `{image}`,
+  `{run}`, `{secs}`), with `{session}` a UUID that Maatwerk makes per conversation.
+- **Output:** plain text. stdout and stderr lines go into the transcript as they come; the last
+  stdout block is the answer. No events, no step names in the status line ("Bezig…").
+- **Conversation:** without "later turns" arguments every turn is a fresh run, and
+  `.maatwerk/request.md` carries the earlier messages of the conversation.
+- **Result:** the same as for the presets: Maatwerk diffs `opdracht.typ` and `images/` in the
+  temp dir, runs the check itself (finding 9), and shows the diff card.
+- **Safety:** Maatwerk cannot pass permission flags it does not know; the settings card says that
+  the teacher is responsible for the CLI's own restrictions, and the privacy notice applies as for
+  the presets. Constraint 1 holds anyway: only the temp dir's content is offered.
+- **Errors:** no login detection; a non-zero exit gives the CLI-error card with the last output
+  lines.
+- **Detection:** shown on the rail when the command resolves (PATH or absolute path), else listed
+  as "Niet gevonden" in the settings.
+
 ### Decision 49: do Mistral Vibe and Copilot CLI qualify?
 
 - **Mistral Vibe: yes.** Documented headless mode with streamed NDJSON, resume by session id, a
@@ -326,8 +377,13 @@ editable (answer 8), so a wrong guess is a settings change, not a release.
    `{prompt}`; the teacher's text goes into `.maatwerk/request.md` in the temp dir.
 2. **PATH on macOS/Linux.** An app started from Finder or a desktop launcher does not get the
    login shell's PATH, so `~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin` and the npm/nvm
-   folders are missing. Detection reads the login shell's PATH once (`$SHELL -lc 'echo $PATH'`)
-   and also probes the installers' default folders. On Windows: user and system PATH plus
+   folders are missing. This is a known, solved problem (editors such as VS Code do the same):
+   Maatwerk reads the login shell's PATH once at startup (`$SHELL -l -i -c` printing `$PATH`
+   between markers, with a time limit), merges the installers' default folders
+   (`~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`, `~/.npm-global/bin`, the active nvm
+   version), and uses that PATH both to find the CLI and **as the child's environment**, because
+   npm-installed CLIs start with `#!/usr/bin/env node` and fail without Node on PATH. A command
+   preset may also hold an absolute path, as a last resort. On Windows: user and system PATH plus
    `PATHEXT` (`.exe`, `.cmd`).
 3. **Stable temp dir per conversation.** Gemini keys sessions by the project path, so a
    conversation's temp dir keeps its path (also across an app restart) until "Nieuw gesprek".
@@ -338,8 +394,9 @@ editable (answer 8), so a wrong guess is a settings change, not a release.
    Unix). Claude Code and Vibe keep the session resumable after a stop; Vibe's own
    `--time-limit` is a second guard.
 6. **Login check before a run:** `claude auth status` and `codex login status` answer without a
-   prompt; Gemini's exit code 41 marks it; Vibe and Copilot are recognised from their error
-   output once the manual check has shown it.
+   prompt; Gemini's exit code 41 marks it, Antigravity's `authentication required` error on
+   stderr; Vibe and Copilot are recognised from their error output once the manual check has
+   shown it.
 7. **Residual risk ("edits only in the working dir"):** Claude Code (`--restricted`), Vibe
    (`outside_workdir = "deny"`) and Copilot (path check) keep their file tools in the temp dir;
    Codex relies on its sandbox for writes and cannot deny other shell commands; on native
@@ -347,3 +404,8 @@ editable (answer 8), so a wrong guess is a settings change, not a release.
    `opdracht.typ` and `images/` back (decision 50).
 8. **Node.js** is needed only for Gemini CLI (and the npm routes of the others); the install help
    (decision 72) says so per CLI instead of one general Node.js note.
+9. **Check on Maatwerk's side too.** Antigravity (no per-run permission rules) and custom CLIs
+   cannot be relied on to run the bundled check. After every turn Maatwerk runs the check on the
+   temp dir itself (it does so for the diff card anyway, decision 68); for these CLIs, when
+   errors remain, it resumes the conversation with the diagnostics, bounded to 3 rounds
+   (constraint 3), and shows what is left. The presets that can run `{check}` keep doing so.

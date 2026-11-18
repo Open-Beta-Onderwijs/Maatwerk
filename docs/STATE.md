@@ -23,7 +23,13 @@ launch set (user's call); prompts go via `.maatwerk/request.md`, not argv (`.cmd
 Linux detection must read the login shell PATH; Gemini needs a stable temp dir path per
 conversation. _verify_ rows go into the 32c manual check.
 
-**Next action:** 32a (bridge, no UI), after the user has seen the research report.
+**After the report (user 2026-11-18):** decision 76 adds Antigravity CLI (researched, ADR table;
+check on Maatwerk's side because it has no per-run permission rules), decision 77 adds "Eigen
+CLI" (teacher-defined command and arguments, plain-text output; board 62 gets its card in 32c).
+ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
+also passed to the child).
+
+**Next action:** 32a (bridge, no UI).
 Releases 0.20-0.22 still wait for the user.
 
 ## Previous step (30-31)

@@ -121,6 +121,13 @@ AI assistant design round (user, 2026-11-18; design round 15, boards 59-63; spec
 | 74  | Opdracht toevoegen: a switch card "Eerste versie laten maken met AI" with the description and the AI-programma select (installed CLIs only); the button becomes "Opslaan en AI starten"; the message is sent at once and the opdracht holds the empty template until a proposal is applied            | user   |
 | 75  | "Laat AI dit oplossen": one card per failed opdracht with a student count only (never names); it opens the editor with the Fouten oplossen text and the error as an attachment, not sent until the teacher sends it                                                                                   | user   |
 
+After the CLI research (user, 2026-11-18; ADR-0009 "CLI research"):
+
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                   | Source |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 76  | Antigravity CLI (`agy`) joins the launch set (six CLIs; the install help of decision 72 lists six). It cannot get per-run permission rules, so the check runs on Maatwerk's side with up to 3 fix rounds (ADR finding 9)                                                                                                                                                   | user   |
+| 77  | "Eigen CLI": a teacher can add CLIs that are not in the list (name, command, arguments for the first and optionally later turns, the preset placeholders); plain-text output, Maatwerk-side check, no login detection, monogram on the rail; stored per teacher in local settings. Its card in AI-instellingen and the "Eigen CLI toevoegen" button extend board 62 in 32c | user   |
+
 Open questions of the design round, answered (user, 2026-11-18):
 
 1. **School switch storage:** an additive field in `instellingen.json` (the file behind the
@@ -516,7 +523,7 @@ button, toolbar on top with dropdown groups, file tabs below it, status pill, dr
 ### Step 32: AI assistant (L+, three sessions)
 
 Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 option D as amended,
-decisions 48-75. Design: spec 4.8.1, 4.9; boards 59-63.
+decisions 48-77. Design: spec 4.8.1, 4.9; boards 59-63.
 
 - **Design round (done, user OK 2026-11-18):** design round 15, boards 59-63
   (`AIChat`, `AIContext`, `AIDiff`, `AIInstellingen`, `AIStart` in `docs/phase-2/design/mocks/`),
