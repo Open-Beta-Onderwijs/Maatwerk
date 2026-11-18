@@ -17,9 +17,12 @@
 
 pub mod check;
 pub mod detect;
+pub mod diff;
 pub mod events;
+pub mod history;
 pub mod provider;
 pub mod run;
+pub mod turn;
 pub mod workspace;
 
 pub use provider::{AiSettings, Builtin, ProviderKey};

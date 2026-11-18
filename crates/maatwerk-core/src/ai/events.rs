@@ -23,7 +23,7 @@ const TAIL_LINES: usize = 20;
 const MAX_ANSWER: usize = 64_000;
 
 /// What a step does, for its icon and the status line.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum StepKind {
     Thinking,

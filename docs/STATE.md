@@ -29,7 +29,7 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32a sub-task 4 (history, diff and rebase), see "Step 32a progress".
+**Next action:** 32a sub-task 5 (Tauri commands, events, bindings), see "Step 32a progress".
 
 ## Step 32a progress (bridge, no UI)
 
