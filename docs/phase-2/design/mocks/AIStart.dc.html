@@ -1,0 +1,166 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: AI bij Opdracht toevoegen en Opdrachten genereren</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-mono{font-family:Consolas,'Cascadia Mono',monospace}
+.mw-cap{font-size:12px;font-weight:700;letter-spacing:.6px}
+.mw-chip{height:30px;padding:0 12px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer}
+.mw-sw{width:40px;height:22px;flex:none;border-radius:999px;border:0;padding:2px;cursor:pointer;display:flex}
+.mw-sw span{width:18px;height:18px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.mw-spin{animation:mwspin .9s linear infinite;transform-origin:50% 50%}
+@keyframes mwspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; position: relative; overflow: hidden; background: {{t.bg}}; color: {{t.text}}; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+  <header style="height: 56px; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+    <span style="font-weight: 800; letter-spacing: .5px">MAATWERK</span><span style="color: {{t.muted}}">Leerlingen</span><span style="color: {{t.muted}}">Groepen</span><span style="color: {{t.muted}}">Toetsen</span><span style="color: {{t.muted}}">Observaties</span><span style="font-weight: 600; height: 56px; display: flex; align-items: center; box-shadow: inset 0 -3px 0 {{a.text}}">Opdrachten</span>
+  </header>
+  <div aria-hidden="true" style="position: absolute; inset: 56px 0 0 0; background: rgba(16,24,40,.42)"></div>
+
+  <sc-if value="{{isNew}}" hint-placeholder-val="{{ true }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-ot" style="position: absolute; top: 76px; left: 80px; width: 760px; display: flex; flex-direction: column; background: {{t.surface}}; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
+      <div style="padding: 18px 24px 14px; border-bottom: 1px solid {{t.border}}; display: flex; align-items: center"><h2 id="mw-ot" style="margin: 0; flex: 1; font-size: 22px; color: {{a.text}}">Opdracht toevoegen</h2></div>
+      <div style="padding: 16px 24px; display: flex; flex-direction: column; gap: 14px">
+        <label class="mw-cap" style="display: flex; flex-direction: column; gap: 6px; color: {{t.muted}}">NAAM<input value="Weerstand en de wet van Ohm" style="height: 36px; box-sizing: border-box; padding: 0 12px; border: 1px solid {{t.input}}; border-radius: 8px; background: {{t.inputBg}}; color: {{t.text}}; font: inherit; font-size: 14px; font-weight: 400; letter-spacing: 0"></label>
+        <label class="mw-cap" style="display: flex; flex-direction: column; gap: 6px; color: {{t.muted}}">BESCHRIJVING<textarea rows="2" style="box-sizing: border-box; padding: 8px 12px; border: 1px solid {{t.input}}; border-radius: 8px; background: {{t.inputBg}}; color: {{t.text}}; font: inherit; font-size: 14px; font-weight: 400; letter-spacing: 0; line-height: 1.45; resize: none">Leerling oefent met het bepalen van weerstand uit een (U,I)-diagram en rekent met R = U / I.</textarea></label>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 6px"><span class="mw-cap" style="color: {{t.muted}}">SCHOOLSOORT</span><div style="display: flex; gap: 6px"><sc-for list="{{types}}" as="c" hint-placeholder-count="3"><button class="mw-chip" aria-pressed="{{c.on}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.w}}">{{c.label}}</button></sc-for></div></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><span class="mw-cap" style="color: {{t.muted}}">VAKKEN</span><div style="display: flex; gap: 6px"><sc-for list="{{vakken}}" as="c" hint-placeholder-count="2"><button class="mw-chip" aria-pressed="{{c.on}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.w}}">{{c.label}}</button></sc-for></div></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><span class="mw-cap" style="color: {{t.muted}}">JAARLAGEN</span><div style="display: flex; gap: 6px"><sc-for list="{{jl}}" as="c" hint-placeholder-count="6"><button class="mw-chip" aria-pressed="{{c.on}}" style="width: 34px; padding: 0; border-radius: 8px; border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.w}}">{{c.label}}</button></sc-for></div></div>
+        </div>
+        <div style="border: 1px solid {{aiBd}}; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; background: {{aiBg}}">
+          <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer">
+            <button class="mw-sw" role="switch" aria-checked="{{aiA}}" onClick="{{toggleAi}}" style="margin-top: 1px; background: {{aiSw.bg}}"><span style="transform: translateX({{aiSw.x}}px)"></span></button>
+            <span style="display: flex; flex-direction: column; gap: 2px"><b>Eerste versie laten maken met AI</b><span style="font-size: 13px; color: {{t.muted}}">Zonder AI begin je met het lege sjabloon.</span></span>
+          </label>
+          <sc-if value="{{ai}}" hint-placeholder-val="{{ true }}">
+            <label class="mw-cap" style="display: flex; flex-direction: column; gap: 6px; color: {{t.muted}}">WAT MOET ER IN DE OPDRACHT STAAN?
+              <textarea rows="4" style="box-sizing: border-box; padding: 9px 12px; border: 1px solid {{t.input}}; border-radius: 8px; background: {{t.inputBg}}; color: {{t.text}}; font: inherit; font-size: 14px; font-weight: 400; letter-spacing: 0; line-height: 1.45; resize: vertical">Korte uitleg over weerstand met een formuleblok R = U / I en een uitgewerkt voorbeeld. Daarna drie opgaven van oplopende moeilijkheid: aflezen uit een (U,I)-diagram, rekenen met de formule, en een opgave waarin de leerling uitlegt waarom een lampje geen constante weerstand heeft. Met antwoordmodel en punten.</textarea>
+            </label>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <label class="mw-cap" for="mw-prov" style="color: {{t.muted}}">AI-PROGRAMMA</label>
+              <select id="mw-prov" style="height: 34px; padding: 0 10px; border: 1px solid {{t.input}}; border-radius: 8px; background: {{t.inputBg}}; color: {{t.text}}; font: inherit; font-size: 13.5px"><option>Claude Code</option><option>Codex</option><option>Gemini CLI</option></select>
+              <span style="flex: 1; font-size: 12.5px; line-height: 1.45; color: {{t.muted}}">De gegevens hierboven gaan als context mee. Dit wordt het eerste bericht in de chat.</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid {{t.border}}">
+        <span style="flex: 1"></span>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <a href="AIChat.dc.html" style="height: 36px; padding: 0 16px; border-radius: 8px; background: {{a.fill}}; color: {{a.on}}; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">{{saveLabel}}</a>
+      </div>
+    </section>
+
+    <sc-if value="{{ai}}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; top: 76px; left: 900px; width: 460px; display: flex; flex-direction: column; gap: 10px">
+        <span class="mw-cap" style="color: #FFFFFF">NA OPSLAAN: DE EDITOR OPENT MET DE CHAT</span>
+        <div style="width: 380px; border-radius: 12px; overflow: hidden; background: {{t.surface}}; border: 1px solid {{t.border}}; box-shadow: 0 12px 32px rgba(16,24,40,.2)">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid {{t.border}}"><span style="width: 28px; height: 28px; border-radius: 8px; background: #C2540F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 12px">C</span><div style="display: flex; flex-direction: column"><b>Claude Code</b><span style="font-size: 12px; color: {{t.muted}}">via de command line op deze computer</span></div></div>
+          <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+            <div style="align-self: flex-end; max-width: 88%; background: {{a.tint}}; border-radius: 12px 12px 4px 12px; padding: 9px 11px; font-size: 13px; line-height: 1.45">Korte uitleg over weerstand met een formuleblok R = U / I en een uitgewerkt voorbeeld. Daarna drie opgaven…</div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid {{t.border}}; border-radius: 10px; background: {{t.surface2}}; font-size: 13px"><svg class="mw-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{a.text}}" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9"></path></svg><span style="flex: 1">Leest de handleiding…</span><span style="font-size: 12px; color: {{t.muted}}">0:04 / 5:00</span></div>
+          </div>
+        </div>
+        <span style="font-size: 12.5px; line-height: 1.5; color: #E7EAF0; max-width: 400px">Het bericht wordt meteen verstuurd. Tot het voorstel is toegepast bevat de opdracht het lege sjabloon.</span>
+      </div>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{isGen}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-og" style="position: absolute; top: 76px; left: 80px; width: 760px; display: flex; flex-direction: column; background: {{t.surface}}; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
+      <div style="padding: 18px 24px 14px; border-bottom: 1px solid {{t.border}}; display: flex; flex-direction: column; gap: 4px">
+        <h2 id="mw-og" style="margin: 0; font-size: 22px; color: {{a.text}}">Opdrachten genereren</h2>
+        <span style="font-size: 13px; color: {{t.muted}}">Toets 503 Elektrische schakelingen · klas 4H2</span>
+      </div>
+      <div style="padding: 16px 24px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: baseline; gap: 10px"><b style="font-size: 16px">24 van 27 opdrachten gemaakt</b><span style="color: {{er.fg}}; font-weight: 600">3 mislukt</span></div>
+          <div aria-hidden="true" style="height: 8px; border-radius: 4px; overflow: hidden; display: flex; background: {{t.surface2}}"><div style="width: 88.9%; background: {{ok.fg}}"></div><div style="width: 11.1%; background: {{er.fg}}"></div></div>
+        </div>
+        <span class="mw-cap" style="color: {{t.muted}}">MISLUKT, PER OPDRACHT</span>
+        <sc-for list="{{fails}}" as="f" hint-placeholder-count="2">
+          <div style="border: 1px solid {{t.border}}; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; align-items: center; gap: 10px"><b style="flex: 1">{{f.name}}</b><span style="font-size: 12.5px; color: {{t.muted}}">{{f.count}}</span></div>
+            <div class="mw-mono" style="font-size: 12px; line-height: 1.5; white-space: pre-wrap; padding: 8px 10px; border-radius: 8px; background: {{er.bg}}; color: {{er.fg}}">{{f.err}}</div>
+            <div style="display: flex; align-items: center; gap: 8px">
+              <a href="AIChat.dc.html" style="height: 32px; padding: 0 12px 0 6px; border-radius: 8px; background: {{a.fill}}; color: {{a.on}}; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px"><span style="width: 22px; height: 22px; border-radius: 6px; background: #FFFFFF; color: #C2540F; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800">C</span>Laat AI dit oplossen</a>
+              <button style="height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Openen in editor</button>
+              <span style="flex: 1"></span>
+              <button style="border: 0; background: transparent; color: {{a.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Melding kopiëren</button>
+            </div>
+          </div>
+        </sc-for>
+        <span style="font-size: 12.5px; line-height: 1.5; color: {{t.muted}}">Voor deze leerlingen is nog geen opdracht gemaakt. Na het oplossen maak je ze met Opnieuw genereren; de 24 gemaakte blijven staan.</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid {{t.border}}">
+        <span style="flex: 1"></span>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-weight: 600; cursor: pointer">Sluiten</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-weight: 600; cursor: pointer">Opnieuw genereren (3)</button>
+      </div>
+    </section>
+
+    <div style="position: absolute; top: 76px; left: 900px; width: 460px; display: flex; flex-direction: column; gap: 10px">
+      <span class="mw-cap" style="color: #FFFFFF">NA ‘LAAT AI DIT OPLOSSEN’: DE EDITOR OPENT ZO</span>
+      <div style="width: 380px; border-radius: 12px; overflow: hidden; background: {{t.surface}}; border: 1px solid {{t.border}}; box-shadow: 0 12px 32px rgba(16,24,40,.2)">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid {{t.border}}"><span style="width: 28px; height: 28px; border-radius: 8px; background: #C2540F; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 12px">C</span><div style="display: flex; flex-direction: column"><b>Claude Code</b><span style="font-size: 12px; color: {{t.muted}}">via de command line op deze computer</span></div></div>
+        <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px">
+          <span style="display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 7px; border: 1px solid {{t.border}}; background: {{t.surface2}}; font-size: 12px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM9 12h7M9 16h7"></path></svg>Foutmelding genereren<span style="color: {{t.muted}}">1 kB</span></span>
+          <div style="border: 1px solid {{a.fill}}; box-shadow: 0 0 0 3px {{a.tint}}; border-radius: 10px; padding: 9px 11px; font-size: 13px; line-height: 1.45; background: {{t.inputBg}}">Los de fouten en waarschuwingen in deze opdracht op. Verander verder niets aan de inhoud.<span style="display: inline-block; width: 1.5px; height: 15px; background: {{t.text}}; vertical-align: -3px; margin-left: 1px"></span></div>
+          <span style="font-size: 11.5px; color: {{t.muted}}">Alleen deze opdracht en de gekozen context worden verstuurd, via jouw eigen abonnement.</span>
+        </div>
+      </div>
+      <span style="font-size: 12.5px; line-height: 1.5; color: #E7EAF0; max-width: 400px">Ingevuld, nog niet verstuurd: de docent drukt zelf op Versturen. De foutmelding noemt geen leerlingen, alleen de opdracht en de regel.</span>
+    </div>
+  </sc-if>
+
+  <div role="tablist" aria-label="Scherm kiezen (mock)" style="position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; padding: 4px; background: #1B2230; border-radius: 10px">
+    <sc-for list="{{views}}" as="v" hint-placeholder-count="2"><button role="tab" aria-selected="{{v.sel}}" onClick="{{v.pick}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: {{v.bg}}; color: {{v.fg}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">{{v.label}}</button></sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["licht","donker"],"default":"licht"},"accent":{"editor":"enum","options":["rood","oranje","geel","groen","blauw","indigo","paars","turquoise","roze","grafiet"],"default":"blauw"},"scherm":{"editor":"enum","options":["Opdracht toevoegen","Opdrachten genereren"],"default":"Opdracht toevoegen"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { view: (p.scherm ?? 'Opdracht toevoegen') === 'Opdrachten genereren' ? 'gen' : 'new', ai: true }; }
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const ac = ACC[this.props.accent] || ACC.blauw;
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F'), on: ac[0] === '#E5AE0B' ? '#2A2000' : '#FFFFFF' };
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', text: '#E7EAF0', muted: '#A3ABB8', input: '#3A414C', inputBg: '#171A20' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', text: '#1B2230', muted: '#5D6675', input: '#C9CED8', inputBg: '#FFFFFF' };
+    const er = dark ? { fg: '#FF8A80', bg: '#3A1F1F' } : { fg: '#B42318', bg: '#FDECEA' };
+    const ok = dark ? { fg: '#6CCB8A' } : { fg: '#1E7B3C' };
+    const st = this.state;
+    const chip = (label, on) => ({ label, on: on ? 'true' : 'false', bd: on ? a.fill : t.border, bg: on ? a.tint : t.surface, fg: on ? a.text : t.text, w: on ? 600 : 400 });
+    const views = [['new', 'Opdracht toevoegen'], ['gen', 'Opdrachten genereren: mislukt']].map(([k, label]) => ({ label, sel: st.view === k ? 'true' : 'false', bg: st.view === k ? '#FFFFFF' : 'transparent', fg: st.view === k ? '#1B2230' : '#C9CED8', pick: () => this.setState({ view: k }) }));
+    return {
+      t, a, er, ok, views, isNew: st.view === 'new', isGen: st.view === 'gen',
+      types: ['Havo', 'Vwo', 'Gymnasium'].map((l) => chip(l, l === 'Havo')),
+      vakken: ['Natuurkunde', 'Scheikunde'].map((l) => chip(l, l === 'Natuurkunde')),
+      jl: [1, 2, 3, 4, 5, 6].map((n) => chip(String(n), n === 4)),
+      ai: st.ai, aiA: st.ai ? 'true' : 'false', aiSw: { bg: st.ai ? a.fill : t.input, x: st.ai ? 18 : 0 }, toggleAi: () => this.setState({ ai: !st.ai }),
+      aiBd: st.ai ? a.fill : t.border, aiBg: st.ai ? a.fill + (dark ? '14' : '0A') : 'transparent',
+      saveLabel: st.ai ? 'Opslaan en AI starten' : 'Opslaan',
+      fails: [
+        { name: 'Helling bepalen uit een grafiek', count: 'voor 2 leerlingen', err: 'error: file not found: afbeeldingen/helling-2.png\n  ┌─ opdracht.typ:41:3' },
+        { name: 'Eenheden omrekenen', count: 'voor 1 leerling', err: 'error: expected expression, found closing bracket\n  ┌─ opdracht.typ:88:1' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

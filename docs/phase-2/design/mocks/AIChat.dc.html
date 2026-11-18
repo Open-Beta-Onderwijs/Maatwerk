@@ -1,0 +1,448 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: AI-assistent in de opdrachten-editor</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-spin{animation:mwspin .9s linear infinite;transform-origin:50% 50%}
+@keyframes mwspin{to{transform:rotate(360deg)}}
+.mw-rail{width:40px;height:40px;border-radius:12px;cursor:pointer;font:inherit;font-weight:750;font-size:13px;display:flex;align-items:center;justify-content:center;position:relative;transition:transform .15s}
+.mw-rail:hover{transform:translateX(-2px)}
+.mw-ib{width:32px;height:32px;border-radius:7px;border:0;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.mw-chip{height:26px;padding:0 9px 0 7px;border-radius:999px;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.mw-mono{font-family:Consolas,'Cascadia Mono',monospace}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; position: relative; display: flex; flex-direction: column; background: {{t.bg}}; color: {{t.text}}; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden">
+
+  <header style="height: 52px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px 0 10px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+    <a href="#" style="display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 8px; border-radius: 8px; color: {{a.text}}; font-weight: 600; text-decoration: none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>
+      Terug naar opdrachten
+    </a>
+    <span style="width: 1px; height: 24px; background: {{t.border}}"></span>
+    <div style="display: flex; flex-direction: column; min-width: 0">
+      <span style="font-weight: 700; font-size: 16px; white-space: nowrap">GFBA bovenbouw (+ significantie)</span>
+      <span style="font-size: 12px; color: {{t.muted}}">Opdracht · Natuurkunde · havo 4, 5</span>
+    </div>
+    <div style="flex: 1"></div>
+    <span role="status" style="display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: {{hdr.bg}}; color: {{hdr.fg}}; font-size: 13px; font-weight: 600">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{hdr.icon}}"></path></svg>
+      {{hdr.text}}
+    </span>
+    <button aria-label="Gebruikersmenu" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid {{a.fill}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer; padding: 0">MK</button>
+  </header>
+
+  <div style="flex: 1; min-height: 0; display: flex">
+    <section aria-label="Editor" style="flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; background: {{t.surface}}; border-right: 1px solid {{t.border}}">
+      <div role="toolbar" aria-label="Opmaak" style="display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: 1px solid {{t.border}}; font-size: 13px; color: {{t.muted}}">
+        <button class="mw-ib" style="color: {{t.text}}; font-weight: 800" title="Vet">B</button>
+        <button class="mw-ib" style="color: {{t.text}}; font-style: italic" title="Cursief">I</button>
+        <button class="mw-ib" style="color: {{t.text}}" title="Wiskundige formule">$x$</button>
+        <span style="width: 1px; height: 20px; background: {{t.border}}; margin: 0 4px"></span>
+        <button class="mw-ib" style="width: auto; padding: 0 8px; color: {{a.text}}; font: inherit; font-weight: 600" title="Nieuwe opgave">+ Opgave</button>
+        <button class="mw-ib" style="width: auto; padding: 0 8px; color: {{a.text}}; font: inherit; font-weight: 600" title="Nieuwe vraag">+ Vraag</button>
+        <span style="flex: 1"></span>
+        <span>Typst</span>
+      </div>
+      <div role="tablist" aria-label="Bestanden" style="display: flex; gap: 2px; padding: 8px 10px 0; background: {{t.code}}; border-bottom: 1px solid {{t.border}}">
+        <button role="tab" aria-selected="true" class="mw-mono" style="border: 1px solid {{t.border}}; border-bottom: 0; border-radius: 8px 8px 0 0; background: {{t.surface}}; color: {{t.text}}; padding: 7px 14px; font-size: 13px; margin-bottom: -1px; cursor: pointer">opdracht.typ</button>
+        <button role="tab" aria-selected="false" class="mw-mono" style="border: 1px solid transparent; background: transparent; color: {{t.muted}}; padding: 7px 14px; font-size: 13px; cursor: pointer">main.typ</button>
+        <button role="tab" aria-selected="false" class="mw-mono" style="border: 1px solid transparent; background: transparent; color: {{t.muted}}; padding: 7px 14px; font-size: 13px; cursor: pointer">lib.typ</button>
+      </div>
+      <sc-if value="{{isBezig}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: {{a.tint}}; color: {{t.text}}; font-size: 12.5px; border-bottom: 1px solid {{t.border}}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{a.text}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg>
+          {{prov.name}} werkt op een kopie. Je kunt gewoon verder typen; wat de AI ook wil veranderen, zie je bij Toepassen als conflict.
+        </div>
+      </sc-if>
+      <div class="mw-mono" style="flex: 1; min-height: 0; overflow: auto; display: flex; font-size: 13px; line-height: 22px">
+        <div aria-hidden="true" style="flex: none; padding: 10px 10px 10px 14px; text-align: right; color: {{t.faint}}; background: {{t.code}}; border-right: 1px solid {{t.line}}; user-select: none">
+          <sc-for list="{{code}}" as="l" hint-placeholder-count="20"><div>{{l.n}}</div></sc-for>
+        </div>
+        <div style="flex: 1; padding: 10px 14px; white-space: pre">
+          <sc-for list="{{code}}" as="l" hint-placeholder-count="20"><div style="color: {{l.c}}; font-style: {{l.fs}}; text-decoration: {{l.ul}}; text-decoration-color: {{neg}}">{{l.t}}</div></sc-for>
+        </div>
+      </div>
+      <sc-if value="{{errors}}" hint-placeholder-val="{{ false }}">
+        <div style="flex: none; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid {{t.border}}; background: {{er.bg}}; color: {{er.fg}}; font-size: 12.5px">
+          <b>2 fouten</b><span class="mw-mono" style="color: {{t.text}}">regel 18: unknown variable: punten_3c</span><span style="flex: 1"></span><span style="color: {{t.muted}}">Meldingen ▴</span>
+        </div>
+      </sc-if>
+    </section>
+
+    <section aria-label="Voorbeeld" style="flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; background: {{t.surface2}}; position: relative">
+      <div style="height: 44px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}; font-size: 13px">
+        <span style="font-variant-numeric: tabular-nums">91%</span><span style="flex: 1"></span><span style="color: {{t.muted}}">Pagina 1 van 3</span>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow: hidden; padding: 22px">
+        <div role="img" aria-label="Voorbeeld van de opdracht" style="max-width: 420px; margin: 0 auto; background: #FFFFFF; box-shadow: 0 2px 10px rgba(16,24,40,.18); padding: 36px 40px; display: flex; flex-direction: column; gap: 12px; font-family: Georgia, 'Times New Roman', serif; color: #1B2230">
+          <div style="font-size: 19px; font-weight: 700">GFBA bovenbouw (+ significantie)</div>
+          <div style="background: #EEF0F3; border-radius: 4px; padding: 8px 10px; font-size: 11px; display: flex; justify-content: space-between"><b>Naam: ______________________</b><span>Natuurkunde</span></div>
+          <div style="display: flex; flex-direction: column; gap: 7px"><sc-for list="{{textLines}}" as="w" hint-placeholder-count="6"><div style="height: 7px; border-radius: 4px; background: #D9DDE3; width: {{w}}%"></div></sc-for></div>
+          <div style="background: #FBEFC5; border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px"><b style="font-size: 11px; color: #7A5300">Formule 1 (De GFBA-methode)</b><sc-for list="{{boxLines}}" as="w" hint-placeholder-count="5"><div style="height: 6px; border-radius: 3px; background: #E8D594; width: {{w}}%"></div></sc-for></div>
+          <div style="display: flex; flex-direction: column; gap: 7px"><sc-for list="{{textLines}}" as="w" hint-placeholder-count="6"><div style="height: 7px; border-radius: 4px; background: #D9DDE3; width: {{w}}%"></div></sc-for></div>
+        </div>
+      </div>
+      <div role="tablist" aria-label="Toestand van de chat (mock)" style="position: absolute; left: 12px; right: 12px; bottom: 14px; display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: #1B2230; border-radius: 10px">
+        <span style="color: #C9CED8; font-size: 12px; padding: 0 6px; display: flex; align-items: center">Toestand:</span>
+        <sc-for list="{{views}}" as="v" hint-placeholder-count="8"><button role="tab" aria-selected="{{v.sel}}" onClick="{{v.pick}}" style="height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: {{v.bg}}; color: {{v.fg}}; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">{{v.label}}</button></sc-for>
+      </div>
+    </section>
+
+    <sc-if value="{{chatOpen}}" hint-placeholder-val="{{ true }}">
+    <section aria-label="AI-assistent" style="flex: none; width: 380px; display: flex; flex-direction: column; background: {{t.surface}}; border-left: 1px solid {{t.border}}">
+      <div style="height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 14px; border-bottom: 1px solid {{t.border}}">
+        <span style="width: 28px; height: 28px; flex: none; border-radius: 8px; background: {{prov.fill}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 12px">{{prov.mono}}</span>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+          <b>{{prov.name}}</b>
+          <span style="font-size: 12px; color: {{t.muted}}">via de command line op deze computer</span>
+        </div>
+        <button onClick="{{newChat}}" title="Nieuw gesprek" style="height: 30px; padding: 0 8px; border-radius: 7px; border: 0; background: transparent; color: {{a.text}}; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Nieuw gesprek</button>
+        <a href="AIInstellingen.dc.html" aria-label="AI-instellingen" title="AI-instellingen" class="mw-ib" style="color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></a>
+        <button onClick="{{closeChat}}" aria-label="Chat sluiten" class="mw-ib" style="color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      </div>
+
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 12px">
+        <sc-if value="{{isLeeg}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px 2px 4px">
+            <b style="font-size: 16px">Waar kan {{prov.name}} mee helpen?</b>
+            <span style="font-size: 13px; line-height: 1.5; color: {{t.muted}}">De AI werkt op een kopie van deze opdracht en stelt wijzigingen voor. Jij kiest wat je toepast.</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <sc-for list="{{starters}}" as="s" hint-placeholder-count="4">
+              <button onClick="{{s.pick}}" style="display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid {{s.bd}}; background: {{s.bg}}; color: {{t.text}}; font: inherit; font-size: 13.5px; text-align: left; cursor: pointer">
+                <span style="width: 28px; height: 28px; flex: none; border-radius: 8px; background: {{s.icBg}}; color: {{s.icFg}}; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.icon}}"></path></svg></span>
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 1px"><span style="font-weight: 600">{{s.label}}</span><span style="font-size: 12px; color: {{t.muted}}">{{s.sub}}</span></span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{hasUser}}" hint-placeholder-val="{{ false }}">
+          <div style="align-self: flex-end; max-width: 88%; display: flex; flex-direction: column; gap: 6px; align-items: flex-end">
+            <div style="background: {{a.tint}}; border-radius: 12px 12px 4px 12px; padding: 10px 12px; line-height: 1.45">{{sent}}</div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 7px; border: 1px solid {{t.border}}; font-size: 12px; color: {{t.muted}}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="m3 16 5-5 4 4 3-3 6 6"></path></svg><span style="color: {{t.text}}">meetresultaten.png</span>412 kB</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isBezig}}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid {{t.border}}; border-radius: 10px; background: {{t.surface2}}; overflow: hidden">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px">
+              <svg class="mw-spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{a.text}}" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 1-9 9"></path></svg>
+              <span role="status" aria-live="polite" style="flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{run.text}}</span>
+              <span title="Tijdslimiet 5 minuten" style="font-size: 12px; color: {{t.muted}}; font-variant-numeric: tabular-nums">{{run.time}}</span>
+              <button onClick="{{toggleTr}}" aria-expanded="{{trA}}" aria-label="Volledig transcript" title="Volledig transcript" class="mw-ib" style="width: 28px; height: 28px; color: {{t.muted}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{trChev}}deg); transition: transform .2s"><path d="m6 9 6 6 6-6"></path></svg></button>
+              <button onClick="{{stop}}" style="height: 28px; padding: 0 10px; border-radius: 7px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 2px; background: {{neg}}"></span>Stop</button>
+            </div>
+            <div aria-hidden="true" style="height: 3px; background: {{t.line}}"><div style="height: 3px; width: {{run.pct}}%; background: {{a.fill}}; transition: width 1s linear"></div></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{hasSummary}}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{toggleTr}}" aria-expanded="{{trA}}" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 8px; border: 1px solid {{t.border}}; background: transparent; color: {{t.muted}}; font: inherit; font-size: 12.5px; cursor: pointer; text-align: left">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{sum.c}}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{sum.icon}}"></path></svg>
+            <span style="flex: 1">{{sum.text}}</span>
+            <span>Transcript</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{trChev}}deg)"><path d="m6 9 6 6 6-6"></path></svg>
+          </button>
+        </sc-if>
+
+        <sc-if value="{{showTr}}" hint-placeholder-val="{{ false }}">
+          <div style="border: 1px solid {{t.border}}; border-radius: 10px; overflow: hidden; background: {{t.code}}">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 12px; color: {{t.muted}}"><span style="flex: 1">Transcript · {{prov.cmd}}</span><button style="border: 0; background: transparent; color: {{a.text}}; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">Kopiëren</button></div>
+            <sc-for list="{{steps}}" as="s" hint-placeholder-count="6">
+              <div style="border-top: 1px solid {{t.line}}">
+                <button onClick="{{s.toggle}}" aria-expanded="{{s.exp}}" style="width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 0; background: transparent; color: {{t.text}}; font: inherit; font-size: 12.5px; cursor: pointer; text-align: left">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{s.chev}}deg); color: {{t.muted}}"><path d="m9 6 6 6-6 6"></path></svg>
+                  <span style="width: 8px; height: 8px; flex: none; border-radius: 50%; background: {{s.dot}}"></span>
+                  <span style="flex: 1">{{s.title}}</span><span style="color: {{t.muted}}; font-variant-numeric: tabular-nums">{{s.dur}}</span>
+                </button>
+                <sc-if value="{{s.isOpen}}" hint-placeholder-val="{{ false }}">
+                  <div class="mw-mono" style="padding: 0 10px 8px 38px; font-size: 11.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word"><sc-for list="{{s.lines}}" as="l" hint-placeholder-count="2"><div style="color: {{l.c}}">{{l.t}}</div></sc-for></div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isKlaar}}" hint-placeholder-val="{{ false }}">
+          <div style="align-self: flex-start; max-width: 94%; display: flex; flex-direction: column; gap: 8px">
+            <div style="background: {{t.surface2}}; border-radius: 12px 12px 12px 4px; padding: 10px 12px; line-height: 1.45">Ik heb opgave 4 ‘Weerstand en significantie’ toegevoegd: drie vragen (2, 2 en 3 punten) met antwoordmodel. De meetresultaten staan als tabel in de opgave en de afbeelding als figuur. Ik wilde ook de kopregel in main.typ aanpassen; dat wordt niet toegepast.</div>
+            <div style="border: 1px solid {{t.border}}; border-radius: 10px; background: {{t.surface}}; overflow: hidden">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid {{t.line}}"><b style="font-size: 13px">Voorstel</b><span style="font-size: 12px; color: {{t.muted}}">4 wijzigingen · 2 bestanden</span></div>
+              <sc-for list="{{dfiles}}" as="f" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 5px 10px; font-size: 12.5px">
+                  <span class="mw-mono" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: {{f.c}}; text-decoration: {{f.dec}}">{{f.name}}</span>
+                  <span style="color: {{pos}}; font-weight: 600">{{f.add}}</span><span style="color: {{neg}}; font-weight: 600">{{f.del}}</span>
+                  <span style="font-size: 11px; padding: 1px 7px; border-radius: 999px; background: {{f.tagBg}}; color: {{f.tagFg}}">{{f.tag}}</span>
+                </div>
+              </sc-for>
+              <div style="padding: 2px 10px 8px; font-size: 12px; color: {{t.muted}}">main.typ: niet toegepast (alleen opdracht.typ en afbeeldingen)</div>
+              <div style="display: flex; align-items: flex-start; gap: 8px; margin: 0 10px 8px; padding: 7px 9px; border-radius: 7px; background: {{wr.bg}}; color: {{wr.fg}}; font-size: 12px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M12 3 2 21h20z"></path><path d="M12 10v5M12 18h.01"></path></svg>
+                <span>1 waarschuwing blijft · regel 131: ongebruikte variabele <span class="mw-mono">tabel_r</span></span>
+              </div>
+              <sc-if value="{{notApplied}}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid {{t.line}}">
+                  <span style="flex: 1"></span>
+                  <a href="AIDiff.dc.html" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font-size: 12.5px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center">Bekijken</a>
+                  <button onClick="{{apply}}" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer">Toepassen</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{applied}}" hint-placeholder-val="{{ false }}">
+                <div role="status" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid {{t.line}}; background: {{ok.bg}}; color: {{ok.fg}}; font-size: 12.5px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>
+                  <span style="flex: 1">Toegepast: 4 wijzigingen en 1 afbeelding</span>
+                  <button onClick="{{undo}}" style="border: 0; background: transparent; color: {{a.text}}; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer">Ongedaan maken</button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{isFout}}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{e.hasMsg}}" hint-placeholder-val="{{ false }}"><div style="align-self: flex-start; max-width: 94%; background: {{t.surface2}}; border-radius: 12px 12px 12px 4px; padding: 10px 12px; line-height: 1.45">{{e.msg}}</div></sc-if>
+          <div role="alert" style="border: 1px solid {{e.bd}}; background: {{e.bg}}; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+            <div style="display: flex; gap: 8px; align-items: center; color: {{e.fg}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="{{e.icon}}"></path></svg><b style="font-size: 13.5px">{{e.title}}</b></div>
+            <span style="font-size: 13px; line-height: 1.5; color: {{t.text}}">{{e.body}}</span>
+            <sc-if value="{{e.hasCode}}" hint-placeholder-val="{{ false }}"><div class="mw-mono" style="font-size: 11.5px; line-height: 1.5; white-space: pre-wrap; padding: 8px 10px; border-radius: 7px; background: {{t.code}}; color: {{t.text}}">{{e.code}}</div></sc-if>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap">
+              <sc-for list="{{e.btns}}" as="b" hint-placeholder-count="2"><button onClick="{{b.go}}" style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{b.bd}}; background: {{b.bg}}; color: {{b.fg}}; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer">{{b.label}}</button></sc-for>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="flex: none; padding: 10px 12px 8px; border-top: 1px solid {{t.border}}; display: flex; flex-direction: column; gap: 8px">
+        <sc-if value="{{afbOn}}" hint-placeholder-val="{{ false }}">
+          <div role="alert" style="display: flex; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid {{wr.bd}}; background: {{wr.bg}}; color: {{wr.fg}}; font-size: 12px; line-height: 1.45">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M12 3 2 21h20z"></path><path d="M12 10v5M12 18h.01"></path></svg>
+            <span>Afbeeldingen kunnen leerlingen tonen (foto’s van werk, uit de klas). Zet dit alleen aan als er geen leerlingen op staan. Geldt alleen voor het volgende bericht.</span>
+          </div>
+        </sc-if>
+        <div role="group" aria-label="Context die wordt meegestuurd" style="display: flex; flex-wrap: wrap; gap: 5px; opacity: {{ctxOp}}">
+          <sc-for list="{{chips}}" as="c" hint-placeholder-count="7">
+            <button class="mw-chip" onClick="{{c.toggle}}" aria-pressed="{{c.on}}" title="{{c.tip}}" disabled="{{c.dis}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.w}}">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg>{{c.label}}
+            </button>
+          </sc-for>
+        </div>
+        <sc-if value="{{hasAtt}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-wrap: wrap; gap: 5px">
+            <sc-for list="{{att}}" as="f" hint-placeholder-count="1"><span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 4px 0 9px; border-radius: 7px; border: 1px solid {{t.border}}; background: {{t.surface2}}; font-size: 12px"><span>{{f.name}}</span><span style="color: {{t.muted}}">{{f.size}}</span><button onClick="{{f.remove}}" aria-label="{{f.aria}}" class="mw-ib" style="width: 22px; height: 22px; color: {{t.muted}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span></sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{hasAttErr}}" hint-placeholder-val="{{ false }}"><span role="alert" style="font-size: 12px; color: {{er.fg}}">{{attErr}}</span></sc-if>
+        <div style="display: flex; align-items: flex-end; gap: 6px; border: 1px solid {{t.input}}; border-radius: 10px; padding: 4px 4px 4px 4px; background: {{t.inputBg}}">
+          <button onClick="{{attach}}" aria-label="Bijlage toevoegen" title="Bijlage toevoegen (max. 25 MB per bestand, 10 per gesprek)" class="mw-ib" style="width: 34px; height: 34px; color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4L15.5 7"></path></svg></button>
+          <textarea rows="2" aria-label="Bericht" placeholder="{{ph}}" value="{{draft}}" onChange="{{onDraft}}" disabled="{{busy}}" style="flex: 1; resize: none; border: 0; outline: 0; background: transparent; color: {{t.text}}; padding: 7px 2px; font: inherit; line-height: 1.4"></textarea>
+          <button onClick="{{send}}" aria-label="Versturen" disabled="{{busy}}" style="width: 34px; height: 34px; flex: none; border-radius: 8px; border: 0; background: {{sendBg}}; color: {{a.on}}; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+        <div style="display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.4; color: {{t.muted}}">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+          <span>Alleen deze opdracht en de gekozen context worden verstuurd, via jouw eigen abonnement.</span>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <nav aria-label="AI-assistenten" style="flex: none; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 14px; background: {{t.foot}}; border-left: 1px solid {{t.border}}">
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}">AI</span>
+      <sc-for list="{{rail}}" as="p" hint-placeholder-count="3">
+        <button class="mw-rail" onClick="{{p.pick}}" title="{{p.tip}}" aria-label="{{p.name}}" aria-pressed="{{p.sel}}" style="border: 1px solid {{t.border}}; background: {{t.surface}}; color: {{p.fg}}; box-shadow: {{p.ring}}">{{p.mono}}<span aria-hidden="true" style="position: absolute; right: -3px; top: -3px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid {{t.foot}}; background: {{p.dot}}; display: {{p.dotD}}"></span></button>
+      </sc-for>
+    </nav>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["licht","donker"],"default":"licht"},"accent":{"editor":"enum","options":["rood","oranje","geel","groen","blauw","indigo","paars","turquoise","roze","grafiet"],"default":"blauw"},"toestand":{"editor":"enum","options":["leeg","bezig","klaar","niet ingelogd","CLI-fout","time-out","gestopt","geen wijzigingen"],"default":"klaar"},"compileerfouten":{"editor":"boolean","default":true},"geinstalleerd":{"editor":"enum","options":["drie","alle vijf"],"default":"drie"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const map = { 'leeg': ['leeg'], 'bezig': ['bezig'], 'klaar': ['klaar'], 'niet ingelogd': ['fout', 'login'], 'CLI-fout': ['fout', 'cli'], 'time-out': ['fout', 'timeout'], 'gestopt': ['fout', 'stop'], 'geen wijzigingen': ['fout', 'geen'] };
+    const m = map[p.toestand ?? 'klaar'] || ['klaar'];
+    this.state = { prov: 'C', stages: { C: m[0] }, err: m[1] || 'login', tr: false, steps: { 6: true }, draft: '', sent: '', elapsed: 102, phase: 6, auto: false, applied: false, chat: true,
+      ctx: { hand: true, geg: true, meld: true, pdf: true, syl: true, andere: false, afb: false }, att: [], attN: 0, attErr: '' };
+  }
+  componentDidMount() { if (this.state.stages.C === 'bezig') this.tick(); }
+  componentWillUnmount() { clearInterval(this.iv); }
+  tick() {
+    clearInterval(this.iv);
+    this.iv = setInterval(() => {
+      const s = this.state;
+      if ((s.stages[s.prov] || 'leeg') !== 'bezig') { clearInterval(this.iv); return; }
+      const el = s.elapsed + 1;
+      if (s.auto && el >= 16) { clearInterval(this.iv); this.setStage('klaar', { elapsed: el, phase: 6, applied: false, steps: {} }); return; }
+      if (el >= 300) { clearInterval(this.iv); this.setStage('fout', { err: 'timeout', elapsed: 300 }); return; }
+      this.setState({ elapsed: el, phase: s.auto ? Math.min(6, Math.floor(el / 2.5) + 1) : s.phase, steps: s.auto ? { [Math.min(6, Math.floor(el / 2.5) + 1)]: true } : s.steps });
+    }, 1000);
+  }
+  setStage(stage, extra) { this.setState({ stages: { ...this.state.stages, [this.state.prov]: stage }, ...(extra || {}) }); }
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const ac = ACC[this.props.accent] || ACC.blauw;
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F'), on: ac[0] === '#E5AE0B' ? '#2A2000' : '#FFFFFF' };
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', faint: '#6B7380', foot: '#181B21', code: '#171A20', input: '#3A414C', inputBg: '#171A20' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', faint: '#9AA1AD', foot: '#FAFBFC', code: '#FAFBFC', input: '#C9CED8', inputBg: '#FFFFFF' };
+    const neg = dark ? '#FF8A80' : '#B42318', pos = dark ? '#6CCB8A' : '#1E7B3C';
+    const er = dark ? { fg: '#FF8A80', bg: '#3A1F1F', bd: '#5A2A2A' } : { fg: '#B42318', bg: '#FDECEA', bd: '#F4C7C3' };
+    const wr = dark ? { fg: '#F5CF5C', bg: '#3A3015', bd: '#5C4A1A' } : { fg: '#7A5300', bg: '#FFF6E0', bd: '#F0C36D' };
+    const ok = dark ? { fg: '#6CCB8A', bg: '#16301F' } : { fg: '#1E7B3C', bg: '#EAF6EE' };
+    const I = { check: 'm5 12 5 5 9-10', plus: 'M12 5v14M5 12h14', warn: 'M12 3 2 21h20zM12 10v5M12 18h.01', x: 'M6 6l12 12M18 6 6 18', key: 'M15 7a4 4 0 1 1-3.9 5H4v3h3v3h3v-3h1.1A4 4 0 0 1 15 7z', clock: 'M12 7v5l3 2M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', stop: 'M7 7h10v10H7z', info: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 11v6M12 7.5h.01' };
+
+    const st = this.state;
+    const P = [['C', 'Claude Code', '#C2540F', '#FFB27A', 'claude'], ['G', 'Codex', '#1F7045', '#7DD8A3', 'codex'], ['Ge', 'Gemini CLI', '#2560BF', '#8DB6FF', 'gemini'], ['M', 'Mistral Vibe', '#C93636', '#FF9C9C', 'vibe'], ['Co', 'Copilot CLI', '#7A33B0', '#D2A6F5', 'copilot']];
+    const inst = (this.props.geinstalleerd ?? 'drie') === 'drie' ? P.slice(0, 3) : P;
+    const cur = inst.find((p) => p[0] === st.prov) || inst[0];
+    const stage = st.stages[cur[0]] || 'leeg';
+    const prov = { mono: cur[0], name: cur[1], fill: cur[2], cmd: cur[4] };
+    const running = Object.keys(st.stages).find((k) => st.stages[k] === 'bezig');
+    const rail = inst.map(([mono, name, c, cd]) => {
+      const sel = st.chat && st.prov === mono, s = st.stages[mono];
+      return { mono, name, tip: name + (s === 'bezig' ? ' · bezig' : s && s !== 'leeg' ? ' · gesprek open' : ''), sel: sel ? 'true' : 'false', fg: dark ? cd : c,
+        ring: sel ? `0 0 0 2px ${t.foot}, 0 0 0 4px ${c}` : 'none', dot: s === 'bezig' ? a.fill : t.faint, dotD: s && s !== 'leeg' && !sel ? 'block' : 'none',
+        pick: () => this.setState({ prov: mono, chat: !(st.chat && st.prov === mono), tr: false }) };
+    });
+
+    const errors = this.props.compileerfouten ?? true;
+    const busy = stage === 'bezig';
+    const hdr = busy ? { bg: a.tint, fg: a.text, icon: I.clock, text: prov.name + ' is bezig' } : errors ? { bg: er.bg, fg: er.fg, icon: I.warn, text: '2 fouten' } : { bg: ok.bg, fg: ok.fg, icon: I.check, text: 'Opgeslagen · PDF bijgewerkt' };
+
+    const PRE = {
+      fix: 'Los de fouten en waarschuwingen in deze opdracht op. Verander verder niets aan de inhoud.',
+      ant: 'Vul bij elke vraag het antwoordmodel en het aantal punten aan waar die ontbreken.',
+      niv: 'Herschrijf deze opdracht voor havo 4: eenvoudigere taal, dezelfde opgaven en puntenverdeling.',
+      nieuw: 'Voeg een nieuwe opgave toe over ',
+    };
+    const S = [
+      ['fix', 'Fouten oplossen', '2 fouten in de opdracht', I.warn, true],
+      ['ant', 'Antwoorden en punten aanvullen', 'Antwoordmodel en punten per vraag', 'M4 20h4L19 9l-4-4L4 16z', false],
+      ['niv', 'Herschrijven voor ander niveau', 'Andere schoolsoort of jaarlaag', 'M4 7h12l-3-3M20 17H8l3 3', false],
+      ['nieuw', 'Nieuwe opgave toevoegen', 'Over een onderwerp dat jij kiest', I.plus, false],
+    ].filter((s) => !s[4] || errors);
+    const starters = S.map(([k, label, sub, icon, isErr]) => ({ label, sub, icon, bd: isErr ? er.bd : t.border, bg: isErr ? er.bg : t.surface, icBg: isErr ? 'transparent' : a.tint, icFg: isErr ? er.fg : a.text,
+      pick: () => this.setState({ draft: PRE[k] }) }));
+
+    const DEFAULT_MSG = 'Voeg een nieuwe opgave toe over weerstand, met een vraag waarbij de leerling ook de significantie controleert. Gebruik de meetresultaten in de bijlage.';
+    const mmss = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    const RUN = ['Start ' + prov.name + '…', 'Leest de handleiding…', 'Leest syllabus…', 'Schrijft opgave 4…', 'Controleert de opdracht… ronde 1', 'Past opdracht.typ aan…', 'Controleert de opdracht… ronde 2'];
+    const run = { text: RUN[st.phase] || RUN[6], time: mmss(st.elapsed) + ' / 5:00', pct: Math.min(100, st.elapsed / 3) };
+
+    const L = (txt, kind) => ({ t: txt, c: kind === 'cmd' ? t.muted : kind === 'err' ? neg : kind === 'add' ? pos : t.text });
+    const STEPS = [
+      [1, 'Leest de handleiding', '0:04', [L('Read  context/handleiding/opdrachten.md (412 regels)'), L('Read  context/handleiding/voorbeelden/gfba.typ')]],
+      [2, 'Leest de syllabus', '0:09', [L('Read  context/syllabus/Natuurkunde havo 2026.pdf'), L('      p. 14–16 · Domein B1 Elektrische schakelingen', 'cmd')]],
+      [3, 'Bewerkt opdracht.typ', '0:31', [L('Edit  opdracht.typ  +12 −1'), L('+ #opgave(titel: "Weerstand en significantie")[', 'add'), L('Write afbeeldingen/meetresultaten.png (nieuw)')]],
+      [4, 'Controleert de opdracht · ronde 1', '0:06', [L('$ maatwerk check opdracht.typ', 'cmd'), L('error: unknown variable: punten_3c', 'err'), L('  ┌─ opdracht.typ:18:22', 'err'), L('1 fout, 1 waarschuwing', 'cmd')]],
+      [5, 'Bewerkt opdracht.typ', '0:12', [L('Edit  opdracht.typ  +2 −1'), L('+ #vraag(punten: 3)[', 'add')]],
+      [6, 'Controleert de opdracht · ronde 2', '', [L('$ maatwerk check opdracht.typ', 'cmd')]],
+    ];
+    const lastDone = busy ? st.phase - 1 : stage === 'fout' && (st.err === 'stop' || st.err === 'timeout') ? 3 : 6;
+    const steps = STEPS.filter((s) => s[0] <= (busy ? st.phase : lastDone + (stage === 'fout' && (st.err === 'stop' || st.err === 'timeout') ? 1 : 0))).map(([n, title, dur, lines]) => {
+      const isRun = busy && n === st.phase;
+      const isStopped = stage === 'fout' && n === lastDone + 1;
+      const done6 = n === 6 && !isRun && !isStopped;
+      const ls = done6 ? lines.concat([L('0 fouten, 1 waarschuwing (regel 131)')]) : isRun ? lines.concat([L('…', 'cmd')]) : isStopped ? lines.concat([L(st.err === 'stop' ? '■ gestopt door de docent' : '■ tijdslimiet bereikt (5:00)', 'err')]) : lines;
+      const open = !!st.steps[n];
+      return { title, dur: isRun ? 'bezig' : isStopped ? 'gestopt' : done6 ? '0:05' : dur, lines: ls, isOpen: open, exp: open ? 'true' : 'false', chev: open ? 90 : 0,
+        dot: isRun ? a.fill : isStopped || n === 4 ? neg : pos, toggle: () => this.setState({ steps: { ...st.steps, [n]: !open } }) };
+    });
+
+    const btn = (label, primary, go) => ({ label, go: go || (() => {}), bd: primary ? a.fill : t.input, bg: primary ? a.fill : t.surface, fg: primary ? a.on : t.text });
+    const retry = () => { this.setStage('bezig', { elapsed: 0, phase: 1, auto: true, tr: false, steps: { 1: true } }); this.tick(); };
+    const E = {
+      login: { title: prov.name + ' is niet ingelogd', body: 'Open een terminal, start ' + prov.cmd + ' en log in met je eigen account. Probeer het daarna opnieuw.', icon: I.key, kind: 'err', btns: [btn('Opnieuw proberen', true, retry), btn('Hulp bij inloggen')] },
+      cli: { title: prov.name + ' stopte met een fout', body: 'Er is niets aan je opdracht veranderd. De laatste regels van de command line:', code: 'Error: API rate limit reached. Try again in 4 minutes.\nexit code 1', icon: I.warn, kind: 'err', btns: [btn('Opnieuw proberen', true, retry), btn('Details kopiëren')] },
+      timeout: { title: 'Gestopt na 5 minuten', body: 'De tijdslimiet is bereikt. Er is niets aan je opdracht veranderd. Probeer een kleinere vraag, of verhoog de limiet in AI-instellingen.', icon: I.clock, kind: 'warn', btns: [btn('Opnieuw proberen', true, retry), btn('AI-instellingen')] },
+      stop: { title: 'Je hebt de AI gestopt na 1:42', body: 'Wat de AI tot dan toe deed, is weggegooid. Je opdracht is niet veranderd.', icon: I.stop, kind: 'neutral', btns: [btn('Opnieuw proberen', true, retry)] },
+      geen: { title: 'Geen wijzigingen voorgesteld', body: 'De opdracht is hetzelfde gebleven. Stel een vervolgvraag als je toch iets wilt laten aanpassen.', msg: 'Alle vragen hebben al een antwoordmodel en punten, en de opdracht compileert zonder fouten. Ik heb niets aangepast.', icon: I.info, kind: 'neutral', btns: [] },
+    }[st.err];
+    const kc = E.kind === 'err' ? er : E.kind === 'warn' ? wr : { fg: t.text, bg: t.surface2, bd: t.border };
+    const e = { ...E, fg: kc.fg, bg: kc.bg, bd: kc.bd, hasCode: !!E.code, hasMsg: !!E.msg };
+    const sum = stage === 'klaar' ? { text: 'Klaar in 2:31 · 6 stappen', c: pos, icon: I.check }
+      : st.err === 'stop' ? { text: 'Gestopt na 1:42 · 4 stappen', c: t.muted, icon: I.stop }
+      : st.err === 'timeout' ? { text: 'Tijdslimiet bereikt na 5:00', c: wr.fg, icon: I.clock }
+      : st.err === 'geen' ? { text: 'Klaar in 0:48 · geen wijzigingen', c: pos, icon: I.check }
+      : { text: 'Mislukt na 0:03', c: neg, icon: I.x };
+
+    const dfiles = [
+      { name: 'opdracht.typ', add: '+14', del: '−2', tag: '4 wijzigingen', tagBg: t.surface2, tagFg: t.muted, c: t.text, dec: 'none' },
+      { name: 'afbeeldingen/meetresultaten.png', add: '', del: '', tag: 'nieuw', tagBg: ok.bg, tagFg: ok.fg, c: t.text, dec: 'none' },
+      { name: 'main.typ', add: '+3', del: '−1', tag: 'niet toegepast', tagBg: t.surface2, tagFg: t.muted, c: t.muted, dec: 'line-through' },
+    ];
+
+    const CTX = [
+      ['hand', 'Opdrachtinstructies AI', 'Instructies voor de AI over het schrijven van opdrachten, met voorbeelden'],
+      ['geg', 'Opdrachtgegevens', 'Titel, vak, schoolsoort, jaarlagen en observaties'],
+      ['meld', 'Fouten & waarschuwingen', 'De huidige fouten en waarschuwingen'],
+      ['pdf', 'PDF-output', 'De gerenderde pagina’s van de opdracht'],
+      ['syl', 'Syllabus: Natuurkunde havo 2026 ▾', 'Gekozen op vak en schoolsoort; klik ▾ voor een andere of Geen'],
+      ['andere', 'Andere opdrachten ▾', 'Kies 1 tot 3 andere opdrachten als voorbeeld'],
+      ['afb', 'Afbeeldingen', 'Afbeeldingen uit deze opdracht; alleen voor het volgende bericht'],
+    ];
+    const chips = CTX.map(([k, label, tip]) => {
+      const on = !!st.ctx[k], warnC = k === 'afb' && on;
+      return { label, tip, on: on ? 'true' : 'false', dis: busy, w: on ? 600 : 400, icon: on ? I.check : I.plus,
+        bd: warnC ? wr.bd : on ? a.fill : t.border, bg: warnC ? wr.bg : on ? a.tint : 'transparent', fg: warnC ? wr.fg : on ? a.text : t.muted,
+        toggle: () => this.setState({ ctx: { ...st.ctx, [k]: !on } }) };
+    });
+
+    const POOL = [['meetresultaten.png', '412 kB', 0.4], ['toets-scan.pdf', '31,4 MB', 31.4], ['notities.txt', '3 kB', 0.003], ['schermafbeelding (geplakt)', '1,2 MB', 1.2]];
+    const att = st.att.map((f, i) => ({ name: f[0], size: f[1], aria: f[0] + ' verwijderen', remove: () => this.setState({ att: st.att.filter((_, j) => j !== i), attErr: '' }) }));
+    const attach = () => {
+      const f = POOL[st.attN % POOL.length];
+      if (f[2] > 25) return this.setState({ attN: st.attN + 1, attErr: f[0] + ' is te groot (' + f[1] + '; max. 25 MB per bestand).' });
+      if (st.att.length >= 10) return this.setState({ attErr: 'Maximaal 10 bijlagen per gesprek.' });
+      this.setState({ att: st.att.concat([f]), attN: st.attN + 1, attErr: '' });
+    };
+
+    const VIEWS = [['leeg', 'Leeg'], ['bezig', 'Bezig'], ['klaar', 'Klaar'], ['login', 'Niet ingelogd'], ['cli', 'CLI-fout'], ['timeout', 'Time-out'], ['stop', 'Gestopt'], ['geen', 'Geen wijzigingen']];
+    const vkey = stage === 'fout' ? st.err : stage;
+    const views = VIEWS.map(([k, label]) => ({ label, sel: vkey === k ? 'true' : 'false', bg: vkey === k ? '#FFFFFF' : 'transparent', fg: vkey === k ? '#1B2230' : '#C9CED8',
+      pick: () => {
+        clearInterval(this.iv);
+        if (k === 'leeg' || k === 'klaar') this.setStage(k, { tr: false, applied: false, sent: '' });
+        else if (k === 'bezig') { this.setStage('bezig', { elapsed: 102, phase: 6, auto: false, tr: false, steps: { 6: true }, sent: '' }); this.tick(); }
+        else this.setStage('fout', { err: k, tr: false, steps: {}, sent: '' });
+      } }));
+
+    const K = dark ? '#D2A6F5' : '#7A33B0', SC = dark ? '#7DD8A3' : '#1F7045', C = t.faint;
+    const raw = [['#import "lib.typ": *', K], ['', t.text], ['#let render_uitleg() = [', K], ['  Bij natuurkunde moet je regelmatig een', t.text], ['  berekening doen om tot een antwoord te komen.', t.text], ['', t.text],
+      ['  #formule_blok(name: "De GFBA-methode")[', SC], ['    - Gevraagd / Gegevens', t.text], ['    - Formule', t.text], ['    - Berekening', t.text], ['    - Antwoord', t.text], ['  ]', SC], [']', K], ['', t.text],
+      ['// Opgave 3', C, 'italic'], ['#opgave(titel: "Significantie")[', K], ['  #vraag(punten: 2)[Bereken de weerstand.]', t.text], ['  #vraag(punten: punten_3c)[Rond af.]', t.text, 'normal', true], [']', K], ['', t.text], ['', t.text]];
+    const code = raw.map(([tx, c, fs, bad], i) => ({ n: i + 1, t: tx || ' ', c, fs: fs === 'italic' ? 'italic' : 'normal', ul: bad && errors ? 'underline wavy' : 'none' }));
+
+    return {
+      t, a, neg, pos, er, wr, ok, hdr, errors, prov, rail, views, code,
+      textLines: [100, 96, 100, 88, 100, 62], boxLines: [92, 100, 84, 70, 60],
+      chatOpen: st.chat, closeChat: () => this.setState({ chat: false }),
+      newChat: () => { clearInterval(this.iv); this.setStage('leeg', { tr: false, applied: false, sent: '', draft: '', att: [], attErr: '' }); },
+      isLeeg: stage === 'leeg', isBezig: busy, isKlaar: stage === 'klaar', isFout: stage === 'fout', hasUser: stage !== 'leeg', hasSummary: stage === 'klaar' || stage === 'fout',
+      starters, sent: st.sent || DEFAULT_MSG, run, steps, sum, e, dfiles,
+      showTr: st.tr && (busy || stage !== 'leeg'), trA: st.tr ? 'true' : 'false', trChev: st.tr ? 180 : 0, toggleTr: () => this.setState({ tr: !st.tr }),
+      stop: () => { clearInterval(this.iv); this.setStage('fout', { err: 'stop' }); },
+      notApplied: !st.applied, applied: st.applied, apply: () => this.setState({ applied: true }), undo: () => this.setState({ applied: false }),
+      chips, ctxOp: busy ? 0.55 : 1, afbOn: !!st.ctx.afb,
+      att, hasAtt: att.length > 0, attErr: st.attErr, hasAttErr: !!st.attErr, attach,
+      draft: st.draft, onDraft: (ev) => this.setState({ draft: ev.target.value }), busy,
+      ph: busy ? 'Wacht tot ' + prov.name + ' klaar is, of stop hem' : 'Vraag iets over deze opdracht… (sleep of plak een bestand)',
+      sendBg: busy ? t.faint : a.fill,
+      send: () => { if (busy) return; this.setStage('bezig', { sent: st.draft.trim() || DEFAULT_MSG, draft: '', elapsed: 0, phase: 1, auto: true, tr: false, steps: { 1: true }, applied: false }); this.tick(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

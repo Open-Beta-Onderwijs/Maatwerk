@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-18 (step 32 decisions) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last updated: 2026-11-18 (step 32 design round) Branch: `step/32-ai` (from `main` at `941eb5c`)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -10,8 +10,12 @@ Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832c
 decisions 48-61, ADR-0009 "Amendment (step 32)"); the step section is rewritten as a design round
 plus CLI research, then 32a bridge, 32b editor UI, 32c settings/entry points/gate. No code yet.
 
-**Next action:** design round for step 32 (boards listed in the step section); releases 0.20-0.22
-still wait for the user.
+**Design round done (user OK 2026-11-18):** design round 15, boards 59-63 (mocks `AIChat`,
+`AIContext`, `AIDiff`, `AIInstellingen`, `AIStart`), `PLAN-2.md` decisions 62-75 with the answers to its three questions (school switch in `instellingen.json`, syllabus folder fixed next to the app, CLI details from the research), spec 4.8.1 and 4.9 (the school switch is on Beheer › Instellingen).
+
+**Next action:** CLI research for step 32 (non-interactive mode, streaming, resume, permission and
+web-search flags, image input per CLI; record in ADR-0009; confirms the CLI details of answer 3), then 32a.
+Releases 0.20-0.22 still wait for the user.
 
 ## Previous step (30-31)
 

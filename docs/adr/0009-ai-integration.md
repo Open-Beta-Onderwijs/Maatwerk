@@ -158,7 +158,8 @@ The user refined option D before step 32 (`PLAN-2.md` decisions 48-61). Changes 
 above:
 
 - **Answer 1 reversed in part:** besides the per-teacher switch, the admin can turn the assistant
-  off for the whole school (an additive `school.json` field).
+  off for the whole school (an additive field in `instellingen.json`, set on the Beheer ›
+  Instellingen tab; user 2026-11-18, after the design round).
 - **More context than the opdracht folder,** each switchable by the teacher: opdracht metadata,
   current diagnostics, rendered PDF pages, a syllabus PDF (local `syllabus/` folder), other
   opdrachten the teacher picks, and the teacher's own attachments. Constraint 1 stays: no student,

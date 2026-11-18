@@ -98,9 +98,38 @@ AI assistant (user, 2026-11-18; amends ADR-0009, see its "Amendment (step 32)"):
 | 56  | Diff card: Bekijken (side-by-side diff with a PDF preview of the proposal), Toepassen per file or hunk, one undo step; saving stays the normal flow                                                                                                                                                                                                                                                               | user   |
 | 57  | Empty chat shows starter buttons: Fouten oplossen (only with errors), Antwoorden en punten aanvullen, Herschrijven voor ander niveau, Nieuwe opgave toevoegen. Answers in Dutch; opdracht content in the opdracht's own language                                                                                                                                                                                  | user   |
 | 58  | Entry points: the editor rail; Opdracht toevoegen "met AI" (creates the opdracht, opens the editor with the description as the first message); "Laat AI dit oplossen" after a failed Opdrachten genereren (opens the editor with a prefilled chat; the batch is rerun by hand)                                                                                                                                    | user   |
-| 59  | Off switch per teacher, plus an admin switch for the whole school (additive `school.json` field; reverses ADR-0009 answer 1). Settings via a gear in the chat panel: command and arguments per CLI (Standaard herstellen), time limit, syllabus folder                                                                                                                                                            | user   |
+| 59  | Off switch per teacher, plus an admin switch for the whole school (additive `instellingen.json` field, see the answers under decision 75; reverses ADR-0009 answer 1). Settings via a gear in the chat panel: command and arguments per CLI (Standaard herstellen), time limit, syllabus folder                                                                                                                   | user   |
 | 60  | Privacy and cost: a one-time notice per user on first use plus a permanent footer line under the input                                                                                                                                                                                                                                                                                                            | user   |
 | 61  | Step 32 starts with a design round (context chips, attachments, status/transcript, diff view with hunk choice, settings, notices); tests use a scripted fake CLI, plus a manual check of each real CLI the user has before the release                                                                                                                                                                            | user   |
+
+AI assistant design round (user, 2026-11-18; design round 15, boards 59-63; spec 4.8.1):
+
+| #   | Decision                                                                                                                                                                                                                                                                                              | Source |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 62  | Rail and panel per board 59: monograms until the real logos; panel header with "Nieuw gesprek", the gear (AI-instellingen) and close; a dot on a rail button marks a provider with an open conversation (accent while it runs)                                                                        | user   |
+| 63  | One AI run per opdracht at a time. While it runs, input, send and chips are disabled, the other conversations stay readable, and the editor stays editable with a bar saying the AI works on a copy                                                                                                   | user   |
+| 64  | Chip names: Opdrachtinstructies AI, Opdrachtgegevens, Fouten & waarschuwingen, PDF-output, Syllabus: <naam> ▾, Andere opdrachten (n) ▾, Afbeeldingen. Afbeeldingen is never remembered: off by default, switched off again after each message, amber warning while on                                 | user   |
+| 65  | Paste: an image becomes an attachment; text goes into the input and becomes a "Geplakte tekst" attachment from 2.000 characters. Unsupported types and files over 25 MB are refused with an inline error per file; at 10 attachments the paperclip is disabled with a message                         | user   |
+| 66  | Status line: spinner, current step, elapsed / limit, a progress bar of the limit, transcript chevron, Stop. The transcript has collapsible steps (tool calls, edits, check output in monospace) and stays available after the run via a summary row                                                   | user   |
+| 67  | A stopped or timed-out run keeps nothing (no partial proposal); the opdracht is unchanged. Error cards for not logged in, CLI error (last output lines), time-out (link to AI-instellingen), stopped, and no changes (the AI's answer plus a neutral note)                                            | user   |
+| 68  | Diff card: Toepassen applies every non-conflicting hunk and the new images as one undo step, then shows "Toegepast …" with Ongedaan maken; skipped `main.typ`/`lib.typ` are listed struck through; the diagnostics left after the proposal are shown                                                  | user   |
+| 69  | Voorstel bekijken (board 61): full dialog with a file list (tri-state checkbox per file, the image with its own checkbox), side-by-side hunks with a checkbox each, conflicts amber and skipped, Alles/Niets, "Toepassen (n)", and a PDF preview (Voorstel / Huidige versie) that follows the choice  | user   |
+| 70  | First-use notice: a modal, once per teacher, with "Wordt verstuurd" / "Wordt nooit verstuurd", the own-subscription text, the image warning (also for the PDF-output) and "Begrepen"                                                                                                                  | user   |
+| 71  | AI-instellingen are per teacher on this computer: show switch, one accordion card per CLI found (command, arguments, standaard/aangepast, Standaard herstellen), "Niet gevonden … · Installatiehulp", time limit 1-30 minutes, syllabus folder; conversations stay on this computer with the opdracht | user   |
+| 72  | No CLI found: a dashed "?" rail button opens install help with all five CLIs and their install commands (Kopiëren), a Node.js note, Opnieuw zoeken and AI-assistent verbergen                                                                                                                         | user   |
+| 73  | The school switch is in Beheer › Instellingen (an "AI-assistent" card below Editor), not on the School tab. Off: no rail, no AI option in Opdracht toevoegen, no "Laat AI dit oplossen"; the user menu item "AI-instellingen… · Uitgeschakeld door je school" is the only explanation                 | user   |
+| 74  | Opdracht toevoegen: a switch card "Eerste versie laten maken met AI" with the description and the AI-programma select (installed CLIs only); the button becomes "Opslaan en AI starten"; the message is sent at once and the opdracht holds the empty template until a proposal is applied            | user   |
+| 75  | "Laat AI dit oplossen": one card per failed opdracht with a student count only (never names); it opens the editor with the Fouten oplossen text and the error as an attachment, not sent until the teacher sends it                                                                                   | user   |
+
+Open questions of the design round, answered (user, 2026-11-18):
+
+1. **School switch storage:** an additive field in `instellingen.json` (the file behind the
+   Instellingen tab), not `school.json`; this replaces that part of decision 59.
+2. **Syllabus folder:** fixed, as decision 52 (`syllabus/` next to the app); the settings show
+   the path read-only with "Map openen". The "Wijzigen…" button and the editable path in board 62
+   are not built.
+3. **CLI details:** the default arguments and install commands in board 62 are placeholders; the
+   research sub-task confirms or replaces them.
 
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
@@ -136,32 +165,32 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 
 ## 3. Status (keep up to date)
 
-| Step | Title                                                            | Size         | Release | Status |
-| ---- | ---------------------------------------------------------------- | ------------ | ------- | ------ |
-| 12   | Triage and open decisions                                        | S (user)     | -       | done   |
-| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done   |
-| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done   |
-| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done   |
-| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done   |
-| 17   | Rapport fixes                                                    | M            | 0.8     | done   |
-| 18   | Data format v3                                                   | M            | 0.9     | done   |
-| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done   |
-| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done   |
-| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done   |
-| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done   |
-| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done   |
-| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done   |
-| 25   | Score entry                                                      | M            | 0.16    | done   |
-| 26   | Login and splash                                                 | M            | 0.17    | done   |
-| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done   |
-| 28   | Beheer screens                                                   | M            | 0.19    | done   |
-| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
-| 30   | Observaties and opdrachten                                       | M            | 0.21    | gate   |
-| 31   | Opdrachten-editor                                                | M            | 0.22    | gate   |
-| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | design |
-| 33   | Toetsen as cards                                                 | M            | 0.24    | todo   |
-| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |
-| 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
+| Step | Title                                                            | Size         | Release | Status   |
+| ---- | ---------------------------------------------------------------- | ------------ | ------- | -------- |
+| 12   | Triage and open decisions                                        | S (user)     | -       | done     |
+| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done     |
+| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done     |
+| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done     |
+| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done     |
+| 17   | Rapport fixes                                                    | M            | 0.8     | done     |
+| 18   | Data format v3                                                   | M            | 0.9     | done     |
+| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done     |
+| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done     |
+| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done     |
+| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done     |
+| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done     |
+| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done     |
+| 25   | Score entry                                                      | M            | 0.16    | done     |
+| 26   | Login and splash                                                 | M            | 0.17    | done     |
+| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done     |
+| 28   | Beheer screens                                                   | M            | 0.19    | done     |
+| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done     |
+| 30   | Observaties and opdrachten                                       | M            | 0.21    | gate     |
+| 31   | Opdrachten-editor                                                | M            | 0.22    | gate     |
+| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | research |
+| 33   | Toetsen as cards                                                 | M            | 0.24    | todo     |
+| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo     |
+| 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo     |
 
 ## 4. Steps
 
@@ -484,11 +513,12 @@ button, toolbar on top with dropdown groups, file tabs below it, status pill, dr
 ### Step 32: AI assistant (L+, three sessions)
 
 Items: F-01, Step 9 m3 (time limit on the headless check/render), ADR-0009 option D as amended,
-decisions 48-61.
+decisions 48-75. Design: spec 4.8.1, 4.9; boards 59-63.
 
-- **Design round first:** boards for the context chips, attachments, status line and transcript,
-  diff view with hunk choice and PDF preview, AI settings dialog, first-use notice and footer, the
-  "met AI" option in Opdracht toevoegen; user OK, then spec 4.8 updated.
+- **Design round (done, user OK 2026-11-18):** design round 15, boards 59-63
+  (`AIChat`, `AIContext`, `AIDiff`, `AIInstellingen`, `AIStart` in `docs/phase-2/design/mocks/`),
+  decisions 62-75 and the answers under them; spec 4.8.1 and 4.9 updated. Read only the
+  board a sub-task needs: 59 and 60 for 32b, 61 for the diff view, 62 and 63 for 32c.
 - **Research:** the non-interactive invocation, streaming output, session resume, permission and
   web-search flags and image input of each launch CLI (decision 49); record in ADR-0009.
 - **32a (bridge, no UI):** CLI detection and presets with per-user overrides (local settings),
@@ -500,8 +530,8 @@ decisions 48-61.
   opdracht, attachments (picker, drop, paste, limits), status line with expandable transcript,
   Stop, starter buttons, diff card with Bekijken (diff + PDF preview) and Toepassen per file or
   hunk as one undo step.
-- **32c (rest):** AI settings dialog (gear), teacher and admin off switches (`school.json`
-  additive field, version guard, fixture test), first-use notice and footer, Opdracht toevoegen
+- **32c (rest):** AI settings dialog (gear), teacher and admin off switches (admin switch on
+  Beheer › Instellingen, additive `instellingen.json` field, version guard, fixture test), first-use notice and footer, Opdracht toevoegen
   "met AI", "Laat AI dit oplossen" after a failed batch, provider logos per their brand rules in
   `THIRD_PARTY_LICENSES.md`, manual check with real CLIs, gate and review.
 
