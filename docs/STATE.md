@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-18 (step 32 CLI research) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last updated: 2026-11-18 (step 32b done) Branch: `step/32-ai` (from `main` at `941eb5c`)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -29,7 +29,7 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32b (editor UI) in progress, see "Step 32b progress".
+**Next action:** 32c (settings dialog, switches, notice, entry points, logos, real-CLI check, gate and review). Releases 0.20-0.22 still wait for the user.
 Releases 0.20-0.22 still wait for the user.
 
 ## Step 32b progress (editor UI)
@@ -47,6 +47,32 @@ Ongedaan maken, (7) Voorstel bekijken dialog with PDF preview (board 61).
    teacher and opdracht, `info` = opdrachtgegevens + other opdrachten, `preview` via
    `renderAssignmentSvg`), `editor/ai/client.ts` (iframe client). New command
    `ai_pick_attachments` + `ai.pickAttachments()`.
+
+2. **Done (`4968beb`):** `editor/ai/model.ts` (pure, tested): chips and what is remembered,
+   syllabus preselection, attachment limits, transcript from events, status/summary/diff texts,
+   starters, `applyHunks` (the dialog's preview).
+3. **Done (`a80295a`, sub-tasks 3-7 in one commit):** `editor/ai/panel.ts` (rail, panel,
+   conversation, run flow, apply/undo), `composer.ts` (chips, syllabus listbox, Andere
+   opdrachten, attachments: paperclip/drop/paste), `cards.ts` (status card, transcript, summary
+   row, end-state cards, diff card), `review.ts` (Voorstel bekijken), `dom.ts`,
+   `styles/editor-ai.css`; wired in `editor-init.js` (`initAi`: buffers, minimal-diff apply as
+   one undo step, copy bar, `setAiBusy` pill). `no-file-drop` lets `[data-file-drop]` take
+   drops. e2e `ai-panel.spec.ts` (4 tests); editor/CSP/quirks e2e still pass (97).
+
+**32b done.** Checks: lint, typecheck, 763 Vitest, cargo clippy/fmt, bindings test.
+Known gaps (for 32c or later, tell the user):
+
+- Gear (AI-instellingen) and the timed-out card's "AI-instellingen" button only appear once
+  32c passes `openSettings`; the "?" button shows a short text, not board 63's install help.
+- First-use notice (decision 70) and the school/teacher switches are 32c.
+- Voorstel bekijken's preview renders `opdracht.typ` only: new images from the proposal are
+  not in it until applied (the note says so), and new parts are not outlined (board 61).
+- Skipped `main.typ`/`lib.typ` are listed struck through without "Toon voorstel" (the
+  proposal does not carry their text).
+- Ongedaan maken refuses after the teacher typed since Toepassen (points to Ctrl+Z).
+- `editor-init.js` (~2.050 lines, JS) is not converted or split (R-05); the AI code is new TS
+  modules next to it.
+- Real-CLI manual check not done (32c).
 
 ## Step 32a progress (bridge, no UI)
 
