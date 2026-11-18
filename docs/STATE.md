@@ -55,9 +55,19 @@ must work on macOS 12). Checks: clippy, cargo scheme tests, 726 Vitest, Chromium
 Visual: 69 diffs in 23 views (the step 30/31 views plus every view with an emoji), all emoji
 glyphs or the intended step 30/31 changes.
 
-**Next action (STOP, user):** look at the four changed views (visual diffs) and the editor; then
-update the visual baselines (local and CI), merge `step/30-observaties`, `step/31-editor` and `fix/ui-emoji-font` into
-`main` (tags `step-30`, `step-31`), and the releases 0.20-0.22 when the user asks. Then step 32.
+**Visual baselines and merge (user approved the diffs 2026-11-17):** local `visual` baselines
+updated (177/177). CI baselines of 23 views dropped (`e296fcb` and before) and pushed on
+`step/31-editor` (which now includes `fix/ui-emoji-font`). The first run found a WebKit bug: the
+editor dropped every answer (U10 checked `event.source`); fixed by an origin check (`e296fcb`).
+Run 44158096575: Windows and Linux wrote their 23 files (no real diffs), checked and committed
+(`5cd76c1`, local, not pushed). macOS: no hosted runner ("not acquired by Runner … capacity"),
+twice, also on a rerun of the job.
+
+**Next action (user 2026-11-17: rerun macOS in the morning):** `gh run rerun 44158096575 --job
+<macOS job id>` (do not push before: a push cancels it). Copy the 23 new files of
+`visual-ci-webkit-darwin` from the artifact `visual-macos` (after a look), commit, push, wait for a
+green run; then merge `step/30-observaties` and `step/31-editor` into `main` (merge commits), tags
+`step-30`, `step-31`; push `main`. Releases 0.20-0.22 when the user asks. Then step 32.
 
 **Choices made without asking (step 31):** "Opmaak ▾" holds the formula formatting (Formaat,
 Lettertypevarianten, Tekstoperator), "Wiskunde ▾" the structures (Breuk, Wortel, …), "Symbolen ▾"
