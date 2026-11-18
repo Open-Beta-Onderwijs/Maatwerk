@@ -29,8 +29,24 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32b (editor UI): rail and chat panel, boards 59 and 60, on `window.maatwerk.ai`.
+**Next action:** 32b (editor UI) in progress, see "Step 32b progress".
 Releases 0.20-0.22 still wait for the user.
+
+## Step 32b progress (editor UI)
+
+Baseline 2026-11-18 on `fd327f1`: cargo test all ok.
+
+Plan: (1) iframe <-> main window AI protocol, (2) pure UI helpers (chips, attachments, status,
+diff summary), (3) rail + panel + conversation + starters (board 59), (4) composer: chips,
+syllabus listbox, Andere opdrachten popover, attachments (board 60), (5) running: status line,
+transcript, Stop, editor bar, pill, error cards, (6) diff card, Toepassen as one undo step,
+Ongedaan maken, (7) Voorstel bekijken dialog with PDF preview (board 61).
+
+1. **Done (`1b65eda`):** `editor/ai-protocol.ts` (`maatwerk-ai` requests with a method
+   allowlist, events as `maatwerk-ai-event` per run id), `modals/editor-ai.ts` (main window adds
+   teacher and opdracht, `info` = opdrachtgegevens + other opdrachten, `preview` via
+   `renderAssignmentSvg`), `editor/ai/client.ts` (iframe client). New command
+   `ai_pick_attachments` + `ai.pickAttachments()`.
 
 ## Step 32a progress (bridge, no UI)
 
