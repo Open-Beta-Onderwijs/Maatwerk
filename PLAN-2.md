@@ -129,7 +129,10 @@ Open questions of the design round, answered (user, 2026-11-18):
    the path read-only with "Map openen". The "Wijzigen…" button and the editable path in board 62
    are not built.
 3. **CLI details:** the default arguments and install commands in board 62 are placeholders; the
-   research sub-task confirms or replaces them.
+   research sub-task confirms or replaces them. **Settled (research 2026-11-18):** the presets
+   and install commands are the "Default args" and "Install" rows of ADR-0009 "CLI research"
+   (they replace board 62's); Mistral Vibe and Copilot CLI qualify under decision 49; rows marked
+   _verify_ are confirmed in the 32c manual check.
 
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
@@ -165,32 +168,32 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 
 ## 3. Status (keep up to date)
 
-| Step | Title                                                            | Size         | Release | Status   |
-| ---- | ---------------------------------------------------------------- | ------------ | ------- | -------- |
-| 12   | Triage and open decisions                                        | S (user)     | -       | done     |
-| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done     |
-| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done     |
-| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done     |
-| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done     |
-| 17   | Rapport fixes                                                    | M            | 0.8     | done     |
-| 18   | Data format v3                                                   | M            | 0.9     | done     |
-| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done     |
-| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done     |
-| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done     |
-| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done     |
-| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done     |
-| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done     |
-| 25   | Score entry                                                      | M            | 0.16    | done     |
-| 26   | Login and splash                                                 | M            | 0.17    | done     |
-| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done     |
-| 28   | Beheer screens                                                   | M            | 0.19    | done     |
-| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done     |
-| 30   | Observaties and opdrachten                                       | M            | 0.21    | gate     |
-| 31   | Opdrachten-editor                                                | M            | 0.22    | gate     |
-| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | research |
-| 33   | Toetsen as cards                                                 | M            | 0.24    | todo     |
-| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo     |
-| 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo     |
+| Step | Title                                                            | Size         | Release | Status |
+| ---- | ---------------------------------------------------------------- | ------------ | ------- | ------ |
+| 12   | Triage and open decisions                                        | S (user)     | -       | done   |
+| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done   |
+| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done   |
+| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done   |
+| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done   |
+| 17   | Rapport fixes                                                    | M            | 0.8     | done   |
+| 18   | Data format v3                                                   | M            | 0.9     | done   |
+| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done   |
+| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done   |
+| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done   |
+| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done   |
+| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done   |
+| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done   |
+| 25   | Score entry                                                      | M            | 0.16    | done   |
+| 26   | Login and splash                                                 | M            | 0.17    | done   |
+| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done   |
+| 28   | Beheer screens                                                   | M            | 0.19    | done   |
+| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
+| 30   | Observaties and opdrachten                                       | M            | 0.21    | gate   |
+| 31   | Opdrachten-editor                                                | M            | 0.22    | gate   |
+| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | 32a    |
+| 33   | Toetsen as cards                                                 | M            | 0.24    | todo   |
+| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |
+| 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
 
 ## 4. Steps
 

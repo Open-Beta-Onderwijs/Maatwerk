@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-18 (step 32 design round) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last updated: 2026-11-18 (step 32 CLI research) Branch: `step/32-ai` (from `main` at `941eb5c`)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -13,8 +13,17 @@ plus CLI research, then 32a bridge, 32b editor UI, 32c settings/entry points/gat
 **Design round done (user OK 2026-11-18):** design round 15, boards 59-63 (mocks `AIChat`,
 `AIContext`, `AIDiff`, `AIInstellingen`, `AIStart`), `PLAN-2.md` decisions 62-75 with the answers to its three questions (school switch in `instellingen.json`, syllabus folder fixed next to the app, CLI details from the research), spec 4.8.1 and 4.9 (the school switch is on Beheer › Instellingen).
 
-**Next action:** CLI research for step 32 (non-interactive mode, streaming, resume, permission and
-web-search flags, image input per CLI; record in ADR-0009; confirms the CLI details of answer 3), then 32a.
+**CLI research done (2026-11-18):** ADR-0009 "CLI research": a table per CLI (non-interactive,
+streaming, resume, permissions, web search, images, detection, not logged in, install, default
+args) with sources. Installed here: Claude Code 2.1.327, Mistral Vibe 3.0.4 (Codex, Gemini,
+Copilot not installed; nothing logged in, no prompt sent). Answer 3 settled: presets and install
+commands from the ADR replace board 62's. Vibe and Copilot qualify (decision 49). Notable: Gemini
+CLI was replaced by Antigravity CLI for free/Google One users (2026-06-18), Antigravity not in the
+launch set (user's call); prompts go via `.maatwerk/request.md`, not argv (`.cmd` shims); macOS/
+Linux detection must read the login shell PATH; Gemini needs a stable temp dir path per
+conversation. _verify_ rows go into the 32c manual check.
+
+**Next action:** 32a (bridge, no UI), after the user has seen the research report.
 Releases 0.20-0.22 still wait for the user.
 
 ## Previous step (30-31)
