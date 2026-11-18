@@ -29,7 +29,8 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32a sub-task 5 (Tauri commands, events, bindings), see "Step 32a progress".
+**Next action:** 32b (editor UI): rail and chat panel, boards 59 and 60, on `window.maatwerk.ai`.
+Releases 0.20-0.22 still wait for the user.
 
 ## Step 32a progress (bridge, no UI)
 
@@ -43,10 +44,36 @@ Baseline 2026-11-18 on `64d5b54`: cargo test all ok.
    with session, answer, error, auth failure), `run` (thread runner, time limit, Stop, tree
    kill via `taskkill /T` or process group). Fake CLI `src/bin/maatwerk-fake-ai.rs`, tests in
    `tests/ai_fake_cli.rs`.
-2. **Done:** bundled check: `maatwerk --ai-check <dir>` (app `main.rs`, `ai::check`), JSON
-   report, exit 0/1/2/3, editor time limit; `assignment::with_time_limit`; `maatwerk-cli
-assignment check|render --timeout` (default 30 s, exit 3) closes Step 9 m3.
-   Releases 0.20-0.22 still wait for the user.
+2. **Done (`88ed2b7`):** bundled check: `maatwerk --ai-check <dir>` (app `main.rs`,
+   `ai::check`), JSON report, exit 0/1/2/3, editor time limit; `assignment::with_time_limit`;
+   `maatwerk-cli assignment check|render --timeout` (default 30 s, exit 3) closes Step 9 m3.
+3. **Done (`601a94d`):** `ai::workspace`: `Layout` (`<local app data>/ai/<gebruiker>/`:
+   `settings.json`, `opdrachten/<id>/<provider>.json` history, `context.json` chips,
+   `work/<id>/<provider>/` workspace with a stable path, `<provider>.run/` per turn), `prepare`
+   (buffers or saved files, grey same-size placeholder images unless the Afbeeldingen chip,
+   context per chip, attachments with limits, `.maatwerk/check` + `check.cmd`, Vibe
+   `.vibe/config.toml`, Gemini policy, `request.md` in English with the Dutch-answer rule),
+   `Baseline` for the diff.
+4. **Done (`6feea68`):** `ai::history` (conversation per provider per opdracht, transcript per
+   run), `ai::diff` (proposal restricted to `opdracht.typ` + `images/`, `main.typ`/`lib.typ`
+   skipped, hunks via `similar`, `rebase` onto the current buffer with conflicts, `apply` of
+   selected hunks), `ai::turn` (`run_turn`: prepare, run with resume, Maatwerk-side check with
+   up to 3 fix rounds for CLIs that cannot run it, outcomes Proposal/NoChanges/NotLoggedIn/
+   CliError/TimedOut/Stopped/NotFound, nothing kept on stop/time-out/failure, history saved,
+   `proposal.json` in the run folder). Tests `tests/ai_turn.rs`. New crates `similar`
+   (Apache-2.0) and `uuid` in `THIRD_PARTY_LICENSES.md`; `npm run notices` still to run at the
+   gate.
+5. **Done (`78904ed`):** app `src-tauri/src/ai.rs` (17 `ai_*` commands: detect, settings, login
+   check, send with events over a `Channel` and one run per opdracht, stop, conversations,
+   new conversation, proposal with rebased statuses, apply with image backups and undo,
+   proposal image, context chips without Afbeeldingen, syllabus list and folder (`syllabus/`
+   next to the exe on Windows, local app data elsewhere), presets). JSON payloads typed in
+   `ui/src/bridge/ai-api.ts` (`window.maatwerk.ai`), Tauri impl in `tauri-api.ts`, scripted
+   `mock/mock-ai.ts` with a test. Checks: clippy, cargo test (25 suites), typecheck, lint, 733
+   Vitest.
+
+**32a done.** Left for 32c: the real-CLI manual check (ADR-0009 _verify_ rows), the entry
+points, settings dialog and school switch.
 
 ## Previous step (30-31)
 
