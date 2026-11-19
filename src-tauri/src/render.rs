@@ -9,7 +9,8 @@ use maatwerk_core::outputs::{self, PrintName};
 use maatwerk_core::paths::RelPath;
 use maatwerk_core::typst_svc::{
     self, BatchError, BatchJob, BatchOptions, BatchProgress, Diagnostic, JobWarning, Mode,
-    OpdrachtHeader, OpdrachtInputs, PoRapportData, RapportData, TypstProject, local_now,
+    OpdrachtHeader, OpdrachtInputs, PoRapportData, ProjectFileStatus, RapportData, TypstProject,
+    local_now,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -67,7 +68,8 @@ pub struct BatchJobArg {
     pub label: Option<String>,
     /// `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing.
     pub header: Option<Value>,
-    /// `answers` for the answer key; anything else is the student's opdracht.
+    /// `answers` for the answer key, `plain` for the opdracht without the student block (0.19.1);
+    /// anything else is the student's opdracht.
     pub mode: Option<String>,
 }
 
@@ -245,17 +247,21 @@ pub async fn render_assignment_batch(
             .unwrap_or_else(|| "opdrachten.pdf".to_owned());
         let include_answers = opts.include_answers.unwrap_or(true);
         let mut batch = Vec::with_capacity(jobs.len());
+        let mut notes = Vec::new();
         for job in &jobs {
+            let mode = job_mode(job.mode.as_deref());
+            if mode == Mode::Plain
+                && let Some(note) = plain_mode_note(c, &job.opdracht_id)?
+            {
+                notes.push(note);
+            }
             batch.push(BatchJob {
                 key: job.key.clone(),
                 label: job.label.clone().unwrap_or_else(|| job.opdracht_id.clone()),
                 opdracht: job.opdracht_id.clone(),
                 project: opdracht_project(c, &job.opdracht_id)?,
                 inputs: OpdrachtInputs {
-                    mode: match job.mode.as_deref() {
-                        Some("answers") => Mode::Answers,
-                        _ => Mode::Student,
-                    },
+                    mode,
                     include_answers,
                     header: header(job.header.clone())?,
                 },
@@ -281,13 +287,43 @@ pub async fn render_assignment_batch(
                 BatchError::Empty => invalid_argument(e.to_string()),
                 e => CommandError::typst(e.to_string()),
             })?;
+        notes.extend(job_warning_texts(&out.warnings));
         Ok(RenderedBatch {
             pdf_path: c.outputs()?.put(&output_name, &out.merged.pdf)?,
             pages: u32::try_from(out.merged.pages).unwrap_or(u32::MAX),
-            warnings: job_warning_texts(&out.warnings),
+            warnings: notes,
         })
     })
     .await
+}
+
+/// A job's `mode`: `answers` (answer key), `plain` (no student block, 0.19.1), else student.
+fn job_mode(mode: Option<&str>) -> Mode {
+    match mode {
+        Some("answers") => Mode::Answers,
+        Some("plain") => Mode::Plain,
+        _ => Mode::Student,
+    }
+}
+
+/// Plain mode needs `maatwerk-main 3`: an unchanged older `main.typ` is updated first (as opening
+/// the editor does). A copy the teacher changed is left alone; it may still draw the student
+/// block, which the returned note says.
+fn plain_mode_note(c: &Core, opdracht_id: &str) -> Res<Option<String>> {
+    let files = typst_svc::check_project_files(c.storage()?, opdracht_id)?;
+    Ok(main_typ_note(&files))
+}
+
+/// The note when `main.typ` (after the silent update) predates the bundled version.
+fn main_typ_note(files: &[ProjectFileStatus]) -> Option<String> {
+    let main = files.iter().find(|f| f.file == "main.typ");
+    let current = main.is_some_and(|f| f.version.unwrap_or(0) >= f.bundled_version);
+    (!current).then(|| {
+        "main.typ van deze opdracht is aangepast of verouderd. Het blok met leerling, klas en \
+         observaties kan daardoor toch zichtbaar zijn. Open de opdracht in de editor en kies \
+         bij main.typ \"Herstel standaardversie\" om dat op te lossen."
+            .to_owned()
+    })
 }
 
 fn invalid_argument(message: String) -> CommandError {
@@ -415,5 +451,41 @@ mod tests {
         assert!(texts[0].starts_with("Opdracht \"Remweg\":\n"), "{texts:?}");
         assert!(texts[0].contains("tofu"), "{texts:?}");
         assert!(texts[1].starts_with("Opdracht \"Hefboom\":"), "{texts:?}");
+    }
+
+    #[test]
+    fn job_modes() {
+        assert_eq!(job_mode(Some("plain")), Mode::Plain);
+        assert_eq!(job_mode(Some("answers")), Mode::Answers);
+        assert_eq!(job_mode(Some("student")), Mode::Student);
+        assert_eq!(job_mode(None), Mode::Student);
+    }
+
+    /// 0.19.1: plain mode warns when `main.typ` is still older than `maatwerk-main 3`.
+    #[test]
+    fn plain_mode_notes_an_old_main_typ() {
+        use maatwerk_core::typst_svc::ProjectFileState;
+        let main = |state, version| ProjectFileStatus {
+            file: "main.typ",
+            state,
+            version,
+            bundled_version: 3,
+            hash: None,
+        };
+        for ok in [
+            main(ProjectFileState::Current, Some(3)),
+            main(ProjectFileState::Updated, Some(3)),
+            main(ProjectFileState::Modified, Some(3)),
+        ] {
+            assert_eq!(main_typ_note(&[ok]), None);
+        }
+        for old in [
+            main(ProjectFileState::Outdated, Some(2)),
+            main(ProjectFileState::Modified, None),
+            main(ProjectFileState::Missing, None),
+        ] {
+            let note = main_typ_note(&[old]).expect("a note");
+            assert!(note.contains("Herstel standaardversie"), "{note}");
+        }
     }
 }

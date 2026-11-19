@@ -91,7 +91,8 @@ export interface BatchJob {
     exam: string;
     observaties: { icon: string; name: string }[];
   }>;
-  mode?: 'student' | 'answers';
+  /** `plain`: the opdracht without the student block (printed from the Opdrachten tab). */
+  mode?: 'student' | 'plain' | 'answers';
 }
 
 export interface BatchOptions {

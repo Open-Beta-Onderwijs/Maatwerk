@@ -23,6 +23,9 @@ pub enum Mode {
     /// The student's opdracht: header, uitleg, opgaven (`buildAssignmentWrapper`, default).
     #[default]
     Student,
+    /// The opdracht on its own: title, uitleg, opgaven, no student block (printed from the
+    /// Opdrachten tab, 0.19.1). Needs `maatwerk-main 3`; an older copy lays it out as `Student`.
+    Plain,
     /// The answer key (`mode: 'answers'`).
     Answers,
 }

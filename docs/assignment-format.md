@@ -24,10 +24,10 @@ data/opdrachten/<opdrachtId>/
   downloaded: `@preview/zero:0.7.1`, `@preview/cetz:0.3.4`, `@preview/oxifmt:0.2.1`,
   `@preview/unify:0.8.0`. Any other package is a compile error.
 - **`main.typ` and `lib.typ`** start as the bundled versions (`maatwerk-core/assets/templates/`,
-  `opdracht-main.typ` and `lib.typ`). Each has a version line (`// maatwerk-main 2`,
+  `opdracht-main.typ` and `lib.typ`). Each has a version line (`// maatwerk-main 3`,
   `// maatwerk-lib 2`). An unmodified old copy is updated silently when the editor opens the
-  opdracht; a changed copy is never overwritten (the editor offers "Bekijk verschillen" and
-  "Herstel standaardversie").
+  opdracht, and `main.typ` also before a plain print (section 2); a changed copy is never
+  overwritten (the editor offers "Bekijk verschillen" and "Herstel standaardversie").
 - **`opdracht.typ`** starts as `base_assignment.typ`. It is the teacher's file; Maatwerk never
   rewrites it, apart from removing a leading BOM.
 - **`opdracht.json`** is data, not Typst; the headless tools do not read it.
@@ -38,15 +38,21 @@ data/opdrachten/<opdrachtId>/
 
 `main.typ` reads a JSON string from `sys.inputs.at("maatwerk-data")`:
 
-| Field             | Values                                                              | Default (placeholder) |
-| ----------------- | ------------------------------------------------------------------- | --------------------- |
-| `mode`            | `"student"` (the opdracht) or `"answers"` (key)                     | `"student"`           |
-| `include_answers` | student mode: answers upside down at the bottom                     | `true`                |
-| `header`          | `title`, `student`, `group`, `exam`, `observaties` (`icon`, `name`) | placeholder texts     |
+| Field             | Values                                                                        | Default (placeholder) |
+| ----------------- | ----------------------------------------------------------------------------- | --------------------- |
+| `mode`            | `"student"` (the opdracht), `"plain"` (no student block) or `"answers"` (key) | `"student"`           |
+| `include_answers` | student mode: answers upside down at the bottom                               | `true`                |
+| `header`          | `title`, `student`, `group`, `exam`, `observaties` (`icon`, `name`)           | placeholder texts     |
 
 When the app prints an opdracht for a student it fills `header` with that student's name, group,
 exam and observaties. **The headless tools never do**: they compile with the placeholder header,
 so no student data is ever needed to check or render an opdracht.
+
+Plain mode (`maatwerk-main 3`, 0.19.1) is the print button on the Opdrachten tab: one copy of the
+opdracht laid out as in student mode, but with only the title above the uitleg (no block with
+student, group, exam and observaties; `header` fields other than `title` are ignored).
+`include_answers` works as in student mode. A `main.typ` older than version 3 that the teacher
+changed has no plain mode and lays it out as student mode; the app then shows a warning.
 
 Answer-key mode lays out `render_uitleg()` and `render_opgaven()` hidden (so the vragen and their
 numbers exist) and prints `antwoorden_lijst()`.
