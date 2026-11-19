@@ -48,7 +48,7 @@ When the app prints an opdracht for a student it fills `header` with that studen
 exam and observaties. **The headless tools never do**: they compile with the placeholder header,
 so no student data is ever needed to check or render an opdracht.
 
-Plain mode (`maatwerk-main 3`, 0.19.1) is the print button on the Opdrachten tab: one copy of the
+Plain mode (`maatwerk-main 3`, 0.23.1) is the print button on the Opdrachten tab: one copy of the
 opdracht laid out as in student mode, but with only the title above the uitleg (no block with
 student, group, exam and observaties; `header` fields other than `title` are ignored).
 `include_answers` works as in student mode. A `main.typ` older than version 3 that the teacher

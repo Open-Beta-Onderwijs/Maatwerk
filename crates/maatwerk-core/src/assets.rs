@@ -59,7 +59,7 @@ impl ProjectFile {
                 // (review 8b n4), 0.3.1.
                 (2, "46159ead80b65e7da0800ddcc610b5fb2e02872b"),
                 // 3: mode "plain" (an opdracht without the student block, printed from the
-                // Opdrachten tab), 0.19.1.
+                // Opdrachten tab), 0.23.1.
                 (3, "2de3ae8ed858c95d0b55bfd82a6c86bcb4647640"),
             ],
         }

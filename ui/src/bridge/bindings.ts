@@ -310,7 +310,7 @@ export type BatchJobArg = {
 	/**  `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing. */
 	header: Value | null,
 	/**
-	 *  `answers` for the answer key, `plain` for the opdracht without the student block (0.19.1);
+	 *  `answers` for the answer key, `plain` for the opdracht without the student block (0.23.1);
 	 *  anything else is the student's opdracht.
 	 */
 	mode: string | null,

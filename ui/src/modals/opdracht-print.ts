@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// MODAL: Opdracht afdrukken (0.19.1 hotfix), from the print button on the Opdrachten tab: one copy
+// MODAL: Opdracht afdrukken (0.23.1 hotfix), from the print button on the Opdrachten tab: one copy
 // of the opdracht without the student block (`mode: 'plain'`, `maatwerk-main 3`), in the PDF
 // viewer. "Met antwoorden" renders it again with the upside-down answers. The viewer's
 // "Openen in PDF-viewer" opens the rendered PDF in the system viewer; no copy is saved in

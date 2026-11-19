@@ -83,7 +83,7 @@ test('Opdrachten genereren: a question card links opdrachten to a low score on o
   expect(errors).toEqual([]);
 });
 
-// 0.19.1 hotfix: one opdracht printed from the Opdrachten tab, without the student block.
+// 0.23.1 hotfix: one opdracht printed from the Opdrachten tab, without the student block.
 test('Opdrachten tab: the print button shows one plain copy of the opdracht', async ({ page }) => {
   const errors = watchErrors(page);
   await login(page);

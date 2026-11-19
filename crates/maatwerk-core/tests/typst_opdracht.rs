@@ -414,7 +414,7 @@ fn answers_mode_ignores_the_student_fields() {
     assert!(text.starts_with("SleutelAntwoordsleutel"), "{text}");
 }
 
-/// 0.19.1: printed from the Opdrachten tab, the opdracht has its title but no student block,
+/// 0.23.1: printed from the Opdrachten tab, the opdracht has its title but no student block,
 /// even when header fields are passed; otherwise it is laid out as the student's copy.
 #[test]
 fn plain_mode_has_the_title_but_no_student_block() {

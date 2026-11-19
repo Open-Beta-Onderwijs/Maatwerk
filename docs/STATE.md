@@ -4,15 +4,16 @@ Last updated: 2026-11-19 (step 32 done) Branch: `step/32-ai` (from `main` at `94
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
-## Hotfix 0.19.1 (2026-11-19, on `step/32-ai`, user's call)
+## Hotfix 0.23.1 (2026-11-19, on `step/32-ai`, user's call)
 
 Print button on the Opdrachten tab (between Kopiëren and Verwijderen): one copy of the opdracht
 without the student block, in the PDF viewer (`modals/opdracht-print.ts`). Decisions with the
 user: `maatwerk-main 3` adds `mode: "plain"` (data-format change OK'd; unchanged v2 copies update
 silently, also right before a plain print; a teacher-changed old copy gets a warning naming
 "Herstel standaardversie"); a "Met antwoorden" checkbox in the dialog header (default off);
-"Openen in PDF-viewer" opens the rendered output, no copy in `rapporten/`; version 0.19.1 on this
-branch, no separate release branch. Migration goldens: the four `main.typ` copies follow the
+"Openen in PDF-viewer" opens the rendered output, no copy in `rapporten/`; version 0.23.1 on this
+branch, no separate release branch (first bumped to 0.19.1; the user corrected it to the AI
+release, step 32 = 0.23, so 0.23.1). Migration goldens: the four `main.typ` copies follow the
 template. Open: the tracked CI baselines of `screen-opdrachten` (3 platforms) are stale (the new
 button); drop or regenerate them with the user's OK, as for step 32's views. Manual check: print
 one opdracht in the real app, with and without answers.

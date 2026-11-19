@@ -68,7 +68,7 @@ pub struct BatchJobArg {
     pub label: Option<String>,
     /// `{ title, student, group, exam, observaties: [{ icon, name }] }`; fields may be missing.
     pub header: Option<Value>,
-    /// `answers` for the answer key, `plain` for the opdracht without the student block (0.19.1);
+    /// `answers` for the answer key, `plain` for the opdracht without the student block (0.23.1);
     /// anything else is the student's opdracht.
     pub mode: Option<String>,
 }
@@ -297,7 +297,7 @@ pub async fn render_assignment_batch(
     .await
 }
 
-/// A job's `mode`: `answers` (answer key), `plain` (no student block, 0.19.1), else student.
+/// A job's `mode`: `answers` (answer key), `plain` (no student block, 0.23.1), else student.
 fn job_mode(mode: Option<&str>) -> Mode {
     match mode {
         Some("answers") => Mode::Answers,
@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(job_mode(None), Mode::Student);
     }
 
-    /// 0.19.1: plain mode warns when `main.typ` is still older than `maatwerk-main 3`.
+    /// 0.23.1: plain mode warns when `main.typ` is still older than `maatwerk-main 3`.
     #[test]
     fn plain_mode_notes_an_old_main_typ() {
         use maatwerk_core::typst_svc::ProjectFileState;
