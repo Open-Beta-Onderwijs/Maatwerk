@@ -530,7 +530,7 @@ Decisions 48-61 and 62-75 in `PLAN-2.md`. The boards use the mock's own colour v
   selected button has a 2 px ring in the provider colour; a dot top right marks a provider with
   an open conversation (accent while it runs). A click opens or switches the conversation (one
   per provider per opdracht); clicking the open one closes the panel.
-- **Chat panel (380 px):** header: logo, name, "via de command line op deze computer", "+ Nieuw
+- **Chat panel (380 px):** header: logo, name, "via command line" (user 2026-11-19; was "via de command line op deze computer"), "+ Nieuw
   gesprek", gear (AI-instellingen, board 62), close. Messages: the teacher's in an accent-tint
   bubble (attachments as small chips under it), the AI's in `--surface-2`.
 - **Empty chat:** "Waar kan <naam> mee helpen?", one line on the temp copy and the proposal, then

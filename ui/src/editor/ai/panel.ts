@@ -383,7 +383,7 @@ export class AiPanel {
         'div',
         { class: 'ai-head-text' },
         h('strong', {}, p.name),
-        h('span', {}, 'via de command line op deze computer'),
+        h('span', {}, 'via command line'),
       ),
       h(
         'button',
