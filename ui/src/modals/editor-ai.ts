@@ -15,6 +15,7 @@ import {
   isAiMethod,
   isProviderKey,
   type AiEditorInfo,
+  type AiStart,
   type OtherOpdrachtInfo,
 } from '../editor/ai-protocol';
 
@@ -31,6 +32,8 @@ export interface AiRequestContext {
   preview(text: string): Promise<{ pages: string[] } | { error: string }>;
   /** Streams a run's events to the iframe. */
   emit(runId: string, event: AiEvent): void;
+  /** The conversation to start with, once (Opdracht toevoegen met AI, Laat AI dit oplossen). */
+  takeStart?(): AiStart | null;
 }
 
 const str = (v: unknown, what: string): string => {
@@ -63,7 +66,9 @@ function levels(o: Opdracht): string {
 }
 
 /** Opdrachtgegevens and the other opdrachten (decision 51). */
-export function aiEditorInfo(ctx: Omit<AiRequestContext, 'ai' | 'preview' | 'emit'>): AiEditorInfo {
+export function aiEditorInfo(
+  ctx: Omit<AiRequestContext, 'ai' | 'preview' | 'emit' | 'takeStart'>,
+): AiEditorInfo {
   const o = ctx.opdracht;
   const obsNames = new Map(ctx.observaties.map((x) => [x.id, x.naam ?? x.id]));
   const metadata: Json = {
@@ -94,7 +99,10 @@ export async function handleAiRequest(
 ): Promise<unknown> {
   if (!isAiMethod(method) || !Array.isArray(args))
     throw new Error(`not allowed: ${String(method)}`);
-  if (method === 'info') return aiEditorInfo(ctx);
+  if (method === 'info') {
+    const start = ctx.takeStart?.() ?? null;
+    return { ...aiEditorInfo(ctx), ...(start ? { start } : {}) };
+  }
   const g = ctx.gebruiker;
   if (g === null) throw new Error('Niet ingelogd.');
   const { ai } = ctx;

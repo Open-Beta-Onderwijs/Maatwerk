@@ -155,6 +155,8 @@ function checkOpdrachtId(id: string): void {
 export class MockApi implements MaatwerkApi {
   /** The AI assistant against a scripted fake (`mock-ai.ts`). */
   readonly ai = new MockAi(() => this.readText('instellingen.json'));
+  /** Opdracht ids whose jobs fail in `renderAssignmentBatch` (step 32c tests). */
+  batchFailures: string[] = [];
   private files = new Map<string, Uint8Array>();
   private dirs = new Set<string>();
   private session: Record<string, unknown> | null = null;
@@ -751,6 +753,27 @@ export class MockApi implements MaatwerkApi {
       return { success: false, error: 'Ongeldige opdracht.' };
     if (baseName(outputName) !== outputName || outputName.includes('\\'))
       return { success: false, error: `Ongeldige bestandsnaam: ${outputName}` };
+    // T23's text (maatwerk_core::typst_svc::batch): every failed opdracht once, in job order.
+    const failed = [
+      ...new Set(
+        jobs
+          .filter((j) => this.batchFailures.includes(j.opdrachtId))
+          .map((j) => j.label ?? j.opdrachtId),
+      ),
+    ];
+    if (failed.length) {
+      const sep = '\n\n────────\n\n';
+      const parts = failed.map(
+        (l) => `Fout in opdracht "${l}":\n\nerror: unknown variable: oeps\n  ┌─ opdracht.typ:3:1`,
+      );
+      return {
+        success: false,
+        error:
+          parts.length === 1
+            ? parts[0]!
+            : `${parts.length} opdrachten bevatten een fout.${sep}${parts.join(sep)}`,
+      };
+    }
     const total = jobs.length;
     for (const cb of this.progressListeners) cb({ done: 0, total });
     const pages: string[][] = [];

@@ -215,3 +215,116 @@
   font-size: 15px;
   line-height: 1;
 }
+
+/* Opdracht toevoegen "met AI" (board 63, step 32c; modals/opdracht-ai.ts). */
+.op-ai {
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.op-ai.is-on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+.op-ai__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.op-ai__text {
+  resize: vertical;
+}
+.op-ai__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.op-ai__row .form-label {
+  margin: 0;
+  white-space: nowrap;
+}
+.op-ai__row select {
+  width: auto;
+  flex: none;
+}
+.op-ai__hint {
+  flex: 1;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+/* A failed Opdrachten genereren (board 63, step 32c; opdrachten-genereren/failures.ts). */
+.og-fail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 4px;
+  max-width: 760px;
+}
+.og-fail__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.og-fail__head strong {
+  font-size: 16px;
+  color: var(--danger);
+}
+.og-fail__head span {
+  color: var(--muted);
+}
+.og-fail__card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card-lg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+}
+.og-fail__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.og-fail__title strong {
+  flex: 1;
+}
+.og-fail__title .ais-muted {
+  font-size: 12.5px;
+}
+.og-fail__error {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: var(--r-btn);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.og-fail__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.og-fail__spacer {
+  flex: 1;
+}
+.og-fail__ai {
+  padding-left: 6px;
+  gap: 8px;
+}
+.og-fail__ai .ais-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}

@@ -21,6 +21,7 @@ import {
   type EditorResponse,
 } from '../editor/protocol';
 import { Store } from '../store.js';
+import type { AiStart } from '../editor/ai-protocol';
 import { handleAiRequest } from './editor-ai';
 
 /** Live editor methods the iframe may call (ADR-0002 section 6: method allowlist). */
@@ -45,11 +46,14 @@ const OPDRACHT_METHODS = new Set(['editorOpen', 'projectFilesStatus', 'restorePr
 let messageHandler: ((evt: MessageEvent) => void) | null = null;
 let unsubscribeUpdates: (() => void) | null = null;
 let session: number | null = null;
+/** The AI conversation the next editor starts with (step 32c), taken by its first `info`. */
+let pendingStart: AiStart | null = null;
 
 const overlay = () => document.getElementById('editor-overlay')!;
 const frameEl = () => document.getElementById('editor-frame') as HTMLIFrameElement;
 
-export function openEditor(opdracht: Opdracht): void {
+export function openEditor(opdracht: Opdracht, aiStart: AiStart | null = null): void {
+  pendingStart = aiStart;
   const frame = frameEl();
   const params = new URLSearchParams({ id: opdracht.id, naam: opdracht.naam ?? '' });
   frame.src = `editor.html?${params}`;
@@ -97,6 +101,7 @@ function editorInfo(opdracht: Opdracht): EditorInfo {
 }
 
 function closeEditor(): void {
+  pendingStart = null;
   const frame = frameEl();
   frame.src = '';
   overlay().classList.add('hidden');
@@ -132,6 +137,11 @@ function aiContext(frame: HTMLIFrameElement, opdracht: Opdracht) {
     },
     emit(runId: string, event: unknown) {
       frame.contentWindow?.postMessage({ type: 'maatwerk-ai-event', runId, event }, '*');
+    },
+    takeStart() {
+      const start = pendingStart;
+      pendingStart = null;
+      return start;
     },
   };
 }

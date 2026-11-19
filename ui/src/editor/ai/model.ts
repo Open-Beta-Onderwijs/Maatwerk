@@ -351,10 +351,14 @@ export function starters(errors: number): StarterDef[] {
       key: 'fixErrors',
       label: 'Fouten oplossen',
       subtitle: errors === 1 ? '1 fout in de opdracht' : `${errors} fouten in de opdracht`,
-      text: 'Los de fouten en waarschuwingen in deze opdracht op. Verander verder niets aan de inhoud.',
+      text: FIX_ERRORS_TEXT,
     });
   return list;
 }
+
+/** The Fouten oplossen text (also "Laat AI dit oplossen", decision 75). */
+export const FIX_ERRORS_TEXT =
+  'Los de fouten en waarschuwingen in deze opdracht op. Verander verder niets aan de inhoud.';
 
 // ── Diff card and dialog (decisions 56, 68, 69) ────────────────────────────
 

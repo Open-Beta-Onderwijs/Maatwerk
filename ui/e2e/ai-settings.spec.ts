@@ -207,3 +207,78 @@ test('the user menu opens AI-instellingen when the school allows it', async ({ p
   await page.locator('#acc-ai').click();
   await expect(page.getByRole('dialog', { name: 'AI-instellingen' })).toBeVisible();
 });
+
+// Decision 74 (board 63): Opdracht toevoegen "met AI" sends the description at once.
+test('Opdracht toevoegen met AI: saved, the editor opens and sends the message', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await login(page);
+  await noticeSeen(page);
+  await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+  await page.locator('#btn-add-opdracht').click();
+  const dlg = page.getByRole('dialog', { name: 'Opdracht toevoegen' });
+  await dlg.locator('#f-opnam').fill('Wet van Ohm');
+  await dlg
+    .getByRole('group', { name: 'Schoolsoort' })
+    .getByRole('button', { name: 'Havo' })
+    .click();
+  await dlg
+    .getByRole('group', { name: 'Vakken' })
+    .getByRole('button', { name: 'Natuurkunde' })
+    .click();
+  await dlg.getByRole('group', { name: 'Jaarlagen' }).getByRole('button', { name: '4' }).click();
+  const sw = dlg.getByRole('switch', { name: 'Eerste versie laten maken met AI' });
+  await sw.click();
+  await expect(dlg.locator('#f-opsave')).toHaveText('Opslaan en AI starten');
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await dlg.locator('#op-ai-text').fill('Drie opgaven over R = U / I met antwoordmodel.');
+  await shot(page, '15-opdracht-met-ai');
+  await dlg.locator('#f-opsave').click();
+  const frame = page.frameLocator('#editor-frame');
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  await expect(panel.locator('.ai-bubble').first()).toContainText('Drie opgaven over R = U / I');
+  await expect(panel.getByText('Voorstel', { exact: false }).first()).toBeVisible();
+  const sent = await withMock(page, (m) => m.ai.calls.filter((c) => c.method === 'send').length);
+  expect(sent).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+// Decision 75 (board 63): a failed batch offers "Laat AI dit oplossen", filled, not sent.
+test('Laat AI dit oplossen: the editor opens with the input filled and the error attached', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  await login(page);
+  await noticeSeen(page);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await expect(async () => {
+    await page.locator('[data-action="exam-menu"]:not([data-kind="summary"])').first().click();
+    await page.getByRole('menuitem', { name: 'Opdrachten genereren' }).click({ timeout: 1000 });
+  }).toPass();
+  await page.locator('[data-action="og-key"]').click();
+  await expect(page.locator('.og-result .rapport-pdf-frame')).toBeVisible();
+  const first = await withMock(page, (m) => {
+    const jobs = m.calls.filter((c) => c[0] === 'renderAssignmentBatch').at(-1)?.[1] as {
+      opdrachtId: string;
+    }[];
+    m.batchFailures = [jobs[0]!.opdrachtId];
+    return jobs[0]!.opdrachtId;
+  });
+  await page.locator('[data-action="og-back"]').click();
+  await page.locator('[data-action="og-key"]').click();
+  const card = page.locator(`.og-fail__card[data-opdracht="${first}"]`);
+  await expect(card).toContainText('error: unknown variable: oeps');
+  await shot(page, '16-generate-failed');
+  await card.getByRole('button', { name: 'Laat AI dit oplossen' }).click();
+  const frame = page.frameLocator('#editor-frame');
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  await expect(panel.getByRole('textbox', { name: 'Bericht' })).toHaveValue(
+    /^Los de fouten en waarschuwingen in deze opdracht op/,
+  );
+  await expect(panel).toContainText('Foutmelding genereren.txt');
+  const sent = await withMock(page, (m) => m.ai.calls.filter((c) => c.method === 'send').length);
+  expect(sent).toBe(0);
+  await shot(page, '17-fix-prefilled');
+  expect(errors).toEqual([]);
+});

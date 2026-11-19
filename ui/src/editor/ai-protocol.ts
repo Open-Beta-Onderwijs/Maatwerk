@@ -7,7 +7,7 @@
 // the run id the iframe chose.
 
 import type { Json } from '../bridge/api';
-import type { AiEvent, ProviderKey } from '../bridge/ai-api';
+import type { AiEvent, ProviderKey, Starter } from '../bridge/ai-api';
 
 /** The methods the editor may call, with the arguments it passes (no gebruiker, no opdracht). */
 export const AI_METHODS = [
@@ -53,6 +53,21 @@ export interface OtherOpdrachtInfo {
   subtitle: string;
 }
 
+/**
+ * A conversation the editor starts with (step 32c, decisions 74, 75): Opdracht toevoegen "met
+ * AI" sends the description at once; "Laat AI dit oplossen" only fills the input and attaches
+ * the error. Given once, on the first `info` after the editor opened.
+ */
+export interface AiStart {
+  provider: ProviderKey;
+  message: string;
+  starter?: Starter;
+  /** Text attachments (`Foutmelding genereren`). */
+  attachments?: { name: string; text: string }[];
+  /** True: send at once; false: the teacher sends it. */
+  send: boolean;
+}
+
 /** What the panel needs from the main window (`info`). */
 export interface AiEditorInfo {
   /** False without a logged-in teacher: no rail. */
@@ -62,6 +77,7 @@ export interface AiEditorInfo {
   vakken: string[];
   schoolsoort: string[];
   others: OtherOpdrachtInfo[];
+  start?: AiStart;
 }
 
 /** `maatwerk-ai` request. */

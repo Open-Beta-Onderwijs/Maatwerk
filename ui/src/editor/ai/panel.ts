@@ -153,6 +153,20 @@ export class AiPanel {
     this.open = new Set(convs.open);
     this.rail.hidden = false;
     this.renderRail();
+    await this.begin(this.info.start);
+  }
+
+  /** Opens the start conversation (decisions 74, 75): sends it, or leaves it for the teacher. */
+  private async begin(start: AiEditorInfo['start']): Promise<void> {
+    if (!start || !this.provider(start.provider)) return;
+    await this.select(start.provider);
+    if (this.selected !== start.provider) return; // the notice was closed
+    this.composer.prefill(
+      start.message,
+      start.starter ?? null,
+      start.attachments ?? [],
+      start.send,
+    );
   }
 
   private provider(key: ProviderKey | null): AiProvider | undefined {

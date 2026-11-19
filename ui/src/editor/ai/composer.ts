@@ -212,6 +212,26 @@ export class Composer {
     this.input.focus();
   }
 
+  /**
+   * Fills the input and adds text attachments (step 32c: Opdracht toevoegen met AI, Laat AI dit
+   * oplossen); `send` sends it at once.
+   */
+  prefill(
+    text: string,
+    starter: Starter | null,
+    attachments: { name: string; text: string }[],
+    send: boolean,
+  ): void {
+    this.attachments = attachments.map((a) => ({
+      name: a.name,
+      size: new Blob([a.text]).size,
+      text: a.text,
+    }));
+    this.fill(text, starter);
+    this.render();
+    if (send) this.submit();
+  }
+
   /** Files dropped on the panel. */
   async addFiles(files: FileList | File[]): Promise<void> {
     this.errors = [];
