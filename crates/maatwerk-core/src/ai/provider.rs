@@ -110,7 +110,7 @@ const CODEX_ARGS: &str = "--json --skip-git-repo-check --sandbox workspace-write
      -c approval_policy=never -c web_search=live {images} {prompt}";
 
 const COPILOT_ARGS: &str = "-p {prompt} --output-format json --no-ask-user \
-     --allow-tool \"write,shell({check})\" --allow-all-urls --session-id {session} {images}";
+     --allow-tool write --allow-all-urls --session-id {session} {images}";
 
 const VIBE_ARGS: &str = "--prompt-file {request} --workdir {workdir} --trust --agent accept-edits \
      --output streaming --output-dir {run} --time-limit {secs}";
@@ -170,7 +170,7 @@ fn build_presets() -> Vec<Preset> {
             format: StreamFormat::GeminiStreamJson,
             session: SessionMode::Reported,
             image_flag: None,
-            runs_check: true,
+            runs_check: false,
             login_probe: None,
             install: InstallHelp {
                 windows: "npm install -g @google/gemini-cli",
@@ -210,7 +210,7 @@ fn build_presets() -> Vec<Preset> {
             format: StreamFormat::VibeStreaming,
             session: SessionMode::Reported,
             image_flag: None,
-            runs_check: true,
+            runs_check: false,
             login_probe: None,
             install: InstallHelp {
                 windows: "powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"; uv tool install --python 3.14 mistral-vibe",
@@ -228,7 +228,7 @@ fn build_presets() -> Vec<Preset> {
             format: StreamFormat::CopilotJson,
             session: SessionMode::Maatwerk,
             image_flag: Some("--attachment"),
-            runs_check: true,
+            runs_check: false,
             login_probe: None,
             install: InstallHelp {
                 windows: "winget install GitHub.Copilot",

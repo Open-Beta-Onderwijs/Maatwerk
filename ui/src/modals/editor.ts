@@ -48,12 +48,15 @@ let unsubscribeUpdates: (() => void) | null = null;
 let session: number | null = null;
 /** The AI conversation the next editor starts with (step 32c), taken by its first `info`. */
 let pendingStart: AiStart | null = null;
+/** The opdracht of the open editor: its AI run stops when the editor closes (review 32 M3). */
+let openOpdrachtId: string | null = null;
 
 const overlay = () => document.getElementById('editor-overlay')!;
 const frameEl = () => document.getElementById('editor-frame') as HTMLIFrameElement;
 
 export function openEditor(opdracht: Opdracht, aiStart: AiStart | null = null): void {
   pendingStart = aiStart;
+  openOpdrachtId = opdracht.id;
   const frame = frameEl();
   const params = new URLSearchParams({ id: opdracht.id, naam: opdracht.naam ?? '' });
   frame.src = `editor.html?${params}`;
@@ -102,6 +105,9 @@ function editorInfo(opdracht: Opdracht): EditorInfo {
 
 function closeEditor(): void {
   pendingStart = null;
+  // A run keeps nothing when stopped (decision 67); nobody would see its proposal.
+  if (openOpdrachtId) void window.maatwerk.ai.stop(openOpdrachtId).catch(() => {});
+  openOpdrachtId = null;
   const frame = frameEl();
   frame.src = '';
   overlay().classList.add('hidden');

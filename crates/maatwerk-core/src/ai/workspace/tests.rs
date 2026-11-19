@@ -242,11 +242,17 @@ fn provider_files() {
     prepare(&work, &run, &provider("vibe"), false, &i).unwrap();
     let vibe = fs::read_to_string(work.join(".vibe/config.toml")).unwrap();
     assert!(vibe.contains("outside_workdir = \"deny\""));
-    assert!(vibe.contains("[tools.powershell]"));
+    // No shell and no check script (review 32 M1): Maatwerk runs the check.
+    assert!(vibe.contains("[tools.powershell]\npermission = \"never\""));
+    assert!(!vibe.contains("allowlist"));
+    assert!(!work.join(".maatwerk/check").exists());
+    let request = fs::read_to_string(work.join(REQUEST_FILE)).unwrap();
+    assert!(request.contains("Do not run commands"));
     let (work, run) = (ws.path().join("g"), ws.path().join("g.run"));
     prepare(&work, &run, &provider("gemini"), false, &i).unwrap();
     let policy = fs::read_to_string(run.join("gemini-policy.toml")).unwrap();
-    assert!(policy.contains("commandPrefix = \".maatwerk/check\""));
+    assert!(!policy.contains("commandPrefix"));
+    assert!(policy.contains("toolName = \"run_shell_command\"\ndecision = \"deny\""));
     assert!(!work.join(".vibe").exists());
 }
 

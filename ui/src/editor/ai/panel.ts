@@ -149,7 +149,12 @@ export class AiPanel {
     this.composer.setChips(this.chips);
     this.panel.append(this.headerEl, this.messagesEl, this.composer.el, this.helpFoot, this.dropEl);
     this.setupDrop();
-    const convs = await this.ai.conversations().catch(() => ({ open: [], running: null }));
+    let convs = await this.ai.conversations().catch(() => ({ open: [], running: null }));
+    // A run of an editor closed a moment ago is still being stopped (review 32 M3).
+    for (let i = 0; convs.running && i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      convs = await this.ai.conversations().catch(() => ({ open: convs.open, running: null }));
+    }
     this.open = new Set(convs.open);
     this.rail.hidden = false;
     this.renderRail();
@@ -780,12 +785,24 @@ export class AiPanel {
       return;
     }
     for (const file of Object.keys(a.after)) await this.host.applyText(file, a.before[file] ?? '');
+    let imageError: string | null = null;
     if (a.images.length) {
-      await this.ai.undoImages(key, a.images).catch(() => {});
+      // A failed image undo is said, not swallowed (review 32 M4).
+      await this.ai.undoImages(key, a.images).catch((err: unknown) => {
+        imageError = err instanceof Error ? err.message : String(err);
+      });
       this.host.refreshPreview();
     }
     this.applied.delete(key);
-    this.cardState.set(key, { kind: 'ready' });
+    this.cardState.set(
+      key,
+      imageError
+        ? {
+            kind: 'error',
+            message: `De tekst is teruggezet, de afbeeldingen niet: ${imageError}`,
+          }
+        : { kind: 'ready' },
+    );
     this.render();
   }
 

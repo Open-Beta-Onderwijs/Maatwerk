@@ -21,6 +21,32 @@ export interface BatchFailure {
   students: number;
   /** The error as the batch wrote it, without the "Fout in opdracht" line. */
   error: string;
+  /**
+   * What the per-student compile had in its header (student, group, toets, observaties): never
+   * sent to the AI (decision 54, review 32 M2), see `forAi`.
+   */
+  private: string[];
+}
+
+/** Every header value of the jobs (the student-specific inputs of the compile). */
+function headerValues(jobs: readonly BatchJob[]): string[] {
+  const values = new Set<string>();
+  for (const j of jobs) {
+    const h = j.header ?? {};
+    for (const v of [h.student, h.group, h.exam, ...(h.observaties ?? []).map((o) => o.name)]) {
+      const t = v?.trim();
+      if (t && t.length >= 2) values.add(t);
+    }
+  }
+  // Longest first, so "Anna de Vries" goes before "Anna".
+  return [...values].sort((a, b) => b.length - a.length);
+}
+
+/** The error without any student, group, toets or observatie value of the header. */
+export function forAi(f: BatchFailure): string {
+  let text = f.error;
+  for (const v of f.private) text = text.split(v).join('[…]');
+  return text;
 }
 
 /** The failures in the batch error, matched to the jobs; null when the text is not of that form. */
@@ -42,7 +68,13 @@ export function parseBatchFailures(
     const students = new Set(
       own.filter((j) => j.opdrachtId === job.opdrachtId && j.mode !== 'answers').map((j) => j.key),
     );
-    out.push({ opdrachtId: job.opdrachtId, label, students: students.size, error: m[2]!.trim() });
+    out.push({
+      opdrachtId: job.opdrachtId,
+      label,
+      students: students.size,
+      error: m[2]!.trim(),
+      private: headerValues(own),
+    });
   }
   return out.length ? out : null;
 }

@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-18 (step 32b done) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last updated: 2026-11-19 (step 32 done) Branch: `step/32-ai` (from `main` at `941eb5c`)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -29,7 +29,7 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32c, see "Step 32c progress". Releases 0.20-0.22 still wait for the user.
+**Next action:** step 32 is done (gate, review, fixes); waiting for the user: visual check of the 12 diffs, M-AI manual checks, merge. Releases 0.20-0.23 wait for the user.
 
 ## Step 32c progress (settings, switches, entry points, gate)
 
@@ -75,7 +75,17 @@ genereren.txt`, not sent), "Openen in editor", "Melding kopiëren". Mock `batchF
    regenerated (`4afc8b8`); 783 Vitest; Chromium e2e 385/385. Visual: 12 diffs in 4 views × 3
    looks, all intended: `editor` (the AI rail of 32b; the baseline predates it),
    `admin-instellingen` (AI-assistent card), `user-menu-teacher`, `user-menu-admin`
-   ("AI-instellingen…"). Baselines not updated (user's check first). Review: running.
+   ("AI-instellingen…"). Baselines not updated (user's check first).
+7. **Review** `docs/reviews/step-32.md`: 0 blockers, 4 majors (all fixed), 12 minors (m1, m2
+   fixed; m3-m12 in `docs/backlog.md` "From Step 32"), 8 nits. M1: Gemini, Vibe, Copilot no
+   longer run the check (shell denied, Maatwerk checks; `maatwerk_core::ai::apply` etc.); M2:
+   header values scrubbed from the "Laat AI dit oplossen" attachment; M3: closing the editor
+   stops its run; M4: image apply/undo in core with tests, first backup kept. Vibe (user logged
+   in 2026-11-19): real turns OK before and after M1 (17 s instead of 76 s for turn 2). Gate
+   rerun green: fmt, clippy, cargo test, 784 Vitest, Chromium e2e 386/386.
+
+**32c done; step 32 done except the user's part:** visual check of the 12 diffs (then
+baselines, CI), manual checks M-AI-1..12, merge and tags, releases 0.20-0.23.
 
 Chrome extension was not connected this session: the visual checks used Playwright
 screenshots (`AI_SHOTS=<dir>` on `ai-settings.spec.ts` and `ai-panel.spec.ts`).

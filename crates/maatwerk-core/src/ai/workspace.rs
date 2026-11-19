@@ -304,7 +304,12 @@ pub fn prepare(
     let mut listed = Vec::new();
     write_context(input, workdir, &meta, &mut listed)?;
     let image_args = write_attachments(&input.attachments, &meta, &mut listed)?;
-    write_check_scripts(workdir, &meta, &input.check_program)?;
+    // Only for CLIs that run the check themselves and cannot edit `.maatwerk/` (review 32 M1).
+    if provider.runs_check {
+        write_check_scripts(workdir, &meta, &input.check_program)?;
+    } else {
+        fs::create_dir_all(&meta).map_err(io(&meta))?;
+    }
     write_provider_files(provider, workdir, run_dir)?;
     let request = request_text(provider, resumes, input, &listed, &baseline);
     let path = workdir.join(REQUEST_FILE);
@@ -649,7 +654,8 @@ fn write_check_scripts(workdir: &Path, meta: &Path, program: &Path) -> Result<()
     );
     let cmd_quote = |p: &Path| format!("\"{}\"", p.to_string_lossy().replace('%', "%%"));
     let cmd = format!(
-        "@echo off\r\nrem Maatwerk's check of this opdracht: prints JSON, \"ok\": true when it compiles.\r\n{} {flag} {}\r\nexit /b %ERRORLEVEL%\r\n",
+        // UTF-8 code page first: the file is UTF-8 and the paths may not be ASCII (review 32 m2).
+        "@echo off\r\nchcp 65001 >nul\r\nrem Maatwerk's check of this opdracht: prints JSON, \"ok\": true when it compiles.\r\n{} {flag} {}\r\nexit /b %ERRORLEVEL%\r\n",
         cmd_quote(program),
         cmd_quote(workdir)
     );
@@ -672,11 +678,9 @@ fn write_provider_files(provider: &Resolved, workdir: &Path, run_dir: &Path) -> 
         Some(Builtin::Vibe) => {
             let dir = workdir.join(".vibe");
             fs::create_dir_all(&dir).map_err(io(&dir))?;
-            let shell = |tool: &str| {
-                format!(
-                    "[tools.{tool}]\npermission = \"ask\"\nallowlist = [\"{CHECK_COMMAND}\", \".maatwerk\\\\check\"]\n\n"
-                )
-            };
+            // No shell at all: its file tools can edit `.maatwerk/`, so a check script it may
+            // run would be a way to any command (review 32 M1); Maatwerk checks after the turn.
+            let shell = |tool: &str| format!("[tools.{tool}]\npermission = \"never\"\n\n");
             let config = format!(
                 "# Written by Maatwerk before every message; changes here are lost.\noutside_workdir = \"deny\"\n\n[tools.web_search]\npermission = \"always\"\n\n[tools.web_fetch]\npermission = \"always\"\n\n{}{}{}",
                 shell("bash"),
@@ -687,12 +691,9 @@ fn write_provider_files(provider: &Resolved, workdir: &Path, run_dir: &Path) -> 
             fs::write(&path, config).map_err(io(&path))
         }
         Some(Builtin::Gemini) => {
-            let policy = format!(
-                "# Written by Maatwerk (ADR-0009): web search and the check only.\n\
+            let policy = "# Written by Maatwerk (ADR-0009): web search only; Maatwerk runs the check.\n\
                  [[rule]]\ntoolName = [\"google_web_search\", \"web_fetch\"]\ndecision = \"allow\"\npriority = 900\n\n\
-                 [[rule]]\ntoolName = \"run_shell_command\"\ncommandPrefix = \"{CHECK_COMMAND}\"\ndecision = \"allow\"\npriority = 900\n\n\
-                 [[rule]]\ntoolName = \"run_shell_command\"\ndecision = \"deny\"\npriority = 800\n"
-            );
+                 [[rule]]\ntoolName = \"run_shell_command\"\ndecision = \"deny\"\npriority = 800\n";
             let path = run_dir.join("gemini-policy.toml");
             fs::write(&path, policy).map_err(io(&path))
         }

@@ -11,6 +11,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 
+use maatwerk_core::ai::apply;
 use maatwerk_core::ai::detect::{self, SearchPath};
 use maatwerk_core::ai::diff::{self, Proposal};
 use maatwerk_core::ai::history::Conversation;
@@ -21,7 +22,7 @@ use maatwerk_core::ai::turn::{self, Turn};
 use maatwerk_core::ai::workspace::{
     Attachment, ContextChoice, Layout, OtherOpdracht, Starter, TurnInput,
 };
-use maatwerk_core::opdracht_images::{self, Stored, extension_of, stem_of};
+use maatwerk_core::opdracht_images::{self, extension_of};
 use maatwerk_core::storage::decode_base64_lenient;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -302,7 +303,12 @@ pub async fn ai_send(
         let ctx = request.context;
         let syllabus = match ctx.syllabus {
             Some(name) => {
-                if name.contains(['/', '\\']) || name.starts_with('.') {
+                // A plain PDF name in the folder: no separators, no drive (`C:x.pdf` would make
+                // `join` leave the folder on Windows; review 32 m1).
+                if name.contains(['/', '\\', ':'])
+                    || name.starts_with('.')
+                    || !name.to_ascii_lowercase().ends_with(".pdf")
+                {
                     return Err(bad("Ongeldige syllabus."));
                 }
                 Some(syllabus_dir.join(name))
@@ -527,36 +533,10 @@ pub async fn ai_apply(
         }
         let storage = c.storage()?;
         let undo = layout.run_dir(&opdracht_id, &key)?.join("undo");
-        let _ = std::fs::remove_dir_all(&undo);
-        let mut saved = Vec::new();
-        for path in images {
-            let Some(img) = p.images.iter().find(|i| i.path == path) else {
-                return Err(bad(format!("{path} hoort niet bij het voorstel.")));
-            };
-            let file = path.trim_start_matches("images/");
-            let (name, ext) = (stem_of(file), extension_of(file));
-            // Keep what is replaced, for "Ongedaan maken".
-            let existing = opdracht_images::list(storage, &opdracht_id)?
-                .into_iter()
-                .filter(|i| i.name.eq_ignore_ascii_case(name))
-                .collect::<Vec<_>>();
-            for old in &existing {
-                let rel = opdracht_images::folder(&opdracht_id)?.join(&old.file)?;
-                if let Some(bytes) = storage.read_bytes(&rel)? {
-                    std::fs::create_dir_all(&undo).map_err(|e| io_err("undo", e))?;
-                    std::fs::write(undo.join(old.file.trim_start_matches("images/")), bytes)
-                        .map_err(|e| io_err("undo", e))?;
-                }
-            }
-            let bytes = std::fs::read(&img.source).map_err(|e| io_err(path.clone(), e))?;
-            match opdracht_images::store(storage, &opdracht_id, name, &ext, &bytes, true)? {
-                Stored::Saved { file, .. } => {
-                    saved.push(json!({ "path": file, "new": existing.is_empty() }))
-                }
-                Stored::Exists { .. } => {}
-                Stored::Rejected { message } => return Err(bad(message)),
-            }
-        }
+        let saved: Vec<Value> = apply::apply_images(storage, &opdracht_id, &p, &images, &undo)?
+            .into_iter()
+            .map(|a| json!({ "path": a.path, "new": a.new }))
+            .collect();
         let history = layout.history_file(&opdracht_id, &key)?;
         let mut conv = Conversation::load(&history, &key);
         conv.mark_applied();
@@ -581,45 +561,13 @@ pub async fn ai_undo_images(
     let layout = layout(&app, &gebruiker)?;
     let key = key(&provider)?;
     blocking(state, move |c| {
-        let storage = c.storage()?;
         let undo = layout.run_dir(&opdracht_id, &key)?.join("undo");
-        let folder = opdracht_images::folder(&opdracht_id)?;
-        for path in images {
-            let file = path.trim_start_matches("images/").to_owned();
-            if file.contains(['/', '\\']) {
-                return Err(bad("Ongeldige afbeelding."));
-            }
-            let rel = folder.join("images")?.join(&file)?;
-            storage.delete(&rel)?;
-            let backups: Vec<PathBuf> = std::fs::read_dir(&undo)
-                .into_iter()
-                .flatten()
-                .flatten()
-                .map(|e| e.path())
-                .filter(|p| {
-                    p.file_name()
-                        .and_then(|n| n.to_str())
-                        .is_some_and(|n| stem_of(n).eq_ignore_ascii_case(stem_of(&file)))
-                })
-                .collect();
-            for b in backups {
-                let name = b
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or_default()
-                    .to_owned();
-                let bytes = std::fs::read(&b).map_err(|e| io_err("undo", e))?;
-                opdracht_images::store(
-                    storage,
-                    &opdracht_id,
-                    stem_of(&name),
-                    &extension_of(&name),
-                    &bytes,
-                    true,
-                )?;
-            }
-        }
-        Ok(())
+        Ok(apply::undo_images(
+            c.storage()?,
+            &opdracht_id,
+            &images,
+            &undo,
+        )?)
     })
     .await
 }

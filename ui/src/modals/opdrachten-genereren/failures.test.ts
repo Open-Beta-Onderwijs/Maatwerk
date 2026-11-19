@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { BatchJob } from '../../bridge/api';
-import { FAILURE_SEPARATOR, parseBatchFailures } from './failures';
+import { FAILURE_SEPARATOR, forAi, parseBatchFailures } from './failures';
 
 const job = (key: string, opdrachtId: string, label: string, mode = 'student'): BatchJob =>
   ({ key, opdrachtId, label, mode }) as BatchJob;
@@ -19,7 +19,13 @@ describe('parseBatchFailures (step 32c)', () => {
     expect(
       parseBatchFailures('Fout in opdracht "Remweg":\n\nerror: x\n  ┌─ opdracht.typ:3:1', jobs),
     ).toEqual([
-      { opdrachtId: 'o1', label: 'Remweg', students: 2, error: 'error: x\n  ┌─ opdracht.typ:3:1' },
+      {
+        opdrachtId: 'o1',
+        label: 'Remweg',
+        students: 2,
+        error: 'error: x\n  ┌─ opdracht.typ:3:1',
+        private: [],
+      },
     ]);
   });
 
@@ -40,6 +46,29 @@ describe('parseBatchFailures (step 32c)', () => {
   it('gives null for any other error', () => {
     expect(parseBatchFailures('Er is niets om te genereren.', jobs)).toBeNull();
     expect(parseBatchFailures('Fout in opdracht "Onbekend":\n\nerror', jobs)).toBeNull();
+  });
+
+  it('keeps student, group, toets and observatie values out of the AI text (review 32 M2)', () => {
+    const withHeader = [
+      {
+        key: 's1',
+        opdrachtId: 'o1',
+        label: 'Remweg',
+        mode: 'student',
+        header: {
+          student: 'Anna de Vries',
+          group: '4H2',
+          exam: 'Toets H1',
+          observaties: [{ icon: '🧮', name: 'Rekenfout' }],
+        },
+      } as BatchJob,
+    ];
+    const [f] = parseBatchFailures(
+      'Fout in opdracht "Remweg":\n\nerror: bad value "Anna de Vries" (4H2, Toets H1, Rekenfout)',
+      withHeader,
+    )!;
+    expect(f!.error).toContain('Anna de Vries'); // the teacher's own screen
+    expect(forAi(f!)).toBe('error: bad value "[…]" ([…], […], […])');
   });
 
   it('counts no students for the answer key', () => {

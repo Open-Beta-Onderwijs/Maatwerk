@@ -13,7 +13,7 @@ import { includedStudents, type OgState } from './state';
 import { renderSummary } from './lists';
 import { FIX_ERRORS_TEXT } from '../../editor/ai/model';
 import { openEditor } from '../editor';
-import { failureView, fixProvider, parseBatchFailures } from './failures';
+import { failureView, fixProvider, forAi, parseBatchFailures } from './failures';
 
 export type GenerateKind = 'student' | 'key';
 
@@ -136,7 +136,7 @@ export async function generate(
             attachments: [
               {
                 name: 'Foutmelding genereren.txt',
-                text: `Fout in opdracht "${f.label}":\n\n${f.error}`,
+                text: `Fout in opdracht "${f.label}":\n\n${forAi(f)}`,
               },
             ],
             send: false,

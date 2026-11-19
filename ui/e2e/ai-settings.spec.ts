@@ -282,3 +282,22 @@ test('Laat AI dit oplossen: the editor opens with the input filled and the error
   await shot(page, '17-fix-prefilled');
   expect(errors).toEqual([]);
 });
+
+// Review 32 M3: a run of a closed editor is stopped (it keeps nothing).
+test('closing the editor stops its AI run', async ({ page }) => {
+  await login(page);
+  await noticeSeen(page);
+  const frame = await openEditor(page);
+  await frame.getByRole('button', { name: 'Claude Code', exact: true }).click();
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  await withMock(page, (m) => {
+    m.ai.stepDelayMs = 800;
+  });
+  await panel.getByRole('textbox', { name: 'Bericht' }).fill('Langzaam');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  await expect(panel.getByRole('button', { name: 'Stop' })).toBeVisible();
+  await frame.getByRole('button', { name: /Terug naar opdrachten/ }).click();
+  await expect(page.locator('#editor-overlay')).toBeHidden();
+  const stops = await withMock(page, (m) => m.ai.calls.filter((c) => c.method === 'stop').length);
+  expect(stops).toBe(1);
+});
