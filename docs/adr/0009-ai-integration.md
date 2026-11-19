@@ -276,7 +276,7 @@ Sources: [headless](https://geminicli.com/docs/cli/headless/),
 | Web search      | Built-in `web_search` and `web_fetch` (permission `ask` by default, so they are set to `always`)                                                                                                                                                                                                                                                                                                                |
 | Images          | Vision models get PNG/JPEG/GIF/WebP through `@` mentions (TUI, since 2.14); `vision_model` describes images for text-only models. In `-p`: _verify_, else name the file and let `read_file` read it                                                                                                                                                                                                             |
 | Detection       | `vibe` (`vibe.exe` in the uv/pip scripts folder); `vibe --version` prints `vibe 3.0.4`                                                                                                                                                                                                                                                                                                                          |
-| Not logged in   | Not documented: expected exit 1 or 2 with a message on stderr (_verify_). Login is a browser sign-in or an API key (OS keyring, `~/.vibe/.env` or `MISTRAL_API_KEY`), set up with `vibe --setup`                                                                                                                                                                                                                |
+| Not logged in   | Verified 2026-11-19 (3.0.4, no key): stderr `Error: Missing MISTRAL_API_KEY environment variable for mistral provider` after "Reading API keys from the system keyring", non-zero exit; Maatwerk reports it as not logged in. Login is a browser sign-in or an API key (OS keyring, `~/.vibe/.env` or `MISTRAL_API_KEY`), set up with `vibe --setup`                                                            |
 | Install         | macOS/Linux: `curl -LsSf https://mistral.ai/vibe/install.sh \| bash`; Windows: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"`, then `uv tool install --python 3.14 mistral-vibe` (uv/Python, not Node). Apache-2.0                                                                                                                                                       |
 | Default args    | `--prompt-file {workdir}/.maatwerk/request.md --workdir {workdir} --trust --agent accept-edits --output streaming --output-dir {run} --time-limit {secs}`; later turns add `--resume {session}`. Maatwerk rewrites `.vibe/config.toml` before every run: `outside_workdir = "deny"`, `web_search`/`web_fetch` `always`, `bash`/`powershell`/`git_bash` `ask` with `allowlist = ["{check}"]`                     |
 
@@ -368,6 +368,21 @@ so a custom CLI gets the lowest common denominator:
 
 Both stay in the launch set. The _verify_ rows are part of the 32c manual check; the presets stay
 editable (answer 8), so a wrong guess is a settings change, not a release.
+
+### Real-CLI check (step 32c, 2026-11-19)
+
+`crates/maatwerk-core/tests/ai_real_cli.rs` (opt-in) on the development machine, Windows 11:
+
+- **Claude Code 2.1.328** (logged in, Pro): two turns on the base opdracht, the second resumed
+  with `--resume {session}`. Both gave a proposal of one hunk in `opdracht.typ`, the check passed,
+  answers in Dutch, 19 s and 13 s. Finding: on Windows it first tried its PowerShell tool on
+  `.maatwerk\check.cmd`, which `--allowedTools` denies (adding a `PowerShell(...check.cmd)` rule
+  did not match either); the request now tells Claude Code to run `.maatwerk/check` with Bash,
+  and the check runs on the first try.
+- **Mistral Vibe 3.0.4** (not logged in): the not-logged-in text above. A logged-in run (stream
+  fields, resume, images) is still the user's manual check M-AI-6.
+- Codex, Gemini CLI, Antigravity and Copilot CLI are not installed here: their _verify_ rows stay
+  open for a machine that has them.
 
 ### Findings for 32a
 
