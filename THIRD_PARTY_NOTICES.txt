@@ -874,6 +874,7 @@ Apache License 2.0 (Apache-2.0)
 
 Used by:
   hayro-font 0.3.0
+  similar 2.7.0
 --------------------------------------------------------------------------------
 
                               Apache License
