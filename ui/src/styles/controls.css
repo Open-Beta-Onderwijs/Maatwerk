@@ -511,3 +511,17 @@ table.questions-table .rtti-btn {
     transition: none;
   }
 }
+
+/* "AI-instellingen…" with "Uitgeschakeld door je school" (board 62, step 32c). */
+#acc-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#acc-ai[aria-disabled='true'] {
+  cursor: default;
+}
+.user-menu__sub {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}

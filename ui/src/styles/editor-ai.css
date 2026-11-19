@@ -4,6 +4,7 @@
  * boards 59-61). Colours are the tokens of section 2; the editor itself is light only. */
 
 @import './tokens.css';
+@import './ai-install.css';
 
 [hidden] {
   display: none !important;
@@ -239,6 +240,12 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+}
+.ai-head-text strong,
+.ai-head-text span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ai-head-text span {
   font-size: 12px;
@@ -1398,4 +1405,38 @@
   font-size: 12px;
   color: var(--muted);
   text-align: center;
+}
+
+/* ── Install help, the "?" panel (board 62, step 32c) ─────────────────────── */
+.ai-avatar.is-missing {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.ai-help {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-help h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.ai-help .ai-intro-text {
+  margin: 0;
+}
+.ai-help-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+.ai-help-hide {
+  color: var(--muted);
+  font-size: 12.5px;
 }

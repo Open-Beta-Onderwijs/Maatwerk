@@ -22,6 +22,8 @@
 @import './styles/beheer.css';
 @import './styles/overview.css';
 @import './styles/obs-opd.css';
+@import './styles/ai-install.css';
+@import './styles/ai-settings.css';
 
 /* ── Reset & base ─────────────────────────────────────────────────────────── */
 *,

@@ -9,6 +9,8 @@ import type { AiApi, AiEvent, ProviderKey } from '../bridge/ai-api';
 import type { Json } from '../bridge/api';
 import { VAK_LABEL } from '../domain/editor-header';
 import type { Observatie, Opdracht } from '../domain/types';
+import { ensureAiNotice } from './ai-notice';
+import { openAiSettings } from './ai-settings';
 import {
   isAiMethod,
   isProviderKey,
@@ -143,5 +145,14 @@ export async function handleAiRequest(
       return ai.pickAttachments();
     case 'preview':
       return ctx.preview(str(a[0], 'text'));
+    case 'openSettings':
+      return openAiSettings({ ai, gebruiker: g });
+    case 'notice':
+      return ensureAiNotice(ai, g);
+    case 'hideAssistant': {
+      const { settings } = await ai.detect(g, false);
+      await ai.saveSettings(g, { ...settings, enabled: false });
+      return;
+    }
   }
 }

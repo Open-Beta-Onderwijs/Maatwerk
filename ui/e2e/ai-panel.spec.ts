@@ -5,7 +5,7 @@
 // Toepassen and Ongedaan maken, Voorstel bekijken, Stop, and the time-out card.
 
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
-import { login, watchErrors, withMock } from './helpers';
+import { TEACHER, login, watchErrors, withMock } from './helpers';
 
 const SHOTS = process.env.AI_SHOTS;
 
@@ -25,6 +25,12 @@ async function shot(page: Page, name: string) {
 async function openClaude(page: Page): Promise<FrameLocator> {
   await page.setViewportSize({ width: 1600, height: 900 });
   await login(page);
+  // The first-use notice is ai-settings.spec's (step 32c).
+  await withMock(
+    page,
+    (m, g) => m.ai.saveSettings(g, { enabled: true, timeLimitMinutes: 5, noticeSeen: true }),
+    TEACHER,
+  );
   const frame = await openEditor(page);
   await frame.getByRole('button', { name: 'Claude Code', exact: true }).click();
   await expect(

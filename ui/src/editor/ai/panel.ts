@@ -31,6 +31,7 @@ import {
 import type { EditorAi } from './client';
 import { Composer, type PendingAttachment } from './composer';
 import { append, h, icon, monogram } from './dom';
+import { installList } from './install';
 import {
   MAX_ATTACHMENTS,
   addEvent,
@@ -62,8 +63,6 @@ export interface PanelHost {
   refreshPreview(): void;
   /** The panel opened or closed (the preview refits). */
   layoutChanged(): void;
-  /** AI-instellingen (board 62; step 32c). */
-  openSettings?(): void;
 }
 
 interface Applied {
@@ -84,6 +83,8 @@ interface LiveState {
 export class AiPanel {
   private info!: AiEditorInfo;
   private providers: AiProvider[] = [];
+  /** Every provider, also the ones not found (the install help). */
+  private allProviders: AiProvider[] = [];
   private settings: AiSettings | null = null;
   private open = new Set<ProviderKey>();
   private selected: ProviderKey | null = null;
@@ -98,6 +99,9 @@ export class AiPanel {
   private readonly messagesEl: HTMLElement;
   private readonly headerEl: HTMLElement;
   private readonly dropEl: HTMLElement;
+  /** The install help's footer (AI-assistent verbergen, Opnieuw zoeken). */
+  private readonly helpFoot: HTMLElement;
+  private helpOpen = false;
 
   constructor(
     private readonly ai: EditorAi,
@@ -108,6 +112,7 @@ export class AiPanel {
     this.headerEl = h('header', { class: 'ai-head' });
     this.messagesEl = h('div', { class: 'ai-messages', 'aria-live': 'polite' });
     this.dropEl = h('div', { class: 'ai-drop', hidden: true });
+    this.helpFoot = h('div', { class: 'ai-help-foot', hidden: true });
   }
 
   async init(): Promise<void> {
@@ -117,6 +122,7 @@ export class AiPanel {
     this.settings = detection.settings;
     // Off by the school or by the teacher: no rail (decisions 59, 73).
     if (!detection.school || !detection.settings.enabled) return;
+    this.allProviders = detection.providers;
     this.providers = detection.providers.filter((p) => p.found);
     const syllabus = await this.ai
       .syllabusList()
@@ -141,7 +147,7 @@ export class AiPanel {
       usedAttachments: () => this.usedAttachments(),
     });
     this.composer.setChips(this.chips);
-    this.panel.append(this.headerEl, this.messagesEl, this.composer.el, this.dropEl);
+    this.panel.append(this.headerEl, this.messagesEl, this.composer.el, this.helpFoot, this.dropEl);
     this.setupDrop();
     const convs = await this.ai.conversations().catch(() => ({ open: [], running: null }));
     this.open = new Set(convs.open);
@@ -171,10 +177,11 @@ export class AiPanel {
           'button',
           {
             type: 'button',
-            class: 'ai-rail-btn is-missing',
+            class: `ai-rail-btn is-missing${this.helpOpen ? ' is-selected' : ''}`,
             title: 'Geen AI-programma gevonden',
-            'aria-label': 'Geen AI-programma gevonden',
-            onclick: () => this.showInstallHelp(),
+            'aria-label': 'AI-assistent instellen',
+            'aria-pressed': String(this.helpOpen),
+            onclick: () => (this.helpOpen ? this.close() : this.showInstallHelp()),
           },
           '?',
         ),
@@ -205,22 +212,90 @@ export class AiPanel {
     this.rail.replaceChildren(...buttons);
   }
 
+  /** The "?" panel (board 62, decision 72): install help, Opnieuw zoeken, verbergen. */
   private showInstallHelp(): void {
     this.selected = null;
+    this.helpOpen = true;
     this.panel.hidden = false;
+    this.renderRail();
     this.headerEl.replaceChildren(
-      h('div', { class: 'ai-head-text' }, h('strong', {}, 'Geen AI-programma gevonden')),
+      h('span', { class: 'ai-avatar is-missing', 'aria-hidden': 'true' }, '?'),
+      h('div', { class: 'ai-head-text' }, h('strong', {}, 'AI-assistent instellen')),
       this.closeButton(),
     );
+    const rescan = h(
+      'button',
+      { type: 'button', class: 'ai-btn ai-btn-primary' },
+      'Opnieuw zoeken',
+    );
+    rescan.addEventListener('click', async () => {
+      rescan.disabled = true;
+      try {
+        await this.refresh(true);
+      } finally {
+        rescan.disabled = false;
+      }
+    });
+    const hide = h(
+      'button',
+      { type: 'button', class: 'ai-link ai-help-hide' },
+      'AI-assistent verbergen',
+    );
+    hide.addEventListener('click', async () => {
+      await this.ai.hideAssistant().catch(() => {});
+      this.hideAll();
+    });
     this.messagesEl.replaceChildren(
       h(
-        'p',
-        { class: 'ai-intro-text' },
-        'Maatwerk werkt met een AI-programma op de command line van deze computer (Claude Code, Codex, Gemini CLI, Antigravity, Mistral Vibe of Copilot CLI). Installeer er een, log in met je eigen account en open de editor opnieuw.',
+        'div',
+        { class: 'ai-help' },
+        h('h3', {}, 'Geen AI-programma gevonden'),
+        h(
+          'p',
+          { class: 'ai-intro-text' },
+          'Maatwerk gebruikt een AI-programma voor de command line dat je zelf installeert, met ' +
+            'je eigen account of abonnement. Installeer er één, log er in een terminal één keer ' +
+            'mee in en klik op Opnieuw zoeken.',
+        ),
+        installList(this.allProviders),
       ),
     );
     this.composer.el.hidden = true;
+    this.helpFoot.replaceChildren(hide, rescan);
+    this.helpFoot.hidden = false;
     this.host.layoutChanged();
+  }
+
+  /** Detects again (after AI-instellingen or Opnieuw zoeken) and redraws the rail. */
+  private async refresh(rescan: boolean): Promise<void> {
+    const d = await this.ai.detect(rescan);
+    this.settings = d.settings;
+    if (!d.school || !d.settings.enabled) return this.hideAll();
+    this.allProviders = d.providers;
+    // A run keeps its provider; the rail catches up when it ends.
+    if (this.live) return;
+    this.providers = d.providers.filter((p) => p.found);
+    if (this.helpOpen) {
+      if (this.providers.length) this.close();
+      else this.showInstallHelp();
+    } else if (this.selected && !this.provider(this.selected)) {
+      this.close();
+    } else if (this.selected) {
+      this.render();
+    }
+    this.renderRail();
+  }
+
+  /** The teacher switched the assistant off: no rail, no panel. */
+  private hideAll(): void {
+    this.close();
+    this.rail.hidden = true;
+    this.host.layoutChanged();
+  }
+
+  /** AI-instellingen (board 62) in the main window; the rail follows a save. */
+  private async openSettings(): Promise<void> {
+    if (await this.ai.openSettings().catch(() => false)) await this.refresh(false);
   }
 
   private closeButton(): HTMLElement {
@@ -240,6 +315,8 @@ export class AiPanel {
   private close(): void {
     this.selected = null;
     this.conv = null;
+    this.helpOpen = false;
+    this.helpFoot.hidden = true;
     this.panel.hidden = true;
     this.renderRail();
     this.host.layoutChanged();
@@ -248,6 +325,13 @@ export class AiPanel {
   /** Opens the conversation of `key`; clicking the open one closes the panel. */
   async select(key: ProviderKey): Promise<void> {
     if (this.selected === key) return this.close();
+    // The first-use notice (decision 70), once per teacher, before any conversation.
+    if (this.settings && !this.settings.noticeSeen) {
+      if (!(await this.ai.notice().catch(() => false))) return;
+      this.settings = { ...this.settings, noticeSeen: true };
+    }
+    this.helpOpen = false;
+    this.helpFoot.hidden = true;
     this.selected = key;
     this.conv = { provider: key, messages: [] };
     this.composer.reset();
@@ -294,19 +378,17 @@ export class AiPanel {
         icon('plus', 15),
         'Nieuw gesprek',
       ),
-      this.host.openSettings
-        ? h(
-            'button',
-            {
-              type: 'button',
-              class: 'ai-icon-btn',
-              'aria-label': 'AI-instellingen',
-              title: 'AI-instellingen',
-              onclick: () => this.host.openSettings?.(),
-            },
-            icon('gear', 18, 1.9),
-          )
-        : null,
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'ai-icon-btn',
+          'aria-label': 'AI-instellingen',
+          title: 'AI-instellingen',
+          onclick: () => void this.openSettings(),
+        },
+        icon('gear', 18, 1.9),
+      ),
       this.closeButton(),
     );
   }
@@ -479,7 +561,7 @@ export class AiPanel {
   private ending(p: AiProvider, e: Ending, withRetry = true): HTMLElement {
     const card = endingCard(e, p.name, p.command, {
       retry: () => this.retry(p.key),
-      ...(this.host.openSettings ? { settings: () => this.host.openSettings!() } : {}),
+      settings: () => void this.openSettings(),
     });
     if (!withRetry || this.live) card.querySelector('.ai-end-buttons')?.remove();
     return card;

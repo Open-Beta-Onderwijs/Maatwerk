@@ -29,6 +29,10 @@ export const AI_METHODS = [
   'openSyllabusFolder',
   'pickAttachments',
   'preview',
+  // Step 32c: dialogs of the main window and the install help's "AI-assistent verbergen".
+  'openSettings',
+  'notice',
+  'hideAssistant',
 ] as const;
 export type AiMethod = (typeof AI_METHODS)[number];
 

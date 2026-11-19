@@ -55,6 +55,12 @@ export interface EditorAi {
   pickAttachments(): Promise<PickedAttachment[]>;
   /** SVG pages of `opdracht.typ` text, or the compile error. */
   preview(text: string): Promise<{ pages: string[] } | { error: string }>;
+  /** AI-instellingen in the main window; true after Opslaan. */
+  openSettings(): Promise<boolean>;
+  /** The first-use notice when it was not seen yet; false when closed without Begrepen. */
+  notice(): Promise<boolean>;
+  /** "AI-assistent verbergen": the teacher's switch off. */
+  hideAssistant(): Promise<void>;
 }
 
 let runSeq = 0;
@@ -102,5 +108,8 @@ export function createEditorAi(
     openSyllabusFolder: () => call('openSyllabusFolder'),
     pickAttachments: () => call('pickAttachments'),
     preview: (text) => call('preview', text),
+    openSettings: () => call('openSettings'),
+    notice: () => call('notice'),
+    hideAssistant: () => call('hideAssistant'),
   };
 }
