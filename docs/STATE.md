@@ -42,6 +42,31 @@ school"); (3) first-use notice (decision 70) and the "?" install help panel in t
 Opdrachten genereren; (6) provider logos (brand rules); (7) real-CLI manual check (Claude Code,
 Vibe are installed here); (8) gate, review, report.
 
+Baseline 2026-11-19 on `7a223b9`: cargo test all ok (the doctest run raced an edit; rerun ok).
+
+1. **Done (`8980ec6`):** school switch `ai.enabled` (`maatwerk_core::ai::school`, `ai_detect`
+   reports `school`, `ai_send` refuses, mock, no rail), Beheer › Instellingen "AI-assistent"
+   card, `components/switch.ts`, data-files-v3 section. No `minAppVersion` raise and no
+   validate-data check (no older app has an AI; instellingen fields were never validated).
+2. and 3. **Done (`552a1b2`):** `modals/ai-settings/` (model tested; dialog per board 62: show
+   switch, CLI accordion cards with Opdracht/Argumenten/Vervolgbericht, Standaard herstellen,
+   Eigen CLI cards, Installatiehulp, Opnieuw zoeken, time limit, syllabus folder read-only),
+   `modals/ai-notice.ts` (decision 70, before the first conversation; Escape = no chat),
+   `editor/ai/install.ts` + `styles/ai-install.css` (install help shared with the editor), the
+   editor's "?" panel (board 62: Opnieuw zoeken, AI-assistent verbergen), the gear and the
+   time-out card's button, user menu "AI-instellingen…" ("Uitgeschakeld door je school",
+   aria-disabled). Protocol methods `openSettings`, `notice`, `hideAssistant`.
+3. and 5. **Done (`3952ef2`):** editor start request (`AiStart` in `info`, `openEditor(o,
+start)`, `Composer.prefill`, `AiPanel.begin`). Opdracht toevoegen "met AI"
+   (`modals/opdracht-ai.ts`, board 63, sent at once). A failed Opdrachten genereren shows one
+   card per opdracht (`opdrachten-genereren/failures.ts` parses T23's text against the jobs;
+   student count only) with "Laat AI dit oplossen" (filled, error attached as `Foutmelding
+genereren.txt`, not sent), "Openen in editor", "Melding kopiëren". Mock `batchFailures`.
+   e2e `ai-settings.spec.ts` (9). 783 Vitest, Chromium e2e 385/385.
+
+Chrome extension was not connected this session: the visual checks used Playwright
+screenshots (`AI_SHOTS=<dir>` on `ai-settings.spec.ts` and `ai-panel.spec.ts`).
+
 ## Step 32b progress (editor UI)
 
 Baseline 2026-11-18 on `fd327f1`: cargo test all ok.
