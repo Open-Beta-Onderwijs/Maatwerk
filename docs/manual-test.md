@@ -417,6 +417,40 @@ local copy of the shared folder synced as in README "Linux: the shared folder":
 - [ ] **M-LNX-6** An opdracht made on Windows whose `.typ` names an image in other case
       (`Figuur.png` for `figuur.PNG`) compiles on Linux (quirk T32).
 
+## AI assistant (M-AI, step 32)
+
+With a real CLI installed and logged in (decision 61). Only synthetic opdrachten. The headless
+version of M-AI-2/3 is `crates/maatwerk-core/tests/ai_real_cli.rs` (opt-in, see its docs).
+
+- [ ] **M-AI-1** First opening of a rail button shows "Voordat je de AI-assistent gebruikt";
+      Escape closes it without a chat, "Begrepen" opens the chat and it never shows again.
+- [ ] **M-AI-2** Claude Code: "Antwoorden en punten aanvullen" on an opdracht; the status line
+      shows the steps and the time; the diff card appears; Bekijken shows the hunks and the PDF
+      preview; Toepassen changes the editor as one Ctrl+Z step; Ongedaan maken restores it.
+- [ ] **M-AI-3** A second message in the same conversation resumes the session (the AI knows
+      the first message); "Nieuw gesprek" starts over.
+- [ ] **M-AI-4** Typing in `opdracht.typ` while the AI runs: the bar says the AI works on a
+      copy; a hunk on the changed lines is a conflict and is skipped.
+- [ ] **M-AI-5** Stop during a run: "Gestopt", nothing changes; a time limit of 1 minute in
+      AI-instellingen gives the time-out card with the AI-instellingen button.
+- [ ] **M-AI-6** Mistral Vibe: as M-AI-2; note the streamed event fields, the text when not
+      logged in (`vibe --setup` undone) and whether an attached image reaches the model
+      (ADR-0009 _verify_ rows).
+- [ ] **M-AI-7** Not logged in (Claude Code: `claude auth logout`): the "Niet ingelogd" card.
+- [ ] **M-AI-8** AI-instellingen: change Claude Code's arguments ("aangepast"), Standaard
+      herstellen; add an Eigen CLI that runs a script printing text: its answer shows, the
+      check runs on Maatwerk's side; Opnieuw zoeken after installing a CLI adds it to the rail.
+- [ ] **M-AI-9** Opdracht toevoegen with "Eerste versie laten maken met AI": the editor opens
+      with the message sent; the opdracht keeps the empty template until Toepassen.
+- [ ] **M-AI-10** Break an opdracht, generate opdrachten for a toets: the failed card names the
+      opdracht and a student count (no names); "Laat AI dit oplossen" opens the editor with the
+      text and the error attached, not sent.
+- [ ] **M-AI-11** Beheer › Instellingen: switch the AI off for the school and save; a teacher
+      (after reopening the editor) has no rail, no AI card in Opdracht toevoegen, no "Laat AI
+      dit oplossen"; the user menu says "Uitgeschakeld door je school".
+- [ ] **M-AI-12** macOS/Linux started from Finder or the desktop: the CLIs installed via npm or
+      Homebrew are found (login-shell PATH) and run.
+
 ## Shutdown (M-END)
 
 - [ ] **M-END-1** Closing the window ends the process (Task Manager) and marks the teacher offline
