@@ -16,6 +16,7 @@ use maatwerk_core::ai::diff::{self, Proposal};
 use maatwerk_core::ai::history::Conversation;
 use maatwerk_core::ai::provider::{AiSettings, ProviderKey, preset, presets};
 use maatwerk_core::ai::run::quick_output;
+use maatwerk_core::ai::school::school_allows_in;
 use maatwerk_core::ai::turn::{self, Turn};
 use maatwerk_core::ai::workspace::{
     Attachment, ContextChoice, Layout, OtherOpdracht, Starter, TurnInput,
@@ -113,13 +114,16 @@ fn syllabus_dir(app: &AppHandle) -> Res<PathBuf> {
 #[specta::specta]
 pub async fn ai_detect(
     app: AppHandle,
+    state: State<'_, Shared>,
     ai: State<'_, Arc<AiState>>,
     gebruiker: String,
     refresh: bool,
 ) -> Res<Value> {
     let layout = layout(&app, &gebruiker)?;
     let ai = Arc::clone(ai.inner());
-    off_thread(move || {
+    blocking(state, move |c| {
+        // The school's switch (decision 73); without a data folder there is none, so on.
+        let school = c.storage().map_or(true, school_allows_in);
         let settings = AiSettings::load(&layout.settings_file());
         let search = search_path(&ai, refresh);
         let found = detect::detect(&settings, &search);
@@ -148,7 +152,7 @@ pub async fn ai_detect(
                 })
             })
             .collect();
-        Ok(json!({ "providers": providers, "settings": to_value(&settings)? }))
+        Ok(json!({ "providers": providers, "settings": to_value(&settings)?, "school": school }))
     })
     .await
 }
@@ -287,6 +291,9 @@ pub async fn ai_send(
         let storage = c.storage()?;
         let data_root = storage.data_dir().root().to_path_buf();
         let opdracht_dir = data_root.join("opdrachten").join(&id);
+        if !school_allows_in(storage) {
+            return Err(bad("De AI-assistent is uitgeschakeld door je school."));
+        }
         let settings = AiSettings::load(&layout.settings_file());
         if !settings.enabled {
             return Err(bad("De AI-assistent staat uit in je AI-instellingen."));

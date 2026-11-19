@@ -22,6 +22,7 @@ pub mod events;
 pub mod history;
 pub mod provider;
 pub mod run;
+pub mod school;
 pub mod turn;
 pub mod workspace;
 

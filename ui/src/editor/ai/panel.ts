@@ -115,7 +115,8 @@ export class AiPanel {
     if (!this.info.available) return;
     const detection = await this.ai.detect(false);
     this.settings = detection.settings;
-    if (!detection.settings.enabled) return;
+    // Off by the school or by the teacher: no rail (decisions 59, 73).
+    if (!detection.school || !detection.settings.enabled) return;
     this.providers = detection.providers.filter((p) => p.found);
     const syllabus = await this.ai
       .syllabusList()

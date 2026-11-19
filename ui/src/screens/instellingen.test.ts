@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SNAPSHOT_DEFAULTS,
+  aiSchoolEnabled,
   compileTimeoutSeconds,
   isoWeek,
   settingProblem,
@@ -11,6 +12,16 @@ import {
   snapshotSettings,
 } from './instellingen';
 import { checkedLine, folderOf } from './gegevens';
+
+describe('Instellingen: the school AI switch (step 32c)', () => {
+  it('is on unless ai.enabled is false, as maatwerk_core::ai::school', () => {
+    expect(aiSchoolEnabled(null)).toBe(true);
+    expect(aiSchoolEnabled({})).toBe(true);
+    expect(aiSchoolEnabled({ ai: { enabled: true } })).toBe(true);
+    expect(aiSchoolEnabled({ ai: { enabled: 'nee' } })).toBe(true);
+    expect(aiSchoolEnabled({ ai: { enabled: false } })).toBe(false);
+  });
+});
 
 describe('Instellingen (Step 7b)', () => {
   it('reads the snapshot settings like maatwerk-core, with defaults', () => {

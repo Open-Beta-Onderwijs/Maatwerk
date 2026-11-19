@@ -303,3 +303,21 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* AI-assistent card (board 62, step 32c). */
+.inst-ai .inst-card__head {
+  margin-bottom: 12px;
+}
+.inst-ai__tag {
+  flex: none;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+}
+.inst-ai__tag.is-on {
+  background: var(--ok-soft);
+  color: var(--ok);
+}

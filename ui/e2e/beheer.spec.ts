@@ -113,6 +113,24 @@ test('Instellingen: fields with units, Opslaan top right, the snapshots with the
   expect(opened).toEqual(['snapshots']);
 });
 
+test('Instellingen: the school AI switch is saved in instellingen.json (step 32c)', async ({
+  page,
+}) => {
+  await admin(page, 'instellingen');
+  const sw = page.getByRole('switch', { name: 'Docenten mogen de AI-assistent gebruiken' });
+  await expect(sw).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.inst-ai__tag')).toHaveText('Aan');
+  await sw.click();
+  await expect(page.locator('.inst-ai__tag')).toHaveText('Uit voor alle docenten');
+  await page.locator('#inst-save').click();
+  await expect(page.locator('.toast').last()).toContainText('Instellingen opgeslagen');
+  const saved = await withMock(page, (m) => JSON.parse(m.peek('instellingen.json') ?? 'null'));
+  expect(saved).toMatchObject({ ai: { enabled: false }, editor: { compileTimeoutSeconds: 30 } });
+  await expect(
+    page.getByRole('switch', { name: 'Docenten mogen de AI-assistent gebruiken' }),
+  ).toHaveAttribute('aria-checked', 'false');
+});
+
 test('F-02: the CSV import shows an example that can be saved', async ({ page }) => {
   await admin(page, 'leerlingen');
   await page.locator('#btn-import-students').click();

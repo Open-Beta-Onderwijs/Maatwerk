@@ -29,8 +29,18 @@ CLI" (teacher-defined command and arguments, plain-text output; board 62 gets it
 ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
 also passed to the child).
 
-**Next action:** 32c (settings dialog, switches, notice, entry points, logos, real-CLI check, gate and review). Releases 0.20-0.22 still wait for the user.
-Releases 0.20-0.22 still wait for the user.
+**Next action:** 32c, see "Step 32c progress". Releases 0.20-0.22 still wait for the user.
+
+## Step 32c progress (settings, switches, entry points, gate)
+
+Plan: (1) school switch: `ai.enabled` in `instellingen.json` (core reader, `ai_detect` and
+`ai_send` honour it, validate-data, mock), "AI-assistent" card on Beheer › Instellingen;
+(2) AI-instellingen dialog in the main window (show switch, CLI cards, Eigen CLI, time limit,
+syllabus folder, install help), from the editor gear and the user menu ("Uitgeschakeld door je
+school"); (3) first-use notice (decision 70) and the "?" install help panel in the editor;
+(4) Opdracht toevoegen "met AI" (board 63); (5) "Laat AI dit oplossen" after a failed
+Opdrachten genereren; (6) provider logos (brand rules); (7) real-CLI manual check (Claude Code,
+Vibe are installed here); (8) gate, review, report.
 
 ## Step 32b progress (editor UI)
 

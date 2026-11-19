@@ -79,6 +79,19 @@ export class MockAi implements AiApi {
   private contexts = new Map<string, Json>();
   private running = new Map<string, { provider: ProviderKey; stop: boolean }>();
 
+  /** `readSettingsFile` gives the data folder's `instellingen.json` text (the school switch). */
+  constructor(private readonly readSettingsFile: () => string | null = () => null) {}
+
+  /** maatwerk_core::ai::school::school_allows: on unless `ai.enabled` is `false`. */
+  private school(): boolean {
+    try {
+      const v = JSON.parse(this.readSettingsFile() ?? 'null') as { ai?: { enabled?: unknown } };
+      return v?.ai?.enabled !== false;
+    } catch {
+      return true;
+    }
+  }
+
   private record(method: string, args: unknown[]): void {
     this.calls.push({ method, args });
   }
@@ -114,7 +127,7 @@ export class MockAi implements AiApi {
         install: null,
       });
     }
-    return { providers, settings };
+    return { providers, settings, school: this.school() };
   }
 
   async saveSettings(gebruiker: string, settings: AiSettings): Promise<AiSettings> {
@@ -152,6 +165,7 @@ export class MockAi implements AiApi {
     onEvent: (event: AiEvent) => void,
   ): Promise<TurnResult> {
     this.record('send', [gebruiker, opdrachtId, provider, request]);
+    if (!this.school()) throw new Error('De AI-assistent is uitgeschakeld door je school.');
     if (this.running.has(opdrachtId)) {
       throw new Error('Er loopt al een AI-opdracht voor deze opdracht.');
     }

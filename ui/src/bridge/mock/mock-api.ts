@@ -154,7 +154,7 @@ function checkOpdrachtId(id: string): void {
 
 export class MockApi implements MaatwerkApi {
   /** The AI assistant against a scripted fake (`mock-ai.ts`). */
-  readonly ai = new MockAi();
+  readonly ai = new MockAi(() => this.readText('instellingen.json'));
   private files = new Map<string, Uint8Array>();
   private dirs = new Set<string>();
   private session: Record<string, unknown> | null = null;

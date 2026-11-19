@@ -69,6 +69,8 @@ export interface AiSettings {
 export interface AiDetection {
   providers: AiProvider[];
   settings: AiSettings;
+  /** The school's switch in `instellingen.json` (decision 73); false: no AI anywhere. */
+  school: boolean;
 }
 
 export type StepKind =
