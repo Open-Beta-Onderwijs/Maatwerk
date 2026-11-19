@@ -64,6 +64,19 @@ start)`, `Composer.prefill`, `AiPanel.begin`). Opdracht toevoegen "met AI"
 genereren.txt`, not sent), "Openen in editor", "Melding kopiëren". Mock `batchFailures`.
    e2e `ai-settings.spec.ts` (9). 783 Vitest, Chromium e2e 385/385.
 
+4. **Logos (user 2026-11-19): monograms stay.** OpenAI, Anthropic, Google need written
+   permission, GitHub Brand Studio approval; noted in `THIRD_PARTY_LICENSES.md` (`703f716`).
+5. **Real-CLI check (user OK to use the accounts, 2026-11-19):** `tests/ai_real_cli.rs`
+   (opt-in), manual checks M-AI-1..12 (`559644d`). Claude Code 2.1.328: proposal + resume +
+   check OK; fix `d82e08e` (request tells Claude Code to run the check with Bash; it tried a
+   denied PowerShell call first on Windows). Vibe 3.0.4 is not logged in here: its
+   not-logged-in text verified (ADR-0009 "Real-CLI check"); a logged-in Vibe run is M-AI-6.
+6. **Gate (2026-11-19):** cargo fmt, clippy, test, deny, SPDX, npm licences green; notices
+   regenerated (`4afc8b8`); 783 Vitest; Chromium e2e 385/385. Visual: 12 diffs in 4 views × 3
+   looks, all intended: `editor` (the AI rail of 32b; the baseline predates it),
+   `admin-instellingen` (AI-assistent card), `user-menu-teacher`, `user-menu-admin`
+   ("AI-instellingen…"). Baselines not updated (user's check first). Review: running.
+
 Chrome extension was not connected this session: the visual checks used Playwright
 screenshots (`AI_SHOTS=<dir>` on `ai-settings.spec.ts` and `ai-panel.spec.ts`).
 
