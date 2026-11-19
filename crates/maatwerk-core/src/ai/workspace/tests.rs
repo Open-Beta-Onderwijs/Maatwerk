@@ -88,7 +88,13 @@ fn copies_buffers_and_placeholder_images() {
     let request = fs::read_to_string(work.join(REQUEST_FILE)).unwrap();
     assert!(request.contains("grey placeholders"));
     assert!(request.contains("Voeg een opgave toe over dichtheid."));
-    assert!(request.contains("run the check `.maatwerk/check`"));
+    // Claude Code: the Bash form its permission rules allow, also on Windows (step 32c).
+    assert!(request.contains("run the check with the Bash tool, exactly `.maatwerk/check`"));
+    let other = tempfile::tempdir().unwrap();
+    let (w2, r2) = (other.path().join("w"), other.path().join("r"));
+    prepare(&w2, &r2, &provider("codex"), false, &input(src.path())).unwrap();
+    let codex = fs::read_to_string(w2.join(REQUEST_FILE)).unwrap();
+    assert!(codex.contains("run the check `.maatwerk/check` (on Windows `.maatwerk\\check.cmd`)"));
     assert!(work.join(".maatwerk/check").is_file());
     let cmd = fs::read_to_string(work.join(".maatwerk/check.cmd")).unwrap();
     assert!(cmd.contains("--ai-check"));

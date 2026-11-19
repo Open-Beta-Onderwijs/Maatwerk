@@ -730,7 +730,13 @@ fn request_text(
          - Edit only `opdracht.typ`, and add or change files in `images/` if a figure is needed. Do not change `main.typ` or `lib.typ`: changes there are discarded.\n\
          - Work only inside this folder. Never put student names, grades or other personal data in the opdracht.\n",
     );
-    if provider.runs_check {
+    if provider.builtin == Some(Builtin::Claude) {
+        // Its permission rules allow exactly `Bash(.maatwerk/check *)`; on Windows it otherwise
+        // tries PowerShell on `check.cmd` first and is denied (real-CLI check, step 32c).
+        r.push_str(
+            "- After editing, run the check with the Bash tool, exactly `.maatwerk/check` (also on Windows). It prints JSON: `\"ok\": true` means it compiles; fix the errors it lists. Run no other commands.\n",
+        );
+    } else if provider.runs_check {
         r.push_str(
             "- After editing, run the check `.maatwerk/check` (on Windows `.maatwerk\\check.cmd`). It prints JSON: `\"ok\": true` means it compiles; fix the errors it lists. Run no other commands.\n",
         );
