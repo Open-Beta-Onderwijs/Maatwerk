@@ -25,11 +25,10 @@ long transcript titles cut off with a tooltip, chat follows its bottom so a foll
 card shows at once (cause: the previous proposal's diff card fills in after an await and
 pushed the card out of view), input grows to 7 lines (`5a8ce1d`); answers rendered as Markdown
 (`markdown.ts`, own small parser, no dependency, `1b125c0`). e2e `ai-panel.spec.ts` +3.
-Open: the diff card's applied state (remark 6) is investigated, questions to the user pending:
-only the last proposal gets a card (older ones none); `run.applied` in the history is set by
-`ai_apply` but not cleared by Ongedaan maken; a follow-up run resets the in-memory card state
-and the previous proposal's files are replaced, so the old card briefly offers Toepassen again
-or shows "Er is geen voorstel (meer)."
+Remark 6 done with the user's answers (status lines for older proposals, no applying of
+replaced ones, applied card keeps files + read-only Bekijken, Ongedaan maken clears the
+history's flag). e2e `ai-panel.spec.ts` 10 tests. Manual check in the real app: a follow-up's
+status card (the mock loads proposals instantly, so the bug did not show there).
 
 ## Current step
 
