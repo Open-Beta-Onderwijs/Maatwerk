@@ -27,7 +27,7 @@ pushed the card out of view), input grows to 7 lines (`5a8ce1d`); answers render
 (`markdown.ts`, own small parser, no dependency, `1b125c0`). e2e `ai-panel.spec.ts` +3.
 Remark 6 done with the user's answers (status lines for older proposals, no applying of
 replaced ones, applied card keeps files + read-only Bekijken, Ongedaan maken clears the
-history's flag). e2e `ai-panel.spec.ts` 10 tests. Manual check in the real app: a follow-up's
+history's flag). e2e `ai-panel.spec.ts` 8 tests. Manual check in the real app: a follow-up's
 status card (the mock loads proposals instantly, so the bug did not show there).
 
 ## Current step
