@@ -6,7 +6,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as core from './core';
 import { bestAttempt, bestAttemptMany } from './attempts';
-import { examResults, examResultsMany } from './grades';
+import { examResults, examResultsMany, hasGradeData, recordFor } from './grades';
+import { forGrading, setRubricLookup } from './po';
+import { newRubric, type RubricCategory } from './rubric';
 import type { Exam, ScoreRecord } from './types';
 
 vi.mock('./core', async (importOriginal) => {
@@ -95,5 +97,55 @@ describe('bestAttemptMany', () => {
     bestAttemptMany(records, [original, resit]);
     expect(coreCall).toHaveBeenCalledTimes(1);
     expect(coreCall.mock.calls[0]![0]).toBe('bestAttemptMany');
+  });
+});
+
+describe('the skip is safe: the rules answer null for every record JS skips (review 33b m5)', () => {
+  const rubric = newRubric('nat', {
+    id: 'r1',
+    categories: [{ id: 'c1', max: 50, soort: 'normaal' }] as RubricCategory[],
+  });
+  setRubricLookup((id) => (id === 'r1' ? rubric : undefined));
+  const po = {
+    id: 'p',
+    subject: 'nat',
+    kind: 'po',
+    rubric_id: 'r1',
+    questions: [],
+  } as unknown as Exam;
+  const lines = { groupLines: [{ label: 'Te laat', value: -0.5 }], ownLines: [] };
+  const edge = (id: string): unknown[] => [
+    null,
+    {},
+    { scores: null },
+    { scores: { [id]: {} } },
+    { scores: { [id]: 'x' } },
+    { scores: { [id]: [] } },
+    { scores: { [id]: null } },
+    { scores: { other: { q1: 5 } } },
+    { overrides: {} },
+    { overrides: { other: { cijfer: 7 } } },
+    { po: { [id]: lines } }, // a PO with only bonus/malus lines
+    { observations: { [id]: ['o1'] } },
+  ];
+
+  for (const exam of [original, po]) {
+    it(`for ${exam.id === 'p' ? 'a PO' : 'a test'}`, () => {
+      for (const rec of edge(exam.id) as (ScoreRecord | null)[]) {
+        expect(hasGradeData(rec, exam.id)).toBe(false);
+        const rules = core.coreCall('examResults', recordFor(rec, [exam]), forGrading(exam));
+        expect(rules, JSON.stringify(rec)).toBeNull();
+      }
+    });
+  }
+
+  it('the rules do give a grade once there is a score or an override', () => {
+    for (const rec of [
+      { scores: { e: { q1: 5 } } },
+      { overrides: { e: { cijfer: 6 } } },
+    ] as unknown as ScoreRecord[]) {
+      expect(hasGradeData(rec, 'e')).toBe(true);
+      expect(examResults(rec, original)?.grade).toBeTypeOf('number');
+    }
   });
 });

@@ -291,6 +291,8 @@ async function fillGroupGradeStats(groups: Group[], year: string, container: HTM
   for (const g of groups) {
     if (run !== fillRun) return;
     const numbers = await groupNumbers(g, year);
+    // groupNumbers yields per student: a newer draw may have taken over (review 33b m2).
+    if (run !== fillRun) return;
     if (!numbers) continue;
     const el = container.querySelector<HTMLElement>(`[data-grade-stats="${CSS.escape(g.id)}"]`);
     if (!el) continue;

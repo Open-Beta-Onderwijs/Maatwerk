@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { describe, expect, it } from 'vitest';
-import { SLICE_MS, inIdleSlices, yieldSlice } from './idle';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { SLICE_MS, inIdleSlices, resetSlice, yieldSlice } from './idle';
 
 describe('inIdleSlices', () => {
   it('runs every item once, in order, in slices', async () => {
@@ -35,18 +35,44 @@ describe('inIdleSlices', () => {
 });
 
 describe('yieldSlice', () => {
-  it('goes on at once within the slice and gives a task turn after it', async () => {
+  beforeEach(() => resetSlice());
+
+  /** Whether `p` settles within a run of microtasks (no task boundary). */
+  async function settlesInMicrotasks(p: Promise<void>): Promise<boolean> {
+    let done = false;
+    void p.then(() => (done = true));
+    for (let i = 0; i < 50; i++) await Promise.resolve();
+    return done;
+  }
+
+  it('goes on at once within the slice', async () => {
     let t = 1_000;
     const now = () => t;
-    await yieldSlice(now); // the first call opens a slice after a turn
-    const order: string[] = [];
-    setTimeout(() => order.push('task'), 0);
+    await yieldSlice(now); // opens a slice
     t += SLICE_MS - 1;
+    expect(await settlesInMicrotasks(yieldSlice(now))).toBe(true);
+  });
+
+  it('gives the browser a task turn once the slice is used up', async () => {
+    let t = 1_000;
+    const now = () => t;
     await yieldSlice(now);
-    order.push('within');
-    t += 2;
+    t += SLICE_MS + 1;
+    const turn = yieldSlice(now);
+    expect(await settlesInMicrotasks(turn)).toBe(false);
+    await turn; // a task later
+  });
+
+  it('does not wait for a timer (no 4 ms clamp of nested timeouts, review 33b m3)', async () => {
+    let t = 1_000;
+    const now = () => t;
     await yieldSlice(now);
-    order.push('after');
-    expect(order).toEqual(['within', 'task', 'after']);
+    const order: string[] = [];
+    setTimeout(() => order.push('timer'), 0);
+    t += SLICE_MS + 1;
+    await yieldSlice(now);
+    order.push('yielded');
+    await new Promise((r) => setTimeout(r, 5));
+    expect(order).toEqual(['yielded', 'timer']);
   });
 });

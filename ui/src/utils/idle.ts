@@ -71,8 +71,35 @@ let sliceStart = 0;
  */
 export async function yieldSlice(now: () => number = () => performance.now()): Promise<void> {
   if (now() - sliceStart < SLICE_MS) return;
-  await new Promise((r) => setTimeout(r, 0));
+  await nextTask();
   sliceStart = now();
+}
+
+/** Starts a fresh slice (tests: the budget is module state shared by every loop). */
+export function resetSlice(): void {
+  sliceStart = 0;
+}
+
+/**
+ * Resolves in a new task, as soon as the browser has had its turn (review 33b m3). Not
+ * `setTimeout(0)`: nested timeouts are clamped to >= 4 ms, and timers of a hidden window are
+ * throttled. `scheduler.yield()` where it exists (Chromium/WebView2), else a message on a
+ * MessageChannel (WebKit), else a timeout.
+ */
+function nextTask(): Promise<void> {
+  const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (typeof scheduler?.yield === 'function') return scheduler.yield();
+  if (typeof MessageChannel === 'function') {
+    return new Promise((resolve) => {
+      const { port1, port2 } = new MessageChannel();
+      port1.onmessage = () => {
+        port1.close();
+        resolve();
+      };
+      port2.postMessage(null);
+    });
+  }
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 /** Resolves in the next idle period (for async loops that yield between steps). */

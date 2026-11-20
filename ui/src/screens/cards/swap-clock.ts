@@ -13,13 +13,18 @@ export const SWAP_HALF_MS = 4500;
 
 let timer: ReturnType<typeof setInterval> | null = null;
 
-/** Starts the clock (once; later calls do nothing). "laatste" shows first. */
+/**
+ * Starts the clock (once; later calls do nothing). "laatste" shows first. It runs for the life of
+ * the window once student cards were drawn, also on other screens and after logout: one attribute
+ * write per 4,5 s, which only restyles the swap spans (review 33b n3).
+ */
 export function startSwapClock(): void {
   if (timer) return;
   const root = document.documentElement;
   root.dataset.cardSwap = 'a';
   timer = setInterval(() => {
-    // A hidden window has nothing to show; the next tick carries on.
+    // A hidden window has nothing to show. Skipped ticks are not caught up, so the phase may
+    // shift; every card still follows the same attribute, so they stay in step (review 33b n4).
     if (document.hidden) return;
     root.dataset.cardSwap = root.dataset.cardSwap === 'b' ? 'a' : 'b';
   }, SWAP_HALF_MS);

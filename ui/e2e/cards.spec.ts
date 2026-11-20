@@ -90,8 +90,11 @@ test('the admin keeps the plain student list, without grades', async ({ page }) 
 });
 
 test('the "laatste / SE" swap follows the one clock on <html> (spec 4.3)', async ({ page }) => {
+  // A fake clock: the real 4,5 s interval cannot flip in the middle of a check (review 33b m4).
+  await page.clock.install();
   await login(page);
   await screen(page, 'leerlingen');
+  await page.clock.pauseAt(new Date(Date.now() + 60_000));
   // The tiny fixture has no years 4-6: one swap in the markup of card-html.ts.
   await page.evaluate(() => {
     const slot = document.querySelector('#student-list .s-card')!;
@@ -101,15 +104,21 @@ test('the "laatste / SE" swap follows the one clock on <html> (spec 4.3)', async
     );
   });
   const html = page.locator('html');
-  await expect(html).toHaveAttribute('data-card-swap', 'a');
   const a = page.locator('#swap-probe .s-card__swap-a');
   const b = page.locator('#swap-probe .s-card__swap-b');
-  await expect(a).toHaveCSS('opacity', '1');
-  await expect(b).toHaveCSS('opacity', '0');
-  // The clock flips every 4,5 s; flipped by hand here, the cross-fade follows.
-  await page.evaluate(() => (document.documentElement.dataset.cardSwap = 'b'));
-  await expect(a).toHaveCSS('opacity', '0');
-  await expect(b).toHaveCSS('opacity', '1');
+  const shows = async (side: 'a' | 'b') => {
+    await expect(html).toHaveAttribute('data-card-swap', side);
+    await expect(a).toHaveCSS('opacity', side === 'a' ? '1' : '0');
+    await expect(b).toHaveCSS('opacity', side === 'a' ? '0' : '1');
+  };
+  const now = (await html.getAttribute('data-card-swap')) as 'a' | 'b';
+  const other = now === 'a' ? 'b' : 'a';
+  await shows(now);
+  // Half a cycle later the other value shows (the cross-fade runs on real time).
+  await page.clock.runFor(4500);
+  await shows(other);
+  await page.clock.runFor(4500);
+  await shows(now);
 });
 
 test.describe('reduced motion', () => {
