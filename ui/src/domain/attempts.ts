@@ -4,7 +4,7 @@
 // decision 8); this file gives them types and joins the answers back to the UI's objects.
 
 import { coreCall } from './core';
-import { recordFor } from './grades';
+import { hasGradeData, recordFor } from './grades';
 import { forGrading, isPo, rubricOf } from './po';
 import type { Exam, Override, PoGrading, QuestionScores, ScoreRecord } from './types';
 
@@ -34,6 +34,40 @@ export function resitsOf<E extends Exam>(exams: E[], parentId: string): E[] {
     .sort((a, b) => (a.attempt ?? 1) - (b.attempt ?? 1));
 }
 
+/** The attempt that counts, of one student in a batch (bestAttemptMany). */
+export interface BestGrade {
+  exam: Exam;
+  grade: number;
+}
+
+/**
+ * bestAttempt's attempt and grade for many students in one call into the rules (perf hotfix
+ * 0.24.1); records without data for any attempt are not sent.
+ */
+export function bestAttemptMany(
+  recs: readonly (ScoreRecord | null | undefined)[],
+  attempts: Exam[],
+): (BestGrade | null)[] {
+  const out: (BestGrade | null)[] = recs.map(() => null);
+  const send: number[] = [];
+  recs.forEach((rec, i) => {
+    if (attempts.some((e) => hasGradeData(rec, e.id))) send.push(i);
+  });
+  if (!send.length) return out;
+  const answers = coreCall<({ examId: string; grade: number } | null)[]>(
+    'bestAttemptMany',
+    send.map((i) => recordFor(recs[i], attempts)),
+    attempts.map(forGrading),
+  );
+  const byId = new Map(attempts.map((e) => [e.id, e]));
+  send.forEach((i, k) => {
+    const best = answers[k];
+    const exam = best && byId.get(best.examId);
+    if (best && exam) out[i] = { exam, grade: best.grade };
+  });
+  return out;
+}
+
 /**
  * The attempt with the highest grade (override included) among `attempts` (the parent first, then
  * its resits); the earliest wins a tie. Null when no attempt has a grade.
@@ -42,6 +76,8 @@ export function bestAttempt(
   rec: ScoreRecord | null | undefined,
   attempts: Exam[],
 ): BestEntry | null {
+  // Without scores or an override no attempt has a grade: no trip into the rules.
+  if (!attempts.some((e) => hasGradeData(rec, e.id))) return null;
   const best = coreCall<{ examId: string; grade: number } | null>(
     'bestAttempt',
     recordFor(rec, attempts),

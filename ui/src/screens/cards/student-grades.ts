@@ -12,6 +12,7 @@ import { applyStyleData } from '../../legacy/style-data';
 import { Store } from '../../store.js';
 import { perfSpan } from '../../utils/perf';
 import { studentGradesHtml } from './card-html';
+import { syncSwaps } from './swap-sync';
 
 export interface GradeFill {
   /** A card element was added: fill it if its numbers are known. */
@@ -44,16 +45,6 @@ function cached(): Map<string, string> {
 }
 
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-/**
- * Keeps the "laatste / SE" swap of every card in step (spec 4.3: all cards in
- * sync), also for cards added later: their CSS animations start at time 0.
- */
-export function syncSwaps(root: ParentNode = document): void {
-  for (const el of root.querySelectorAll('.s-card__swap > span')) {
-    for (const a of el.getAnimations()) a.startTime = 0;
-  }
-}
 
 export function fillStudentGrades(
   container: HTMLElement,

@@ -78,7 +78,7 @@ export function calcResults(
  */
 export function recordFor(
   rec: ScoreRecord | null | undefined,
-  exams: Pick<Exam, 'id'>[],
+  exams: readonly Pick<Exam, 'id'>[],
 ): Pick<ScoreRecord, 'scores' | 'overrides' | 'po'> {
   const scores: NonNullable<ScoreRecord['scores']> = {};
   const overrides: NonNullable<ScoreRecord['overrides']> = {};
@@ -118,5 +118,44 @@ export function examResults(
   exam: Pick<Exam, 'id' | 'n_term' | 'questions'> &
     Partial<Pick<Exam, 'kind' | 'subject' | 'rubric_id'>>,
 ): Results | null {
+  if (!hasGradeData(rec, exam.id)) return null;
   return coreCall('examResults', recordFor(rec, [exam]), forGrading(exam));
+}
+
+type GradedExam = Pick<Exam, 'id' | 'n_term' | 'questions'> &
+  Partial<Pick<Exam, 'kind' | 'subject' | 'rubric_id'>>;
+
+/**
+ * examResults for many students and exams in one call into the rules (perf hotfix 0.24.1):
+ * `[student][exam]`. Records without data for any of the exams are not sent.
+ */
+export function examResultsMany(
+  recs: readonly (ScoreRecord | null | undefined)[],
+  exams: readonly GradedExam[],
+): (Results | null)[][] {
+  const out = recs.map(() => exams.map((): Results | null => null));
+  const send: number[] = [];
+  recs.forEach((rec, i) => {
+    if (exams.some((e) => hasGradeData(rec, e.id))) send.push(i);
+  });
+  if (!send.length) return out;
+  const answers = coreCall<(Results | null)[][]>(
+    'examResultsMany',
+    send.map((i) => recordFor(recs[i], exams)),
+    exams.map(forGrading),
+  );
+  send.forEach((i, k) => (out[i] = answers[k] ?? out[i]!));
+  return out;
+}
+
+/**
+ * Whether a record holds scores or an override for an exam. Without either the rules answer "no
+ * grade" without computing (grade.rs `exam_results`), so callers skip the trip into WebAssembly.
+ */
+export function hasGradeData(rec: ScoreRecord | null | undefined, examId: string): boolean {
+  if (rec?.overrides?.[examId] !== undefined) return true;
+  const scores: unknown = rec?.scores?.[examId];
+  if (!scores || typeof scores !== 'object') return false;
+  for (const _ in scores) return true;
+  return false;
 }

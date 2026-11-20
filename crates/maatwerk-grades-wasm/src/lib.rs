@@ -39,9 +39,17 @@ fn attempts(args: &[AttemptArg]) -> Vec<Attempt<'_>> {
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct BestArg<'a> {
-    exam_id: &'a str,
+struct BestArg {
+    exam_id: String,
     grade: f64,
+}
+
+/// The attempt that counts, as the UI reads it: its id and grade.
+fn best_arg(rec: &ScoreRecord, exams: &[&Exam]) -> Option<BestArg> {
+    g::best_attempt(rec, exams).map(|b| BestArg {
+        exam_id: b.exam.id.clone(),
+        grade: b.grade,
+    })
 }
 
 /// Decodes the JSON argument list into a tuple.
@@ -88,11 +96,29 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
         "bestAttempt" => {
             let (rec, exams): (Option<ScoreRecord>, Vec<Exam>) = parse(args)?;
             let refs: Vec<&Exam> = exams.iter().collect();
-            let best = g::best_attempt(&rec.unwrap_or_default(), &refs);
-            json(best.map(|b| BestArg {
-                exam_id: &b.exam.id,
-                grade: b.grade,
-            }))
+            json(best_arg(&rec.unwrap_or_default(), &refs))
+        }
+        // The batch forms (perf hotfix 0.24.1): one call for many students, so the exams cross
+        // the boundary once instead of once per student. Per record the same rule as above.
+        "examResultsMany" => {
+            let (recs, exams): (Vec<Option<ScoreRecord>>, Vec<Exam>) = parse(args)?;
+            let out: Vec<Vec<_>> = recs
+                .into_iter()
+                .map(|rec| {
+                    let rec = rec.unwrap_or_default();
+                    exams.iter().map(|e| g::exam_results(&rec, e)).collect()
+                })
+                .collect();
+            json(out)
+        }
+        "bestAttemptMany" => {
+            let (recs, exams): (Vec<Option<ScoreRecord>>, Vec<Exam>) = parse(args)?;
+            let refs: Vec<&Exam> = exams.iter().collect();
+            let out: Vec<_> = recs
+                .into_iter()
+                .map(|rec| best_arg(&rec.unwrap_or_default(), &refs))
+                .collect();
+            json(out)
         }
         "resolveBestAttempts" => {
             let (history,): (Vec<HistoryEntry>,) = parse(args)?;
@@ -292,6 +318,46 @@ mod tests {
         let rec = json!({"overrides": {"e": {"cijfer": 5.0}, "h": {"cijfer": 6.0}}});
         let v = run("bestAttempt", json!([rec, [exam(), resit]]));
         assert_eq!(v, json!({"examId": "h", "grade": 6.0}));
+    }
+
+    /// The batch forms answer per record exactly as the single calls (perf hotfix 0.24.1).
+    #[test]
+    fn exam_results_many_equals_one_by_one() {
+        let mut resit = exam();
+        resit["id"] = json!("h");
+        let exams = json!([exam(), resit]);
+        let records = json!([
+            null,
+            {"scores": null},
+            {"scores": {"e": {"q1": 8, "q2": "N"}}},
+            {"scores": {"e": {"gone": 5}}, "overrides": {"h": {"cijfer": 6.5}}},
+            {"scores": {"e": {"q1": 2}, "h": {"q1": 9, "q4": 3}}}
+        ]);
+        let many = run("examResultsMany", json!([records, exams]));
+        for (i, rec) in records.as_array().unwrap().iter().enumerate() {
+            for (j, ex) in exams.as_array().unwrap().iter().enumerate() {
+                let one = run("examResults", json!([rec, ex]));
+                assert_eq!(many[i][j], one, "record {i}, exam {j}");
+            }
+        }
+    }
+
+    #[test]
+    fn best_attempt_many_equals_one_by_one() {
+        let mut resit = exam();
+        resit["id"] = json!("h");
+        let exams = json!([exam(), resit]);
+        let records = json!([
+            null,
+            {"overrides": {"e": {"cijfer": 5.0}, "h": {"cijfer": 6.0}}},
+            {"scores": {"e": {"q1": 8}}},
+            {"scores": {"e": {"q1": 8}, "h": {"q1": 8}}}
+        ]);
+        let many = run("bestAttemptMany", json!([records, exams]));
+        for (i, rec) in records.as_array().unwrap().iter().enumerate() {
+            let one = run("bestAttempt", json!([rec, exams]));
+            assert_eq!(many[i], one, "record {i}");
+        }
     }
 
     #[test]

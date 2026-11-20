@@ -12,7 +12,8 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { bestAttempt, resitsOf } from '../domain/attempts';
+import { bestAttemptMany, resitsOf } from '../domain/attempts';
+import { examResultsMany } from '../domain/grades';
 import { attemptLabel } from '../domain/exam-info';
 import { gradeTextColor } from '../domain/grade-colors';
 import { isPo } from '../domain/po';
@@ -28,7 +29,7 @@ import { openNewPoModal } from '../modals/po-gegevens';
 import { openRttiUitlegModal } from '../modals/rtti-uitleg';
 import * as Presence from '../presence.js';
 import { Store } from '../store.js';
-import { perfSpan } from '../utils/perf';
+import { afterPaint, perfSpan } from '../utils/perf';
 import { cardSummary, miniHistogram, topObservaties, type CardNumbers } from './toetsen/card-model';
 import { gridHtml, miniHistHtml, periodeNr, type CardKind } from './toetsen/cards';
 import { initStacks, toggleStack } from './toetsen/stack';
@@ -79,6 +80,7 @@ async function computeExamWarnings(year: string, exam: Exam): Promise<ScoreProbl
   const students = Store.getStudentsSync(year);
   const problems: ScoreProblem[] = [];
   for (const s of students) {
+    await slice();
     const rec = await Store.getStudentScores(s.id, year);
     const examScores: Record<string, ScoreValue> | undefined = rec?.scores?.[exam.id];
     if (!examScores || Object.keys(examScores).length === 0) continue;
@@ -220,20 +222,46 @@ async function blockNumbers(year: string, original: Exam, resits: readonly Exam[
   const attempts = [original, ...resits];
   const per = new Map(attempts.map((a) => [a.id, emptyNumbers()]));
   const summary = emptyNumbers();
-  for (const s of Store.getStudentsSync(year) as { id: string }[]) {
-    const rec = (await Store.getStudentScores(s.id, year)) as ScoreRecord | null;
-    for (const a of attempts) {
-      const nums = per.get(a.id)!;
-      const res = Store.examResults(rec, a);
-      if (res && res.grade !== null) nums.grades.push(res.grade);
-      countObs(nums, obsOf(rec, a));
-    }
-    if (!resits.length) continue;
-    const best = bestAttempt(rec, attempts);
-    if (best) summary.grades.push(best.grade);
-    countObs(summary, best ? obsOf(rec, best.exam) : attempts.flatMap((a) => obsOf(rec, a)));
+  const students = Store.getStudentsSync(year) as { id: string }[];
+  // In chunks, one call into the grade rules per chunk (perf hotfix 0.24.1), between slices.
+  for (let i = 0; i < students.length; i += CHUNK) {
+    await slice();
+    const recs = (await Promise.all(
+      students.slice(i, i + CHUNK).map((s) => Store.getStudentScores(s.id, year)),
+    )) as (ScoreRecord | null)[];
+    const results = examResultsMany(recs, attempts);
+    const bests = resits.length ? bestAttemptMany(recs, attempts) : null;
+    recs.forEach((rec, k) => {
+      attempts.forEach((a, j) => {
+        const nums = per.get(a.id)!;
+        const res = results[k]?.[j];
+        if (res && res.grade !== null) nums.grades.push(res.grade);
+        countObs(nums, obsOf(rec, a));
+      });
+      if (!bests) return;
+      const best = bests[k];
+      if (best) summary.grades.push(best.grade);
+      countObs(summary, best ? obsOf(rec, best.exam) : attempts.flatMap((a) => obsOf(rec, a)));
+    });
   }
   return { per, summary };
+}
+
+/** Students per call into the grade rules. */
+const CHUNK = 60;
+/** How long the fills may hold the main thread before the browser gets a turn (ms). */
+const SLICE_MS = 8;
+let sliceStart = 0;
+
+/**
+ * Gives the browser a turn once the current slice is used up. Cached score reads resolve as
+ * microtasks, so without this the fills of every card run as one long task. The budget is shared
+ * by all blocks filling at the same time.
+ */
+async function slice(): Promise<void> {
+  if (performance.now() - sliceStart < SLICE_MS) return;
+  await new Promise((r) => setTimeout(r, 0));
+  sliceStart = performance.now();
 }
 
 /** Fills the bottom of a card and its mini histogram. */
@@ -349,8 +377,21 @@ export async function renderToetsenList() {
   applyStyleData(container);
   initStacks(container);
   void fillExamPresence();
+  // The cards with their placeholders paint first; the numbers follow in slices (perf hotfix
+  // 0.24.1: computed at once they held the first paint back for seconds on a school laptop).
+  void afterPaint().then(() => {
+    if (current()) fillNumbers(year, exams, attemptsOf, container, current);
+  });
+}
 
-  // ── Fill the numbers and warnings asynchronously ───────────────────────────
+/** Fills the numbers and warnings of the cards of one draw, in the background. */
+function fillNumbers(
+  year: string,
+  exams: Exam[],
+  attemptsOf: (e: Exam) => Exam[],
+  container: HTMLElement,
+  current: () => boolean,
+): void {
   const endStats = perfSpan('toetsen:stats');
   const fills: Promise<void>[] = [];
   const cardEl = (id: string, kind: CardKind) =>
