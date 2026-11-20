@@ -559,3 +559,10 @@ See `docs/reviews/step-32.md` for the evidence of each item.
   programs (ADR-0009 _verify_ rows); Vibe's transcript shows only text events (no tool steps).
 - **Logos:** vendor logos only with permission (`THIRD_PARTY_LICENSES.md`).
 - ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
+
+## From Step 33
+
+Review `docs/reviews/step-33.md`: m3 (tab order reaches the attempts only after the rest of the
+row), m4 (test gaps: `gridHtml` unit test; e2e for a Verzamelkaart click, a PO Verzamelkaart, one
+open stack per row, more than three attempts; a stronger reduced-motion check; the Verzamelkaart's
+observatie rule shared with `exam-overview/data.ts`), and the nits.

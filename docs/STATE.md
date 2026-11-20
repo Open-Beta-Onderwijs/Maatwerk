@@ -66,8 +66,12 @@ Toetsen modals (the screen behind the backdrop), and `splash` (version text 0.23
 hotfix). Baselines not updated (user's check first). Screenshots of a stack: `TOETSEN_SHOTS=<dir>`
 on `e2e/toetsen.spec.ts`.
 
-**Next action:** review (`docs/reviews/step-33.md`), fix blockers/majors, build the exe, report.
-Then the user: visual check of the diffs, merge (after step 32), release 0.24.
+Review `docs/reviews/step-33.md`: 0 blockers, 1 major (fixed: the Verzamelkaart shows its
+attempts' warnings and colleagues), 5 minors (m1, m2, m5 fixed, m3 in part; rest in
+`docs/backlog.md` "From Step 33"), 9 nits. Rerun: 826 Vitest, Chromium e2e 395/395.
+
+**Next action:** step 33 is done except the user's part: visual check of the 42 diffs (then
+baselines), the one-open-stack-per-row choice, merge (after step 32), release 0.24.
 
 ## Current step (step 32)
 

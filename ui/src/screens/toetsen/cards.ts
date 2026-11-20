@@ -96,19 +96,32 @@ function line1Title(e: Exam): string {
  * One card: a test without resits (`solo`), the Verzamelkaart of a stack (`summary`, numbers over
  * the best attempt per student) or an attempt in the tray (`attempt`, `original` is its stack).
  */
-export function examCardHtml(e: Exam, kind: CardKind, original: Exam = e): string {
+export function examCardHtml(
+  e: Exam,
+  kind: CardKind,
+  original: Exam = e,
+  attempts: readonly Exam[] = [e],
+): string {
   const diagnostic = !!e.diagnostic;
   const rtti = cardRtti(e);
   const hist = miniHistogram([]);
-  const live = kind !== 'summary'; // the presence badges and score warnings are per attempt
+  // A Verzamelkaart shows the warnings and colleagues of all its attempts (review 33 M1): a closed
+  // stack hides the attempt cards.
+  const summary = kind === 'summary';
+  const warning = summary
+    ? `<span class="exam-warning" data-summary-warning="${esc(e.id)}" hidden aria-label="Waarschuwing">⚠</span>`
+    : `<span class="exam-warning" data-examid="${esc(e.id)}" hidden aria-label="Waarschuwing">⚠</span>`;
+  const presence = (summary ? attempts : [e])
+    .map((a) => `<span class="presence-badges" data-presence-exam="${esc(a.id)}"></span>`)
+    .join('');
   const action = cardAction(e, kind);
   return `
     <article class="tcard${diagnostic ? ' tcard--diagnostic' : ''}${isPo(e) ? ' tcard--po' : ''}${action ? ' tcard--link' : ''}" data-exam-card="${esc(e.id)}" data-kind="${kind}">
       <div class="tcard-head">
         ${subBadge(e)}${badge(e)}
         ${title(e, kind, (kind === 'attempt' ? original.title : e.title) ?? '')}
-        ${live ? `<span class="exam-warning" data-examid="${esc(e.id)}" hidden aria-label="Waarschuwing">⚠</span>` : ''}
-        ${live ? `<span class="presence-badges" data-presence-exam="${esc(e.id)}"></span>` : ''}
+        ${warning}
+        ${presence}
         ${menuButton(e.id, kind)}
       </div>
       <div class="tcard-mid">
@@ -136,6 +149,13 @@ export function examCardHtml(e: Exam, kind: CardKind, original: Exam = e): strin
         <div class="tcard-avg" data-avg>${skelLine(70)}</div>
       </div>
     </article>`;
+}
+
+/** The toggle pill's text; the triangle is not read aloud. */
+export function toggleLabel(open: boolean, n: number): string {
+  return open
+    ? 'Inklappen <span aria-hidden="true">▴</span>'
+    : `${n} pogingen <span aria-hidden="true">▾</span>`;
 }
 
 /** Periode of an exam as a number for sorting; none last. */
@@ -166,7 +186,8 @@ export function gridHtml(
 ): string {
   let html = '';
   let row: Stack[] = [];
-  const flushTray = (rowNr: number) => {
+  const trayId = (s: Stack) => `ttray-${s.original.id}`;
+  const flushTray = () => {
     if (!row.length) return;
     const cards = row
       .flatMap(({ original, resits }) =>
@@ -177,9 +198,9 @@ export function gridHtml(
       )
       .join('');
     html += `
-      <div class="ttray" data-tray="${rowNr}" data-stacks="${esc(row.map((s) => s.original.id).join(' '))}">
+      <div class="ttray" id="${esc(trayId(row[0]!))}" data-stacks="${esc(row.map((s) => s.original.id).join(' '))}">
         <svg class="ttray-outline" aria-hidden="true"><path/></svg>
-        <div class="ttray-title"></div>
+        <div class="ttray-title" aria-hidden="true"></div>
         <div class="ttray-cards">${cards}</div>
       </div>`;
     row = [];
@@ -196,18 +217,20 @@ export function gridHtml(
     if (stack) {
       const n = resits.length + 1;
       row.push({ original: e, resits });
+      // The tray of this row is named after its first stack.
+      const controls = trayId(row[0]!);
       html += `
         <div class="tgrid-cell tgrid-cell--stack" data-col="${col}" data-stack="${esc(e.id)}" data-n="${n}">
           ${head}
           <div class="tstack">
-            ${examCardHtml(e, 'summary')}
-            <button type="button" class="tstack-toggle" data-action="exam-attempts" data-examid="${esc(e.id)}" aria-expanded="false">${n} pogingen ▾</button>
+            ${examCardHtml(e, 'summary', e, [e, ...resits])}
+            <button type="button" class="tstack-toggle" data-action="exam-attempts" data-examid="${esc(e.id)}" aria-expanded="false" aria-controls="${esc(controls)}">${toggleLabel(false, n)}</button>
           </div>
         </div>`;
     } else {
       html += `<div class="tgrid-cell" data-col="${col}">${head}${examCardHtml(e, 'solo')}</div>`;
     }
-    if (col === COLUMNS - 1 || i === originals.length - 1) flushTray(Math.floor(i / COLUMNS));
+    if (col === COLUMNS - 1 || i === originals.length - 1) flushTray();
   });
   return `<div class="tgrid">${html}</div>`;
 }

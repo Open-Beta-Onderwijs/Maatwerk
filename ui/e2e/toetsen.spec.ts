@@ -177,6 +177,14 @@ test.describe('exam list (spec 4.7)', () => {
     // The Verzamelkaart: numbers over the best attempt per student.
     const summary = page.locator(`.tcard[data-exam-card="${original.id}"][data-kind="summary"]`);
     await expect(summary.locator('[data-count]')).toHaveText(/^beste poging · \d+ leerlingen?$/);
+    // The closed stack still shows its attempts' score warnings, named per attempt (review 33 M1).
+    await expect(summary.locator('.exam-warning')).toBeVisible();
+    await expect(summary.locator('.exam-warning')).toHaveAttribute(
+      'title',
+      /^(Origineel|Herkansing|Inhaal): .+ — (ongeldige score|onvolledige scores)/,
+    );
+    await expect(summary.locator('.presence-badges')).toHaveCount(3);
+    await expect(toggle).toHaveAttribute('aria-controls', /^ttray-/);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/stack-closed.png`, fullPage: true });
 
     await toggle.click();

@@ -14,6 +14,7 @@ import {
   type GridGeometry,
   type StackPhase,
 } from './stack-layout';
+import { toggleLabel } from './cards';
 
 /** Stacks the teacher opened; for this session only (closed by default, decision 43). */
 const openStacks = new Set<string>();
@@ -70,7 +71,7 @@ function layoutTray(tray: HTMLElement): void {
     if (toggle) {
       const open = openStacks.has(id);
       toggle.setAttribute('aria-expanded', String(open));
-      toggle.textContent = open ? 'Inklappen ▴' : `${n} pogingen ▾`;
+      toggle.innerHTML = toggleLabel(open, n);
     }
     tray
       .querySelectorAll<HTMLElement>(`.ttray-card[data-stack-of="${CSS.escape(id)}"]`)
@@ -161,7 +162,8 @@ export function toggleStack(container: HTMLElement, id: string): void {
   }
   // One open stack per row: another one in this row closes at once.
   for (const other of (tray.dataset.stacks ?? '').split(' ')) {
-    if (other && other !== id && openStacks.has(other)) {
+    // ...also one that is still closing (review 33 m1).
+    if (other && other !== id && (openStacks.has(other) || phaseOf(other) > 0)) {
       openStacks.delete(other);
       clearTimeout(timers.get(other));
       phases.set(other, 0);

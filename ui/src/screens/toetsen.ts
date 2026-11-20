@@ -12,7 +12,8 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { bestAttempt } from '../domain/attempts';
+import { bestAttempt, resitsOf } from '../domain/attempts';
+import { attemptLabel } from '../domain/exam-info';
 import { gradeTextColor } from '../domain/grade-colors';
 import { isPo } from '../domain/po';
 import { poStudentObs } from '../domain/po-grading';
@@ -183,16 +184,20 @@ function filteredExams(year: string): Exam[] {
   );
 }
 
-function applyWarning(el: HTMLElement, problems: ScoreProblem[] | null): void {
-  if (!problems) {
+const problemText = (p: ScoreProblem) =>
+  `${p.name} — ${p.issue === 'ongeldig' ? 'ongeldige score' : 'onvolledige scores'}`;
+
+function applyWarning(el: HTMLElement, lines: string[]): void {
+  if (!lines.length) {
     el.remove();
     return;
   }
-  el.title = problems
-    .map((p) => `${p.name} — ${p.issue === 'ongeldig' ? 'ongeldige score' : 'onvolledige scores'}`)
-    .join('\n');
+  el.title = lines.join('\n');
   el.hidden = false;
 }
+
+/** Bumped on every draw: fills of an older draw must not touch the new list (review 33 m2). */
+let generation = 0;
 
 /** A student's observaties of one attempt: a test's list, or a PO's general and category ones. */
 function obsOf(rec: ScoreRecord | null, exam: Exam): string[] {
@@ -307,13 +312,8 @@ function wireList(container: HTMLElement): void {
 }
 
 /** Sections per jaarlaag: label and grid. */
-function listHtml(exams: Exam[]): string {
+function listHtml(exams: Exam[], attemptsOf: (e: Exam) => Exam[]): string {
   const originals = exams.filter((e) => !e.parent_id);
-  const resitsByParent: Record<string, Exam[]> = {};
-  for (const e of exams) {
-    if (e.parent_id) (resitsByParent[e.parent_id] ??= []).push(e);
-  }
-  const resitsOf = (e: Exam) => resitsByParent[e.id] ?? [];
   const byJl = new Map<string, Exam[]>();
   for (const e of originals) {
     const jl = String(e.jaarlaag ?? '—');
@@ -323,7 +323,7 @@ function listHtml(exams: Exam[]): string {
   return [...byJl]
     .map(
       ([jl, list]) =>
-        `<section class="tsection"><h3 class="tsection-label">Jaarlaag ${escHtml(jl)}</h3>${gridHtml(list, resitsOf)}</section>`,
+        `<section class="tsection"><h3 class="tsection-label">Jaarlaag ${escHtml(jl)}</h3>${gridHtml(list, attemptsOf)}</section>`,
     )
     .join('');
 }
@@ -332,6 +332,11 @@ export async function renderToetsenList() {
   const year: string = SEL.toetsenYear.getValue();
   const exams = filteredExams(year);
   const container = document.getElementById('exam-list')!;
+  const gen = ++generation;
+  const current = () => gen === generation;
+  // A stack holds every resit of the year, as the verzameloverzicht it opens (review 33 m5).
+  const all: Exam[] = Store.getExamsSync(year);
+  const attemptsOf = (e: Exam) => resitsOf(all, e.id);
   container.classList.add('tlist');
   wireList(container);
 
@@ -340,7 +345,7 @@ export async function renderToetsenList() {
     return;
   }
 
-  container.innerHTML = listHtml(exams);
+  container.innerHTML = listHtml(exams, attemptsOf);
   applyStyleData(container);
   initStacks(container);
   void fillExamPresence();
@@ -354,10 +359,11 @@ export async function renderToetsenList() {
     );
   const originals = exams.filter((e) => !e.parent_id);
   for (const e of originals) {
-    const resits = exams.filter((r) => r.parent_id === e.id);
+    const resits = attemptsOf(e);
     const stack = resits.length > 0;
     fills.push(
       blockNumbers(year, e, resits).then(({ per, summary }) => {
+        if (!current()) return;
         if (stack) {
           const card = cardEl(e.id, 'summary');
           if (card) fillCard(card, summary, true, !!e.diagnostic);
@@ -368,14 +374,34 @@ export async function renderToetsenList() {
         }
       }),
     );
-    for (const a of [e, ...resits]) {
-      const warning = container.querySelector<HTMLElement>(
-        `.exam-warning[data-examid="${CSS.escape(a.id)}"]`,
+    const warnings = Promise.all(
+      [e, ...resits].map(async (a) => ({
+        a,
+        problems: (await computeExamWarnings(year, a)) ?? [],
+      })),
+    ).then((list) => {
+      if (!current()) return;
+      for (const { a, problems } of list) {
+        const el = container.querySelector<HTMLElement>(
+          `.exam-warning[data-examid="${CSS.escape(a.id)}"]`,
+        );
+        if (el) applyWarning(el, problems.map(problemText));
+      }
+      const summary = container.querySelector<HTMLElement>(
+        `.exam-warning[data-summary-warning="${CSS.escape(e.id)}"]`,
       );
-      if (warning) fills.push(computeExamWarnings(year, a).then((p) => applyWarning(warning, p)));
-    }
+      if (summary)
+        applyWarning(
+          summary,
+          list.flatMap(({ a, problems }) =>
+            problems.map((p) => `${attemptLabel(a)}: ${problemText(p)}`),
+          ),
+        );
+    });
+    fills.push(warnings);
   }
   void Promise.allSettled(fills).then(() => {
+    if (!current()) return;
     // A read that failed leaves no placeholder behind.
     container.querySelectorAll('.tcard [data-avg]:has(> .skel)').forEach((el) => {
       el.replaceChildren();
