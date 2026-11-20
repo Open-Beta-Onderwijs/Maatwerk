@@ -238,10 +238,3 @@
 .po-free-note--open {
   color: var(--warn);
 }
-
-/* A PO's title is not a link yet (no PO overview before steps 23/29). */
-.exam-card--po span.exam-title-link,
-.exam-attempt-card span.exam-attempt-label {
-  color: var(--text);
-  cursor: default;
-}

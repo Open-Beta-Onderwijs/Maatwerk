@@ -242,16 +242,18 @@ test.describe('projectgroepen (decisions 18, 19)', () => {
     const school = await readMockJson<{ minAppVersion: string }>(page, 'school.json');
     expect(school.minAppVersion).toBe('0.13.0');
 
-    // The card: striped badge, kind pill, meta ending in the groups, the rubric line.
+    // The card (spec 4.7): striped badge, kind pill, the rubric's points; no RTTI line; the
+    // groups and the rubric in the tooltip of line 1.
     const card = page.locator(`[data-exam-card="${po!.id}"]`);
     await expect(card.locator('.test-badge--po')).toBeVisible();
-    await expect(card.locator('.exam-kind-pill')).toHaveText('Praktische opdracht');
-    await expect(card.locator('.exam-line').first()).toHaveText(
-      'Havo / Vwo · Weging 1 · 2 projectgroepen',
+    await expect(card.locator('.tcard-pill--kind')).toHaveText('Praktische opdracht');
+    const line1 = card.locator('.tcard-line').first();
+    await expect(line1).toHaveText('17 punten + 4 bonus · weging rapport 1');
+    await expect(line1).toHaveAttribute(
+      'title',
+      'Havo / Vwo · Weging 1 · 2 projectgroepen\nRubric Onderzoeksverslag',
     );
-    await expect(card.locator('.exam-line--nums')).toHaveText(
-      'Rubric Onderzoeksverslag · 4 categorieën · 17 punten · bonus 4',
-    );
+    await expect(card.locator('.tcard-rtti')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 
@@ -321,14 +323,15 @@ test.describe('a PO on the Toetsen screen', () => {
     await toetsen(page);
     const card = page.locator(`[data-exam-card="${PO_ID}"]`);
     await expect(card.locator('.test-badge--se-po')).toHaveText('309');
-    await expect(card.locator('.exam-kind-pill')).toHaveText('SE praktische opdracht');
-    await expect(card.locator('.exam-line').first()).toHaveText(
-      'Havo / Vwo · Periode 2 · Weging 2 · Weging SE 10 · 2 projectgroepen',
+    await expect(card.locator('.tcard-pill--kind')).toHaveText('SE praktische opdracht');
+    await expect(card.locator('.tcard-line').first()).toHaveText(
+      '17 punten + 4 bonus · weging rapport 2 · SE 10',
     );
     // 17/17 = 10,0 twice and 14/17 = 8,2 twice (decision 16): mean 9,1.
-    await expect(card.locator('.exam-stats b')).toHaveText('9,1');
-    // The PO overview opens from the card (step 29c).
-    await expect(card.locator('.exam-card-btn')).toHaveAttribute('data-action', 'po-overview');
+    await expect(card.locator('.tcard-mean b')).toHaveText('9,1');
+    await expect(card.locator('[data-count]')).toHaveText('4 leerlingen');
+    // The PO overview opens from the card (step 29c, decision 41).
+    await expect(card.locator('.tcard-title')).toHaveAttribute('data-action', 'po-overview');
 
     // A re-render of the list can close the menu: open it again until its items are seen.
     const items = page.locator('.exam-menu-item');
@@ -338,6 +341,7 @@ test.describe('a PO on the Toetsen screen', () => {
       await expect(items).toHaveText(
         [
           'Scores invoeren',
+          'Overzicht openen',
           'Rapport genereren',
           'Opdrachten genereren',
           'Herkansing toevoegen',
@@ -350,7 +354,7 @@ test.describe('a PO on the Toetsen screen', () => {
       // Scores invoeren is the PO score table from step 23.
       await expect(items.nth(0)).not.toHaveAttribute('aria-disabled', 'true', { timeout: 1000 });
       // It has scores: it cannot be deleted.
-      await expect(items.nth(6)).toHaveAttribute('aria-disabled', 'true', { timeout: 1000 });
+      await expect(items.nth(7)).toHaveAttribute('aria-disabled', 'true', { timeout: 1000 });
     }).toPass();
     await page.keyboard.press('Escape');
 
@@ -397,7 +401,7 @@ test.describe('a PO on the Toetsen screen', () => {
     await expect(e.locator('#po-rubric-host .csel-trigger')).toBeDisabled();
     await e.locator('#po-naam').fill('PO Valbeweging');
     await e.locator('#po-save').click();
-    await expect(card.locator('.exam-title-link')).toHaveText('PO Valbeweging');
+    await expect(card.locator('.tcard-title')).toHaveText('PO Valbeweging');
     expect(errors).toEqual([]);
   });
 
@@ -434,9 +438,9 @@ test.describe('a PO on the Toetsen screen', () => {
     const original = await readMockJson<PoFile>(page, `${YEAR}/exams/${PO_ID}.json`);
     expect(original.projectgroepen[0]!.student_ids).toEqual(['900001', '900101']);
     // Summary card with 2 attempts; an attempt has no "Herkansing toevoegen".
-    await expect(
-      page.locator(`[data-action="exam-attempts"][data-examid="${PO_ID}"]`),
-    ).toContainText('2 pogingen');
+    const toggle = page.locator(`[data-action="exam-attempts"][data-examid="${PO_ID}"]`);
+    await expect(toggle).toContainText('2 pogingen');
+    await toggle.click();
     await page.locator(`[data-action="exam-menu"][data-id="${resit.id}"]`).click();
     await expect(page.getByRole('menuitem', { name: 'Herkansing toevoegen' })).toHaveCount(0);
   });

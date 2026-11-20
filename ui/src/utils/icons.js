@@ -12,6 +12,8 @@ export const ICONS = {
   scores: svgIcon(
     '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
   ),
+  // A bar chart: Overzicht openen (step 33).
+  overview: svgIcon('<path d="M3 3v18h18"/><path d="M8 17v-5M13 17V8M18 17v-9"/>'),
   rapport: svgIcon(
     '<path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/>',
   ),

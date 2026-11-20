@@ -3,7 +3,15 @@
 // The Toetsen screen and its modals (step 20; design spec 4.7, 4.11; V-11, F-12, B-05).
 
 import { expect, test, type Page } from '@playwright/test';
-import { login, readMockJson, seedFiles, watchErrors, withMock, YEAR } from './helpers';
+import {
+  login,
+  openStackOf,
+  readMockJson,
+  seedFiles,
+  watchErrors,
+  withMock,
+  YEAR,
+} from './helpers';
 
 interface Exam {
   id: string;
@@ -26,6 +34,9 @@ interface Observatie {
   naam: string;
 }
 
+/** A folder for screenshots of the cards and stacks (visual check by hand). */
+const SHOTS = process.env.TOETSEN_SHOTS;
+
 const examFile = (id: string) => `${YEAR}/exams/${id}.json`;
 
 async function toetsen(page: Page) {
@@ -35,6 +46,7 @@ async function toetsen(page: Page) {
 
 async function menu(page: Page, examId: string, kind: string, item: string) {
   // As examMenuItem: scrolling to the button can close the menu again; try again then.
+  if (kind === 'attempt') await openStackOf(page, examId);
   await expect(async () => {
     await page
       .locator(`[data-action="exam-menu"][data-id="${examId}"][data-kind="${kind}"]`)
@@ -73,12 +85,50 @@ test.describe('exam list (spec 4.7)', () => {
       'SE praktische opdracht',
       'Diagnostisch',
     ]);
-    await expect(page.locator('.exam-card .exam-kind-pill').first()).toHaveText(
-      /^(Toets|SE-toets)$/,
-    );
+    await expect(page.locator('.tcard .tcard-pill--kind').first()).toHaveText(/^(Toets|SE-toets)$/);
   });
 
-  test('a diagnostic test: grey badge, pill, no wegingen in its meta line', async ({ page }) => {
+  test('cards: three per row per jaarlaag, periode labels, the two lines and the numbers', async ({
+    page,
+  }) => {
+    await login(page);
+    await toetsen(page);
+    const grid = page.locator('.tgrid').first();
+    await expect(page.locator('.tsection-label').first()).toHaveText(/^Jaarlaag /);
+    expect(
+      await grid.evaluate((g) => getComputedStyle(g).gridTemplateColumns.split(' ').length),
+    ).toBe(3);
+    await expect(grid.locator('.tgrid-per').first()).toHaveText(/^Periode \d+$/);
+    // Line 1 and the RTTI line with all four categories (spec 4.7).
+    const card = page.locator('.tcard[data-kind="solo"]').first();
+    await expect(card.locator('.tcard-line').first()).toHaveText(
+      /^\d+(,\d+)? punten( \+ \d+ bonus)? · weging rapport \d+/,
+    );
+    await expect(card.locator('.tcard-rtti b')).toHaveText(['R', 'T1', 'T2', 'I']);
+    // The numbers fill in: count, mean ± SD, % onvoldoende, ten bins in the mini histogram.
+    await expect(card.locator('[data-count]')).toHaveText(/^\d+ leerlingen?$/);
+    await expect(card.locator('.tcard-fail')).toHaveText(/(% onvoldoende|nog geen cijfers)$/);
+    await expect(card.locator('.tcard-bin')).toHaveCount(10);
+    const box = await card.boundingBox();
+    expect(Math.round(box!.height)).toBe(214);
+  });
+
+  test('a periode that starts mid-row gets a divider to its left', async ({ page }) => {
+    await login(page);
+    await toetsen(page);
+    const cells = page.locator('.tgrid-cell');
+    await expect(cells.first()).toBeVisible();
+    const n = await cells.count();
+    for (let i = 0; i < n; i++) {
+      const cell = cells.nth(i);
+      const label = (await cell.locator('.tgrid-per').textContent()) ?? '';
+      const col = await cell.getAttribute('data-col');
+      const divider = await cell.locator('.tgrid-divider').count();
+      expect(divider, `cell ${i}`).toBe(label && col !== '0' ? 1 : 0);
+    }
+  });
+
+  test('a diagnostic test: grey badge, pill, "telt niet mee"', async ({ page }) => {
     const exams = await fixtureExams(page);
     const exam = exams.find((e) => e.title && !e.parent_id && e.subject === 'nat')!;
     await seedFiles(page, {
@@ -86,53 +136,127 @@ test.describe('exam list (spec 4.7)', () => {
     });
     await login(page);
     await toetsen(page);
-    const card = page.locator('.exam-card--diagnostic').first();
+    const card = page.locator('.tcard--diagnostic').first();
     await expect(card.locator('.test-badge--diagnostic')).toBeVisible();
-    await expect(card.locator('.exam-kind-pill')).toHaveText('Diagnostisch');
-    await expect(card).toContainText('telt niet mee voor rapport of SE');
-    await expect(card.locator('.exam-line').first()).not.toContainText('Weging');
+    await expect(card.locator('.tcard-pill--kind')).toHaveText('Diagnostisch');
+    await expect(card.locator('.tcard-line').first()).toHaveText(/ · telt niet mee$/);
+    await expect(card.locator('.tcard-line').first()).not.toContainText('weging');
   });
 
-  test('attempts are open by default; the toggle closes them for the session', async ({ page }) => {
+  test('a click on a card opens its overview; "Overzicht openen" is in the menu', async ({
+    page,
+  }) => {
+    await login(page);
+    await toetsen(page);
+    const card = page.locator('.tcard[data-kind="solo"]:not(.tcard--po)').first();
+    const id = await card.getAttribute('data-exam-card');
+    // Somewhere on the card that is not a button: the mini histogram.
+    await card.locator('.tcard-hist').click();
+    await expect(page.locator('.dlg [data-tab="resultaten"]')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.dlg [data-tab="resultaten"]')).toBeHidden();
+    await menu(page, id!, 'solo', 'Overzicht openen');
+    await expect(page.locator('.dlg [data-tab="resultaten"]')).toBeVisible();
+  });
+
+  test('a stack: closed by default, opens into a tray, closes again; remembered', async ({
+    page,
+  }) => {
     const { original, resit } = await testWithResit(page);
     await login(page);
     await toetsen(page);
     const toggle = page.locator(`[data-action="exam-attempts"][data-examid="${original.id}"]`);
-    const attempt = page.locator(`[data-action="exam-menu"][data-id="${resit.id}"]`);
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(toggle).toContainText(/^\d+ pogingen/);
-    await expect(attempt).toBeVisible();
+    const attempt = page.locator('.ttray-card').filter({
+      has: page.locator(`[data-action="exam-menu"][data-id="${resit.id}"]`),
+    });
+    const tray = page.locator('.ttray').filter({ has: attempt });
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(toggle).toHaveText(/^\d+ pogingen ▾$/);
+    await expect(attempt).toHaveAttribute('inert', '');
+    expect((await tray.boundingBox())!.height).toBe(0);
+    // The Verzamelkaart: numbers over the best attempt per student.
+    const summary = page.locator(`.tcard[data-exam-card="${original.id}"][data-kind="summary"]`);
+    await expect(summary.locator('[data-count]')).toHaveText(/^beste poging · \d+ leerlingen?$/);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/stack-closed.png`, fullPage: true });
 
     await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(attempt).toBeHidden();
-
-    // Stays closed when the list is drawn again.
-    await page.locator('.nav-btn[data-screen="groepen"]').click();
-    await toetsen(page);
-    await expect(attempt).toBeHidden();
-    await page.locator(`[data-action="exam-attempts"][data-examid="${original.id}"]`).click();
-    await expect(attempt).toBeVisible();
-  });
-
-  test('an attempt shows its label, number of students and the lock pill', async ({ page }) => {
-    const { original, resit } = await testWithResit(page);
-    await login(page);
-    await toetsen(page);
-    const card = page
-      .locator('.exam-attempt-card')
-      .filter({ has: page.locator(`[data-id="${resit.id}"]`) });
-    await expect(card.locator('.exam-attempt-label')).toHaveText('Herkansing');
-    await expect(card.locator('.exam-attempt-count')).toHaveText(/^\d+ leerlingen?$/);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle).toHaveText('Inklappen ▴');
+    await expect(attempt).not.toHaveAttribute('inert', '');
+    await expect(tray.locator('.ttray-title')).toHaveText(
+      `Pogingen van ${original.volgnummer} · de beste poging per leerling telt`,
+    );
+    await expect(tray.locator('.ttray-outline path')).toHaveAttribute('d', /^M .* Z$/);
+    // Spread: the attempt cards end side by side under the stack's row.
+    await expect(async () => {
+      const boxes = await tray
+        .locator('.ttray-card')
+        .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect));
+      const s = (await summary.boundingBox())!;
+      for (const b of boxes) expect(b.top).toBeGreaterThan(s.y + s.height);
+      expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBe(boxes.length);
+    }).toPass();
+    if (SHOTS) {
+      await page.waitForTimeout(700); // the spread animation
+      await page.screenshot({ path: `${SHOTS}/stack-open.png`, fullPage: true });
+      await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+      await page.screenshot({ path: `${SHOTS}/stack-open-dark.png`, fullPage: true });
+      await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+    }
+    // The attempt's card: label, lock pill, its own menu.
+    const card = attempt.locator('.tcard');
+    await expect(card.locator('.tcard-pill--attempt')).toHaveText('Herkansing');
     await expect(card.locator('.test-badge').first()).toHaveText(`${original.volgnummer}-H`);
-    await expect(card.locator('.exam-lock-pill')).toHaveText(
+    await expect(card.locator('.tcard-pill--lock')).toHaveText(
       `Observaties van ${original.volgnummer}`,
     );
-    const first = page
-      .locator('.exam-attempt-card')
-      .filter({ has: page.locator(`[data-id="${original.id}"]`) });
-    await expect(first.locator('.exam-attempt-label')).toHaveText('Origineel');
-    await expect(first.locator('.exam-lock-pill')).toHaveCount(0);
+    const first = page.locator(`.ttray-card[data-stack-of="${original.id}"][data-k="0"]`);
+    await expect(first.locator('.tcard-pill--attempt')).toHaveText('Origineel');
+    await expect(first.locator('.tcard-pill--lock')).toHaveCount(0);
+
+    // Stays open when the list is drawn again (session), and closes.
+    await page.locator('.nav-btn[data-screen="groepen"]').click();
+    await toetsen(page);
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(attempt).not.toHaveAttribute('inert', '');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(attempt).toHaveAttribute('inert', '');
+    await expect.poll(async () => (await tray.boundingBox())!.height).toBe(0);
+  });
+
+  test('cards below a stack move down while it is open; cards beside it do not', async ({
+    page,
+  }) => {
+    const { original } = await testWithResit(page);
+    await login(page);
+    await toetsen(page);
+    const cell = page.locator(`.tgrid-cell--stack[data-stack="${original.id}"]`);
+    const grid = page.locator('.tgrid').filter({ has: cell });
+    const others = grid.locator('.tgrid-cell:not(.tgrid-cell--stack)');
+    const before = await others.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+    const stackTop = (await cell.boundingBox())!.y;
+    await cell.locator('[data-action="exam-attempts"]').click();
+    await expect(async () => {
+      const after = await others.evaluateAll((els) =>
+        els.map((e) => e.getBoundingClientRect().top),
+      );
+      after.forEach((top, i) => {
+        if (before[i]! <= stackTop + 1) expect(Math.abs(top - before[i]!)).toBeLessThan(1);
+        else expect(top).toBeGreaterThan(before[i]! + 200);
+      });
+    }).toPass();
+  });
+
+  test('reduced motion: the stack switches without transitions', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const { original } = await testWithResit(page);
+    await login(page);
+    await toetsen(page);
+    await page.locator(`[data-action="exam-attempts"][data-examid="${original.id}"]`).click();
+    const card = page.locator(`.ttray-card[data-stack-of="${original.id}"]`).first();
+    expect(await card.evaluate((el) => getComputedStyle(el).transitionDuration)).toMatch(/^0s/);
+    await expect(card).not.toHaveAttribute('inert', '');
   });
 });
 

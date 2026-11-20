@@ -196,7 +196,7 @@ export const VIEWS: View[] = [
     seed: (p) => poSeed(p, { scores: true }),
     open: async (p) => {
       await screen(p, 'toetsen');
-      await expect(p.locator('[data-exam-card="po-valbeweging"] .exam-stats b')).toBeVisible();
+      await expect(p.locator('[data-exam-card="po-valbeweging"] .tcard-mean b')).toBeVisible();
     },
   },
   { name: 'modal-po-new', user: 'teacher', target: 'modal', open: poStep1 },
@@ -260,7 +260,7 @@ export const VIEWS: View[] = [
       seed: (p) => poSeed(p, { grading: true }),
       open: async (p) => {
         await screen(p, 'toetsen');
-        await p.locator('[data-exam-card="po-valbeweging"] .exam-card-btn').click();
+        await p.locator('[data-exam-card="po-valbeweging"] .tcard-title').click();
         const d = p.locator('.modal-po-overview');
         await expect(d.locator('.po-ov-table')).toBeVisible();
         if (tab === 'groep') await d.getByRole('button', { name: 'Per projectgroep' }).click();

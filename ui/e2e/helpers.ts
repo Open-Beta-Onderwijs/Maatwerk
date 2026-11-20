@@ -112,9 +112,31 @@ export async function logout(page: Page): Promise<void> {
  * re-renders once its statistics are loaded, which can detach an open menu, so
  * this retries until the click lands (backlog: wait for a "list rendered" signal).
  */
+/**
+ * Opens the stack (Toetsen, step 33) whose tray holds the attempt card of `examId`, if that card
+ * is not the first menu of the exam and the stack is closed. A test without resits: nothing.
+ */
+export async function openStackOf(page: Page, examId: string): Promise<void> {
+  const holder = page.locator('.ttray-card').filter({
+    has: page.locator(`[data-action="exam-menu"][data-id="${examId}"]`),
+  });
+  if (!(await holder.count())) return;
+  const stackOf = await holder.first().getAttribute('data-stack-of');
+  const toggle = page.locator(`[data-action="exam-attempts"][data-examid="${stackOf}"]`);
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+  await expect(holder.first()).not.toHaveAttribute('inert', '');
+}
+
 export async function examMenuItem(page: Page, examId: string, item: string): Promise<void> {
   await expect(async () => {
-    await page.locator(`[data-action="exam-menu"][data-id="${examId}"]`).click();
+    if (
+      !(await page
+        .locator(`.tcard [data-action="exam-menu"][data-id="${examId}"]`)
+        .first()
+        .isVisible())
+    )
+      await openStackOf(page, examId);
+    await page.locator(`[data-action="exam-menu"][data-id="${examId}"]`).first().click();
     await page.getByRole('menuitem', { name: item }).click({ timeout: 1000 });
   }).toPass();
 }

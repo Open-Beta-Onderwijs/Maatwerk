@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// The Toetsen screen (design spec 4.7): filtering, the cards (exam-cards.ts),
-// their statistics and warnings, and the ⋮ menu (exam-menu.ts).
+// The Toetsen screen (design spec 4.7, F-27): filtering, the cards and stacks (toetsen/cards.ts,
+// toetsen/stack.ts), their numbers and warnings, and the ⋮ menu (exam-menu.ts).
 
 import {
   escHtml,
@@ -12,11 +12,12 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { formatFixed, parseDecimalLoose } from '../domain/format';
+import { bestAttempt } from '../domain/attempts';
 import { gradeTextColor } from '../domain/grade-colors';
-import { mean, stats } from '../domain/statistics';
+import { isPo } from '../domain/po';
+import { poStudentObs } from '../domain/po-grading';
 import { TEST_KINDS, testKindBadgeClass } from '../domain/test-type';
-import type { Exam, ScoreValue } from '../domain/types';
+import type { Exam, Observatie, ScoreRecord, ScoreValue } from '../domain/types';
 import { applyStyleData } from '../legacy/style-data';
 import { openExamOverviewModal } from '../modals/exam-overview';
 import { openPoOverviewModal } from '../modals/po-overview';
@@ -27,19 +28,10 @@ import { openRttiUitlegModal } from '../modals/rtti-uitleg';
 import * as Presence from '../presence.js';
 import { Store } from '../store.js';
 import { perfSpan } from '../utils/perf';
-import { examBlock, setAttemptsOpen } from './exam-cards';
+import { cardSummary, miniHistogram, topObservaties, type CardNumbers } from './toetsen/card-model';
+import { gridHtml, miniHistHtml, periodeNr, type CardKind } from './toetsen/cards';
+import { initStacks, toggleStack } from './toetsen/stack';
 import { toggleExamMenu } from './exam-menu';
-
-/** What a stats line shows. */
-interface ExamStats {
-  n: number;
-  avgG: string;
-  sd: string;
-  fails: number;
-}
-
-/** Trees the teacher closed; for this session only (open by default, spec 4.7). */
-const closedAttempts = new Set<string>();
 
 function currentYear(): string {
   return SEL.toetsenYear.getValue() || Store.getConfigSync().activeYear;
@@ -77,33 +69,6 @@ function renderLegend(): void {
   ).join('');
 }
 
-export async function computeExamStats(year: string, exam: Exam) {
-  const students = Store.getStudentsSync(year);
-  const { normalMax } = Store.calcResults(exam, {});
-  const grades: number[] = [];
-  const points: number[] = [];
-  for (const s of students) {
-    const rec = await Store.getStudentScores(s.id, year);
-    const res = Store.examResults(rec, exam);
-    if (res && res.grade !== null) {
-      grades.push(res.grade);
-      // Only an overwritten grade, no scores: no points to average
-      if (Object.keys(rec.scores?.[exam.id] ?? {}).length) points.push(res.scored);
-    }
-  }
-  const st = stats(grades);
-  if (!st) return null;
-  const avgPts = mean(points);
-  return {
-    n: st.n,
-    avgPts: avgPts === null ? '—' : formatFixed(avgPts),
-    avgG: formatFixed(st.mean),
-    sd: formatFixed(st.sd),
-    fails: st.fails,
-    normalMax,
-  };
-}
-
 interface ScoreProblem {
   name: string;
   issue: 'ongeldig' | 'onvolledig';
@@ -131,16 +96,6 @@ async function computeExamWarnings(year: string, exam: Exam): Promise<ScoreProbl
       problems.push({ name: Store.fullName(s), issue: 'onvolledig' });
   }
   return problems.length > 0 ? problems : null;
-}
-
-async function computeBestGradeStats(parentId: string, year: string): Promise<ExamStats | null> {
-  const bestMap: Record<string, { grade: number }> = await Store.computeBestGradeMap(
-    parentId,
-    year,
-  );
-  const st = stats(Object.values(bestMap).map((e) => e.grade));
-  if (!st) return null;
-  return { n: st.n, avgG: formatFixed(st.mean), sd: formatFixed(st.sd), fails: st.fails };
 }
 
 const SUBCATEGORY_TO_FILTER: Record<string, string> = {
@@ -216,27 +171,16 @@ function filteredExams(year: string): Exam[] {
     );
   }
 
+  const byId = new Map(exams.map((e) => [e.id, e]));
   return exams.sort(
     (a, b) =>
       String(a.jaarlaag).localeCompare(String(b.jaarlaag), undefined, { numeric: true }) ||
+      // The periodes in reading order (decision 41); the attempts follow their original.
+      periodeNr(a.parent_id ? (byId.get(a.parent_id) ?? a) : a) -
+        periodeNr(b.parent_id ? (byId.get(b.parent_id) ?? b) : b) ||
       (a.volgnummer ?? 0) - (b.volgnummer ?? 0) ||
       (a.attempt ?? 1) - (b.attempt ?? 1),
   );
-}
-
-function applyStats(el: HTMLElement, st: ExamStats | null, diagnostic: boolean): void {
-  if (!st) {
-    el.remove();
-    return;
-  }
-  const b = document.createElement('b');
-  b.textContent = st.avgG;
-  // A diagnostic test counts for nothing: its mean stays grey (spec 4.7).
-  if (!diagnostic) b.style.color = gradeTextColor(parseDecimalLoose(st.avgG));
-  const rest = document.createElement('span');
-  rest.className = 'muted';
-  rest.textContent = ` ± ${st.sd} · ${st.fails}% onvoldoende`;
-  el.replaceChildren(b, rest);
 }
 
 function applyWarning(el: HTMLElement, problems: ScoreProblem[] | null): void {
@@ -247,118 +191,198 @@ function applyWarning(el: HTMLElement, problems: ScoreProblem[] | null): void {
   el.title = problems
     .map((p) => `${p.name} — ${p.issue === 'ongeldig' ? 'ongeldige score' : 'onvolledige scores'}`)
     .join('\n');
-  el.style.display = 'inline';
+  el.hidden = false;
 }
 
-export async function renderToetsenList() {
-  const year: string = SEL.toetsenYear.getValue();
-  const exams = filteredExams(year);
-  const container = document.getElementById('exam-list')!;
+/** A student's observaties of one attempt: a test's list, or a PO's general and category ones. */
+function obsOf(rec: ScoreRecord | null, exam: Exam): string[] {
+  return isPo(exam) ? poStudentObs(rec, exam.id) : (rec?.observations?.[exam.id] ?? []);
+}
 
-  if (exams.length === 0) {
-    container.innerHTML = `<p class="hint">Geen toetsen voor ${escHtml(year)}.</p>`;
-    return;
+const emptyNumbers = (): CardNumbers => ({ grades: [], obs: new Map() });
+
+function countObs(numbers: CardNumbers, ids: readonly string[]): void {
+  for (const id of new Set(ids)) numbers.obs.set(id, (numbers.obs.get(id) ?? 0) + 1);
+}
+
+/**
+ * The numbers of a test's cards in one pass over the score files: per attempt its grades and
+ * observaties, and for a stack the Verzamelkaart's (the best attempt per student; its
+ * observaties are those of the attempt that counts, without a grade those of all, as the
+ * verzameloverzicht).
+ */
+async function blockNumbers(year: string, original: Exam, resits: readonly Exam[]) {
+  const attempts = [original, ...resits];
+  const per = new Map(attempts.map((a) => [a.id, emptyNumbers()]));
+  const summary = emptyNumbers();
+  for (const s of Store.getStudentsSync(year) as { id: string }[]) {
+    const rec = (await Store.getStudentScores(s.id, year)) as ScoreRecord | null;
+    for (const a of attempts) {
+      const nums = per.get(a.id)!;
+      const res = Store.examResults(rec, a);
+      if (res && res.grade !== null) nums.grades.push(res.grade);
+      countObs(nums, obsOf(rec, a));
+    }
+    if (!resits.length) continue;
+    const best = bestAttempt(rec, attempts);
+    if (best) summary.grades.push(best.grade);
+    countObs(summary, best ? obsOf(rec, best.exam) : attempts.flatMap((a) => obsOf(rec, a)));
   }
+  return { per, summary };
+}
 
+/** Fills the bottom of a card and its mini histogram. */
+function fillCard(card: HTMLElement, numbers: CardNumbers, best: boolean, diagnostic: boolean) {
+  const sum = cardSummary(numbers, best);
+  card.querySelector('[data-count]')!.textContent = sum.countText;
+  const obs = topObservaties(numbers.obs, Store.getObservatiesSync() as Observatie[]);
+  card.querySelector('[data-obs]')!.innerHTML = obs
+    .map(
+      (o) =>
+        `<span class="tcard-obs-item" title="${escHtml(o.title)}"><span aria-hidden="true">${escHtml(o.icon)}</span><b>${o.count}</b></span>`,
+    )
+    .join('');
+  const avg = card.querySelector<HTMLElement>('[data-avg]')!;
+  const mean = document.createElement('span');
+  mean.className = 'tcard-mean';
+  const b = document.createElement('b');
+  b.textContent = sum.meanText;
+  // A diagnostic test counts for nothing: its mean stays grey (spec 4.7).
+  if (sum.mean !== null && !diagnostic) b.style.color = gradeTextColor(sum.mean);
+  mean.append(b);
+  if (sum.mean !== null) mean.append(` ± ${sum.sdText}`);
+  const fail = document.createElement('span');
+  fail.className = 'tcard-fail';
+  fail.textContent = sum.failText;
+  avg.replaceChildren(mean, fail);
+  const hist = card.querySelector<HTMLElement>('[data-hist]')!;
+  const model = miniHistogram(numbers.grades);
+  hist.innerHTML = miniHistHtml(model.bars, model.passPct);
+  applyStyleData(hist);
+}
+
+/** Opens what a card's title button names. */
+function openFromCard(btn: HTMLElement): void {
+  const id = btn.dataset.examid ?? '';
+  const year = currentYear();
+  switch (btn.dataset.action) {
+    case 'exam-overview':
+      void openExamOverviewModal(id, year);
+      break;
+    case 'po-overview':
+      void openPoOverviewModal(id, year);
+      break;
+    case 'exam-overview-best':
+      openBestGradesOverviewModal(id, year);
+      break;
+  }
+}
+
+/** One listener for the whole list (it is redrawn often). */
+function wireList(container: HTMLElement): void {
+  if (container.dataset.wired) return;
+  container.dataset.wired = '1';
+  container.addEventListener('click', (ev) => {
+    const target = ev.target as Element;
+    const action = target.closest<HTMLElement>('[data-action]');
+    if (action && container.contains(action)) {
+      switch (action.dataset.action) {
+        case 'exam-menu':
+          void toggleExamMenu(action, SEL.toetsenYear.getValue());
+          return;
+        case 'exam-attempts':
+          toggleStack(container, action.dataset.examid ?? '');
+          return;
+        default:
+          openFromCard(action);
+          return;
+      }
+    }
+    // A click anywhere else on a card opens its overview (decision 41), not on a selection.
+    const card = target.closest<HTMLElement>('.tcard--link');
+    if (!card || target.closest('a, button, input') || window.getSelection()?.toString()) return;
+    const title = card.querySelector<HTMLElement>('.tcard-title[data-action]');
+    if (title) openFromCard(title);
+  });
+}
+
+/** Sections per jaarlaag: label and grid. */
+function listHtml(exams: Exam[]): string {
   const originals = exams.filter((e) => !e.parent_id);
   const resitsByParent: Record<string, Exam[]> = {};
   for (const e of exams) {
     if (e.parent_id) (resitsByParent[e.parent_id] ??= []).push(e);
   }
   const resitsOf = (e: Exam) => resitsByParent[e.id] ?? [];
-
-  let html = '';
-  let lastJl: string | null = null;
+  const byJl = new Map<string, Exam[]>();
   for (const e of originals) {
     const jl = String(e.jaarlaag ?? '—');
-    if (jl !== lastJl) {
-      html += `<div class="section-heading-jaarlaag">Jaarlaag ${escHtml(jl)}</div>`;
-      lastJl = jl;
-    }
-    html += examBlock(e, resitsOf(e), !closedAttempts.has(e.id));
+    if (!byJl.has(jl)) byJl.set(jl, []);
+    byJl.get(jl)!.push(e);
   }
-  container.innerHTML = html;
+  return [...byJl]
+    .map(
+      ([jl, list]) =>
+        `<section class="tsection"><h3 class="tsection-label">Jaarlaag ${escHtml(jl)}</h3>${gridHtml(list, resitsOf)}</section>`,
+    )
+    .join('');
+}
+
+export async function renderToetsenList() {
+  const year: string = SEL.toetsenYear.getValue();
+  const exams = filteredExams(year);
+  const container = document.getElementById('exam-list')!;
+  container.classList.add('tlist');
+  wireList(container);
+
+  if (exams.length === 0) {
+    container.innerHTML = `<p class="hint">Geen toetsen voor ${escHtml(year)}.</p>`;
+    return;
+  }
+
+  container.innerHTML = listHtml(exams);
   applyStyleData(container);
+  initStacks(container);
   void fillExamPresence();
 
-  // ── Event listeners ────────────────────────────────────────────────────────
-  const buttons = (action: string) =>
-    container.querySelectorAll<HTMLElement>(`[data-action="${action}"]`);
-  buttons('exam-menu').forEach((b) =>
-    b.addEventListener('click', () => void toggleExamMenu(b, year)),
-  );
-  buttons('exam-overview').forEach((b) =>
-    b.addEventListener(
-      'click',
-      () => void openExamOverviewModal(b.dataset.examid ?? '', currentYear()),
-    ),
-  );
-  buttons('po-overview').forEach((b) =>
-    b.addEventListener(
-      'click',
-      () => void openPoOverviewModal(b.dataset.examid ?? '', currentYear()),
-    ),
-  );
-  buttons('exam-overview-best').forEach((b) =>
-    b.addEventListener('click', () =>
-      openBestGradesOverviewModal(b.dataset.examid ?? '', currentYear()),
-    ),
-  );
-  buttons('exam-attempts').forEach((b) =>
-    b.addEventListener('click', () => {
-      const id = b.dataset.examid ?? '';
-      const open = closedAttempts.has(id);
-      if (open) closedAttempts.delete(id);
-      else closedAttempts.add(id);
-      setAttemptsOpen(b, open);
-    }),
-  );
-
-  // ── Fill stats and warnings asynchronously ─────────────────────────────────
+  // ── Fill the numbers and warnings asynchronously ───────────────────────────
   const endStats = perfSpan('toetsen:stats');
   const fills: Promise<void>[] = [];
-  const statsSlot = (id: string, best: boolean) =>
+  const cardEl = (id: string, kind: CardKind) =>
     container.querySelector<HTMLElement>(
-      `.exam-stats[data-examid="${CSS.escape(id)}"]${best ? '[data-best-stats]' : ':not([data-best-stats])'}`,
+      `.tcard[data-exam-card="${CSS.escape(id)}"][data-kind="${kind}"]`,
     );
-  const warningSlot = (id: string) =>
-    container.querySelector<HTMLElement>(`.exam-warning[data-examid="${CSS.escape(id)}"]`);
-
+  const originals = exams.filter((e) => !e.parent_id);
   for (const e of originals) {
-    const resits = resitsOf(e);
-    if (resits.length > 0) {
-      const el = statsSlot(e.id, true);
-      if (el) {
-        fills.push(
-          computeBestGradeStats(e.id, year).then((st) => applyStats(el, st, !!e.diagnostic)),
-        );
-      }
-    }
-    for (const attempt of [e, ...resits]) {
-      const el = statsSlot(attempt.id, false);
-      if (el) {
-        fills.push(
-          computeExamStats(year, attempt).then((st) => {
-            applyStats(el, st, !!attempt.diagnostic);
-            const count = container.querySelector(
-              `[data-attempt-count="${CSS.escape(attempt.id)}"]`,
-            );
-            if (count) {
-              const n = st?.n ?? 0;
-              count.textContent = `${n} ${n === 1 ? 'leerling' : 'leerlingen'}`;
-            }
-          }),
-        );
-      }
-      const warning = warningSlot(attempt.id);
-      if (warning) {
-        fills.push(computeExamWarnings(year, attempt).then((p) => applyWarning(warning, p)));
-      }
+    const resits = exams.filter((r) => r.parent_id === e.id);
+    const stack = resits.length > 0;
+    fills.push(
+      blockNumbers(year, e, resits).then(({ per, summary }) => {
+        if (stack) {
+          const card = cardEl(e.id, 'summary');
+          if (card) fillCard(card, summary, true, !!e.diagnostic);
+        }
+        for (const a of [e, ...resits]) {
+          const card = cardEl(a.id, stack ? 'attempt' : 'solo');
+          if (card) fillCard(card, per.get(a.id)!, false, !!a.diagnostic);
+        }
+      }),
+    );
+    for (const a of [e, ...resits]) {
+      const warning = container.querySelector<HTMLElement>(
+        `.exam-warning[data-examid="${CSS.escape(a.id)}"]`,
+      );
+      if (warning) fills.push(computeExamWarnings(year, a).then((p) => applyWarning(warning, p)));
     }
   }
   void Promise.allSettled(fills).then(() => {
     // A read that failed leaves no placeholder behind.
-    container.querySelectorAll('.exam-stats:has(> .skel)').forEach((el) => el.remove());
+    container.querySelectorAll('.tcard [data-avg]:has(> .skel)').forEach((el) => {
+      el.replaceChildren();
+    });
+    container.querySelectorAll('.tcard [data-count]:has(> .skel)').forEach((el) => {
+      el.replaceChildren();
+    });
     endStats();
   });
 }

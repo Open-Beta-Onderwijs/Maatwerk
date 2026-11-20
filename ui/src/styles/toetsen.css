@@ -33,145 +33,391 @@
   box-sizing: border-box;
 }
 
-/* ── Exam card ───────────────────────────────────────────────────────────── */
-.exam-card-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 10px;
+/* ── Cards (step 33; spec 4.7, boards 55-56, decisions 41-44) ────────────── */
+/* screens/toetsen/cards.ts, stack.ts. Three cards per row; a stack's attempts
+   live in a tray row under it (positions set by stack.ts). */
+.tlist {
+  --tcard-h: 214px;
+  --tray-tint: color-mix(in srgb, var(--accent) 12%, transparent);
 }
-.exam-card .exam-title-link {
-  font-size: 15px;
-  font-weight: 650 !important;
+html[data-theme='dark'] .tlist {
+  --tray-tint: color-mix(in srgb, var(--accent) 20%, transparent);
 }
-.exam-kind-pill {
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--surface-2);
+.tsection-label {
+  margin: 28px 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--accent-text);
+}
+.tsection:first-child .tsection-label {
+  margin-top: 8px;
+}
+.tgrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 36px;
+  align-items: start;
+}
+.tgrid-cell {
+  position: relative;
+  min-width: 0;
+}
+.tgrid-cell--stack {
+  z-index: 3; /* above its tray, whose closed cards lie behind it */
+}
+/* "Periode N" above the first card of a periode */
+.tgrid-per {
+  height: 20px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
-  font-size: var(--fs-caption);
   white-space: nowrap;
 }
-.exam-line {
-  color: var(--muted);
-  font-size: var(--fs-secondary);
-}
-.exam-line--nums,
-.exam-stats {
-  font-variant-numeric: tabular-nums;
-}
-.exam-stats {
-  display: block;
-  min-height: 1.4em;
-  font-size: var(--fs-secondary);
-}
-.exam-stats .skel {
-  vertical-align: middle;
-}
-/* A diagnostic test counts for nothing: grey italic title and stats (spec 4.7). */
-.exam-card--diagnostic .exam-title-link,
-.exam-card--diagnostic .exam-attempt-label {
-  color: var(--muted);
-  font-style: italic;
-}
-.exam-card--diagnostic .exam-stats {
-  font-style: italic;
-}
-.exam-card--diagnostic .exam-stats b {
-  color: var(--muted);
-}
-.exam-attempts-toggle .exam-chevron {
-  margin-left: 6px;
-  transition: transform 0.25s;
-}
-.exam-attempts-toggle[aria-expanded='true'] .exam-chevron {
-  transform: rotate(180deg);
+/* A periode that starts mid-row: a divider in the middle of the gap to its left */
+.tgrid-divider {
+  position: absolute;
+  left: -19px;
+  top: 4px;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--border);
 }
 
-/* ── Attempts on a tree line, indented 28 px; open by default ────────────── */
-.attempt-tree {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.25s;
-}
-.attempt-tree--open {
-  grid-template-rows: 1fr;
-  opacity: 1;
-}
-.attempt-tree-inner {
-  min-height: 0;
-  overflow: hidden;
-}
-.attempt-tree-list {
+/* ── The card ── */
+.tcard {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 0 2px 50px;
+  height: var(--tcard-h);
+  box-sizing: border-box;
+  padding: 14px 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
 }
-/* Closed: out of sight once the animation is done, not only clipped. */
-.attempt-tree:not(.attempt-tree--open) .attempt-tree-list {
-  visibility: hidden;
-  transition: visibility 0s 0.35s;
+.tcard--link {
+  cursor: pointer;
 }
-.exam-attempt-card {
-  position: relative;
-  overflow: visible;
-  margin: 0;
+.tcard--link:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-card-hover);
 }
-.exam-attempt-card::before {
-  content: '';
-  position: absolute;
-  left: -22px;
-  top: calc(50% - 1px);
-  width: 18px;
-  height: 2px;
-  background: var(--tree-line);
+.tcard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
-.exam-attempt-card::after {
-  content: '';
-  position: absolute;
-  left: -22px;
-  top: -10px;
-  height: calc(50% + 10px);
-  width: 2px;
-  background: var(--tree-line);
+.tcard-head .test-badge {
+  flex: none;
 }
-.exam-attempt-card:not(:last-child)::after {
-  height: calc(100% + 18px);
-}
-.exam-attempt-label {
+.tcard-title {
+  flex: 1;
+  min-width: 0;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--text);
   font: inherit;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--accent-text);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+button.tcard-title {
   cursor: pointer;
 }
-.exam-attempt-label:hover {
+button.tcard-title:hover {
   text-decoration: underline;
 }
-.exam-attempt-count {
+.tcard--diagnostic .tcard-title {
   color: var(--muted);
-  font-size: var(--fs-caption);
+  font-style: italic;
 }
-.exam-lock-pill {
+.tcard-head .exam-warning {
+  margin: 0;
+}
+.tcard-head .exam-warning[hidden] {
+  display: none;
+}
+.tcard-head .presence-badges {
+  flex: none;
+}
+.tcard-head .exam-menu-btn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  margin: -4px -6px -4px 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.tcard-head .exam-menu-btn:hover,
+.tcard-head .exam-menu-btn.active {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.tcard-mid {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+  margin-top: 6px;
+}
+.tcard-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tcard-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+.tcard-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 1px 8px;
-  border: 1px solid var(--border);
+  gap: 4px;
+  padding: 0 8px;
   border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  background: var(--surface-2);
   color: var(--muted);
-  font-size: var(--fs-caption);
   white-space: nowrap;
 }
+.tcard-pill--attempt {
+  background: var(--tray-tint);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.tcard-line {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tcard-rtti b {
+  font-weight: 700;
+}
+.tcard-sep {
+  padding: 0 4px;
+  color: var(--border-strong);
+}
+.tcard-rtti .rtti-r {
+  color: var(--rtti-r);
+}
+.tcard-rtti .rtti-t1 {
+  color: var(--rtti-t1);
+}
+.tcard-rtti .rtti-t2 {
+  color: var(--rtti-t2);
+}
+.tcard-rtti .rtti-i {
+  color: var(--rtti-i);
+}
+/* Mini histogram, 104 × 46: bins of spec 3.10 with step 1, the dashed 5,5 line */
+.tcard-hist {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 104px;
+  height: 46px;
+  border-bottom: 1px solid var(--border);
+}
+.tcard-bin {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+}
+.tcard-bin--empty {
+  background: var(--border);
+}
+.tcard-pass {
+  position: absolute;
+  top: -3px;
+  bottom: 0;
+  border-left: 1.5px dashed #e5736b;
+  pointer-events: none;
+}
+.tcard-foot {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+.tcard-count {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tcard-n {
+  min-height: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tcard-obs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 18px;
+}
+.tcard-obs-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+}
+.tcard-obs-item b {
+  font-variant-numeric: tabular-nums;
+}
+.tcard-avg {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  text-align: right;
+}
+.tcard-mean {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tcard-mean b {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.tcard-fail {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ── Stack: the Verzamelkaart with its toggle pill on the bottom edge ── */
+.tstack {
+  position: relative;
+}
+.tstack-toggle {
+  position: absolute;
+  right: 14px;
+  bottom: -11px;
+  z-index: 4;
+  height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
+}
+.tstack-toggle:hover {
+  background: var(--surface-hover);
+}
+
+/* ── Tray: a grid row under the stack's row; closed it takes no room ── */
+.ttray {
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 1;
+  height: 0;
+  margin: -16px -8px 0;
+  transition:
+    height 0.4s ease,
+    margin-top 0.4s ease;
+}
+.ttray-outline {
+  position: absolute;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    clip-path 0.4s ease,
+    opacity 0.2s ease;
+}
+.ttray-outline path {
+  fill: var(--tray-tint);
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.ttray--open .ttray-outline {
+  opacity: 1;
+}
+.ttray-title {
+  position: absolute;
+  top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--accent-text);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.ttray--open .ttray-title {
+  opacity: 1;
+}
+.ttray-cards {
+  position: absolute;
+  top: 36px;
+  left: 8px;
+  right: 8px;
+}
+.ttray-card {
+  position: absolute;
+  pointer-events: none;
+  transition:
+    left 0.38s cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 0.4s ease,
+    opacity 0.3s ease;
+}
+.ttray-card--usable {
+  pointer-events: auto;
+}
+/* A drawn (or resized) list takes its state without animating */
+.tgrid-static .ttray,
+.tgrid-static .ttray-outline,
+.tgrid-static .ttray-title,
+.tgrid-static .ttray-card {
+  transition: none;
+}
 @media (prefers-reduced-motion: reduce) {
-  .attempt-tree,
-  .exam-attempts-toggle .exam-chevron {
+  .ttray,
+  .ttray-outline,
+  .ttray-title,
+  .ttray-card,
+  .tcard {
     transition: none;
   }
 }

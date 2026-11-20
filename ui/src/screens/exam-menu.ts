@@ -4,7 +4,11 @@
 
 import { esc } from '../components/dialog';
 import { openExamModal, deleteExam } from '../modals/toets-edit';
-import { openResitModal, openSummaryEditModal } from '../modals/herkansing';
+import {
+  openBestGradesOverviewModal,
+  openResitModal,
+  openSummaryEditModal,
+} from '../modals/herkansing';
 import { openOpdrachtenGenererenModal } from '../modals/opdrachten-genereren';
 import { openRapportModal } from '../modals/rapport';
 import { examObsIds } from '../domain/opdrachten';
@@ -17,7 +21,9 @@ import { openPoScoresModal } from '../modals/po-scores';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { perfSpan } from '../utils/perf';
-import type { CardKind } from './exam-cards';
+import { openExamOverviewModal } from '../modals/exam-overview';
+import { openPoOverviewModal } from '../modals/po-overview';
+import { PO_SUMMARY_LATER, type CardKind } from './toetsen/cards';
 import { prebuildScoreModal } from './scores/build';
 import { openScoreModal } from './scores/modal';
 import { renderToetsenList } from './toetsen';
@@ -71,6 +77,13 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
           icon: ICONS.scores,
           label: 'Scores invoeren',
           run: () => openPoScoresModal(examId, year, openPoGrading),
+        },
+    summary
+      ? { icon: ICONS.overview, label: 'Overzicht openen', disabled: PO_SUMMARY_LATER }
+      : {
+          icon: ICONS.overview,
+          label: 'Overzicht openen',
+          run: () => openPoOverviewModal(examId, year),
         },
     summary
       ? {
@@ -155,6 +168,13 @@ async function buildMenuItems(examId: string, kind: CardKind, year: string): Pro
           label: 'Scores invoeren',
           run: () => openScoreModal(examId, year, { openExamModal, renderToetsenList }),
         },
+    {
+      icon: ICONS.overview,
+      label: 'Overzicht openen',
+      // Decision 41: a click on the card opens it too; the Verzamelkaart's is over the best attempts.
+      run: () =>
+        summary ? openBestGradesOverviewModal(examId, year) : openExamOverviewModal(examId, year),
+    },
     summary
       ? {
           icon: ICONS.rapport,
