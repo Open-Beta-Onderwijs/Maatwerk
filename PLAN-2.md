@@ -199,6 +199,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 31   | Opdrachten-editor                                                | M            | 0.22    | gate   |
 | 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | gate   |
 | 33   | Toetsen as cards                                                 | M            | 0.24    | gate   |
+| 33b  | Perf hotfix: first tab visits, card swap clock, batch grades     | S            | 0.24.1  | gate   |
 | 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |
 | 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
 

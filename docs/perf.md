@@ -45,7 +45,7 @@ a real copy (500+ students).
   group grid since the staged build, see below), `scores:read|compute|dom` per group grid,
   `menu:exam`, and the background fills after a render (`leerlingen:checks`, `groepen:stats`,
   `toetsen:stats`). They show in the DevTools Performance panel too.
-- `node tools/perf/measure.mjs --data <dir>` starts the release exe on that folder with the
+- `node tools/perf/measure.mjs --data <dir>/shared/data` (the data folder itself) starts the release exe on that folder with the
   WebView2 DevTools port open, logs in through the UI, switches the tabs 5 times, opens 4 score
   modals 5 times, and prints median / p90 / max per span plus the main thread's long tasks.
   `--cpu 4` throttles the webview 4x (CDP), as a stand-in for a school laptop; `--admin 1`
@@ -287,3 +287,68 @@ The JS of the measured screens (scores, store, app, score grid) did not change s
 WebView2 runtime here: 156.0.4314.58. To confirm: repeat on mains power (expected: back to the
 Step 7c numbers). For the cutover, M-PERF-1/2 on a school laptop (also on battery) is the
 relevant check.
+
+## Perf hotfix 0.24.1 (step 33b, 2026-11-20)
+
+User report: the first visit of some tabs, Toetsen most of all, is slow. Setup as in Step 7c:
+`school` fixture (600 students, migrated), teacher nat, release exe, Windows 11, 16 logical
+CPUs; `tools/perf/measure.mjs --cpu 4|1 --runs 3 --exams 2` (fixed in this step: login and
+dialog selectors; new `first` column = first visit after login). One run each, back to back, same
+machine; single samples vary (Step 7c), the long-task totals are the clearest signal.
+Function-level profiles came from `npm run dev:mock` with `MAATWERK_FIXTURE=school` in Chromium
+(the release bundle is minified).
+
+### Causes
+
+1. **Leerlingen swap sync.** Each card's "laatste / SE" swap was a CSS animation; the app set its
+   `startTime` through `el.getAnimations()` per card, between the writes that fill the cards.
+   Every call computed style for the list: ~10-12 s of a 4x profile, running in the background
+   right after login and competing with whatever tab was opened next. Batched per frame it was
+   still ~12 s (per element it computes the style of off-screen and hidden cards one by one), and
+   `document.getAnimations()` leaves out off-screen cards (`content-visibility: auto`).
+2. **Statistics before the first paint.** Toetsen and Groepen awaited cached score reads; those
+   resolve as microtasks, so all statistics ran as one task before the browser could paint the
+   cards.
+3. **One grade-rules call per student per attempt.** ~5,400 calls into WebAssembly for 8 nat exams;
+   each call serialised the exam with all its questions (JSON, `TextEncoder`, serde).
+
+### Changes
+
+- One clock for the swap (`cards/swap-clock.ts`): `data-card-swap` on `<html>` flips every 4,5 s,
+  the cards cross-fade in CSS (same timing as before). No per-card work at all.
+- Toetsen paints its cards first (`afterPaint`) and fills the numbers in 8 ms slices
+  (`utils/idle.ts` `yieldSlice`); Groepen fills its groups in slices too.
+- `examResults` / `bestAttempt` skip the rules for a record without scores or an override for
+  the exam (the rules answer null without computing). New batch calls `examResultsMany` /
+  `bestAttemptMany` in `maatwerk-grades-wasm` (no rule changed; equal to the single calls, tested
+  in Rust and Vitest); Toetsen calls them per 60 students.
+
+### Before (0.24.0) and after (0.24.1)
+
+`first / median` in ms.
+
+| Span                | 4x before  | 4x after   | 1x before  | 1x after |
+| ------------------- | ---------- | ---------- | ---------- | -------- |
+| tab:leerlingen      | 264 / 121  | 242 / 127  | 56 / 17    | 92 / 32  |
+| leerlingen:grades   | 31972      | 7251       | 12616      | 839      |
+| leerlingen:rest     | 40829      | 7487       | 93         | 150      |
+| tab:groepen         | 192 / 116  | 142 / 106  | 32 / 32    | 53 / 28  |
+| groepen:stats       | 2175       | 8708       | 324        | 1240     |
+| tab:toetsen         | 1918 / 107 | 266 / 114  | 367 / 59   | 74 / 45  |
+| toetsen:stats       | 1750       | 1115       | 338        | 140      |
+| modal:scores        | 189 / 171  | 164 / 108  | 50 / 23    | 24 / 27  |
+| long tasks (n, sum) | 80, 49 447 | 78, 12 228 | 11, 12 952 | 5, 325   |
+| longest task        | 7418       | 672        | 4578       | 79       |
+
+Findings:
+
+- At 1x the main thread is free again: 0.3 s of long tasks instead of 13 s, the longest 79 ms
+  instead of 4,6 s. The first Toetsen visit is within the 100 ms budget at 1x (74 ms) and 266 ms
+  at 4x (was 1,9 s).
+- `groepen:stats` takes longer in wall time (324 -> 1240 ms at 1x): it now yields and shares the
+  main thread with the Leerlingen fill that runs right after login. It no longer blocks a paint or
+  input (`tab:groepen` stays within budget). The background fills as a whole are the next target:
+  backlog "Grade cache" (from the perf hotfix 0.24.1).
+- The synthetic fixture gives every student scores in every exam of the vak, so the "skip empty
+  records" change hardly shows here; on real data (an exam per jaarlaag) it skips most calls.
+- Not measured: WebKit (macOS, Linux) and the user's real copy (M-PERF-1).
