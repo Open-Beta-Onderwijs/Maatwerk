@@ -352,3 +352,31 @@ Findings:
 - The synthetic fixture gives every student scores in every exam of the vak, so the "skip empty
   records" change hardly shows here; on real data (an exam per jaarlaag) it skips most calls.
 - Not measured: WebKit (macOS, Linux) and the user's real copy (M-PERF-1).
+
+### After the review fixes (review 33b, same day)
+
+Review 33b m3: `yieldSlice` yielded with `setTimeout(0)` (>= 4 ms clamp once nested, throttled in
+a hidden window). First replaced by `scheduler.yield()`: the first Toetsen visit at 1x went 74 ->
+310 ms, because a `scheduler.yield()` continuation goes ahead of other queued tasks, so the app's
+own timers (and the span's `afterPaint`) waited for the whole background fill. Now a
+`MessageChannel` message: no clamp, no queue-jumping. Also: Toetsen fills test by test in reading
+order and stops after a redraw (m1, n2); Groepen stops after a redraw (m2).
+
+`first / median` in ms; "1x (a)" was the first run after the build, "1x (b)" the next one.
+
+| Span              | 4x      | 1x (a) | 1x (b) |
+| ----------------- | ------- | ------ | ------ |
+| tab:leerlingen    | 197/115 | 38/17  | 34/34  |
+| leerlingen:grades | 3916    | 5075   | 662    |
+| leerlingen:rest   | 4379    | 65     | 50     |
+| tab:groepen       | 141/99  | 21/21  | 62/39  |
+| groepen:stats     | 4225    | 3482   | 1031   |
+| tab:toetsen       | 261/116 | 40/47  | 76/35  |
+| toetsen:stats     | 1668    | 1956   | 189    |
+| modal:scores      | 160/121 | 70/50  | 63/37  |
+| long tasks, sum   | 8273    | 629    | 445    |
+| longest task      | 265     | 89     | 82     |
+
+The background fills' wall times move a lot between runs (they yield to everything else; run
+(a) was right after a build, probably a cold start); the long tasks do not: at 1x no task over
+~90 ms, at 4x none over ~270 ms (0.24.0: 4,6 s and 7,4 s).

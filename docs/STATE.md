@@ -32,7 +32,15 @@ Choice made without a spec line (tell the user): the swap now cross-fades by a C
 shared clock instead of a keyframe animation per card; timing as before (4,5 s per value incl.
 0,7 s fade, 9 s cycle).
 
-**Next action:** review subagent (`docs/reviews/step-33b.md`), fix blockers/majors, report.
+Review `docs/reviews/step-33b.md` (`a214cfa`): 0 blockers, 0 majors, 5 minors, 5 nits; all fixed
+(`cf23b60`, and `yieldSlice` through a MessageChannel instead of `scheduler.yield()`, which held
+the app's own timers back: `docs/perf.md` "After the review fixes"). New pure module
+`screens/toetsen/block-numbers.ts` (tested equal to the old one-by-one path). Rerun: cargo fmt,
+clippy, test, SPDX; typecheck, lint, 851 Vitest, Chromium e2e 396/396; measured again (1x: no
+task over ~90 ms; 4x: none over ~270 ms).
+
+**Next action:** the user: check a years 4-6 student card's "laatste / SE" swap in the real app,
+the local `splash` baselines (version text) and the CI ones; merge 32, 33, 33b; release 0.24.1.
 
 ## Hotfix 0.23.1 (2026-11-19, on `step/32-ai`, user's call)
 

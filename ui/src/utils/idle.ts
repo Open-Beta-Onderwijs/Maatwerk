@@ -81,14 +81,13 @@ export function resetSlice(): void {
 }
 
 /**
- * Resolves in a new task, as soon as the browser has had its turn (review 33b m3). Not
- * `setTimeout(0)`: nested timeouts are clamped to >= 4 ms, and timers of a hidden window are
- * throttled. `scheduler.yield()` where it exists (Chromium/WebView2), else a message on a
- * MessageChannel (WebKit), else a timeout.
+ * Resolves in a new task, as soon as the browser has had its turn (review 33b m3): a message on a
+ * MessageChannel. Not `setTimeout(0)`: nested timeouts are clamped to >= 4 ms, and timers of a
+ * hidden window are throttled. Not `scheduler.yield()` either: its continuation goes ahead of the
+ * other queued tasks, so a background fill held back the app's own timers until it was done
+ * (first Toetsen visit 74 -> 310 ms at 1x when measured).
  */
 function nextTask(): Promise<void> {
-  const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
-  if (typeof scheduler?.yield === 'function') return scheduler.yield();
   if (typeof MessageChannel === 'function') {
     return new Promise((resolve) => {
       const { port1, port2 } = new MessageChannel();
