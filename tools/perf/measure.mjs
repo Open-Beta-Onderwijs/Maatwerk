@@ -7,7 +7,7 @@
 // main thread's long tasks. Synthetic data only: use the `school` fixture
 // (migrated to v2) or a copy of real data outside the repo.
 //
-//   node tools/perf/measure.mjs --data <dir> [--exe target/release/maatwerk.exe]
+//   node tools/perf/measure.mjs --data <data folder> [--exe target/release/maatwerk.exe]
 //     [--subject nat] [--user <id> | --admin 1] [--pin 12345] [--runs 5] [--exams 4]
 //     [--tabs leerlingen,groepen,...] [--cpu 4] [--menu-ms 300] [--json out.json]
 //
@@ -16,6 +16,9 @@
 // choosing "Scores invoeren" (a person moving the mouse; the grids are prebuilt
 // meanwhile). The admin has no score modal: use --exams 0.
 // The login PIN is chosen at the first login if the user has none yet.
+// --data is the data folder itself (it becomes $MAATWERK_DATA_DIR), e.g. the
+// `shared/data` the fixture generator writes. The table's `first` column is a
+// span's first sample: a tab's first visit after login, which the medians hide.
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -71,10 +74,15 @@ async function appPage(browser) {
 }
 
 async function login(page) {
-  await page.locator(`.subject-card[data-subject="${subject}"]`).click();
+  // The vak last used on this PC is chosen already; clicking it again would go back.
+  const tile = page.locator(`.subject-card[data-subject="${subject}"]`);
+  await tile.waitFor();
+  await page.waitForTimeout(300);
+  if ((await tile.getAttribute('aria-pressed')) !== 'true') await tile.click();
+  const role = args.admin ? 'beheer' : 'docent';
   const badge = args.user
     ? page.locator(`.user-badge[data-user-id="${args.user}"]`)
-    : page.locator(`.user-badge.${args.admin ? 'badge-square' : 'badge-circle'}[data-user-id]`);
+    : page.locator(`.login-group[data-role="${role}"] .user-badge[data-user-id]`);
   await badge.first().click();
   const first = page.locator('#pin-new');
   const again = page.locator('#pin-input');
@@ -140,14 +148,14 @@ async function openScores(page, { id, kind }) {
   await page.getByRole('menuitem', { name: 'Scores invoeren' }).click();
   await waitForSpan(page, 'mw:modal:scores', before);
   await settle(page, 300);
-  await page.locator('#modal-close').click();
-  await page.locator('#modal-overlay.hidden').waitFor({ state: 'attached' });
+  await page.locator('.dlg .dlg-close').last().click();
+  await page.locator('.dlg-backdrop').waitFor({ state: 'detached' });
 }
 
 function stats(values) {
   const v = [...values].sort((a, b) => a - b);
   const q = (p) => v[Math.min(v.length - 1, Math.floor(p * v.length))];
-  return { n: v.length, median: q(0.5), p90: q(0.9), max: v[v.length - 1] };
+  return { n: v.length, first: values[0], median: q(0.5), p90: q(0.9), max: v[v.length - 1] };
 }
 
 const child = spawn(exe, [], {
