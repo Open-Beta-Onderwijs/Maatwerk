@@ -59,6 +59,22 @@ export function inIdleSlices<T>(items: T[], run: (slice: T[]) => void, batch = 2
   };
 }
 
+/** How long background fills may hold the main thread before the browser gets a turn (ms). */
+export const SLICE_MS = 8;
+let sliceStart = 0;
+
+/**
+ * For async loops over cached data (perf hotfix 0.24.1): resolves at once while the current
+ * slice lasts, else after a task, so input and paint get a turn. Cached reads resolve as
+ * microtasks, so without this a fill over hundreds of students runs as one long task. One budget
+ * for every loop running at the same time.
+ */
+export async function yieldSlice(now: () => number = () => performance.now()): Promise<void> {
+  if (now() - sliceStart < SLICE_MS) return;
+  await new Promise((r) => setTimeout(r, 0));
+  sliceStart = now();
+}
+
 /** Resolves in the next idle period (for async loops that yield between steps). */
 export function nextIdle(): Promise<void> {
   return new Promise((resolve) => requestIdle(() => resolve()));

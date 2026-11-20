@@ -89,6 +89,29 @@ test('the admin keeps the plain student list, without grades', async ({ page }) 
   await expect(page.locator('#f-gname')).toBeVisible();
 });
 
+test('the "laatste / SE" swap follows the one clock on <html> (spec 4.3)', async ({ page }) => {
+  await login(page);
+  await screen(page, 'leerlingen');
+  // The tiny fixture has no years 4-6: one swap in the markup of card-html.ts.
+  await page.evaluate(() => {
+    const slot = document.querySelector('#student-list .s-card')!;
+    slot.insertAdjacentHTML(
+      'beforeend',
+      '<span class="s-card__swap" id="swap-probe"><span class="s-card__swap-a">laatste</span><span class="s-card__swap-b">SE</span><span class="s-card__swap-both">both</span></span>',
+    );
+  });
+  const html = page.locator('html');
+  await expect(html).toHaveAttribute('data-card-swap', 'a');
+  const a = page.locator('#swap-probe .s-card__swap-a');
+  const b = page.locator('#swap-probe .s-card__swap-b');
+  await expect(a).toHaveCSS('opacity', '1');
+  await expect(b).toHaveCSS('opacity', '0');
+  // The clock flips every 4,5 s; flipped by hand here, the cross-fade follows.
+  await page.evaluate(() => (document.documentElement.dataset.cardSwap = 'b'));
+  await expect(a).toHaveCSS('opacity', '0');
+  await expect(b).toHaveCSS('opacity', '1');
+});
+
 test.describe('reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
   test('cards do not move on hover', async ({ page }) => {

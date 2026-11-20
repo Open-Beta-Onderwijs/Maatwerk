@@ -12,7 +12,7 @@ import { applyStyleData } from '../../legacy/style-data';
 import { Store } from '../../store.js';
 import { perfSpan } from '../../utils/perf';
 import { studentGradesHtml } from './card-html';
-import { syncSwaps } from './swap-sync';
+import { startSwapClock } from './swap-clock';
 
 export interface GradeFill {
   /** A card element was added: fill it if its numbers are known. */
@@ -53,6 +53,8 @@ export function fillStudentGrades(
 ): GradeFill {
   const html = new Map<string, string>();
   let cancelled = false;
+  // The "laatste / SE" swap of years 4-6: one clock for every card (swap-clock.ts).
+  startSwapClock();
 
   const put = (id: string) => {
     const slot = container.querySelector<HTMLElement>(`[data-card-grades="${CSS.escape(id)}"]`);
@@ -74,7 +76,6 @@ export function fillStudentGrades(
       put(s.id);
       return false;
     });
-    syncSwaps(container);
     if (!todo.length) return;
     const end = perfSpan('leerlingen:grades');
     const ids = todo.map((s) => s.id);
@@ -112,7 +113,6 @@ export function fillStudentGrades(
         cached().set(keyOf(s.id), value);
         put(s.id);
       }
-      syncSwaps(container);
       await nextFrame();
       if (cancelled) return;
     }
@@ -125,7 +125,6 @@ export function fillStudentGrades(
       const id = card.dataset.id;
       if (id && html.has(id)) {
         put(id);
-        syncSwaps(card);
       }
     },
     cancel() {

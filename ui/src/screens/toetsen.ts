@@ -29,6 +29,7 @@ import { openNewPoModal } from '../modals/po-gegevens';
 import { openRttiUitlegModal } from '../modals/rtti-uitleg';
 import * as Presence from '../presence.js';
 import { Store } from '../store.js';
+import { yieldSlice } from '../utils/idle';
 import { afterPaint, perfSpan } from '../utils/perf';
 import { cardSummary, miniHistogram, topObservaties, type CardNumbers } from './toetsen/card-model';
 import { gridHtml, miniHistHtml, periodeNr, type CardKind } from './toetsen/cards';
@@ -80,7 +81,7 @@ async function computeExamWarnings(year: string, exam: Exam): Promise<ScoreProbl
   const students = Store.getStudentsSync(year);
   const problems: ScoreProblem[] = [];
   for (const s of students) {
-    await slice();
+    await yieldSlice();
     const rec = await Store.getStudentScores(s.id, year);
     const examScores: Record<string, ScoreValue> | undefined = rec?.scores?.[exam.id];
     if (!examScores || Object.keys(examScores).length === 0) continue;
@@ -225,7 +226,7 @@ async function blockNumbers(year: string, original: Exam, resits: readonly Exam[
   const students = Store.getStudentsSync(year) as { id: string }[];
   // In chunks, one call into the grade rules per chunk (perf hotfix 0.24.1), between slices.
   for (let i = 0; i < students.length; i += CHUNK) {
-    await slice();
+    await yieldSlice();
     const recs = (await Promise.all(
       students.slice(i, i + CHUNK).map((s) => Store.getStudentScores(s.id, year)),
     )) as (ScoreRecord | null)[];
@@ -249,20 +250,6 @@ async function blockNumbers(year: string, original: Exam, resits: readonly Exam[
 
 /** Students per call into the grade rules. */
 const CHUNK = 60;
-/** How long the fills may hold the main thread before the browser gets a turn (ms). */
-const SLICE_MS = 8;
-let sliceStart = 0;
-
-/**
- * Gives the browser a turn once the current slice is used up. Cached score reads resolve as
- * microtasks, so without this the fills of every card run as one long task. The budget is shared
- * by all blocks filling at the same time.
- */
-async function slice(): Promise<void> {
-  if (performance.now() - sliceStart < SLICE_MS) return;
-  await new Promise((r) => setTimeout(r, 0));
-  sliceStart = performance.now();
-}
 
 /** Fills the bottom of a card and its mini histogram. */
 function fillCard(card: HTMLElement, numbers: CardNumbers, best: boolean, diagnostic: boolean) {
