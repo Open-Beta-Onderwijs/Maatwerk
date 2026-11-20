@@ -165,3 +165,111 @@ test('Stop keeps nothing; a time-out shows its card', async ({ page }) => {
   await panel.getByRole('button', { name: 'Versturen' }).click();
   await expect(panel.getByRole('alert').last()).toContainText('Gestopt na 5 minuten');
 });
+
+test('the panel resizes from 380 px up, saved per user; the input grows to 7 lines', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  const frame = await openClaude(page);
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  const handle = frame.getByRole('separator', { name: 'Breedte AI-assistent' });
+  await expect(handle).toHaveAttribute('aria-valuenow', '380');
+  await handle.focus();
+  await page.keyboard.press('ArrowRight'); // narrower: not under 380
+  await expect(handle).toHaveAttribute('aria-valuenow', '380');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await expect(handle).toHaveAttribute('aria-valuenow', '420');
+
+  // Drag 200 px to the left: wider.
+  const box = (await handle.boundingBox())!;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + box.width / 2, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 200, y, { steps: 5 });
+  await page.mouse.up();
+  await expect(handle).toHaveAttribute('aria-valuenow', '620');
+  expect(Math.round((await panel.boundingBox())!.width)).toBe(620);
+
+  // Saved in the user's file.
+  await expect
+    .poll(async () =>
+      withMock(
+        page,
+        (m, rel) =>
+          (JSON.parse(m.peek(rel) ?? '{}') as { preferences?: { aiPanelWidth?: number } })
+            .preferences?.aiPanelWidth,
+        `gebruikers/${TEACHER}.json`,
+      ),
+    )
+    .toBe(620);
+
+  // The input grows with its text up to 7 lines, then scrolls.
+  const input = panel.getByRole('textbox', { name: 'Bericht' });
+  const height = async () => (await input.boundingBox())!.height;
+  await input.fill('regel');
+  const one = await height();
+  await input.fill(Array.from({ length: 5 }, (_, i) => `regel ${i + 1}`).join('\n'));
+  const five = await height();
+  // Two lines at least (rows=2), five lines for five.
+  expect(five).toBeGreaterThan(one * 1.8);
+  await input.fill(Array.from({ length: 12 }, (_, i) => `regel ${i + 1}`).join('\n'));
+  const twelve = await height();
+  expect(twelve).toBeGreaterThan(five);
+  expect(await input.evaluate((el) => el.scrollHeight > el.clientHeight + 1)).toBe(true);
+  const lines = await input.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    return Math.round((el.clientHeight - pad) / parseFloat(cs.lineHeight));
+  });
+  expect(lines).toBe(7);
+
+  // Double click: back to 380 px.
+  await handle.dblclick();
+  await expect(handle).toHaveAttribute('aria-valuenow', '380');
+  expect(errors).toEqual([]);
+});
+
+test('a follow-up message shows its status card at once; long step titles are cut off', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  const frame = await openClaude(page);
+  await withMock(page, (m) => {
+    m.ai.stepDelayMs = 300;
+  });
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  const input = panel.getByRole('textbox', { name: 'Bericht' });
+  await input.fill('Voeg een regel toe');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  await expect(panel.locator('.ai-diff-card')).toContainText('Voorstel');
+
+  const long = `Uitvoeren: typst compile C:/Users/${'heel-lange-mapnaam-'.repeat(8)}/opdracht.typ`;
+  await withMock(
+    page,
+    (m, title) => {
+      m.ai.nextTurn = {
+        events: [
+          { kind: 'step', step: 'command', title, detail: null },
+          { kind: 'stepOutput', text: 'error: niet gevonden', error: true },
+          { kind: 'step', step: 'check', title: 'Opdracht controleren', detail: null },
+          { kind: 'text', text: 'Klaar.' },
+        ],
+      };
+    },
+    long,
+  );
+  await input.fill('En nog een regel');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  const status = panel.locator('.ai-status-card');
+  await expect(status).toBeInViewport();
+  await status.getByRole('button', { name: 'Volledig transcript' }).click();
+  const title = status.locator('.ai-step-title', { hasText: 'Uitvoeren' });
+  await expect(title).toHaveAttribute('title', long);
+  // Cut off, and nothing in the chat scrolls sideways.
+  expect(await title.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  const messages = panel.locator('.ai-messages');
+  expect(await messages.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await expect(panel.locator('.ai-diff-card')).toContainText('Voorstel');
+  expect(errors).toEqual([]);
+});

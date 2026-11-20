@@ -21,6 +21,9 @@ import {
   type Chips,
 } from './model';
 
+/** The input grows up to this many lines before it scrolls (user, 2026-11-20). */
+const MAX_INPUT_LINES = 7;
+
 /** An attachment waiting to be sent. */
 export interface PendingAttachment {
   name: string;
@@ -129,6 +132,14 @@ export class Composer {
       }
     });
     this.input.addEventListener('paste', (e) => this.onPaste(e));
+    // A wider or narrower panel wraps the text differently.
+    let inputWidth = 0;
+    new ResizeObserver(() => {
+      const w = this.input.clientWidth;
+      if (w === inputWidth) return;
+      inputWidth = w;
+      this.fitInput();
+    }).observe(this.input);
     this.clip = h(
       'button',
       {
@@ -455,6 +466,23 @@ export class Composer {
 
   private renderSend(): void {
     this.sendBtn.disabled = this.busy || !this.input.value.trim();
+    this.fitInput();
+  }
+
+  /** The input grows with its text up to `MAX_INPUT_LINES` lines, then scrolls (user). */
+  private fitInput(): void {
+    const el = this.input;
+    if (!el.isConnected || el.offsetParent === null) {
+      el.style.height = ''; // not laid out (hidden panel): measure when shown
+      return;
+    }
+    const cs = getComputedStyle(el);
+    const line = parseFloat(cs.lineHeight) || 20;
+    const max = line * MAX_INPUT_LINES + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    el.style.height = 'auto';
+    const full = el.scrollHeight;
+    el.style.height = `${Math.ceil(Math.min(full, max))}px`;
+    el.style.overflowY = full > max + 1 ? 'auto' : 'hidden';
   }
 
   // ── Popovers (board 60) ───────────────────────────────────────────────────

@@ -57,6 +57,7 @@ import {
 import { createEditorAi } from './editor/ai/client';
 import { AiPanel } from './editor/ai/panel';
 import { mountDivider } from './editor/divider';
+import { mountPanelResize } from './editor/panel-resize';
 import { registerEmojiFont } from './utils/emoji-font';
 import {
   clickPoint,
@@ -370,12 +371,28 @@ const divider = mountDivider({
       if (zoomMode === 'fit') applyZoom();
     }),
 });
+// The AI panel's width (380 px until the saved one arrives).
+const aiResize = mountPanelResize({
+  host: document.getElementById('editor-body'),
+  panel: document.getElementById('ai-panel'),
+  handle: document.getElementById('ai-panel-resize'),
+  save: (width) => {
+    postToParent('maatwerk-set-ai-width', { width }).catch((e) =>
+      console.warn('[editor] AI panel width not saved', e),
+    );
+  },
+  onChange: () =>
+    requestAnimationFrame(() => {
+      if (zoomMode === 'fit') applyZoom();
+    }),
+});
 postToParent('maatwerk-editor-info')
   .then((info) => {
     if (!info) return;
     document.getElementById('editor-subtitle').textContent = info.subtitle;
     registerEmojiFont(info.emojiFontUrl);
     divider.set(info.split);
+    if (typeof info.aiWidth === 'number') aiResize.set(info.aiWidth);
   })
   .catch((e) => console.warn('[editor] info', e));
 

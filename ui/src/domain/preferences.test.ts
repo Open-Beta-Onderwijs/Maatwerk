@@ -2,9 +2,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  clampAiPanelWidth,
   clampEditorSplit,
   isSchoolYear,
   savedActiveYear,
+  savedAiPanelWidth,
   savedEditorSplit,
   savedLook,
   withPreferences,
@@ -61,5 +63,17 @@ describe('editor divider position (F-16)', () => {
     expect(savedEditorSplit({ preferences: { editorSplit: Number.NaN } })).toBeNull();
     expect(savedEditorSplit({})).toBeNull();
     expect(clampEditorSplit(0.4567)).toBe(0.46);
+  });
+});
+
+describe('AI panel width', () => {
+  it('reads a saved width of at least 380 px; anything else is not set', () => {
+    expect(savedAiPanelWidth({ preferences: { aiPanelWidth: 520 } })).toBe(520);
+    expect(savedAiPanelWidth({ preferences: { aiPanelWidth: 200 } })).toBe(380);
+    expect(savedAiPanelWidth({ preferences: { aiPanelWidth: 5000 } })).toBe(1200);
+    expect(savedAiPanelWidth({ preferences: { aiPanelWidth: '520' } })).toBeNull();
+    expect(savedAiPanelWidth({ preferences: { aiPanelWidth: Number.NaN } })).toBeNull();
+    expect(savedAiPanelWidth({})).toBeNull();
+    expect(clampAiPanelWidth(450.6)).toBe(451);
   });
 });

@@ -102,6 +102,8 @@ export class AiPanel {
   /** The install help's footer (AI-assistent verbergen, Opnieuw zoeken). */
   private readonly helpFoot: HTMLElement;
   private helpOpen = false;
+  /** The chat follows new content at its bottom (until the teacher scrolls up). */
+  private stick = true;
 
   constructor(
     private readonly ai: EditorAi,
@@ -113,6 +115,21 @@ export class AiPanel {
     this.messagesEl = h('div', { class: 'ai-messages', 'aria-live': 'polite' });
     this.dropEl = h('div', { class: 'ai-drop', hidden: true });
     this.helpFoot = h('div', { class: 'ai-help-foot', hidden: true });
+    this.followBottom();
+  }
+
+  /**
+   * Keeps the newest content in view: content that grows above it later (the previous
+   * proposal's diff card is filled after an await) no longer pushes the status card of a
+   * follow-up message out of sight.
+   */
+  private followBottom(): void {
+    const el = this.messagesEl;
+    const distance = () => el.scrollHeight - el.scrollTop - el.clientHeight;
+    el.addEventListener('scroll', () => (this.stick = distance() < 40), { passive: true });
+    new MutationObserver(() => {
+      if (this.stick && distance() > 0) el.scrollTop = el.scrollHeight;
+    }).observe(el, { childList: true, subtree: true, characterData: true });
   }
 
   async init(): Promise<void> {
@@ -352,6 +369,7 @@ export class AiPanel {
     this.helpOpen = false;
     this.helpFoot.hidden = true;
     this.selected = key;
+    this.stick = true;
     this.conv = { provider: key, messages: [] };
     this.composer.reset();
     this.composer.el.hidden = false;
@@ -455,10 +473,10 @@ export class AiPanel {
       const ending = this.endingOfTurn(r);
       if (ending) children.push(this.ending(p, ending));
     }
-    const atBottom =
-      this.messagesEl.scrollHeight - this.messagesEl.scrollTop - this.messagesEl.clientHeight < 40;
+    // A run in progress always shows its status card.
+    if (busy) this.stick = true;
     this.messagesEl.replaceChildren(...children);
-    if (atBottom || busy) this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
+    if (this.stick) this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
   }
 
   private emptyState(p: AiProvider): HTMLElement {

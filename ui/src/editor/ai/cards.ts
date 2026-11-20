@@ -44,7 +44,7 @@ function stepRow(s: LiveStep, now: number, ended: 'stopped' | 'timedOut' | null)
       { class: 'ai-step-row' },
       icon('chevronRight', 12, 2.6),
       h('span', { class: `ai-dot is-${state}` }),
-      h('span', { class: 'ai-step-title' }, s.title),
+      h('span', { class: 'ai-step-title', title: s.title }, s.title),
       h('span', { class: 'ai-step-time' }, duration),
     ),
   );

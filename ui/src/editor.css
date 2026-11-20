@@ -500,7 +500,8 @@ body {
   user-select: none;
 }
 #editor-body.is-resizing #cm-container,
-#editor-body.is-resizing #pdf-panel {
+#editor-body.is-resizing #pdf-panel,
+#editor-body.is-resizing .ai-messages {
   pointer-events: none;
 }
 

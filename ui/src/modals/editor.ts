@@ -11,7 +11,14 @@
 
 import { confirmDialog } from '../app.js';
 import { editorSubtitle } from '../domain/editor-header';
-import { EDITOR_SPLIT, clampEditorSplit, savedEditorSplit } from '../domain/preferences';
+import {
+  AI_PANEL_WIDTH,
+  EDITOR_SPLIT,
+  clampAiPanelWidth,
+  clampEditorSplit,
+  savedAiPanelWidth,
+  savedEditorSplit,
+} from '../domain/preferences';
 import type { Observatie, Opdracht } from '../domain/types';
 import {
   isEditorFile,
@@ -99,6 +106,7 @@ function editorInfo(opdracht: Opdracht): EditorInfo {
   return {
     subtitle: editorSubtitle(latest ?? opdracht),
     split: savedEditorSplit(Store.getActiveUser()) ?? EDITOR_SPLIT.initial,
+    aiWidth: savedAiPanelWidth(Store.getActiveUser()) ?? AI_PANEL_WIDTH.initial,
     emojiFontUrl: window.maatwerk.emojiFontUrl(),
   };
 }
@@ -260,6 +268,15 @@ function handleEditorMessage(
           throw new Error('not allowed: split');
         if (!Store.getActiveUser()) return false;
         await Store.savePreferences({ editorSplit: clampEditorSplit(msg.split) });
+        return true;
+      });
+    case 'maatwerk-set-ai-width':
+      // The AI panel's width, saved per user like the divider.
+      return answer(async () => {
+        if (typeof msg.width !== 'number' || !Number.isFinite(msg.width))
+          throw new Error('not allowed: width');
+        if (!Store.getActiveUser()) return false;
+        await Store.savePreferences({ aiPanelWidth: clampAiPanelWidth(msg.width) });
         return true;
       });
     case 'maatwerk-ai':

@@ -200,6 +200,7 @@
   display: flex;
   flex-direction: column;
   width: 380px;
+  min-width: 380px;
   flex-shrink: 0;
   min-height: 0;
   background: var(--surface);
@@ -208,6 +209,35 @@
 }
 #ai-panel[hidden] {
   display: none;
+}
+/* The left edge drags the width (380 px or more; panel-resize.ts). */
+#ai-panel-resize {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  width: 8px;
+  z-index: 5;
+  cursor: col-resize;
+  touch-action: none;
+}
+#ai-panel-resize::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s;
+}
+#ai-panel-resize:hover::after,
+#ai-panel-resize:focus-visible::after,
+#editor-body.is-resizing #ai-panel-resize::after {
+  background: var(--accent);
+}
+#ai-panel-resize:focus-visible {
+  outline: none;
 }
 .ai-head {
   display: flex;
@@ -279,7 +309,15 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 14px 14px 10px;
+}
+/* Nothing in the chat is wider than the panel (a long unbroken line would otherwise widen its
+   card: a flex item's minimum width is its content's). */
+.ai-messages > *,
+.ai-msg > *,
+.ai-summary-wrap > * {
+  min-width: 0;
 }
 .ai-empty,
 .ai-intro {
@@ -483,8 +521,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 6px 10px;
+  gap: 8px;
   font-size: 12px;
   color: var(--muted);
+}
+.ai-transcript-head > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ai-step {
   border-top: 1px solid var(--line);
@@ -530,6 +575,10 @@
 .ai-step-title {
   flex: 1;
   min-width: 0;
+  /* A long command or path is cut off, not scrolled sideways (the full text is its tooltip). */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ai-step-time {
   color: var(--muted);
@@ -581,6 +630,10 @@
 }
 .ai-summary-text {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .ai-summary.is-success > .ai-icon:first-child {
   color: var(--ok);
@@ -889,7 +942,8 @@
 .ai-input {
   flex: 1;
   min-width: 0;
-  max-height: 160px;
+  /* The height follows the text up to 7 lines (composer.ts fitInput). */
+  overflow-y: hidden;
   padding: 7px 2px;
   border: 0;
   outline: 0;

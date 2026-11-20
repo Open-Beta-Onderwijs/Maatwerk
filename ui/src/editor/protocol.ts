@@ -20,6 +20,8 @@ export interface EditorInfo {
   subtitle: string;
   /** The editor's share of the width (F-16), saved per user. */
   split: number;
+  /** The AI panel's width in px (380 or more), saved per user. */
+  aiWidth: number;
   /** The embedded emoji font (`utils/emoji-font.ts`); the frame has no bridge to ask. */
   emojiFontUrl: string;
 }
@@ -40,6 +42,7 @@ export type EditorRequest =
   | { type: 'maatwerk-user-avatar' }
   | { type: 'maatwerk-editor-info' }
   | { type: 'maatwerk-set-split'; split: number }
+  | { type: 'maatwerk-set-ai-width'; width: number }
   | AiRequestMessage;
 
 /** A notice from the iframe (no answer). */
