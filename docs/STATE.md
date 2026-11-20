@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-20 (step 33 gate) Branch: `step/33-toetsen-cards` (from `step/32-ai` at
+Last updated: 2026-11-20 (step 33 done, 0.24.0) Branch: `step/33-toetsen-cards` (from `step/32-ai` at
 `54d9f26`; step 32 is not merged yet, so step 33 builds on it)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
@@ -70,8 +70,12 @@ Review `docs/reviews/step-33.md`: 0 blockers, 1 major (fixed: the Verzamelkaart 
 attempts' warnings and colleagues), 5 minors (m1, m2, m5 fixed, m3 in part; rest in
 `docs/backlog.md` "From Step 33"), 9 nits. Rerun: 826 Vitest, Chromium e2e 395/395.
 
-**Next action:** step 33 is done except the user's part: visual check of the 42 diffs (then
-baselines), the one-open-stack-per-row choice, merge (after step 32), release 0.24.
+User 2026-11-20: choices 1-4 above OK; baselines updated (local `visual` 177/177; the 42 CI
+baselines of the 14 changed views removed on all three platforms, so the next CI run writes them:
+commit what it writes after a look, `docs/testing.md`); version 0.24.0; exe rebuilt.
+
+**Next action:** the user: merge step 32 and step 33, push, commit the CI-written baselines,
+release 0.24.
 
 ## Current step (step 32)
 
