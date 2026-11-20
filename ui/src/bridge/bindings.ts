@@ -259,8 +259,9 @@ export const commands = {
 	 */
 	aiApply: (gebruiker: string, opdrachtId: string, provider: string, current: { [key in string]: string }, hunks: { [key in string]: number[] }, images: string[]) => typedError<Value, CommandError>(__TAURI_INVOKE("ai_apply", { gebruiker, opdrachtId, provider, current, hunks, images })),
 	/**
-	 *  "Ongedaan maken" for images: removes the images [`ai_apply`] added and puts back the ones it
-	 *  replaced. (The text goes back through the editor's undo.)
+	 *  "Ongedaan maken": removes the images [`ai_apply`] added and puts back the ones it replaced
+	 *  (none: only the history), and marks the proposal as not applied again. (The text goes back
+	 *  through the editor's undo.)
 	 */
 	aiUndoImages: (gebruiker: string, opdrachtId: string, provider: string, images: string[]) => typedError<null, CommandError>(__TAURI_INVOKE("ai_undo_images", { gebruiker, opdrachtId, provider, images })),
 	/**  An image of the proposal as a data URL (Voorstel bekijken). */
