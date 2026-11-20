@@ -294,6 +294,7 @@ export interface AiApi {
     hunks: Record<string, number[]>,
     images: string[],
   ): Promise<ApplyResult>;
+  /** Ongedaan maken: the applied images back (none: only the history) and "not applied" again. */
   undoImages(
     gebruiker: string,
     opdrachtId: string,

@@ -373,8 +373,30 @@ export interface DiffCardActions {
 
 export type DiffCardState =
   | { kind: 'ready' }
-  | { kind: 'applied'; hunks: number; images: number; conflicts: number }
+  /** Applied in this editor session: the counts, and Ongedaan maken. */
+  | { kind: 'applied'; hunks: number; images: number; conflicts: number; message?: string }
+  /** Applied before the editor was opened (the history): no undo any more. */
+  | { kind: 'appliedEarlier' }
   | { kind: 'error'; message: string };
+
+/** What became of a proposal that no longer has its card (user, 2026-11-20). */
+export type ProposalFate = 'applied' | 'replaced' | 'notApplied';
+
+/** The one-line status of an older proposal: Toegepast, Vervangen, Niet toegepast. */
+export function proposalStatus(fate: ProposalFate): HTMLElement {
+  const [ic, text]: [IconName, string] =
+    fate === 'applied'
+      ? ['check', 'Voorstel toegepast']
+      : fate === 'replaced'
+        ? ['swap', 'Voorstel vervangen door een nieuwer voorstel']
+        : ['minus', 'Voorstel niet toegepast'];
+  return h(
+    'div',
+    { class: `ai-proposal-status is-${fate}` },
+    icon(ic, 13, fate === 'applied' ? 2.6 : 2.2),
+    h('span', {}, text),
+  );
+}
 
 export function diffCard(
   view: ProposalView,
@@ -423,23 +445,34 @@ export function diffCard(
     .flat()
     .filter((s) => s.kind === 'conflict').length;
 
+  const review = () =>
+    h('button', { type: 'button', class: 'ai-btn', onclick: () => actions.review() }, 'Bekijken');
   let footer: HTMLElement;
-  if (state.kind === 'applied') {
+  if (state.kind === 'applied' || state.kind === 'appliedEarlier') {
+    // Applied: the files stay, Bekijken only shows the proposal (user, 2026-11-20).
     footer = h(
       'div',
       { class: 'ai-diff-foot is-applied', role: 'status' },
       icon('check', 14, 2.6),
       h(
         'span',
-        {},
-        appliedText(state.hunks, state.images) +
-          (state.conflicts ? ` · ${state.conflicts} overgeslagen (conflict)` : ''),
+        { class: 'ai-diff-applied-text' },
+        state.kind === 'applied'
+          ? appliedText(state.hunks, state.images) +
+              (state.conflicts ? ` · ${state.conflicts} overgeslagen (conflict)` : '')
+          : 'Toegepast',
       ),
-      h(
-        'button',
-        { type: 'button', class: 'ai-link', onclick: () => actions.undo() },
-        'Ongedaan maken',
-      ),
+      state.kind === 'applied'
+        ? h(
+            'button',
+            { type: 'button', class: 'ai-link', onclick: () => actions.undo() },
+            'Ongedaan maken',
+          )
+        : null,
+      review(),
+      state.kind === 'applied' && state.message
+        ? h('span', { class: 'ai-diff-error', role: 'alert' }, state.message)
+        : null,
     );
   } else {
     footer = h(
@@ -455,7 +488,7 @@ export function diffCard(
             `${conflicts} ${conflicts === 1 ? 'conflict wordt' : 'conflicten worden'} overgeslagen`,
           )
         : null,
-      h('button', { type: 'button', class: 'ai-btn', onclick: () => actions.review() }, 'Bekijken'),
+      review(),
       h(
         'button',
         { type: 'button', class: 'ai-btn ai-btn-primary', onclick: () => actions.apply() },

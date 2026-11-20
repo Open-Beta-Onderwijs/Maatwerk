@@ -25,7 +25,8 @@ export interface ReviewOptions {
   check: CheckReport | null;
   /** The editor text now. */
   buffers: Record<string, string>;
-  apply(hunks: Record<string, number[]>, images: string[]): Promise<void>;
+  /** Toepassen (n); null after the proposal was applied: the dialog only shows it (user). */
+  apply: ((hunks: Record<string, number[]>, images: string[]) => Promise<void>) | null;
 }
 
 let openDialog: HTMLElement | null = null;
@@ -33,9 +34,13 @@ let openDialog: HTMLElement | null = null;
 export async function openReview(o: ReviewOptions): Promise<void> {
   openDialog?.remove();
   const { proposal, statuses } = o.view;
+  const apply = o.apply;
+  // Applied already: the hunks against today's text say nothing (they are in it).
+  const readOnly = apply === null;
   const key = (file: string, id: number) => `${file}#${id}`;
   const chosen = new Set<string>();
-  const conflict = (file: string, i: number) => statuses[file]?.[i]?.kind === 'conflict';
+  const conflict = (file: string, i: number) =>
+    !readOnly && statuses[file]?.[i]?.kind === 'conflict';
   for (const f of proposal.files)
     f.hunks.forEach((hk, i) => {
       if (!conflict(f.path, i)) chosen.add(key(f.path, hk.id));
@@ -49,7 +54,7 @@ export async function openReview(o: ReviewOptions): Promise<void> {
     0,
   );
   const edited = proposal.files.some((f) => (o.buffers[f.path] ?? f.base) !== f.base);
-  let tab: 'proposal' | 'current' = 'proposal';
+  let tab: 'proposal' | 'current' = readOnly ? 'current' : 'proposal';
   let previewSeq = 0;
 
   const m = monogram(o.provider.key, o.provider.name);
@@ -57,6 +62,11 @@ export async function openReview(o: ReviewOptions): Promise<void> {
   avatar.style.setProperty('--provider', m.colour);
   const countEl = h('span', { class: 'ai-review-count' });
   const applyBtn = h('button', { type: 'button', class: 'ai-btn ai-btn-primary ai-btn-lg' });
+  const closeBtn = h(
+    'button',
+    { type: 'button', class: 'ai-btn ai-btn-lg', onclick: () => close() },
+    readOnly ? 'Sluiten' : 'Annuleren',
+  );
   const left = h('nav', { class: 'ai-review-left', 'aria-label': 'Bestanden en wijzigingen' });
   const middle = h('div', { class: 'ai-review-hunks' });
   const pages = h('div', { class: 'ai-review-pages' });
@@ -82,25 +92,33 @@ export async function openReview(o: ReviewOptions): Promise<void> {
     onclick: () => void,
     disabled = false,
   ) =>
-    h(
-      'button',
-      {
-        type: 'button',
-        class: `ai-cb is-${state}`,
-        role: 'checkbox',
-        'aria-checked': state === 'mixed' ? 'mixed' : String(state === 'on'),
-        'aria-label': label,
-        disabled,
-        onclick,
-      },
-      state === 'on' ? icon('check', 12, 3.4) : state === 'mixed' ? icon('minus', 12, 3.4) : null,
-    );
+    readOnly
+      ? null
+      : h(
+          'button',
+          {
+            type: 'button',
+            class: `ai-cb is-${state}`,
+            role: 'checkbox',
+            'aria-checked': state === 'mixed' ? 'mixed' : String(state === 'on'),
+            'aria-label': label,
+            disabled,
+            onclick,
+          },
+          state === 'on'
+            ? icon('check', 12, 3.4)
+            : state === 'mixed'
+              ? icon('minus', 12, 3.4)
+              : null,
+        );
 
   const chosenCount = () => [...chosen].length + images.size;
 
   function render(): void {
     const n = chosenCount();
-    countEl.textContent = `${n} van ${total} gekozen${conflicts ? ` · ${conflicts} conflict${conflicts === 1 ? '' : 'en'}` : ''}`;
+    countEl.textContent = readOnly
+      ? `${total} ${total === 1 ? 'wijziging' : 'wijzigingen'}`
+      : `${n} van ${total} gekozen${conflicts ? ` · ${conflicts} conflict${conflicts === 1 ? '' : 'en'}` : ''}`;
     applyBtn.textContent = n ? `Toepassen (${n})` : 'Toepassen';
     applyBtn.disabled = n === 0;
     renderLeft();
@@ -109,7 +127,9 @@ export async function openReview(o: ReviewOptions): Promise<void> {
   }
 
   function renderLeft(): void {
-    const items: HTMLElement[] = [h('h3', { class: 'ai-review-section' }, 'WORDT TOEGEPAST')];
+    const items: HTMLElement[] = [
+      h('h3', { class: 'ai-review-section' }, readOnly ? 'VOORSTEL' : 'WORDT TOEGEPAST'),
+    ];
     for (const f of proposal.files) {
       const fileChoice = f.hunks
         .map((hk, i) => ({ hk, i }))
@@ -153,7 +173,13 @@ export async function openReview(o: ReviewOptions): Promise<void> {
             },
             h('span', { class: `ai-dot is-${c ? 'conflict' : on ? 'chosen' : 'skipped'}` }),
             h('span', { class: 'ai-ellipsis' }, hunkTitle(hk, i)),
-            h('span', { class: 'ai-review-state' }, c ? 'conflict' : on ? 'gekozen' : 'overslaan'),
+            readOnly
+              ? null
+              : h(
+                  'span',
+                  { class: 'ai-review-state' },
+                  c ? 'conflict' : on ? 'gekozen' : 'overslaan',
+                ),
           ),
         );
       });
@@ -251,15 +277,17 @@ export async function openReview(o: ReviewOptions): Promise<void> {
               ),
               h('strong', {}, `Wijziging ${i + 1}`),
               h('span', { class: 'ai-muted' }, hunkLocation(hk)),
-              h(
-                'span',
-                { class: `ai-hunk-state is-${c ? 'conflict' : on ? 'on' : 'off'}` },
-                c
-                  ? 'Conflict · wordt overgeslagen'
-                  : on
-                    ? 'Wordt toegepast'
-                    : 'Wordt niet toegepast',
-              ),
+              readOnly
+                ? null
+                : h(
+                    'span',
+                    { class: `ai-hunk-state is-${c ? 'conflict' : on ? 'on' : 'off'}` },
+                    c
+                      ? 'Conflict · wordt overgeslagen'
+                      : on
+                        ? 'Wordt toegepast'
+                        : 'Wordt niet toegepast',
+                  ),
             ),
             c
               ? h(
@@ -306,9 +334,11 @@ export async function openReview(o: ReviewOptions): Promise<void> {
             h(
               'p',
               { class: 'ai-muted' },
-              on
-                ? 'Wordt toegevoegd aan de afbeeldingen van de opdracht.'
-                : 'Wordt niet toegevoegd; een wijziging die deze afbeelding gebruikt, geeft dan een fout.',
+              readOnly
+                ? 'Afbeelding uit het voorstel.'
+                : on
+                  ? 'Wordt toegevoegd aan de afbeeldingen van de opdracht.'
+                  : 'Wordt niet toegevoegd; een wijziging die deze afbeelding gebruikt, geeft dan een fout.',
             ),
           ),
         ),
@@ -329,6 +359,7 @@ export async function openReview(o: ReviewOptions): Promise<void> {
 
   async function renderPreview(): Promise<void> {
     const seq = ++previewSeq;
+    tabs.hidden = readOnly;
     tabs.replaceChildren(
       ...(['proposal', 'current'] as const).map((t) =>
         h(
@@ -347,8 +378,9 @@ export async function openReview(o: ReviewOptions): Promise<void> {
         ),
       ),
     );
-    note.textContent =
-      tab === 'proposal'
+    note.textContent = readOnly
+      ? 'Zoals de opdracht nu is, met de toegepaste wijzigingen.'
+      : tab === 'proposal'
         ? 'Voorbeeld met jouw keuze. Nieuwe afbeeldingen staan er pas na toepassen in.'
         : 'Zoals de opdracht nu is, met jouw eigen aanpassingen.';
     pages.classList.add('is-loading');
@@ -381,8 +413,9 @@ export async function openReview(o: ReviewOptions): Promise<void> {
     const hunks: Record<string, number[]> = {};
     for (const f of proposal.files)
       hunks[f.path] = f.hunks.filter((hk) => chosen.has(key(f.path, hk.id))).map((hk) => hk.id);
+    if (!apply) return;
     applyBtn.disabled = true;
-    await o.apply(hunks, [...images]);
+    await apply(hunks, [...images]);
     close();
   });
 
@@ -408,47 +441,55 @@ export async function openReview(o: ReviewOptions): Promise<void> {
           h(
             'span',
             {},
-            edited
-              ? 'Daarna heb je de opdracht zelf ook aangepast'
-              : 'Op de huidige versie van de opdracht',
+            readOnly
+              ? 'Toegepast'
+              : edited
+                ? 'Daarna heb je de opdracht zelf ook aangepast'
+                : 'Op de huidige versie van de opdracht',
           ),
         ),
         countEl,
-        h(
-          'div',
-          { class: 'ai-seg ai-seg-outline', role: 'group', 'aria-label': 'Alles of niets kiezen' },
-          h(
-            'button',
-            {
-              type: 'button',
-              class: 'ai-seg-btn',
-              onclick: () => {
-                for (const f of proposal.files)
-                  f.hunks.forEach((hk, i) => {
-                    if (!conflict(f.path, i)) chosen.add(key(f.path, hk.id));
-                  });
-                proposal.images.forEach((i) => images.add(i.path));
-                render();
+        readOnly
+          ? null
+          : h(
+              'div',
+              {
+                class: 'ai-seg ai-seg-outline',
+                role: 'group',
+                'aria-label': 'Alles of niets kiezen',
               },
-            },
-            'Alles',
-          ),
-          h(
-            'button',
-            {
-              type: 'button',
-              class: 'ai-seg-btn',
-              onclick: () => {
-                chosen.clear();
-                images.clear();
-                render();
-              },
-            },
-            'Niets',
-          ),
-        ),
-        h('button', { type: 'button', class: 'ai-btn ai-btn-lg', onclick: close }, 'Annuleren'),
-        applyBtn,
+              h(
+                'button',
+                {
+                  type: 'button',
+                  class: 'ai-seg-btn',
+                  onclick: () => {
+                    for (const f of proposal.files)
+                      f.hunks.forEach((hk, i) => {
+                        if (!conflict(f.path, i)) chosen.add(key(f.path, hk.id));
+                      });
+                    proposal.images.forEach((i) => images.add(i.path));
+                    render();
+                  },
+                },
+                'Alles',
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  class: 'ai-seg-btn',
+                  onclick: () => {
+                    chosen.clear();
+                    images.clear();
+                    render();
+                  },
+                },
+                'Niets',
+              ),
+            ),
+        closeBtn,
+        readOnly ? null : applyBtn,
       ),
       h(
         'div',
@@ -479,5 +520,5 @@ export async function openReview(o: ReviewOptions): Promise<void> {
   document.addEventListener('keydown', onKey, true);
   openDialog = dialog;
   render();
-  applyBtn.focus();
+  (readOnly ? closeBtn : applyBtn).focus();
 }

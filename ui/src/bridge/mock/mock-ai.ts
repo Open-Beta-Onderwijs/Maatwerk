@@ -318,7 +318,13 @@ export class MockAi implements AiApi {
     };
   }
 
-  async undoImages(): Promise<void> {}
+  /** Ongedaan maken: the proposal is not applied any more (no images in the mock). */
+  async undoImages(gebruiker: string, opdrachtId: string, provider: ProviderKey): Promise<void> {
+    this.record('undoImages', [gebruiker, opdrachtId, provider]);
+    const conv = this.conv(gebruiker, opdrachtId, provider);
+    const last = [...conv.messages].reverse().find((m) => m.run?.proposal);
+    if (last?.run) last.run.applied = false;
+  }
 
   async proposalImage(): Promise<string> {
     return 'data:image/png;base64,';

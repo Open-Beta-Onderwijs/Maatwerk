@@ -23,10 +23,12 @@ import {
   diffCard,
   endingCard,
   endingOf,
+  proposalStatus,
   summaryRow,
   transcriptCard,
   type DiffCardState,
   type Ending,
+  type ProposalFate,
 } from './cards';
 import type { EditorAi } from './client';
 import { Composer, type PendingAttachment } from './composer';
@@ -457,13 +459,31 @@ export class AiPanel {
     if (msgs.length === 0 && !(busy && this.live?.provider === p.key)) {
       children.push(this.emptyState(p));
     }
+    // Only the newest proposal has a card, and only while no run came after it (each run
+    // replaces the saved proposal); older ones get a status line (user, 2026-11-20).
+    let lastRun = -1;
     let lastProposal = -1;
     msgs.forEach((m, i) => {
-      if (!m.fromTeacher && m.run?.proposal) lastProposal = i;
+      if (m.fromTeacher || !m.run) return;
+      lastRun = i;
+      if (m.run.proposal) lastProposal = i;
     });
+    const runningHere = busy && this.live?.provider === p.key;
+    const current = !runningHere && lastProposal === lastRun ? lastProposal : -1;
     msgs.forEach((m, i) => {
-      if (m.fromTeacher) children.push(this.teacherBubble(m));
-      else children.push(this.aiMessage(p, m, i === lastProposal, i === msgs.length - 1));
+      if (m.fromTeacher) {
+        children.push(this.teacherBubble(m));
+        return;
+      }
+      const fate: ProposalFate | null =
+        m.run?.proposal && i !== current
+          ? m.run.applied
+            ? 'applied'
+            : msgs.slice(i + 1).some((x) => !x.fromTeacher && x.run?.proposal)
+              ? 'replaced'
+              : 'notApplied'
+          : null;
+      children.push(this.aiMessage(p, m, i === current, fate, i === msgs.length - 1));
     });
     const live = this.live;
     if (live && live.provider === p.key) {
@@ -552,6 +572,7 @@ export class AiPanel {
     p: AiProvider,
     m: AiMessage,
     withProposal: boolean,
+    fate: ProposalFate | null,
     last: boolean,
   ): HTMLElement {
     const el = h('div', { class: 'ai-msg is-ai' });
@@ -569,7 +590,9 @@ export class AiPanel {
     if (run && withProposal) {
       const host = h('div', { class: 'ai-diff-host' });
       el.append(host);
-      void this.fillDiffCard(p.key, host, run.applied && !this.applied.has(p.key));
+      void this.fillDiffCard(p.key, host, run.applied);
+    } else if (fate) {
+      el.append(proposalStatus(fate));
     } else if (run) {
       const ending = endingOf(run, this.limitMs());
       // Only the last message offers Opnieuw proberen; older ones keep their card.
@@ -700,34 +723,26 @@ export class AiPanel {
 
   // ── Proposal (decisions 56, 68, 69) ───────────────────────────────────────
 
-  private async fillDiffCard(key: ProviderKey, host: HTMLElement, appliedEarlier: boolean) {
-    if (appliedEarlier) {
-      host.replaceChildren(
-        h(
-          'div',
-          { class: 'ai-diff-card' },
-          h('div', { class: 'ai-diff-foot is-applied' }, icon('check', 14, 2.6), 'Toegepast'),
-        ),
-      );
-      return;
-    }
+  /**
+   * The newest proposal's card. `applied`: the history says it was applied (in this session,
+   * `cardState` has the counts and Ongedaan maken; after reopening only "Toegepast").
+   */
+  private async fillDiffCard(key: ProviderKey, host: HTMLElement, applied: boolean) {
     let view: ProposalView;
     try {
       view = await this.ai.proposal(key, this.host.buffers());
-    } catch (err) {
-      host.replaceChildren(
-        h(
-          'div',
-          { class: 'ai-diff-card' },
-          h('p', { class: 'ai-diff-note' }, String((err as Error).message)),
-        ),
-      );
+    } catch {
+      // The saved proposal is gone (a run that did not record itself): the status line.
+      host.replaceChildren(proposalStatus(applied ? 'applied' : 'notApplied'));
       return;
     }
     const check = this.lastTurn.get(key)?.check ?? null;
-    const state = this.cardState.get(key) ?? { kind: 'ready' };
+    const state: DiffCardState =
+      this.cardState.get(key) ?? (applied ? { kind: 'appliedEarlier' } : { kind: 'ready' });
+    const isApplied = state.kind === 'applied' || state.kind === 'appliedEarlier';
     host.replaceChildren(
       diffCard(view, check, state, {
+        // Applied: Bekijken only shows the proposal (user, 2026-11-20).
         review: () =>
           void openReview({
             ai: this.ai,
@@ -735,7 +750,7 @@ export class AiPanel {
             view,
             check,
             buffers: this.host.buffers(),
-            apply: (hunks, images) => this.apply(key, hunks, images),
+            apply: isApplied ? null : (hunks, images) => this.apply(key, hunks, images),
           }),
         apply: () => void this.applyAll(key),
         undo: () => void this.undo(key),
@@ -777,6 +792,7 @@ export class AiPanel {
       const stored = result.images.map((i) => i.path);
       if (stored.length) this.host.refreshPreview();
       this.applied.set(key, { before, after, images: stored, hunks: applied, conflicts });
+      this.markApplied(key, true);
       this.cardState.set(key, {
         kind: 'applied',
         hunks: applied,
@@ -789,15 +805,24 @@ export class AiPanel {
     if (this.selected === key) this.render();
   }
 
+  /** The in-memory history follows `ai_apply` / `ai_undo_images` (the card and status lines). */
+  private markApplied(key: ProviderKey, applied: boolean): void {
+    if (this.selected !== key || !this.conv) return;
+    const last = [...this.conv.messages].reverse().find((m) => !m.fromTeacher && m.run?.proposal);
+    if (last?.run) last.run.applied = applied;
+  }
+
   /** Ongedaan maken: the texts from before Toepassen and the images removed or restored. */
   private async undo(key: ProviderKey): Promise<void> {
     const a = this.applied.get(key);
-    if (!a) return;
+    const state = this.cardState.get(key);
+    if (!a || state?.kind !== 'applied') return;
     const now = this.host.buffers();
     const changed = Object.keys(a.after).filter((f) => now[f] !== a.after[f]);
     if (changed.length) {
+      // Still applied: the card keeps its state and says why it cannot undo.
       this.cardState.set(key, {
-        kind: 'error',
+        ...state,
         message:
           'Je hebt de opdracht na het toepassen nog aangepast. Gebruik Ctrl+Z in de editor om terug te gaan.',
       });
@@ -805,14 +830,14 @@ export class AiPanel {
       return;
     }
     for (const file of Object.keys(a.after)) await this.host.applyText(file, a.before[file] ?? '');
+    // Also without images: the history says "not applied" again (user, 2026-11-20). A failed
+    // image undo is said, not swallowed (review 32 M4).
     let imageError: string | null = null;
-    if (a.images.length) {
-      // A failed image undo is said, not swallowed (review 32 M4).
-      await this.ai.undoImages(key, a.images).catch((err: unknown) => {
-        imageError = err instanceof Error ? err.message : String(err);
-      });
-      this.host.refreshPreview();
-    }
+    await this.ai.undoImages(key, a.images).catch((err: unknown) => {
+      imageError = err instanceof Error ? err.message : String(err);
+    });
+    if (a.images.length) this.host.refreshPreview();
+    this.markApplied(key, false);
     this.applied.delete(key);
     this.cardState.set(
       key,

@@ -539,15 +539,16 @@ pub async fn ai_apply(
             .collect();
         let history = layout.history_file(&opdracht_id, &key)?;
         let mut conv = Conversation::load(&history, &key);
-        conv.mark_applied();
+        conv.set_applied(true);
         conv.save(&history)?;
         Ok(json!({ "files": files, "images": saved }))
     })
     .await
 }
 
-/// "Ongedaan maken" for images: removes the images [`ai_apply`] added and puts back the ones it
-/// replaced. (The text goes back through the editor's undo.)
+/// "Ongedaan maken": removes the images [`ai_apply`] added and puts back the ones it replaced
+/// (none: only the history), and marks the proposal as not applied again. (The text goes back
+/// through the editor's undo.)
 #[tauri::command]
 #[specta::specta]
 pub async fn ai_undo_images(
@@ -562,12 +563,12 @@ pub async fn ai_undo_images(
     let key = key(&provider)?;
     blocking(state, move |c| {
         let undo = layout.run_dir(&opdracht_id, &key)?.join("undo");
-        Ok(apply::undo_images(
-            c.storage()?,
-            &opdracht_id,
-            &images,
-            &undo,
-        )?)
+        apply::undo_images(c.storage()?, &opdracht_id, &images, &undo)?;
+        let history = layout.history_file(&opdracht_id, &key)?;
+        let mut conv = Conversation::load(&history, &key);
+        conv.set_applied(false);
+        conv.save(&history)?;
+        Ok(())
     })
     .await
 }

@@ -310,3 +310,69 @@ test('the answer is rendered as Markdown; HTML in it stays text', async ({ page 
   await shot(page, '06-markdown');
   expect(errors).toEqual([]);
 });
+
+test('diff card: applied keeps Bekijken (read-only); older proposals get a status line; reopen and undo', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  let frame = await openClaude(page);
+  let panel = frame.getByRole('region', { name: 'AI-assistent' });
+  const send = async (text: string) => {
+    await panel.getByRole('textbox', { name: 'Bericht' }).fill(text);
+    await panel.getByRole('button', { name: 'Versturen' }).click();
+    await expect(panel.locator('.ai-status-card')).toHaveCount(0);
+  };
+  const card = () => panel.locator('.ai-diff-card');
+  const statuses = () => panel.locator('.ai-proposal-status');
+
+  // 1. Applied: files, Ongedaan maken and a read-only Bekijken.
+  await send('Eerste');
+  await card().getByRole('button', { name: 'Toepassen' }).click();
+  await expect(card()).toContainText('Toegepast: 1 wijziging');
+  await expect(card().getByRole('button', { name: 'Ongedaan maken' })).toBeVisible();
+  await expect(card()).toContainText('opdracht.typ');
+  await card().getByRole('button', { name: 'Bekijken' }).click();
+  const dialog = frame.getByRole('dialog', { name: 'Voorstel van Claude Code' });
+  await expect(dialog).toContainText('Toegepast');
+  await expect(dialog.getByRole('button', { name: /^Toepassen/ })).toHaveCount(0);
+  await expect(dialog.getByRole('checkbox')).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Sluiten' }).click();
+  await expect(dialog).toHaveCount(0);
+
+  // 2. A follow-up: the applied one becomes a status line, the new one has the card.
+  await send('Tweede');
+  await expect(statuses()).toHaveText(['Voorstel toegepast']);
+  await expect(card()).toHaveCount(1);
+  await expect(card().getByRole('button', { name: 'Toepassen' })).toBeVisible();
+
+  // 3. Not applied, then replaced.
+  await send('Derde');
+  await expect(statuses()).toHaveText([
+    'Voorstel toegepast',
+    'Voorstel vervangen door een nieuwer voorstel',
+  ]);
+
+  // 4. Apply the newest, reopen: "Toegepast" with Bekijken, no Ongedaan maken.
+  await card().getByRole('button', { name: 'Toepassen' }).click();
+  await expect(card()).toContainText('Toegepast: 1 wijziging');
+  const reopen = async () => {
+    await frame.locator('#btn-app-title').click();
+    frame = await openEditor(page);
+    await frame.getByRole('button', { name: /^Claude Code/ }).click();
+    panel = frame.getByRole('region', { name: 'AI-assistent' });
+  };
+  await reopen();
+  await expect(card().locator('.ai-diff-applied-text')).toHaveText('Toegepast');
+  await expect(card().getByRole('button', { name: 'Bekijken' })).toBeVisible();
+  await expect(card().getByRole('button', { name: 'Ongedaan maken' })).toHaveCount(0);
+  await expect(statuses()).toHaveCount(2);
+
+  // 5. Undo clears the history's "applied": after reopening the card offers Toepassen again.
+  await send('Vierde');
+  await card().getByRole('button', { name: 'Toepassen' }).click();
+  await card().getByRole('button', { name: 'Ongedaan maken' }).click();
+  await expect(card().getByRole('button', { name: 'Toepassen' })).toBeVisible();
+  await reopen();
+  await expect(card().getByRole('button', { name: 'Toepassen' })).toBeVisible();
+  expect(errors).toEqual([]);
+});

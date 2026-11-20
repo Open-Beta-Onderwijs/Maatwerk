@@ -198,15 +198,16 @@ impl Conversation {
             .collect()
     }
 
-    /// Marks the last proposal as applied (the diff card's "Toegepast").
-    pub fn mark_applied(&mut self) {
+    /// Marks the last proposal as applied (the diff card's "Toegepast") or, after "Ongedaan
+    /// maken", as not applied again.
+    pub fn set_applied(&mut self, applied: bool) {
         if let Some(run) = self
             .messages
             .iter_mut()
             .rev()
             .find_map(|m| m.run.as_mut().filter(|r| r.proposal))
         {
-            run.applied = true;
+            run.applied = applied;
         }
     }
 }
@@ -279,11 +280,15 @@ mod tests {
                 applied: false,
             }),
         });
-        c.mark_applied();
+        c.set_applied(true);
         c.save(&path).unwrap();
         let back = Conversation::load(&path, &key);
         assert_eq!(back, c);
         assert!(back.messages[1].run.as_ref().unwrap().applied);
+        // Ongedaan maken: not applied again.
+        let mut undone = back.clone();
+        undone.set_applied(false);
+        assert!(!undone.messages[1].run.as_ref().unwrap().applied);
         assert_eq!(back.past().len(), 2);
         // Another provider's file is not this conversation.
         let other = ProviderKey::parse("codex").unwrap();

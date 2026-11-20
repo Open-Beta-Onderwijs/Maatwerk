@@ -871,6 +871,22 @@
 .ai-diff-foot.is-applied > span {
   flex: 1;
 }
+/* An older proposal's one-line status (Toegepast, Vervangen, Niet toegepast). */
+.ai-proposal-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.ai-proposal-status.is-applied {
+  border-color: transparent;
+  background: var(--ok-soft);
+  color: var(--ok);
+}
 .ai-diff-conflicts {
   flex: 1;
   font-size: 12px;
