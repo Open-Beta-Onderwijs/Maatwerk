@@ -1,6 +1,7 @@
 # State
 
-Last updated: 2026-11-19 (step 32 done) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last updated: 2026-11-20 (step 33 gate) Branch: `step/33-toetsen-cards` (from `step/32-ai` at
+`54d9f26`; step 32 is not merged yet, so step 33 builds on it)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -30,7 +31,45 @@ replaced ones, applied card keeps files + read-only Bekijken, Ongedaan maken cle
 history's flag). e2e `ai-panel.spec.ts` 8 tests. Manual check in the real app: a follow-up's
 status card (the mock loads proposals instantly, so the bug did not show there).
 
-## Current step
+## Step 33: Toetsen as cards (2026-11-20, on `step/33-toetsen-cards`)
+
+Baseline: cargo test had one failure, `bindings_are_up_to_date` (a doc comment of `ai_undo_images`
+changed after the last regeneration); regenerated (`f1f7805`).
+
+Done (`646100e`): sub-tasks 1-4 of the step. `screens/toetsen/cards.ts` (card, grid per jaarlaag,
+periode labels and dividers, stacks and their trays), `card-model.ts` (line 1, RTTI line, mini
+histogram with the step-1 bins of `maatwerk-grades`, top three observaties, average block; tested),
+`stack-layout.ts` (positions, tray height, the outline path; tested against the mock's numbers),
+`stack.ts` (phases 0/1/2 with the 200/220 ms steps, session memory, ResizeObserver relayout,
+reduced motion), `toetsen.ts` (one pass over the score files per test for all its cards; delegated
+clicks), ⋮ "Overzicht openen" (`ICONS.overview`). Old `screens/exam-cards.ts` removed.
+
+Choices made without a spec line (tell the user):
+
+- **One open stack per row:** opening a second stack in the same row closes the first (two trays
+  under one row would cross each other's outline).
+- Exams sort by jaarlaag, **periode**, volgnummer (was jaarlaag, volgnummer) so the periodes run
+  in reading order; an exam without periode comes last as "Zonder periode".
+- The attempts in a tray keep the app's attempt order (Origineel, then by `attempt`), not by date.
+- An attempt card shows the original's title (its own label pill says Inhaal/Herkansing).
+- Line 1 shows bonus points as "16 punten + 2 bonus"; the tooltip of line 1 keeps the old meta
+  line (schoolsoort, periode, N-term, wegingen; a PO also its rubric and projectgroepen).
+- The presence badges and the score warning ⚠ stay in the card header (not in the mock).
+- A PO's Verzamelkaart is not clickable (no PO verzameloverzicht yet, backlog); its ⋮ item
+  "Overzicht openen" is disabled with that reason.
+- Without grades: "0 leerlingen", "—" and "nog geen cijfers".
+
+Gate (2026-11-20): cargo fmt, clippy, test (all ok after the bindings fix), deny, SPDX, npm
+licences; lint, typecheck, 826 Vitest, Chromium e2e 395/395. Visual: 42 diffs = 14 views × 3
+looks, all intended: `screen-toetsen`, `screen-toetsen-po`, `exam-menu` (new item), the ten
+Toetsen modals (the screen behind the backdrop), and `splash` (version text 0.23.1 of the
+hotfix). Baselines not updated (user's check first). Screenshots of a stack: `TOETSEN_SHOTS=<dir>`
+on `e2e/toetsen.spec.ts`.
+
+**Next action:** review (`docs/reviews/step-33.md`), fix blockers/majors, build the exe, report.
+Then the user: visual check of the diffs, merge (after step 32), release 0.24.
+
+## Current step (step 32)
 
 **Step 32 (AI assistant, L+, 32a-32c):** decisions taken with the user 2026-11-18 (`PLAN-2.md`
 decisions 48-61, ADR-0009 "Amendment (step 32)"); the step section is rewritten as a design round
