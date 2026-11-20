@@ -558,5 +558,4 @@ See `docs/reviews/step-32.md` for the evidence of each item.
 - **Real CLIs:** Codex, Gemini CLI, Antigravity and Copilot CLI are untested against the real
   programs (ADR-0009 _verify_ rows); Vibe's transcript shows only text events (no tool steps).
 - **Logos:** vendor logos only with permission (`THIRD_PARTY_LICENSES.md`).
-- **Resizable AI panel (user 2026-11-19):** a drag handle on the chat panel's left edge (now a
-  fixed 380 px, board 59), remembered per teacher like the editor divider (`editorSplit`).
+- ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).

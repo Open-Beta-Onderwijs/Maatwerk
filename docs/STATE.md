@@ -18,6 +18,19 @@ template. Open: the tracked CI baselines of `screen-opdrachten` (3 platforms) ar
 button); drop or regenerate them with the user's OK, as for step 32's views. Manual check: print
 one opdracht in the real app, with and without answers.
 
+## AI panel remarks (2026-11-20, user's manual test, on `step/32-ai`)
+
+Done: resizable panel (backlog item; 380 px minimum, `preferences.aiPanelWidth`, `5a8ce1d`),
+long transcript titles cut off with a tooltip, chat follows its bottom so a follow-up's status
+card shows at once (cause: the previous proposal's diff card fills in after an await and
+pushed the card out of view), input grows to 7 lines (`5a8ce1d`); answers rendered as Markdown
+(`markdown.ts`, own small parser, no dependency, `1b125c0`). e2e `ai-panel.spec.ts` +3.
+Open: the diff card's applied state (remark 6) is investigated, questions to the user pending:
+only the last proposal gets a card (older ones none); `run.applied` in the history is set by
+`ai_apply` but not cleared by Ongedaan maken; a follow-up run resets the in-memory card state
+and the previous proposal's files are replaced, so the old card briefly offers Toepassen again
+or shows "Er is geen voorstel (meer)."
+
 ## Current step
 
 **Step 32 (AI assistant, L+, 32a-32c):** decisions taken with the user 2026-11-18 (`PLAN-2.md`
