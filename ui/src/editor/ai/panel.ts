@@ -32,6 +32,7 @@ import type { EditorAi } from './client';
 import { Composer, type PendingAttachment } from './composer';
 import { append, h, icon, monogram } from './dom';
 import { installList } from './install';
+import { markdown } from './markdown';
 import {
   MAX_ATTACHMENTS,
   addEvent,
@@ -563,7 +564,8 @@ export class AiPanel {
         ),
       );
     }
-    if (m.text.trim()) el.append(h('div', { class: 'ai-bubble' }, m.text));
+    // The CLIs answer in Markdown (user, 2026-11-20).
+    if (m.text.trim()) el.append(h('div', { class: 'ai-bubble is-md' }, markdown(m.text)));
     if (run && withProposal) {
       const host = h('div', { class: 'ai-diff-host' });
       el.append(host);

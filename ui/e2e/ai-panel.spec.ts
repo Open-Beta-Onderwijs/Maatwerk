@@ -273,3 +273,40 @@ test('a follow-up message shows its status card at once; long step titles are cu
   await expect(panel.locator('.ai-diff-card')).toContainText('Voorstel');
   expect(errors).toEqual([]);
 });
+
+test('the answer is rendered as Markdown; HTML in it stays text', async ({ page }) => {
+  const errors = watchErrors(page);
+  const frame = await openClaude(page);
+  await withMock(page, (m) => {
+    m.ai.nextTurn = {
+      answer: [
+        '## Wat ik deed',
+        '',
+        'Ik heb **twee** dingen aangepast:',
+        '',
+        '1. `opgave_punten` verhoogd',
+        '2. een *nieuwe* vraag',
+        '',
+        '```typst',
+        '#vraag[Leg uit.]',
+        '```',
+        '',
+        '<img src=x onerror="document.title=1">',
+      ].join('\n'),
+    };
+  });
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  await panel.getByRole('textbox', { name: 'Bericht' }).fill('Pas iets aan');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  const answer = panel.locator('.ai-msg.is-ai .ai-md');
+  await expect(answer.locator('h5')).toHaveText('Wat ik deed');
+  await expect(answer.locator('strong')).toHaveText('twee');
+  await expect(answer.locator('ol > li')).toHaveCount(2);
+  await expect(answer.locator('li code')).toHaveText('opgave_punten');
+  await expect(answer.locator('em')).toHaveText('nieuwe');
+  await expect(answer.locator('pre code')).toHaveText('#vraag[Leg uit.]');
+  await expect(answer.locator('img')).toHaveCount(0);
+  await expect(answer).toContainText('<img src=x');
+  await shot(page, '06-markdown');
+  expect(errors).toEqual([]);
+});
