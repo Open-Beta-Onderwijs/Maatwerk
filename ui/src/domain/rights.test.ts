@@ -77,7 +77,7 @@ describe('rights', () => {
   });
 
   it('grades a projectgroep with an own student, never foreign own lines', () => {
-    const graded = { scores: { p1: { c1: 4 } }, po: { p1: { projectgroep: 'g1' } } };
+    const graded = { scores: { p1: { c1: 4 } }, po: { p1: { projectgroep: 'g1', ownLines: [] } } };
     expect(teacherMayWrite('3', null, graded, ctx())).toBe(true);
     expect(
       teacherMayWrite(

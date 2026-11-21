@@ -283,8 +283,11 @@ fn nothing_for(rec: &Value, exam: &str) -> bool {
     EXAM_KEYS.iter().all(|k| entry(rec, k, exam).is_none())
 }
 
+/// The student's own lines for the exam; absent, `null` and `[]` are the same (none).
 fn own_lines<'a>(rec: &'a Value, exam: &str) -> Option<&'a Value> {
-    entry(rec, "po", exam).and_then(|p| p.get("ownLines"))
+    entry(rec, "po", exam)
+        .and_then(|p| p.get("ownLines"))
+        .filter(|v| !v.is_null() && v.as_array().is_none_or(|a| !a.is_empty()))
 }
 
 fn str_list(v: Option<&Value>) -> Vec<String> {

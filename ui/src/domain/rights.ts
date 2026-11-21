@@ -177,7 +177,11 @@ function examChangeAllowed(
     g.student_ids.map(String).includes(student),
   );
   if (!group) return nothingFor(next, examId);
-  const own = (r: Rec) => (entry(r, 'po', examId) as Rec)?.ownLines;
+  // Absent, null and [] are the same: no own lines.
+  const own = (r: Rec) => {
+    const v = (entry(r, 'po', examId) as Rec)?.ownLines;
+    return Array.isArray(v) && v.length === 0 ? undefined : (v ?? undefined);
+  };
   if (!same(own(old), own(next))) return false;
   if (group.student_ids.some((m) => ctx.own.has(String(m)))) return true;
   const pg = (r: Rec) => (entry(r, 'po', examId) as Rec)?.projectgroep;

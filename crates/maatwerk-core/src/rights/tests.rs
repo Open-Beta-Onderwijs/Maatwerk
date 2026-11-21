@@ -289,8 +289,9 @@ fn a_projectgroep_with_an_own_student_may_be_graded() {
     let (_t, s) = setup();
     let a = session("gebr-a", Role::Docent);
     // Student 3 (B's) shares g1 with student 1 (A's).
+    // `ownLines: []` where the file had none is no change of own lines.
     let graded = json!({ "scores": { "p1": { "c1": 4 } },
-                         "po": { "p1": { "projectgroep": "g1", "comment": "goed" } } });
+                         "po": { "p1": { "projectgroep": "g1", "comment": "goed", "ownLines": [] } } });
     assert!(check(&s, &a, "3", graded).is_ok());
     // g2 holds only B's student 4.
     let g2 = json!({ "scores": { "p1": { "c1": 4 } }, "po": { "p1": { "projectgroep": "g2" } } });
