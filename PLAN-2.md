@@ -225,8 +225,8 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | gate   |
 | 33   | Toetsen as cards                                                 | M            | 0.24    | gate   |
 | 33b  | Perf hotfix: first tab visits, card swap clock, batch grades     | S            | 0.24.1  | gate   |
-| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |
-| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | todo   |
+| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | gate   |
+| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | wip    |
 | 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | todo   |
 | 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | todo   |
 | 38   | Grade numbers in Rust                                            | M            | 0.29    | todo   |
@@ -650,6 +650,10 @@ data before the release (decision 8).
    locked. The lock look is new: show the user before the visual baselines (stop and ask).
 6. e2e: teachers A and B, voorzitter, secretaris on one exam with three groups; a PO with a mixed
    projectgroep. Gate, review, release 0.26.
+7. **Added by the user (2026-11-21):** the app starts on the vak tiles; the last vak is
+   highlighted (and focused), not chosen.
+
+The user asked for steps 35 and 36 in one go with one gate at the end of 36 (2026-11-21).
 
 ### Step 36: Rights b: Gastaccount, Kopieer naar… (M)
 

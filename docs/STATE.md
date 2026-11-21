@@ -1,10 +1,56 @@
 # State
 
-Last updated: 2026-11-21 (step 34) Branch: `step/34-obs-opd-cards` (from `step/33b-perf` at
-`334cc77`, `main` merged in after the merges below)
+Last updated: 2026-11-21 (steps 35-36) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
+`87ad870`, the 0.25.0 commit)
 Last tags: `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Steps 35 and 36 in one go (2026-11-21, user's request)
+
+The user approved step 34 and asked for steps 35 and 36 together, one gate at the end of 36.
+Answer at the start of 36 (asked early): a Gast may **preview only**, never print into
+`rapporten/`. Added to 35 by the user: the app starts on the vak tiles with the last vak
+highlighted, not chosen.
+
+Step 34 merge: version 0.25.0 (`87ad870`), the CI baselines of
+`screen-observaties`, `screen-opdrachten` and `splash` dropped; CI run 44921940112 wrote them (the
+only failures); committed as `b90d91b` and pushed; CI run 44923939530 checks it. **Then:** merge `step/34-obs-opd-cards` into `main` with a
+merge commit, tag `step-34`, merge `main` into `step/35-rights`.
+
+### Step 35 (on `step/35-rights`, version 0.26.0)
+
+Done:
+
+1. `964163c` core: `maatwerk-core::rights` (Role `docent` / `bestuur:<vak>` / `beheer`, Session,
+   `check_json_write`), `Auth` keeps a Session (`verify_pin_as`, `set_first_pin_as`; the old
+   calls log in with the default role), `write_json` / `delete_file` refuse with the new
+   `forbidden` code; every login raises `minAppVersion` to 0.26.0; version 0.26.0. TS mirror
+   `domain/rights.ts` (mock: same rule, but writes without a login pass).
+2. `b3274ba` data: `secties.<vak>.secretaris`, `validate-data` checks, school schema, data format
+   doc, ADR-0006 amendment "Roles and rights" (the rights table).
+3. `420e9c3` UI: Gebruikers voorzitter + secretaris dropdowns; SECTIESECRETARIS login group, the
+   role sent to the backend; `Store.isSectiebestuurActive`; start on the tiles (user); backend
+   logout after queued score saves (3b); photo put back on a refused save (26-28 m2).
+4. `b6e25ac` UI lock: score grid rows, lock in the group heading (tooltip), PO beoordelen
+   read-only / own lines locked (`services/score-lock.ts`).
+5. e2e `rights.spec.ts` (5 tests) + fix: `ownLines: []` = none.
+
+Not done in 35: the manual check on a copy of real data (decision 8, user's), the lock look is
+new (stop and ask before the visual baselines: show the user at the end of 36).
+
+Choices made without a spec line (tell the user):
+
+- Fixtures: the generator is unchanged (its groups feed many visual baselines); the e2e seeds a
+  second teacher, the secretaris and B's group instead.
+- Score changes an exam edit brings stay open to every teacher of the vak (dropping observaties
+  the exam no longer lists, removing a deleted exam's or a left PO's entries, a projectgroep move
+  that copies a staying member's grading).
+- The admin may write every score file (no score screens, but restores and imports).
+- The mock lets score writes without a login through (unit tests write without logging in).
+
+**Next action:** after the step 34 merge, step 36 (Gastaccount, Kopieer naar…), then the gate,
+review and report for 35 + 36.
 
 ## Steps 32, 33, 33b merged (2026-11-21)
 
