@@ -1,4 +1,4 @@
-# Maatwerk: phase 2 plan (steps 12-35)
+# Maatwerk: phase 2 plan (steps 12-45)
 
 Phase 2 turns the intake in `ROADMAP.md` section 4 and the design in `docs/phase-2/design/` into
 steps that each fit one Claude Code session of at most 5 hours (**M**), or two sessions with a
@@ -141,6 +141,31 @@ Open questions of the design round, answered (user, 2026-11-18):
    (they replace board 62's); Mistral Vibe and Copilot CLI qualify under decision 49; rows marked
    _verify_ are confirmed in the 32c manual check.
 
+Road to 1.0 (user, 2026-11-21; new steps 35-45, ROADMAP F-29..F-32, X-09..X-11):
+
+| #   | Decision                                                                                                                                                                                                                                                                                                               | Source |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 78  | Score lock (F-29): a teacher changes scores only of students in groups whose `docenten` include them; other groups of the same exam are shown, locked. Only the scores are locked: every teacher of the vak still adds, edits and deletes exams as today                                                               | user   |
+| 79  | Logged in as Sectievoorzitter or Sectiesecretaris, a teacher changes every score of that vak. A PO projectgroep may be graded by the teacher of any of its members; a student's own bonus/malus lines only by that student's teacher (or the voorzitter/secretaris)                                                    | user   |
+| 80  | Sectiesecretaris (F-30): a second role per sectie with exactly the voorzitter's rights; a dropdown next to Sectievoorzitter on the Gebruikers tab; a login group of its own                                                                                                                                            | user   |
+| 81  | Gastaccount (F-31): a checkbox per sectie on the Gebruikers tab, next to the two dropdowns. Checked, the login screen shows a Gast for that sectie that logs in without a PIN and reads **everything** of that sectie (student data included; the admin switches it on knowingly). It never writes, creates or deletes | user   |
+| 82  | A Gast copies an Opdracht to another sectie with "Kopieer naar…": pick the target sectie, pick yourself as a teacher there, enter your PIN; the copy is made under that teacher's name; linked observaties (of the source vak) are dropped, with a note                                                                | user   |
+| 83  | Grade numbers of the list screens are computed in Rust (backlog "Grade cache", part 1), then measured; a disk cache only if the measurement asks for it (where it lives is then decided with the user)                                                                                                                 | user   |
+| 84  | Typst is upgraded before 1.0 (X-01) in its own step, after the v1 code and goldens are gone; 1.0 ships without ignored advisories                                                                                                                                                                                      | user   |
+| 85  | `rapporten/` (X-06): Beheer › Instellingen shows its size and an "Opruimen" button that deletes printed copies older than a chosen school year, after a confirm. Nothing automatic                                                                                                                                     | user   |
+| 86  | PO verzameloverzicht (F-32) before 1.0: the PO overview with the attempt that counts per student and the I/H dot (as decision 35), after a short design check with the user                                                                                                                                            | user   |
+| 87  | 1.0 ships portable, as now (plus the step 16 bundles), but signing-ready: at the start of step 45 the user gets a to-do list for Windows and macOS signing, and the build is prepared so that signing later is only certificates and secrets, not a code change                                                        | user   |
+| 88  | The v1 (Electron) paths go at 1.0: v1 import and migration, v1 helpers, the compat layer, v1-only goldens and parity checks. v2 -> v3 migration stays                                                                                                                                                                  | user   |
+| 89  | AI CLIs not yet checked against the real program get a "bèta" tag in the rail and AI-instellingen until their manual check passes; 1.0 does not wait for them                                                                                                                                                          | user   |
+
+Choices made without the user (2026-11-21, tell the user if they bite): the rights of decisions
+78-82 are enforced in the UI **and** in `maatwerk-core` (the session carries the role; the core
+refuses a write the role does not allow), as the PIN already guards the shared PC this way; step
+35 raises `minAppVersion` so an older app (which would ignore the lock) opens read-only; a Gast
+saves no preferences (look and year come from the defaults); step 44 (TypeScript) comes after the
+backlog steps because step 38 moves the grade numbers out of `store.js` first (steps 35-43 add
+typed modules beside the JS files they touch, as before, instead of converting them).
+
 The priority, size and step of every roadmap item and old quirk are in `ROADMAP.md` section 4.6.
 
 ## 2. Working rules
@@ -201,7 +226,17 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 33   | Toetsen as cards                                                 | M            | 0.24    | gate   |
 | 33b  | Perf hotfix: first tab visits, card swap clock, batch grades     | S            | 0.24.1  | gate   |
 | 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | todo   |
-| 35   | Hardening, dependencies, 1.0                                     | M            | 1.0     | todo   |
+| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | todo   |
+| 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | todo   |
+| 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | todo   |
+| 38   | Grade numbers in Rust                                            | M            | 0.29    | todo   |
+| 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo   |
+| 40   | AI assistant follow-ups                                          | M            | 0.31    | todo   |
+| 41   | Data and storage robustness, `rapporten/` cleanup                | M            | 0.32    | todo   |
+| 42   | Tests and CI hygiene                                             | M            | 0.33    | todo   |
+| 43   | Remaining backlog                                                | M            | 0.34    | todo   |
+| 44   | TypeScript complete, compat layer removed                        | L (44a, 44b) | 0.35    | todo   |
+| 45   | Signing-ready, dependencies, reviews, 1.0                        | L (45a, 45b) | 1.0     | todo   |
 
 ## 4. Steps
 
@@ -577,11 +612,252 @@ opdracht render used by the editor preview). R-05: `screens/observaties.js` and
   opdrachten; the render on demand with a cache per opdracht and a placeholder; reduced motion.
   e2e: open, switch, close; visual baselines after the user's check (stop and ask).
 
-### Step 35: Hardening, dependencies, 1.0 (M)
+Steps 35-45 replace the old step 35 ("Hardening, dependencies, 1.0"). Backlog references are
+`docs/backlog.md` sections ("7b n4" = "From Step 7b", item n4); the table at the top of the
+backlog maps every section to its step. An item a step finds already done is struck through
+there with the commit, not silently dropped.
 
-Items: X-01 (Typst upgrade, golden diff with the user), X-02, X-05, the remaining R-05 files and
-compat layer, backlog cleanup, `/security-review`, whole-codebase review by a fresh reviewer,
-README and screenshots, release 1.0.
+### Step 35: Rights a: own groups only, Sectiesecretaris (M)
+
+Items: F-29, F-30; backlog 7b n4 (role checked only at login), 3b "queued saves stamp the user",
+26-28 m2 (photo before user record), 15 m5 (Gebruikers save conflict, only if the new dropdowns
+make it worse). Decisions 78-80. Touches data (`school.json`): manual check on a copy of real
+data before the release (decision 8).
+
+1. **Rights table (ADR-0006 amendment "Roles and rights"):** per role (docent, sectievoorzitter,
+   sectiesecretaris, beheer, and the gast of step 36) what it reads and writes. The Rust session
+   (`maatwerk-core::auth`) carries the role, not only the user id (`docent`, `bestuur:<vak>`);
+   the role is checked against `school.json` again at every guarded write, so an admin's removal
+   takes effect at once (closes 7b n4).
+2. **Data:** `secties.<vak>.secretaris` (additive; school schema; `validate-data`: an active
+   teacher of the vak, not the voorzitter). `minAppVersion` raised to 0.26.0 (an older app would
+   ignore the lock; it now opens read-only). Fixture test; `tiny` and `school` get a secretaris
+   and groups with different `docenten`.
+3. **Gebruikers and login:** the Sectiesecretaris dropdown next to Sectievoorzitter
+   (`screens/gebruikers.ts`, same row style); 26-28 m2 while in that dialog. Login: a
+   SECTIESECRETARIS group (`domain/login.ts`), role label "Sectiesecretaris". Every
+   `isVoorzitterActive` caller (Rubrics, groep-edit, user menu, …) moves to one
+   `isSectiebestuurActive(vak)`.
+4. **Core check, failing tests first:** a score write (scores, overrides, observaties in the
+   score file, PO grading writes into members' files) is refused with a new `forbidden` code and a
+   Dutch message when a changed entry belongs to a student outside the user's groups, unless the
+   session is bestuur of that vak. PO: allowed when a member of the projectgroep is in the user's
+   groups; own bonus/malus lines only for own students (decision 79). The stamp of a queued save
+   is the session at enqueue time (3b).
+5. **UI:** the score grid shows other teachers' groups read-only (locked rows, a lock in the group
+   heading with a tooltip naming who may change them); paste, cut and Delete skip locked cells;
+   Projectgroep beoordelen is read-only for a projectgroep without own members, per-student lines
+   locked. The lock look is new: show the user before the visual baselines (stop and ask).
+6. e2e: teachers A and B, voorzitter, secretaris on one exam with three groups; a PO with a mixed
+   projectgroep. Gate, review, release 0.26.
+
+### Step 36: Rights b: Gastaccount, Kopieer naar… (M)
+
+Items: F-31; backlog 15 n6 (presence reads `school.json` twice). Decisions 81-82. Touches data
+(additive `school.json` field): manual check on a copy of real data.
+
+1. **Data and admin:** `secties.<vak>.gast: true` (additive; an older 0.26 app ignores it and
+   shows no Gast, so no `minAppVersion` raise). A "Gastaccount" checkbox per sectie on the
+   Gebruikers tab, next to the two dropdowns.
+2. **Core:** a gast session (`gast:<vak>`, no user id, no PIN) in which every write command is
+   refused (`read_only`, the version guard's path); a Rust test walks the command list and checks
+   each writing command refuses a gast. Presence shows "Gast (<vak>)". No per-user preferences
+   are read or written; AI assistant off; the editor opens read-only.
+3. **Login and UI:** a GAST group in that sectie's login list, no PIN block. One `canWrite()` per
+   screen hides or disables every create, edit, delete, import and save control (the step lists
+   them per tab); an "Alleen lezen (gast)" pill in the top bar. **Ask the user at the start:** may
+   a Gast print a rapport or opdracht (printing writes a copy into `rapporten/`), or only preview?
+4. **Kopieer naar…** on the Opdrachten cards and the preview panel (step 34): a dialog with the
+   target sectie, then that sectie's teachers, then the PIN (the login throttle of `auth`). The
+   core command checks the PIN and writes the copy as that teacher for this one write only:
+   `vakken` = the target, linked observaties dropped (the dialog says so).
+5. e2e: gast login, a sweep over every tab that nothing is writable, Kopieer naar with a wrong
+   and a right PIN, the copy's owner and links. Gate, review, release 0.27.
+
+### Step 37: PO completion: verzameloverzicht, PO backlog (M)
+
+Items: F-32; backlog 21 m1-m3, m6, n7-n9; 22 (all three); 23 m1, m4, m9, n1, n3, n4; 24 m3-m8,
+n1, n3, n5; 29c "Profile observaties". Decision 86. Numbers: 24 m5 and the profile count change
+numbers, so a before/after table and the user's OK.
+
+1. **Design check (stop and ask):** the PO verzameloverzicht as the PO overview (F-24) with the
+   attempt that counts per student and the I/H dot right of the grade (decision 35); a small mock
+   for the user. Then build it and enable the PO Verzamelkaart's "Overzicht openen".
+2. **PO rapport:** 24 m3 (warning for a partly graded projectgroep), m4, m5 (averages that add
+   up), m6, m7 (break inside a tall block), m8 tests, n1, n3, n5.
+3. **PO grading:** 23 m4 (save on quitting the app), n1, n3 (live footer status), tests m1/m9.
+4. **Rubric guards and validation:** 21 m1 (one-time notice when `minAppVersion` rises), m2 (the
+   "in use" scan fails closed), m3, m6, n7 (an error `code` instead of a message prefix), n8, n9;
+   `validate-data` warnings of 22 n5, 22 (PO scores without projectgroep) and 23 n4.
+5. **Profile observaties:** include a PO's rubric and category observaties (29c).
+6. Gate, review, release 0.28.
+
+### Step 38: Grade numbers in Rust (M)
+
+Items: X-09; backlog 33b "Grade cache" part 1 and its "smaller wins", 7c "First tab visit", 7c m4
+rest, 7c n2, 7c n5, 19 m6, 29 m4, 29 m5; 10 "Perf at 4x" (closed: re-measured in 0.24.1).
+Decision 83. No rule changes: every number must stay the same.
+
+1. **`maatwerk-core::numbers`:** per (year, vak) everything the list screens show: results per
+   exam and attempt, year average, SE over the years (upper school), per exam the card numbers
+   (Verzamelkaart included), per group the card numbers, observatie counts; computed with
+   `maatwerk-grades`. Test first: identical to the WASM path for every number on `tiny` and
+   `school` (the before/after table is "no change"; state that to the user).
+2. **Command and screens:** a Tauri command under `spawn_blocking`; Leerlingen, Groepen and
+   Toetsen cards and the overviews' slow parts use it. The WASM rules stay for the live score grid
+   and the modals. Invalidation per data generation (own writes too).
+3. **Small wins** of the backlog item (WASM parse once, `getStudentHistory` map, `yieldSlice` in
+   `cards/student-grades.ts`, `topbar-fit.ts` layout, fills after login), 29 m4/m5, 7c m4/n2/n5.
+4. **Measure** with `tools/perf/measure.mjs` at 1x and 4x, and on the user's real copy
+   (M-PERF-1); `docs/perf.md`. **Ask the user:** is a disk cache still needed? If yes, it becomes
+   an "After 1.0" item with the location question of the backlog, unless the user wants it now.
+5. Gate, review, release 0.29.
+
+### Step 39: v1 removal and Typst upgrade (L, two sessions)
+
+Items: X-01, X-10; backlog 2 m3/m4/m6/m7, 2a n4, 5a m3, 5a n8, 5b n2, 5b n4, 5b n5, 5b n7, 6a
+"Typst warnings", 7a m6, 7a n1, 8a m2, m6, n2, n5, n6, 8b m5, n1, n4, n6, n8 and "Jumps after an
+error", 9 m3 (if step 32 left any), 17 m2, Step 6 manual M-START-3. Decisions 84, 88.
+
+- **39a, v1 removal:** the v1 import and v1 -> v2 migration in `maatwerk-cli` and core (v2 -> v3
+  stays), `TypstProject::opdracht_v1`/`v1_opdracht_id`, `tools/fixtures/to-v2.mjs` and the 7a m6
+  parity check, v1-only goldens and the harness that calls `_reference/`, the
+  `render_assignment_svg` command, 5b n5 (images mount to `opdrachten/images/<id>`), 5b n7.
+  Close 2/2a items that concern only removed goldens; fix the rest. `docs/parity.md` and
+  `docs/cutover-runbook.md` marked history. `_reference/` stays gitignored, read-only.
+- **39b, Typst:** `typst`, `typst-pdf`, `typst-svg`, `typst-kit` (and `typst-render` in tests)
+  together; the bundled packages' `compiler` versions; Noto Color Emoji with it (COLRv1 check);
+  the quick-xml ignores out of `deny.toml`; every golden regenerated and shown to the user as a
+  visual diff (stop and ask; the old goldens become the new output, decision 9; 17 m2 then
+  closes). With it: 5a m3 (name the field of a failing eval'd text), 5a n8 (system fonts in the
+  app), 5b n4 (**ask the user**: hash normalisation of `main.typ`/`lib.typ`), 6a (Typst warnings
+  shown in the editor and the generate/rapport modals), 5b n2, and the `LiveEditor` items of 8a
+  and 8b. `typst-ide` checked for the editor. Gate, review, release 0.30.
+
+### Step 40: AI assistant follow-ups (M)
+
+Items: backlog 32 m3-m12, "Real CLIs", "Logos"; ADR-0009 _verify_ rows. Decision 89.
+
+1. Apply and images: 32 m3 (apply reverts typing), m4 (images written before the text is saved),
+   m5 (placeholder overwrites a real image). Failing tests first.
+2. Process: m6 (kill the process tree on exit), m7 (Stop and the time limit during preparation
+   and Maatwerk's own checks), m8-m10 (login check, iframe metadata, `--version` once per
+   detection).
+3. "bèta" tag for CLIs without a passed manual check (decision 89; the verified set is a
+   constant with the ADR rows); Vibe's tool steps in the transcript; logos only with permission
+   (`THIRD_PARTY_LICENSES.md`), monograms otherwise.
+4. m11: split `panel.ts`, `ai.rs`, `provider.rs`, `workspace.rs`, `events.rs` (~500-line rule);
+   m12 tests; the nits. Manual check of each CLI the user has; ADR-0009 rows updated.
+5. Gate, review, release 0.31.
+
+### Step 41: Data and storage robustness, `rapporten/` cleanup (M)
+
+Items: X-06; backlog 3b n4, 4a m4, m6, n4, n6, n7, n9-n12, 4b n4, 5a m4, 5b n6, 6a m4, n7, 6b n9,
+n10, 7a n3-n6, n8, 7b "Herstellen uit snapshot", 7c "Read vs. colleague change", 9 n6, 10 m3, m6,
+n1, n2, 15 m2 (verify, probably done in 18), 18 security m4, n1, n4, n5, 26-28 m6. Decision 85.
+Bugs: failing test first.
+
+1. **`rapporten/` (X-06):** Beheer › Instellingen shows the folder's size and "Opruimen" (copies
+   older than a chosen school year, a confirm with the count); core function with a test. The
+   copy layout decides how "school year" is read; check it first.
+2. **Storage and watcher:** 4a m6 (retry an `io` read), 5a m4 (content hash on a same-size change),
+   7c read vs. colleague change, 3b n4, 4a n4/n6/n7/n9-n12, 4b n4, 10 m6 (CAS delete of an exam).
+3. **Snapshots and startup:** 10 m3 (claim removed on shutdown), 10 n1/n2, 7b (reload after
+   Herstellen uit snapshot), 26-28 m6 (`listSnapshots` returns the kind).
+4. **Input limits and messages:** 6b n10 and 6a m4 (image read cap, thumbnail cache, decode
+   limits), 18 m4 (watermark cap), 18 n1/n4/n5, 6a n7, 6b n9, 5b n6, 9 n6, 7a n3-n6/n8, 4a m4.
+5. Gate, review, release 0.32.
+
+### Step 42: Tests and CI hygiene (M)
+
+Items: X-05; backlog 0 n2, n3, n6, n9, 3a n5, 3b m8, 6a/6b "Command-level tests", 6b m3 rest, 7c
+m5 rest, 7c `examMenuItem` retries, 9 m7, 13 "Possibly flaky Rust test", "Flaky e2e on CI", 13 n9,
+10 n7, 14 m4, 15 m6, 19 m9, 20 m6, 25 m3/m6, 26-28 m8, 29 m7, 33 m4, 23 "Local WebKit".
+
+1. **Flaky and timed tests:** fixed waits and retries out (9 m7 with `page.clock`, 3a n5, 7c, 15
+   m6); the two flaky suspects run 20x with kept logs and get fixed or a recorded cause.
+2. **Command-level tests:** `tauri::test` mock-runtime tests for the render, print, image and
+   rights commands (the gast and forbidden paths of steps 35-36); the real-PDF test through the
+   `maatwerk-out` scheme (6b m3).
+3. **Test gaps** of the reviews listed above (Vitest and e2e).
+4. **CI and policy:** actions pinned by SHA with Dependabot, no double runs, no Windows target on
+   Linux (0 n9); a bundle licence check (3b m8); one source for the two licence allowlists (0
+   n2); SPDX decision for toml/yml (0 n6); the verbatim `LICENSE` (0 n3).
+5. Gate, review, release 0.33.
+
+### Step 43: Remaining backlog (M)
+
+Items: backlog 29 m1, m6, n1-n7 (unused utility classes); 3a "Styling cleanup", m7, U18; 13 m3/m4,
+n5, n8, raw RTTI colours; 14 m2, n2, n4, n5, n6; 15 n4, n5; 9 n9; 19 m8; 20 (attempt numbering,
+`_meta` copy: record as quirks, keep behaviour), 20 m5; 21 n8 (if 37 left it); 22 "Toetsen list
+re-renders" (check with the cards); 25 n2; 33 m3; 8b m6 and "CSP report" (check). **Ask the user
+at the start:** 29 m1 (which students the exam overview's Observaties percentage counts) and U18
+(period separators in the group students modal: wanted?).
+
+1. Dialog and async: 14 m2 (pass the `Dialog` to the helpers), 14 n2, 19 m8 (message when
+   WebAssembly cannot start), 33 m3 (tab order into an open stack), 20 m5 (`aria-pressed`).
+2. Shared helpers: one `utils/html.ts` escape (15 n5), `el()` (9 n9), `SCHOOLSOORTEN` (21 n8),
+   the version compare (15 n4), 29 m6 duplication, 25 n2 (keyboard handler module).
+3. Styling: raw colours to tokens (13 n5, 14 n4, RTTI colours), the 3a utility consolidation and
+   unused classes (29 n-items). Visible changes: show the diff, baselines after the user's OK.
+4. Gate, review, release 0.34.
+
+### Step 44: TypeScript complete, compat layer removed (L, two sessions)
+
+Items: R-05 (the rest), backlog 6b "Compat layer", 15 "R-05 (shell)", 14 n3, 13 m7, 26-28 R-05,
+14 "u-\* utilities" (what is left in these files). No behaviour change: e2e and visual baselines
+unchanged is the gate (zero visual diffs). The JS left after step 34 (2026-11-21 count, ~7.100
+lines): `store.js` 1.522, `editor-init.js` 2.087, `app.js` 827, `modals/groep-edit.js` 752,
+`shell/filter-bar.js` 527, `screens/school.js` 328, `pdf-viewer.js` 291, `modals/leerling-edit.js`
+267, `custom-select.js` 208, `presence.js` 196, `utils/csv.js` 65, `sync.js` 61,
+`utils/icons.js` 42.
+
+- **44a, data side:** `store.js` to typed `store/` modules (each under ~500 lines: cache and
+  generation, scores, exams and attempts, groups, users and roles, watcher changes), then
+  `sync.js`, `presence.js`, `utils/csv.js`, `utils/icons.js`, `custom-select.js`.
+- **44b, screens and editor:** `app.js` (modal helpers, sync notices, navigation into `shell/`),
+  `shell/filter-bar.js`, `modals/groep-edit.js`, `modals/leerling-edit.js`, `screens/school.js`,
+  `pdf-viewer.js`, `editor-init.js` (split: toolbar, file tabs, preview sync, dialogs, keyboard).
+  Then the compat layer: the reference result shapes in `bridge/tauri-api.ts` and `bridge/api.ts`
+  and the compat mapping in `src-tauri/src/error.rs` go; callers use the typed `{ code, message }`
+  errors. `allowJs` off and a CI check for `.js` under `ui/src`. Gate, review, release 0.35.
+
+### Step 45: Signing-ready, dependencies, reviews, 1.0 (L, two sessions)
+
+Items: X-02, X-11; the rest of the backlog (fixed or moved to "After 1.0" with a reason);
+`/security-review` and a whole-codebase review; Step 6 manual M-SYNC-1..4; the Step 6 and 10
+manual re-checks; README and screenshots. Decisions 87-89.
+
+- **45a, preparation and reviews:**
+  1. **First, the user's signing to-do list** (decision 87; Apple enrolment takes days, so it
+     comes first): what to buy or apply for and what to hand over, for Windows (certificate
+     options such as Azure Trusted Signing or an OV certificate, `signtool`, Tauri's
+     `signCommand`, SmartScreen reputation) and macOS (Apple Developer Program, Developer ID
+     Application certificate, notarisation with `notarytool` and an API key, hardened runtime
+     and entitlements, stapling); written to `docs/release.md` "Code signing". Then prepare the
+     build: signing settings read from environment/CI secrets, CI steps that sign and notarise
+     only when the secrets exist, the entitlements file, verify commands. Without secrets the
+     build is as today.
+  2. **Dependencies:** X-02 (pdf.js, Chart.js, annotation plugin; visual diff for the user), a
+     full `cargo update` / npm update pass, the Rust toolchain, `cargo deny` with no ignores,
+     licence files and `THIRD_PARTY_NOTICES.txt` regenerated.
+  3. **Security review of the whole codebase** (`/security-review`, not a diff): ADR-0006 and the
+     rights of steps 35-36, the gast path, path handling, the AI CLI sandbox, the custom scheme,
+     CSP, input limits. `docs/reviews/security-1.0.md`; blockers and majors fixed.
+  4. **Whole-codebase review** by a fresh reviewer (Appendix C, extended: layering, the core
+     never depends on `tauri`, dead code, files over ~500 lines, duplication, docs drift, test
+     coverage per area). `docs/reviews/review-1.0.md`; blockers and majors fixed; the backlog
+     triaged to zero open items outside "After 1.0".
+- **45b, release:**
+  1. Remaining fixes from 45a.
+  2. Docs: README (what Maatwerk is, install, screenshots from the fixtures, never real data),
+     `docs/manual-test.md` pass, `docs/release.md` 1.0 checklist, ROADMAP and this plan closed,
+     the "After 1.0" list (X-03 Tauri 3, disk grade cache if not built, installer and updater,
+     signing itself, 4b overflow, 26-28 m7).
+  3. The user's full manual test on a copy of real data: every M-\* check, M-SYNC-1..4 on two
+     machines, M-PERF-1, the re-checks of manual tests 6 and 10, each AI CLI the user has.
+  4. Version 1.0.0, release notes (changes since 0.1, known limits: unsigned, bèta CLIs),
+     checksums, tag `v1.0.0`. Stop and report.
 
 ## 5. Prompts for the user to paste
 

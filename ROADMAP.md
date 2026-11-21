@@ -106,6 +106,10 @@ from the inventory keep their old ID in "Source".
 | F-26 | RTTI category names reproductie, training, transfer, inzicht everywhere in the UI (as the rapport)                                                                                                                                                                                                                                                                                                                                             | Overzicht                 | P2  | S    |                             | user 2026-11-14                    |
 | F-27 | Toetsen as cards: grid per jaarlaag with periodes in reading order, exam card with RTTI points, mini histogram and top observaties, attempts as a stack that opens into an outlined tray (spec 4.7, boards 55-56)                                                                                                                                                                                                                              | Toetsen                   | P2  | M    | yes (design)                | user 2026-11-17                    |
 | F-28 | Observaties and Opdrachten as cards; Opdrachten opens a preview (PDF/SVG) on the right half while the cards move aside (spec 4.16, 4.17, boards 57-58)                                                                                                                                                                                                                                                                                         | Observaties, Opdrachten   | P2  | M    | yes (design)                | user 2026-11-17                    |
+| F-29 | Score lock per group: a teacher changes scores only of their own groups (`docenten`); other groups of the exam are shown locked; the sectievoorzitter/-secretaris changes all                                                                                                                                                                                                                                                                  | Scores, Admin             | P1  | M    | yes                         | user 2026-11-21                    |
+| F-30 | Sectiesecretaris: a second role per sectie with the voorzitter's rights (dropdown next to Sectievoorzitter on Gebruikers, own login group)                                                                                                                                                                                                                                                                                                     | Admin, Shell              | P1  | S    |                             | user 2026-11-21                    |
+| F-31 | Gastaccount per sectie (checkbox on Gebruikers): login without PIN, reads everything of that sectie, never writes; "Kopieer naar…" copies an opdracht to another sectie after that teacher's PIN                                                                                                                                                                                                                                               | Admin, Shell, Opdrachten  | P1  | M    | yes                         | user 2026-11-21                    |
+| F-32 | PO verzameloverzicht: the summary overview of a PO with resits (attempt that counts, I/H dot)                                                                                                                                                                                                                                                                                                                                                  | Overzicht and profiel     | P2  | S    | yes (design)                | backlog 29c                        |
 
 ### 4.2 Bugs and quirks (B)
 
@@ -161,6 +165,9 @@ from the inventory keep their old ID in "Source".
 | X-06 | `rapporten/` retention policy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | P3  | S    | yes               | backlog         |
 | X-07 | Data folder cleanup and renames: (a) list leftover folders and files in the real `data/` that v2 does not use (`validate-data` reports unknown entries; cleanup only after the user confirms); (b) rename `fotos/` to `afbeeldingen/` (it also holds the school logo and watermark; the rapport mount `/data/fotos` moves with it); (c) `users/` is **not** unused: it holds the presence files (who is online), `gebruikers/` holds the accounts. Proposal: rename `users/` to `aanwezigheid/` for clarity. (b) and (c) change the data format: v3 migration, and see decision 7.4 (old app versions would recreate `fotos/` and not see each other online) | P2  | M    | yes (data)        | user 2026-11-04 |
 | X-08 | Synthetic fixtures with more observaties on exams, so the exam overview's Observaties tab and F-10 can be checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | P2  | S    |                   | user 2026-11-04 |
+| X-09 | Grade numbers of the list screens computed in Rust (backlog "Grade cache" part 1); a disk cache only if measured necessary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | P2  | M    |                   | user 2026-11-20 |
+| X-10 | Remove the v1 (Electron) paths: v1 import and migration, v1 helpers, v1-only goldens and parity checks (v2 -> v3 stays)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | P2  | M    |                   | user 2026-11-21 |
+| X-11 | Signing-ready release build for Windows and macOS (to-do list for the user, signing driven by CI secrets); 1.0 ships unsigned                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | P2  | S    | yes               | user 2026-11-21 |
 
 ### 4.6 Triage (step 12, 2026-11-04)
 
@@ -197,6 +204,10 @@ does it.
 | F-26 | P2   | 29           |
 | F-27 | P2   | 33           |
 | F-28 | P2   | 34           |
+| F-29 | P1   | 35           |
+| F-30 | P1   | 35           |
+| F-31 | P1   | 36           |
+| F-32 | P2   | 37           |
 | B-01 | Done | 10           |
 | B-02 | P1   | 19           |
 | B-03 | P1   | 19           |
@@ -222,14 +233,17 @@ does it.
 | R-03 | P1   | 13, 14       |
 | R-04 | P1   | 19           |
 | R-05 | P2   | every step   |
-| X-01 | P2   | 35           |
-| X-02 | P3   | 35           |
+| X-01 | P2   | 39b          |
+| X-02 | P3   | 45a          |
 | X-03 | P3   | after 1.0    |
 | X-04 | P2   | 16           |
-| X-05 | P2   | 35 + ongoing |
-| X-06 | P3   | 28           |
+| X-05 | P2   | 42 + ongoing |
+| X-06 | P3   | 41           |
 | X-07 | P2   | 18           |
 | X-08 | P2   | 19           |
+| X-09 | P2   | 38           |
+| X-10 | P2   | 39a          |
+| X-11 | P2   | 45a          |
 
 **Old quirks** (`docs/phase-2/inventory.md` section 1):
 
@@ -286,13 +300,13 @@ Steps are cut along these areas. The files listed are the current main ones.
 
 ## 6. Steps
 
-The steps are in `PLAN-2.md` (steps 12-35, each one or two 5-hour sessions). This file keeps the
+The steps are in `PLAN-2.md` (steps 12-45, each one or two 5-hour sessions). This file keeps the
 item lists; `PLAN-2.md` decides the order and the scope per session.
 
 ## 7. Decisions
 
 All decided (2026-11-04); details in `PLAN-2.md` section 1 and
-`docs/adr/0010-phase-2-decisions.md`: 1 Rust core; 2 0.x per step, 1.0 at the end (step 35); 3 real-data
+`docs/adr/0010-phase-2-decisions.md`: 1 Rust core; 2 0.x per step, 1.0 at the end (step 45); 3 real-data
 test only for steps that touch data; 4 minimum app version in `school.json`; 5 old goldens
 replaced step by step; 6 AI assistant in step 32; 7 theme, accent, divider and active year per
 user in `gebruikers/<id>.json`; 8 data v3 renames `fotos/` and `users/`; 9 trend arrow = best

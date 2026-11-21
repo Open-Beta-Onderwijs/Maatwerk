@@ -2,6 +2,49 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## Road to 1.0: which step takes what (2026-11-21, `PLAN-2.md` steps 35-45)
+
+Every open item below belongs to one step; the step's "Items" line names them. A step strikes an
+item through with its commit when done, or moves it to "After 1.0" with a reason.
+
+| Section                                        | Step                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| 29c PO verzameloverzicht, profile observaties  | 37                                                                        |
+| 29c review 29: m1, m6, nits                    | 43 (m1 needs the user's answer)                                           |
+| 29c review 29: m4, m5 / m7                     | 38 / 42                                                                   |
+| Manual tests 6 and 10 (re-checks, M-SYNC-1..4) | 45b (M-START-3: closed with v1 in 39a)                                    |
+| 6b, 6a                                         | compat layer 44b; typst warnings 39b; tests 42; images, messages 41       |
+| 5b, 5a                                         | 39 (Typst, v1); 5a m4 and 5b n6 in 41                                     |
+| 4b, 4a                                         | 41 (4b overflow: After 1.0)                                               |
+| 3b                                             | n4 41; m8 42; "queued saves" 35                                           |
+| 3a                                             | styling, m7, U18 43; n5 42; dependency updates 45a (X-02)                 |
+| Step 2, 2a, 17 m2                              | 39a (most concern v1 goldens) and 39b                                     |
+| Step 0 review: n2, n3, n6, n9                  | 42                                                                        |
+| 7a                                             | m6, n1 39a; m2 drop or use in 41; n3-n6, n8 41                            |
+| 7b                                             | n4 35; reload after Herstellen 41; n5 closed (dev only)                   |
+| 7c                                             | perf items 38; read vs. colleague change 41; tests 42                     |
+| 8a, 8b                                         | 39b (`LiveEditor`); 8b m6 and "CSP report" 43 (check)                     |
+| 9                                              | m3 39b (if left); m7 42; n6 41; n9 43                                     |
+| Other (`rapporten/`, Tauri 3)                  | X-06 41; Tauri 3 After 1.0                                                |
+| 10                                             | m3, m6, n1, n2 41; n7 42; "Perf at 4x" closed in 38                       |
+| 13, 14, 15                                     | 43 (helpers, styling, dialogs); test items 42; R-05 44; 15 m5 35, n6 36   |
+| 18, 19                                         | security items 41; 19 m6 38, m8 43, m9 42                                 |
+| 20                                             | m5 43; m6 42; attempt numbering and `_meta` copy: quirks, 43              |
+| 21, 22, 23, 24                                 | 37 (tests of 23 m1/m9 in 37; "Local WebKit" note 42)                      |
+| 25                                             | m3/m6 42; n2 43                                                           |
+| 26-28                                          | m2 35; m6 41; m7 After 1.0; m8 42; R-05 44                                |
+| 32                                             | 40                                                                        |
+| 33                                             | m3 43; m4 42                                                              |
+| 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 unless 38 says otherwise |
+
+## After 1.0
+
+- **Tauri 3** (X-03) once 3.0 and its plugins are stable.
+- **Disk grade cache** (33b "Grade cache" parts 2-4), unless step 38's measurement asks for it.
+- **Installer and updater**, and the signing itself once the user has the certificates (X-11).
+- **4b `ReadDirectoryChangesW` overflow:** revisit if colleagues report missed changes.
+- **26-28 m7:** "Vergelijken" (OneDrive conflict copy) and "Toets openen" behind board 12.
+
 ## From step 29c (overviews, 2026-11-15)
 
 - **PO verzameloverzicht:** a PO with an inhaal or herkansing has no summary overview over the

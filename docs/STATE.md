@@ -5,6 +5,15 @@ Last updated: 2026-11-20 (perf hotfix 0.24.1, step 33b) Branch: `step/33b-perf` 
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
 
+## Plan to 1.0 extended (2026-11-21, user's request)
+
+`PLAN-2.md` now runs to step 45: the old step 35 is replaced by steps 35-45 (rights: own groups,
+Sectiesecretaris, Gastaccount; PO completion; grade numbers in Rust; v1 removal and Typst; AI
+follow-ups; data robustness and `rapporten/`; tests and CI; remaining backlog; TypeScript and
+compat layer; signing-ready, reviews, 1.0). Decisions 78-89 in `PLAN-2.md` section 1, roadmap
+items F-29..F-32 and X-09..X-11, and the backlog's step map at the top of `docs/backlog.md`. The
+next action below is unchanged; step 34 comes next after the merges.
+
 ## Perf hotfix 0.24.1 (step 33b, 2026-11-20, user's call)
 
 User report: the first visit of some tabs, Toetsen most of all, is slow. Measured and fixed;
