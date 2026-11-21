@@ -327,13 +327,6 @@ body::after {
   flex-shrink: 0;
 }
 
-/* Stacked button column inside card-actions */
-.exam-card-btn-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 /* ⋮ action-menu button on exam cards */
 .exam-menu-btn.active {
   background: var(--surface-2);
@@ -388,11 +381,6 @@ body::after {
   height: 0;
   margin: 4px 0;
   border-top: 1px solid var(--border);
-}
-
-/* Consistent-size buttons on exam cards */
-.exam-card-btn {
-  min-width: 120px;
 }
 
 /* Single-row student card */
@@ -1460,22 +1448,6 @@ code {
   font-weight: 500;
   color: var(--text);
   white-space: nowrap;
-}
-
-/* ── Exam title link (Toetsen tab) ────────────────────────────────────────── */
-.exam-title-link {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-weight: 700 !important;
-  font-size: 14px;
-  color: var(--accent-text);
-  text-align: left;
-  font-family: inherit;
-}
-.exam-title-link:hover {
-  text-decoration: underline;
 }
 
 /* ── Group name button (Groepen tab) ──────────────────────────────────────── */

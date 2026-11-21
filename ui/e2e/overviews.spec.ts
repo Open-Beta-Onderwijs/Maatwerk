@@ -230,7 +230,7 @@ async function openPoOverview(page: Page) {
   await seedFiles(page, await poSeed(page, { grading: true }));
   await login(page);
   await screen(page, 'toetsen');
-  await page.locator(`[data-exam-card="${PO_ID}"] .exam-card-btn`).click();
+  await page.locator(`[data-exam-card="${PO_ID}"] .tcard-title`).click();
   const d = page.locator('.modal-po-overview');
   await expect(d.locator('.po-ov-table')).toBeVisible();
   return d;
