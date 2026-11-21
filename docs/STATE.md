@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-21 (steps 35-36) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
+Last updated: 2026-11-21 (steps 35-36, gate done) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
 `87ad870`, the 0.25.0 commit)
 Last tags: `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -49,8 +49,41 @@ Choices made without a spec line (tell the user):
 - The admin may write every score file (no score screens, but restores and imports).
 - The mock lets score writes without a login through (unit tests write without logging in).
 
-**Next action:** after the step 34 merge, step 36 (Gastaccount, Kopieer naar…), then the gate,
-review and report for 35 + 36.
+### Step 36 (same branch, version stays 0.26.0 until the release decision)
+
+Done:
+
+1. `69115b5` core: `Role::Gast`, `Auth::login_gast` (no PIN, `secties.<vak>.gast`),
+   `Storage::set_guest` / `refuse_guest` (every write refused with `GuestReadOnly`, code
+   `read_only`, presence excepted), `print_copy` refused (preview only, user), `ai_send` refused,
+   `copy_to_sectie` (Kopieer naar: target teacher's PIN, written as that teacher via a
+   thread-local `as_teacher`, `vakken` = target, observaties dropped); a test classifies every
+   Tauri command for the gast guard.
+2. `ef1c84c` UI: Gastaccount checkbox (Gebruikers), GAST login group without PIN, "Alleen lezen
+   (gast)" pill, `html[data-gast]` hides every `data-write` control, exam menu reads only,
+   score grid / PO read-only, print opens the PDF, user menu without PIN/photo/AI, presence
+   "Gast (<vak>)", Kopieer naar… dialog (⋮ menu and preview panel). Mock mirrors it. 15 n6.
+3. `5c0925e` hide Toets bewerken / Projectgroepen / PO bewerken from a gast. `eb4b2b5` flaky
+   `ai_fake_cli` test fixed (stderr may come first; it failed step 34's macOS CI once).
+
+Gate (2026-11-21, 35 + 36): cargo fmt, clippy, test (all suites), deny, SPDX, npm licences,
+typecheck, 893 Vitest + 127 node tests, Chromium e2e 411/411. Lint: only the user's untracked
+`docs/reviews/manual-test-step-32.md`. Visual (local): 6 diffs = `splash` (0.26.0) and
+`admin-gebruikers` (secretaris dropdown, Gastaccount) in three looks; baselines not updated. The
+lock look is not in a visual view (the fixture locks nothing); screenshots for the user.
+
+Choices made without a spec line (36):
+
+- The editor is not opened read-only for a gast: "Openen in editor" is hidden (the preview panel
+  shows the PDF). The plan said "the editor opens read-only".
+- A gast may change the look and year on screen (not saved), and keeps its filters (local).
+- Opdrachten genereren is off for a gast (it links opdrachten to the test, a write).
+- Kopieer naar keeps the opdracht's name (no "(kopie)"): it lands in another sectie.
+
+**Next action:** review `docs/reviews/step-35-36.md`, fix blockers/majors, then report to the
+user (lock look screenshots, the visual diffs, the manual check on a copy of real data, release
+0.26 / 0.27 numbering). Step 34: merge into `main` and tag once CI run 44923939530 (rerun of the
+flaky macOS job) is green.
 
 ## Steps 32, 33, 33b merged (2026-11-21)
 
