@@ -1,9 +1,17 @@
 # State
 
-Last updated: 2026-11-20 (perf hotfix 0.24.1, step 33b) Branch: `step/33b-perf` (from
-`step/33-toetsen-cards` at `6e6a427`; steps 32 and 33 are not merged yet, so 33b builds on them)
-Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
-(`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
+Last updated: 2026-11-21 (steps 32, 33, 33b merged) Branch: `main`
+Last tags: `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+`step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
+(`d8c741c`), `v0.16.0`, `step-25`
+
+## Steps 32, 33, 33b merged (2026-11-21)
+
+CI run 44763575121 on `step/33b-perf` (`7a345f3`, with the CI baselines of the 19 changed views)
+green on all four jobs; merged into `main` with merge commits and tagged `step-32`, `step-33`,
+`step-33b` (the branch head `334cc77` adds only the plan to 1.0). Not done: the releases 0.23,
+0.24 and 0.24.1 (the user's), and the local `splash` baselines (version text 0.24.1, user's
+check).
 
 ## Plan to 1.0 extended (2026-11-21, user's request)
 
@@ -48,8 +56,8 @@ the app's own timers back: `docs/perf.md` "After the review fixes"). New pure mo
 clippy, test, SPDX; typecheck, lint, 851 Vitest, Chromium e2e 396/396; measured again (1x: no
 task over ~90 ms; 4x: none over ~270 ms).
 
-**Next action:** the user: check a years 4-6 student card's "laatste / SE" swap in the real app,
-the local `splash` baselines (version text) and the CI ones; merge 32, 33, 33b; release 0.24.1.
+**Next action (done 2026-11-21: merged):** the user: check a years 4-6 student card's "laatste /
+SE" swap in the real app and the local `splash` baselines (version text); release 0.24.1.
 
 ## Hotfix 0.23.1 (2026-11-19, on `step/32-ai`, user's call)
 
