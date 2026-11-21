@@ -80,10 +80,17 @@ Choices made without a spec line (36):
 - Opdrachten genereren is off for a gast (it links opdrachten to the test, a write).
 - Kopieer naar keeps the opdracht's name (no "(kopie)"): it lands in another sectie.
 
-**Next action:** review `docs/reviews/step-35-36.md`, fix blockers/majors, then report to the
-user (lock look screenshots, the visual diffs, the manual check on a copy of real data, release
-0.26 / 0.27 numbering). Step 34: merge into `main` and tag once CI run 44923939530 (rerun of the
-flaky macOS job) is green.
+Review `docs/reviews/step-35-36.md`: 0 blockers, 3 majors (all fixed), 7 minors (m1-m3, m7
+fixed; m4, m5, m6 backlog "From Steps 35-36"), 6 nits (n3, n5 fixed; rest backlog). Fixes
+`a4230fc`. M1 was a mistake of this session: the user's untracked
+`docs/reviews/manual-test-step-32.md` had been committed in `69115b5`; untracked again (file on
+disk unchanged).
+
+**Next action:** the user: look at the lock look and gast screenshots and the 6 visual diffs
+(`splash` 0.26.0, `admin-gebruikers`), decide the release numbering (35 + 36 as 0.26, or 0.26
+and 0.27), and do the manual check on a copy of real data (decision 8). Then: local baselines,
+drop the CI baselines of `splash` and `admin-gebruikers`, push, merge, tags `step-35`, `step-36`.
+Step 34: merge into `main` and tag `step-34` once CI run 44923939530 is green.
 
 ## Steps 32, 33, 33b merged (2026-11-21)
 
