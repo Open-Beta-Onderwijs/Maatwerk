@@ -20,6 +20,7 @@ use serde_json::{Map, Value};
 
 use crate::error::{Error, Result};
 use crate::paths::RelPath;
+use crate::rights::{Role, Session};
 use crate::storage::{Storage, stamp_meta};
 
 /// PIN length in digits.
@@ -154,7 +155,7 @@ struct Failures {
 #[derive(Debug, Default)]
 pub struct Auth {
     failures: Mutex<HashMap<String, Failures>>,
-    session: Mutex<Option<String>>,
+    session: Mutex<Option<Session>>,
 }
 
 pub fn user_path(user_id: &str) -> Result<RelPath> {
@@ -202,6 +203,11 @@ impl Auth {
 
     /// The user logged in on this machine, if any.
     pub fn session(&self) -> Option<String> {
+        self.current().map(|s| s.user_id)
+    }
+
+    /// The user logged in on this machine and the role they chose (step 35).
+    pub fn current(&self) -> Option<Session> {
         self.session
             .lock()
             .unwrap_or_else(|p| p.into_inner())
@@ -212,8 +218,35 @@ impl Auth {
         *self.session.lock().unwrap_or_else(|p| p.into_inner()) = None;
     }
 
-    fn login(&self, user_id: &str) {
-        *self.session.lock().unwrap_or_else(|p| p.into_inner()) = Some(user_id.to_owned());
+    fn login(&self, user_id: &str, role: Role) {
+        *self.session.lock().unwrap_or_else(|p| p.into_inner()) = Some(Session {
+            user_id: user_id.to_owned(),
+            role,
+        });
+    }
+
+    /// The role a login without an explicit one gets: beheer for the admin, else docent.
+    fn default_role(storage: &Storage, user_id: &str) -> Result<Role> {
+        Ok(if is_admin(&read_user(storage, user_id)?) {
+            Role::Beheer
+        } else {
+            Role::Docent
+        })
+    }
+
+    /// Refuses a role the user does not have (now) in `school.json` or the user file.
+    fn require_role(storage: &Storage, user_id: &str, role: &Role) -> Result<()> {
+        if crate::rights::role_allowed(storage, user_id, role)? {
+            Ok(())
+        } else {
+            Err(invalid(match role {
+                Role::Bestuur(_) => {
+                    "Je bent geen sectievoorzitter of sectiesecretaris (meer) van dit vak."
+                }
+                Role::Beheer => "Alleen de beheerder mag dit.",
+                Role::Docent => "Deze gebruiker is gedeactiveerd.",
+            }))
+        }
     }
 
     /// Checks `secret` against what `check` finds, with the per-key delay. The lock is held
@@ -243,9 +276,40 @@ impl Auth {
         }
     }
 
-    /// Login: checks the user's PIN; on success the user is logged in on this machine. A
-    /// deactivated user cannot log in.
+    /// Login: checks the user's PIN; on success the user is logged in on this machine (as the
+    /// admin for an admin, else as a teacher). A deactivated user cannot log in.
     pub fn verify_pin(
+        &self,
+        storage: &Storage,
+        user_id: &str,
+        pin: &str,
+        now: Instant,
+    ) -> Result<Check> {
+        let role = Self::default_role(storage, user_id)?;
+        self.verify_pin_as(storage, user_id, role, pin, now)
+    }
+
+    /// Login with the role chosen on the login screen (step 35); a role the user does not have
+    /// is refused after a right PIN, so the role check does not tell anyone without the PIN.
+    pub fn verify_pin_as(
+        &self,
+        storage: &Storage,
+        user_id: &str,
+        role: Role,
+        pin: &str,
+        now: Instant,
+    ) -> Result<Check> {
+        let result = self.check_pin(storage, user_id, pin, now)?;
+        if result == Check::Ok {
+            Self::require_role(storage, user_id, &role)?;
+            self.login(user_id, role);
+            crate::rights::after_login(storage);
+        }
+        Ok(result)
+    }
+
+    /// The PIN check of a login, without logging in (also confirms a PIN change).
+    fn check_pin(
         &self,
         storage: &Storage,
         user_id: &str,
@@ -259,11 +323,7 @@ impl Auth {
         let Some(hash) = pin_hash(&user) else {
             return Ok(Check::NoPin);
         };
-        let result = self.throttled(&format!("pin:{user_id}"), now, || verify_secret(pin, hash));
-        if result == Check::Ok {
-            self.login(user_id);
-        }
-        Ok(result)
+        Ok(self.throttled(&format!("pin:{user_id}"), now, || verify_secret(pin, hash)))
     }
 
     /// First login (or after a reset): sets the PIN of a user who has none and logs them in.
@@ -276,7 +336,21 @@ impl Auth {
         pin: &str,
         at: SystemTime,
     ) -> Result<PinSet> {
+        let role = Self::default_role(storage, user_id)?;
+        self.set_first_pin_as(storage, user_id, role, pin, at)
+    }
+
+    /// [`Self::set_first_pin`] with the role chosen on the login screen.
+    pub fn set_first_pin_as(
+        &self,
+        storage: &Storage,
+        user_id: &str,
+        role: Role,
+        pin: &str,
+        at: SystemTime,
+    ) -> Result<PinSet> {
         check_pin_format(pin)?;
+        Self::require_role(storage, user_id, &role)?;
         let user = read_user(storage, user_id)?;
         if !is_active(&user) {
             return Err(invalid("Deze gebruiker is gedeactiveerd."));
@@ -304,7 +378,8 @@ impl Auth {
             }
             Ok(())
         })?;
-        self.login(user_id);
+        self.login(user_id, role);
+        crate::rights::after_login(storage);
         Ok(PinSet {
             user: written,
             recovery_codes: codes,
@@ -323,7 +398,7 @@ impl Auth {
     ) -> Result<(Check, Option<Value>)> {
         check_pin_format(new_pin)?;
         let user_id = self.session().ok_or_else(|| invalid("Niet ingelogd."))?;
-        let check = self.verify_pin(storage, &user_id, current, now)?;
+        let check = self.check_pin(storage, &user_id, current, now)?;
         if check != Check::Ok {
             return Ok((check, None));
         }
@@ -407,7 +482,8 @@ impl Auth {
             user.insert(PIN_FIELD.into(), Value::String(pin.clone()));
             Ok(())
         })?;
-        self.login(user_id);
+        self.login(user_id, Role::Beheer);
+        crate::rights::after_login(storage);
         Ok((Check::Ok, Some(written)))
     }
 
@@ -420,7 +496,7 @@ impl Auth {
         at: SystemTime,
     ) -> Result<(Check, Option<PinSet>)> {
         let admin = self.require_admin(storage)?;
-        let check = self.verify_pin(storage, &admin, pin, now)?;
+        let check = self.check_pin(storage, &admin, pin, now)?;
         if check != Check::Ok {
             return Ok((check, None));
         }

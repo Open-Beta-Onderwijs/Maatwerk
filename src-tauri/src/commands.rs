@@ -6,6 +6,7 @@
 //! result shapes.
 
 use maatwerk_core::paths::{RelPath, display_path};
+use maatwerk_core::rights;
 use maatwerk_core::storage::{Expect, check_opdracht_typ_path, check_photo_path};
 use serde::Serialize;
 use serde_json::Value;
@@ -67,7 +68,8 @@ pub async fn read_json_versioned(
 }
 
 /// Writes JSON atomically; returns the hash written. With `cas`, the file must still hash to
-/// `expectedHash` (`null`: must not exist), else error `conflict`.
+/// `expectedHash` (`null`: must not exist), else error `conflict`. A score file the session may
+/// not change is refused with `forbidden` (step 35, `maatwerk_core::rights`).
 #[tauri::command]
 #[specta::specta]
 pub async fn write_json(
@@ -83,7 +85,9 @@ pub async fn write_json(
             (true, None) => Expect::Missing,
             (true, Some(h)) => Expect::Hash(h),
         };
-        Ok(c.storage()?.write_json(&rel(&rel_path)?, &data, expect)?)
+        let (storage, rel) = (c.storage()?, rel(&rel_path)?);
+        rights::check_json_write(storage, c.auth.current().as_ref(), &rel, Some(&data))?;
+        Ok(storage.write_json(&rel, &data, expect)?)
     })
     .await
 }
@@ -147,11 +151,16 @@ pub async fn read_opdrachten(state: State<'_, Shared>) -> Res<Vec<Value>> {
     .await
 }
 
-/// Deletes the file; a missing file is fine.
+/// Deletes the file; a missing file is fine. Score files as [`write_json`].
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_file(state: State<'_, Shared>, rel_path: String) -> Res<()> {
-    blocking(state, move |c| Ok(c.storage()?.delete(&rel(&rel_path)?)?)).await
+    blocking(state, move |c| {
+        let (storage, rel) = (c.storage()?, rel(&rel_path)?);
+        rights::check_json_write(storage, c.auth.current().as_ref(), &rel, None)?;
+        Ok(storage.delete(&rel)?)
+    })
+    .await
 }
 
 #[tauri::command]

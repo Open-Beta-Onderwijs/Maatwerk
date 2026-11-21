@@ -388,3 +388,83 @@ fn pin_writes_keep_preferences_and_unknown_fields() {
     assert_eq!(after["preferences"], prefs);
     assert_eq!(after["futureField"], json!({ "x": 1 }));
 }
+
+#[test]
+fn a_login_carries_the_role_chosen_and_checks_it() {
+    let (_t, s) = setup();
+    s.write_json(
+        &RelPath::parse("school.json").unwrap(),
+        &json!({ "naam": "S", "secties": { "nat": { "secretaris": "gebr-2" } } }),
+        Expect::Any,
+    )
+    .unwrap();
+    let auth = Auth::new();
+    auth.set_first_pin(&s, "gebr-1", "12345", SystemTime::now())
+        .unwrap();
+    auth.set_first_pin(&s, "gebr-2", "54321", SystemTime::now())
+        .unwrap();
+    let now = Instant::now();
+    // gebr-1 is no bestuur of nat: refused after the right PIN, nobody logged in.
+    auth.logout();
+    let err = auth
+        .verify_pin_as(&s, "gebr-1", Role::Bestuur("nat".into()), "12345", now)
+        .unwrap_err();
+    assert_eq!(err.code(), "invalid_argument");
+    assert_eq!(auth.current(), None);
+    assert_eq!(
+        auth.verify_pin_as(&s, "gebr-2", Role::Bestuur("nat".into()), "54321", now)
+            .unwrap(),
+        Check::Ok
+    );
+    assert_eq!(
+        auth.current(),
+        Some(Session {
+            user_id: "gebr-2".into(),
+            role: Role::Bestuur("nat".into())
+        })
+    );
+    // A teacher cannot log in as the admin.
+    assert!(
+        auth.verify_pin_as(&s, "gebr-1", Role::Beheer, "12345", now)
+            .is_err()
+    );
+    // A PIN change keeps the role.
+    auth.verify_pin_as(&s, "gebr-2", Role::Bestuur("nat".into()), "54321", now)
+        .unwrap();
+    auth.change_pin(&s, "54321", "65432", now, SystemTime::now())
+        .unwrap();
+    assert_eq!(auth.current().unwrap().role, Role::Bestuur("nat".into()));
+}
+
+#[test]
+fn a_login_raises_min_app_version_for_the_score_lock() {
+    let (_t, s) = setup();
+    let school = RelPath::parse("school.json").unwrap();
+    s.write_json(
+        &school,
+        &json!({ "naam": "S", "minAppVersion": "0.14.0" }),
+        Expect::Any,
+    )
+    .unwrap();
+    let auth = Auth::new();
+    auth.set_first_pin(&s, "gebr-1", "12345", SystemTime::now())
+        .unwrap();
+    let after = s.read_json(&school).unwrap().unwrap();
+    assert_eq!(
+        after["minAppVersion"],
+        crate::rights::RIGHTS_MIN_APP_VERSION
+    );
+    assert_eq!(after["naam"], "S");
+}
+
+#[test]
+fn the_default_login_role_is_beheer_for_the_admin() {
+    let (_t, s) = setup();
+    let auth = Auth::new();
+    auth.set_first_pin(&s, "admin", "99999", SystemTime::now())
+        .unwrap();
+    assert_eq!(auth.current().unwrap().role, Role::Beheer);
+    auth.set_first_pin(&s, "gebr-1", "12345", SystemTime::now())
+        .unwrap();
+    assert_eq!(auth.current().unwrap().role, Role::Docent);
+}

@@ -46,6 +46,15 @@ import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
 import { requiredVersion } from '../../services/read-only';
 import { checkRubric, lockedChanges, type Rubric } from '../../domain/rubric';
+import {
+  bestuurOf,
+  forbiddenMessage,
+  ownStudentIds,
+  scoreFile,
+  teacherMayWrite,
+  type ExamLike,
+  type GroupLike,
+} from '../../domain/rights';
 
 /** A snapshot of a data folder: file contents (text or base64) and folders. */
 export interface MockSeed {
@@ -55,7 +64,9 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.25.0';
+export const MOCK_APP_VERSION = '0.26.0';
+/** `rights::RIGHTS_MIN_APP_VERSION`: raised at every login (step 35). */
+const RIGHTS_MIN_APP_VERSION = '0.26.0';
 export const MOCK_LOG_DIR =
   'C:\\Users\\docent\\AppData\\Local\\nl.openbetaonderwijs.maatwerk\\logs';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -212,6 +223,8 @@ export class MockApi implements MaatwerkApi {
   };
   /** Logged-in user and wrong attempts (maatwerk-core::auth::Auth). */
   private authSession: string | null = null;
+  /** The role of the login (step 35): `docent`, `bestuur:<vak>` or `beheer`. */
+  private authRole: string | null = null;
   private pinFailures = new Map<string, { count: number; last: number }>();
   /** Snapshot names (newest first) and the files each holds; tests fill them. */
   snapshots: { name: string; files: Record<string, Json> }[] = [];
@@ -359,7 +372,7 @@ export class MockApi implements MaatwerkApi {
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
     if (this.readOnly()) return { ok: false, reason: 'read_only' };
-    const refused = this.rubricGuard(relPath, data);
+    const refused = this.rubricGuard(relPath, data) ?? this.rightsGuard(relPath, data);
     if (refused) return { ok: false, reason: refused };
     if (opts.cas) {
       const current = this.files.get(relPath);
@@ -437,6 +450,8 @@ export class MockApi implements MaatwerkApi {
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
     if (this.readOnly()) return { ok: false, reason: 'read_only' };
+    const forbidden = this.rightsGuard(relPath, null);
+    if (forbidden) return { ok: false, reason: forbidden };
     const rubricId = /^rubrics\/([^/]+)\.json$/.exec(relPath)?.[1];
     const uses = rubricId ? (this.rubricUses()[rubricId]?.length ?? 0) : 0;
     if (uses > 0) {
@@ -959,6 +974,83 @@ export class MockApi implements MaatwerkApi {
     return null;
   }
 
+  /**
+   * The core's score lock (`rights::check_json_write`, step 35): a refusal message, or null.
+   * Unlike the core, the mock lets a write without a login through (unit tests write scores
+   * without logging in).
+   */
+  private rightsGuard(relPath: string, data: Json): string | null {
+    const parts = scoreFile(relPath);
+    const userId = this.authSession;
+    if (!parts || !userId) return null;
+    const [year, vak, student] = parts;
+    let user: UserRecord;
+    try {
+      user = this.readUser(userId);
+    } catch {
+      return 'Niet ingelogd.';
+    }
+    if (user.actief === false) return 'Deze gebruiker is gedeactiveerd.';
+    const role = this.authRole ?? (user.isAdmin === true ? 'beheer' : 'docent');
+    if (role === 'beheer' && user.isAdmin === true) return null;
+    if (role === `bestuur:${vak}` && bestuurOf(this.schoolJson(), vak).includes(userId))
+      return null;
+    const readJson = (rel: string): Record<string, unknown> | null => {
+      const text = this.readText(rel);
+      if (text === null) return null;
+      try {
+        return JSON.parse(text) as Record<string, unknown>;
+      } catch {
+        return null;
+      }
+    };
+    const groups = this.jsonFilesIn(`${year}/groups`).map((f) => f.data as GroupLike);
+    const ok = teacherMayWrite(
+      student,
+      readJson(relPath),
+      (data ?? null) as Record<string, unknown> | null,
+      {
+        own: ownStudentIds(groups, vak, userId),
+        exam: (id) =>
+          /^[\w-]+$/.test(id) ? (readJson(`${year}/exams/${id}.json`) as ExamLike | null) : null,
+        record: (id) => readJson(`${year}/scores/${vak}/${id}.json`),
+      },
+    );
+    return ok ? null : forbiddenMessage(student);
+  }
+
+  private schoolJson(): { secties?: Record<string, { voorzitter?: string; secretaris?: string }> } {
+    try {
+      return JSON.parse(this.readText('school.json') ?? '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  /** As `rights::role_allowed`. */
+  private roleAllowed(userId: string, role: string): boolean {
+    const user = this.readUser(userId);
+    if (user.actief === false) return false;
+    if (role === 'docent') return true;
+    if (role === 'beheer') return user.isAdmin === true;
+    const vak = /^bestuur:([\w-]+)$/.exec(role)?.[1];
+    return !!vak && bestuurOf(this.schoolJson(), vak).includes(userId);
+  }
+
+  private login(userId: string, role: string | undefined): void {
+    const r = role ?? (this.readUser(userId).isAdmin === true ? 'beheer' : 'docent');
+    if (!this.roleAllowed(userId, r)) {
+      throw new Error(
+        r === 'beheer'
+          ? 'Alleen de beheerder mag dit.'
+          : 'Je bent geen sectievoorzitter of sectiesecretaris (meer) van dit vak.',
+      );
+    }
+    this.authSession = userId;
+    this.authRole = r;
+    if (!this.readOnly()) this.raiseMinAppVersion(RIGHTS_MIN_APP_VERSION);
+  }
+
   private raiseMinAppVersion(min: string): void {
     const text = this.readText('school.json');
     if (text === null) return;
@@ -1054,7 +1146,7 @@ export class MockApi implements MaatwerkApi {
     return n.length === 8 ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
   }
 
-  async verifyPin(userId: string, pin: string): Promise<PinCheck> {
+  async verifyPin(userId: string, pin: string, role?: string): Promise<PinCheck> {
     this.record('verifyPin', [userId]);
     const user = this.readUser(userId);
     if (user.actief === false) throw new Error('Deze gebruiker is gedeactiveerd.');
@@ -1062,11 +1154,17 @@ export class MockApi implements MaatwerkApi {
       return { outcome: 'noPin', retryAfterMs: 0, user: null, recoveryCodes: null };
     }
     const check = this.throttled(`pin:${userId}`, () => user.pinHash === `mock$${pin}`);
-    if (check.outcome === 'ok') this.authSession = userId;
+    if (check.outcome === 'ok') this.login(userId, role);
     return check;
   }
 
-  async setFirstPin(userId: string, pin: string): Promise<PinCheck> {
+  /** The PIN check of `changePin` and `renewRecoveryCodes`: no login, the role stays. */
+  private checkPin(userId: string, pin: string): PinCheck {
+    const user = this.readUser(userId);
+    return this.throttled(`pin:${userId}`, () => user.pinHash === `mock$${pin}`);
+  }
+
+  async setFirstPin(userId: string, pin: string, role?: string): Promise<PinCheck> {
     this.record('setFirstPin', [userId]);
     checkPinFormat(pin);
     const user = this.readUser(userId);
@@ -1074,12 +1172,14 @@ export class MockApi implements MaatwerkApi {
     if (user.pinHash) {
       throw new Error('Er is intussen al een pincode ingesteld. Log in met die pincode.');
     }
+    const r = role ?? (user.isAdmin === true ? 'beheer' : 'docent');
+    if (!this.roleAllowed(userId, r)) this.login(userId, r); // throws the core's message
     const codes = user.isAdmin === true ? MockApi.newCodes() : null;
     const saved = this.writeUser(userId, (u) => {
       u.pinHash = `mock$${pin}`;
       if (codes) u.recoveryCodeHashes = codes.map((c) => `mock$${c}`);
     });
-    this.authSession = userId;
+    this.login(userId, r);
     return { outcome: 'ok', retryAfterMs: 0, user: saved, recoveryCodes: codes };
   }
 
@@ -1088,7 +1188,7 @@ export class MockApi implements MaatwerkApi {
     checkPinFormat(newPin);
     const id = this.authSession;
     if (!id) throw new Error('Niet ingelogd.');
-    const check = await this.verifyPin(id, currentPin);
+    const check = this.checkPin(id, currentPin);
     if (check.outcome !== 'ok') return check;
     const saved = this.writeUser(id, (u) => {
       u.pinHash = `mock$${newPin}`;
@@ -1118,14 +1218,14 @@ export class MockApi implements MaatwerkApi {
       u.recoveryCodeHashes = hashes.filter((h) => h !== used);
       u.pinHash = `mock$${newPin}`;
     });
-    this.authSession = userId;
+    this.login(userId, 'beheer');
     return { ...check, user: saved };
   }
 
   async renewRecoveryCodes(pin: string): Promise<PinCheck> {
     this.record('renewRecoveryCodes', []);
     const admin = this.requireAdmin();
-    const check = await this.verifyPin(admin, pin);
+    const check = this.checkPin(admin, pin);
     if (check.outcome !== 'ok') return check;
     const codes = MockApi.newCodes();
     const saved = this.writeUser(admin, (u) => {
@@ -1137,6 +1237,7 @@ export class MockApi implements MaatwerkApi {
   async logout(): Promise<void> {
     this.record('logout', []);
     this.authSession = null;
+    this.authRole = null;
   }
 
   /** The user logged in through the PIN methods (tests). */

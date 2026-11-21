@@ -290,10 +290,13 @@ export interface MaatwerkApi {
   // ── Accounts and snapshots (Step 7b) ──────────────────────────────────────
   // PINs are checked in Rust; the backend remembers who logged in, so the
   // admin-only methods do not trust the UI. Rejections carry a Dutch message.
-  /** Login; `noPin`: the user sets a PIN first (`setFirstPin`). */
-  verifyPin(userId: string, pin: string): Promise<PinCheck>;
+  /**
+   * Login; `noPin`: the user sets a PIN first (`setFirstPin`). `role` (step 35): `docent`,
+   * `bestuur:<vak>` or `beheer`, checked by the backend; absent: beheer for the admin, else docent.
+   */
+  verifyPin(userId: string, pin: string, role?: string): Promise<PinCheck>;
   /** First login or after a reset; the admin also gets `recoveryCodes` (show once). */
-  setFirstPin(userId: string, pin: string): Promise<PinCheck>;
+  setFirstPin(userId: string, pin: string, role?: string): Promise<PinCheck>;
   /** The logged-in user's own PIN. */
   changePin(currentPin: string, newPin: string): Promise<PinCheck>;
   /** Admin only: the teacher sets a new PIN at the next login. Resolves to the user as written. */

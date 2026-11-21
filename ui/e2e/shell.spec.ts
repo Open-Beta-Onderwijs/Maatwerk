@@ -34,7 +34,7 @@ test.describe('minimum app version', () => {
     const banner = page.locator('#read-only-banner');
     await expect(banner).toBeVisible();
     await expect(banner).toContainText('Maatwerk 99.0.0 of nieuwer');
-    await expect(banner).toContainText('deze versie: 0.25.0');
+    await expect(banner).toContainText('deze versie: 0.26.0');
     await expect(page.locator('html')).toHaveAttribute('data-read-only', 'true');
   });
 

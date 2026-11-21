@@ -61,6 +61,11 @@ pub enum Error {
         app_version: String,
     },
 
+    /// The session's role does not allow this write (step 35: a score of a student outside the
+    /// teacher's groups); `message` is Dutch, for the teacher.
+    #[error("forbidden: {message}")]
+    Forbidden { message: String },
+
     /// Any other I/O error.
     #[error("I/O error on {path}: {source}")]
     Io {
@@ -84,6 +89,7 @@ impl Error {
             Error::MigrationBlocked { .. } => "migration_blocked",
             Error::InvalidArgument { .. } => "invalid_argument",
             Error::ReadOnly { .. } => "read_only",
+            Error::Forbidden { .. } => "forbidden",
             Error::Io { .. } => "io",
         }
     }

@@ -7,6 +7,7 @@
 use std::time::{Instant, SystemTime};
 
 use maatwerk_core::auth::Check;
+use maatwerk_core::rights::Role;
 use maatwerk_core::snapshots;
 use serde::Serialize;
 use serde_json::Value;
@@ -59,14 +60,26 @@ impl PinCheck {
     }
 }
 
-/// Login with a PIN; on success the user is logged in on this PC.
+/// Login with a PIN; on success the user is logged in on this PC with `role` (`docent`,
+/// `bestuur:<vak>` or `beheer`, step 35), which must be theirs; none: beheer for the admin,
+/// else docent.
 #[tauri::command]
 #[specta::specta]
-pub async fn verify_pin(state: State<'_, Shared>, user_id: String, pin: String) -> Res<PinCheck> {
+pub async fn verify_pin(
+    state: State<'_, Shared>,
+    user_id: String,
+    pin: String,
+    role: Option<String>,
+) -> Res<PinCheck> {
     blocking(state, move |c| {
-        let check = c
-            .auth
-            .verify_pin(c.storage()?, &user_id, &pin, Instant::now())?;
+        let now = Instant::now();
+        let check = match role {
+            Some(role) => {
+                c.auth
+                    .verify_pin_as(c.storage()?, &user_id, Role::parse(&role)?, &pin, now)?
+            }
+            None => c.auth.verify_pin(c.storage()?, &user_id, &pin, now)?,
+        };
         Ok(PinCheck::from(check, None))
     })
     .await
@@ -79,11 +92,17 @@ pub async fn set_first_pin(
     state: State<'_, Shared>,
     user_id: String,
     pin: String,
+    role: Option<String>,
 ) -> Res<PinCheck> {
     blocking(state, move |c| {
-        let set = c
-            .auth
-            .set_first_pin(c.storage()?, &user_id, &pin, SystemTime::now())?;
+        let (storage, at) = (c.storage()?, SystemTime::now());
+        let set = match role {
+            Some(role) => {
+                c.auth
+                    .set_first_pin_as(storage, &user_id, Role::parse(&role)?, &pin, at)?
+            }
+            None => c.auth.set_first_pin(storage, &user_id, &pin, at)?,
+        };
         Ok(PinCheck {
             recovery_codes: set.recovery_codes,
             ..PinCheck::from(Check::Ok, Some(set.user))
