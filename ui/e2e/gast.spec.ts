@@ -69,6 +69,21 @@ test('a gast logs in without a PIN and nothing is writable on any tab', async ({
     await expect(page.locator('[data-write]:visible')).toHaveCount(0);
   }
 
+  // Behavioural (review M3): clicking the card titles opens nothing to edit.
+  await page.locator('.nav-btn[data-screen="observaties"]').click();
+  await page.locator('[data-action="edit-obs"]').first().click();
+  await expect(page.locator('.dlg')).toHaveCount(0);
+  const writes = await withMock(
+    page,
+    (m) =>
+      m.calls
+        .filter(([name]) =>
+          ['writeJson', 'deleteFile', 'writeTextFile', 'savePhoto'].includes(name),
+        )
+        .filter(([, rel]) => !String(rel).startsWith('aanwezigheid/')).length,
+  );
+  expect(writes).toBe(0);
+
   // Toetsen: only what reads; Opdrachten genereren is off.
   await page.locator('.nav-btn[data-screen="toetsen"]').click();
   await expect(async () => {

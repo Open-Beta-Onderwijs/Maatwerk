@@ -105,4 +105,9 @@ describe('rights', () => {
     expect(teacherMayWrite('4', old, other, ctx(records))).toBe(false);
     expect(teacherMayWrite('4', moved, other, ctx(records))).toBe(false);
   });
+
+  it('does not let another teacher clear a grading without projectgroep (review m3)', () => {
+    const old = { scores: { p1: { c1: 3 } } };
+    expect(teacherMayWrite('4', old, { scores: {} }, ctx())).toBe(false);
+  });
 });

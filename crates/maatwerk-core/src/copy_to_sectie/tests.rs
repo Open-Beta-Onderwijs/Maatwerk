@@ -101,6 +101,9 @@ fn a_gast_writes_nothing_but_presence() {
     assert!(refused(opdracht_images::copy(&s, "opd-1", "opd-2")));
     assert!(refused(crate::rubrics::ensure_min_app_version(&s, "9.0.0")));
     assert_eq!(Error::GuestReadOnly.code(), "read_only");
+    // No folders either (review m1): the path comes back, nothing is made.
+    let year = s.ensure_year("2030-2031").unwrap();
+    assert!(!year.exists());
     // Presence is not data: colleagues see "Gast (nat)".
     s.write_json(
         &rel("aanwezigheid/gast-nat.json"),
@@ -182,5 +185,9 @@ fn kopieer_naar_needs_a_gast_and_a_teacher_of_the_target_vak() {
     );
     assert!(
         copy_opdracht_to_sectie(&s, &auth, "nope", "bio", "gebr-bio", "24680", now, at).is_err()
+    );
+    assert!(
+        copy_opdracht_to_sectie(&s, &auth, "opd-1", "nat", "gebr-nat", "24680", now, at).is_err(),
+        "not into the gast's own vak (review n5)"
     );
 }

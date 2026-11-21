@@ -398,7 +398,9 @@ fn exam_change_allowed(
     }
     let grading = group_grading(new, exam_id);
     if grading.is_empty() {
-        return Ok(true);
+        // Clearing is a move only out of another projectgroep, or when there was nothing: a
+        // grading without `projectgroep` stays the student's teacher's (review m3).
+        return Ok(pg(old).is_some() || group_grading(old, exam_id).is_empty());
     }
     if pg(new).as_deref() != Some(group_id) {
         return Ok(false);

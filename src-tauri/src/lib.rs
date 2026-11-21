@@ -387,10 +387,6 @@ mod tests {
             "rubric_usage",
             "stamp_issues",
             "verify_pin",
-            "set_first_pin",
-            "change_pin",
-            "recover_with_code",
-            "renew_recovery_codes",
             "logout",
             "login_gast",
             "save_text_as",
@@ -413,7 +409,6 @@ mod tests {
             "editor_definition",
             "editor_jump_from_click",
             "editor_jump_from_cursor",
-            "project_files_status",
             "bundled_project_file",
             "problem_info",
             "open_log_folder",
@@ -433,8 +428,6 @@ mod tests {
             "ai_open_syllabus_folder",
             "ai_presets",
             "ai_pick_attachments",
-            "ensure_year",
-            "ensure_dir",
         ];
         // Write the data folder through `Storage` (refused for a gast; presence excepted).
         const STORAGE_WRITE: &[&str] = &[
@@ -456,6 +449,14 @@ mod tests {
             "ai_apply",
             "ai_undo_images",
             "print_pdf",
+            // The user file (PIN commands), project file updates, folders (none for a gast).
+            "set_first_pin",
+            "change_pin",
+            "recover_with_code",
+            "renew_recovery_codes",
+            "project_files_status",
+            "ensure_year",
+            "ensure_dir",
         ];
         // Check the gast themselves: `ai_send` refuses; `copy_opdracht_to_sectie` is the gast's
         // one write, as the teacher who gave their PIN (decision 82).

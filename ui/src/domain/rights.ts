@@ -187,7 +187,9 @@ function examChangeAllowed(
   const pg = (r: Rec) => (entry(r, 'po', examId) as Rec)?.projectgroep;
   if (pg(old) === group.id) return false;
   const grading = groupGrading(next, examId);
-  if (!Object.keys(grading).length) return true;
+  // Clearing is a move only out of another projectgroep, or when there was nothing (review m3).
+  if (!Object.keys(grading).length)
+    return pg(old) !== undefined || !Object.keys(groupGrading(old, examId)).length;
   if (pg(next) !== group.id) return false;
   const want = sortedJson(grading);
   return group.student_ids

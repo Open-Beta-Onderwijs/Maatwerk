@@ -25,7 +25,7 @@ import { hideSplash } from '../../shell/splash';
 import { Store } from '../../store.js';
 import { applyUserLook } from '../../theme';
 import { showAbout } from '../about';
-import { scoreSavesDone } from '../scores/session';
+import { backendLogoutDone, scoreSavesDone } from '../scores/session';
 import { mountPinPanel } from './pin-panel';
 
 type Stage = 'start' | 'vak' | 'user';
@@ -192,6 +192,8 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
       busy = true;
       try {
         await scoreSavesDone();
+        // The previous user's logout waits for their saves; it must not end this login (M2).
+        await backendLogoutDone();
         await window.maatwerk.loginGast(vak);
         await logIn(picked.user, 'gast');
       } catch (e) {

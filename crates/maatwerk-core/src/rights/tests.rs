@@ -419,3 +419,27 @@ fn role_allowed_checks_school_json_and_the_user() {
     assert!(!role_allowed(&s, "gebr-a", &Role::Beheer).unwrap());
     assert!(!role_allowed(&s, "nobody", &Role::Docent).unwrap());
 }
+
+#[test]
+fn review_m3_a_grading_without_projectgroep_is_not_cleared_by_another_teacher() {
+    let (_t, s) = setup();
+    // Student 4 (B's, alone in g2) has PO scores but no `po.projectgroep`.
+    put_scores(&s, "4", json!({ "scores": { "p1": { "c1": 3 } } }));
+    let a = session("gebr-a", Role::Docent);
+    assert!(is_forbidden(check(&s, &a, "4", json!({ "scores": {} }))));
+    // Nothing there yet: an empty write is no change of grading.
+    put_scores(
+        &s,
+        "4",
+        json!({ "po": { "p1": { "projectgroep": "old" } } }),
+    );
+    assert!(
+        check(
+            &s,
+            &a,
+            "4",
+            json!({ "po": { "p1": { "projectgroep": "g2" } } })
+        )
+        .is_ok()
+    );
+}

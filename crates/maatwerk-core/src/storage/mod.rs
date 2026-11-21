@@ -242,14 +242,13 @@ impl Storage {
     /// Runs `f` with the gast guard lifted on this thread: "Kopieer naar…" writes the copy as the
     /// teacher who confirmed it with their PIN (step 36, decision 82). Nothing else may call it.
     pub(crate) fn as_teacher<T>(&self, f: impl FnOnce() -> Result<T>) -> Result<T> {
-        struct Reset;
+        struct Reset(bool);
         impl Drop for Reset {
             fn drop(&mut self) {
-                AS_TEACHER.with(|c| c.set(false));
+                AS_TEACHER.with(|c| c.set(self.0));
             }
         }
-        AS_TEACHER.with(|c| c.set(true));
-        let _reset = Reset;
+        let _reset = Reset(AS_TEACHER.with(|c| c.replace(true)));
         f()
     }
 
@@ -613,6 +612,10 @@ impl Storage {
     /// `mkdir -p` (`fs:ensureDir`).
     pub fn ensure_dir(&self, rel: &RelPath) -> Result<PathBuf> {
         let path = self.dir.resolve(rel)?;
+        // A gast creates nothing (step 36, review m1); a missing folder reads as empty anyway.
+        if self.refuse_guest().is_err() {
+            return Ok(path);
+        }
         fs::create_dir_all(&path).map_err(|e| Error::io(rel.as_str(), e))?;
         Ok(path)
     }

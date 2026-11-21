@@ -2,6 +2,22 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Steps 35-36 (review `docs/reviews/step-35-36.md`)
+
+- **m4 (step 37, PO completion):** the core compares raw member files with what the UI
+  normalises (`gradingOf`/`linesOf`), so a regroup can be refused; po-beoordelen writes members
+  one by one, so a refusal on member k leaves the ones before it written. Normalise both sides
+  as `gradingKey` does, and check every member with `teacherMayWrite` before the first write.
+- **m5 (step 38, measured with the grade numbers):** every score write reads the user file,
+  `school.json`, every group of the year and the exam. Measure with the 33b spans; cache
+  `YearGroups` per (year, vak, user) if it shows.
+- **m6 (step 41, robustness):** the rights check and the write are two steps; with `Expect::Any`
+  a colleague's change in between is written unchecked, and deleting an unreadable foreign score
+  file passes. Return the hash read and write with `Expect::Hash`; fail closed on a read error.
+- n1 (42): e2e paste/cut on a locked row. n2 (41): limit the gast presence exemption to its own
+  file. n4 (42): share Rust/TS rule cases (number vs string ids, `1` vs `1.0`, case). n6: the
+  0.26/0.27 version text, settled at the release.
+
 ## Road to 1.0: which step takes what (2026-11-21, `PLAN-2.md` steps 35-45)
 
 Every open item below belongs to one step; the step's "Items" line names them. A step strikes an
@@ -36,6 +52,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 | 32                                             | 40                                                                        |
 | 33                                             | m3 43; m4 42                                                              |
 | 34                                             | m2, m4 (focus into the panel), nits 43; m6 42                             |
+| 35-36                                          | m4 37; m5 38; m6, n2 41; n1, n4 42; n6 at the release                     |
 | 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 unless 38 says otherwise |
 
 ## After 1.0

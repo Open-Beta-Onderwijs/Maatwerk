@@ -69,10 +69,13 @@ pub fn copy_opdracht_to_sectie(
     now: Instant,
     at: SystemTime,
 ) -> Result<Copied> {
-    if !matches!(auth.current().map(|s| s.role), Some(Role::Gast(_))) {
+    let Some(Role::Gast(own)) = auth.current().map(|s| s.role) else {
         return Err(invalid(
             "Alleen een gast kopieert een opdracht naar een andere sectie.",
         ));
+    };
+    if own == vak {
+        return Err(invalid("Kies een andere sectie dan die van de gast."));
     }
     if Role::parse(&format!("bestuur:{vak}")).is_err() {
         return Err(invalid("Onbekend vak."));
@@ -102,9 +105,13 @@ pub fn copy_opdracht_to_sectie(
     copy.insert("vakken".into(), Value::from(vec![vak]));
     copy.insert("observaties".into(), Value::Array(vec![]));
     let copy = stamp_meta(copy, None, Some(teacher_id), at);
+    // `opdracht.json` first claims the id (review m7); a failure after it removes the folder.
     storage.as_teacher(|| {
-        opdracht_images::copy(storage, from_id, &new_id)?;
         storage.write_json(&opdracht_json(&new_id)?, &copy, Expect::Missing)?;
+        if let Err(e) = opdracht_images::copy(storage, from_id, &new_id) {
+            let _ = opdracht_images::delete_all(storage, &new_id);
+            return Err(e);
+        }
         Ok(())
     })?;
     tracing::info!("opdracht {from_id} copied to {vak} as {new_id} by {teacher_id} (gast)");
