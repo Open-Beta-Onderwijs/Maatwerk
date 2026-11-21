@@ -275,7 +275,10 @@ fn step_7b_files_and_sectie_references_are_checked() {
     let school_path = data.join("school.json");
     let mut school: serde_json::Value =
         serde_json::from_str(&fs::read_to_string(&school_path).unwrap()).unwrap();
-    school["secties"] = serde_json::json!({ "nat": { "voorzitter": "gebr-weg" } });
+    school["secties"] = serde_json::json!({
+        "nat": { "voorzitter": "gebr-weg", "secretaris": "gebr-weg2" },
+        "bio": { "voorzitter": "admin", "secretaris": "admin" }
+    });
     fs::write(&school_path, stamp(school)).unwrap();
 
     let report = validate(&data).unwrap();
@@ -289,6 +292,24 @@ fn step_7b_files_and_sectie_references_are_checked() {
         IssueKind::Reference,
         "school.json",
         "Sectievoorzitter nat: gebruiker gebr-weg bestaat niet"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        "school.json",
+        "Sectiesecretaris nat: gebruiker gebr-weg2 bestaat niet"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Shape,
+        "school.json",
+        "Sectiesecretaris bio: admin is ook de sectievoorzitter"
+    ));
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        "school.json",
+        "Sectiesecretaris bio: admin is geen actieve docent van dit vak"
     ));
 }
 

@@ -81,3 +81,27 @@ uitloggen) instead of logging out on the first click. Badge photos load through 
 - Snapshots inside OneDrive do not survive deleting the whole folder; the runbook points at
   OneDrive's version history.
 - Logout is one click more than before.
+
+## Amendment (step 35): Roles and rights
+
+PLAN-2 decisions 78-81. The session in `maatwerk-core::auth` now carries the role the teacher chose
+on the login screen (`maatwerk-core::rights::Role`): `docent`, `bestuur:<vak>` (sectievoorzitter
+or sectiesecretaris, decision 80: the same rights) or `beheer`. The login refuses a role the user
+does not have; every guarded write checks it against `school.json` again, so an admin's removal
+takes effect at once (backlog 7b n4; the role falls back to docent).
+
+| Role                                   | Reads         | Writes                                                                                                                                                                                                        |
+| -------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| docent                                 | the whole vak | exams, observaties, opdrachten, rubrics of the vak (as before); **scores only of students in own groups** (`docenten`); a PO projectgroep with an own student, but own bonus/malus lines only of own students |
+| bestuur:<vak> (voorzitter, secretaris) | the whole vak | as docent, plus every score of the vak; the groups of the vak (students, teachers) as before                                                                                                                  |
+| beheer                                 | everything    | everything the Beheer tabs offer; every score file (the admin has no score screens)                                                                                                                           |
+| gast:<vak> (step 36)                   | the whole vak | nothing                                                                                                                                                                                                       |
+
+Enforced in the UI (locked rows) **and** in the core: `write_json` and `delete_file` refuse a
+score file write the role does not allow with `forbidden` and a Dutch message. Score changes that
+an exam edit brings with it stay open to every teacher of the vak, because exams are: dropping
+observaties the exam no longer lists, removing everything of a deleted exam or of a PO the student
+left, and moving a student into a projectgroep (taking a staying member's grading, decision 19).
+The mock backend has the same rule (`ui/src/domain/rights.ts`) but lets writes without a login
+through. Like the PIN, this guards the shared PC, not the files. Every login raises
+`minAppVersion` to 0.26.0, so an older app (which would ignore the lock) opens read-only.

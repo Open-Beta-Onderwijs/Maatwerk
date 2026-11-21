@@ -178,7 +178,27 @@ ai: { enabled: false }
 - `validate-data` does not check `instellingen.json` fields (as before: unusable values count
   as the default).
 
+## Roles and the score lock (0.26, step 35)
+
+Additive within v3 (PLAN-2 decisions 78-80; ADR-0006 "Roles and rights").
+
+```
+school.json   secties: { <vak>: { voorzitter: <userId>, secretaris: <userId> } }
+```
+
+- `secretaris` (new): the sectiesecretaris, set by the admin on Gebruikers. Same rights as the
+  voorzitter; an active teacher of the vak and not the voorzitter (the dropdown offers only those;
+  `validate-data` warns otherwise). Absent or `null`: none.
+- The score lock is not stored: a teacher changes the score file of a student only when the
+  student is in one of the teacher's groups of that vak (`docenten`), unless logged in as the
+  voorzitter or secretaris of the vak (`maatwerk_core::rights`).
+- Guard: every login raises `school.json` `minAppVersion` to **0.26.0**: an older app would ignore
+  the lock, so it opens read-only.
+
 ## `validate-data`
+
+Step 35 adds: `secties.<vak>.secretaris` naming no user (missing), the voorzitter (warning), or no
+active teacher of the vak (warning).
 
 Step 23 adds: `po` under an exam id that does not exist (missing), a `po` entry that is not an
 object, `groupLines`/`ownLines` that are not lists, and lines that do not count (warnings).
