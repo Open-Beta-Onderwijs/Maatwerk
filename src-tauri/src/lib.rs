@@ -111,6 +111,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             auth::recover_with_code,
             auth::renew_recovery_codes,
             auth::logout,
+            auth::login_gast,
+            auth::copy_opdracht_to_sectie,
             auth::save_text_as,
             auth::list_snapshots,
             auth::snapshot_for_file,
@@ -352,6 +354,134 @@ mod tests {
     use std::path::Path;
 
     use super::*;
+
+    /// Step 36 (decision 81): a gast writes nothing. Every command is listed here by what it
+    /// writes, so a new command must be placed: data-folder writes go through `Storage`, which
+    /// refuses them for a gast (`Storage::refuse_guest`, tested in
+    /// `maatwerk_core::copy_to_sectie`); the few others check `is_guest` themselves.
+    #[test]
+    fn every_command_is_classified_for_the_gast_guard() {
+        // Read-only, or writes only local files of this PC (app data, temp outputs, a file the
+        // teacher picks in a save dialog).
+        const NO_DATA_WRITE: &[&str] = &[
+            "read_json",
+            "read_json_versioned",
+            "list_years",
+            "read_all_json",
+            "read_json_dir",
+            "read_opdrachten",
+            "get_data_dir",
+            "data_folder_status",
+            "restart_app",
+            "choose_data_folder",
+            "read_text_file",
+            "read_text_file_versioned",
+            "read_local_session",
+            "write_local_session",
+            "read_photo_as_data_url",
+            "set_watch_year",
+            "list_opdracht_images",
+            "pick_image_file",
+            "read_clipboard_image",
+            "validate_data_folder",
+            "rubric_usage",
+            "stamp_issues",
+            "verify_pin",
+            "set_first_pin",
+            "change_pin",
+            "recover_with_code",
+            "renew_recovery_codes",
+            "logout",
+            "login_gast",
+            "save_text_as",
+            "list_snapshots",
+            "snapshot_for_file",
+            "render_rapport_pdf",
+            "render_po_rapport_pdf",
+            "render_assignment_svg",
+            "render_assignment_batch",
+            "open_path",
+            "open_data_folder",
+            "editor_open",
+            "editor_update",
+            "editor_unset",
+            "editor_refresh",
+            "editor_resend",
+            "editor_close",
+            "editor_complete",
+            "editor_hover",
+            "editor_definition",
+            "editor_jump_from_click",
+            "editor_jump_from_cursor",
+            "project_files_status",
+            "bundled_project_file",
+            "problem_info",
+            "open_log_folder",
+            "log_ui_error",
+            "ai_detect",
+            "ai_save_settings",
+            "ai_login_check",
+            "ai_stop",
+            "ai_conversations",
+            "ai_conversation",
+            "ai_new_conversation",
+            "ai_proposal",
+            "ai_proposal_image",
+            "ai_context",
+            "ai_save_context",
+            "ai_syllabus_list",
+            "ai_open_syllabus_folder",
+            "ai_presets",
+            "ai_pick_attachments",
+            "ensure_year",
+            "ensure_dir",
+        ];
+        // Write the data folder through `Storage` (refused for a gast; presence excepted).
+        const STORAGE_WRITE: &[&str] = &[
+            "write_json",
+            "delete_file",
+            "write_text_file",
+            "update_presence",
+            "save_photo",
+            "create_opdracht_folder",
+            "save_opdracht_image",
+            "import_opdracht_image",
+            "copy_opdracht_folder",
+            "delete_opdracht_folder",
+            "migrate_data_folder",
+            "accept_stamp",
+            "reset_pin",
+            "restore_from_snapshot",
+            "restore_project_file",
+            "ai_apply",
+            "ai_undo_images",
+            "print_pdf",
+        ];
+        // Check the gast themselves: `ai_send` refuses; `copy_opdracht_to_sectie` is the gast's
+        // one write, as the teacher who gave their PIN (decision 82).
+        const OWN_CHECK: &[&str] = &["ai_send", "copy_opdracht_to_sectie"];
+
+        let source = include_str!("lib.rs");
+        let start = source.find("collect_commands![").unwrap();
+        let end = start + source[start..].find("])").unwrap();
+        let listed: Vec<&str> = source[start..end]
+            .lines()
+            .skip(1)
+            .filter_map(|l| l.trim().trim_end_matches(',').rsplit("::").next())
+            .filter(|n| !n.is_empty())
+            .collect();
+        assert!(listed.len() > 80, "{listed:?}");
+        for name in &listed {
+            let n = [NO_DATA_WRITE, STORAGE_WRITE, OWN_CHECK]
+                .iter()
+                .filter(|l| l.contains(name))
+                .count();
+            assert_eq!(n, 1, "command {name} must be in exactly one gast list");
+        }
+        for name in NO_DATA_WRITE.iter().chain(STORAGE_WRITE).chain(OWN_CHECK) {
+            assert!(listed.contains(name), "{name} is not a command any more");
+        }
+    }
 
     /// CI fails on stale bindings (ADR-0005). `npm run bindings` regenerates them.
     #[test]

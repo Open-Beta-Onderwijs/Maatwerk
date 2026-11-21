@@ -134,6 +134,16 @@ export const commands = {
 	/**  Back to the login screen. */
 	logout: () => typedError<null, CommandError>(__TAURI_INVOKE("logout")),
 	/**
+	 *  Step 36 (decision 81): the gast of `vak` logs in without a PIN; from then on this app writes
+	 *  nothing to the data folder (presence excepted) until logout.
+	 */
+	loginGast: (vak: string) => typedError<null, CommandError>(__TAURI_INVOKE("login_gast", { vak })),
+	/**
+	 *  "Kopieer naar…" (decision 82): a gast copies opdracht `fromId` to sectie `vak` as teacher
+	 *  `teacherId`, who confirms with their PIN.
+	 */
+	copyOpdrachtToSectie: (fromId: string, vak: string, teacherId: string, pin: string) => typedError<CopiedTo, CommandError>(__TAURI_INVOKE("copy_opdracht_to_sectie", { fromId, vak, teacherId, pin })),
+	/**
 	 *  "Opslaan als" for the recovery codes: a save dialog, then the text as a UTF-8 file. Returns
 	 *  the path, `null` when cancelled.
 	 */
@@ -337,6 +347,15 @@ export type CommandError = {
 	/**  English, for logs and developers; the UI shows its own Dutch text per `code`. */
 	message: string,
 	details: ErrorDetails,
+};
+
+/**  What "Kopieer naar…" did (step 36). */
+export type CopiedTo = {
+	outcome: PinOutcome,
+	retryAfterMs: number,
+	/**  The new `opdracht.json`, when copied. */
+	opdracht: Value | null,
+	droppedObservaties: number,
 };
 
 /**  `data:changed` item (`ipc-api.md`, "Main -> renderer events"). */

@@ -9,10 +9,12 @@ pub(crate) mod atomic;
 mod commit;
 mod entity;
 
+use std::cell::Cell;
 use std::collections::{BTreeMap, HashMap};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use base64::Engine as _;
@@ -147,6 +149,21 @@ pub struct Storage {
     stamps: Mutex<BTreeMap<String, StampState>>,
     /// Compared with `minAppVersion` in `school.json` ([`Storage::read_only`]).
     app_version: String,
+    /// A gast is logged in (step 36): every write is refused, presence files excepted.
+    guest: AtomicBool,
+}
+
+thread_local! {
+    /// Set on this thread while a gast's "Kopieer naar…" writes as the teacher who gave their PIN
+    /// ([`Storage::as_teacher`]).
+    static AS_TEACHER: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Presence files may be written by a gast ("Gast (<vak>)" for colleagues, step 36).
+fn is_presence(rel: &RelPath) -> bool {
+    rel.as_str()
+        .split_once('/')
+        .is_some_and(|(dir, _)| dir.eq_ignore_ascii_case(PRESENCE_DIR))
 }
 
 impl Storage {
@@ -166,6 +183,7 @@ impl Storage {
             update_locks: Mutex::new(HashMap::new()),
             stamps: Mutex::new(BTreeMap::new()),
             app_version: crate::app_version::APP_VERSION.to_owned(),
+            guest: AtomicBool::new(false),
         };
         storage.check_schema()?;
         Ok(storage)
@@ -199,7 +217,46 @@ impl Storage {
         crate::app_version::required_version(&school, &self.app_version)
     }
 
-    fn check_writable(&self) -> Result<()> {
+    /// Step 36: a gast session makes this folder read-only for this app ([`Auth`] sets it at
+    /// login and clears it at logout or another login).
+    ///
+    /// [`Auth`]: crate::auth::Auth
+    pub fn set_guest(&self, guest: bool) {
+        self.guest.store(guest, Ordering::SeqCst);
+    }
+
+    pub fn is_guest(&self) -> bool {
+        self.guest.load(Ordering::SeqCst)
+    }
+
+    /// Refuses a write while a gast is logged in ([`Error::GuestReadOnly`]), unless this thread
+    /// is inside [`Storage::as_teacher`].
+    pub fn refuse_guest(&self) -> Result<()> {
+        if self.is_guest() && !AS_TEACHER.with(Cell::get) {
+            Err(Error::GuestReadOnly)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Runs `f` with the gast guard lifted on this thread: "Kopieer naar…" writes the copy as the
+    /// teacher who confirmed it with their PIN (step 36, decision 82). Nothing else may call it.
+    pub(crate) fn as_teacher<T>(&self, f: impl FnOnce() -> Result<T>) -> Result<T> {
+        struct Reset;
+        impl Drop for Reset {
+            fn drop(&mut self) {
+                AS_TEACHER.with(|c| c.set(false));
+            }
+        }
+        AS_TEACHER.with(|c| c.set(true));
+        let _reset = Reset;
+        f()
+    }
+
+    fn check_writable(&self, rel: &RelPath) -> Result<()> {
+        if !is_presence(rel) {
+            self.refuse_guest()?;
+        }
         match self.read_only() {
             Some(min_version) => Err(Error::ReadOnly {
                 min_version,
@@ -493,7 +550,7 @@ impl Storage {
         note: bool,
     ) -> Result<()> {
         let path = self.dir.resolve(rel)?;
-        self.check_writable()?;
+        self.check_writable(rel)?;
         // The temp file is written before the commit lock, so the lock covers only the check
         // and the rename (plus its retries and fallback, which are part of the rename).
         let tmp = atomic::TempFile::write(&path, bytes).map_err(|e| Error::io(rel.as_str(), e))?;
@@ -522,7 +579,7 @@ impl Storage {
     /// use is refused (`rubrics::guard_delete`).
     pub fn delete(&self, rel: &RelPath) -> Result<()> {
         let path = self.dir.resolve(rel)?;
-        self.check_writable()?;
+        self.check_writable(rel)?;
         crate::rubrics::guard_delete(self, rel)?;
         let _guard = self.commit.acquire()?;
         if let Some(observer) = &self.observer {
@@ -545,7 +602,7 @@ impl Storage {
     /// empty or locked.
     pub fn remove_empty_dir(&self, rel: &RelPath) -> Result<bool> {
         let path = self.dir.resolve(rel)?;
-        self.check_writable()?;
+        self.check_writable(rel)?;
         match fs::remove_dir(&path) {
             Ok(()) => Ok(true),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),

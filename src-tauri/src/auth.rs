@@ -190,8 +190,64 @@ pub async fn renew_recovery_codes(state: State<'_, Shared>, pin: String) -> Res<
 #[specta::specta]
 pub async fn logout(state: State<'_, Shared>) -> Res<()> {
     blocking(state, |c| {
-        c.auth.logout();
+        c.auth.logout_from(c.storage().ok());
         Ok(())
+    })
+    .await
+}
+
+/// Step 36 (decision 81): the gast of `vak` logs in without a PIN; from then on this app writes
+/// nothing to the data folder (presence excepted) until logout.
+#[tauri::command]
+#[specta::specta]
+pub async fn login_gast(state: State<'_, Shared>, vak: String) -> Res<()> {
+    blocking(state, move |c| {
+        c.auth.login_gast(c.storage()?, &vak)?;
+        Ok(())
+    })
+    .await
+}
+
+/// What "Kopieer naar…" did (step 36).
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CopiedTo {
+    pub outcome: PinOutcome,
+    pub retry_after_ms: u32,
+    /// The new `opdracht.json`, when copied.
+    pub opdracht: Option<Value>,
+    pub dropped_observaties: u32,
+}
+
+/// "Kopieer naar…" (decision 82): a gast copies opdracht `fromId` to sectie `vak` as teacher
+/// `teacherId`, who confirms with their PIN.
+#[tauri::command]
+#[specta::specta]
+pub async fn copy_opdracht_to_sectie(
+    state: State<'_, Shared>,
+    from_id: String,
+    vak: String,
+    teacher_id: String,
+    pin: String,
+) -> Res<CopiedTo> {
+    blocking(state, move |c| {
+        let done = maatwerk_core::copy_to_sectie::copy_opdracht_to_sectie(
+            c.storage()?,
+            &c.auth,
+            &from_id,
+            &vak,
+            &teacher_id,
+            &pin,
+            Instant::now(),
+            SystemTime::now(),
+        )?;
+        let check = PinCheck::from(done.check, None);
+        Ok(CopiedTo {
+            outcome: check.outcome,
+            retry_after_ms: check.retry_after_ms,
+            opdracht: done.opdracht,
+            dropped_observaties: u32::try_from(done.dropped_observaties).unwrap_or(u32::MAX),
+        })
     })
     .await
 }

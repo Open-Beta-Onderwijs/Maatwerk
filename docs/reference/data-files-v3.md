@@ -195,6 +195,23 @@ school.json   secties: { <vak>: { voorzitter: <userId>, secretaris: <userId> } }
 - Guard: every login raises `school.json` `minAppVersion` to **0.26.0**: an older app would ignore
   the lock, so it opens read-only.
 
+## Gastaccount (0.27, step 36)
+
+Additive within v3 (PLAN-2 decisions 81-82).
+
+```
+school.json   secties: { <vak>: { ..., gast: true } }
+```
+
+- `gast: true`: the admin ticked "Gastaccount" for the sectie on Gebruikers. The vak's login list
+  shows a Gast that logs in without a PIN, reads everything of the vak and writes nothing: the
+  core refuses every data-folder write of that session (`read_only`), presence excepted
+  (`aanwezigheid/gast-<vak>.json`, "Gast (<vak>)"), and no copy goes into `rapporten/` (preview
+  only, user 2026-11-21). Absent or any other value: no Gast.
+- "Kopieer naar…": the gast's one write, as the target teacher after their PIN; the copy's
+  `vakken` is the target vak, `observaties` is emptied.
+- No guard: an older app (0.26) ignores the field and shows no Gast.
+
 ## `validate-data`
 
 Step 35 adds: `secties.<vak>.secretaris` naming no user (missing), the voorzitter (warning), or no

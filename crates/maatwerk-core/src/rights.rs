@@ -47,6 +47,8 @@ pub enum Role {
     Bestuur(String),
     /// The admin.
     Beheer,
+    /// The gast account of a sectie (step 36, decision 81): reads the vak, writes nothing.
+    Gast(String),
 }
 
 impl Role {
@@ -56,6 +58,7 @@ impl Role {
             None if raw == "docent" => Ok(Role::Docent),
             None if raw == "beheer" => Ok(Role::Beheer),
             Some(("bestuur", vak)) if is_vak_key(vak) => Ok(Role::Bestuur(vak.to_owned())),
+            Some(("gast", vak)) if is_vak_key(vak) => Ok(Role::Gast(vak.to_owned())),
             _ => Err(invalid(&format!("Onbekende rol: {raw}"))),
         }
     }
@@ -65,6 +68,7 @@ impl Role {
             Role::Docent => "docent".to_owned(),
             Role::Bestuur(vak) => format!("bestuur:{vak}"),
             Role::Beheer => "beheer".to_owned(),
+            Role::Gast(vak) => format!("gast:{vak}"),
         }
     }
 }
@@ -131,6 +135,9 @@ pub fn bestuur_of(school: &Value, vak: &str) -> Vec<String> {
 /// Whether `user_id` may log in with `role` now: a bestuur role needs `school.json` to name the
 /// user for that vak, beheer needs an active admin. Every role needs an active user.
 pub fn role_allowed(storage: &Storage, user_id: &str, role: &Role) -> Result<bool> {
+    if let Role::Gast(vak) = role {
+        return Ok(user_id == gast_id(vak) && gast_enabled(storage, vak)?);
+    }
     let Some(user) = read_user(storage, user_id) else {
         return Ok(false);
     };
@@ -142,7 +149,20 @@ pub fn role_allowed(storage: &Storage, user_id: &str, role: &Role) -> Result<boo
         Role::Beheer => user.get("isAdmin") == Some(&Value::Bool(true)),
         Role::Bestuur(vak) => read_school(storage)?
             .is_some_and(|school| bestuur_of(&school, vak).iter().any(|id| id == user_id)),
+        Role::Gast(_) => false,
     })
+}
+
+/// The session id of a gast of `vak` (no user file; also the presence file name).
+pub fn gast_id(vak: &str) -> String {
+    format!("gast-{vak}")
+}
+
+/// `school.json` `secties.<vak>.gast` is `true` (step 36): the vak's login list shows a Gast.
+pub fn gast_enabled(storage: &Storage, vak: &str) -> Result<bool> {
+    Ok(read_school(storage)?.is_some_and(|school| {
+        school.pointer(&format!("/secties/{vak}/gast")) == Some(&Value::Bool(true))
+    }))
 }
 
 /// The role as it holds now: a bestuur or beheer role the user lost since the login falls back
@@ -195,6 +215,7 @@ pub fn check_json_write(
     match role {
         Role::Beheer => return Ok(()),
         Role::Bestuur(ref v) if v.eq_ignore_ascii_case(vak) => return Ok(()),
+        Role::Gast(_) => return Err(Error::GuestReadOnly),
         _ => {}
     }
     let old = storage.read_json(rel).ok().flatten().unwrap_or(Value::Null);

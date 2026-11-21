@@ -218,11 +218,45 @@ impl Auth {
         *self.session.lock().unwrap_or_else(|p| p.into_inner()) = None;
     }
 
-    fn login(&self, user_id: &str, role: Role) {
+    fn login(&self, storage: &Storage, user_id: &str, role: Role) {
+        storage.set_guest(matches!(role, Role::Gast(_)));
         *self.session.lock().unwrap_or_else(|p| p.into_inner()) = Some(Session {
             user_id: user_id.to_owned(),
             role,
         });
+    }
+
+    /// Logs out and lifts a gast's read-only guard on `storage`.
+    pub fn logout_from(&self, storage: Option<&Storage>) {
+        self.logout();
+        if let Some(storage) = storage {
+            storage.set_guest(false);
+        }
+    }
+
+    /// Step 36 (decision 81): the gast of `vak` logs in without a PIN when the admin switched
+    /// it on (`secties.<vak>.gast`). From then on this app writes nothing to the data folder
+    /// (presence excepted) until logout.
+    pub fn login_gast(&self, storage: &Storage, vak: &str) -> Result<Session> {
+        let role = Role::Gast(vak.to_owned());
+        let id = crate::rights::gast_id(vak);
+        if !crate::rights::role_allowed(storage, &id, &role)? {
+            return Err(invalid("Dit vak heeft geen gastaccount (meer)."));
+        }
+        self.login(storage, &id, role);
+        Ok(self.current().expect("just logged in"))
+    }
+
+    /// A PIN check of another user than the one logged in, throttled like a login and without
+    /// logging in: "Kopieer naar…" (step 36) confirms the target teacher this way.
+    pub(crate) fn confirm_pin(
+        &self,
+        storage: &Storage,
+        user_id: &str,
+        pin: &str,
+        now: Instant,
+    ) -> Result<Check> {
+        self.check_pin(storage, user_id, pin, now)
     }
 
     /// The role a login without an explicit one gets: beheer for the admin, else docent.
@@ -245,6 +279,7 @@ impl Auth {
                 }
                 Role::Beheer => "Alleen de beheerder mag dit.",
                 Role::Docent => "Deze gebruiker is gedeactiveerd.",
+                Role::Gast(_) => "Een gast logt in zonder pincode.",
             }))
         }
     }
@@ -302,7 +337,7 @@ impl Auth {
         let result = self.check_pin(storage, user_id, pin, now)?;
         if result == Check::Ok {
             Self::require_role(storage, user_id, &role)?;
-            self.login(user_id, role);
+            self.login(storage, user_id, role);
             crate::rights::after_login(storage);
         }
         Ok(result)
@@ -378,7 +413,7 @@ impl Auth {
             }
             Ok(())
         })?;
-        self.login(user_id, role);
+        self.login(storage, user_id, role);
         crate::rights::after_login(storage);
         Ok(PinSet {
             user: written,
@@ -482,7 +517,7 @@ impl Auth {
             user.insert(PIN_FIELD.into(), Value::String(pin.clone()));
             Ok(())
         })?;
-        self.login(user_id, Role::Beheer);
+        self.login(storage, user_id, Role::Beheer);
         crate::rights::after_login(storage);
         Ok((Check::Ok, Some(written)))
     }

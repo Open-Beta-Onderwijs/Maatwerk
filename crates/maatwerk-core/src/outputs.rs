@@ -267,6 +267,8 @@ pub fn print_copy(
     name: &PrintName,
     now: OffsetDateTime,
 ) -> Result<PrintedCopy> {
+    // A gast previews only (step 36, the user's answer): no copy in `rapporten/`.
+    storage.refuse_guest()?;
     if !is_year_name(&name.schooljaar) {
         return Err(Error::InvalidArgument {
             message: format!("not a school year: {:?}", name.schooljaar),

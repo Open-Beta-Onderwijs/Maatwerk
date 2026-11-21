@@ -142,6 +142,13 @@ impl From<Error> for CommandError {
                 },
             ),
             Error::Forbidden { .. } => (ErrorCode::Forbidden, ErrorDetails::default()),
+            Error::GuestReadOnly => (
+                ErrorCode::ReadOnly,
+                ErrorDetails {
+                    found: Some("gast".to_owned()),
+                    ..ErrorDetails::default()
+                },
+            ),
             Error::Io { path: p, .. } => (ErrorCode::Io, path(p)),
         };
         CommandError {
@@ -188,6 +195,7 @@ mod tests {
             Error::Forbidden {
                 message: "m".into(),
             },
+            Error::GuestReadOnly,
             Error::Io {
                 path: "a".into(),
                 source: std::io::Error::other("x"),
