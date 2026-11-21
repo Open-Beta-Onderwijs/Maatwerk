@@ -252,6 +252,11 @@ const Store = (() => {
     return cache['gebruikers'];
   }
 
+  /** The users loaded by `loadUsers` (the login screen loads them first), or null. */
+  function getUsersSync() {
+    return cache['gebruikers'] ?? null;
+  }
+
   // ── School ─────────────────────────────────────────────────────────────────
   async function loadSchool() {
     return await load('school.json');
@@ -1446,6 +1451,7 @@ const Store = (() => {
     setActiveUser,
     getActiveRole,
     isSectiebestuurActive,
+    getUsersSync,
     voorzitterOf,
     secretarisOf,
     isAdminActive,

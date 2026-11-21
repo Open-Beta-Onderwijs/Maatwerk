@@ -192,6 +192,32 @@ function examChangeAllowed(
     .some((m) => sortedJson(groupGrading(ctx.record(m), examId)) === want);
 }
 
+/**
+ * Which students' scores the session may change (step 35, decision 78): `null` = every student
+ * (bestuur of the vak, the admin), else the own students of the vak.
+ */
+export function editableStudents(
+  groups: readonly GroupLike[],
+  vak: string,
+  userId: string,
+  bestuurOrAdmin: boolean,
+): Set<string> | null {
+  return bestuurOrAdmin ? null : ownStudentIds(groups, vak, userId);
+}
+
+/**
+ * The lock tooltip of a group heading: who may change these scores (the group's teachers, the
+ * voorzitter and the secretaris), in Dutch.
+ */
+export function lockTitle(teachers: readonly string[], bestuur: readonly string[]): string {
+  const who = [...teachers, ...bestuur.filter((b) => !teachers.includes(b))];
+  if (!who.length)
+    return 'Alleen-lezen: alleen de sectievoorzitter of -secretaris kan deze scores wijzigen.';
+  const list =
+    who.length === 1 ? who[0]! : `${who.slice(0, -1).join(', ')} of ${who[who.length - 1]!}`;
+  return `Alleen-lezen: ${list} kan deze scores wijzigen.`;
+}
+
 /** The forbidden message (the core's text). */
 export function forbiddenMessage(student: string): string {
   return (

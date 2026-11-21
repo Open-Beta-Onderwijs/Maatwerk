@@ -38,6 +38,7 @@ import {
   type GroupGrading,
 } from '../domain/po-grading';
 import type { Exam, PoLine, ScoreRecord } from '../domain/types';
+import { LOCK_ICON, scoreLock } from '../services/score-lock';
 import { Store } from '../store.js';
 import {
   categoryHtml,
@@ -118,6 +119,31 @@ export function openPoGrading(
     ...(exam.obs_ids ?? []),
     ...grading.observations,
   ]);
+  // Step 35 (decision 79): a projectgroep without one of the teacher's students is read-only;
+  // a student's own lines only for that student's teacher (or the voorzitter / secretaris).
+  const lock = scoreLock(subject, year);
+  const readOnly = members.every((m) => lock.locked(m));
+  const ownLocked = (m: string) => lock.locked(m);
+  const lockText = readOnly
+    ? lock.title(
+        [
+          ...new Set(
+            (
+              Store.getGroupsSync(year) as {
+                subject?: string;
+                docenten?: string[];
+                student_ids: unknown[];
+              }[]
+            )
+              .filter(
+                (g) =>
+                  g.subject === subject && g.student_ids.some((s) => members.includes(String(s))),
+              )
+              .flatMap((g) => g.docenten ?? []),
+          ),
+        ].map(String),
+      )
+    : '';
   const cats = rubric.categories;
   const maxNormal = cats.filter((c) => c.soort === 'normaal').reduce((s, c) => s + (c.max ?? 0), 0);
 
@@ -161,13 +187,13 @@ export function openPoGrading(
     className: 'dlg--po-grade',
     fixedHeight: true,
     bodyClass: 'po-gr-body',
-    headerActionsHtml: '<span class="po-gr-status" id="po-gr-status" role="status"></span>',
+    headerActionsHtml: `${readOnly ? `<span class="po-gr-lock" title="${esc(lockText)}">${LOCK_ICON}Alleen-lezen</span>` : ''}<span class="po-gr-status" id="po-gr-status" role="status"></span>`,
     body: `${cats.map((c) => categoryHtml(c, grading, obsList)).join('')}
       <section class="po-gr-card">
         <label class="po-gr-label" for="po-gr-overall">Commentaar op het werk als geheel</label>
         <textarea id="po-gr-overall" class="po-gr-overall" rows="4">${esc(grading.comment)}</textarea>
       </section>
-      <section class="po-gr-card po-gr-adj" id="po-gr-adj">${linesHtml(groupDrafts, members, ownDrafts, ctx.name)}</section>`,
+      <section class="po-gr-card po-gr-adj" id="po-gr-adj">${linesHtml(groupDrafts, members, ownDrafts, ctx.name, ownLocked)}</section>`,
     footerHtml: `<div class="po-gr-foot">
         <div class="po-gr-general" role="group" aria-label="Algemene observaties">
           <span class="po-gr-label">Algemene observaties</span>
@@ -203,7 +229,31 @@ export function openPoGrading(
         status.textContent = text;
         status.dataset.kind = kind;
       };
-      setStatus('● Alles opgeslagen', 'ok');
+      setStatus(readOnly ? '' : '● Alles opgeslagen', 'ok');
+      if (readOnly) el.classList.add('po-gr--readonly');
+
+      /** Disables what this session may not change (step 35); again after the lines redraw. */
+      const applyLocks = () => {
+        const off = (sel: string) =>
+          el
+            .querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLTextAreaElement>(sel)
+            .forEach((x) => {
+              x.disabled = true;
+            });
+        if (readOnly) {
+          off('.po-gr-body input, .po-gr-body textarea, .po-gr-body button');
+          off('[data-gen-obs]');
+          return;
+        }
+        el.querySelectorAll<HTMLElement>('.po-gr-member-lines--locked').forEach((box) =>
+          box
+            .querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button')
+            .forEach((x) => {
+              x.disabled = true;
+            }),
+        );
+      };
+      applyLocks();
 
       const renderTotals = () => {
         const s = toSave();
@@ -263,14 +313,18 @@ export function openPoGrading(
         const card = range?.closest?.<HTMLElement>('.po-gr-cat--empty');
         if (card && range.type === 'range') setScore(card, Number(range.value));
       };
-      el.addEventListener('click', (e) => scoreEmpty(e.target));
+      el.addEventListener('click', (e) => {
+        if (!readOnly) scoreEmpty(e.target);
+      });
       el.addEventListener('keydown', (e) => {
+        if (readOnly) return;
         if (['ArrowLeft', 'ArrowDown', 'Home', 'PageDown', '0'].includes(e.key))
           scoreEmpty(e.target);
       });
 
       el.addEventListener('input', (e) => {
         const t = e.target as HTMLInputElement | HTMLTextAreaElement;
+        if (readOnly) return;
         const card = t.closest<HTMLElement>('.po-gr-cat');
         if (t instanceof HTMLInputElement && t.type === 'range' && card) {
           setScore(card, Number(t.value));
@@ -289,6 +343,7 @@ export function openPoGrading(
         const line = t.closest<HTMLElement>('.po-gr-line');
         if (!line) return;
         const own = line.dataset.line === 'own';
+        if (own && ownLocked(line.dataset.member ?? '')) return;
         if (own) ownTouched.add(line.dataset.member ?? '');
         const list = own ? (ownDrafts.get(line.dataset.member ?? '') ?? []) : groupDrafts;
         const d = list[Number(line.dataset.i)];
@@ -309,13 +364,17 @@ export function openPoGrading(
         btn.setAttribute('aria-pressed', String(on));
       };
       const rerenderLines = (focus: string) => {
-        $('#po-gr-adj').innerHTML = linesHtml(groupDrafts, members, ownDrafts, ctx.name);
+        $('#po-gr-adj').innerHTML = linesHtml(groupDrafts, members, ownDrafts, ctx.name, ownLocked);
+        applyLocks();
         el.querySelector<HTMLElement>(focus)?.focus();
         changed();
       };
 
       el.addEventListener('click', (e) => {
         const t = e.target as HTMLElement;
+        if (readOnly) return;
+        const member = t.closest<HTMLElement>('[data-member]')?.dataset.member;
+        if (member && ownLocked(member) && t.closest('.po-gr-member-lines')) return;
         const catObs = t.closest<HTMLElement>('[data-cat-obs]');
         if (catObs) {
           const cat = catObs.closest<HTMLElement>('.po-gr-cat')?.dataset.cat ?? '';
@@ -421,6 +480,7 @@ export function openPoGrading(
   /** Saves the grading into every member file; false on a conflict or an error. */
   async function save(): Promise<boolean> {
     if (saving) await saving;
+    if (readOnly) return true; // nothing here is this session's to save (step 35)
     if (stopped) return false;
     const want = snapshot();
     if (want === saved) return true;

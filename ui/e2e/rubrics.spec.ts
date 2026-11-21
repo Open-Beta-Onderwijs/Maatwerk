@@ -152,9 +152,10 @@ test.describe('rubric editor', () => {
       { min: 0, max: 2, uitleg: 'Zwak' },
       { min: 3, max: 4, uitleg: 'Goed' },
     ]);
+    // The login (step 35) raised it past the rubric guard's 0.12.0 already.
     expect(
       ((await readMockJson(page, 'school.json')) as { minAppVersion: string }).minAppVersion,
-    ).toBe('0.12.0');
+    ).toBe('0.26.0');
     await expect(page.locator('.rubric-card')).toHaveCount(4);
     expect(errors).toEqual([]);
   });

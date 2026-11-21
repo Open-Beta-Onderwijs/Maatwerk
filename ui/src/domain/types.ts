@@ -130,6 +130,8 @@ export interface Group {
   subject?: string;
   jaarlaag?: string | number;
   student_ids: StudentId[];
+  /** The group's teachers (user ids); their scores are theirs to change (step 35). */
+  docenten?: string[];
   [key: string]: unknown;
 }
 

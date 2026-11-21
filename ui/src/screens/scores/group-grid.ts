@@ -48,6 +48,8 @@ export function createGroupGrid(
   gridData: GridData,
   year: string,
   obsArr: Observatie[] = [],
+  /** Step 35: students whose scores this session may not change (read-only rows). */
+  isLocked: (studentId: string) => boolean = () => false,
 ): ScoreGrid {
   const layout = gridLayout(exam, obsArr.length, gridData);
   const { O, firstQCol, lastQCol, obsStart, lastObsCol, gradeCol, summaryIdx, stdIdx } = layout;
@@ -60,6 +62,8 @@ export function createGroupGrid(
     ...Array.from({ length: layout.N }, (_, i) => firstQCol + i),
     ...Array.from({ length: O }, (_, i) => obsStart + i),
   ];
+  const locked = (row: number) =>
+    row <= lastDataRow && !!students[row] && isLocked(String(students[row].id));
   const qCol = (col: number) => isQCol(layout, col);
   const obsCol = (col: number) => isObsCol(layout, col);
 
@@ -183,6 +187,7 @@ export function createGroupGrid(
     // The selection's cross-hair (G58): its row and column, stronger where they cross.
     const onRow = row === selectedCell.row;
     const onCol = col === selectedCell.col;
+    td.classList.toggle('sc-locked', locked(row));
     if (onRow && onCol) td.classList.add('sc-cross', 'sc-cross--both');
     else if (onRow || onCol) td.classList.add('sc-cross');
   }
@@ -264,7 +269,7 @@ export function createGroupGrid(
     const col = obsStart + obsIdx;
     const obs = obsArr[obsIdx];
     const student = students[row];
-    if (!obs || !student) return;
+    if (!obs || !student || locked(row)) return;
     const prevVal = gridData[row]![col] === true;
     const apply = (val: boolean) => {
       gridData[row]![col] = val;
@@ -290,7 +295,7 @@ export function createGroupGrid(
   // flagged.
   function setGradeOverride(row: number, cijfer: number | null): void {
     const student = students[row];
-    if (!student) return;
+    if (!student || locked(row)) return;
     const prev = overrides[row];
     const calc = gradeInfo[row]?.calculatedGrade ?? null;
     const next: Override | undefined = cijfer === null ? undefined : { cijfer, berekend: calc };
@@ -347,7 +352,7 @@ export function createGroupGrid(
     try {
       asOneStep(() => {
         for (const { row, col, oldValue, newValue } of changes) {
-          if (row > lastDataRow) continue;
+          if (row > lastDataRow || locked(row)) continue;
           if (col === gradeCol) gradeTyped(row, oldValue, newValue);
           else if (qCol(col)) scoreTyped(row, col, oldValue, newValue);
           else if (obsCol(col)) setObs(row, col - obsStart, newValue === true);
@@ -365,6 +370,7 @@ export function createGroupGrid(
     if (!td || grid.isDestroyed) return;
     const coords = grid.getCoords(td);
     if (!coords || coords.col !== gradeCol || coords.row < 0 || coords.row >= summaryIdx) return;
+    if (locked(coords.row)) return;
     const ov = overrides[coords.row];
     if (!ov) return;
     e.preventDefault();
@@ -494,7 +500,7 @@ export function createGroupGrid(
     data: gridData as CellValue[][],
     columns,
     isEditable(row, col) {
-      if (row === summaryIdx || row === stdIdx) return false;
+      if (row === summaryIdx || row === stdIdx || locked(row)) return false;
       // Score cols, observaties, and Cijfer (typing there overwrites the grade).
       return qCol(col) || obsCol(col) || col === gradeCol;
     },

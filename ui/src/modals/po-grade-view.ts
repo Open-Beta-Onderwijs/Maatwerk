@@ -136,6 +136,8 @@ export function linesHtml(
   members: readonly string[],
   ownDrafts: ReadonlyMap<string, LineDraft[]>,
   name: (id: string) => string,
+  /** Step 35: own lines this session may not change (another teacher's student). */
+  ownLocked: (id: string) => boolean = () => false,
 ): string {
   return `
     <div class="po-gr-adj-col">
@@ -147,7 +149,9 @@ export function linesHtml(
       <span class="po-gr-label">Bonus / malus per leerling</span>
       ${members
         .map(
-          (m) => `<div class="po-gr-member-lines" data-member="${esc(m)}">
+          (
+            m,
+          ) => `<div class="po-gr-member-lines${ownLocked(m) ? ' po-gr-member-lines--locked' : ''}" data-member="${esc(m)}">
             <span class="po-gr-member-name">${esc(name(m))}</span>
             <div class="po-gr-member-list">
               ${(ownDrafts.get(m) ?? []).map((d, i) => lineRow(d, `data-line="own" data-member="${esc(m)}" data-i="${i}"`)).join('')}

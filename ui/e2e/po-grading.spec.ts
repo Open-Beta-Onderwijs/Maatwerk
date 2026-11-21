@@ -187,7 +187,8 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     // Other tests in the files stay; the first grading raised the minimum version (0.14).
     expect(Object.keys((await record(page, '900002')).scores ?? {}).length).toBeGreaterThan(1);
     const school = await readMockJson<{ minAppVersion: string }>(page, 'school.json');
-    expect(school.minAppVersion).toBe('0.14.0');
+    // The login (step 35) raised it past the grading guard's 0.14.0 already.
+    expect(school.minAppVersion).toBe('0.26.0');
     expect(errors).toEqual([]);
   });
 

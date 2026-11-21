@@ -12,6 +12,7 @@ import {
   type GridData,
 } from '../../domain/scoregrid';
 import type { Exam, ScoreRecord, Student } from '../../domain/types';
+import { LOCK_ICON, scoreLock } from '../../services/score-lock';
 import { Store } from '../../store.js';
 import { nextIdle } from '../../utils/idle';
 import { perfSpan, timed } from '../../utils/perf';
@@ -52,6 +53,7 @@ export async function loadScoreGrid(
     return;
   }
   container.innerHTML = '';
+  const lock = scoreLock((exam.subject ?? Store.getActiveSubject()) as string, year);
 
   let built = 0;
   for (const group of groups) {
@@ -66,7 +68,14 @@ export async function loadScoreGrid(
     const section = document.createElement('div');
     section.className = 'score-group-section';
     // The heading sticks to the top of the scroll area while its grid scrolls by (board 13).
-    section.innerHTML = `<div class="sc-group-head"><div class="sc-group-title"><h3 class="group-heading">${escHtml(group.name)}</h3><span class="sc-group-info"></span></div></div><div class="score-grid-host"></div>`;
+    // A group whose students are all read-only here gets the lock in its heading (step 35).
+    const groupLocked = groupStudents.every((s) => lock.locked(String(s.id)));
+    if (groupLocked) section.classList.add('score-group-section--locked');
+    const lockText = groupLocked ? lock.title((group.docenten ?? []).map(String)) : '';
+    const lockIcon = groupLocked
+      ? `<span class="sc-group-lock" role="img" aria-label="${escHtml(lockText)}" title="${escHtml(lockText)}">${LOCK_ICON}</span>`
+      : '';
+    section.innerHTML = `<div class="sc-group-head"><div class="sc-group-title"><h3 class="group-heading">${escHtml(group.name)}</h3>${lockIcon}<span class="sc-group-info"></span></div></div><div class="score-grid-host"></div>`;
     container.appendChild(section);
 
     session.activeObs = examObservaties(exam);
@@ -132,6 +141,7 @@ export async function loadScoreGrid(
         gridData,
         year,
         obs,
+        lock.locked,
       ),
     );
     session.gridInstances.push(grid);
