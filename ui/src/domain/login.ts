@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // What the login screen shows (V-04, design spec 4.2): the vak tiles and, for
-// the chosen vak, the users in three groups (DOCENTEN, SECTIEVOORZITTER,
-// BEHEER). Pure: the screen (screens/login/) draws it.
+// the chosen vak, the users in groups (DOCENTEN, SECTIEVOORZITTER,
+// SECTIESECRETARIS (step 35), BEHEER). Pure: the screen (screens/login/) draws it.
 
 export interface LoginUser {
   id: string;
@@ -18,8 +18,11 @@ export interface LoginUser {
   pinHash?: string | null;
 }
 
-/** How a user logs in: as a teacher, as the vak's sectievoorzitter, or as the admin. */
-export type LoginRole = 'docent' | 'voorzitter' | 'beheer';
+/**
+ * How a user logs in: as a teacher, as the vak's sectievoorzitter or sectiesecretaris (the same
+ * rights, decision 80), or as the admin.
+ */
+export type LoginRole = 'docent' | 'voorzitter' | 'secretaris' | 'beheer';
 
 export interface LoginGroup {
   role: LoginRole;
@@ -46,10 +49,25 @@ export const VAK_EMOJI: Readonly<Record<string, string>> = {
 const ROLE_LABEL: Record<LoginRole, string> = {
   docent: 'Docent',
   voorzitter: 'Sectievoorzitter',
+  secretaris: 'Sectiesecretaris',
   beheer: 'Beheerder',
 };
 
-/** "Docent", "Sectievoorzitter" or "Beheerder" (the line under the name in the PIN block). */
+/** The role the backend checks at login (`maatwerk_core::rights::Role`). */
+export function backendRole(role: LoginRole, vak: string): string {
+  if (role === 'voorzitter' || role === 'secretaris') return `bestuur:${vak}`;
+  return role;
+}
+
+/** The previous login's vak among the tiles, when it can be chosen (highlighted at the start). */
+export function rememberedTile(
+  tiles: readonly VakTile[],
+  remembered: string | null,
+): string | null {
+  return tiles.find((t) => t.key === remembered && !t.disabled)?.key ?? null;
+}
+
+/** "Docent", "Sectievoorzitter", "Sectiesecretaris" or "Beheerder" (under the name in the PIN block). */
 export function roleLabel(role: LoginRole): string {
   return ROLE_LABEL[role];
 }
@@ -78,21 +96,24 @@ export function vakTiles(
 }
 
 /**
- * The user groups of `vak`: its active teachers, its sectievoorzitter (an
- * active teacher of the vak, decision 13) and the active admin. Empty groups
- * are left out.
+ * The user groups of `vak`: its active teachers, its sectievoorzitter and
+ * sectiesecretaris (active teachers of the vak, decisions 13 and 80) and the
+ * active admin. Empty groups are left out.
  */
 export function loginGroups(
   users: readonly LoginUser[],
   vak: string,
   voorzitterId: string | null,
+  secretarisId: string | null = null,
 ): LoginGroup[] {
   const teachers = teachersOf(users, vak);
   const voorzitter = teachers.find((u) => u.id === voorzitterId);
+  const secretaris = teachers.find((u) => u.id === secretarisId && u.id !== voorzitterId);
   const admin = users.find((u) => u.isAdmin && u.actief);
   const groups: LoginGroup[] = [
     { role: 'docent', label: 'DOCENTEN', users: teachers },
     { role: 'voorzitter', label: 'SECTIEVOORZITTER', users: voorzitter ? [voorzitter] : [] },
+    { role: 'secretaris', label: 'SECTIESECRETARIS', users: secretaris ? [secretaris] : [] },
     { role: 'beheer', label: 'BEHEER', users: admin ? [admin] : [] },
   ];
   return groups.filter((g) => g.users.length > 0);

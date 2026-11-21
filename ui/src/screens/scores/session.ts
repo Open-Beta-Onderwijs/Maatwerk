@@ -122,6 +122,22 @@ export function scoreSavesDone(): Promise<unknown> {
   return saveChain;
 }
 
+let backendLogout: Promise<unknown> = Promise.resolve();
+
+/**
+ * Logs out in the backend once the queued score saves have run: the core checks every score
+ * write against the session (step 35), so a save still queued must run as the user who typed it
+ * (backlog 3b "queued saves").
+ */
+export function logoutAfterSaves(logout: () => Promise<unknown>): void {
+  backendLogout = saveChain.then(logout).catch((e: unknown) => console.warn('[pin] logout', e));
+}
+
+/** Resolves when a logout started by [`logoutAfterSaves`] is done: a new login waits for it. */
+export function backendLogoutDone(): Promise<unknown> {
+  return backendLogout;
+}
+
 export async function waitForPendingSaves(timeoutMs = 5000): Promise<void> {
   const end = Date.now() + timeoutMs;
   while (pendingSaves.size > 0 && Date.now() < end) {

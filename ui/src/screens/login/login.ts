@@ -12,6 +12,7 @@ import { escHtml, navigateTo, showUserBadge } from '../../app.js';
 import { avatarHtml, loadAvatarPhotos } from '../../components/avatar';
 import {
   loginGroups,
+  rememberedTile,
   vakTiles,
   type LoginGroup,
   type LoginRole,
@@ -30,7 +31,7 @@ type Stage = 'start' | 'vak' | 'user';
 // store.js is untyped: its default parameter reads as `null`.
 const setActiveUser = Store.setActiveUser as (
   user: LoginUser,
-  role: { voorzitter: string } | null,
+  role: { bestuur: string; kind: 'voorzitter' | 'secretaris' } | null,
 ) => void;
 
 const EASE = 'cubic-bezier(.2,.8,.2,1)';
@@ -54,11 +55,11 @@ function tileHtml(t: VakTile): string {
 }
 
 function userHtml(u: LoginUser, role: LoginRole): string {
-  // `data-voorzitter-id` (not data-user-id) keeps the teacher's own badge the
-  // only one with their id.
+  // `data-voorzitter-id` / `data-secretaris-id` (not data-user-id) keep the
+  // teacher's own badge the only one with their id.
   const idAttr =
-    role === 'voorzitter'
-      ? `class="user-badge badge-voorzitter login-user" data-voorzitter-id="${escHtml(u.id)}"`
+    role === 'voorzitter' || role === 'secretaris'
+      ? `class="user-badge badge-${role} login-user" data-${role}-id="${escHtml(u.id)}"`
       : `class="user-badge login-user" data-user-id="${escHtml(u.id)}"`;
   return `
     <button type="button" ${idAttr} data-role="${role}">
@@ -152,7 +153,12 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
       setStage('start');
       return;
     }
-    const groups = loginGroups(users, key, Store.voorzitterOf(key) as string | null);
+    const groups = loginGroups(
+      users,
+      key,
+      Store.voorzitterOf(key) as string | null,
+      Store.secretarisOf(key) as string | null,
+    );
     // The new users start hidden, then fade in group by group (stagger).
     panel.classList.add('login-users--enter');
     panel.innerHTML = groups.map(groupHtml).join('');
@@ -168,7 +174,7 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
 
   function userFor(badge: HTMLElement): { user: LoginUser; role: LoginRole } | null {
     const role = badge.dataset.role as LoginRole;
-    const id = badge.dataset.userId ?? badge.dataset.voorzitterId;
+    const id = badge.dataset.userId ?? badge.dataset.voorzitterId ?? badge.dataset.secretarisId;
     const user = users.find((u) => u.id === id);
     return user ? { user, role } : null;
   }
@@ -190,6 +196,7 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
     const panelApi = mountPinPanel(form, {
       user: picked.user,
       role: picked.role,
+      vak,
       vakName: (Store.SUBJECT_DISPLAY as Record<string, string>)[vak] ?? vak,
       api: window.maatwerk,
       onBack: () => void back(),
@@ -272,7 +279,10 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
     Store.cacheUser(fresh);
     // Score saves still queued belong to the previous user (review 3b M1).
     await scoreSavesDone();
-    setActiveUser(fresh, role === 'voorzitter' ? { voorzitter: subject } : null);
+    setActiveUser(
+      fresh,
+      role === 'voorzitter' || role === 'secretaris' ? { bestuur: subject, kind: role } : null,
+    );
     // The teacher's own look (F-18) before the main screen is shown.
     applyUserLook(fresh);
     await Store.initSubject(subject);
@@ -302,11 +312,15 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
     tile?.focus({ preventScroll: true });
   });
 
-  // The last vak on this PC is chosen already, without animation.
-  const start = tiles.find((t) => t.key === remembered && !t.disabled);
-  if (start) {
-    root.classList.add('login--instant');
-    selectVak(start.key);
-    void nextFrames().then(() => root.classList.remove('login--instant'));
+  // The app starts on the tiles; the last vak on this PC is highlighted, not chosen (user
+  // 2026-11-21, step 35), and has the focus so Enter chooses it.
+  const last = rememberedTile(tiles, remembered);
+  const lastTile = last
+    ? root.querySelector<HTMLButtonElement>(`.login-tile[data-subject="${last}"]`)
+    : null;
+  if (lastTile) {
+    lastTile.classList.add('login-tile--last');
+    lastTile.insertAdjacentHTML('beforeend', '<span class="login-tile-last">Laatst gekozen</span>');
+    lastTile.focus({ preventScroll: true });
   }
 }

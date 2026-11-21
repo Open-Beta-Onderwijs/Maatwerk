@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
-import { loginGroups, roleLabel, vakTiles, type LoginUser } from './login';
+import {
+  backendRole,
+  loginGroups,
+  rememberedTile,
+  roleLabel,
+  vakTiles,
+  type LoginUser,
+} from './login';
 
 const DISPLAY = { nat: 'Natuurkunde', bio: 'Biologie', schk: 'Scheikunde', wi: 'Wiskunde' };
 
@@ -49,5 +56,31 @@ describe('login screen model (V-04)', () => {
       'Sectievoorzitter',
       'Beheerder',
     ]);
+  });
+
+  it('adds the sectiesecretaris group (step 35), never the voorzitter twice', () => {
+    const groups = loginGroups(users, 'nat', 'tw', 'mk');
+    expect(groups.map((g) => [g.label, g.users.map((u) => u.id)])).toEqual([
+      ['DOCENTEN', ['mk', 'tw']],
+      ['SECTIEVOORZITTER', ['tw']],
+      ['SECTIESECRETARIS', ['mk']],
+      ['BEHEER', ['admin']],
+    ]);
+    expect(loginGroups(users, 'nat', 'tw', 'tw').map((g) => g.role)).not.toContain('secretaris');
+    expect(roleLabel('secretaris')).toBe('Sectiesecretaris');
+  });
+
+  it('maps the login role to the backend role', () => {
+    expect(backendRole('docent', 'nat')).toBe('docent');
+    expect(backendRole('voorzitter', 'nat')).toBe('bestuur:nat');
+    expect(backendRole('secretaris', 'bio')).toBe('bestuur:bio');
+    expect(backendRole('beheer', 'nat')).toBe('beheer');
+  });
+
+  it('highlights the remembered vak only when it can be chosen', () => {
+    const tiles = vakTiles(users, DISPLAY);
+    expect(rememberedTile(tiles, 'wi')).toBe('wi');
+    expect(rememberedTile(tiles, 'bio')).toBeNull();
+    expect(rememberedTile(tiles, null)).toBeNull();
   });
 });

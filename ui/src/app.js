@@ -25,6 +25,7 @@ import { renderGebruikers } from './screens/gebruikers';
 import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
 import { changePinFlow, renewCodesFlow } from './screens/pin';
+import { logoutAfterSaves } from './screens/scores/session';
 import { closeUserMenu, toggleUserMenu } from './components/user-menu';
 import { aiSchoolEnabled, renderInstellingen } from './screens/instellingen';
 import { openAiSettings } from './modals/ai-settings';
@@ -544,9 +545,9 @@ function applyRoleVisibility(user) {
 }
 
 function roleLabel(role) {
-  return role?.voorzitter
-    ? `Sectievoorzitter ${Store.SUBJECT_DISPLAY[role.voorzitter] ?? role.voorzitter}`
-    : '';
+  if (!role?.bestuur) return '';
+  const name = role.kind === 'secretaris' ? 'Sectiesecretaris' : 'Sectievoorzitter';
+  return `${name} ${Store.SUBJECT_DISPLAY[role.bestuur] ?? role.bestuur}`;
 }
 
 /** The line under the name in the user menu (spec 3.6). */
@@ -589,7 +590,7 @@ userBadgeBtn.addEventListener('click', () => {
       }),
     onRenewCodes: user.isAdmin ? () => void renewCodesFlow(user, api, onUserChanged) : undefined,
     onLogout: () => {
-      void api.logout().catch((e) => console.warn('[pin]', e));
+      logoutAfterSaves(() => api.logout());
       logOut();
     },
     // Step 32c (board 62): the school switch decides whether the item opens or explains.

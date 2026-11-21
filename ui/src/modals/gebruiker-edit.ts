@@ -273,6 +273,10 @@ export async function openUserModal(
           // C16: saved over the version this form was opened with. A conflict or a
           // read-only refusal goes to the app's own message (app.js).
           await save(saved, user?._meta?.rev);
+        } catch (e) {
+          // A refused save leaves the photo as it was (review 26-28 m2).
+          if (choice.kind === 'new') await undoPhoto(foto!, user?.foto ?? null, current);
+          throw e;
         } finally {
           if (saveBtn.isConnected) setBusy(saveBtn, false);
         }
@@ -283,4 +287,22 @@ export async function openUserModal(
       });
     },
   });
+}
+
+/**
+ * Puts the photo at `written` back as it was before a save that was then refused: the previous
+ * photo when it lived there, else nothing (review 26-28 m2). Failures are only logged.
+ */
+async function undoPhoto(
+  written: string,
+  before: string | null,
+  beforeDataUrl: string | null,
+): Promise<void> {
+  try {
+    const base64 = before === written ? beforeDataUrl?.split(',', 2)[1] : undefined;
+    if (base64) await window.maatwerk.savePhoto(written, base64);
+    else await window.maatwerk.deleteFile(written);
+  } catch (e) {
+    console.warn('[gebruikers] photo not restored', e);
+  }
 }
