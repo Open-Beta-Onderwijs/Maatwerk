@@ -27,6 +27,13 @@ export interface ScoreLock {
 /** The lock for the scores of `vak` in school year `year`. */
 export function scoreLock(vak: string, year: string): ScoreLock {
   const user = Store.getActiveUser() as UserLike | null;
+  if (Store.isGast()) {
+    return {
+      free: false,
+      locked: () => true,
+      title: () => 'Alleen lezen: je bent ingelogd als gast.',
+    };
+  }
   const userId = user?.id ?? '';
   const free = !user || user.isAdmin === true || (Store.isSectiebestuurActive(vak) as boolean);
   const own = editableStudents(Store.getGroupsSync(year) as Group[], vak, userId, free);

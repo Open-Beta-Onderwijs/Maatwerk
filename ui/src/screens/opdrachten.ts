@@ -16,7 +16,8 @@ import {
   toast,
 } from '../app.js';
 import { closeCardMenu, isCardMenuOpen, showCardMenu } from '../components/card-menu';
-import type { Observatie } from '../domain/types';
+import type { Observatie, Opdracht } from '../domain/types';
+import { openKopieerNaar } from '../modals/kopieer-naar';
 import { openOpdrachtModal } from '../modals/opdracht-edit';
 import { openOpdrachtPrintModal } from '../modals/opdracht-print';
 import { Store } from '../store.js';
@@ -83,6 +84,20 @@ function toggleMenu(btn: HTMLElement): void {
     return;
   }
   const id = btn.dataset.id ?? '';
+  if (Store.isGast()) {
+    void showCardMenu(btn, [
+      { icon: ICONS.copy, label: 'Kopieer naar…', run: () => kopieerNaar(id) },
+      {
+        icon: ICONS.print,
+        label: 'Afdrukken',
+        run: () => {
+          const o = opdracht(id);
+          if (o) openOpdrachtPrintModal(o);
+        },
+      },
+    ]);
+    return;
+  }
   void showCardMenu(btn, [
     { icon: ICONS.editor, label: 'Openen in de editor', run: () => openInEditor(id) },
     { icon: ICONS.pen, label: 'Bewerken', run: () => openOpdrachtenModal(id) },
@@ -100,9 +115,15 @@ function toggleMenu(btn: HTMLElement): void {
   ]);
 }
 
+/** "Kopieer naar…" (step 36): the gast copies an opdracht to another sectie. */
+function kopieerNaar(id: string): void {
+  const o = opdracht(id);
+  if (o) openKopieerNaar(o as Opdracht);
+}
+
 const host: PreviewHost = {
   opdracht,
-  copy: (id) => void copyOpdracht(id),
+  copy: (id) => (Store.isGast() ? kopieerNaar(id) : void copyOpdracht(id)),
   openInEditor,
 };
 

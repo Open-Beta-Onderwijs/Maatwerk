@@ -25,6 +25,7 @@ import { openBestGradesOverviewModal } from '../modals/herkansing';
 import { openNewPoModal } from '../modals/po-gegevens';
 import { openRttiUitlegModal } from '../modals/rtti-uitleg';
 import * as Presence from '../presence.js';
+import { presenceUser } from '../domain/login';
 import { Store } from '../store.js';
 import { yieldSlice } from '../utils/idle';
 import { afterPaint, perfSpan } from '../utils/perf';
@@ -124,7 +125,8 @@ async function fillExamPresence(): Promise<void> {
   spans.forEach((span) => {
     span.innerHTML = Presence.inScoreModal(year, subject, span.dataset.presenceExam)
       .map((o: { userId: string; status: string }) => {
-        const user = users.find((u) => u.id === o.userId);
+        const user = presenceUser(users, o.userId) as
+          { id: string; [k: string]: unknown } | undefined;
         return user
           ? Presence.badgeHtml(user, o.status, `${Store.fullName(user)} werkt hierin`)
           : '';

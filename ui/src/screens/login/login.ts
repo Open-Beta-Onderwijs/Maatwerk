@@ -8,9 +8,11 @@
 //          rest fades out. "Andere gebruiker" plays it in reverse.
 // Under prefers-reduced-motion the movement becomes a fade.
 
-import { escHtml, navigateTo, showUserBadge } from '../../app.js';
+import { escHtml, navigateTo, showUserBadge, toast } from '../../app.js';
+import { setGuest } from '../../services/read-only';
 import { avatarHtml, loadAvatarPhotos } from '../../components/avatar';
 import {
+  gastUser,
   loginGroups,
   rememberedTile,
   vakTiles,
@@ -31,7 +33,7 @@ type Stage = 'start' | 'vak' | 'user';
 // store.js is untyped: its default parameter reads as `null`.
 const setActiveUser = Store.setActiveUser as (
   user: LoginUser,
-  role: { bestuur: string; kind: 'voorzitter' | 'secretaris' } | null,
+  role: { bestuur: string; kind: 'voorzitter' | 'secretaris' } | { gast: string } | null,
 ) => void;
 
 const EASE = 'cubic-bezier(.2,.8,.2,1)';
@@ -58,7 +60,7 @@ function userHtml(u: LoginUser, role: LoginRole): string {
   // `data-voorzitter-id` / `data-secretaris-id` (not data-user-id) keep the
   // teacher's own badge the only one with their id.
   const idAttr =
-    role === 'voorzitter' || role === 'secretaris'
+    role === 'voorzitter' || role === 'secretaris' || role === 'gast'
       ? `class="user-badge badge-${role} login-user" data-${role}-id="${escHtml(u.id)}"`
       : `class="user-badge login-user" data-user-id="${escHtml(u.id)}"`;
   return `
@@ -158,6 +160,7 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
       key,
       Store.voorzitterOf(key) as string | null,
       Store.secretarisOf(key) as string | null,
+      Store.gastEnabled(key) as boolean,
     );
     // The new users start hidden, then fade in group by group (stagger).
     panel.classList.add('login-users--enter');
@@ -174,6 +177,7 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
 
   function userFor(badge: HTMLElement): { user: LoginUser; role: LoginRole } | null {
     const role = badge.dataset.role as LoginRole;
+    if (role === 'gast' && vak) return { user: gastUser(vak), role };
     const id = badge.dataset.userId ?? badge.dataset.voorzitterId ?? badge.dataset.secretarisId;
     const user = users.find((u) => u.id === id);
     return user ? { user, role } : null;
@@ -183,6 +187,20 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
     if (busy || !vak) return;
     const picked = userFor(badge);
     if (!picked) return;
+    if (picked.role === 'gast') {
+      // No PIN for the gast (decision 81): straight in, read-only.
+      busy = true;
+      try {
+        await scoreSavesDone();
+        await window.maatwerk.loginGast(vak);
+        await logIn(picked.user, 'gast');
+      } catch (e) {
+        toast(e instanceof Error ? e.message : String(e), 'error');
+      } finally {
+        busy = false;
+      }
+      return;
+    }
     busy = true;
     source = badge;
     const from = badge.querySelector('.avatar')!.getBoundingClientRect();
@@ -276,12 +294,18 @@ function mountLogin(container: HTMLElement, users: LoginUser[], remembered: stri
 
   async function logIn(fresh: LoginUser, role: LoginRole): Promise<void> {
     const subject = vak!;
-    Store.cacheUser(fresh);
+    const gast = role === 'gast';
+    setGuest(gast);
+    if (!gast) Store.cacheUser(fresh);
     // Score saves still queued belong to the previous user (review 3b M1).
     await scoreSavesDone();
     setActiveUser(
       fresh,
-      role === 'voorzitter' || role === 'secretaris' ? { bestuur: subject, kind: role } : null,
+      role === 'voorzitter' || role === 'secretaris'
+        ? { bestuur: subject, kind: role }
+        : gast
+          ? { gast: subject }
+          : null,
     );
     // The teacher's own look (F-18) before the main screen is shown.
     applyUserLook(fresh);

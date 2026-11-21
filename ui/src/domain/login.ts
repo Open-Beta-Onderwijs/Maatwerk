@@ -22,7 +22,7 @@ export interface LoginUser {
  * How a user logs in: as a teacher, as the vak's sectievoorzitter or sectiesecretaris (the same
  * rights, decision 80), or as the admin.
  */
-export type LoginRole = 'docent' | 'voorzitter' | 'secretaris' | 'beheer';
+export type LoginRole = 'docent' | 'voorzitter' | 'secretaris' | 'beheer' | 'gast';
 
 export interface LoginGroup {
   role: LoginRole;
@@ -51,11 +51,38 @@ const ROLE_LABEL: Record<LoginRole, string> = {
   voorzitter: 'Sectievoorzitter',
   secretaris: 'Sectiesecretaris',
   beheer: 'Beheerder',
+  gast: 'Gast',
 };
+
+/** The gast of a sectie (step 36): no user file; its id is also its presence file name. */
+export function gastUser(vak: string): LoginUser {
+  return {
+    id: `gast-${vak}`,
+    voornaam: 'Gast',
+    achternaam: `(${vak})`,
+    afkorting: 'G',
+    kleur: '#6b7280',
+    foto: null,
+    actief: true,
+    vakken: [vak],
+  };
+}
+
+/** A presence entry's user: a user record, or the gast of a sectie ("Gast (nat)"). */
+export function presenceUser<U extends { id: string }>(
+  users: readonly U[],
+  id: string,
+): U | LoginUser | undefined {
+  const user = users.find((u) => u.id === id);
+  if (user) return user;
+  const vak = /^gast-([\w-]+)$/.exec(id)?.[1];
+  return vak ? gastUser(vak) : undefined;
+}
 
 /** The role the backend checks at login (`maatwerk_core::rights::Role`). */
 export function backendRole(role: LoginRole, vak: string): string {
   if (role === 'voorzitter' || role === 'secretaris') return `bestuur:${vak}`;
+  if (role === 'gast') return `gast:${vak}`;
   return role;
 }
 
@@ -105,6 +132,7 @@ export function loginGroups(
   vak: string,
   voorzitterId: string | null,
   secretarisId: string | null = null,
+  gast = false,
 ): LoginGroup[] {
   const teachers = teachersOf(users, vak);
   const voorzitter = teachers.find((u) => u.id === voorzitterId);
@@ -114,6 +142,7 @@ export function loginGroups(
     { role: 'docent', label: 'DOCENTEN', users: teachers },
     { role: 'voorzitter', label: 'SECTIEVOORZITTER', users: voorzitter ? [voorzitter] : [] },
     { role: 'secretaris', label: 'SECTIESECRETARIS', users: secretaris ? [secretaris] : [] },
+    { role: 'gast', label: 'GAST', users: gast ? [gastUser(vak)] : [] },
     { role: 'beheer', label: 'BEHEER', users: admin ? [admin] : [] },
   ];
   return groups.filter((g) => g.users.length > 0);

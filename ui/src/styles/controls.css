@@ -362,6 +362,25 @@ table.questions-table .rtti-btn {
   font-weight: 600;
 }
 
+/* Step 36: the gast reads everything of the vak and writes nothing (decision 81). Every create,
+   edit, delete, import and save control carries `data-write`. */
+html[data-gast] [data-write] {
+  display: none !important;
+}
+.gast-pill {
+  align-self: center;
+  margin-right: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--warn);
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--text);
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: help;
+}
+
 /* ── User menu (F-17, spec 3.6): dropdown under the avatar ─────────────────── */
 .user-menu {
   position: fixed;

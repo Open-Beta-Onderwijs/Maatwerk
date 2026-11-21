@@ -41,6 +41,7 @@ import {
   isReadOnlyError,
   noteReadOnly,
   onReadOnly,
+  setGuest,
 } from './services/read-only';
 import { showReadOnlyBanner } from './components/read-only-banner';
 import { applyLook, baseLook, currentLook } from './theme';
@@ -488,6 +489,10 @@ const readPhoto = (rel) => window.maatwerk.readPhotoAsDataUrl(rel);
 
 export async function showUserBadge(user, subject) {
   const role = Store.getActiveRole();
+  // Step 36: the gast reads, never writes; `data-gast` hides every create/edit/delete control.
+  const gast = Store.isGast();
+  document.documentElement.toggleAttribute('data-gast', gast);
+  document.getElementById('gast-pill')?.classList.toggle('hidden', !gast);
   // Spec 3.6: 38 px, accent ring; square for the admin and a sectievoorzitter login.
   userBadgeBtn.dataset.userId = user.id;
   void renderAvatar(
@@ -502,7 +507,7 @@ export async function showUserBadge(user, subject) {
 
   // Admin sees vakken popover; teacher sees eigen toggle
   document.getElementById('admin-vak-wrap').classList.toggle('hidden', !user.isAdmin);
-  document.getElementById('btn-filter-eigen').classList.toggle('hidden', user.isAdmin);
+  document.getElementById('btn-filter-eigen').classList.toggle('hidden', user.isAdmin || gast);
 
   await initFilterBar(user, subject);
   applyRoleVisibility(user);
@@ -545,6 +550,7 @@ function applyRoleVisibility(user) {
 }
 
 function roleLabel(role) {
+  if (role?.gast) return `Gast · ${Store.SUBJECT_DISPLAY[role.gast] ?? role.gast} · alleen lezen`;
   if (!role?.bestuur) return '';
   const name = role.kind === 'secretaris' ? 'Sectiesecretaris' : 'Sectievoorzitter';
   return `${name} ${Store.SUBJECT_DISPLAY[role.bestuur] ?? role.bestuur}`;
@@ -593,20 +599,26 @@ userBadgeBtn.addEventListener('click', () => {
       logoutAfterSaves(() => api.logout());
       logOut();
     },
+    gast: Store.isGast(),
     // Step 32c (board 62): the school switch decides whether the item opens or explains.
-    ai: {
-      school: Store.loadInstellingen().then(aiSchoolEnabled),
-      onOpen: () =>
-        void openAiSettings({ ai: api.ai, gebruiker: user.id }).catch((e) =>
-          toast(e instanceof Error ? e.message : String(e), 'error'),
-        ),
-    },
+    ai: Store.isGast()
+      ? undefined
+      : {
+          school: Store.loadInstellingen().then(aiSchoolEnabled),
+          onOpen: () =>
+            void openAiSettings({ ai: api.ai, gebruiker: user.id }).catch((e) =>
+              toast(e instanceof Error ? e.message : String(e), 'error'),
+            ),
+        },
     readPhoto,
   });
 });
 
 function logOut() {
   closeUserMenu();
+  setGuest(false);
+  document.documentElement.removeAttribute('data-gast');
+  document.getElementById('gast-pill')?.classList.add('hidden');
   Presence.stop();
   userBadgeBtn.classList.add('hidden');
   userBadgeBtn.replaceChildren();

@@ -30,6 +30,7 @@ import type {
   Unsubscribe,
 } from '../api';
 import type {
+  CopiedTo,
   EditorClickJump,
   EditorCompletions,
   EditorCursorJump,
@@ -223,8 +224,18 @@ export class MockApi implements MaatwerkApi {
   };
   /** Logged-in user and wrong attempts (maatwerk-core::auth::Auth). */
   private authSession: string | null = null;
-  /** The role of the login (step 35): `docent`, `bestuur:<vak>` or `beheer`. */
+  /** The role of the login (step 35): `docent`, `bestuur:<vak>`, `beheer` or `gast:<vak>`. */
   private authRole: string | null = null;
+
+  /** A gast is logged in (step 36): every write is refused, presence excepted. */
+  private get guest(): boolean {
+    return this.authRole?.startsWith('gast:') === true;
+  }
+
+  /** As `Storage::refuse_guest`: a gast writes nothing but presence. */
+  private guestRefuses(relPath: string): boolean {
+    return this.guest && !relPath.startsWith('aanwezigheid/');
+  }
   private pinFailures = new Map<string, { count: number; last: number }>();
   /** Snapshot names (newest first) and the files each holds; tests fill them. */
   snapshots: { name: string; files: Record<string, Json> }[] = [];
@@ -371,7 +382,7 @@ export class MockApi implements MaatwerkApi {
     if (this.writeDelayMs) await new Promise((res) => setTimeout(res, this.writeDelayMs));
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
-    if (this.readOnly()) return { ok: false, reason: 'read_only' };
+    if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
     const refused = this.rubricGuard(relPath, data) ?? this.rightsGuard(relPath, data);
     if (refused) return { ok: false, reason: refused };
     if (opts.cas) {
@@ -449,7 +460,7 @@ export class MockApi implements MaatwerkApi {
 
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
-    if (this.readOnly()) return { ok: false, reason: 'read_only' };
+    if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
     const forbidden = this.rightsGuard(relPath, null);
     if (forbidden) return { ok: false, reason: forbidden };
     const rubricId = /^rubrics\/([^/]+)\.json$/.exec(relPath)?.[1];
@@ -824,6 +835,7 @@ export class MockApi implements MaatwerkApi {
 
   async printPdf(pdfPath: string, name: PrintName): Promise<string> {
     this.record('printPdf', [pdfPath, name]);
+    this.refuseIfReadOnly();
     const bytes = this.pdfs.get(pdfPath);
     if (!bytes) throw new Error(`not found: ${pdfPath}`);
     const parts = [name.soort, name.vak, name.groep, name.toets].filter((p) => p.trim());
@@ -846,6 +858,7 @@ export class MockApi implements MaatwerkApi {
   /** Rejects like a backend command refused with `read_only`. */
   private refuseIfReadOnly(): void {
     if (this.readOnly()) throw { code: 'read_only', message: 'read-only', details: {} };
+    if (this.guest) throw { code: 'read_only', message: 'gast', details: { found: 'gast' } };
   }
 
   /** `minAppVersion` of the mock `school.json` when it is newer than the app (as the backend). */
@@ -1019,7 +1032,9 @@ export class MockApi implements MaatwerkApi {
     return ok ? null : forbiddenMessage(student);
   }
 
-  private schoolJson(): { secties?: Record<string, { voorzitter?: string; secretaris?: string }> } {
+  private schoolJson(): {
+    secties?: Record<string, { voorzitter?: string; secretaris?: string; gast?: boolean }>;
+  } {
     try {
       return JSON.parse(this.readText('school.json') ?? '{}');
     } catch {
@@ -1232,6 +1247,63 @@ export class MockApi implements MaatwerkApi {
       u.recoveryCodeHashes = codes.map((c) => `mock$${c}`);
     });
     return { ...check, user: saved, recoveryCodes: codes };
+  }
+
+  async loginGast(vak: string): Promise<void> {
+    this.record('loginGast', [vak]);
+    const on = (this.schoolJson().secties?.[vak] as { gast?: unknown } | undefined)?.gast === true;
+    if (!on) throw new Error('Dit vak heeft geen gastaccount (meer).');
+    this.authSession = `gast-${vak}`;
+    this.authRole = `gast:${vak}`;
+  }
+
+  async copyOpdrachtToSectie(
+    fromId: string,
+    vak: string,
+    teacherId: string,
+    pin: string,
+  ): Promise<CopiedTo> {
+    this.record('copyOpdrachtToSectie', [fromId, vak, teacherId]);
+    if (!this.guest)
+      throw new Error('Alleen een gast kopieert een opdracht naar een andere sectie.');
+    const teacher = this.readUser(teacherId);
+    if (
+      teacher.actief === false ||
+      teacher.isAdmin === true ||
+      !(teacher.vakken as string[] | undefined)?.includes(vak)
+    )
+      throw new Error('Kies een actieve docent van dat vak.');
+    const check = this.throttled(`pin:${teacherId}`, () => teacher.pinHash === `mock$${pin}`);
+    if (check.outcome !== 'ok')
+      return {
+        outcome: check.outcome,
+        retryAfterMs: check.retryAfterMs,
+        opdracht: null,
+        droppedObservaties: 0,
+      };
+    const text = this.readText(`opdrachten/${fromId}/opdracht.json`);
+    if (text === null) throw new Error('Opdracht niet gevonden.');
+    const source = JSON.parse(text) as Record<string, unknown>;
+    const newId = `opdracht_${Date.now()}`;
+    for (const [rel, bytes] of [...this.files]) {
+      const prefix = `opdrachten/${fromId}/`;
+      if (rel.startsWith(prefix) && !rel.endsWith('/opdracht.json'))
+        this.putFile(`opdrachten/${newId}/${rel.slice(prefix.length)}`, bytes);
+    }
+    const dropped = Array.isArray(source.observaties) ? source.observaties.length : 0;
+    const rest = { ...source };
+    delete rest._meta;
+    delete rest.typFile;
+    const copy = stampMeta(
+      { ...rest, id: newId, vakken: [vak], observaties: [] },
+      null as never,
+      teacherId,
+    ) as unknown as Value;
+    this.putFile(
+      `opdrachten/${newId}/opdracht.json`,
+      encoder.encode(JSON.stringify(copy, null, 2) + '\n'),
+    );
+    return { outcome: 'ok', retryAfterMs: 0, opdracht: copy, droppedObservaties: dropped };
   }
 
   async logout(): Promise<void> {

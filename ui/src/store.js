@@ -228,6 +228,14 @@ const Store = (() => {
     const id = _activeUser.id;
     return voorzitterOf(vak) === id || secretarisOf(vak) === id;
   }
+  /** Logged in as the gast of a sectie (step 36): reads everything of the vak, writes nothing. */
+  function isGast() {
+    return Boolean(_activeRole?.gast);
+  }
+  /** `school.json` `secties.<vak>.gast` (step 36): the vak's login list shows a Gast. */
+  function gastEnabled(vak) {
+    return getSchoolSync().secties?.[vak]?.gast === true;
+  }
   /** The teacher assigned as sectievoorzitter of `vak` in school.json, or null. */
   function voorzitterOf(vak) {
     return getSchoolSync().secties?.[vak]?.voorzitter ?? null;
@@ -1451,6 +1459,8 @@ const Store = (() => {
     setActiveUser,
     getActiveRole,
     isSectiebestuurActive,
+    isGast,
+    gastEnabled,
     getUsersSync,
     voorzitterOf,
     secretarisOf,

@@ -43,7 +43,9 @@ export async function renderGebruikers(): Promise<void> {
     <h3 class="list-section-header">Sectiebestuur</h3>
     <p class="hint">De sectievoorzitter en de sectiesecretaris van een vak wijzigen alle scores van
        dat vak en de leerlingen en docenten van de groepen. Ze loggen daarvoor in met de eigen
-       pincode via de aparte badge "Sectievoorzitter" of "Sectiesecretaris".</p>
+       pincode via de aparte badge "Sectievoorzitter" of "Sectiesecretaris". Met "Gastaccount"
+       toont het inlogscherm van dat vak een Gast: zonder pincode, leest alles van het vak (ook
+       leerlinggegevens) en wijzigt niets.</p>
     <div id="voorzitter-list" class="card voorzitter-list"></div>`;
 
   await renderUserList();
@@ -143,7 +145,10 @@ async function renderUserList(): Promise<void> {
 
 // ── Sectiebestuur (school.json `secties`, decision 13; secretaris step 35) ─
 type SectieRole = 'voorzitter' | 'secretaris';
-type Secties = Record<string, { voorzitter?: string | null; secretaris?: string | null }>;
+type Secties = Record<
+  string,
+  { voorzitter?: string | null; secretaris?: string | null; gast?: boolean }
+>;
 
 const ROLE_NAME: Record<SectieRole, string> = {
   voorzitter: 'Sectievoorzitter',
@@ -197,8 +202,34 @@ async function renderVoorzitters(): Promise<void> {
         <span class="voorzitter-vak"><span aria-hidden="true">${VAK_EMOJI[vak] ?? ''}</span>${escHtml(SUBJECT_LABEL[vak] ?? vak)}</span>
         ${roleSelect(vak, 'voorzitter', teachers, vz, sec)}
         ${roleSelect(vak, 'secretaris', teachers, sec, vz)}
+        <label class="voorzitter-gast" title="Een gast logt zonder pincode in, leest alles van dit vak (ook leerlinggegevens) en kan niets wijzigen.">
+          <input type="checkbox" data-gast-vak="${vak}"${secties[vak]?.gast === true ? ' checked' : ''} />
+          Gastaccount
+        </label>
       </div>`;
   }).join('');
+  // Step 36 (decision 81): the admin switches the sectie's gast on knowingly.
+  container.querySelectorAll<HTMLInputElement>('input[data-gast-vak]').forEach((box) => {
+    box.addEventListener('change', async () => {
+      const vak = box.dataset.gastVak!;
+      const on = box.checked;
+      try {
+        await Store.updateSchool((s: { secties?: Secties }) => {
+          const next = { ...(s.secties ?? {}) };
+          const sectie = { ...(next[vak] ?? {}) };
+          if (on) sectie.gast = true;
+          else delete sectie.gast;
+          if (Object.keys(sectie).length) next[vak] = sectie;
+          else delete next[vak];
+          s.secties = next;
+        });
+        toast(`Gastaccount ${SUBJECT_LABEL[vak]} ${on ? 'aangezet' : 'uitgezet'}.`, 'success');
+      } catch (e) {
+        toast(e instanceof Error ? e.message : String(e), 'error');
+        await renderVoorzitters();
+      }
+    });
+  });
   container.querySelectorAll<HTMLSelectElement>('select[data-vak]').forEach((select) => {
     select.addEventListener('change', async () => {
       const vak = select.dataset.vak!;

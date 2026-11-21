@@ -84,6 +84,7 @@ function wireList(container: HTMLElement): void {
     // A click anywhere else on a card opens Observatie bewerken, not on a text selection.
     const card = target.closest<HTMLElement>('[data-obs-card]');
     if (!card || target.closest('a, button, input') || window.getSelection()?.toString()) return;
+    if (Store.isGast()) return; // a gast reads the card only (step 36)
     openObsModal(card.dataset.obsCard ?? null);
   });
 }

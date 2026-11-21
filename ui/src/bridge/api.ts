@@ -21,6 +21,7 @@ export type Json = unknown;
 
 export type { PrintName } from '../domain/print';
 import type {
+  CopiedTo,
   DataFolderStatus,
   EditorClickJump,
   EditorCompletions,
@@ -306,6 +307,21 @@ export interface MaatwerkApi {
   /** Admin, with the PIN: ten new recovery codes replace the old ones. */
   renewRecoveryCodes(pin: string): Promise<PinCheck>;
   logout(): Promise<void>;
+  /**
+   * Step 36: the gast of `vak` logs in without a PIN (the admin's switch); from then on the
+   * backend refuses every write (`read_only`) until logout.
+   */
+  loginGast(vak: string): Promise<void>;
+  /**
+   * "Kopieer naar…" (step 36): a gast copies an opdracht to sectie `vak` as teacher `teacherId`,
+   * who confirms with their PIN. `opdracht` is the copy when `outcome` is `ok`.
+   */
+  copyOpdrachtToSectie(
+    fromId: string,
+    vak: string,
+    teacherId: string,
+    pin: string,
+  ): Promise<CopiedTo>;
   /** "Opslaan als" dialog for a text file; the path, or null when cancelled. */
   saveTextAs(defaultName: string, content: string): Promise<string | null>;
   /** `snapshots/*.zip`, newest first. */

@@ -29,6 +29,8 @@ export interface UserMenuOptions {
   /** Only for the admin. */
   onRenewCodes?: () => void;
   onLogout: () => void;
+  /** A gast (step 36): no photo, PIN or AI items; the look is not saved. */
+  gast?: boolean;
   /**
    * "AI-instellingen…" (board 62, step 32c). `school` resolves false when the school switched
    * the assistant off: the item then only says so ("Uitgeschakeld door je school").
@@ -100,8 +102,12 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
       </div>
     </div>
     <div class="user-menu__sep"></div>
-    <button type="button" class="user-menu__item" id="acc-photo">Foto wijzigen</button>
-    <button type="button" class="user-menu__item" id="acc-pin">Pincode wijzigen</button>
+    ${
+      opts.gast
+        ? ''
+        : `<button type="button" class="user-menu__item" id="acc-photo">Foto wijzigen</button>
+    <button type="button" class="user-menu__item" id="acc-pin">Pincode wijzigen</button>`
+    }
     ${opts.onRenewCodes ? `<button type="button" class="user-menu__item" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
     ${opts.ai ? `<button type="button" class="user-menu__item" id="acc-ai">AI-instellingen…<span class="user-menu__sub" hidden>Uitgeschakeld door je school</span></button>` : ''}
     <div class="user-menu__sep"></div>
@@ -171,8 +177,8 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
     sync();
     opts.onLook({ ...look });
   });
-  el.querySelector('#acc-photo')!.addEventListener('click', act(opts.onChangePhoto));
-  el.querySelector('#acc-pin')!.addEventListener('click', act(opts.onChangePin));
+  el.querySelector('#acc-photo')?.addEventListener('click', act(opts.onChangePhoto));
+  el.querySelector('#acc-pin')?.addEventListener('click', act(opts.onChangePin));
   if (opts.onRenewCodes)
     el.querySelector('#acc-codes')!.addEventListener('click', act(opts.onRenewCodes));
   el.querySelector('#acc-logout')!.addEventListener('click', act(opts.onLogout));

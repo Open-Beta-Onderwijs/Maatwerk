@@ -173,8 +173,8 @@ function adminRowHtml(s: Student): string {
           </div>
         </div>
         <div class="card-actions">
-          <button class="btn btn--icon" data-action="edit-student" data-id="${id}" title="Leerling bewerken" aria-label="Leerling bewerken">${ICONS.pen}</button>
-          <button class="btn btn--icon btn--icon-danger" data-action="del-student" data-id="${id}" title="Leerling verwijderen" aria-label="Leerling verwijderen">${ICONS.trash}</button>
+          <button class="btn btn--icon" data-action="edit-student" data-write data-id="${id}" title="Leerling bewerken" aria-label="Leerling bewerken">${ICONS.pen}</button>
+          <button class="btn btn--icon btn--icon-danger" data-action="del-student" data-write data-id="${id}" title="Leerling verwijderen" aria-label="Leerling verwijderen">${ICONS.trash}</button>
         </div>
       </div>`;
 }

@@ -11,6 +11,7 @@
 // closing), with a page-sized placeholder meanwhile.
 
 import { modalOpen } from '../../app.js';
+import { Store } from '../../store.js';
 import { esc } from '../../components/dialog';
 import { skelRegion } from '../../components/skeleton';
 import { cardSlots, gridHeight, pageInView } from './preview-layout';
@@ -209,8 +210,8 @@ function panelHtml(o: OpdFields): string {
           <span class="opd-preview-name">${esc(o.naam ?? '')}</span>
           <span class="opd-preview-meta">${esc(headMeta(o, null))}</span>
         </div>
-        <button type="button" class="btn btn--secondary" data-preview="copy">Kopiëren</button>
-        <button type="button" class="btn btn--primary" data-preview="editor">Openen in editor</button>
+        <button type="button" class="btn btn--secondary" data-preview="copy">${Store.isGast() ? 'Kopieer naar…' : 'Kopiëren'}</button>
+        <button type="button" class="btn btn--primary" data-preview="editor" data-write>Openen in editor</button>
         <button type="button" class="btn btn--icon opd-preview-close" data-preview="close" title="Voorbeeld sluiten" aria-label="Voorbeeld sluiten"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       </div>
       <div class="opd-preview-body">${skelRegion('<span class="skel opd-page opd-page--skel"></span>', 'Voorbeeld laden…')}</div>

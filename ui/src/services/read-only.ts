@@ -27,7 +27,9 @@ export const READ_ONLY_SAVE_TEXT =
  * (review 15 M1).
  */
 export function readOnlyError(): Error & { code: string } {
-  return Object.assign(new Error(READ_ONLY_SAVE_TEXT), { code: READ_ONLY_CODE });
+  return Object.assign(new Error(guest ? GAST_SAVE_TEXT : READ_ONLY_SAVE_TEXT), {
+    code: READ_ONLY_CODE,
+  });
 }
 
 // ── Read-only state of this app ────────────────────────────────────────────
@@ -36,9 +38,18 @@ export function readOnlyError(): Error & { code: string } {
 
 let readOnly = false;
 let listener: (() => void) | null = null;
+/** A gast is logged in (step 36): read-only too, without the version banner. */
+let guest = false;
+
+/** The gast's refused save (should not happen: the gast sees no save controls). */
+export const GAST_SAVE_TEXT = 'Niet opgeslagen: je bent ingelogd als gast en kunt alleen lezen.';
+
+export function setGuest(on: boolean): void {
+  guest = on;
+}
 
 export function isReadOnly(): boolean {
-  return readOnly;
+  return readOnly || guest;
 }
 
 /** Called by app.js: shows the banner the first time the app turns read-only. */
@@ -48,7 +59,7 @@ export function onReadOnly(fn: () => void): void {
 
 /** A write was refused as read-only (or the start status said so). */
 export function noteReadOnly(): void {
-  if (readOnly) return;
+  if (readOnly || guest) return;
   readOnly = true;
   listener?.();
 }
