@@ -4,6 +4,7 @@
 // 15): Schoolsoort, Vakken and Jaarlagen as toggle buttons.
 
 import { escHtml } from '../app.js';
+import { VAK_CHIPS } from '../domain/vakken';
 import { Store } from '../store.js';
 
 export const SCHOOLSOORTEN = [
@@ -17,16 +18,7 @@ export const SCHOOLSOORTEN = [
 ] as const;
 
 /** The vak codes of observaties and opdrachten (wiskunde in its variants). */
-export const VAK_CHIPS: readonly [code: string, label: string][] = [
-  ['bio', 'Biologie'],
-  ['nat', 'Natuurkunde'],
-  ['schk', 'Scheikunde'],
-  ['wisob', 'Wis OB'],
-  ['wisa', 'WisA'],
-  ['wisb', 'WisB'],
-  ['wisc', 'WisC'],
-  ['wisd', 'WisD'],
-];
+export { VAK_CHIPS };
 
 export const JAARLAGEN = ['1', '2', '3', '4', '5', '6'] as const;
 

@@ -17,9 +17,9 @@ import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen';
 import { renderToetsen, renderToetsenList } from './screens/toetsen';
-import { renderObservaties } from './screens/observaties.js';
+import { renderObservaties } from './screens/observaties';
 import { renderRubrics } from './screens/rubrics';
-import { renderOpdrachten } from './screens/opdrachten.js';
+import { renderOpdrachten } from './screens/opdrachten';
 import { openEditor } from './modals/editor';
 import { renderGebruikers } from './screens/gebruikers';
 import { renderSchool } from './screens/school.js';
@@ -682,7 +682,7 @@ const SCREEN_REFRESH = {
   // An exam change can change a rubric's use (step 22 writes `rubric_id`).
   rubrics: { types: ['rubric', 'observatie', 'exam'], render: () => renderRubrics() },
   observaties: {
-    types: ['observatie', 'group', 'rubric'],
+    types: ['observatie', 'group', 'rubric', 'exam', 'opdracht'],
     year: () => Store.getConfigSync().activeYear,
     render: () => renderObservaties(),
   },

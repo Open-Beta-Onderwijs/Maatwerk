@@ -151,8 +151,9 @@ export const commands = {
 	 */
 	renderPoRapportPdf: (examId: string, students: Value, poInfo: Value) => typedError<RenderedPdf, CommandError>(__TAURI_INVOKE("render_po_rapport_pdf", { examId, students, poInfo })),
 	/**
-	 *  The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
-	 *  with the placeholder header, one SVG per page. (The old cursor marker is gone since
+	 *  The editor preview: the buffer (`previewContent`) compiled as the opdracht, with the
+	 *  placeholder header, one SVG per page. Without a buffer the saved `opdracht.typ` is compiled
+	 *  (the Opdrachten tab's preview, step 34b). (The old cursor marker is gone since
 	 *  `maatwerk-main 2`; the editor uses `editor_jump_from_cursor`.)
 	 */
 	renderAssignmentSvg: (opdrachtId: string, title: string, previewContent: string | null) => typedError<RenderedSvg, CommandError>(__TAURI_INVOKE("render_assignment_svg", { opdrachtId, title, previewContent })),

@@ -6,16 +6,17 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import {
-  PIN,
-  TEACHER,
-  YEAR,
+  chooseVak,
   enterPin,
   login,
   logout,
+  openOpdrachtEditor,
+  PIN,
   readMockJson,
+  TEACHER,
   watchErrors,
   withMock,
-  chooseVak,
+  YEAR,
 } from './helpers';
 
 type User = { pinHash?: string; recoveryCodeHashes?: string[]; _meta: { rev: number } };
@@ -242,7 +243,7 @@ test('the admin sets the editor compile time limit; the editor uses it', async (
   expect(saved.snapshots).toEqual({ intervalHours: 24, daily: 7, weekly: 4, monthly: 12 });
 
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   const frame = page.frameLocator('#editor-frame');
   await frame.locator('.cm-content').click();
   await page.keyboard.press('Control+End');

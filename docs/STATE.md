@@ -1,6 +1,7 @@
 # State
 
-Last updated: 2026-11-21 (steps 32, 33, 33b merged) Branch: `main`
+Last updated: 2026-11-21 (step 34) Branch: `step/34-obs-opd-cards` (from `step/33b-perf` at
+`334cc77`, `main` merged in after the merges below)
 Last tags: `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
@@ -12,6 +13,62 @@ green on all four jobs; merged into `main` with merge commits and tagged `step-3
 `step-33b` (the branch head `334cc77` adds only the plan to 1.0). Not done: the releases 0.23,
 0.24 and 0.24.1 (the user's), and the local `splash` baselines (version text 0.24.1, user's
 check).
+
+## Step 34: Observaties and Opdrachten as cards (2026-11-21, on `step/34-obs-opd-cards`)
+
+Branched from `step/33b-perf` (`334cc77`) while its CI run 44763575121 finished; `main` (with
+32, 33, 33b) merged in afterwards.
+
+Gate (2026-11-21): cargo fmt, clippy, test (25 suites), deny, SPDX, npm lint (only the user's
+untracked `docs/reviews/manual-test-step-32.md`), typecheck, 879 Vitest + 127 node tests,
+Chromium e2e 403/403. Visual (local): 9 diffs = `screen-observaties` and `screen-opdrachten` in
+three looks (intended) and `splash` (version text 0.24.1, from 33b); baselines not updated. The
+visual check found the Observatie footer overflowing at 1280 px (fixed, `8905357`).
+
+Review `docs/reviews/step-34.md` (`aca9027`): 0 blockers, 1 major (M1 stale preview after an
+editor session: fixed), 6 minors (m1, m3, m5 fixed, m4 in part; m2, m6 backlog "From Step 34"),
+7 nits (backlog). Fixes `bcffd2d`.
+
+User 2026-11-21: the Observatie card follows the Opdracht card: "<schoolsoort> · <vakken>" above
+the footer (the observatie's `subjects`), the Toets/PO pills move into the footer before the
+jaarlagen (the schoolsoort pill is gone). At 1280 px with Toets + PO and both counts, the
+opdrachten count is cut with an ellipsis (its tooltip names them).
+
+User approved step 34 (2026-11-21): version 0.25.0, local baselines of the two views and
+`splash` updated (visual 177/177), CI baselines of `screen-observaties`, `screen-opdrachten` and
+`splash` dropped on all three platforms; branch pushed for CI, which writes them.
+
+**Next action (superseded):** the user: look at the 6 Observaties/Opdrachten visual diffs (and `splash`) and
+the preview in the real app (render of a real opdracht, the animation); then update the local
+baselines, drop the CI baselines of the two views on all three platforms (as step 33), version
+0.25.0, push, merge with tag `step-34`. The branch is not pushed yet (its CI would fail on the two
+views until their CI baselines are dropped).
+
+34a done (`7c4fe50`): `components/card-menu.ts` (the ⋮ menu, taken out of
+`screens/exam-menu.ts`, which now uses it); `screens/cards/item-card.ts` (jaarlagen boxes, the
+count at the end of the filter row); `screens/observaties.ts` + `observaties/card.ts`,
+`observaties/filter.ts` (R-05, replaces `observaties.js`); `screens/opdrachten.ts` +
+`opdrachten/card.ts` (replaces `opdrachten.js`); `domain/vakken.ts` (`VAK_CHIPS`, pure);
+`styles/item-cards.css`, token `--accent-tint`. e2e `item-cards.spec.ts`, `cardMenu` helper.
+
+34b done (next commit): `opdrachten/preview.ts` (pin the grid's cards, move them to two columns
+in the left half, panel sticky under the screen head, switch in place, close by the same card,
+✕ or Escape; render on demand, cached per opdracht by `_meta.rev`, dropped when the editor opens
+it; page placeholder; error in the panel; reduced motion) and `preview-layout.ts` (slots, tested
+against board 58's numbers). `render_assignment_svg` without `previewContent` now compiles the
+saved `opdracht.typ` (was: an empty buffer; no caller passed none); bindings regenerated. e2e:
+3 preview tests, `openOpdrachtEditor` helper (the card title now opens the preview).
+
+Choices made without a spec line (tell the user):
+
+- "<n> toetsen" counts the tests of the active school year that link the observatie; a resit
+  counts with its original (it carries the original's observaties), a PO only through its own
+  `obs_ids` (rubric observaties are not counted). The delete rule is unchanged (any test in the
+  cache, or a rubric).
+- Opdrachten ⋮ keeps **Afdrukken** (the 0.23.1 print) between Kopiëren and Verwijderen; board 58
+  predates it.
+- The preview cache does not notice a colleague changing only `opdracht.typ` (no `_meta.rev`
+  change) until the app restarts or the opdracht is opened in the editor here.
 
 ## Plan to 1.0 extended (2026-11-21, user's request)
 

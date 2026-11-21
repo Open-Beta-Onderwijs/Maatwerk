@@ -2,7 +2,7 @@
 
 // Shared steps for the Playwright tests on the mock build (tiny fixture).
 
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import type { MockApi } from '../src/bridge/mock/mock-api';
 
 export const TEACHER = 'gebr-1756713600001'; // Docent van Natuur, nat + schk
@@ -139,4 +139,19 @@ export async function examMenuItem(page: Page, examId: string, item: string): Pr
     await page.locator(`[data-action="exam-menu"][data-id="${examId}"]`).first().click();
     await page.getByRole('menuitem', { name: item }).click({ timeout: 1000 });
   }).toPass();
+}
+
+/** Opens the ⋮ menu of a card (Observaties, Opdrachten) and clicks an item (step 34). */
+export async function cardMenu(card: Locator, item: string): Promise<void> {
+  const page = card.page();
+  await card.getByRole('button', { name: 'Meer acties' }).click();
+  await page.getByRole('menuitem', { name: item, exact: true }).click();
+}
+
+/** Opens an opdracht (the first, or `id`) in the editor from its card's ⋮ menu (step 34b). */
+export async function openOpdrachtEditor(page: Page, id?: string): Promise<void> {
+  const card = id
+    ? page.locator(`#opdracht-list [data-opd-card="${id}"]`)
+    : page.locator('#opdracht-list .icard').first();
+  await cardMenu(card, 'Openen in de editor');
 }

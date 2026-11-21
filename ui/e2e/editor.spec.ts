@@ -7,12 +7,12 @@
 // "Herstel standaardversie" and "Bekijk verschillen".
 
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
-import { login, watchErrors, withMock } from './helpers';
+import { login, openOpdrachtEditor, watchErrors, withMock } from './helpers';
 
 async function openEditor(page: Page): Promise<{ frame: FrameLocator; id: string }> {
   await login(page);
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   const frame = page.frameLocator('#editor-frame');
   await expect(frame.locator('.cm-content')).toBeVisible();
   const src = await page.locator('#editor-frame').getAttribute('src');
@@ -180,7 +180,7 @@ test('lib.typ: warning, Bekijk verschillen and Herstel standaardversie', async (
     `opdrachten/${id}/lib.typ`,
   );
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator(`[data-action="open-editor"][data-id="${id}"]`).click();
+  await openOpdrachtEditor(page, id);
   const frame = page.frameLocator('#editor-frame');
   await expect(frame.locator('.cm-content')).toBeVisible();
   const tab = frame.locator('.file-tab[data-file="lib.typ"]');
@@ -246,7 +246,7 @@ test('lib.typ: a current copy edited in the editor offers Bekijk verschillen', a
     `opdrachten/${id}/lib.typ`,
   );
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator(`[data-action="open-editor"][data-id="${id}"]`).click();
+  await openOpdrachtEditor(page, id);
   const frame = page.frameLocator('#editor-frame');
   await expect(frame.locator('.cm-content')).toBeVisible();
   await expect(frame.locator('.file-tab[data-file="lib.typ"]')).not.toHaveClass(/needs-attention/);

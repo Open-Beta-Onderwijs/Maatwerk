@@ -292,13 +292,13 @@ test.describe('observatie toetstype (F-23)', () => {
   test('the Observaties tab filters on toetstype and marks PO observaties', async ({ page }) => {
     await login(page);
     await page.locator('.nav-btn[data-screen="observaties"]').click();
-    const cards = page.locator('#obs-list .card');
+    const cards = page.locator('#obs-list .icard');
     const all = await cards.count();
     await page.locator('#btn-filter-toetstype').click();
     await page.getByRole('radio', { name: 'PO', exact: true }).click();
     await expect(page.locator('#btn-filter-toetstype')).toHaveText('PO');
     await expect(cards).toHaveCount(4);
-    await expect(page.locator('.obs-toetstype-badge')).toHaveText(['PO', 'PO', 'Toets + PO', 'PO']);
+    await expect(cards.locator('.icard-pills')).toHaveText(['PO', 'PO', 'ToetsPO', 'PO']);
     await page.locator('#btn-filter-toetstype').click();
     await page.getByRole('radio', { name: 'Toets', exact: true }).click();
     await expect(cards).toHaveCount(all - 3);
@@ -327,17 +327,19 @@ test.describe('observatie toetstype (F-23)', () => {
     expect(saved.find((o) => o.naam === 'Bronvermelding')?.toetstypes).toEqual(['po']);
 
     // obs-po-bronnen is in rubric-onderzoek: PO cannot be switched off.
-    await page
-      .locator('#obs-list .card', { hasText: 'Bronnen ontbreken' })
-      .locator('[data-action="edit-obs"]')
-      .click();
+    const bronnen = page.locator('#obs-list .icard', { hasText: 'Bronnen ontbreken' });
+    await bronnen.locator('[data-action="edit-obs"]').click();
     await expect(page.locator('#obs-tt-group [data-tt="po"]')).toBeDisabled();
     await page.keyboard.press('Escape');
-    await expect(
-      page
-        .locator('#obs-list .card', { hasText: 'Bronnen ontbreken' })
-        .locator('[data-action="del-obs"]'),
-    ).toBeDisabled();
+    await bronnen.getByRole('button', { name: 'Meer acties' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Verwijderen' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    await expect(page.getByRole('menuitem', { name: 'Verwijderen' })).toHaveAttribute(
+      'title',
+      /rubric/,
+    );
   });
 
   test('a test offers only observaties of toetstype Toets', async ({ page }) => {

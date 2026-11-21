@@ -432,12 +432,3 @@
   gap: 3px;
   min-width: 160px;
 }
-.obs-toetstype-badge {
-  margin-left: 8px;
-  padding: 0 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-badge);
-  color: var(--muted);
-  font-size: var(--fs-caption);
-  font-weight: 600;
-}
