@@ -19,8 +19,21 @@ check).
 Branched from `step/33b-perf` (`334cc77`) while its CI run 44763575121 finished; `main` (with
 32, 33, 33b) merged in afterwards.
 
-**Next action:** gate (visual diffs: Observaties and Opdrachten views, their modals, `editor`),
-reviewer subagent, then stop for the user's check of the baselines.
+Gate (2026-11-21): cargo fmt, clippy, test (25 suites), deny, SPDX, npm lint (only the user's
+untracked `docs/reviews/manual-test-step-32.md`), typecheck, 879 Vitest + 127 node tests,
+Chromium e2e 403/403. Visual (local): 9 diffs = `screen-observaties` and `screen-opdrachten` in
+three looks (intended) and `splash` (version text 0.24.1, from 33b); baselines not updated. The
+visual check found the Observatie footer overflowing at 1280 px (fixed, `8905357`).
+
+Review `docs/reviews/step-34.md` (`aca9027`): 0 blockers, 1 major (M1 stale preview after an
+editor session: fixed), 6 minors (m1, m3, m5 fixed, m4 in part; m2, m6 backlog "From Step 34"),
+7 nits (backlog). Fixes `bcffd2d`.
+
+**Next action:** the user: look at the 6 Observaties/Opdrachten visual diffs (and `splash`) and
+the preview in the real app (render of a real opdracht, the animation); then update the local
+baselines, drop the CI baselines of the two views on all three platforms (as step 33), version
+0.25.0, push, merge with tag `step-34`. The branch is not pushed yet (its CI would fail on the two
+views until their CI baselines are dropped).
 
 34a done (`7c4fe50`): `components/card-menu.ts` (the ⋮ menu, taken out of
 `screens/exam-menu.ts`, which now uses it); `screens/cards/item-card.ts` (jaarlagen boxes, the
