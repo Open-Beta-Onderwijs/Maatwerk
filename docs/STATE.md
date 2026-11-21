@@ -34,7 +34,11 @@ the footer (the observatie's `subjects`), the Toets/PO pills move into the foote
 jaarlagen (the schoolsoort pill is gone). At 1280 px with Toets + PO and both counts, the
 opdrachten count is cut with an ellipsis (its tooltip names them).
 
-**Next action:** the user: look at the 6 Observaties/Opdrachten visual diffs (and `splash`) and
+User approved step 34 (2026-11-21): version 0.25.0, local baselines of the two views and
+`splash` updated (visual 177/177), CI baselines of `screen-observaties`, `screen-opdrachten` and
+`splash` dropped on all three platforms; branch pushed for CI, which writes them.
+
+**Next action (superseded):** the user: look at the 6 Observaties/Opdrachten visual diffs (and `splash`) and
 the preview in the real app (render of a real opdracht, the animation); then update the local
 baselines, drop the CI baselines of the two views on all three platforms (as step 33), version
 0.25.0, push, merge with tag `step-34`. The branch is not pushed yet (its CI would fail on the two
