@@ -49,13 +49,20 @@ function openInEditor(id: string): void {
   openEditor(o);
 }
 
+/** Opdrachten being copied: a second click (menu or panel) waits for the first (review 34 m3). */
+const copying = new Set<string>();
+
 async function copyOpdracht(id: string): Promise<void> {
+  if (copying.has(id)) return;
+  copying.add(id);
   try {
     const copy = await Store.copyOpdracht(id);
     toast(`Opdracht gekopieerd als "${copy.naam}".`, 'success');
     void renderOpdrachten();
   } catch (e) {
     toast(`Kopiëren mislukt: ${(e as Error).message}`, 'error');
+  } finally {
+    copying.delete(id);
   }
 }
 

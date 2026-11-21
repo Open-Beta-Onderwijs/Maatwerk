@@ -85,7 +85,7 @@ export function obsCardHtml(o: ObsFields, use: ObsUse): string {
         <button type="button" class="icard-title icard-title--wrap" data-action="edit-obs" data-id="${esc(o.id)}">${esc(o.naam ?? '')}</button>
         ${cardMenuButton({ action: 'obs-menu', id: o.id })}
       </div>
-      <div class="icard-pills" aria-label="Toetstype">${pills}</div>
+      <div class="icard-pills" role="group" aria-label="Toetstype">${pills}</div>
       <div class="icard-desc">${esc(o.uitleg ?? '')}</div>
       <div class="icard-foot">
         ${ss}${jaarlagenBoxes(o.jaarlagen)}

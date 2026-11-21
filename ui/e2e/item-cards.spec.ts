@@ -191,4 +191,35 @@ test.describe('Opdracht preview', () => {
     await page.locator('#opdracht-list .icard').first().locator('.icard-desc').click();
     await expect(page.getByRole('alert')).toContainText('unknown variable: foo');
   });
+  test('an editor session renders the preview again; Escape in ⋮ keeps it open', async ({
+    page,
+  }) => {
+    const errors = watchErrors(page);
+    await login(page);
+    await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+    const first = page.locator('#opdracht-list .icard').first();
+    const id = (await first.getAttribute('data-opd-card'))!;
+    const panel = page.getByRole('region', { name: 'Voorbeeld van de opdracht' });
+    await first.locator('.icard-desc').click();
+    await expect(panel.locator('img.opd-page')).toHaveCount(1);
+
+    // Escape closes the ⋮ menu only (review 34 m1).
+    await first.getByRole('button', { name: 'Meer acties' }).click();
+    await expect(page.getByRole('menu')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    await expect(panel).toBeVisible();
+
+    // Bewerken › "Inhoud bewerken in de editor", then back: the pages are rendered again (M1).
+    await cardMenu(first, 'Bewerken');
+    await page.getByRole('button', { name: 'Inhoud bewerken in de editor' }).click();
+    const frame = page.frameLocator('#editor-frame');
+    await expect(frame.locator('.cm-content')).toBeVisible();
+    await frame.getByRole('button', { name: 'Terug naar opdrachten' }).click();
+    await expect(page.locator('#editor-frame')).toBeHidden();
+    // The preview stayed open behind the editor and shows the pages again.
+    await expect(panel.locator('img.opd-page')).toHaveCount(1);
+    await expect.poll(async () => (await renders(page)).filter((x) => x === id).length).toBe(2);
+    expect(errors).toEqual([]);
+  });
 });

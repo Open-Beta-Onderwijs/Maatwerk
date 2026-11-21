@@ -35,6 +35,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 | 26-28                                          | m2 35; m6 41; m7 After 1.0; m8 42; R-05 44                                |
 | 32                                             | 40                                                                        |
 | 33                                             | m3 43; m4 42                                                              |
+| 34                                             | m2, m4 (focus into the panel), nits 43; m6 42                             |
 | 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 unless 38 says otherwise |
 
 ## After 1.0
@@ -602,6 +603,15 @@ See `docs/reviews/step-32.md` for the evidence of each item.
   programs (ADR-0009 _verify_ rows); Vibe's transcript shows only text events (no tool steps).
 - **Logos:** vendor logos only with permission (`THIRD_PARTY_LICENSES.md`).
 - ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
+
+## From Step 34
+
+Review `docs/reviews/step-34.md`: m2 (every re-render of the Opdrachten list rebuilds the preview
+panel: its scroll position and focus are lost; keep the panel outside `#opdracht-list`), m4 in
+part (focus does not move into the panel on open; the rest is fixed), m6 (e2e: Opdrachten filters
+and their empty state, reduced motion, switching during the close animation, escaping of names),
+and the nits. Also: the preview does not notice a colleague changing only `opdracht.typ` (no
+`_meta.rev` change) until the editor is opened here or the app restarts.
 
 ## From Step 33
 

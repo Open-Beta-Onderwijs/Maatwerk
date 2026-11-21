@@ -30,8 +30,12 @@ interface Rendered {
 }
 
 const MOVE_MS = 350;
+/** Rendered opdrachten kept (their pages as blob URLs), the least recently shown dropped first. */
+const CACHE_MAX = 8;
 const cache = new Map<string, Rendered>();
 const pending = new Map<string, Promise<Rendered>>();
+/** Bumped when an opdracht's pages are forgotten: a render started before must not be cached. */
+const generation = new Map<string, number>();
 
 let selected: string | null = null;
 let host: PreviewHost | null = null;
@@ -49,18 +53,37 @@ function drop(id: string): void {
   cache.delete(id);
 }
 
-/** Forget rendered pages (one opdracht, or all): after the editor saved or a colleague's change. */
+function forget(id: string): void {
+  drop(id);
+  pending.delete(id);
+  generation.set(id, (generation.get(id) ?? 0) + 1);
+}
+
+/**
+ * Forget rendered pages (one opdracht, or all). The editor calls it when it closes: it saves
+ * `opdracht.typ` without changing the opdracht's `_meta.rev` (review 34 M1).
+ */
 export function forgetPreviews(id?: string): void {
-  if (id) drop(id);
-  else [...cache.keys()].forEach(drop);
+  if (id) forget(id);
+  else new Set([...cache.keys(), ...pending.keys()]).forEach(forget);
+  // A preview left open behind the editor shows the new pages.
+  if (selected && (!id || id === selected) && panel()) {
+    const o = host?.opdracht(selected);
+    if (o) show(o);
+  }
 }
 
 async function render(o: OpdFields): Promise<Rendered> {
   const rev = revOf(o);
   const hit = cache.get(o.id);
-  if (hit && hit.rev === rev) return hit;
+  if (hit && hit.rev === rev) {
+    cache.delete(o.id); // most recently shown last
+    cache.set(o.id, hit);
+    return hit;
+  }
   const running = pending.get(o.id);
   if (running) return running;
+  const gen = generation.get(o.id) ?? 0;
   const job = (async (): Promise<Rendered> => {
     let out: Rendered;
     try {
@@ -76,15 +99,18 @@ async function render(o: OpdFields): Promise<Rendered> {
     } catch (e) {
       out = { rev, error: (e as Error).message ?? String(e) };
     }
+    // Forgotten while rendering (the editor saved): show it this once, keep nothing.
+    if ((generation.get(o.id) ?? 0) !== gen) return out;
     drop(o.id);
     cache.set(o.id, out);
+    while (cache.size > CACHE_MAX) drop(cache.keys().next().value!);
     return out;
   })();
   pending.set(o.id, job);
   try {
     return await job;
   } finally {
-    pending.delete(o.id);
+    if (pending.get(o.id) === job) pending.delete(o.id);
   }
 }
 
@@ -253,8 +279,10 @@ function wirePanel(p: HTMLElement): void {
     const btn = (ev.target as Element).closest<HTMLElement>('[data-preview]');
     const id = p.dataset.for;
     if (!btn || !id) return;
-    if (btn.dataset.preview === 'close') closePreview();
-    else if (btn.dataset.preview === 'copy') host?.copy(id);
+    if (btn.dataset.preview === 'close') {
+      closePreview();
+      focusTitle(id);
+    } else if (btn.dataset.preview === 'copy') host?.copy(id);
     else if (btn.dataset.preview === 'editor') host?.openInEditor(id);
   });
 }
@@ -268,11 +296,23 @@ function markSelected(): void {
 }
 
 function onKey(e: KeyboardEvent): void {
-  if (e.key !== 'Escape' || !selected) return;
-  // A dialog or a menu on top handles its own Escape.
+  if (e.key !== 'Escape' || !selected || e.defaultPrevented) return;
+  // A dialog or a menu on top handles its own Escape (the ⋮ menu closes in the capture phase and
+  // marks the event); another screen does not see the preview.
   if (modalOpen() || document.querySelector('.exam-menu')) return;
+  if (!document.getElementById('screen-opdrachten')?.classList.contains('active')) return;
   e.preventDefault();
+  const id = selected;
   closePreview();
+  focusTitle(id);
+}
+
+/** Gives the card's title the focus back (after ✕ or Escape). */
+function focusTitle(id: string): void {
+  cards()
+    .find((c) => c.dataset.opdCard === id)
+    ?.querySelector<HTMLElement>('.icard-title')
+    ?.focus({ preventScroll: true });
 }
 
 /** Stops following keys and size while the preview is closed. */

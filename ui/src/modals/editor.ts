@@ -30,6 +30,7 @@ import {
 import { Store } from '../store.js';
 import type { AiStart } from '../editor/ai-protocol';
 import { handleAiRequest } from './editor-ai';
+import { forgetPreviews } from '../screens/opdrachten/preview';
 
 /** Live editor methods the iframe may call (ADR-0002 section 6: method allowlist). */
 const EDITOR_METHODS = new Set([
@@ -115,6 +116,8 @@ function closeEditor(): void {
   pendingStart = null;
   // A run keeps nothing when stopped (decision 67); nobody would see its proposal.
   if (openOpdrachtId) void window.maatwerk.ai.stop(openOpdrachtId).catch(() => {});
+  // The editor saved opdracht.typ without a new `_meta.rev`: the Opdrachten preview renders again.
+  if (openOpdrachtId) forgetPreviews(openOpdrachtId);
   openOpdrachtId = null;
   const frame = frameEl();
   frame.src = '';

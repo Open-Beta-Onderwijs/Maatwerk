@@ -44,7 +44,7 @@ export function opdCardHtml(o: OpdFields, obsById: ReadonlyMap<string, Observati
   return `
     <article class="icard icard--opd" data-opd-card="${esc(o.id)}" title="Klik voor een voorbeeld">
       <div class="icard-head">
-        <button type="button" class="icard-title" data-action="preview" data-id="${esc(o.id)}" title="${esc(o.naam ?? '')}" aria-controls="opd-preview">${esc(o.naam ?? '')}</button>
+        <button type="button" class="icard-title" data-action="preview" data-id="${esc(o.id)}" title="${esc(o.naam ?? '')}" aria-controls="opd-preview" aria-expanded="false">${esc(o.naam ?? '')}</button>
         ${cardMenuButton({ action: 'opd-menu', id: o.id })}
       </div>
       <div class="icard-desc">${esc(o.beschrijving ?? '')}</div>
