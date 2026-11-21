@@ -76,7 +76,7 @@ export function obsCardHtml(o: ObsFields, use: ObsUse): string {
     )
     .join('');
   const ss = (o.schoolsoort ?? []).length
-    ? `<span class="icard-ss">${esc((o.schoolsoort ?? []).join(', '))}</span>`
+    ? `<span class="icard-ss" title="${esc((o.schoolsoort ?? []).join(', '))}">${esc((o.schoolsoort ?? []).join(', '))}</span>`
     : '';
   return `
     <article class="icard icard--obs" data-obs-card="${esc(o.id)}" title="Klik om te bewerken">

@@ -56,6 +56,7 @@ describe('obsCardHtml', () => {
     expect(all(html, 'icard-pill icard-pill--(?:toets|po)')).toEqual(['Toets', 'PO']);
     expect(all(html, 'icard-jl icard-jl--on')).toEqual(['4', '5']);
     expect(all(html, 'icard-ss')).toEqual(['Havo, Vwo']);
+    expect(html).toContain('<span class="icard-ss" title="Havo, Vwo">');
     expect(all(html, 'icard-use')).toEqual(['1 toets', '· 2 opdrachten']);
     expect(html).toContain('title="Gekoppelde opdrachten: Atomen, Machten"');
   });
