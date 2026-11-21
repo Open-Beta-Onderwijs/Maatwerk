@@ -21,6 +21,7 @@ import type { HistoryEntry } from '../domain/attempts';
 import type { Exam, ScoreRecord } from '../domain/types';
 import { applyStyleData } from '../legacy/style-data';
 import { Store } from '../store.js';
+import { yieldSlice } from '../utils/idle';
 import { perfSpan } from '../utils/perf';
 import { openGroupStudentsModal } from './leerlingen';
 import { groupGradesHtml } from './cards/card-html';
@@ -247,18 +248,20 @@ async function groupNumbers(group: Group, year: string) {
   // All the students' tests of the year, whatever the group's jaarlaag (decision 25).
   await Store.getExams(year, subject);
   const allExams = upper ? (Store.getAllExamsSync(subject) as Exam[]) : [];
-  const members = await Promise.all(
-    students.map(async (s) => {
-      const rec = (await Store.getStudentScores(s.id, year, subject)) as ScoreRecord;
-      const se = upper
-        ? seAverage(
-            (await Store.getStudentHistory(s.id, subject, { loaded: true })) as HistoryEntry[],
-            allExams,
-          )
-        : null;
-      return { year: Store.studentYearAverage(rec, year, subject) as number | null, se };
-    }),
-  );
+  const members: { year: number | null; se: number | null }[] = [];
+  // One student at a time, in slices: the tab paints first and stays responsive (perf hotfix
+  // 0.24.1; cached reads are microtasks, so all groups ran as one long task).
+  for (const s of students) {
+    await yieldSlice();
+    const rec = (await Store.getStudentScores(s.id, year, subject)) as ScoreRecord;
+    const se = upper
+      ? seAverage(
+          (await Store.getStudentHistory(s.id, subject, { loaded: true })) as HistoryEntry[],
+          allExams,
+        )
+      : null;
+    members.push({ year: Store.studentYearAverage(rec, year, subject) as number | null, se });
+  }
   // Decision 21: mean, SD and % onvoldoende of the averages as shown.
   return groupCardNumbers(members, upper);
 }
@@ -288,6 +291,8 @@ async function fillGroupGradeStats(groups: Group[], year: string, container: HTM
   for (const g of groups) {
     if (run !== fillRun) return;
     const numbers = await groupNumbers(g, year);
+    // groupNumbers yields per student: a newer draw may have taken over (review 33b m2).
+    if (run !== fillRun) return;
     if (!numbers) continue;
     const el = container.querySelector<HTMLElement>(`[data-grade-stats="${CSS.escape(g.id)}"]`);
     if (!el) continue;

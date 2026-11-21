@@ -1,9 +1,55 @@
 # State
 
-Last updated: 2026-11-20 (step 33 done, 0.24.0) Branch: `step/33-toetsen-cards` (from `step/32-ai` at
-`54d9f26`; step 32 is not merged yet, so step 33 builds on it)
+Last updated: 2026-11-20 (perf hotfix 0.24.1, step 33b) Branch: `step/33b-perf` (from
+`step/33-toetsen-cards` at `6e6a427`; steps 32 and 33 are not merged yet, so 33b builds on them)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
+
+## Plan to 1.0 extended (2026-11-21, user's request)
+
+`PLAN-2.md` now runs to step 45: the old step 35 is replaced by steps 35-45 (rights: own groups,
+Sectiesecretaris, Gastaccount; PO completion; grade numbers in Rust; v1 removal and Typst; AI
+follow-ups; data robustness and `rapporten/`; tests and CI; remaining backlog; TypeScript and
+compat layer; signing-ready, reviews, 1.0). Decisions 78-89 in `PLAN-2.md` section 1, roadmap
+items F-29..F-32 and X-09..X-11, and the backlog's step map at the top of `docs/backlog.md`. The
+next action below is unchanged; step 34 comes next after the merges.
+
+## Perf hotfix 0.24.1 (step 33b, 2026-11-20, user's call)
+
+User report: the first visit of some tabs, Toetsen most of all, is slow. Measured and fixed;
+numbers and causes in `docs/perf.md` "Perf hotfix 0.24.1".
+
+Done: `c5785e6` perf harness works again (login/dialog selectors, `first` column); `8d0837c`
+Toetsen paints first and fills in slices, empty records skip the grade rules,
+`examResultsMany`/`bestAttemptMany` in `maatwerk-grades-wasm` (no rule changed); `24be8d7`
+version 0.24.1; `1d3ac46` one clock for the "laatste / SE" card swap (`cards/swap-clock.ts`,
+replaces the per-card `getAnimations` sync that cost seconds), Groepen fills in slices
+(`utils/idle.ts` `yieldSlice`), mock app version 0.24.1. Backlog: "Grade cache" item with the
+findings (user's request).
+
+Result (school fixture, release exe): at 1x long tasks 13 s -> 0.3 s (longest 4,6 s -> 79 ms),
+first Toetsen visit 367 -> 74 ms; at 4x 49 s -> 12 s (longest 7,4 s -> 0,7 s), Toetsen 1,9 s ->
+266 ms.
+
+Gate (2026-11-20): cargo fmt, clippy, test, deny, SPDX, npm licences; typecheck, 841 Vitest,
+Chromium e2e 396/396. Lint: only the untracked `docs/reviews/manual-test-step-32.md` (user's
+file, not touched). Visual (local): 3 diffs, `splash` in three looks, the version text 0.24.1 only;
+baselines not updated (user's check first). CI: the splash baselines that CI run 44732760483
+wrote show 0.24.0, so the next CI run on 0.24.1 differs again on `splash`.
+
+Choice made without a spec line (tell the user): the swap now cross-fades by a CSS transition on a
+shared clock instead of a keyframe animation per card; timing as before (4,5 s per value incl.
+0,7 s fade, 9 s cycle).
+
+Review `docs/reviews/step-33b.md` (`a214cfa`): 0 blockers, 0 majors, 5 minors, 5 nits; all fixed
+(`cf23b60`, and `yieldSlice` through a MessageChannel instead of `scheduler.yield()`, which held
+the app's own timers back: `docs/perf.md` "After the review fixes"). New pure module
+`screens/toetsen/block-numbers.ts` (tested equal to the old one-by-one path). Rerun: cargo fmt,
+clippy, test, SPDX; typecheck, lint, 851 Vitest, Chromium e2e 396/396; measured again (1x: no
+task over ~90 ms; 4x: none over ~270 ms).
+
+**Next action:** the user: check a years 4-6 student card's "laatste / SE" swap in the real app,
+the local `splash` baselines (version text) and the CI ones; merge 32, 33, 33b; release 0.24.1.
 
 ## Hotfix 0.23.1 (2026-11-19, on `step/32-ai`, user's call)
 

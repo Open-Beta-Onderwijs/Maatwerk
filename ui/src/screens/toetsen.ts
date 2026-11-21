@@ -12,11 +12,9 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { bestAttempt, resitsOf } from '../domain/attempts';
+import { resitsOf } from '../domain/attempts';
 import { attemptLabel } from '../domain/exam-info';
 import { gradeTextColor } from '../domain/grade-colors';
-import { isPo } from '../domain/po';
-import { poStudentObs } from '../domain/po-grading';
 import { TEST_KINDS, testKindBadgeClass } from '../domain/test-type';
 import type { Exam, Observatie, ScoreRecord, ScoreValue } from '../domain/types';
 import { applyStyleData } from '../legacy/style-data';
@@ -28,7 +26,9 @@ import { openNewPoModal } from '../modals/po-gegevens';
 import { openRttiUitlegModal } from '../modals/rtti-uitleg';
 import * as Presence from '../presence.js';
 import { Store } from '../store.js';
-import { perfSpan } from '../utils/perf';
+import { yieldSlice } from '../utils/idle';
+import { afterPaint, perfSpan } from '../utils/perf';
+import { addRecords, newBlock, type BlockNumbers } from './toetsen/block-numbers';
 import { cardSummary, miniHistogram, topObservaties, type CardNumbers } from './toetsen/card-model';
 import { gridHtml, miniHistHtml, periodeNr, type CardKind } from './toetsen/cards';
 import { initStacks, toggleStack } from './toetsen/stack';
@@ -75,10 +75,16 @@ interface ScoreProblem {
   issue: 'ongeldig' | 'onvolledig';
 }
 
-async function computeExamWarnings(year: string, exam: Exam): Promise<ScoreProblem[] | null> {
+async function computeExamWarnings(
+  year: string,
+  exam: Exam,
+  current: () => boolean,
+): Promise<ScoreProblem[] | null> {
   const students = Store.getStudentsSync(year);
   const problems: ScoreProblem[] = [];
   for (const s of students) {
+    await yieldSlice();
+    if (!current()) return null; // a newer draw took over (review 33b m1)
     const rec = await Store.getStudentScores(s.id, year);
     const examScores: Record<string, ScoreValue> | undefined = rec?.scores?.[exam.id];
     if (!examScores || Object.keys(examScores).length === 0) continue;
@@ -199,42 +205,31 @@ function applyWarning(el: HTMLElement, lines: string[]): void {
 /** Bumped on every draw: fills of an older draw must not touch the new list (review 33 m2). */
 let generation = 0;
 
-/** A student's observaties of one attempt: a test's list, or a PO's general and category ones. */
-function obsOf(rec: ScoreRecord | null, exam: Exam): string[] {
-  return isPo(exam) ? poStudentObs(rec, exam.id) : (rec?.observations?.[exam.id] ?? []);
-}
-
-const emptyNumbers = (): CardNumbers => ({ grades: [], obs: new Map() });
-
-function countObs(numbers: CardNumbers, ids: readonly string[]): void {
-  for (const id of new Set(ids)) numbers.obs.set(id, (numbers.obs.get(id) ?? 0) + 1);
-}
-
 /**
- * The numbers of a test's cards in one pass over the score files: per attempt its grades and
- * observaties, and for a stack the Verzamelkaart's (the best attempt per student; its
- * observaties are those of the attempt that counts, without a grade those of all, as the
- * verzameloverzicht).
+ * The numbers of a test's cards, chunk by chunk of students (one call into the grade rules per
+ * chunk, between slices). Null when a newer draw took over (review 33b m1).
  */
-async function blockNumbers(year: string, original: Exam, resits: readonly Exam[]) {
-  const attempts = [original, ...resits];
-  const per = new Map(attempts.map((a) => [a.id, emptyNumbers()]));
-  const summary = emptyNumbers();
-  for (const s of Store.getStudentsSync(year) as { id: string }[]) {
-    const rec = (await Store.getStudentScores(s.id, year)) as ScoreRecord | null;
-    for (const a of attempts) {
-      const nums = per.get(a.id)!;
-      const res = Store.examResults(rec, a);
-      if (res && res.grade !== null) nums.grades.push(res.grade);
-      countObs(nums, obsOf(rec, a));
-    }
-    if (!resits.length) continue;
-    const best = bestAttempt(rec, attempts);
-    if (best) summary.grades.push(best.grade);
-    countObs(summary, best ? obsOf(rec, best.exam) : attempts.flatMap((a) => obsOf(rec, a)));
+async function blockNumbers(
+  year: string,
+  original: Exam,
+  resits: readonly Exam[],
+  current: () => boolean,
+): Promise<BlockNumbers | null> {
+  const block = newBlock([original, ...resits]);
+  const students = Store.getStudentsSync(year) as { id: string }[];
+  for (let i = 0; i < students.length; i += CHUNK) {
+    await yieldSlice();
+    if (!current()) return null;
+    const recs = (await Promise.all(
+      students.slice(i, i + CHUNK).map((s) => Store.getStudentScores(s.id, year)),
+    )) as (ScoreRecord | null)[];
+    addRecords(block, recs, original, resits);
   }
-  return { per, summary };
+  return block;
 }
+
+/** Students per call into the grade rules. */
+const CHUNK = 60;
 
 /** Fills the bottom of a card and its mini histogram. */
 function fillCard(card: HTMLElement, numbers: CardNumbers, best: boolean, diagnostic: boolean) {
@@ -349,38 +344,55 @@ export async function renderToetsenList() {
   applyStyleData(container);
   initStacks(container);
   void fillExamPresence();
+  // The cards with their placeholders paint first; the numbers follow in slices (perf hotfix
+  // 0.24.1: computed at once they held the first paint back for seconds on a school laptop).
+  void afterPaint()
+    .then(() => (current() ? fillNumbers(year, exams, attemptsOf, container, current) : undefined))
+    .catch((e) => console.warn('[toetsen] cijfers', e));
+}
 
-  // ── Fill the numbers and warnings asynchronously ───────────────────────────
+/**
+ * Fills the numbers and warnings of the cards of one draw, in the background: one test after the
+ * other in reading order, so the first cards fill first (review 33b n2). A failed read leaves the
+ * rest going and no placeholder behind.
+ */
+async function fillNumbers(
+  year: string,
+  exams: Exam[],
+  attemptsOf: (e: Exam) => Exam[],
+  container: HTMLElement,
+  current: () => boolean,
+): Promise<void> {
   const endStats = perfSpan('toetsen:stats');
-  const fills: Promise<void>[] = [];
   const cardEl = (id: string, kind: CardKind) =>
     container.querySelector<HTMLElement>(
       `.tcard[data-exam-card="${CSS.escape(id)}"][data-kind="${kind}"]`,
     );
-  const originals = exams.filter((e) => !e.parent_id);
-  for (const e of originals) {
+  for (const e of exams.filter((x) => !x.parent_id)) {
+    if (!current()) return;
     const resits = attemptsOf(e);
     const stack = resits.length > 0;
-    fills.push(
-      blockNumbers(year, e, resits).then(({ per, summary }) => {
+    try {
+      const numbers = await blockNumbers(year, e, resits, current);
+      if (!numbers || !current()) return;
+      if (stack) {
+        const card = cardEl(e.id, 'summary');
+        if (card) fillCard(card, numbers.summary, true, !!e.diagnostic);
+      }
+      for (const a of [e, ...resits]) {
+        const card = cardEl(a.id, stack ? 'attempt' : 'solo');
+        if (card) fillCard(card, numbers.per.get(a.id)!, false, !!a.diagnostic);
+      }
+    } catch (err) {
+      console.warn('[toetsen] cijfers', e.id, err);
+    }
+    try {
+      const list: { a: Exam; problems: ScoreProblem[] }[] = [];
+      for (const a of [e, ...resits]) {
+        const problems = await computeExamWarnings(year, a, current);
         if (!current()) return;
-        if (stack) {
-          const card = cardEl(e.id, 'summary');
-          if (card) fillCard(card, summary, true, !!e.diagnostic);
-        }
-        for (const a of [e, ...resits]) {
-          const card = cardEl(a.id, stack ? 'attempt' : 'solo');
-          if (card) fillCard(card, per.get(a.id)!, false, !!a.diagnostic);
-        }
-      }),
-    );
-    const warnings = Promise.all(
-      [e, ...resits].map(async (a) => ({
-        a,
-        problems: (await computeExamWarnings(year, a)) ?? [],
-      })),
-    ).then((list) => {
-      if (!current()) return;
+        list.push({ a, problems: problems ?? [] });
+      }
       for (const { a, problems } of list) {
         const el = container.querySelector<HTMLElement>(
           `.exam-warning[data-examid="${CSS.escape(a.id)}"]`,
@@ -397,18 +409,17 @@ export async function renderToetsenList() {
             problems.map((p) => `${attemptLabel(a)}: ${problemText(p)}`),
           ),
         );
-    });
-    fills.push(warnings);
+    } catch (err) {
+      console.warn('[toetsen] waarschuwingen', e.id, err);
+    }
   }
-  void Promise.allSettled(fills).then(() => {
-    if (!current()) return;
-    // A read that failed leaves no placeholder behind.
-    container.querySelectorAll('.tcard [data-avg]:has(> .skel)').forEach((el) => {
-      el.replaceChildren();
-    });
-    container.querySelectorAll('.tcard [data-count]:has(> .skel)').forEach((el) => {
-      el.replaceChildren();
-    });
-    endStats();
+  if (!current()) return;
+  // A read that failed leaves no placeholder behind.
+  container.querySelectorAll('.tcard [data-avg]:has(> .skel)').forEach((el) => {
+    el.replaceChildren();
   });
+  container.querySelectorAll('.tcard [data-count]:has(> .skel)').forEach((el) => {
+    el.replaceChildren();
+  });
+  endStats();
 }

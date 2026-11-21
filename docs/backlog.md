@@ -2,6 +2,49 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## Road to 1.0: which step takes what (2026-11-21, `PLAN-2.md` steps 35-45)
+
+Every open item below belongs to one step; the step's "Items" line names them. A step strikes an
+item through with its commit when done, or moves it to "After 1.0" with a reason.
+
+| Section                                        | Step                                                                      |
+| ---------------------------------------------- | ------------------------------------------------------------------------- |
+| 29c PO verzameloverzicht, profile observaties  | 37                                                                        |
+| 29c review 29: m1, m6, nits                    | 43 (m1 needs the user's answer)                                           |
+| 29c review 29: m4, m5 / m7                     | 38 / 42                                                                   |
+| Manual tests 6 and 10 (re-checks, M-SYNC-1..4) | 45b (M-START-3: closed with v1 in 39a)                                    |
+| 6b, 6a                                         | compat layer 44b; typst warnings 39b; tests 42; images, messages 41       |
+| 5b, 5a                                         | 39 (Typst, v1); 5a m4 and 5b n6 in 41                                     |
+| 4b, 4a                                         | 41 (4b overflow: After 1.0)                                               |
+| 3b                                             | n4 41; m8 42; "queued saves" 35                                           |
+| 3a                                             | styling, m7, U18 43; n5 42; dependency updates 45a (X-02)                 |
+| Step 2, 2a, 17 m2                              | 39a (most concern v1 goldens) and 39b                                     |
+| Step 0 review: n2, n3, n6, n9                  | 42                                                                        |
+| 7a                                             | m6, n1 39a; m2 drop or use in 41; n3-n6, n8 41                            |
+| 7b                                             | n4 35; reload after Herstellen 41; n5 closed (dev only)                   |
+| 7c                                             | perf items 38; read vs. colleague change 41; tests 42                     |
+| 8a, 8b                                         | 39b (`LiveEditor`); 8b m6 and "CSP report" 43 (check)                     |
+| 9                                              | m3 39b (if left); m7 42; n6 41; n9 43                                     |
+| Other (`rapporten/`, Tauri 3)                  | X-06 41; Tauri 3 After 1.0                                                |
+| 10                                             | m3, m6, n1, n2 41; n7 42; "Perf at 4x" closed in 38                       |
+| 13, 14, 15                                     | 43 (helpers, styling, dialogs); test items 42; R-05 44; 15 m5 35, n6 36   |
+| 18, 19                                         | security items 41; 19 m6 38, m8 43, m9 42                                 |
+| 20                                             | m5 43; m6 42; attempt numbering and `_meta` copy: quirks, 43              |
+| 21, 22, 23, 24                                 | 37 (tests of 23 m1/m9 in 37; "Local WebKit" note 42)                      |
+| 25                                             | m3/m6 42; n2 43                                                           |
+| 26-28                                          | m2 35; m6 41; m7 After 1.0; m8 42; R-05 44                                |
+| 32                                             | 40                                                                        |
+| 33                                             | m3 43; m4 42                                                              |
+| 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 unless 38 says otherwise |
+
+## After 1.0
+
+- **Tauri 3** (X-03) once 3.0 and its plugins are stable.
+- **Disk grade cache** (33b "Grade cache" parts 2-4), unless step 38's measurement asks for it.
+- **Installer and updater**, and the signing itself once the user has the certificates (X-11).
+- **4b `ReadDirectoryChangesW` overflow:** revisit if colleagues report missed changes.
+- **26-28 m7:** "Vergelijken" (OneDrive conflict copy) and "Toets openen" behind board 12.
+
 ## From step 29c (overviews, 2026-11-15)
 
 - **PO verzameloverzicht:** a PO with an inhaal or herkansing has no summary overview over the
@@ -566,3 +609,106 @@ Review `docs/reviews/step-33.md`: m3 (tab order reaches the attempts only after 
 row), m4 (test gaps: `gridHtml` unit test; e2e for a Verzamelkaart click, a PO Verzamelkaart, one
 open stack per row, more than three attempts; a stronger reduced-motion check; the Verzamelkaart's
 observatie rule shared with `exam-overview/data.ts`), and the nits.
+
+## From the perf hotfix 0.24.1 (step 33b)
+
+### Grade cache: compute once, keep on disk (user 2026-11-20)
+
+**Idea (user):** most grades rarely change, older school years almost never. Keep the computed
+numbers in a cache that is built in the background and saved to disk, in a data structure that
+is fast to read, with averages and other slow-changing numbers precomputed, so Maatwerk does not
+compute everything live on every login.
+
+**Where the time goes (measured 2026-11-20, `docs/perf.md` "Perf hotfix 0.24.1"):**
+
+- Reading is cheap: `read_json_dir` of one year's `scores/<vak>/` (600 files) ~300 ms at 4x CPU,
+  decode ~50 ms. Step 7c's decision "no disk cache, the disk was never the cost" still holds for
+  the _raw files_; the cost is _computing_.
+- Computing happens in the webview, in the grade rules compiled to WebAssembly (ADR-0011), one
+  student at a time. A large part of each call is marshalling: JSON text out, `TextEncoder`,
+  serde `Value`, then `from_value` (parsed twice), and the answer back the same way. Before
+  0.24.1 the exam with all its questions crossed the boundary once per student per attempt.
+- After 0.24.1, at 4x CPU on the `school` fixture (600 students, nat): the Leerlingen card
+  numbers take ~4-7 s in the background (year average per student, and for years 4-6 the SE over
+  _all_ years via `getStudentHistory`), Groepen ~1.5-4 s, Toetsen ~0.8-0.9 s. All of it is redone
+  after every login, and after every data change for the screens it touches (`Store.generation`).
+- The only cache today is in memory: `Store.examResults` memoised per (record, exam) object
+  (`store.js` `examResultsMemo`), card HTML per data generation (`cards/student-grades.ts`). Both
+  are gone at the next login, and the `*Many` batch calls of 0.24.1 bypass the memo.
+
+**Suggested approach, in order (each step useful without the next):**
+
+1. **Compute natively, not in the webview.** `maatwerk-core` already depends on
+   `maatwerk-grades`. A Tauri command "numbers of a year and vak" (all students: results per
+   exam, year average, SE; per exam: mean, SD, % onvoldoende, histogram bins, observatie counts;
+   per group: the card numbers) run under `spawn_blocking` is native speed, off the UI thread, and
+   reads the files where they are (no IPC per record). The UI only renders. This alone probably
+   removes most of the wait; the WASM rules stay for the live score grid. It also means numbers
+   come from one place.
+2. **Keep the results on disk, keyed by their inputs.** Every data file already carries
+   `_meta.hash` (and exams/groups `_meta.rev`). A cache entry is valid while the hashes of its
+   inputs match: score file hash, exam hash, rubric hash (PO), and a **rules version** (the
+   `maatwerk-grades` version or a hash of its source, set at build time). A mismatch recomputes
+   that entry only. Older years then cost nothing after the first run.
+3. **Precompute aggregates** per (year, vak): per exam the Toetsen card numbers (incl. the
+   Verzamelkaart), per group the Groepen card numbers, per student the year average and SE. These
+   are exactly what the list screens show.
+4. **Stale-while-revalidate:** show the cached numbers at once, check the input hashes in the
+   background, update the cards that changed.
+
+**Invalidation (the hard part; write it down before coding):**
+
+- Score file of a student -> that student's results, year average, SE (all later years for
+  years 4-6), and every aggregate the student is in (exam, group).
+- Exam file (n_term, questions, weights, kind, parent/attempt) -> every result of that exam and
+  of its resits, all averages of the year, the SE of upper-school students (a resit takes its
+  weight from its original, decision 10, possibly in another year file).
+- Rubric -> every PO graded with it. School/config settings that feed the rules (check which).
+- Group membership -> group aggregates only. Observaties do not change grades but do change the
+  Toetsen card counts.
+- Colleagues' changes arrive through the watcher per path (`Store.generation`), so a
+  path-to-entries dependency map gives targeted invalidation. Own writes are not echoed by the
+  watcher: the write path must invalidate too.
+- A new app version with changed rules invalidates everything (rules version in the key).
+
+**Decisions for the user before starting:**
+
+- **Where the cache lives.** (a) Per PC in `%LOCALAPPDATA%/Maatwerk` (Mac/Linux equivalents):
+  no sync conflicts, but a copy of grades outside the shared data folder on every laptop
+  (privacy/AVG: it must be removable, e.g. on logout or "Gegevens"), and every PC builds its own.
+  (b) In the shared data folder (e.g. `.cache/`): built once for all colleagues, but written by
+  several PCs and app versions at once, synced by OneDrive/network shares; needs per-writer
+  files or a lock, and old app versions must ignore it (minimum-version guard).
+- **Format.** One file per (year, vak) in a compact binary format (`postcard`/`bincode`, MIT/
+  Apache) or SQLite (`rusqlite`, MIT; SQLite is public domain). A single file per (year, vak) reads
+  in one go; SQLite gives partial updates and indexes but is more to maintain. Either way the
+  cache is disposable: deleting it only costs time, never data.
+- Whether step 1 (native numbers) alone is enough, measured, before building the disk cache.
+
+**Rules that apply (`PLAN-2.md` section 2):** any change to a grade, average, SD or percentage
+needs a before/after table on the fixtures and the user's OK. Test: cached == live for every
+number on `tiny` and `school` (and a property test over random edits). The cache holds derived
+student data: never in the repo, never in fixtures, covered by the "Gegevens" reset.
+
+**Smaller wins found on the way (independent of the cache):**
+
+- `maatwerk-grades-wasm` `parse` decodes JSON text to a `Value` and then to the type: use
+  `serde_json::from_str` per argument (or one typed tuple) to parse once.
+- `getStudentHistory` looks each exam up with `exams.find` per score entry (`store.js`): a map per
+  year, built once per fill.
+- `cards/student-grades.ts` fills in fixed batches of 40 per frame; `utils/idle.ts` `yieldSlice`
+  (0.24.1) keeps tasks under ~8 ms instead.
+- `shell/topbar-fit.ts`: its MutationObserver forces a synchronous layout of the whole new screen
+  right after a tab switch (~250-370 ms at 4x on a cold Toetsen); measure in a `ResizeObserver`
+  or the next frame instead.
+- After login the Leerlingen fill and the other tabs' first visits compete; with a cache (or
+  native numbers) this goes away, otherwise start the fills in idle time.
+
+**How to measure (keep using it):** `node tools/fixtures/generate.mjs school <dir>/shared/data`,
+`maatwerk-cli migrate --apply --backup-dir <dir>/backups <dir>/shared/data`, then
+`node tools/perf/measure.mjs --data <dir>/shared/data --cpu 4 --runs 3 --exams 2`: the `first`
+column is the first visit after login. For function-level profiles the release bundle is
+minified: profile `npm run dev:mock` with `MAATWERK_FIXTURE=school` in Chromium (CDP
+`Profiler`) instead. The synthetic fixture gives every student scores in every exam of the vak;
+real data (an exam per jaarlaag) has far fewer graded records per exam, so check on the user's
+real copy too (M-PERF-1).

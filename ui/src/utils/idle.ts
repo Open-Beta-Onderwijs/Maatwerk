@@ -59,6 +59,48 @@ export function inIdleSlices<T>(items: T[], run: (slice: T[]) => void, batch = 2
   };
 }
 
+/** How long background fills may hold the main thread before the browser gets a turn (ms). */
+export const SLICE_MS = 8;
+let sliceStart = 0;
+
+/**
+ * For async loops over cached data (perf hotfix 0.24.1): resolves at once while the current
+ * slice lasts, else after a task, so input and paint get a turn. Cached reads resolve as
+ * microtasks, so without this a fill over hundreds of students runs as one long task. One budget
+ * for every loop running at the same time.
+ */
+export async function yieldSlice(now: () => number = () => performance.now()): Promise<void> {
+  if (now() - sliceStart < SLICE_MS) return;
+  await nextTask();
+  sliceStart = now();
+}
+
+/** Starts a fresh slice (tests: the budget is module state shared by every loop). */
+export function resetSlice(): void {
+  sliceStart = 0;
+}
+
+/**
+ * Resolves in a new task, as soon as the browser has had its turn (review 33b m3): a message on a
+ * MessageChannel. Not `setTimeout(0)`: nested timeouts are clamped to >= 4 ms, and timers of a
+ * hidden window are throttled. Not `scheduler.yield()` either: its continuation goes ahead of the
+ * other queued tasks, so a background fill held back the app's own timers until it was done
+ * (first Toetsen visit 74 -> 310 ms at 1x when measured).
+ */
+function nextTask(): Promise<void> {
+  if (typeof MessageChannel === 'function') {
+    return new Promise((resolve) => {
+      const { port1, port2 } = new MessageChannel();
+      port1.onmessage = () => {
+        port1.close();
+        resolve();
+      };
+      port2.postMessage(null);
+    });
+  }
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 /** Resolves in the next idle period (for async loops that yield between steps). */
 export function nextIdle(): Promise<void> {
   return new Promise((resolve) => requestIdle(() => resolve()));
