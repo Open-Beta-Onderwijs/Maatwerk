@@ -95,6 +95,7 @@ test('a gast logs in without a PIN and nothing is writable on any tab', async ({
   await expect(gridTable(page, 0)).toBeVisible();
   await expect(cell(page, 0, 2, 0)).toHaveClass(/sc-locked/);
   await expect(page.locator('#sc-nterm .spin-val')).toBeDisabled();
+  await expect(page.locator('#sc-edit-exam')).toBeHidden();
   await page.keyboard.press('Escape');
 
   // The backend (mock) refuses writes; presence is allowed.

@@ -230,8 +230,8 @@ export async function openPoScoresModal(
     bodyClass: 'po-sc-body',
     headerActionsHtml: `
       <button type="button" class="btn btn--icon" id="po-sc-help" aria-label="Uitleg" title="Uitleg">?</button>
-      <button type="button" class="btn btn--secondary btn--sm" id="po-sc-groups">Projectgroepen</button>
-      <button type="button" class="btn btn--secondary btn--sm" id="po-sc-edit">PO bewerken</button>`,
+      <button type="button" class="btn btn--secondary btn--sm" id="po-sc-groups" data-write>Projectgroepen</button>
+      <button type="button" class="btn btn--secondary btn--sm" id="po-sc-edit" data-write>PO bewerken</button>`,
     body: tableHtml(ctx),
     footerHtml: `
       <span class="po-sc-hint">Scores per categorie wijzig je via <b>Beoordelen</b> of door dubbel te klikken op een rij; ze gelden voor de hele projectgroep.</span>

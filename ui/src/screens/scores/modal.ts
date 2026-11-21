@@ -119,7 +119,7 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
         title="Aangevinkt: de punt op het numpad vult N in (niet gemaakt). Halve punten typ je dan met een komma.">
         <input type="checkbox" id="sc-dot-n" ${session.numpadDotIsN ? 'checked' : ''} /> . → N
       </label>
-      <button type="button" class="btn btn--secondary btn--sm" id="sc-edit-exam">Toets bewerken</button>
+      <button type="button" class="btn btn--secondary btn--sm" id="sc-edit-exam" data-write>Toets bewerken</button>
       <span class="sc-nterm">N-term
         <span class="num-spinner spinner-wrap-sm" id="sc-nterm"
           data-val="${escHtml(String(exam.n_term ?? 1))}" data-step="0.1" data-min="0" data-max="3">
