@@ -3,7 +3,7 @@
 // Generating the opdrachten (one block per student, each on an odd page) or the answer key, and
 // showing the PDF. A failed batch lists every failed opdracht (T23).
 
-import { escHtml, toast } from '../../app.js';
+import { closeModal, escHtml, toast } from '../../app.js';
 import type { BatchJob } from '../../bridge/api';
 import { printName } from '../../domain/print';
 import type { Opdracht } from '../../domain/types';
@@ -11,6 +11,9 @@ import { renderWarningsHtml } from '../../components/render-warnings';
 import { Store } from '../../store.js';
 import { includedStudents, type OgState } from './state';
 import { renderSummary } from './lists';
+import { FIX_ERRORS_TEXT } from '../../editor/ai/model';
+import { openEditor } from '../editor';
+import { failureView, fixProvider, forAi, parseBatchFailures } from './failures';
 
 export type GenerateKind = 'student' | 'key';
 
@@ -106,8 +109,47 @@ export async function generate(
   renderSummary(el, state);
 
   if (!res.success) {
-    content.innerHTML = `<pre class="hint rapport-error">${escHtml(res.error)}</pre>`;
     toast(`Fout bij het genereren van de ${what.toLowerCase()}.`, 'error');
+    const failures = parseBatchFailures(res.error, jobs);
+    if (!failures) {
+      content.innerHTML = `<pre class="hint rapport-error">${escHtml(res.error)}</pre>`;
+      return;
+    }
+    // Step 32c (board 63, decision 75): per opdracht, with "Laat AI dit oplossen".
+    const user = Store.getActiveUser() as { id?: string } | null;
+    const provider = await fixProvider(window.maatwerk.ai, user?.id ?? null);
+    if (!el.isConnected) return;
+    const opdracht = (id: string) =>
+      (Store.getOpdrachtenSync() as Opdracht[]).find((o) => o.id === id) ?? null;
+    content.replaceChildren(
+      failureView(failures, {
+        provider,
+        fixWithAi(f, p) {
+          const o = opdracht(f.opdrachtId);
+          if (!o) return toast('Deze opdracht bestaat niet meer.', 'error');
+          closeModal();
+          // Filled, not sent: the teacher sends it (decision 75). The batch is rerun by hand.
+          openEditor(o, {
+            provider: p.key,
+            message: FIX_ERRORS_TEXT,
+            starter: 'fixErrors',
+            attachments: [
+              {
+                name: 'Foutmelding genereren.txt',
+                text: `Fout in opdracht "${f.label}":\n\n${forAi(f)}`,
+              },
+            ],
+            send: false,
+          });
+        },
+        openInEditor(f) {
+          const o = opdracht(f.opdrachtId);
+          if (!o) return toast('Deze opdracht bestaat niet meer.', 'error');
+          closeModal();
+          openEditor(o);
+        },
+      }),
+    );
     return;
   }
 

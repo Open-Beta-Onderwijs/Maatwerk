@@ -1,0 +1,189 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: AI-context en bijlagen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-chip{height:26px;padding:0 9px 0 7px;border-radius:999px;font:inherit;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.mw-ib{border:0;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.mw-mono{font-family:Consolas,'Cascadia Mono',monospace}
+.mw-cap{font-size:12px;font-weight:700;letter-spacing:.8px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; box-sizing: border-box; padding: 28px 40px; display: flex; flex-direction: column; gap: 20px; background: {{t.bg}}; color: {{t.text}}; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px; overflow: hidden">
+  <div style="display: flex; align-items: baseline; gap: 14px">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 650; color: {{a.text}}">Context en bijlagen</h1>
+    <span style="color: {{t.muted}}; font-size: 13px">Ware grootte (paneel 380 px). Alle keuzes worden per opdracht onthouden, behalve Afbeeldingen.</span>
+  </div>
+  <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 24px 40px">
+
+    <section aria-labelledby="c1" style="display: flex; flex-direction: column; gap: 10px; min-height: 0; width: 425px; height: 469px">
+      <h2 id="c1" class="mw-cap" style="margin: 0; color: {{a.text}}">1 · CONTEXT-CHIPS</h2>
+      <div style="width: 380px; box-sizing: border-box; padding: 10px 12px; border: 1px solid {{t.border}}; border-radius: 12px; background: {{t.surface}}; display: flex; flex-direction: column; gap: 8px">
+        <div role="group" aria-label="Context" style="display: flex; flex-wrap: wrap; gap: 5px">
+          <sc-for list="{{chips}}" as="c" hint-placeholder-count="7"><button class="mw-chip" onClick="{{c.toggle}}" aria-pressed="{{c.on}}" style="border: 1px solid {{c.bd}}; background: {{c.bg}}; color: {{c.fg}}; font-weight: {{c.w}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.icon}}"></path></svg>{{c.label}}</button></sc-for>
+        </div>
+        <div style="height: 40px; border: 1px solid {{t.input}}; border-radius: 10px; background: {{t.inputBg}}; color: {{t.muted}}; font-size: 13px; display: flex; align-items: center; padding: 0 12px">Vraag iets over deze opdracht…</div>
+      </div>
+      <div style="width: 380px; display: flex; flex-direction: column; font-size: 12.5px">
+        <sc-for list="{{legend}}" as="l" hint-placeholder-count="7"><div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px; padding: 4px 0; border-top: 1px solid {{t.line}}"><b>{{l.k}}</b><span style="color: {{t.muted}}">{{l.v}}</span></div></sc-for>
+      </div>
+    </section>
+
+    <section aria-labelledby="c2" style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+      <h2 id="c2" class="mw-cap" style="margin: 0; color: {{a.text}}">2 · SYLLABUS KIEZEN</h2>
+      <button class="mw-chip" aria-haspopup="listbox" aria-expanded="true" style="align-self: flex-start; border: 1px solid {{sylChip.bd}}; background: {{sylChip.bg}}; color: {{sylChip.fg}}; font-weight: 600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{sylChip.icon}}"></path></svg>{{sylChip.label}} ▴</button>
+      <div role="listbox" aria-label="Syllabus" style="width: 380px; border: 1px solid {{t.border}}; border-radius: 10px; background: {{t.surface}}; box-shadow: 0 12px 28px rgba(16,24,40,.16); overflow: hidden">
+        <div style="padding: 8px 12px 4px; font-size: 11px; font-weight: 700; letter-spacing: .6px; color: {{t.muted}}">IN DE SYLLABUSMAP</div>
+        <sc-for list="{{syl}}" as="s" hint-placeholder-count="5">
+          <button role="option" aria-selected="{{s.sel}}" onClick="{{s.pick}}" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 0; border-top: 1px solid {{s.line}}; background: {{s.bg}}; color: {{t.text}}; font: inherit; font-size: 13px; text-align: left; cursor: pointer">
+            <span style="width: 16px; color: {{a.text}}">{{s.mark}}</span>
+            <span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: {{s.w}}">{{s.name}}</span><span style="font-size: 11.5px; color: {{t.muted}}">{{s.sub}}</span></span>
+          </button>
+        </sc-for>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid {{t.border}}; background: {{t.foot}}; font-size: 12px; color: {{t.muted}}">
+          <span class="mw-mono" style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">D:\OneDrive - School\Sectie NA\Syllabi</span>
+          <a href="#" style="font-weight: 600; text-decoration: none; color: {{a.text}}">Map openen</a>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="c3" style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+      <h2 id="c3" class="mw-cap" style="margin: 0; color: {{a.text}}">3 · ANDERE OPDRACHTEN (1 TOT 3)</h2>
+      <button class="mw-chip" aria-haspopup="dialog" aria-expanded="true" style="align-self: flex-start; border: 1px solid {{anChip.bd}}; background: {{anChip.bg}}; color: {{anChip.fg}}; font-weight: 600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{anChip.icon}}"></path></svg>{{anChip.label}} ▴</button>
+      <div role="dialog" aria-label="Andere opdrachten kiezen" style="width: 380px; border: 1px solid {{t.border}}; border-radius: 10px; background: {{t.surface}}; box-shadow: 0 12px 28px rgba(16,24,40,.16); overflow: hidden">
+        <div style="padding: 10px 12px 6px"><label style="display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border: 1px solid {{t.input}}; border-radius: 8px; background: {{t.inputBg}}; color: {{t.muted}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input placeholder="Zoek een opdracht" aria-label="Zoek een opdracht" style="border: 0; outline: 0; background: transparent; color: {{t.text}}; font: inherit; font-size: 13px; width: 100%"></label></div>
+        <sc-for list="{{andere}}" as="o" hint-placeholder-count="6">
+          <label style="display: flex; align-items: center; gap: 10px; padding: 7px 12px; font-size: 13px; cursor: pointer; opacity: {{o.op}}">
+            <input type="checkbox" checked="{{o.on}}" disabled="{{o.dis}}" onChange="{{o.toggle}}" style="width: 16px; height: 16px; accent-color: {{a.fill}}; margin: 0">
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{o.name}}</span><span style="font-size: 11.5px; color: {{t.muted}}">{{o.sub}}</span></span>
+          </label>
+        </sc-for>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-top: 1px solid {{t.border}}; background: {{t.foot}}; font-size: 12px; color: {{t.muted}}">
+          <span style="flex: 1">{{anCount}}</span>
+          <button style="height: 28px; padding: 0 12px; border-radius: 7px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer">Klaar</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="c4" style="display: flex; flex-direction: column; gap: 10px; min-height: 0; width: 420px; height: 321px">
+      <h2 id="c4" class="mw-cap" style="margin: 0; color: {{a.text}}">4 · AFBEELDINGEN: WAARSCHUWING</h2>
+      <div style="width: 380px; box-sizing: border-box; padding: 10px 12px; border: 1px solid {{t.border}}; border-radius: 12px; background: {{t.surface}}; display: flex; flex-direction: column; gap: 8px">
+        <sc-if value="{{afb}}" hint-placeholder-val="{{ true }}">
+          <div role="alert" style="display: flex; gap: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid {{wr.bd}}; background: {{wr.bg}}; color: {{wr.fg}}; font-size: 12px; line-height: 1.45">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 1px"><path d="M12 3 2 21h20z"></path><path d="M12 10v5M12 18h.01"></path></svg>
+            <span><b>4 afbeeldingen worden meegestuurd.</b> Afbeeldingen kunnen leerlingen tonen (foto’s van werk, uit de klas). Zet dit alleen aan als er geen leerlingen op staan. Na het versturen gaat dit weer uit.</span>
+          </div>
+        </sc-if>
+        <div style="display: flex; flex-wrap: wrap; gap: 5px">
+          <span class="mw-chip" style="border: 1px solid {{a.fill}}; background: {{a.tint}}; color: {{a.text}}; font-weight: 600; cursor: default">✓ Opdrachtinstructies AI</span>
+          <span class="mw-chip" style="border: 1px solid {{a.fill}}; background: {{a.tint}}; color: {{a.text}}; font-weight: 600; cursor: default">✓ PDF-output</span>
+          <button class="mw-chip" onClick="{{toggleAfb}}" aria-pressed="{{afbA}}" style="border: 1px solid {{afbC.bd}}; background: {{afbC.bg}}; color: {{afbC.fg}}; font-weight: {{afbC.w}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{afbC.icon}}"></path></svg>Afbeeldingen</button>
+        </div>
+        <div style="height: 40px; border: 1px solid {{t.input}}; border-radius: 10px; background: {{t.inputBg}}; color: {{t.muted}}; font-size: 13px; display: flex; align-items: center; padding: 0 12px">Vraag iets over deze opdracht…</div>
+      </div>
+      <span style="width: 380px; font-size: 12.5px; line-height: 1.5; color: {{t.muted}}">Standaard uit, en nooit onthouden: de docent zet het per bericht aan. De chip PDF-output stuurt de pagina’s wel met afbeeldingen mee; de waarschuwing staat daarom ook in de eerste-gebruikmelding.</span>
+    </section>
+
+    <section aria-labelledby="c5" style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+      <h2 id="c5" class="mw-cap" style="margin: 0; color: {{a.text}}">5 · SLEPEN EN NEERZETTEN</h2>
+      <div onDragOver="{{dragOver}}" onDragLeave="{{dragLeave}}" onDrop="{{dropIt}}" style="position: relative; width: 380px; height: 300px; box-sizing: border-box; border: 1px solid {{t.border}}; border-radius: 12px; background: {{t.surface}}; overflow: hidden; display: flex; flex-direction: column">
+        <div style="flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+          <div style="align-self: flex-end; max-width: 85%; background: {{a.tint}}; border-radius: 12px 12px 4px 12px; padding: 9px 11px; font-size: 13px">Kun je deze grafiek als figuur toevoegen?</div>
+        </div>
+        <div style="height: 40px; margin: 0 12px 12px; border: 1px solid {{t.input}}; border-radius: 10px; background: {{t.inputBg}}"></div>
+        <sc-if value="{{drag}}" hint-placeholder-val="{{ true }}">
+          <div style="position: absolute; inset: 6px; border: 2px dashed {{a.fill}}; border-radius: 10px; background: {{dropBg}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="{{a.text}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5"></path><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"></path></svg>
+            <b style="color: {{a.text}}">Laat los om toe te voegen</b>
+            <span style="font-size: 12px; color: {{t.muted}}">Afbeeldingen, PDF of tekst · max. 25 MB per bestand<br>Nog 8 van 10 bijlagen in dit gesprek</span>
+          </div>
+        </sc-if>
+      </div>
+      <button onClick="{{toggleDrag}}" style="align-self: flex-start; height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer">{{dragLabel}}</button>
+    </section>
+
+    <section aria-labelledby="c6" style="display: flex; flex-direction: column; gap: 10px; min-height: 0">
+      <h2 id="c6" class="mw-cap" style="margin: 0; color: {{a.text}}">6 · BIJLAGEN, PLAKKEN EN FOUTEN</h2>
+      <div style="width: 380px; box-sizing: border-box; padding: 10px 12px; border: 1px solid {{t.border}}; border-radius: 12px; background: {{t.surface}}; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; flex-wrap: wrap; gap: 5px">
+          <sc-for list="{{att}}" as="f" hint-placeholder-count="3"><span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 4px 0 8px; border-radius: 7px; border: 1px solid {{t.border}}; background: {{t.surface2}}; font-size: 12px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="{{f.icon}}"></path></svg><span>{{f.name}}</span><span style="color: {{t.muted}}">{{f.size}}</span><button onClick="{{f.remove}}" aria-label="{{f.aria}}" class="mw-ib" style="width: 22px; height: 22px; border-radius: 5px; color: {{t.muted}}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></span></sc-for>
+        </div>
+        <div role="alert" style="display: flex; flex-direction: column; gap: 4px; padding: 7px 9px; border-radius: 7px; border: 1px solid {{er.bd}}; background: {{er.bg}}; color: {{er.fg}}; font-size: 12px; line-height: 1.4">
+          <span><b>toets-scan.pdf</b> is niet toegevoegd: te groot (31,4 MB; max. 25 MB per bestand).</span>
+          <span><b>uitleg.mp4</b> is niet toegevoegd: dit soort bestand kan niet mee.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; height: 40px; border: 1px solid {{t.input}}; border-radius: 10px; background: {{t.inputBg}}; padding: 0 4px">
+          <button aria-label="Bijlage toevoegen" class="mw-ib" style="width: 32px; height: 32px; color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 11-8.6 8.6a5 5 0 0 1-7-7L14 4a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4L15.5 7"></path></svg></button>
+          <span style="flex: 1; font-size: 13px; color: {{t.muted}}">Vraag iets over deze opdracht…</span>
+        </div>
+      </div>
+      <div style="width: 380px; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid {{er.bd}}; background: {{er.bg}}; color: {{er.fg}}; font-size: 12px">Limiet bereikt: <b>10 van 10 bijlagen</b> in dit gesprek. Verwijder er een of begin een nieuw gesprek. (De paperclip is dan uitgeschakeld.)</div>
+      <span style="width: 380px; font-size: 12.5px; line-height: 1.5; color: {{t.muted}}">Een geplakte schermafbeelding wordt een bijlage. Geplakte tekst gaat in het invoerveld; vanaf 2.000 tekens wordt het een bijlage ‘Geplakte tekst’.</span>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["licht","donker"],"default":"licht"},"accent":{"editor":"enum","options":["rood","oranje","geel","groen","blauw","indigo","paars","turquoise","roze","grafiet"],"default":"blauw"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    this.state = { ctx: { hand: true, geg: true, meld: true, pdf: true, syl: true, andere: false, afb: false }, syl: 0, an: { 1: true, 3: true }, afb: true, drag: true,
+      att: [['img', 'meetresultaten.png', '412 kB'], ['img', 'Schermafbeelding (geplakt)', '1,2 MB'], ['txt', 'Geplakte tekst', '3 kB']] };
+  }
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const ac = ACC[this.props.accent] || ACC.blauw;
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F'), on: ac[0] === '#E5AE0B' ? '#2A2000' : '#FFFFFF' };
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', foot: '#181B21', input: '#3A414C', inputBg: '#171A20' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', foot: '#FAFBFC', input: '#C9CED8', inputBg: '#FFFFFF' };
+    const er = dark ? { fg: '#FF8A80', bg: '#3A1F1F', bd: '#5A2A2A' } : { fg: '#B42318', bg: '#FDECEA', bd: '#F4C7C3' };
+    const wr = dark ? { fg: '#F5CF5C', bg: '#3A3015', bd: '#5C4A1A' } : { fg: '#7A5300', bg: '#FFF6E0', bd: '#F0C36D' };
+    const CHK = 'm5 12 5 5 9-10', PLUS = 'M12 5v14M5 12h14';
+    const st = this.state;
+    const chipStyle = (on, warn) => ({ bd: warn ? wr.bd : on ? a.fill : t.border, bg: warn ? wr.bg : on ? a.tint : 'transparent', fg: warn ? wr.fg : on ? a.text : t.muted, w: on ? 600 : 400, icon: on ? CHK : PLUS });
+
+    const SYL = [['Natuurkunde havo 2026.pdf', 'Past bij vak en schoolsoort · voorgeselecteerd'], ['Natuurkunde vwo 2026.pdf', 'Natuurkunde · vwo'], ['Natuurkunde havo 2025.pdf', 'Vorige versie'], ['NLT havo vwo 2026.pdf', 'Ander vak'], ['Geen', 'Geen syllabus meesturen']];
+    const sylName = st.syl === 4 ? 'Geen' : SYL[st.syl][0].replace('.pdf', '');
+    const anCountN = Object.values(st.an).filter(Boolean).length;
+    const CT = [['hand', 'Opdrachtinstructies AI'], ['geg', 'Opdrachtgegevens'], ['meld', 'Fouten & waarschuwingen'], ['pdf', 'PDF-output'], ['syl', 'Syllabus: ' + sylName + ' ▾'], ['andere', 'Andere opdrachten ▾'], ['afb', 'Afbeeldingen']];
+    const chips = CT.map(([k, label]) => { const on = !!st.ctx[k] && !(k === 'syl' && st.syl === 4); return { label, on: on ? 'true' : 'false', ...chipStyle(on, k === 'afb' && on), toggle: () => this.setState({ ctx: { ...st.ctx, [k]: !st.ctx[k] } }) }; });
+    const legend = [
+      ['Opdrachtinstructies AI', 'Instructies voor de AI over het schrijven van opdrachten, met voorbeeldopdrachten'],
+      ['Opdrachtgegevens', 'Titel, vak, schoolsoort, jaarlagen, gekoppelde observaties'],
+      ['Fouten & waarschuwingen', 'Huidige fouten en waarschuwingen van de compiler'],
+      ['PDF-output', 'De gerenderde pagina’s als afbeeldingen'],
+      ['Syllabus', 'Gekozen syllabus-PDF (of Geen)'],
+      ['Andere opdrachten', '1 tot 3 andere opdrachten als voorbeeld; standaard uit'],
+      ['Afbeeldingen', 'Afbeeldingen uit afbeeldingen/; standaard uit, alleen per bericht'],
+    ].map(([k, v]) => ({ k, v }));
+    const syl = SYL.map(([name, sub], i) => ({ name, sub, sel: st.syl === i ? 'true' : 'false', mark: st.syl === i ? '✓' : '', w: st.syl === i ? 600 : 400, bg: st.syl === i ? a.tint : 'transparent', line: i === 4 ? t.border : i ? t.line : 'transparent', pick: () => this.setState({ syl: i }) }));
+    const ANDERE = [['Grafiek tekenen & dichtheid bepalen', 'Natuurkunde · 2'], ['Eenheden omrekenen', 'Natuurkunde, Scheikunde · 2, 3'], ['Formules omschrijven', 'Natuurkunde · 3, 4'], ['Significantie oefenen', 'Natuurkunde, Scheikunde · 4, 5, 6'], ['Helling bepalen uit een grafiek', 'Natuurkunde · 3, 4'], ['Rekenen met machten van tien', 'Natuurkunde · 3, 4, 5']];
+    const andere = ANDERE.map(([name, sub], i) => { const on = !!st.an[i], dis = !on && anCountN >= 3; return { name, sub, on, dis, op: dis ? 0.5 : 1, toggle: () => this.setState({ an: { ...st.an, [i]: !on } }) }; });
+    const anChip = { ...chipStyle(anCountN > 0), label: anCountN ? 'Andere opdrachten (' + anCountN + ')' : 'Andere opdrachten' };
+    const sylChip = { ...chipStyle(st.syl !== 4), label: 'Syllabus: ' + sylName };
+    const ICON = { img: 'M3 4h18v16H3zM3 16l5-5 4 4 3-3 6 6', txt: 'M6 3h9l4 4v14H6zM9 12h7M9 16h7' };
+    const att = st.att.map(([k, name, size], i) => ({ name, size, icon: ICON[k], aria: name + ' verwijderen', remove: () => this.setState({ att: st.att.filter((_, j) => j !== i) }) }));
+    return {
+      t, a, er, wr, chips, legend, syl, sylChip, andere, anChip, anCount: anCountN + ' van max. 3 gekozen' + (anCountN >= 3 ? ' · meer kan niet' : ''),
+      afb: st.afb, afbA: st.afb ? 'true' : 'false', afbC: chipStyle(st.afb, st.afb), toggleAfb: () => this.setState({ afb: !st.afb }),
+      drag: st.drag, dropBg: a.fill + (dark ? '26' : '12'), dragLabel: st.drag ? 'Toon zonder sleepactie' : 'Toon tijdens slepen',
+      toggleDrag: () => this.setState({ drag: !st.drag }),
+      dragOver: (e) => { e.preventDefault(); if (!st.drag) this.setState({ drag: true }); }, dragLeave: () => this.setState({ drag: false }), dropIt: (e) => { e.preventDefault(); this.setState({ drag: false }); },
+      att,
+    };
+  }
+}
+</script>
+</body>
+</html>

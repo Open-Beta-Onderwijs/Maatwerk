@@ -1,0 +1,102 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* Shared by AI-instellingen (main window) and the editor's install help (board 62, step 32c;
+   editor/ai/install.ts). Only tokens, no app button classes. */
+
+.ais-mono {
+  font-family: var(--font-code);
+  font-size: 12.5px;
+}
+.ais-muted {
+  color: var(--muted);
+}
+.ais-hint {
+  font-size: var(--fs-caption);
+  line-height: 1.45;
+  color: var(--muted);
+}
+/* Provider tile: monogram until the logos (decision 62). */
+.ais-logo {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--provider, var(--muted));
+  color: #ffffff;
+  font-weight: 750;
+}
+.ais-logo--md {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+.ais-logo--sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  font-size: 11px;
+}
+
+/* Install help (decision 72). */
+.ais-install {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ais-install__card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ais-install__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ais-install__head strong {
+  flex: 1;
+}
+.ais-install__head .ais-muted {
+  font-size: var(--fs-caption);
+}
+.ais-install__cmd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 8px;
+  border-radius: 7px;
+  background: var(--bg);
+}
+.ais-install__cmd code {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ais-copy {
+  flex: none;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ais-copy:hover {
+  background: var(--surface-hover);
+}
+.ais-copy:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

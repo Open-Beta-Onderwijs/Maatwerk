@@ -9,7 +9,7 @@
 // Gebruikers form spreads the loaded record; the PIN commands edit the JSON
 // object), and ignores it. Unknown or invalid values read as "not set".
 // The editor divider position (`editorSplit`: the editor's share of the width, 0,25-0,75) joined
-// in step 31 (F-16).
+// in step 31 (F-16); the AI panel's width in pixels (`aiPanelWidth`, 380 or more) after step 32.
 
 import { isAccent, isTheme, type Look } from './look';
 
@@ -18,6 +18,7 @@ export interface Preferences {
   accent?: string;
   activeYear?: string;
   editorSplit?: number;
+  aiPanelWidth?: number;
 }
 
 /** The editor divider's range and default (spec 4.8). */
@@ -33,6 +34,20 @@ export function clampEditorSplit(v: number): number {
 export function savedEditorSplit(user: unknown): number | null {
   const v = prefsOf(user).editorSplit;
   return typeof v === 'number' && Number.isFinite(v) ? clampEditorSplit(v) : null;
+}
+
+/** The AI panel's width in px (board 59: 380 px, the minimum; wider by dragging its edge). */
+export const AI_PANEL_WIDTH = { min: 380, max: 1200, initial: 380 } as const;
+
+/** `v` within the panel's range, in whole pixels. */
+export function clampAiPanelWidth(v: number): number {
+  return Math.round(Math.min(AI_PANEL_WIDTH.max, Math.max(AI_PANEL_WIDTH.min, v)));
+}
+
+/** The user's saved AI panel width, or null (then 380 px). */
+export function savedAiPanelWidth(user: unknown): number | null {
+  const v = prefsOf(user).aiPanelWidth;
+  return typeof v === 'number' && Number.isFinite(v) ? clampAiPanelWidth(v) : null;
 }
 
 const YEAR = /^(\d{4})-(\d{4})$/;

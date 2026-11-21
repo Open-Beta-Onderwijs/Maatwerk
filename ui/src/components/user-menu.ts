@@ -29,6 +29,11 @@ export interface UserMenuOptions {
   /** Only for the admin. */
   onRenewCodes?: () => void;
   onLogout: () => void;
+  /**
+   * "AI-instellingen…" (board 62, step 32c). `school` resolves false when the school switched
+   * the assistant off: the item then only says so ("Uitgeschakeld door je school").
+   */
+  ai?: { school: Promise<boolean>; onOpen: () => void };
   readPhoto: (relPath: string) => Promise<string | null>;
 }
 
@@ -98,6 +103,7 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
     <button type="button" class="user-menu__item" id="acc-photo">Foto wijzigen</button>
     <button type="button" class="user-menu__item" id="acc-pin">Pincode wijzigen</button>
     ${opts.onRenewCodes ? `<button type="button" class="user-menu__item" id="acc-codes">Nieuwe herstelcodes</button>` : ''}
+    ${opts.ai ? `<button type="button" class="user-menu__item" id="acc-ai">AI-instellingen…<span class="user-menu__sub" hidden>Uitgeschakeld door je school</span></button>` : ''}
     <div class="user-menu__sep"></div>
     <button type="button" class="user-menu__item user-menu__item--danger" id="acc-logout">Uitloggen</button>`;
 
@@ -170,6 +176,22 @@ export function toggleUserMenu(opts: UserMenuOptions): void {
   if (opts.onRenewCodes)
     el.querySelector('#acc-codes')!.addEventListener('click', act(opts.onRenewCodes));
   el.querySelector('#acc-logout')!.addEventListener('click', act(opts.onLogout));
+  if (opts.ai) {
+    const item = el.querySelector<HTMLButtonElement>('#acc-ai')!;
+    let off = false;
+    item.addEventListener('click', () => {
+      // Off by the school: the item stays focusable and only explains (board 62).
+      if (!off) act(opts.ai!.onOpen)();
+    });
+    void opts.ai.school.then(
+      (on) => {
+        off = !on;
+        item.setAttribute('aria-disabled', String(off));
+        item.querySelector<HTMLElement>('.user-menu__sub')!.hidden = on;
+      },
+      () => {},
+    );
+  }
 
   document.body.append(el);
   open = { el, close };

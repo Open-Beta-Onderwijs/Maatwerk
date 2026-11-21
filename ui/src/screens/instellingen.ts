@@ -3,11 +3,12 @@
 // Beheer > Instellingen (Step 7b): `instellingen.json`: the snapshot interval
 // and how many snapshots are kept (maatwerk-core::snapshots), and since Step 8b
 // the editor's compile time limit (maatwerk-core::typst_svc::EditorSettings,
-// ADR-0002 section 12). The app that starts first after the interval writes
+// ADR-0002 section 12), and since step 32c the school's AI switch (`ai.enabled`). The app that starts first after the interval writes
 // `snapshots/<datum tijd>.zip` in the background; restoring the whole folder is
 // a manual step (docs/cutover-runbook.md).
 
 import type { MaatwerkApi } from '../bridge/api';
+import { switchControl } from '../components/switch';
 
 type Api = Pick<MaatwerkApi, 'listSnapshots' | 'openDataFolder'>;
 
@@ -58,6 +59,12 @@ export function compileTimeoutSeconds(instellingen: unknown): number {
   return typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max
     ? v
     : COMPILE_TIMEOUT_DEFAULT;
+}
+
+/** The school's AI switch (`ai.enabled`, step 32c): on unless it is `false` (maatwerk_core::ai::school). */
+export function aiSchoolEnabled(instellingen: unknown): boolean {
+  const ai = (instellingen as { ai?: { enabled?: unknown } } | null)?.ai;
+  return ai?.enabled !== false;
 }
 
 /** Dutch problem with a value typed in the form, or null. */
@@ -258,7 +265,30 @@ export async function renderInstellingen(
       `Standaard ${COMPILE_TIMEOUT_DEFAULT} seconden; geldt voor editors die daarna worden geopend.`,
   );
   editorCard.append(el('h3', 'inst-card__title', 'Editor'), timeoutGroup);
-  left.append(snapCard, editorCard);
+
+  // AI-assistent (board 62, decision 73): the switch for every teacher of the school.
+  const aiCard = el('section', 'card inst-card inst-ai');
+  const aiHead = el('div', 'inst-card__head');
+  const aiTag = el('span', 'inst-ai__tag');
+  aiHead.append(el('h3', 'inst-card__title', 'AI-assistent'), aiTag);
+  const showTag = (on: boolean) => {
+    aiTag.textContent = on ? 'Aan' : 'Uit voor alle docenten';
+    aiTag.classList.toggle('is-on', on);
+  };
+  const aiSwitch = switchControl({
+    id: 'inst-ai-enabled',
+    label: 'Docenten mogen de AI-assistent gebruiken',
+    hint:
+      'Docenten gebruiken een AI-programma op hun eigen computer, met hun eigen account of ' +
+      'abonnement. Alleen de opdracht en de gekozen context worden verstuurd, nooit ' +
+      'leerlinggegevens. Uit: de AI-balk, de AI-optie bij Opdracht toevoegen en ‘Laat AI dit ' +
+      'oplossen’ verdwijnen voor alle docenten van deze school.',
+    checked: aiSchoolEnabled(instellingen),
+    onChange: showTag,
+  });
+  showTag(aiSwitch.checked());
+  aiCard.append(aiHead, aiSwitch.element);
+  left.append(snapCard, editorCard, aiCard);
 
   // Right: the snapshots there are, with their kind, and "Map openen".
   const listCard = el('section', 'card inst-card inst-snapshots');
@@ -309,10 +339,15 @@ export async function renderInstellingen(
       ...((instellingen?.editor as Record<string, unknown> | undefined) ?? {}),
       compileTimeoutSeconds: Number(timeoutInput.value.trim()),
     };
+    // Additive (step 32c): other fields under `ai` are kept.
+    const ai = {
+      ...((instellingen?.ai as Record<string, unknown> | undefined) ?? {}),
+      enabled: aiSwitch.checked(),
+    };
     save.disabled = true;
     try {
       await store.saveInstellingen(
-        { ...(instellingen ?? {}), snapshots: { ...current, ...next }, editor },
+        { ...(instellingen ?? {}), snapshots: { ...current, ...next }, editor, ai },
         baseRev,
       );
       toast('Instellingen opgeslagen.', 'success');

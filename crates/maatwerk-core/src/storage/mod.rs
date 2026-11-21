@@ -650,6 +650,11 @@ fn parse_json(rel: &RelPath, bytes: &[u8]) -> Result<Value> {
     })
 }
 
+/// Standard base64 with padding.
+pub fn encode_base64(bytes: &[u8]) -> String {
+    base64::engine::general_purpose::STANDARD.encode(bytes)
+}
+
 /// Node's `Buffer.from(s, 'base64')` is lenient: whitespace and missing padding are fine, and
 /// the URL-safe alphabet is accepted.
 pub fn decode_base64_lenient(s: &str) -> Result<Vec<u8>> {

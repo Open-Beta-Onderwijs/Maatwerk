@@ -26,7 +26,8 @@ import { renderSchool } from './screens/school.js';
 import { needsAttention, renderGegevens } from './screens/gegevens';
 import { changePinFlow, renewCodesFlow } from './screens/pin';
 import { closeUserMenu, toggleUserMenu } from './components/user-menu';
-import { renderInstellingen } from './screens/instellingen';
+import { aiSchoolEnabled, renderInstellingen } from './screens/instellingen';
+import { openAiSettings } from './modals/ai-settings';
 import { avatarHtml, loadAvatarPhotos, renderAvatar } from './components/avatar';
 import * as Sync from './sync.js';
 import * as Presence from './presence.js';
@@ -590,6 +591,14 @@ userBadgeBtn.addEventListener('click', () => {
     onLogout: () => {
       void api.logout().catch((e) => console.warn('[pin]', e));
       logOut();
+    },
+    // Step 32c (board 62): the school switch decides whether the item opens or explains.
+    ai: {
+      school: Store.loadInstellingen().then(aiSchoolEnabled),
+      onOpen: () =>
+        void openAiSettings({ ai: api.ai, gebruiker: user.id }).catch((e) =>
+          toast(e instanceof Error ? e.message : String(e), 'error'),
+        ),
     },
     readPhoto,
   });

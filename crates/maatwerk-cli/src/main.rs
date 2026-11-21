@@ -25,8 +25,9 @@ usage: maatwerk-cli typst compile <file.typ> [--out <file.pdf>] [--input <key>=<
        maatwerk-cli stats <data-folder> --year <school-year> --vak <vak> [--json]
        maatwerk-cli rubric check <rubric.json | data-folder> [--json]
        maatwerk-cli assignment check <opdracht> [--json] [--answers] [--ignore-system-fonts]
+                                    [--timeout <seconds>]
        maatwerk-cli assignment render <opdracht> --pdf <file.pdf> [--answers | --no-answers]
-                                     [--ignore-system-fonts]
+                                     [--ignore-system-fonts] [--timeout <seconds>]
        maatwerk-cli assignment export-lib <dir> [--overwrite]
        maatwerk-cli --version
 
@@ -61,7 +62,7 @@ placeholder.
   check: compiles and lists errors and warnings with file:line:column, the page count, the vragen
   with punten and answers, and the editor's checks. --json prints
   docs/schemas/assignment-check.schema.json. Exit code 1 when it does not compile, 2 when the
-  opdracht cannot be opened.
+  opdracht cannot be opened, 3 when compiling takes longer than --timeout (default 30 s).
   render: writes the PDF to --pdf (--answers: the answer key). --no-answers leaves out the
   upside-down answers at the bottom.
   export-lib: writes lib.typ, main.typ, a starting opdracht.typ, the embedded packages and fonts

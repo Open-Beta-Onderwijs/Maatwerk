@@ -1,12 +1,207 @@
 # State
 
-Last updated: 2026-11-17 (steps 30-31, gate done) Branch: `step/31-editor` (on top of
-`step/30-observaties`, which started from `design/toetsen-cards`, so the merge brings the round
-12-14 docs into `main`)
-Last tags: `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
-(`d8c741c`), `v0.16.0`, `step-25`
+Last updated: 2026-11-19 (step 32 done) Branch: `step/32-ai` (from `main` at `941eb5c`)
+Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
+(`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
+
+## Hotfix 0.23.1 (2026-11-19, on `step/32-ai`, user's call)
+
+Print button on the Opdrachten tab (between Kopiëren and Verwijderen): one copy of the opdracht
+without the student block, in the PDF viewer (`modals/opdracht-print.ts`). Decisions with the
+user: `maatwerk-main 3` adds `mode: "plain"` (data-format change OK'd; unchanged v2 copies update
+silently, also right before a plain print; a teacher-changed old copy gets a warning naming
+"Herstel standaardversie"); a "Met antwoorden" checkbox in the dialog header (default off);
+"Openen in PDF-viewer" opens the rendered output, no copy in `rapporten/`; version 0.23.1 on this
+branch, no separate release branch (first bumped to 0.19.1; the user corrected it to the AI
+release, step 32 = 0.23, so 0.23.1). Migration goldens: the four `main.typ` copies follow the
+template. Open: the tracked CI baselines of `screen-opdrachten` (3 platforms) are stale (the new
+button); drop or regenerate them with the user's OK, as for step 32's views. Manual check: print
+one opdracht in the real app, with and without answers.
+
+## AI panel remarks (2026-11-20, user's manual test, on `step/32-ai`)
+
+Done: resizable panel (backlog item; 380 px minimum, `preferences.aiPanelWidth`, `5a8ce1d`),
+long transcript titles cut off with a tooltip, chat follows its bottom so a follow-up's status
+card shows at once (cause: the previous proposal's diff card fills in after an await and
+pushed the card out of view), input grows to 7 lines (`5a8ce1d`); answers rendered as Markdown
+(`markdown.ts`, own small parser, no dependency, `1b125c0`). e2e `ai-panel.spec.ts` +3.
+Remark 6 done with the user's answers (status lines for older proposals, no applying of
+replaced ones, applied card keeps files + read-only Bekijken, Ongedaan maken clears the
+history's flag). e2e `ai-panel.spec.ts` 8 tests. Manual check in the real app: a follow-up's
+status card (the mock loads proposals instantly, so the bug did not show there).
 
 ## Current step
+
+**Step 32 (AI assistant, L+, 32a-32c):** decisions taken with the user 2026-11-18 (`PLAN-2.md`
+decisions 48-61, ADR-0009 "Amendment (step 32)"); the step section is rewritten as a design round
+plus CLI research, then 32a bridge, 32b editor UI, 32c settings/entry points/gate. No code yet.
+
+**Design round done (user OK 2026-11-18):** design round 15, boards 59-63 (mocks `AIChat`,
+`AIContext`, `AIDiff`, `AIInstellingen`, `AIStart`), `PLAN-2.md` decisions 62-75 with the answers to its three questions (school switch in `instellingen.json`, syllabus folder fixed next to the app, CLI details from the research), spec 4.8.1 and 4.9 (the school switch is on Beheer › Instellingen).
+
+**CLI research done (2026-11-18):** ADR-0009 "CLI research": a table per CLI (non-interactive,
+streaming, resume, permissions, web search, images, detection, not logged in, install, default
+args) with sources. Installed here: Claude Code 2.1.327, Mistral Vibe 3.0.4 (Codex, Gemini,
+Copilot not installed; nothing logged in, no prompt sent). Answer 3 settled: presets and install
+commands from the ADR replace board 62's. Vibe and Copilot qualify (decision 49). Notable: Gemini
+CLI was replaced by Antigravity CLI for free/Google One users (2026-06-18), Antigravity not in the
+launch set (user's call); prompts go via `.maatwerk/request.md`, not argv (`.cmd` shims); macOS/
+Linux detection must read the login shell PATH; Gemini needs a stable temp dir path per
+conversation. _verify_ rows go into the 32c manual check.
+
+**After the report (user 2026-11-18):** decision 76 adds Antigravity CLI (researched, ADR table;
+check on Maatwerk's side because it has no per-run permission rules), decision 77 adds "Eigen
+CLI" (teacher-defined command and arguments, plain-text output; board 62 gets its card in 32c).
+ADR finding 2 now spells out the macOS/Linux PATH handling (login-shell PATH, default folders,
+also passed to the child).
+
+**Next action:** step 32 is done (gate, review, fixes); waiting for the user: visual check of the 12 diffs, M-AI manual checks, merge. Releases 0.20-0.23 wait for the user.
+
+## Step 32c progress (settings, switches, entry points, gate)
+
+Plan: (1) school switch: `ai.enabled` in `instellingen.json` (core reader, `ai_detect` and
+`ai_send` honour it, validate-data, mock), "AI-assistent" card on Beheer › Instellingen;
+(2) AI-instellingen dialog in the main window (show switch, CLI cards, Eigen CLI, time limit,
+syllabus folder, install help), from the editor gear and the user menu ("Uitgeschakeld door je
+school"); (3) first-use notice (decision 70) and the "?" install help panel in the editor;
+(4) Opdracht toevoegen "met AI" (board 63); (5) "Laat AI dit oplossen" after a failed
+Opdrachten genereren; (6) provider logos (brand rules); (7) real-CLI manual check (Claude Code,
+Vibe are installed here); (8) gate, review, report.
+
+Baseline 2026-11-19 on `7a223b9`: cargo test all ok (the doctest run raced an edit; rerun ok).
+
+1. **Done (`8980ec6`):** school switch `ai.enabled` (`maatwerk_core::ai::school`, `ai_detect`
+   reports `school`, `ai_send` refuses, mock, no rail), Beheer › Instellingen "AI-assistent"
+   card, `components/switch.ts`, data-files-v3 section. No `minAppVersion` raise and no
+   validate-data check (no older app has an AI; instellingen fields were never validated).
+2. and 3. **Done (`552a1b2`):** `modals/ai-settings/` (model tested; dialog per board 62: show
+   switch, CLI accordion cards with Opdracht/Argumenten/Vervolgbericht, Standaard herstellen,
+   Eigen CLI cards, Installatiehulp, Opnieuw zoeken, time limit, syllabus folder read-only),
+   `modals/ai-notice.ts` (decision 70, before the first conversation; Escape = no chat),
+   `editor/ai/install.ts` + `styles/ai-install.css` (install help shared with the editor), the
+   editor's "?" panel (board 62: Opnieuw zoeken, AI-assistent verbergen), the gear and the
+   time-out card's button, user menu "AI-instellingen…" ("Uitgeschakeld door je school",
+   aria-disabled). Protocol methods `openSettings`, `notice`, `hideAssistant`.
+3. and 5. **Done (`3952ef2`):** editor start request (`AiStart` in `info`, `openEditor(o,
+start)`, `Composer.prefill`, `AiPanel.begin`). Opdracht toevoegen "met AI"
+   (`modals/opdracht-ai.ts`, board 63, sent at once). A failed Opdrachten genereren shows one
+   card per opdracht (`opdrachten-genereren/failures.ts` parses T23's text against the jobs;
+   student count only) with "Laat AI dit oplossen" (filled, error attached as `Foutmelding
+genereren.txt`, not sent), "Openen in editor", "Melding kopiëren". Mock `batchFailures`.
+   e2e `ai-settings.spec.ts` (9). 783 Vitest, Chromium e2e 385/385.
+
+4. **Logos (user 2026-11-19): monograms stay.** OpenAI, Anthropic, Google need written
+   permission, GitHub Brand Studio approval; noted in `THIRD_PARTY_LICENSES.md` (`703f716`).
+5. **Real-CLI check (user OK to use the accounts, 2026-11-19):** `tests/ai_real_cli.rs`
+   (opt-in), manual checks M-AI-1..12 (`559644d`). Claude Code 2.1.328: proposal + resume +
+   check OK; fix `d82e08e` (request tells Claude Code to run the check with Bash; it tried a
+   denied PowerShell call first on Windows). Vibe 3.0.4 is not logged in here: its
+   not-logged-in text verified (ADR-0009 "Real-CLI check"); a logged-in Vibe run is M-AI-6.
+6. **Gate (2026-11-19):** cargo fmt, clippy, test, deny, SPDX, npm licences green; notices
+   regenerated (`4afc8b8`); 783 Vitest; Chromium e2e 385/385. Visual: 12 diffs in 4 views × 3
+   looks, all intended: `editor` (the AI rail of 32b; the baseline predates it),
+   `admin-instellingen` (AI-assistent card), `user-menu-teacher`, `user-menu-admin`
+   ("AI-instellingen…"). Baselines not updated (user's check first).
+7. **Review** `docs/reviews/step-32.md`: 0 blockers, 4 majors (all fixed), 12 minors (m1, m2
+   fixed; m3-m12 in `docs/backlog.md` "From Step 32"), 8 nits. M1: Gemini, Vibe, Copilot no
+   longer run the check (shell denied, Maatwerk checks; `maatwerk_core::ai::apply` etc.); M2:
+   header values scrubbed from the "Laat AI dit oplossen" attachment; M3: closing the editor
+   stops its run; M4: image apply/undo in core with tests, first backup kept. Vibe (user logged
+   in 2026-11-19): real turns OK before and after M1 (17 s instead of 76 s for turn 2). Gate
+   rerun green: fmt, clippy, cargo test, 784 Vitest, Chromium e2e 386/386.
+
+**32c done; step 32 done except the user's part:** visual check of the 12 diffs (then
+baselines, CI), manual checks M-AI-1..12, merge and tags, releases 0.20-0.23.
+
+Chrome extension was not connected this session: the visual checks used Playwright
+screenshots (`AI_SHOTS=<dir>` on `ai-settings.spec.ts` and `ai-panel.spec.ts`).
+
+## Step 32b progress (editor UI)
+
+Baseline 2026-11-18 on `fd327f1`: cargo test all ok.
+
+Plan: (1) iframe <-> main window AI protocol, (2) pure UI helpers (chips, attachments, status,
+diff summary), (3) rail + panel + conversation + starters (board 59), (4) composer: chips,
+syllabus listbox, Andere opdrachten popover, attachments (board 60), (5) running: status line,
+transcript, Stop, editor bar, pill, error cards, (6) diff card, Toepassen as one undo step,
+Ongedaan maken, (7) Voorstel bekijken dialog with PDF preview (board 61).
+
+1. **Done (`1b65eda`):** `editor/ai-protocol.ts` (`maatwerk-ai` requests with a method
+   allowlist, events as `maatwerk-ai-event` per run id), `modals/editor-ai.ts` (main window adds
+   teacher and opdracht, `info` = opdrachtgegevens + other opdrachten, `preview` via
+   `renderAssignmentSvg`), `editor/ai/client.ts` (iframe client). New command
+   `ai_pick_attachments` + `ai.pickAttachments()`.
+
+2. **Done (`4968beb`):** `editor/ai/model.ts` (pure, tested): chips and what is remembered,
+   syllabus preselection, attachment limits, transcript from events, status/summary/diff texts,
+   starters, `applyHunks` (the dialog's preview).
+3. **Done (`a80295a`, sub-tasks 3-7 in one commit):** `editor/ai/panel.ts` (rail, panel,
+   conversation, run flow, apply/undo), `composer.ts` (chips, syllabus listbox, Andere
+   opdrachten, attachments: paperclip/drop/paste), `cards.ts` (status card, transcript, summary
+   row, end-state cards, diff card), `review.ts` (Voorstel bekijken), `dom.ts`,
+   `styles/editor-ai.css`; wired in `editor-init.js` (`initAi`: buffers, minimal-diff apply as
+   one undo step, copy bar, `setAiBusy` pill). `no-file-drop` lets `[data-file-drop]` take
+   drops. e2e `ai-panel.spec.ts` (4 tests); editor/CSP/quirks e2e still pass (97).
+
+**32b done.** Checks: lint, typecheck, 763 Vitest, cargo clippy/fmt, bindings test.
+Known gaps (for 32c or later, tell the user):
+
+- Gear (AI-instellingen) and the timed-out card's "AI-instellingen" button only appear once
+  32c passes `openSettings`; the "?" button shows a short text, not board 63's install help.
+- First-use notice (decision 70) and the school/teacher switches are 32c.
+- Voorstel bekijken's preview renders `opdracht.typ` only: new images from the proposal are
+  not in it until applied (the note says so), and new parts are not outlined (board 61).
+- Skipped `main.typ`/`lib.typ` are listed struck through without "Toon voorstel" (the
+  proposal does not carry their text).
+- Ongedaan maken refuses after the teacher typed since Toepassen (points to Ctrl+Z).
+- `editor-init.js` (~2.050 lines, JS) is not converted or split (R-05); the AI code is new TS
+  modules next to it.
+- Real-CLI manual check not done (32c).
+
+## Step 32a progress (bridge, no UI)
+
+Baseline 2026-11-18 on `64d5b54`: cargo test all ok.
+
+1. **Done (`f9e4411`):** `maatwerk_core::ai`: `provider` (six presets per ADR-0009, custom
+   CLIs, per-teacher `AiSettings` in local app data, `split_args`, placeholders `{prompt}`
+   `{request}` `{workdir}` `{session}` `{check}` `{images}` `{run}` `{secs}`; two argument
+   strings per CLI: first message and later messages), `detect` (PATH + login-shell PATH +
+   installer folders, `--version`), `events` (per-format parsers into `AiEvent`, `Collected`
+   with session, answer, error, auth failure), `run` (thread runner, time limit, Stop, tree
+   kill via `taskkill /T` or process group). Fake CLI `src/bin/maatwerk-fake-ai.rs`, tests in
+   `tests/ai_fake_cli.rs`.
+2. **Done (`88ed2b7`):** bundled check: `maatwerk --ai-check <dir>` (app `main.rs`,
+   `ai::check`), JSON report, exit 0/1/2/3, editor time limit; `assignment::with_time_limit`;
+   `maatwerk-cli assignment check|render --timeout` (default 30 s, exit 3) closes Step 9 m3.
+3. **Done (`601a94d`):** `ai::workspace`: `Layout` (`<local app data>/ai/<gebruiker>/`:
+   `settings.json`, `opdrachten/<id>/<provider>.json` history, `context.json` chips,
+   `work/<id>/<provider>/` workspace with a stable path, `<provider>.run/` per turn), `prepare`
+   (buffers or saved files, grey same-size placeholder images unless the Afbeeldingen chip,
+   context per chip, attachments with limits, `.maatwerk/check` + `check.cmd`, Vibe
+   `.vibe/config.toml`, Gemini policy, `request.md` in English with the Dutch-answer rule),
+   `Baseline` for the diff.
+4. **Done (`6feea68`):** `ai::history` (conversation per provider per opdracht, transcript per
+   run), `ai::diff` (proposal restricted to `opdracht.typ` + `images/`, `main.typ`/`lib.typ`
+   skipped, hunks via `similar`, `rebase` onto the current buffer with conflicts, `apply` of
+   selected hunks), `ai::turn` (`run_turn`: prepare, run with resume, Maatwerk-side check with
+   up to 3 fix rounds for CLIs that cannot run it, outcomes Proposal/NoChanges/NotLoggedIn/
+   CliError/TimedOut/Stopped/NotFound, nothing kept on stop/time-out/failure, history saved,
+   `proposal.json` in the run folder). Tests `tests/ai_turn.rs`. New crates `similar`
+   (Apache-2.0) and `uuid` in `THIRD_PARTY_LICENSES.md`; `npm run notices` still to run at the
+   gate.
+5. **Done (`78904ed`):** app `src-tauri/src/ai.rs` (17 `ai_*` commands: detect, settings, login
+   check, send with events over a `Channel` and one run per opdracht, stop, conversations,
+   new conversation, proposal with rebased statuses, apply with image backups and undo,
+   proposal image, context chips without Afbeeldingen, syllabus list and folder (`syllabus/`
+   next to the exe on Windows, local app data elsewhere), presets). JSON payloads typed in
+   `ui/src/bridge/ai-api.ts` (`window.maatwerk.ai`), Tauri impl in `tauri-api.ts`, scripted
+   `mock/mock-ai.ts` with a test. Checks: clippy, cargo test (25 suites), typecheck, lint, 733
+   Vitest.
+
+**32a done.** Left for 32c: the real-CLI manual check (ADR-0009 _verify_ rows), the entry
+points, settings dialog and school switch.
+
+## Previous step (30-31)
 
 **Steps 30 and 31 in one go (user, 2026-11-17):** step 30 (Observaties and opdrachten, 0.21) on
 `step/30-observaties`, then step 31 (Opdrachten-editor, 0.22) on `step/31-editor`; one gate and

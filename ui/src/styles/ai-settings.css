@@ -1,0 +1,262 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* AI-instellingen, first-use notice and the AI parts of other dialogs (board 62, step 32c;
+   modals/ai-settings/, modals/ai-notice.ts). */
+
+.dlg.ai-settings {
+  width: 780px;
+}
+.ais-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ais-cap {
+  font-size: var(--fs-section);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+.ais-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ais-section.is-off,
+.ais-grid.is-off {
+  opacity: 0.45;
+}
+.ais-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ais-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ais-list__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ais-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ais-link:hover {
+  text-decoration: underline;
+}
+.ais-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* CLI accordion card. */
+.ais-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+.ais-card.is-open {
+  border-color: var(--accent);
+}
+.ais-card__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ais-card__head:hover {
+  background: var(--surface-2);
+}
+.ais-card__head:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.ais-card__head .ai-icon {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.ais-card.is-open .ais-card__head .ai-icon {
+  transform: rotate(180deg);
+}
+.ais-card__name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ais-card__name .ais-mono {
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ais-tag {
+  flex: none;
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}
+.ais-tag.is-changed {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+.ais-tag.is-missing {
+  color: var(--danger);
+}
+.ais-card__body {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: center;
+  padding: 4px 12px 12px 50px;
+}
+.ais-card__body .form-control {
+  height: 32px;
+}
+.ais-card__foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ais-card__foot .ais-hint {
+  flex: 1;
+}
+.ais-card__foot .btn {
+  white-space: nowrap;
+}
+.ais-danger-text {
+  color: var(--danger);
+}
+
+/* Time limit and syllabus folder. */
+.ais-grid {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 22px;
+}
+.ais-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ais-row {
+  display: flex;
+  gap: 8px;
+}
+.ais-row .form-control {
+  flex: 1;
+  min-width: 0;
+}
+.ais-error {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--r-btn);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--fs-secondary);
+}
+.ais-foot-note {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ais-card__head .ai-icon {
+    transition: none;
+  }
+}
+
+/* First-use notice (decision 70). */
+.dlg.ai-notice {
+  width: 720px;
+}
+.ain-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  line-height: 1.5;
+}
+.ain-lead,
+.ain-foot {
+  margin: 0;
+  color: var(--muted);
+}
+.ain-foot {
+  font-size: var(--fs-secondary);
+}
+.ain-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.ain-col {
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ain-col--sent .ais-cap,
+.ain-col--sent .ai-icon {
+  color: var(--ok);
+}
+.ain-col--never .ais-cap,
+.ain-col--never .ai-icon {
+  color: var(--danger);
+}
+.ain-col ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ain-col li {
+  display: flex;
+  gap: 8px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.ain-col li .ai-icon {
+  flex: none;
+  margin-top: 2px;
+}
+.ain-warn {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: var(--fs-secondary);
+}
+.ain-warn .ai-icon {
+  flex: none;
+  margin-top: 2px;
+}
+@media (max-width: 700px) {
+  .ain-cols {
+    grid-template-columns: 1fr;
+  }
+}

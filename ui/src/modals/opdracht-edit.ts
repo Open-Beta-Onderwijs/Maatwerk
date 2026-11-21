@@ -18,6 +18,8 @@ import {
 import type { Dialog, DialogOptions } from '../components/dialog';
 import type { Observatie, Opdracht } from '../domain/types';
 import { Store } from '../store.js';
+import { openEditor as openEditorWith } from './editor';
+import { aiStartCard, type AiStartCard } from './opdracht-ai';
 import {
   jaarlagenField,
   readChips,
@@ -112,6 +114,7 @@ export async function openOpdrachtModal(
       <span class="form-label" id="op-obs-label">Observaties <span class="form-label-hint">· deze opdracht past bij</span></span>
       <div id="op-obs-group" class="opd-obs-group" role="group" aria-labelledby="op-obs-label"></div>
     </div>
+    <div id="op-ai-slot"></div>
     `,
     onShow: (el) => {
       const group = el.querySelector<HTMLElement>('#op-obs-group')!;
@@ -168,12 +171,37 @@ export async function openOpdrachtModal(
         return saved;
       };
 
-      el.querySelector('#f-opsave')!.addEventListener('click', () => {
+      // Decision 74 (board 63): a new opdracht can start with the AI.
+      const saveBtn = el.querySelector<HTMLButtonElement>('#f-opsave')!;
+      let aiCard: AiStartCard | null = null;
+      const user = Store.getActiveUser() as { id?: string } | null;
+      if (!isEdit && user?.id) {
+        void aiStartCard(window.maatwerk.ai, user.id, (on) => {
+          saveBtn.textContent = on ? 'Opslaan en AI starten' : 'Toevoegen';
+        }).then((card) => {
+          if (!card || !el.isConnected) return;
+          aiCard = card;
+          el.querySelector('#op-ai-slot')!.replaceWith(card.element);
+        });
+      }
+
+      saveBtn.addEventListener('click', () => {
+        const ai = aiCard?.value() ?? null;
+        if (ai && !ai.message) {
+          toast('Beschrijf wat er in de opdracht moet staan.', 'error');
+          el.querySelector<HTMLElement>('#op-ai-text')?.focus();
+          return;
+        }
         void save().then((saved) => {
           if (!saved) return;
           closeModal();
-          toast(`Opdracht ${isEdit ? 'bijgewerkt' : 'toegevoegd'}.`, 'success');
           onSaved();
+          if (ai) {
+            // The opdracht holds the empty template until a proposal is applied.
+            openEditorWith(saved, { provider: ai.provider, message: ai.message, send: true });
+            return;
+          }
+          toast(`Opdracht ${isEdit ? 'bijgewerkt' : 'toegevoegd'}.`, 'success');
         });
       });
       // Saves first (a new opdracht needs its folder, a change must not be lost), then opens the

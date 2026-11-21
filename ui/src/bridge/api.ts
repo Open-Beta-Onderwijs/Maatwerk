@@ -91,7 +91,8 @@ export interface BatchJob {
     exam: string;
     observaties: { icon: string; name: string }[];
   }>;
-  mode?: 'student' | 'answers';
+  /** `plain`: the opdracht without the student block (printed from the Opdrachten tab). */
+  mode?: 'student' | 'plain' | 'answers';
 }
 
 export interface BatchOptions {
@@ -117,8 +118,12 @@ import type { MigrationResult, DataCheck, StampIssue, PinCheck, RubricUse } from
 export type { PinCheck, PinOutcome } from './bindings';
 
 import type { PrintName } from '../domain/print';
+import type { AiApi } from './ai-api';
 
 export interface MaatwerkApi {
+  /** The AI assistant (step 32, `ai-api.ts`). */
+  readonly ai: AiApi;
+
   // ── JSON storage ──────────────────────────────────────────────────────────
   /** Parsed JSON, or null when missing or unparsable. */
   readJson(relPath: string): Promise<Json | null>;

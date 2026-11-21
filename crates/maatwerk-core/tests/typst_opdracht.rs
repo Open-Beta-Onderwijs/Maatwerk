@@ -414,6 +414,50 @@ fn answers_mode_ignores_the_student_fields() {
     assert!(text.starts_with("SleutelAntwoordsleutel"), "{text}");
 }
 
+/// 0.23.1: printed from the Opdrachten tab, the opdracht has its title but no student block,
+/// even when header fields are passed; otherwise it is laid out as the student's copy.
+#[test]
+fn plain_mode_has_the_title_but_no_student_block() {
+    let (_tmp, dir) = data_dir();
+    let project = || TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
+    let header = OpdrachtHeader {
+        title: "Losse opdracht".into(),
+        student: "Iemand".into(),
+        group: "4A".into(),
+        exam: "Toets".into(),
+        observaties: vec![],
+    };
+    let render = |mode, include_answers| {
+        let inputs = OpdrachtInputs {
+            mode,
+            include_answers,
+            header: header.clone(),
+        };
+        compile(project(), &inputs).unwrap().output
+    };
+    let plain = render(Mode::Plain, false);
+    let student = render(Mode::Student, false);
+    let first = page_text(&plain, 0);
+    assert!(first.starts_with("Losse opdracht"), "{first}");
+    for gone in ["Iemand", "4A", "N.a.v.", "Toets"] {
+        assert!(!first.contains(gone), "{gone} in {first}");
+    }
+    assert!(page_text(&student, 0).contains("N.a.v."));
+    assert_eq!(plain.pages.len(), student.pages.len());
+    for p in 1..plain.pages.len() {
+        assert_eq!(page_text(&plain, p), page_text(&student, p), "page {p}");
+    }
+    let with_answers = render(Mode::Plain, true);
+    let student_answers = render(Mode::Student, true);
+    assert_eq!(with_answers.pages.len(), student_answers.pages.len());
+    let last = with_answers.pages.len() - 1;
+    assert_eq!(
+        page_text(&with_answers, last),
+        page_text(&student_answers, last),
+        "the upside-down answers when asked for"
+    );
+}
+
 /// An opdracht whose source is `body`, compiled in the fixture data dir.
 fn compile_source(body: &str) -> Result<Compiled<PagedDocument>, CompileError> {
     let (_tmp, dir) = data_dir();

@@ -159,6 +159,25 @@ po: { <examId>: { projectgroep, categoryObs: { <categoryId>: [obsId] },
 - Guard: the first score file with a non-empty `po` raises `school.json` `minAppVersion` to
   **0.14.0** (`maatwerk_core::rubrics`): an older app would show PO grades without the lines.
 
+## School AI switch (0.23, step 32c)
+
+Additive within v3 (PLAN-2 decision 73 and the answers under decision 75). `instellingen.json`
+gets, next to `snapshots` and `editor`:
+
+```
+ai: { enabled: false }
+```
+
+- Set by the admin on Beheer › Instellingen ("Docenten mogen de AI-assistent gebruiken"). Missing,
+  or any value but the boolean `false`, means on (`maatwerk_core::ai::school::school_allows`).
+- Off: no AI rail in the editor, no AI option in Opdracht toevoegen, no "Laat AI dit oplossen";
+  `ai_send` refuses a run. The teacher's own settings stay in local app data and are not touched.
+- No guard: no app before 0.23 has an AI assistant, so an older app has nothing to switch off,
+  and every older app writes the whole settings object back (the field survives). Raising
+  `minAppVersion` would only lock older apps out.
+- `validate-data` does not check `instellingen.json` fields (as before: unusable values count
+  as the default).
+
 ## `validate-data`
 
 Step 23 adds: `po` under an exam id that does not exist (missing), a `po` entry that is not an

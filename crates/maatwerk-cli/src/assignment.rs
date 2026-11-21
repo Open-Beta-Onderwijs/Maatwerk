@@ -6,10 +6,11 @@
 use std::path::PathBuf;
 use std::process::ExitCode;
 use std::sync::Arc;
+use std::time::Duration;
 
-use maatwerk_core::assignment::{self, Assignment, CheckReport, RenderOptions};
+use maatwerk_core::assignment::{self, Assignment, CheckReport, RenderOptions, with_time_limit};
 use maatwerk_core::paths::display_path;
-use maatwerk_core::typst_svc::{FontStore, Mode, local_now, to_text};
+use maatwerk_core::typst_svc::{DEFAULT_COMPILE_TIMEOUT, FontStore, Mode, local_now, to_text};
 
 /// Options shared by `check` and `render`.
 #[derive(Debug, PartialEq)]
@@ -17,6 +18,8 @@ struct Common {
     path: PathBuf,
     options: RenderOptions,
     system_fonts: bool,
+    /// The compile time limit (Step 9 m3).
+    timeout: Duration,
 }
 
 impl Common {
@@ -25,6 +28,7 @@ impl Common {
         let mut path = None;
         let mut options = RenderOptions::default();
         let mut system_fonts = true;
+        let mut timeout = DEFAULT_COMPILE_TIMEOUT;
         let mut rest = Vec::new();
         let mut it = args.iter();
         while let Some(&arg) = it.next() {
@@ -32,6 +36,15 @@ impl Common {
                 "--answers" => options.mode = Mode::Answers,
                 "--no-answers" => options.include_answers = false,
                 "--ignore-system-fonts" => system_fonts = false,
+                "--timeout" => {
+                    let secs = it.next().ok_or("--timeout needs seconds")?;
+                    timeout = secs
+                        .parse::<u64>()
+                        .ok()
+                        .filter(|s| (1..=3600).contains(s))
+                        .map(Duration::from_secs)
+                        .ok_or(format!("--timeout {secs}: whole seconds from 1 to 3600"))?;
+                }
                 "--pdf" | "--out" | "-o" => {
                     rest.push(arg);
                     rest.push(it.next().ok_or(format!("{arg} needs a file"))?);
@@ -48,6 +61,7 @@ impl Common {
             path: path.ok_or("missing <opdracht folder or file.typ>")?,
             options,
             system_fonts,
+            timeout,
         };
         Ok((common, rest))
     }
@@ -96,12 +110,12 @@ impl CheckArgs {
             Ok(a) => a,
             Err(code) => return code,
         };
-        let report = assignment::check(
-            &assignment,
-            self.common.options,
-            self.common.fonts(),
-            local_now(),
-        );
+        let (options, fonts) = (self.common.options, self.common.fonts());
+        let Some(report) = with_time_limit(self.common.timeout, move || {
+            assignment::check(&assignment, options, fonts, local_now())
+        }) else {
+            return timed_out(self.common.timeout);
+        };
         if self.json {
             println!(
                 "{}",
@@ -197,12 +211,13 @@ impl RenderArgs {
             Err(code) => return code,
         };
         let out = self.out;
-        match assignment::render_pdf(
-            &assignment,
-            self.common.options,
-            self.common.fonts(),
-            local_now(),
-        ) {
+        let (options, fonts) = (self.common.options, self.common.fonts());
+        let Some(result) = with_time_limit(self.common.timeout, move || {
+            assignment::render_pdf(&assignment, options, fonts, local_now())
+        }) else {
+            return timed_out(self.common.timeout);
+        };
+        match result {
             Ok(compiled) => {
                 if !compiled.warnings.is_empty() {
                     eprint!("{}", to_text(&compiled.warnings));
@@ -220,6 +235,15 @@ impl RenderArgs {
             }
         }
     }
+}
+
+/// Exit code 3: the compile ran past the time limit (it cannot be cancelled; the process ends).
+fn timed_out(limit: Duration) -> ExitCode {
+    eprintln!(
+        "error: compiling took longer than {} s (--timeout) and was stopped",
+        limit.as_secs()
+    );
+    ExitCode::from(3)
 }
 
 /// `assignment export-lib <dir> [--overwrite]`.
@@ -280,6 +304,11 @@ mod tests {
         assert!(CheckArgs::parse(&[]).is_err());
         assert!(CheckArgs::parse(&["op", "--pdf", "x.pdf"]).is_err());
         assert!(CheckArgs::parse(&["op", "--answers", "--no-answers"]).is_err());
+        assert_eq!(c.common.timeout, DEFAULT_COMPILE_TIMEOUT);
+        let t = CheckArgs::parse(&["op", "--timeout", "5"]).unwrap();
+        assert_eq!(t.common.timeout, Duration::from_secs(5));
+        assert!(CheckArgs::parse(&["op", "--timeout", "0"]).is_err());
+        assert!(CheckArgs::parse(&["op", "--timeout"]).is_err());
 
         let r = RenderArgs::parse(&["op/main.typ", "--pdf", "o.pdf", "--no-answers"]).unwrap();
         assert_eq!(r.out, PathBuf::from("o.pdf"));

@@ -38,6 +38,7 @@ let renderError: string | null = null;
 let dirty = false;
 let compiling = false;
 let busyTimer: ReturnType<typeof setTimeout> | null = null;
+let aiBusy: string | null = null;
 /** What the pill shows now; a render of the same state changes nothing (review m6). */
 let shownKey = '';
 
@@ -90,6 +91,7 @@ function state(): { kind: PillKind; text: string; details: string | null } {
   if (message.details !== null)
     return { kind: 'error', text: message.text, details: message.details };
   if (renderError !== null) return { kind: 'error', text: RENDER_ERROR_TEXT, details: renderError };
+  if (aiBusy !== null) return { kind: 'busy', text: aiBusy, details: null };
   if (compiling && busyTimer === null) return { kind: 'busy', text: 'Compileren…', details: null };
   if (message.error) return { kind: 'error', text: message.text, details: null };
   if (dirty) return { kind: 'info', text: DIRTY_TEXT, details: null };
@@ -136,6 +138,12 @@ export function setRenderError(details: string | null): void {
 /** Whether a compile error is shown. */
 export function hasRenderError(): boolean {
   return renderError !== null;
+}
+
+/** "<naam> is bezig" while an AI run works on a copy (step 32b, board 59); null when done. */
+export function setAiBusy(text: string | null): void {
+  aiBusy = text;
+  render();
 }
 
 /** The text has edits that are not saved yet. */

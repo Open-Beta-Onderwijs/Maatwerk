@@ -58,6 +58,9 @@ impl ProjectFile {
                 // 2: `setup_extra(body)` as a show rule (quirk T31) and no cursor marker
                 // (review 8b n4), 0.3.1.
                 (2, "46159ead80b65e7da0800ddcc610b5fb2e02872b"),
+                // 3: mode "plain" (an opdracht without the student block, printed from the
+                // Opdrachten tab), 0.23.1.
+                (3, "2de3ae8ed858c95d0b55bfd82a6c86bcb4647640"),
             ],
         }
     }

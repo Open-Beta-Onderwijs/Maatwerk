@@ -13,6 +13,7 @@ import {
 } from '../app.js';
 import { ICONS } from '../utils/icons.js';
 import { openOpdrachtModal } from '../modals/opdracht-edit';
+import { openOpdrachtPrintModal } from '../modals/opdracht-print';
 import { VAK_CHIPS } from '../modals/obs-opd-fields';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -106,6 +107,7 @@ export async function renderOpdrachten() {
       <div class="card-actions">
         <button class="btn btn--icon" data-action="edit-opdracht" data-id="${escHtml(o.id)}" title="Opdracht bewerken">${ICONS.pen}</button>
         <button class="btn btn--icon" data-action="copy-opdracht" data-id="${escHtml(o.id)}" title="Opdracht kopiëren">${ICONS.copy}</button>
+        <button class="btn btn--icon" data-action="print-opdracht" data-id="${escHtml(o.id)}" title="Opdracht afdrukken" aria-label="Opdracht afdrukken">${ICONS.print}</button>
         <button class="btn btn--icon btn--icon-danger" data-action="del-opdracht" data-id="${escHtml(o.id)}" title="Opdracht verwijderen">${ICONS.trash}</button>
       </div>
     </div>`;
@@ -124,6 +126,12 @@ export async function renderOpdrachten() {
   container
     .querySelectorAll('[data-action="copy-opdracht"]')
     .forEach((b) => b.addEventListener('click', () => copyOpdracht(b, b.dataset.id)));
+  container.querySelectorAll('[data-action="print-opdracht"]').forEach((b) =>
+    b.addEventListener('click', () => {
+      const opdracht = Store.getOpdrachtenSync().find((o) => o.id === b.dataset.id);
+      if (opdracht) openOpdrachtPrintModal(opdracht);
+    }),
+  );
   container
     .querySelectorAll('[data-action="del-opdracht"]')
     .forEach((b) => b.addEventListener('click', () => deleteOpdracht(b.dataset.id)));

@@ -3234,7 +3234,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-app"
-version = "0.19.0"
+version = "0.23.1"
 dependencies = [
  "maatwerk-core",
  "rfd",
@@ -3257,7 +3257,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-cli"
-version = "0.19.0"
+version = "0.23.1"
 dependencies = [
  "maatwerk-core",
  "serde",
@@ -3268,7 +3268,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-core"
-version = "0.19.0"
+version = "0.23.1"
 dependencies = [
  "argon2",
  "base64 0.23.1",
@@ -3283,6 +3283,7 @@ dependencies = [
  "serde_json",
  "sha1",
  "sha2 0.11.1",
+ "similar",
  "tempfile",
  "thiserror 2.0.21",
  "time",
@@ -3295,12 +3296,13 @@ dependencies = [
  "typst-render",
  "typst-svg",
  "unicode-normalization",
+ "uuid",
  "zip",
 ]
 
 [[package]]
 name = "maatwerk-grades"
-version = "0.19.0"
+version = "0.23.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -3308,7 +3310,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-grades-wasm"
-version = "0.19.0"
+version = "0.23.1"
 dependencies = [
  "maatwerk-grades",
  "serde",
@@ -5080,6 +5082,12 @@ name = "simdutf8"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
+
+[[package]]
+name = "similar"
+version = "2.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbbb5d9659141646ae647b42fe094daf6c6192d1620870b449d9557f748b2daa"
 
 [[package]]
 name = "simplecss"

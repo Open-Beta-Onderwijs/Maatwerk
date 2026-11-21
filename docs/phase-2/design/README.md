@@ -17,40 +17,45 @@ UI text stays Dutch, decimal comma, as everywhere in the app.
 
 ## 1. Boards and roadmap items
 
-| Board (mock file)            | Covers                                                                                       | Roadmap                            |
-| ---------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------- |
-| 1 Fundament (`Main.dc.html`) | tab bar, user menu, theme + accent, student and group cards                                  | V-05, F-17, F-18, F-07, F-08, F-09 |
-| 2 Kaartvarianten             | history: card variants A/B/C (C chosen)                                                      | F-07                               |
-| 3 Groepsoverzicht            | modal position, sticky header, placeholders (content superseded by board 45)                 | V-08..V-10                         |
-| 4 Knoppen                    | buttons, inputs, chips, dialog buttons, test-type badges                                     | V-06, V-11                         |
-| 5 Login                      | login flow with inline PIN                                                                   | V-04                               |
-| 6 Splash                     | splash screen                                                                                | F-06                               |
-| 7 Logo, 9 Logo B             | wordmark (7 = final; 9 is history)                                                           | V-12                               |
-| 8 Tabbalk                    | tab-bar wordmark variants (4 chosen)                                                         | V-12                               |
-| 10 Editor                    | editor header, toolbar, divider, status, AI rail                                             | V-07, F-16, F-05, B-08, F-01       |
-| 11 Toetsen                   | test-type badges, attempts as a tree, "+ PO toevoegen"                                       | V-11, F-12                         |
-| 12 Beheer                    | admin tab bar, Gebruikers (+ edit, photo crop), School, Gegevenscontrole, Instellingen       | V-05, F-19, B-04                   |
-| 13 Scores                    | score-entry modal: sticky parts, centred                                                     | V-06, V-10                         |
-| 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                               | V-11, F-12                         |
-| 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                              | F-15                               |
-| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                                 | F-22                               |
-| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                               | F-20, F-22                         |
-| 18 POScores                  | PO score table, projectgroep grading modal                                                   | F-22                               |
-| 19 PORapport1                | PO rapport page 1: grade sentence, projectgroep, lollipop score table, bonus/malus, comment  | F-22                               |
-| 20 PORapportA                | PO rapport category pages (chosen): level cards, comment, observaties with leeradvies        | F-22                               |
-| 21-24 PORapportB-E           | history: category page variants B-E (not chosen)                                             | F-22                               |
-| 25-36 POOv*                  | history: PO overview, three alternatives per tab (chosen: Res C, Dist A and C, Cat B, Obs B) | F-24                               |
-| 37-42 Profiel*               | history: profile, three alternatives per tab (chosen: Cijferverloop C, Analyse B)            | F-25                               |
-| 43 POOverzicht               | PO overview (final, interactive): Per klas / Per projectgroep, tooltips, five tabs           | F-24                               |
-| 44 Profiel                   | student profile (final, interactive): bar chart, SD bands, RTTI cards                        | F-25                               |
-| 45 Groepsoverzicht2          | group overview (final, interactive; replaces board 3's content)                              | F-10, F-26                         |
-| 46 Toetsoverzicht            | exam overview (final, interactive) with the verzameloverzicht toggle                         | F-11, F-26                         |
-| 47-50 ToetsenKaartA-D        | history: Toetsen as cards, four ways to open attempts (chosen: card C, tray idea of B)       | F-27                               |
-| 51-54 ToetsenStapelA-D       | history: the stack as one outlined shape, four variants (chosen: A)                          | F-27                               |
-| 55 ToetsenStapelA2           | Toetsen as cards (final): a stack with two attempts, tray centred under the stack            | F-27                               |
-| 56 ToetsenStapelA3           | Toetsen as cards (final): card layout and a stack with three attempts                        | F-27                               |
-| 57 ObservatiesKaarten        | Observaties as cards (final)                                                                 | F-28                               |
-| 58 OpdrachtenVoorbeeld       | Opdrachten as cards with the preview panel (final, interactive)                              | F-28                               |
+| Board (mock file)            | Covers                                                                                                                                                   | Roadmap                            |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| 1 Fundament (`Main.dc.html`) | tab bar, user menu, theme + accent, student and group cards                                                                                              | V-05, F-17, F-18, F-07, F-08, F-09 |
+| 2 Kaartvarianten             | history: card variants A/B/C (C chosen)                                                                                                                  | F-07                               |
+| 3 Groepsoverzicht            | modal position, sticky header, placeholders (content superseded by board 45)                                                                             | V-08..V-10                         |
+| 4 Knoppen                    | buttons, inputs, chips, dialog buttons, test-type badges                                                                                                 | V-06, V-11                         |
+| 5 Login                      | login flow with inline PIN                                                                                                                               | V-04                               |
+| 6 Splash                     | splash screen                                                                                                                                            | F-06                               |
+| 7 Logo, 9 Logo B             | wordmark (7 = final; 9 is history)                                                                                                                       | V-12                               |
+| 8 Tabbalk                    | tab-bar wordmark variants (4 chosen)                                                                                                                     | V-12                               |
+| 10 Editor                    | editor header, toolbar, divider, status, AI rail                                                                                                         | V-07, F-16, F-05, B-08, F-01       |
+| 11 Toetsen                   | test-type badges, attempts as a tree, "+ PO toevoegen"                                                                                                   | V-11, F-12                         |
+| 12 Beheer                    | admin tab bar, Gebruikers (+ edit, photo crop), School, Gegevenscontrole, Instellingen                                                                   | V-05, F-19, B-04                   |
+| 13 Scores                    | score-entry modal: sticky parts, centred                                                                                                                 | V-06, V-10                         |
+| 14 Toetsmodals               | new test (PTA/D), edit test, inhaal/herkansing                                                                                                           | V-11, F-12                         |
+| 15 ObsOpdModals              | observatie edit with icon picker, opdracht edit                                                                                                          | F-15                               |
+| 16 Rubrics                   | Rubrics tab, rubric editor with level display and validation                                                                                             | F-22                               |
+| 17 PO                        | PO card, PO toevoegen (rubric), projectgroepen                                                                                                           | F-20, F-22                         |
+| 18 POScores                  | PO score table, projectgroep grading modal                                                                                                               | F-22                               |
+| 19 PORapport1                | PO rapport page 1: grade sentence, projectgroep, lollipop score table, bonus/malus, comment                                                              | F-22                               |
+| 20 PORapportA                | PO rapport category pages (chosen): level cards, comment, observaties with leeradvies                                                                    | F-22                               |
+| 21-24 PORapportB-E           | history: category page variants B-E (not chosen)                                                                                                         | F-22                               |
+| 25-36 POOv*                  | history: PO overview, three alternatives per tab (chosen: Res C, Dist A and C, Cat B, Obs B)                                                             | F-24                               |
+| 37-42 Profiel*               | history: profile, three alternatives per tab (chosen: Cijferverloop C, Analyse B)                                                                        | F-25                               |
+| 43 POOverzicht               | PO overview (final, interactive): Per klas / Per projectgroep, tooltips, five tabs                                                                       | F-24                               |
+| 44 Profiel                   | student profile (final, interactive): bar chart, SD bands, RTTI cards                                                                                    | F-25                               |
+| 45 Groepsoverzicht2          | group overview (final, interactive; replaces board 3's content)                                                                                          | F-10, F-26                         |
+| 46 Toetsoverzicht            | exam overview (final, interactive) with the verzameloverzicht toggle                                                                                     | F-11, F-26                         |
+| 47-50 ToetsenKaartA-D        | history: Toetsen as cards, four ways to open attempts (chosen: card C, tray idea of B)                                                                   | F-27                               |
+| 51-54 ToetsenStapelA-D       | history: the stack as one outlined shape, four variants (chosen: A)                                                                                      | F-27                               |
+| 55 ToetsenStapelA2           | Toetsen as cards (final): a stack with two attempts, tray centred under the stack                                                                        | F-27                               |
+| 56 ToetsenStapelA3           | Toetsen as cards (final): card layout and a stack with three attempts                                                                                    | F-27                               |
+| 57 ObservatiesKaarten        | Observaties as cards (final)                                                                                                                             | F-28                               |
+| 58 OpdrachtenVoorbeeld       | Opdrachten as cards with the preview panel (final, interactive)                                                                                          | F-28                               |
+| 59 AIChat                    | AI in the editor (final, interactive): empty chat with starters and chips, running status line and transcript, finished with the diff card, error states | F-01                               |
+| 60 AIContext                 | context chips, syllabus choice, Andere opdrachten picker, image warning, drop zone, attachment errors (final)                                            | F-01                               |
+| 61 AIDiff                    | Voorstel bekijken (final, interactive): hunk choice, conflict, skipped files, PDF preview                                                                | F-01                               |
+| 62 AIInstellingen            | AI-instellingen, first-use notice, install help, assistant off by the school, Beheer › Instellingen switch (final)                                       | F-01                               |
+| 63 AIStart                   | Opdracht toevoegen with AI, Opdrachten genereren: Laat AI dit oplossen (final)                                                                           | F-01                               |
 
 ## 2. Design tokens
 
@@ -509,13 +514,112 @@ Cards since step 33 (user, 2026-11-17); the list design of step 20 is replaced.
   per user.
 - **Right pane:** own bar (zoom −/+ , percentage, Paginabreedte; the "Vragen" warning as an amber
   pill on the right), PDF below.
-- **AI rail (F-01):** 60 px column at the far right, "AI" label, one 40 px button per provider
-  (Claude, ChatGPT, Mistral, Gemini, DeepSeek, Copilot). Use each provider's official logo per
-  its brand guidelines (the mock uses monograms). Clicking one slides open a 380 px chat panel
-  between the PDF and the rail: header (logo, name, "via de command line op deze computer",
-  close), messages, input with send button. A proposed change appears as a diff card
-  ("opdracht.typ +14 −2", **Bekijken**, **Toepassen**); the AI never changes the file without
-  the teacher applying it.
+- **AI rail and assistant (F-01):** see 4.8.1. The provider buttons in boards 10 and 59-63 are
+  monograms; use each provider's official logo per its brand guidelines.
+
+#### 4.8.1 AI assistant (F-01, boards 59-63, design round 15)
+
+Decisions 48-61 and 62-75 in `PLAN-2.md`. The boards use the mock's own colour values; the tokens of section 2 win (for example
+`--border-strong` for inputs in the dark theme). Mock names that differ from the app: the boards say
+`afbeeldingen/` and `maatwerk check`; the app uses `images/` and
+`maatwerk-cli assignment check --json` (the UI text may still say "afbeeldingen").
+
+- **Rail (board 59):** 60 px column at the far right, "AI" label, one 40 px button per CLI found
+  on this computer (Claude Code, Codex, Gemini CLI, Mistral Vibe, Copilot CLI; mock monograms C,
+  G, Ge, M, Co). None found: one dashed "?" button that opens the install help (board 62). The
+  selected button has a 2 px ring in the provider colour; a dot top right marks a provider with
+  an open conversation (accent while it runs). A click opens or switches the conversation (one
+  per provider per opdracht); clicking the open one closes the panel.
+- **Chat panel (380 px):** header: logo, name, "via command line" (user 2026-11-19; was "via de command line op deze computer"), "+ Nieuw
+  gesprek", gear (AI-instellingen, board 62), close. Messages: the teacher's in an accent-tint
+  bubble (attachments as small chips under it), the AI's in `--surface-2`.
+- **Empty chat:** "Waar kan <naam> mee helpen?", one line on the temp copy and the proposal, then
+  the starter buttons (icon tile, label, one-line description): Fouten oplossen (danger tint,
+  only when the opdracht has compile errors), Antwoorden en punten aanvullen, Herschrijven voor
+  ander niveau, Nieuwe opgave toevoegen. A starter fills the input; it does not send.
+- **Composer, top to bottom:** the image warning (amber, only while Afbeeldingen is on); the
+  context chips; the attachment chips; inline attachment errors; the input row (paperclip,
+  textarea, send); the footer line with a lock icon, always visible: "Alleen deze opdracht en de
+  gekozen context worden verstuurd, via jouw eigen abonnement."
+- **Context chips (board 60), 26 px pills:** Opdrachtinstructies AI, Opdrachtgegevens, Fouten &
+  waarschuwingen, PDF-output, "Syllabus: <naam> ▾" (listbox: the PDFs of the syllabus folder,
+  the one matching vak and schoolsoort preselected, "Geen" last, footer with the folder and
+  "Map openen"), "Andere opdrachten (n) ▾" (popover: search, checkboxes, at most 3, the rest
+  disabled at 3, "n van max. 3 gekozen", Klaar), Afbeeldingen. On: accent tint, accent border,
+  check icon; off: outline, muted text, plus icon. Tooltips say what each sends. Remembered per
+  user per opdracht, except Afbeeldingen: off by default, amber when on, switched off again after
+  each message, with the warning "Afbeeldingen kunnen leerlingen tonen…".
+- **Attachments:** paperclip, drop onto the panel (a dashed accent overlay inset 6 px: "Laat los
+  om toe te voegen", accepted types, 25 MB, how many of the 10 are left), paste. A pasted image
+  becomes an attachment; pasted text goes into the input, from 2.000 characters it becomes a
+  "Geplakte tekst" attachment. Chips: icon, name, size, remove button. Errors per file in danger
+  tint (too large, unsupported type); at 10 per chat the paperclip is disabled with a message.
+- **While running:** a status card in the message list: spinner, the current step ("Leest
+  syllabus…", "Controleert de opdracht… ronde 2", `role="status"`), elapsed / limit ("1:42 /
+  5:00"), a chevron for the transcript, Stop (red square); a 3 px progress bar of the time limit
+  underneath. One run per opdracht at a time: input, send and chips are disabled, the other
+  conversations stay readable. The editor stays editable, with an accent-tint bar above the code:
+  "<naam> werkt op een kopie. Je kunt gewoon verder typen; …". The header status pill shows
+  "<naam> is bezig".
+- **Transcript:** monospace card, "Transcript · <command>" with Kopiëren; one collapsible row per
+  step (chevron, status dot: accent running, green done, red error or stopped; title; duration);
+  the body shows tool calls, edits (`+` lines green) and check output (errors red). After the run
+  a summary row ("Klaar in 2:31 · 6 stappen", "Gestopt na 1:42", …) opens the same transcript.
+- **Result:** the AI's answer, then the diff card: "Voorstel · n wijzigingen · m bestanden"; one
+  row per file with +/− counts and a pill ("n wijzigingen", "nieuw" for an image); `main.typ`
+  and `lib.typ` struck through with "niet toegepast" and the line "main.typ: niet toegepast
+  (alleen opdracht.typ en afbeeldingen)"; the diagnostics left after the proposal in an amber
+  box; Bekijken (secondary) and Toepassen (primary). Toepassen applies every hunk that does not
+  conflict plus the new images as one undo step, then the footer turns green: "Toegepast: …" with
+  "Ongedaan maken".
+- **Error and end states** (card under the user's message, `role="alert"`): not logged in
+  (danger; "Open een terminal, start <command> en log in…"; Opnieuw proberen, Hulp bij
+  inloggen); CLI error (danger; the last lines of output in monospace; Opnieuw proberen, Details
+  kopiëren); time-out (amber; nothing changed; Opnieuw proberen, AI-instellingen); stopped by
+  the teacher (neutral; "Wat de AI tot dan toe deed, is weggegooid"); no changes (the AI's answer,
+  then a neutral card "Geen wijzigingen voorgesteld"). A stopped or timed-out run keeps nothing.
+- **Voorstel bekijken (board 61):** dialog inset 24 px. Header: provider logo, "Voorstel van
+  <naam>", time and whether the teacher edited since; "n van m gekozen · k conflict", Alles /
+  Niets, Annuleren, "Toepassen (n)" (disabled at 0). Left (260 px, the editor's gutter tint): WORDT
+  TOEGEPAST with `opdracht.typ` (tri-state checkbox) and its hunks as links with a state dot, the
+  new image with its own checkbox; NIET TOEGEPAST card; NA TOEPASSEN card with the remaining
+  diagnostics. Middle: column heads "HUIDIGE VERSIE (NU IN DE EDITOR)" and "VOORSTEL"; one card
+  per hunk with a checkbox, title, line range and state ("Wordt toegepast", "Wordt niet
+  toegepast" at 50% opacity); side-by-side monospace rows (deleted lines danger tint, added
+  lines green tint, empty filler). A conflict hunk has an amber head, a disabled checkbox and the
+  text "Conflict: je hebt deze regels aangepast terwijl de AI werkte. Deze wijziging wordt
+  overgeslagen…". Then the image card (preview, which hunk uses it; a hunk that uses a deselected
+  image renders a missing-image error) and the skipped files, collapsed, with "Toon voorstel".
+  Right (380 px): PDF preview with Voorstel / Huidige versie tabs, following the current choice;
+  new parts outlined in the accent with a "nieuw" label; "Pagina x van N".
+- **AI-instellingen (board 62, gear):** dialog 780 px, per teacher on this computer: switch "AI-
+  assistent tonen"; AI-PROGRAMMA'S OP DEZE COMPUTER with "Opnieuw zoeken", an accordion card per
+  CLI found (logo, name, path; "standaard" or "aangepast"; open: Opdracht and Argumenten fields in
+  monospace, "Maatwerk voegt zelf de vraag en de map met de kopie toe.", Standaard herstellen);
+  "Niet gevonden: … · Installatiehulp"; Tijdslimiet (minuten, 1-30); Syllabusmap (fixed `syllabus/` folder next to the app, shown read-only with "Map openen"; the board's "Wijzigen…" is not built); footer "Gesprekken blijven op deze computer bij de opdracht.",
+  Annuleren, Opslaan.
+- **First-use notice (board 62):** modal, once per teacher: "Voordat je de AI-assistent
+  gebruikt", the own-subscription paragraph, two cards WORDT VERSTUURD / WORDT NOOIT VERSTUURD,
+  the amber image warning (photos in the opdracht, attachments and the PDF-output), the line that
+  the AI never writes into the opdracht itself, "Begrepen".
+- **Install help (board 62, the "?" button):** the panel "AI-assistent instellen": "Geen
+  AI-programma gevonden", what Maatwerk needs, one card per CLI (logo, name, maker, install
+  command with Kopiëren), a Node.js note; footer "AI-assistent verbergen" and "Opnieuw zoeken".
+  The install commands are checked in the research sub-task.
+- **Off by the school (board 62):** no rail, no AI option in Opdracht toevoegen, no "Laat AI dit
+  oplossen". The only explanation is the user menu item "AI-instellingen…" with "Uitgeschakeld
+  door je school". The switch itself is in Beheer › Instellingen (4.9).
+- **Opdracht toevoegen (board 63):** below the fields a card with the switch "Eerste versie laten
+  maken met AI" (accent border when on): textarea "Wat moet er in de opdracht staan?", select
+  AI-programma (installed CLIs only), "De gegevens hierboven gaan als context mee. Dit wordt het
+  eerste bericht in de chat."; the primary button becomes "Opslaan en AI starten". The editor
+  opens with the chat open and the message already sent.
+- **Opdrachten genereren, failed (board 63):** "x van y opdrachten gemaakt" with "n mislukt" and a
+  green/red bar; MISLUKT, PER OPDRACHT: one card per opdracht with "voor n leerlingen" (never
+  names), the error in monospace, "Laat AI dit oplossen" (primary, with the provider logo),
+  "Openen in editor", "Melding kopiëren"; footer Sluiten, "Opnieuw genereren (n)". "Laat AI dit
+  oplossen" opens the editor with the chat input prefilled with the Fouten oplossen text and the
+  error as an attachment; the teacher sends it.
 
 ### 4.9 Beheer (admin)
 
@@ -538,7 +642,10 @@ Cards since step 33 (user, 2026-11-17); the list design of step 20 is replaced.
   message, path (monospace) and an action ("Map openen", "Vergelijken", "Toets openen").
 - **Instellingen:** Snapshots card (four number fields with units: uur, dagen, weken, maanden),
   Editor card (time limit, seconden), "Aanwezige snapshots" card on the right with the kind
-  (dagelijks/wekelijks/maandelijks) and "Map openen"; "Opslaan" top right of the screen.
+  (dagelijks/wekelijks/maandelijks) and "Map openen"; "Opslaan" top right of the screen. Below
+  the Editor card an "AI-assistent" card (2 px accent border in board 62): switch "Docenten mogen
+  de AI-assistent gebruiken", the explanation, an "Aan" / "Uit voor alle docenten" pill (step 32,
+  user 2026-11-18: here, not on the School tab).
 
 ### 4.10 Scores invoeren (modal)
 

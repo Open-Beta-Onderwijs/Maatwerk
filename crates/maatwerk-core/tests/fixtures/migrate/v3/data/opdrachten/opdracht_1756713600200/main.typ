@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// maatwerk-main 2
+// maatwerk-main 3
 // main.typ: entry point of an opdracht (ADR-0002 5a). It lays out the teacher's opdracht.typ with
 // lib.typ, as the generated wrapper of the old app did. Maatwerk passes the student header and
 // the mode as JSON in `sys.inputs` ("maatwerk-data"). Without it (plain `typst compile main.typ`
@@ -8,7 +8,8 @@
 #import "opdracht.typ": setup_extra, render_uitleg, render_opgaven
 
 #let _placeholder = (
-  // "student" or "answers" (the answer key).
+  // "student", "plain" (no student block: printed from the Opdrachten tab) or "answers" (the
+  // answer key).
   mode: "student",
   // Student mode: the answers upside down at the bottom.
   include_answers: true,
@@ -42,14 +43,19 @@
   #place(hide[#render_uitleg() #render_opgaven()])
   #antwoorden_lijst()
 ] else [
-  #opdracht_header(
-    title: header.title,
-    student: header.student,
-    group: header.group,
-    exam_prefix: "N.a.v.",
-    exam: header.exam,
-    observaties: header.observaties,
-  )
+  #if data.mode == "plain" {
+    block(below: 8pt)[#text(size: 18pt, weight: "bold", fill: black)[#header.title]]
+    v(8pt)
+  } else {
+    opdracht_header(
+      title: header.title,
+      student: header.student,
+      group: header.group,
+      exam_prefix: "N.a.v.",
+      exam: header.exam,
+      observaties: header.observaties,
+    )
+  }
 
   #render_uitleg()
 

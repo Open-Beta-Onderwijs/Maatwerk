@@ -448,3 +448,80 @@ table.questions-table .rtti-btn {
 .user-menu__item--danger {
   color: var(--danger);
 }
+
+/* ── Switch (board 62, step 32c; components/switch.ts) ─────────────────────── */
+.switch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.switch {
+  flex: none;
+  width: 40px;
+  height: 22px;
+  margin-top: 1px;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--border-strong);
+  cursor: pointer;
+  display: flex;
+  transition: background 0.15s;
+}
+.switch__knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s;
+}
+.switch[aria-checked='true'] {
+  background: var(--accent);
+}
+.switch[aria-checked='true'] .switch__knob {
+  transform: translateX(18px);
+}
+.switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.switch-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.switch-row__label {
+  font-weight: 600;
+  cursor: pointer;
+}
+.switch-row__hint {
+  font-size: var(--fs-secondary);
+  line-height: 1.5;
+  color: var(--muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch__knob {
+    transition: none;
+  }
+}
+
+/* "AI-instellingen…" with "Uitgeschakeld door je school" (board 62, step 32c). */
+#acc-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#acc-ai[aria-disabled='true'] {
+  cursor: default;
+}
+.user-menu__sub {
+  font-size: var(--fs-caption);
+  color: var(--muted);
+}

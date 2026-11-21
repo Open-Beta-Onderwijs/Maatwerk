@@ -1,0 +1,265 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: AI-instellingen, eerste gebruik, installatiehulp en beheer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#2560BF}a:hover{color:#1F55AD}
+.mw-mono{font-family:Consolas,'Cascadia Mono',monospace}
+.mw-cap{font-size:12px;font-weight:700;letter-spacing:.6px}
+.mw-ib{border:0;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.mw-sw{width:40px;height:22px;flex:none;border-radius:999px;border:0;padding:2px;cursor:pointer;display:flex;transition:background .15s}
+.mw-sw span{width:18px;height:18px;border-radius:50%;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.mw-sw:disabled{cursor:not-allowed}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; position: relative; overflow: hidden; background: {{t.bg}}; color: {{t.text}}; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <sc-if value="{{showEditor}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column">
+      <header style="height: 52px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 16px 0 18px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+        <span style="color: {{a.text}}; font-weight: 600">← Terug naar opdrachten</span>
+        <span style="width: 1px; height: 24px; background: {{t.border}}"></span>
+        <b style="font-size: 16px">GFBA bovenbouw (+ significantie)</b>
+        <span style="flex: 1"></span>
+        <span style="height: 30px; padding: 0 12px; border-radius: 999px; background: {{ok.bg}}; color: {{ok.fg}}; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center">Opgeslagen · PDF bijgewerkt</span>
+        <button onClick="{{toggleMenu}}" aria-label="Gebruikersmenu" aria-expanded="{{menuA}}" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid {{a.fill}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-weight: 700; font-size: 12px; cursor: pointer; padding: 0">MK</button>
+      </header>
+      <div style="flex: 1; min-height: 0; display: flex">
+        <div aria-hidden="true" style="flex: 1; min-width: 0; background: {{t.surface}}; border-right: 1px solid {{t.border}}; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+          <sc-for list="{{codeBars}}" as="w" hint-placeholder-count="14"><div style="height: 9px; border-radius: 5px; background: {{t.surface2}}; width: {{w}}%"></div></sc-for>
+        </div>
+        <div aria-hidden="true" style="flex: 1; min-width: 0; background: {{t.surface2}}; display: flex; justify-content: center; padding: 22px">
+          <div style="width: 380px; height: 520px; background: #FFFFFF; box-shadow: 0 2px 10px rgba(16,24,40,.15)"></div>
+        </div>
+
+        <sc-if value="{{isGeen}}" hint-placeholder-val="{{ false }}">
+          <section aria-label="Installatiehulp AI" style="flex: none; width: 380px; display: flex; flex-direction: column; background: {{t.surface}}; border-left: 1px solid {{t.border}}">
+            <div style="height: 52px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 14px; border-bottom: 1px solid {{t.border}}">
+              <span style="width: 28px; height: 28px; border-radius: 8px; background: {{t.surface2}}; color: {{t.muted}}; display: flex; align-items: center; justify-content: center; font-weight: 750">?</span>
+              <b style="flex: 1">AI-assistent instellen</b>
+              <button aria-label="Sluiten" class="mw-ib" style="width: 32px; height: 32px; color: {{t.muted}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+            </div>
+            <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; line-height: 1.5">
+              <b style="font-size: 15px">Geen AI-programma gevonden</b>
+              <span style="color: {{t.muted}}">Maatwerk gebruikt een AI-programma voor de command line dat je zelf installeert, met je eigen account of abonnement. Installeer er één, log er in een terminal één keer mee in en klik op Opnieuw zoeken.</span>
+              <sc-for list="{{install}}" as="i" hint-placeholder-count="5">
+                <div style="border: 1px solid {{t.border}}; border-radius: 10px; padding: 9px 10px; display: flex; flex-direction: column; gap: 6px">
+                  <div style="display: flex; align-items: center; gap: 8px"><span style="width: 26px; height: 26px; border-radius: 7px; background: {{i.fill}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 11px">{{i.mono}}</span><b style="flex: 1">{{i.name}}</b><span style="font-size: 12px; color: {{t.muted}}">{{i.maker}}</span></div>
+                  <div style="display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 8px; border-radius: 7px; background: {{t.code}}"><code class="mw-mono" style="flex: 1; min-width: 0; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{i.cmd}}</code><button onClick="{{i.copy}}" style="height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer">{{i.copied}}</button></div>
+                </div>
+              </sc-for>
+              <span style="font-size: 12px; color: {{t.muted}}">De npm-opdrachten hebben Node.js nodig. Maatwerk installeert zelf niets.</span>
+            </div>
+            <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-top: 1px solid {{t.border}}">
+              <a href="#" style="font-size: 12.5px; font-weight: 600; text-decoration: none; color: {{t.muted}}">AI-assistent verbergen</a>
+              <span style="flex: 1"></span>
+              <button style="height: 32px; padding: 0 14px; border-radius: 8px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Opnieuw zoeken</button>
+            </div>
+          </section>
+          <nav aria-label="AI-assistenten" style="flex: none; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 14px; background: {{t.foot}}; border-left: 1px solid {{t.border}}">
+            <span style="font-size: 10px; font-weight: 700; letter-spacing: .8px; color: {{t.muted}}">AI</span>
+            <button aria-label="AI-assistent instellen" aria-pressed="true" title="Geen AI-programma gevonden" style="width: 40px; height: 40px; border-radius: 12px; border: 1px dashed {{t.input}}; background: {{t.surface}}; color: {{t.muted}}; font: inherit; font-weight: 750; font-size: 16px; cursor: pointer; box-shadow: 0 0 0 2px {{t.foot}}, 0 0 0 4px {{t.muted}}">?</button>
+          </nav>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{isUit}}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; right: 16px; top: 58px; width: 300px; border: 1px solid {{t.border}}; border-radius: 12px; background: {{t.surface}}; box-shadow: 0 12px 32px rgba(16,24,40,.18); padding: 6px; display: flex; flex-direction: column; font-size: 13.5px">
+          <div style="padding: 8px 10px 10px; border-bottom: 1px solid {{t.line}}; display: flex; flex-direction: column"><b>Matthias Kortleven</b><span style="font-size: 12px; color: {{t.muted}}">Natuurkunde</span></div>
+          <span style="padding: 9px 10px">Thema en accentkleur</span>
+          <span style="padding: 9px 10px; border-radius: 8px; background: {{t.surface2}}; display: flex; flex-direction: column; gap: 2px">AI-instellingen…<span style="font-size: 12px; color: {{t.muted}}">Uitgeschakeld door je school</span></span>
+          <span style="padding: 9px 10px; border-top: 1px solid {{t.line}}; margin-top: 4px">Uitloggen</span>
+        </div>
+        <div role="note" style="position: absolute; right: 16px; bottom: 76px; width: 300px; padding: 10px 12px; border-radius: 10px; background: {{t.surface}}; border: 1px solid {{t.border}}; font-size: 12.5px; line-height: 1.5; color: {{t.muted}}">Geen AI-balk rechts, geen AI-optie bij Opdracht toevoegen en geen knop ‘Laat AI dit oplossen’. Alleen in het gebruikersmenu staat waarom.</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isBeheer}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: flex; flex-direction: column">
+      <header style="height: 56px; flex: none; display: flex; align-items: stretch; gap: 2px; padding: 0 20px 0 24px; background: {{t.surface}}; border-bottom: 1px solid {{t.border}}">
+        <span style="display: flex; align-items: center; margin-right: 22px; font-weight: 800; letter-spacing: .5px; color: {{t.text}}">MAATWERK</span>
+        <sc-for list="{{btabs}}" as="b" hint-placeholder-count="7"><span style="display: flex; align-items: center; padding: 0 12px; font-weight: {{b.w}}; color: {{b.fg}}; box-shadow: inset 0 -3px 0 {{b.bar}}">{{b.label}}</span></sc-for>
+      </header>
+      <div style="flex: 1; min-height: 0; overflow-y: auto">
+        <div style="max-width: 1360px; margin: 0 auto; padding: 22px 40px">
+          <div style="display: flex; align-items: center; margin-bottom: 16px"><h1 style="margin: 0; flex: 1; font-size: 24px; font-weight: 650; color: {{a.text}}">Instellingen</h1><button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button></div>
+          <div style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 16px">
+          <section style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+            <h2 style="margin: 0; font-size: 16px">Snapshots</h2>
+            <span style="font-size: 13px; color: {{t.muted}}">Nieuwe snapshot na 24 uur · bewaar 7 dagelijkse, 4 wekelijkse, 12 maandelijkse (zoals op bord 12)</span>
+          </section>
+          <section style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px">
+            <h2 style="margin: 0; font-size: 16px">Editor</h2>
+            <span style="font-size: 13px; color: {{t.muted}}">Tijdslimiet voor het compileren: 30 seconden</span>
+          </section>
+          <section aria-labelledby="mw-aih" style="background: {{t.surface}}; border: 2px solid {{a.fill}}; border-radius: 12px; padding: 20px 22px; display: flex; gap: 18px; align-items: flex-start">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+              <h2 id="mw-aih" style="margin: 0; font-size: 16px">AI-assistent</h2>
+              <label style="display: flex; align-items: center; gap: 12px; font-weight: 600"><button class="mw-sw" role="switch" aria-checked="{{schoolA}}" onClick="{{toggleSchool}}" style="background: {{schoolSw.bg}}"><span style="transform: translateX({{schoolSw.x}}px)"></span></button>Docenten mogen de AI-assistent gebruiken</label>
+              <span style="font-size: 13px; line-height: 1.55; color: {{t.muted}}">Docenten gebruiken een AI-programma op hun eigen computer, met hun eigen account of abonnement. Alleen de opdracht en de gekozen context worden verstuurd, nooit leerlinggegevens. Uit: de AI-balk, de AI-optie bij Opdracht toevoegen en ‘Laat AI dit oplossen’ verdwijnen voor alle docenten van deze school.</span>
+            </div>
+            <span style="flex: none; font-size: 12px; padding: 3px 10px; border-radius: 999px; background: {{schoolTag.bg}}; color: {{schoolTag.fg}}; font-weight: 600">{{schoolTag.text}}</span>
+          </section>
+          </div>
+          <section style="background: {{t.surface}}; border: 1px solid {{t.border}}; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 6px">
+            <h2 style="margin: 0; font-size: 16px">Aanwezige snapshots</h2>
+            <span style="font-size: 13px; color: {{t.muted}}">04-11-2026 11:18 · dagelijks</span><span style="font-size: 13px; color: {{t.muted}}">03-11-2026 08:42 · dagelijks</span><span style="font-size: 13px; color: {{t.muted}}">28-10-2026 09:05 · wekelijks</span>
+          </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{dim}}" hint-placeholder-val="{{ true }}"><div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(16,24,40,.42)"></div></sc-if>
+
+  <sc-if value="{{isInst}}" hint-placeholder-val="{{ true }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-ai" style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 780px; max-height: 850px; display: flex; flex-direction: column; background: {{t.surface}}; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
+      <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 18px 24px 14px; border-bottom: 1px solid {{t.border}}">
+        <h2 id="mw-ai" style="margin: 0; flex: 1; font-size: 22px; color: {{a.text}}">AI-instellingen</h2>
+        <button aria-label="Sluiten" class="mw-ib" style="width: 36px; height: 36px; color: {{t.muted}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      </div>
+      <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 20px">
+        <label style="display: flex; align-items: flex-start; gap: 12px">
+          <button class="mw-sw" role="switch" aria-checked="{{showA}}" onClick="{{toggleShow}}" style="margin-top: 1px; background: {{showSw.bg}}"><span style="transform: translateX({{showSw.x}}px)"></span></button>
+          <span style="display: flex; flex-direction: column; gap: 2px"><b>AI-assistent tonen</b><span style="font-size: 13px; color: {{t.muted}}">De AI-balk rechts in de opdrachten-editor. Geldt voor jou, op deze computer.</span></span>
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 8px; opacity: {{bodyOp}}">
+          <div style="display: flex; align-items: center"><span class="mw-cap" style="flex: 1; color: {{t.muted}}">AI-PROGRAMMA’S OP DEZE COMPUTER</span><button style="border: 0; background: transparent; color: {{a.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Opnieuw zoeken</button></div>
+          <sc-for list="{{clis}}" as="c" hint-placeholder-count="3">
+            <div style="border: 1px solid {{c.bd}}; border-radius: 10px; overflow: hidden">
+              <button onClick="{{c.toggle}}" aria-expanded="{{c.exp}}" style="width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 0; background: transparent; color: {{t.text}}; font: inherit; text-align: left; cursor: pointer">
+                <span style="width: 28px; height: 28px; flex: none; border-radius: 8px; background: {{c.fill}}; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 12px">{{c.mono}}</span>
+                <span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><b>{{c.name}}</b><span class="mw-mono" style="font-size: 11.5px; color: {{t.muted}}">{{c.path}}</span></span>
+                <span style="font-size: 12px; color: {{c.tagFg}}">{{c.tag}}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{t.muted}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform: rotate({{c.chev}}deg)"><path d="m6 9 6 6 6-6"></path></svg>
+              </button>
+              <sc-if value="{{c.open}}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 4px 12px 12px 50px; display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 10px 12px; align-items: center">
+                  <label class="mw-cap" for="cmd-{{c.mono}}" style="color: {{t.muted}}">OPDRACHT</label>
+                  <input id="cmd-{{c.mono}}" class="mw-mono" value="{{c.cmd}}" style="height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid {{t.input}}; border-radius: 7px; background: {{t.inputBg}}; color: {{t.text}}; font-size: 12.5px">
+                  <label class="mw-cap" for="arg-{{c.mono}}" style="color: {{t.muted}}">ARGUMENTEN</label>
+                  <input id="arg-{{c.mono}}" class="mw-mono" value="{{c.args}}" style="height: 32px; box-sizing: border-box; padding: 0 10px; border: 1px solid {{c.argBd}}; border-radius: 7px; background: {{t.inputBg}}; color: {{t.text}}; font-size: 12.5px">
+                  <span></span>
+                  <span style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: {{t.muted}}"><span style="flex: 1">Maatwerk voegt zelf de vraag en de map met de kopie toe.</span><button onClick="{{c.reset}}" style="border: 0; background: transparent; color: {{a.text}}; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap">Standaard herstellen</button></span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <span style="font-size: 12.5px; color: {{t.muted}}">Niet gevonden: Mistral Vibe, Copilot CLI · <a href="#" style="color: {{a.text}}; font-weight: 600; text-decoration: none">Installatiehulp</a></span>
+        </div>
+        <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 22px; opacity: {{bodyOp}}">
+          <label class="mw-cap" style="display: flex; flex-direction: column; gap: 6px; color: {{t.muted}}">TIJDSLIMIET
+            <span style="display: flex; align-items: center; height: 36px; border: 1px solid {{t.input}}; border-radius: 8px; overflow: hidden; background: {{t.inputBg}}"><input value="5" inputmode="numeric" aria-label="Tijdslimiet in minuten" style="flex: 1; min-width: 0; border: 0; outline: 0; padding: 0 12px; background: transparent; color: {{t.text}}; font: inherit; font-size: 14px; font-weight: 400; letter-spacing: 0"><span style="height: 100%; display: flex; align-items: center; padding: 0 12px; background: {{t.surface2}}; border-left: 1px solid {{t.border}}; font-size: 13px; font-weight: 400; letter-spacing: 0; color: {{t.text}}">minuten</span></span>
+            <span style="font-weight: 400; letter-spacing: 0; font-size: 12px; line-height: 1.45">Daarna stopt Maatwerk de AI. 1 tot 30.</span>
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span class="mw-cap" style="color: {{t.muted}}">SYLLABUSMAP</span>
+            <div style="display: flex; gap: 8px"><input class="mw-mono" aria-label="Syllabusmap" value="D:\OneDrive - School\Sectie NA\Syllabi" style="flex: 1; min-width: 0; height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid {{t.input}}; border-radius: 8px; background: {{t.inputBg}}; color: {{t.text}}; font-size: 12.5px"><button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Wijzigen…</button><button style="height: 36px; padding: 0 12px; border-radius: 8px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Map openen</button></div>
+            <span style="font-size: 12px; line-height: 1.45; color: {{t.muted}}">De PDF’s in deze map staan in de Syllabus-keuze. Een bestand met het vak en de schoolsoort van de opdracht in de naam wordt voorgeselecteerd (bijv. ‘Natuurkunde havo 2026.pdf’).</span>
+          </div>
+        </div>
+      </div>
+      <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 14px 24px 18px; border-top: 1px solid {{t.border}}">
+        <span style="flex: 1; font-size: 12.5px; color: {{t.muted}}">Gesprekken blijven op deze computer bij de opdracht.</span>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 1px solid {{t.input}}; background: {{t.surface}}; color: {{t.text}}; font: inherit; font-weight: 600; cursor: pointer">Annuleren</button>
+        <button style="height: 36px; padding: 0 16px; border-radius: 8px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-weight: 600; cursor: pointer">Opslaan</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{isEerst}}" hint-placeholder-val="{{ false }}">
+    <section role="dialog" aria-modal="true" aria-labelledby="mw-fu" style="position: absolute; top: 70px; left: 50%; transform: translateX(-50%); width: 720px; display: flex; flex-direction: column; background: {{t.surface}}; border-radius: 14px; box-shadow: 0 24px 64px rgba(16,24,40,.28)">
+      <div style="padding: 22px 26px 6px; display: flex; flex-direction: column; gap: 8px">
+        <h2 id="mw-fu" style="margin: 0; font-size: 22px; color: {{a.text}}">Voordat je de AI-assistent gebruikt</h2>
+        <span style="line-height: 1.5; color: {{t.muted}}">De AI draait via het programma dat jij hebt geïnstalleerd (zoals Claude Code of Codex) en gebruikt jouw eigen account of abonnement. Maatwerk ziet je inloggegevens niet en betaalt niets; de voorwaarden van die aanbieder gelden.</span>
+      </div>
+      <div style="padding: 14px 26px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+        <div style="border: 1px solid {{t.border}}; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px">
+          <span class="mw-cap" style="color: {{ok.fg}}">WORDT VERSTUURD</span>
+          <sc-for list="{{sent}}" as="s" hint-placeholder-count="4"><span style="display: flex; gap: 8px; font-size: 13.5px; line-height: 1.45"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{ok.fg}}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="m5 12 5 5 9-10"></path></svg>{{s}}</span></sc-for>
+        </div>
+        <div style="border: 1px solid {{t.border}}; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px">
+          <span class="mw-cap" style="color: {{er.fg}}">WORDT NOOIT VERSTUURD</span>
+          <sc-for list="{{never}}" as="s" hint-placeholder-count="4"><span style="display: flex; gap: 8px; font-size: 13.5px; line-height: 1.45"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="{{er.fg}}" stroke-width="2.6" stroke-linecap="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M6 6l12 12M18 6 6 18"></path></svg>{{s}}</span></sc-for>
+        </div>
+      </div>
+      <div style="margin: 0 26px; display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid {{wr.bd}}; background: {{wr.bg}}; color: {{wr.fg}}; font-size: 13px; line-height: 1.5">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><path d="M12 3 2 21h20z"></path><path d="M12 10v5M12 18h.01"></path></svg>
+        <span><b>Let op afbeeldingen.</b> Foto’s in een opdracht of in een bijlage kunnen leerlingen tonen. Stuur ze alleen mee als er geen leerlingen op staan. Ook de PDF-output bevat de afbeeldingen.</span>
+      </div>
+      <span style="padding: 12px 26px 0; font-size: 13px; line-height: 1.5; color: {{t.muted}}">De AI schrijft nooit zelf in je opdracht: je krijgt een voorstel en kiest zelf wat je toepast.</span>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; padding: 16px 26px 20px">
+        <button style="height: 36px; padding: 0 20px; border-radius: 8px; border: 0; background: {{a.fill}}; color: {{a.on}}; font: inherit; font-weight: 600; cursor: pointer">Begrepen</button>
+      </div>
+    </section>
+  </sc-if>
+
+  <div role="tablist" aria-label="Scherm kiezen (mock)" style="position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 4px; padding: 4px; background: #1B2230; border-radius: 10px">
+    <sc-for list="{{views}}" as="v" hint-placeholder-count="5"><button role="tab" aria-selected="{{v.sel}}" onClick="{{v.pick}}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: {{v.bg}}; color: {{v.fg}}; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap">{{v.label}}</button></sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["licht","donker"],"default":"licht"},"accent":{"editor":"enum","options":["rood","oranje","geel","groen","blauw","indigo","paars","turquoise","roze","grafiet"],"default":"blauw"},"scherm":{"editor":"enum","options":["AI-instellingen","Eerste gebruik","Geen AI-programma","Uitgeschakeld door school","Beheer · Instellingen"],"default":"AI-instellingen"},"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const m = { 'AI-instellingen': 'inst', 'Eerste gebruik': 'eerst', 'Geen AI-programma': 'geen', 'Uitgeschakeld door school': 'uit', 'Beheer · Instellingen': 'beheer' };
+    this.state = { view: m[p.scherm] || 'inst', open: 'C', show: true, school: true, copied: null, edited: { C: true } };
+  }
+  componentWillUnmount() { clearTimeout(this.tm); }
+  renderVals() {
+    const ACC = { rood: ['#C93636', '#B02E2E', '#FF9C9C'], oranje: ['#C2540F', '#A8480C', '#FFB27A'], geel: ['#E5AE0B', '#7F5D00', '#F5CF5C'], groen: ['#24804E', '#1F7045', '#7DD8A3'], blauw: ['#2F6FD6', '#2560BF', '#8DB6FF'], indigo: ['#4F46C8', '#4339B8', '#A9A3FF'], paars: ['#8A3FC2', '#7A33B0', '#D2A6F5'], turquoise: ['#0F7F86', '#0B6F75', '#6FD6DC'], roze: ['#C2387A', '#AD2F6B', '#FF9CC9'], grafiet: ['#4A5568', '#3D4757', '#B8C2D1'] };
+    const dark = (this.props.theme ?? 'licht') === 'donker';
+    const ac = ACC[this.props.accent] || ACC.blauw;
+    const a = { fill: ac[0], text: dark ? ac[2] : ac[1], tint: ac[0] + (dark ? '33' : '1F'), on: ac[0] === '#E5AE0B' ? '#2A2000' : '#FFFFFF' };
+    const t = dark
+      ? { bg: '#14171C', surface: '#1D2128', surface2: '#272C35', border: '#30363F', line: '#262B33', text: '#E7EAF0', muted: '#A3ABB8', faint: '#6B7380', foot: '#181B21', code: '#171A20', input: '#3A414C', inputBg: '#171A20' }
+      : { bg: '#F5F6F8', surface: '#FFFFFF', surface2: '#EEF0F3', border: '#E1E4EA', line: '#EEF0F3', text: '#1B2230', muted: '#5D6675', faint: '#9AA1AD', foot: '#FAFBFC', code: '#F5F6F8', input: '#C9CED8', inputBg: '#FFFFFF' };
+    const er = dark ? { fg: '#FF8A80' } : { fg: '#B42318' };
+    const wr = dark ? { fg: '#F5CF5C', bg: '#3A3015', bd: '#5C4A1A' } : { fg: '#7A5300', bg: '#FFF6E0', bd: '#F0C36D' };
+    const ok = dark ? { fg: '#6CCB8A', bg: '#16301F' } : { fg: '#1E7B3C', bg: '#EAF6EE' };
+    const st = this.state, v = st.view;
+    const sw = (on) => ({ bg: on ? a.fill : t.input, x: on ? 18 : 0 });
+
+    const DEF = { C: ['claude', '-p --output-format stream-json --verbose'], G: ['codex', 'exec --json'], Ge: ['gemini', '-p --output-format stream-json'] };
+    const CL = [['C', 'Claude Code', '#C2540F', '%APPDATA%\\npm\\claude.cmd'], ['G', 'Codex', '#1F7045', '%APPDATA%\\npm\\codex.cmd'], ['Ge', 'Gemini CLI', '#2560BF', '%APPDATA%\\npm\\gemini.cmd']];
+    const clis = CL.map(([mono, name, fill, path]) => {
+      const open = st.open === mono, edited = !!st.edited[mono];
+      return { mono, name, fill, path, open, exp: open ? 'true' : 'false', chev: open ? 180 : 0, bd: open ? a.fill : t.border,
+        cmd: DEF[mono][0], args: edited ? DEF[mono][1] + ' --model sonnet' : DEF[mono][1], argBd: edited ? a.fill : t.input,
+        tag: edited ? 'aangepast' : 'standaard', tagFg: edited ? a.text : t.muted,
+        toggle: () => this.setState({ open: open ? null : mono }), reset: () => this.setState({ edited: { ...st.edited, [mono]: false } }) };
+    });
+    const INST = [['C', 'Claude Code', 'Anthropic', '#C2540F', 'npm install -g @anthropic-ai/claude-code'], ['G', 'Codex', 'OpenAI', '#1F7045', 'npm install -g @openai/codex'], ['Ge', 'Gemini CLI', 'Google', '#2560BF', 'npm install -g @google/gemini-cli'], ['M', 'Mistral Vibe', 'Mistral AI', '#C93636', 'uv tool install mistral-vibe'], ['Co', 'Copilot CLI', 'GitHub', '#7A33B0', 'npm install -g @github/copilot']];
+    const install = INST.map(([mono, name, maker, fill, cmd]) => ({ mono, name, maker, fill, cmd, copied: st.copied === mono ? 'Gekopieerd' : 'Kopiëren',
+      copy: () => { clearTimeout(this.tm); this.setState({ copied: mono }); this.tm = setTimeout(() => this.setState({ copied: null }), 1500); } }));
+    const VIEWS = [['inst', 'AI-instellingen'], ['eerst', 'Eerste gebruik'], ['geen', 'Geen AI-programma'], ['uit', 'Uitgeschakeld door school'], ['beheer', 'Beheer · Instellingen']];
+    const views = VIEWS.map(([k, label]) => ({ label, sel: v === k ? 'true' : 'false', bg: v === k ? '#FFFFFF' : 'transparent', fg: v === k ? '#1B2230' : '#C9CED8', pick: () => this.setState({ view: k }) }));
+    const btabs = ['Leerlingen', 'Groepen', 'Opdrachten', 'Gebruikers', 'School', 'Gegevenscontrole', 'Instellingen'].map((label) => ({ label, w: label === 'Instellingen' ? 600 : 400, fg: label === 'Instellingen' ? t.text : t.muted, bar: label === 'Instellingen' ? a.text : 'transparent' }));
+    return {
+      t, a, er, wr, ok, views, clis, install, btabs,
+      showEditor: v !== 'beheer', isInst: v === 'inst', isEerst: v === 'eerst', isGeen: v === 'geen', isUit: v === 'uit', isBeheer: v === 'beheer', dim: v === 'inst' || v === 'eerst',
+      codeBars: [42, 18, 64, 80, 72, 30, 55, 90, 66, 40, 75, 58, 24, 62],
+      menuA: v === 'uit' ? 'true' : 'false', toggleMenu: () => {},
+      showA: st.show ? 'true' : 'false', showSw: sw(st.show), toggleShow: () => this.setState({ show: !st.show }), bodyOp: st.show ? 1 : 0.45,
+      schoolA: st.school ? 'true' : 'false', schoolSw: sw(st.school), toggleSchool: () => this.setState({ school: !st.school }),
+      schoolTag: st.school ? { text: 'Aan', bg: ok.bg, fg: ok.fg } : { text: 'Uit voor alle docenten', bg: t.surface2, fg: t.muted },
+      sent: ['De tekst van deze opdracht (opdracht.typ) en de opmaakbestanden', 'De context die jij aanzet: opdrachtinstructies AI, opdrachtgegevens, fouten & waarschuwingen, PDF-output, syllabus, andere opdrachten', 'Je eigen berichten en bijlagen', 'Afbeeldingen alleen als jij dat per bericht aanzet'],
+      never: ['Namen, cijfers en scores van leerlingen', 'Rapporten, toetsanalyses en groepen', 'Andere opdrachten, tenzij je ze kiest', 'Bestanden buiten deze opdracht'],
+    };
+  }
+}
+</script>
+</body>
+</html>

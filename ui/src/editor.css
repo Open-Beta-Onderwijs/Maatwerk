@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 @import './styles/avatar.css';
+@import './styles/editor-ai.css';
 
 *,
 *::before,
@@ -499,7 +500,8 @@ body {
   user-select: none;
 }
 #editor-body.is-resizing #cm-container,
-#editor-body.is-resizing #pdf-panel {
+#editor-body.is-resizing #pdf-panel,
+#editor-body.is-resizing .ai-messages {
   pointer-events: none;
 }
 

@@ -83,6 +83,48 @@ test('Opdrachten genereren: a question card links opdrachten to a low score on o
   expect(errors).toEqual([]);
 });
 
+// 0.23.1 hotfix: one opdracht printed from the Opdrachten tab, without the student block.
+test('Opdrachten tab: the print button shows one plain copy of the opdracht', async ({ page }) => {
+  const errors = watchErrors(page);
+  await login(page);
+  await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+  const card = page.locator('#opdracht-list .card').first();
+  const naam = (await card.locator('[data-action="open-editor"]').textContent())!.trim();
+  await card.getByRole('button', { name: 'Opdracht afdrukken' }).click();
+  await expect(page.locator('.dlg.modal-pdf .rapport-pdf-frame')).toBeVisible();
+  type Call = [string, ...unknown[]];
+  const lastBatch = () =>
+    withMock(page, (m) => {
+      const c = (m.calls as Call[]).filter((x) => x[0] === 'renderAssignmentBatch').at(-1)!;
+      return { jobs: c[1], opts: c[2] } as {
+        jobs: { mode: string; header: Record<string, unknown> }[];
+        opts: { includeAnswers: boolean; duplex: boolean };
+      };
+    });
+  const first = await lastBatch();
+  expect(first.jobs).toHaveLength(1);
+  expect(first.jobs[0]!.mode).toBe('plain');
+  expect(first.jobs[0]!.header).toEqual({ title: naam });
+  expect(first.opts).toMatchObject({ includeAnswers: false, duplex: false });
+
+  await page.getByLabel('Met antwoorden').check();
+  await expect.poll(async () => (await lastBatch()).opts.includeAnswers).toBe(true);
+  expect((await lastBatch()).jobs[0]!.mode).toBe('plain');
+
+  // The viewer's button opens the rendered PDF itself; nothing is saved in rapporten/.
+  await expect(page.locator('.dlg.modal-pdf .rapport-pdf-frame')).toBeVisible();
+  await page.evaluate(() => window.postMessage({ type: 'print-pdf' }, '*'));
+  await expect
+    .poll(() =>
+      withMock(page, (m) => (m.calls as Call[]).filter((c) => c[0] === 'openPath').length),
+    )
+    .toBe(1);
+  expect(
+    await withMock(page, (m) => (m.calls as Call[]).filter((c) => c[0] === 'printPdf').length),
+  ).toBe(0);
+  expect(errors).toEqual([]);
+});
+
 test('the answer key in Opdrachten genereren shows the warnings too', async ({ page }) => {
   const errors = watchErrors(page);
   await login(page);

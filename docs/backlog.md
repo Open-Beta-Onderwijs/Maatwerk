@@ -539,3 +539,23 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 - **Review 26-28 nits:** see `docs/reviews/step-26-28.md` (n1-n6).
 - **R-05:** `screens/school.js` was touched in step 28 and is still JS.
 - **X-06** (`rapporten/` retention): waits for a decision.
+
+## From Step 32
+
+See `docs/reviews/step-32.md` for the evidence of each item.
+
+- **Review 32 m3:** Toepassen can revert what the teacher typed during the apply round trip.
+- **Review 32 m4:** images are written to the shared folder at Toepassen, before the text is
+  saved.
+- **Review 32 m5:** an AI edit of a placeholder image overwrites the teacher's real image.
+- **Review 32 m6:** a CLI that exits early leaves its grandchildren running (kill the tree on
+  exit too).
+- **Review 32 m7:** Stop and the time limit are not checked during workspace preparation or
+  Maatwerk's own checks.
+- **Review 32 m8-m12:** login check unused, metadata from the iframe unchecked, `--version` on
+  every detection, files over ~500 lines (`panel.ts`, `ai.rs`, `provider.rs`, `workspace.rs`,
+  `events.rs`), test gaps; the nits.
+- **Real CLIs:** Codex, Gemini CLI, Antigravity and Copilot CLI are untested against the real
+  programs (ADR-0009 _verify_ rows); Vibe's transcript shows only text events (no tool steps).
+- **Logos:** vendor logos only with permission (`THIRD_PARTY_LICENSES.md`).
+- ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
