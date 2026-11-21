@@ -8,7 +8,7 @@ import { cardMenuButton } from '../../components/card-menu';
 import { esc } from '../../components/dialog';
 import { obsToetstypes } from '../../domain/rubric';
 import type { Exam, Observatie, Opdracht } from '../../domain/types';
-import { countText, jaarlagenBoxes } from '../cards/item-card';
+import { countText, jaarlagenBoxes, metaLine } from '../cards/item-card';
 
 /** Fields of an observatie the card and the filters read. */
 export interface ObsFields extends Observatie {
@@ -75,9 +75,7 @@ export function obsCardHtml(o: ObsFields, use: ObsUse): string {
         : '<span class="icard-pill icard-pill--toets">Toets</span>',
     )
     .join('');
-  const ss = (o.schoolsoort ?? []).length
-    ? `<span class="icard-ss" title="${esc((o.schoolsoort ?? []).join(', '))}">${esc((o.schoolsoort ?? []).join(', '))}</span>`
-    : '';
+  const meta = metaLine(o.schoolsoort, o.subjects);
   return `
     <article class="icard icard--obs" data-obs-card="${esc(o.id)}" title="Klik om te bewerken">
       <div class="icard-head">
@@ -85,12 +83,12 @@ export function obsCardHtml(o: ObsFields, use: ObsUse): string {
         <button type="button" class="icard-title icard-title--wrap" data-action="edit-obs" data-id="${esc(o.id)}">${esc(o.naam ?? '')}</button>
         ${cardMenuButton({ action: 'obs-menu', id: o.id })}
       </div>
-      <div class="icard-pills" role="group" aria-label="Toetstype">${pills}</div>
       <div class="icard-desc">${esc(o.uitleg ?? '')}</div>
+      <div class="icard-meta">${meta ? esc(meta) : '—'}</div>
       <div class="icard-foot">
-        ${ss}${jaarlagenBoxes(o.jaarlagen)}
-        <span class="icard-spacer"></span>
-        ${useHtml(use)}
+        <span class="icard-pills" role="group" aria-label="Toetstype">${pills}</span>
+        ${jaarlagenBoxes(o.jaarlagen)}
+        <span class="icard-use-group">${useHtml(use)}</span>
       </div>
     </article>`;
 }

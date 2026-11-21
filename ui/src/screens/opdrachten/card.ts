@@ -7,10 +7,7 @@
 import { cardMenuButton } from '../../components/card-menu';
 import { esc } from '../../components/dialog';
 import type { Observatie, Opdracht } from '../../domain/types';
-import { VAK_CHIPS } from '../../domain/vakken';
-import { jaarlagenBoxes } from '../cards/item-card';
-
-const SUBJECT_LABEL: Record<string, string> = Object.fromEntries(VAK_CHIPS);
+import { jaarlagenBoxes, metaLine } from '../cards/item-card';
 
 export interface OpdFields extends Opdracht {
   beschrijving?: string;
@@ -18,9 +15,7 @@ export interface OpdFields extends Opdracht {
 
 /** "Havo, Vwo · Natuurkunde, Scheikunde"; a missing part is left out, both missing: "". */
 export function opdMetaLine(o: OpdFields): string {
-  const ss = (o.schoolsoort ?? []).join(', ');
-  const vakken = (o.vakken ?? []).map((v) => SUBJECT_LABEL[v] ?? v).join(', ');
-  return [ss, vakken].filter(Boolean).join(' · ');
+  return metaLine(o.schoolsoort, o.vakken);
 }
 
 /** Sort: lowest jaarlaag first (none last), then the name. */

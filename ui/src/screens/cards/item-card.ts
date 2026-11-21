@@ -4,6 +4,20 @@
 // the jaarlagen as six boxes and the count beside the filter chips.
 
 import { esc } from '../../components/dialog';
+import { VAK_CHIPS } from '../../domain/vakken';
+
+/** Vak codes to UI labels; `wi` is an observatie made on the Wiskunde tab before step 30. */
+const VAK_LABEL: Record<string, string> = { wi: 'Wiskunde', ...Object.fromEntries(VAK_CHIPS) };
+
+/** "Havo, Vwo · Natuurkunde, Scheikunde" above the footer; a missing part is left out. */
+export function metaLine(
+  schoolsoort: readonly string[] | undefined,
+  vakken: readonly string[] | undefined,
+): string {
+  const ss = (schoolsoort ?? []).join(', ');
+  const vak = (vakken ?? []).map((v) => VAK_LABEL[v] ?? v).join(', ');
+  return [ss, vak].filter(Boolean).join(' · ');
+}
 
 /** The six jaarlagen, the active ones in accent tint (spec 4.16). */
 export function jaarlagenBoxes(jaarlagen: readonly (string | number)[] | undefined): string {

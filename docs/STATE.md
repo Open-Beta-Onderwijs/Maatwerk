@@ -29,6 +29,11 @@ Review `docs/reviews/step-34.md` (`aca9027`): 0 blockers, 1 major (M1 stale prev
 editor session: fixed), 6 minors (m1, m3, m5 fixed, m4 in part; m2, m6 backlog "From Step 34"),
 7 nits (backlog). Fixes `bcffd2d`.
 
+User 2026-11-21: the Observatie card follows the Opdracht card: "<schoolsoort> · <vakken>" above
+the footer (the observatie's `subjects`), the Toets/PO pills move into the footer before the
+jaarlagen (the schoolsoort pill is gone). At 1280 px with Toets + PO and both counts, the
+opdrachten count is cut with an ellipsis (its tooltip names them).
+
 **Next action:** the user: look at the 6 Observaties/Opdrachten visual diffs (and `splash`) and
 the preview in the real app (render of a real opdracht, the animation); then update the local
 baselines, drop the CI baselines of the two views on all three platforms (as step 33), version

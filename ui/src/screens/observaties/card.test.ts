@@ -46,6 +46,7 @@ describe('obsCardHtml', () => {
     schoolsoort: ['Havo', 'Vwo'],
     jaarlagen: [4, 5],
     toetstypes: ['toets', 'po'],
+    subjects: ['nat'],
   };
   const all = (html: string, cls: string) =>
     [...html.matchAll(new RegExp(`class="${cls}"[^>]*>([^<]*)<`, 'g'))].map((m) => m[1]);
@@ -55,8 +56,10 @@ describe('obsCardHtml', () => {
     expect(html).toContain('data-action="edit-obs" data-id="obs-1">Rekenfout &lt;x&gt;</button>');
     expect(all(html, 'icard-pill icard-pill--(?:toets|po)')).toEqual(['Toets', 'PO']);
     expect(all(html, 'icard-jl icard-jl--on')).toEqual(['4', '5']);
-    expect(all(html, 'icard-ss')).toEqual(['Havo, Vwo']);
-    expect(html).toContain('<span class="icard-ss" title="Havo, Vwo">');
+    expect(all(html, 'icard-meta')).toEqual(['Havo, Vwo · Natuurkunde']);
+    // The toetstype pills sit in the footer, before the jaarlagen.
+    expect(html.indexOf('icard-pill--po')).toBeGreaterThan(html.indexOf('icard-foot'));
+    expect(html.indexOf('icard-pill--po')).toBeLessThan(html.indexOf('icard-jls'));
     expect(all(html, 'icard-use')).toEqual(['1 toets', '· 2 opdrachten']);
     expect(html).toContain('title="Gekoppelde opdrachten: Atomen, Machten"');
   });
