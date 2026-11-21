@@ -4,7 +4,7 @@
 // filters, the ⋮ actions, and a click on an Observatie card opens Observatie bewerken.
 
 import { expect, test } from '@playwright/test';
-import { cardMenu, login, watchErrors } from './helpers';
+import { cardMenu, login, watchErrors, withMock } from './helpers';
 
 const count = (page: import('@playwright/test').Page, row: string) =>
   page.locator(`#filter-row-${row} .filter-count`);
@@ -103,4 +103,92 @@ test('Opdrachten: cards with the ⋮ actions; Kopiëren adds a card', async ({ p
   await cardMenu(cards.first(), 'Openen in de editor');
   await expect(page.frameLocator('#editor-frame').locator('.cm-content')).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+// Step 34b: the preview panel (spec 4.17, board 58).
+test.describe('Opdracht preview', () => {
+  type Call = [string, ...unknown[]];
+  const renders = (page: import('@playwright/test').Page) =>
+    withMock(page, (m) =>
+      (m.calls as Call[]).filter((c) => c[0] === 'renderAssignmentSvg').map((c) => c[1]),
+    );
+
+  test('open, switch, close; pages rendered once per opdracht', async ({ page }) => {
+    const errors = watchErrors(page);
+    await login(page);
+    await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+    const cards = page.locator('#opdracht-list .icard');
+    const panel = page.getByRole('region', { name: 'Voorbeeld van de opdracht' });
+    const first = cards.nth(0);
+    const second = cards.nth(1);
+    const id1 = (await first.getAttribute('data-opd-card'))!;
+    const id2 = (await second.getAttribute('data-opd-card'))!;
+    const naam1 = (await first.locator('.icard-title').textContent())!.trim();
+
+    await first.locator('.icard-desc').click();
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.opd-preview-name')).toHaveText(naam1);
+    await expect(panel.locator('img.opd-page')).toHaveCount(1);
+    await expect(panel.locator('.opd-preview-page')).toHaveText('Pagina 1 van 1');
+    await expect(panel.locator('.opd-preview-meta')).toHaveText(/ · 1 pagina$/);
+    await expect(first).toHaveClass(/icard--selected/);
+    await expect(first.locator('.icard-title')).toHaveAttribute('aria-expanded', 'true');
+    // The cards move to two columns in the left half.
+    await expect
+      .poll(async () => (await second.boundingBox())!.x - (await first.boundingBox())!.x)
+      .toBeLessThan(((await page.locator('#opdracht-list').boundingBox())!.width / 2) * 0.6);
+
+    // Another card switches the preview in place; back to the first uses the cache.
+    await second.locator('.icard-title').click();
+    await expect(panel.locator('.opd-preview-name')).not.toHaveText(naam1);
+    await expect(second).toHaveClass(/icard--selected/);
+    await expect(first).not.toHaveClass(/icard--selected/);
+    await first.locator('.icard-desc').click();
+    await expect(panel.locator('img.opd-page')).toHaveCount(1);
+    expect(await renders(page)).toEqual([id1, id2]);
+
+    // The same card again closes it; so do Escape and ✕.
+    await first.locator('.icard-desc').click();
+    await expect(panel).toHaveCount(0);
+    await first.locator('.icard-desc').click();
+    await expect(panel).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(panel).toHaveCount(0);
+    await first.locator('.icard-desc').click();
+    await panel.getByRole('button', { name: 'Voorbeeld sluiten' }).click();
+    await expect(panel).toHaveCount(0);
+    await expect(first).not.toHaveClass(/icard--selected/);
+    expect(errors).toEqual([]);
+  });
+
+  test('Kopiëren keeps the preview open; Openen in editor opens the editor', async ({ page }) => {
+    const errors = watchErrors(page);
+    await login(page);
+    await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+    const cards = page.locator('#opdracht-list .icard');
+    const all = await cards.count();
+    const panel = page.getByRole('region', { name: 'Voorbeeld van de opdracht' });
+    await cards.first().locator('.icard-desc').click();
+    const naam = (await panel.locator('.opd-preview-name').textContent())!;
+    await panel.getByRole('button', { name: 'Kopiëren' }).click();
+    await expect(cards).toHaveCount(all + 1);
+    await expect(panel.locator('.opd-preview-name')).toHaveText(naam);
+    await expect(page.locator('.icard--selected')).toHaveCount(1);
+    await panel.getByRole('button', { name: 'Openen in editor' }).click();
+    await expect(page.frameLocator('#editor-frame').locator('.cm-content')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('a render error shows its message in the panel', async ({ page }) => {
+    await login(page);
+    await withMock(page, (m) => {
+      (m as unknown as Record<string, unknown>).renderAssignmentSvg = async () => ({
+        success: false,
+        error: 'opdracht.typ:3: unknown variable: foo',
+      });
+    });
+    await page.locator('.nav-btn[data-screen="opdrachten"]').click();
+    await page.locator('#opdracht-list .icard').first().locator('.icard-desc').click();
+    await expect(page.getByRole('alert')).toContainText('unknown variable: foo');
+  });
 });

@@ -5,7 +5,7 @@
 // draws COLRv1 (supportsColrV1): macOS WebKit keeps the system emoji and registers nothing.
 
 import { expect, test, type Page } from '@playwright/test';
-import { login, watchErrors } from './helpers';
+import { login, openOpdrachtEditor, watchErrors } from './helpers';
 
 const loadedFaces = (page: Page) =>
   page.evaluate(async () => {
@@ -32,7 +32,7 @@ test('emoji use the embedded font in the window and in the editor', async ({ pag
   expect(usesEmoji).toBe(true);
 
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   await expect(page.frameLocator('#editor-frame').locator('.cm-content')).toBeVisible();
   const frame = page.frames().find((f) => f.url().includes('editor.html'))!;
   await expect

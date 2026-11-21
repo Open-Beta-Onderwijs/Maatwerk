@@ -2,8 +2,8 @@
 
 // The Opdrachten tab as cards (design spec 4.17, board 58, F-28, PLAN-2 decision 47): three per
 // row, sorted by lowest jaarlaag, then name. ⋮ has Openen in de editor, Bewerken, Kopiëren,
-// Afdrukken (the 0.23.1 print) and Verwijderen. A click on a card opens the editor until the
-// preview panel arrives (step 34b).
+// Afdrukken (the 0.23.1 print) and Verwijderen. A click on a card opens its preview on the right
+// half (opdrachten/preview.ts, step 34b).
 
 import {
   confirmDialog,
@@ -23,6 +23,13 @@ import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { countText, setFilterCount } from './cards/item-card';
 import { compareOpdrachten, opdCardHtml, type OpdFields } from './opdrachten/card';
+import {
+  closePreview,
+  forgetPreviews,
+  restorePreview,
+  togglePreview,
+  type PreviewHost,
+} from './opdrachten/preview';
 
 /** Opdracht bewerken (modals/opdracht-edit.ts); the list re-renders after a save. */
 function openOpdrachtenModal(existingId: string | null): void {
@@ -35,7 +42,11 @@ function opdracht(id: string): OpdFields | undefined {
 
 function openInEditor(id: string): void {
   const o = opdracht(id);
-  if (o) openEditor(o);
+  if (!o) return;
+  // The editor may change the pages: render them again next time.
+  closePreview();
+  forgetPreviews(id);
+  openEditor(o);
 }
 
 async function copyOpdracht(id: string): Promise<void> {
@@ -82,6 +93,12 @@ function toggleMenu(btn: HTMLElement): void {
   ]);
 }
 
+const host: PreviewHost = {
+  opdracht,
+  copy: (id) => void copyOpdracht(id),
+  openInEditor,
+};
+
 /** One listener for the whole list (it is redrawn often). */
 function wireList(container: HTMLElement): void {
   if (container.dataset.wired) return;
@@ -91,12 +108,12 @@ function wireList(container: HTMLElement): void {
     const action = target.closest<HTMLElement>('[data-action]');
     if (action && container.contains(action)) {
       if (action.dataset.action === 'opd-menu') toggleMenu(action);
-      else if (action.dataset.action === 'open-editor') openInEditor(action.dataset.id ?? '');
+      else if (action.dataset.action === 'preview') togglePreview(action.dataset.id ?? '', host);
       return;
     }
     const card = target.closest<HTMLElement>('[data-opd-card]');
     if (!card || target.closest('a, button, input') || window.getSelection()?.toString()) return;
-    openInEditor(card.dataset.opdCard ?? '');
+    togglePreview(card.dataset.opdCard ?? '', host);
   });
 }
 
@@ -148,8 +165,10 @@ export async function renderOpdrachten(): Promise<void> {
     container.innerHTML = allOpdrachten.length
       ? '<p class="hint">Geen opdrachten gevonden voor de huidige filters.</p>'
       : '<p class="hint">Nog geen opdrachten. Klik "+ Opdracht toevoegen" om te beginnen.</p>';
+    restorePreview(host);
     return;
   }
   const obsById = new Map(allObs.map((o) => [o.id, o]));
   container.innerHTML = `<div class="igrid">${opdrachten.map((o) => opdCardHtml(o, obsById)).join('')}</div>`;
+  restorePreview(host);
 }

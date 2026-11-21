@@ -4,7 +4,7 @@
 // fixture). Used by the visual regression and the CSP walkthrough.
 
 import { expect, type Page } from '@playwright/test';
-import { cardMenu, examMenuItem, login, seedFiles } from './helpers';
+import { cardMenu, examMenuItem, login, openOpdrachtEditor, seedFiles } from './helpers';
 import { poSeed } from './po-seed';
 
 export interface View {
@@ -295,7 +295,8 @@ export const VIEWS: View[] = [
     user: 'teacher',
     target: 'page',
     open: async (p) => {
-      await click('opdrachten', '[data-action="open-editor"]')(p);
+      await screen(p, 'opdrachten');
+      await openOpdrachtEditor(p);
       await expect(p.frameLocator('#editor-frame').locator('.cm-content')).toBeVisible();
     },
   },

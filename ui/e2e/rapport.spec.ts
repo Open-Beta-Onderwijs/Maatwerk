@@ -89,7 +89,7 @@ test('Opdrachten tab: the print button shows one plain copy of the opdracht', as
   await login(page);
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
   const card = page.locator('#opdracht-list .icard').first();
-  const naam = (await card.locator('[data-action="open-editor"]').textContent())!.trim();
+  const naam = (await card.locator('.icard-title').textContent())!.trim();
   await cardMenu(card, 'Afdrukken');
   await expect(page.locator('.dlg.modal-pdf .rapport-pdf-frame')).toBeVisible();
   type Call = [string, ...unknown[]];

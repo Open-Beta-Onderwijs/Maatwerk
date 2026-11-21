@@ -147,3 +147,11 @@ export async function cardMenu(card: Locator, item: string): Promise<void> {
   await card.getByRole('button', { name: 'Meer acties' }).click();
   await page.getByRole('menuitem', { name: item, exact: true }).click();
 }
+
+/** Opens an opdracht (the first, or `id`) in the editor from its card's ⋮ menu (step 34b). */
+export async function openOpdrachtEditor(page: Page, id?: string): Promise<void> {
+  const card = id
+    ? page.locator(`#opdracht-list [data-opd-card="${id}"]`)
+    : page.locator('#opdracht-list .icard').first();
+  await cardMenu(card, 'Openen in de editor');
+}

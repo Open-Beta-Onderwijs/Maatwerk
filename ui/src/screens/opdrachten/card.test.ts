@@ -44,7 +44,7 @@ describe('opdCardHtml', () => {
       },
       obs,
     );
-    expect(html).toMatch(/data-action="open-editor" data-id="op-1" title="Machten">Machten</);
+    expect(html).toMatch(/data-action="preview" data-id="op-1" title="Machten"[^>]*>Machten</);
     expect(html).toContain('<div class="icard-desc">Oefenen.</div>');
     expect(html).toContain('<div class="icard-meta">Havo</div>');
     expect([...html.matchAll(/icard-jl--on">(\d)/g)].map((m) => m[1])).toEqual(['2']);

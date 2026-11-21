@@ -5,16 +5,17 @@
 
 import { expect, test } from '@playwright/test';
 import {
-  TEACHER,
-  YEAR,
+  chooseVak,
   enterPin,
   examMenuItem,
   login,
   logout,
+  openOpdrachtEditor,
   readMockJson,
   seedFiles,
+  TEACHER,
   withMock,
-  chooseVak,
+  YEAR,
 } from './helpers';
 import { EXAMS, openGrid, select } from './grid-driver';
 
@@ -123,7 +124,7 @@ test.describe('avatar (B-04, B-08)', () => {
     await expect(top).toHaveClass(/avatar--ring-accent/);
 
     await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-    await page.locator('[data-action="open-editor"]').first().click();
+    await openOpdrachtEditor(page);
     const editorBadge = page.frameLocator('#editor-frame').locator('#editor-badge-btn');
     await expect(editorBadge.locator('img.avatar-photo')).toBeVisible();
     await expect(editorBadge).toHaveClass(/avatar--30/);

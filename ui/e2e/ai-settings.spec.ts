@@ -4,7 +4,7 @@
 // the first-use notice, the "?" install help, and the school switch, against MockAi.
 
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
-import { TEACHER, login, seedFiles, watchErrors, withMock } from './helpers';
+import { login, openOpdrachtEditor, seedFiles, TEACHER, watchErrors, withMock } from './helpers';
 
 const SHOTS = process.env.AI_SHOTS;
 
@@ -14,7 +14,7 @@ async function shot(page: Page, name: string) {
 
 async function openEditor(page: Page): Promise<FrameLocator> {
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   const frame = page.frameLocator('#editor-frame');
   await expect(frame.locator('.cm-content')).toBeVisible();
   return frame;

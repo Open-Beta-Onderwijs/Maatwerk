@@ -6,16 +6,17 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import {
-  TEACHER,
-  YEAR,
+  chooseVak,
   enterPin,
   examMenuItem,
   login,
   logout,
+  openOpdrachtEditor,
   readMockJson,
   seedFiles,
+  TEACHER,
   withMock,
-  chooseVak,
+  YEAR,
 } from './helpers';
 
 const NASTY = `<b>x</b> & "y" a &lt; b </textarea>`;
@@ -30,7 +31,7 @@ async function openScoreGrid(page: Page) {
 
 async function openFirstOpdrachtInEditor(page: Page) {
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   const frame = page.frameLocator('#editor-frame');
   await expect(frame.locator('.cm-content')).toBeVisible();
   return frame;
@@ -90,7 +91,7 @@ test('D25: the editor reports a failed load instead of waiting forever', async (
   await login(page);
   await withMock(page, (m) => m.fail('readTextFileVersioned', 'opdrachten/'));
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   const status = page.frameLocator('#editor-frame').locator('#editor-status');
   await expect(status).toContainText('Fout bij laden');
 });

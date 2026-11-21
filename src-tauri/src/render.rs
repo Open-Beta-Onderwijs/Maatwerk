@@ -197,8 +197,9 @@ pub async fn render_po_rapport_pdf(
     .await
 }
 
-/// The editor preview: the buffer (`previewContent`, default empty) compiled as the opdracht,
-/// with the placeholder header, one SVG per page. (The old cursor marker is gone since
+/// The editor preview: the buffer (`previewContent`) compiled as the opdracht, with the
+/// placeholder header, one SVG per page. Without a buffer the saved `opdracht.typ` is compiled
+/// (the Opdrachten tab's preview, step 34b). (The old cursor marker is gone since
 /// `maatwerk-main 2`; the editor uses `editor_jump_from_cursor`.)
 #[tauri::command]
 #[specta::specta]
@@ -209,10 +210,10 @@ pub async fn render_assignment_svg(
     preview_content: Option<String>,
 ) -> Res<RenderedSvg> {
     blocking(state, move |c| {
-        let project = opdracht_project(c, &opdracht_id)?.with_file(
-            &RelPath::parse("opdracht.typ")?,
-            preview_content.unwrap_or_default(),
-        );
+        let mut project = opdracht_project(c, &opdracht_id)?;
+        if let Some(text) = preview_content {
+            project = project.with_file(&RelPath::parse("opdracht.typ")?, text);
+        }
         let compiled = typst_svc::render_assignment_svg_pages(
             c.fonts(),
             project,

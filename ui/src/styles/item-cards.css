@@ -226,3 +226,174 @@
 .icard-obs > span {
   cursor: default;
 }
+
+/* ── Opdracht preview (spec 4.17, board 58; screens/opdrachten/preview.ts) ── */
+#opdracht-list {
+  position: relative;
+}
+/* Pinned: the cards stand where preview.ts puts them, and move there. */
+.igrid--placed {
+  display: block;
+  position: relative;
+}
+.igrid--placed > .icard {
+  position: absolute;
+  transition:
+    left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    top 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+.igrid--instant > .icard {
+  transition: none;
+}
+.opd-view--open .icard-desc {
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.icard--selected,
+.icard--selected:hover {
+  border: 2px solid var(--accent);
+  padding: 13px 15px; /* the thicker border keeps the content in place */
+}
+
+/* The panel: the right half, in view while the list scrolls. */
+.opd-preview {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: calc(50% - 18px);
+  pointer-events: none;
+}
+.opd-view--open {
+  min-height: var(--opd-preview-h);
+}
+#opdracht-list {
+  --opd-preview-h: calc(100vh - 200px); /* preview.ts sets both from the screen head */
+  --opd-sticky-top: 180px;
+}
+.opd-preview-panel {
+  position: sticky;
+  top: var(--opd-sticky-top);
+  display: flex;
+  flex-direction: column;
+  height: var(--opd-preview-h);
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.12);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(60px);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.25s ease,
+    visibility 0s linear 0.35s;
+}
+.opd-view--open .opd-preview-panel {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.25s ease,
+    visibility 0s;
+}
+.opd-preview-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.opd-preview-titles {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.opd-preview-name {
+  overflow: hidden;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--accent-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.opd-preview-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.opd-preview-close {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+.opd-preview-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--surface-2);
+}
+.opd-preview-body > .skel-region {
+  display: contents;
+}
+.opd-page {
+  flex: none;
+  width: min(520px, 100%);
+  aspect-ratio: 210 / 297;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(16, 24, 40, 0.18);
+}
+img.opd-page {
+  height: auto;
+  aspect-ratio: auto;
+}
+.opd-page--skel {
+  background: var(--skel-a);
+  box-shadow: none;
+}
+.opd-preview-error {
+  align-self: stretch;
+  padding: 12px 14px;
+  border: 1px solid var(--danger);
+  border-radius: var(--r-btn);
+  background: var(--surface);
+  color: var(--danger);
+  font-size: var(--fs-secondary);
+}
+.opd-preview-error pre {
+  margin: 8px 0 0;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+.opd-preview-foot {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .igrid--placed > .icard,
+  .opd-preview-panel,
+  .opd-view--open .opd-preview-panel {
+    transition: none;
+  }
+}

@@ -5,13 +5,13 @@
 // Toepassen and Ongedaan maken, Voorstel bekijken, Stop, and the time-out card.
 
 import { expect, test, type FrameLocator, type Page } from '@playwright/test';
-import { TEACHER, login, watchErrors, withMock } from './helpers';
+import { login, openOpdrachtEditor, TEACHER, watchErrors, withMock } from './helpers';
 
 const SHOTS = process.env.AI_SHOTS;
 
 async function openEditor(page: Page): Promise<FrameLocator> {
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  await page.locator('[data-action="open-editor"]').first().click();
+  await openOpdrachtEditor(page);
   const frame = page.frameLocator('#editor-frame');
   await expect(frame.locator('.cm-content')).toBeVisible();
   await expect(frame.locator('.svg-page').first()).toBeVisible();

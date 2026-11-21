@@ -10,14 +10,23 @@ Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832c
 Branched from `step/33b-perf` (`334cc77`) while its CI run 44763575121 finished; steps 32, 33
 and 33b go into `main` before this step merges.
 
-34a in progress (uncommitted at the time of writing, see the next commit):
-`components/card-menu.ts` (the ⋮ menu, taken out of `screens/exam-menu.ts`, which now uses
-it); `screens/cards/item-card.ts` (jaarlagen boxes, the count at the end of the filter row);
-`screens/observaties.ts` + `observaties/card.ts`, `observaties/filter.ts` (R-05, replaces
-`observaties.js`); `screens/opdrachten.ts` + `opdrachten/card.ts` (replaces `opdrachten.js`);
-`domain/vakken.ts` (`VAK_CHIPS`, pure); `styles/item-cards.css`, token `--accent-tint`. e2e
-`item-cards.spec.ts` (3 tests), `cardMenu` helper; rubrics, emoji-font, rapport specs and the
-`modal-opdracht-edit` view follow the new markup.
+**Next action:** gate (visual diffs: Observaties and Opdrachten views, their modals, `editor`),
+reviewer subagent, then stop for the user's check of the baselines.
+
+34a done (`7c4fe50`): `components/card-menu.ts` (the ⋮ menu, taken out of
+`screens/exam-menu.ts`, which now uses it); `screens/cards/item-card.ts` (jaarlagen boxes, the
+count at the end of the filter row); `screens/observaties.ts` + `observaties/card.ts`,
+`observaties/filter.ts` (R-05, replaces `observaties.js`); `screens/opdrachten.ts` +
+`opdrachten/card.ts` (replaces `opdrachten.js`); `domain/vakken.ts` (`VAK_CHIPS`, pure);
+`styles/item-cards.css`, token `--accent-tint`. e2e `item-cards.spec.ts`, `cardMenu` helper.
+
+34b done (next commit): `opdrachten/preview.ts` (pin the grid's cards, move them to two columns
+in the left half, panel sticky under the screen head, switch in place, close by the same card,
+✕ or Escape; render on demand, cached per opdracht by `_meta.rev`, dropped when the editor opens
+it; page placeholder; error in the panel; reduced motion) and `preview-layout.ts` (slots, tested
+against board 58's numbers). `render_assignment_svg` without `previewContent` now compiles the
+saved `opdracht.typ` (was: an empty buffer; no caller passed none); bindings regenerated. e2e:
+3 preview tests, `openOpdrachtEditor` helper (the card title now opens the preview).
 
 Choices made without a spec line (tell the user):
 
@@ -27,8 +36,8 @@ Choices made without a spec line (tell the user):
   cache, or a rubric).
 - Opdrachten ⋮ keeps **Afdrukken** (the 0.23.1 print) between Kopiëren and Verwijderen; board 58
   predates it.
-- Until 34b, a click on an Opdracht card (or its name) opens the editor, as the name did; 34b
-  turns it into the preview.
+- The preview cache does not notice a colleague changing only `opdracht.typ` (no `_meta.rev`
+  change) until the app restarts or the opdracht is opened in the editor here.
 
 ## Plan to 1.0 extended (2026-11-21, user's request)
 
