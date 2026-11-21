@@ -2,8 +2,7 @@
 
 // Observatie toetstype (step 21, F-23, decision 23, spec 4.12): the form field "Toetstype" with
 // the chips Toets and PO (one or both, never none; new observaties default to Toets) and the
-// Observaties tab's filter chip. Kept apart from the JS screen (R-05: observaties.js converts in
-// its area step).
+// Observaties tab's filter chip. Used by the screen (observaties.ts) and the form.
 
 import { choiceChip, type ChoiceChip } from '../components/choice-chip';
 import { esc } from '../components/dialog';

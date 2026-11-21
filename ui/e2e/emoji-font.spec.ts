@@ -19,7 +19,7 @@ test('emoji use the embedded font in the window and in the editor', async ({ pag
   const errors = watchErrors(page);
   await login(page);
   await page.locator('.nav-btn[data-screen="observaties"]').click();
-  await expect(page.locator('.obs-card-icon').first()).toBeVisible();
+  await expect(page.locator('.icard-tile').first()).toBeVisible();
   const colr = await page.evaluate(() => CSS.supports('font-tech(color-COLRv1)'));
   if (!colr) {
     expect(await loadedFaces(page)).toEqual([]);

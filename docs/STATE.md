@@ -1,9 +1,34 @@
 # State
 
-Last updated: 2026-11-20 (perf hotfix 0.24.1, step 33b) Branch: `step/33b-perf` (from
-`step/33-toetsen-cards` at `6e6a427`; steps 32 and 33 are not merged yet, so 33b builds on them)
+Last updated: 2026-11-21 (step 34a) Branch: `step/34-obs-opd-cards` (from `step/33b-perf` at
+`334cc77`)
 Last tags: `step-31`, `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27`
 (`33188e8`), `step-26` (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 34: Observaties and Opdrachten as cards (2026-11-21, on `step/34-obs-opd-cards`)
+
+Branched from `step/33b-perf` (`334cc77`) while its CI run 44763575121 finished; steps 32, 33
+and 33b go into `main` before this step merges.
+
+34a in progress (uncommitted at the time of writing, see the next commit):
+`components/card-menu.ts` (the ⋮ menu, taken out of `screens/exam-menu.ts`, which now uses
+it); `screens/cards/item-card.ts` (jaarlagen boxes, the count at the end of the filter row);
+`screens/observaties.ts` + `observaties/card.ts`, `observaties/filter.ts` (R-05, replaces
+`observaties.js`); `screens/opdrachten.ts` + `opdrachten/card.ts` (replaces `opdrachten.js`);
+`domain/vakken.ts` (`VAK_CHIPS`, pure); `styles/item-cards.css`, token `--accent-tint`. e2e
+`item-cards.spec.ts` (3 tests), `cardMenu` helper; rubrics, emoji-font, rapport specs and the
+`modal-opdracht-edit` view follow the new markup.
+
+Choices made without a spec line (tell the user):
+
+- "<n> toetsen" counts the tests of the active school year that link the observatie; a resit
+  counts with its original (it carries the original's observaties), a PO only through its own
+  `obs_ids` (rubric observaties are not counted). The delete rule is unchanged (any test in the
+  cache, or a rubric).
+- Opdrachten ⋮ keeps **Afdrukken** (the 0.23.1 print) between Kopiëren and Verwijderen; board 58
+  predates it.
+- Until 34b, a click on an Opdracht card (or its name) opens the editor, as the name did; 34b
+  turns it into the preview.
 
 ## Plan to 1.0 extended (2026-11-21, user's request)
 

@@ -3,7 +3,7 @@
 // Step 17: Typst warnings in the rapport and opdrachten dialogs (F-04).
 
 import { expect, test, type Page } from '@playwright/test';
-import { login, watchErrors, withMock } from './helpers';
+import { cardMenu, login, watchErrors, withMock } from './helpers';
 
 const WARNING = 'warning: unknown font family: Comic\n  ┌─ opdracht.typ:3:12';
 
@@ -88,9 +88,9 @@ test('Opdrachten tab: the print button shows one plain copy of the opdracht', as
   const errors = watchErrors(page);
   await login(page);
   await page.locator('.nav-btn[data-screen="opdrachten"]').click();
-  const card = page.locator('#opdracht-list .card').first();
+  const card = page.locator('#opdracht-list .icard').first();
   const naam = (await card.locator('[data-action="open-editor"]').textContent())!.trim();
-  await card.getByRole('button', { name: 'Opdracht afdrukken' }).click();
+  await cardMenu(card, 'Afdrukken');
   await expect(page.locator('.dlg.modal-pdf .rapport-pdf-frame')).toBeVisible();
   type Call = [string, ...unknown[]];
   const lastBatch = () =>

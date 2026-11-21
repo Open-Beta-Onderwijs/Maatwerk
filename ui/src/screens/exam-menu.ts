@@ -2,7 +2,12 @@
 
 // The ⋮ menu of an exam card.
 
-import { esc } from '../components/dialog';
+import {
+  closeCardMenu,
+  isCardMenuOpen,
+  showCardMenu,
+  type MenuItem,
+} from '../components/card-menu';
 import { openExamModal, deleteExam } from '../modals/toets-edit';
 import {
   openBestGradesOverviewModal,
@@ -27,27 +32,6 @@ import { PO_SUMMARY_LATER, type CardKind } from './toetsen/cards';
 import { prebuildScoreModal } from './scores/build';
 import { openScoreModal } from './scores/modal';
 import { renderToetsenList } from './toetsen';
-
-interface MenuAction {
-  icon: string;
-  label: string;
-  danger?: boolean;
-  /** Why it cannot be used now; shown as its tooltip. */
-  disabled?: string | null;
-  run?: () => unknown;
-}
-type MenuItem = MenuAction | 'sep';
-
-let openMenu: { el: HTMLElement; btn: HTMLElement; cleanup: () => void } | null = null;
-
-function closeExamMenu(): void {
-  if (!openMenu) return;
-  openMenu.cleanup();
-  openMenu.el.remove();
-  openMenu.btn.setAttribute('aria-expanded', 'false');
-  openMenu.btn.classList.remove('active');
-  openMenu = null;
-}
 
 /** Returns the reason the exam cannot be deleted, or null if it can. */
 async function deleteBlockReason(examId: string, year: string): Promise<string | null> {
@@ -238,11 +222,11 @@ async function buildMenuItems(examId: string, kind: CardKind, year: string): Pro
 }
 
 export async function toggleExamMenu(btn: HTMLElement, year: string): Promise<void> {
-  if (openMenu?.btn === btn) {
-    closeExamMenu();
+  if (isCardMenuOpen(btn)) {
+    closeCardMenu();
     return;
   }
-  closeExamMenu();
+  closeCardMenu();
   const examId = btn.dataset.id ?? '';
   const kind = (btn.dataset.kind ?? 'solo') as CardKind;
   // Most menus lead to "Scores invoeren": build its grids now, out of sight (Step 7c).
@@ -252,63 +236,5 @@ export async function toggleExamMenu(btn: HTMLElement, year: string): Promise<vo
   const endMenu = perfSpan('menu:exam');
   const items = await buildMenuItems(examId, kind, year);
   endMenu();
-  if (!btn.isConnected) return;
-  closeExamMenu(); // another menu may have opened while awaiting
-
-  const menu = document.createElement('div');
-  menu.className = 'exam-menu';
-  menu.setAttribute('role', 'menu');
-  menu.innerHTML = items
-    .map((it, i) =>
-      it === 'sep'
-        ? '<div class="exam-menu-sep" role="separator"></div>'
-        : `<button class="exam-menu-item${it.danger ? ' exam-menu-item--danger' : ''}" role="menuitem" data-idx="${i}"${it.disabled ? ` aria-disabled="true" title="${esc(it.disabled)}"` : ''}><span class="exam-menu-icon">${it.icon}</span><span>${esc(it.label)}</span></button>`,
-    )
-    .join('');
-  document.body.appendChild(menu);
-
-  // Position below the button, right-aligned; flip up if there's no room below
-  const r = btn.getBoundingClientRect();
-  const mh = menu.offsetHeight;
-  const top = r.bottom + 4 + mh > window.innerHeight - 8 ? r.top - 4 - mh : r.bottom + 4;
-  menu.style.top = `${Math.max(8, top)}px`;
-  menu.style.left = `${Math.max(8, r.right - menu.offsetWidth)}px`;
-
-  menu.addEventListener('click', (e) => {
-    const el = (e.target as Element).closest<HTMLElement>('.exam-menu-item');
-    if (!el || el.getAttribute('aria-disabled') === 'true') return;
-    const item = items[Number(el.dataset.idx)];
-    closeExamMenu();
-    if (item && item !== 'sep') item.run?.();
-  });
-
-  const onDocDown = (e: MouseEvent) => {
-    const target = e.target as Node;
-    if (!menu.contains(target) && !btn.contains(target)) closeExamMenu();
-  };
-  const onKey = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closeExamMenu();
-      btn.focus();
-    }
-  };
-  const onScrollResize = () => closeExamMenu();
-  document.addEventListener('mousedown', onDocDown, true);
-  document.addEventListener('keydown', onKey, true);
-  window.addEventListener('resize', onScrollResize);
-  window.addEventListener('scroll', onScrollResize, true);
-
-  btn.setAttribute('aria-expanded', 'true');
-  btn.classList.add('active');
-  openMenu = {
-    el: menu,
-    btn,
-    cleanup: () => {
-      document.removeEventListener('mousedown', onDocDown, true);
-      document.removeEventListener('keydown', onKey, true);
-      window.removeEventListener('resize', onScrollResize);
-      window.removeEventListener('scroll', onScrollResize, true);
-    },
-  };
+  await showCardMenu(btn, items);
 }

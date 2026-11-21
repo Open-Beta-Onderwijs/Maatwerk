@@ -22,6 +22,7 @@
 @import './styles/beheer.css';
 @import './styles/overview.css';
 @import './styles/obs-opd.css';
+@import './styles/item-cards.css';
 @import './styles/ai-install.css';
 @import './styles/ai-settings.css';
 
@@ -1516,18 +1517,6 @@ code {
 #btn-edit-exam-scores:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* ── Observaties screen ───────────────────────────────────────────────────── */
-.obs-card-icon {
-  font-size: 18px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.obs-card-naam {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
 }
 
 /* Textarea inside form-group */
