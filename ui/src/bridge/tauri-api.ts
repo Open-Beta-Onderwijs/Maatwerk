@@ -55,10 +55,15 @@ const tauriBackend: Backend = {
   listenDataChanged: (cb) => events.dataChanged.listen((e) => cb(e.payload as DataChange[])),
   listenAssignmentProgress: (cb) => events.assignmentProgress.listen((e) => cb(e.payload)),
   listenEditorUpdate: (cb) => events.editorUpdate.listen((e) => cb(e.payload)),
-  // Tauri awaits the handler, then destroys the window (core:window:allow-destroy).
+  // Tauri awaits the handler, then destroys the window (core:window:allow-destroy). A handler
+  // that throws would leave the window open for good, so nothing gets out.
   listenCloseRequested: (cb) =>
     getCurrentWindow().onCloseRequested(async () => {
-      await cb();
+      try {
+        await cb();
+      } catch (e) {
+        console.error('[close]', e);
+      }
     }),
   // `http://maatwerk-out.localhost/<id>` on Windows, `maatwerk-out://localhost/<id>` elsewhere.
   outputUrl: (outputId) => convertFileSrc(outputId, OUTPUT_SCHEME),
