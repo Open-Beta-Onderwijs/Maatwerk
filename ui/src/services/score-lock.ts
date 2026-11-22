@@ -42,13 +42,16 @@ export function scoreLock(vak: string, year: string): ScoreLock {
     const u = users.find((x) => x.id === id);
     return u ? (Store.fullName(u) as string) : id;
   };
-  const bestuur = [Store.voorzitterOf(vak), Store.secretarisOf(vak)].filter(
-    (id): id is string => !!id,
-  );
+  const bestuur = (
+    [
+      [Store.voorzitterOf(vak), 'voorzitter'],
+      [Store.secretarisOf(vak), 'secretaris'],
+    ] as const
+  ).flatMap(([id, role]) => (id ? [{ name: name(id), role }] : []));
   return {
     free: own === null,
     locked: (id) => own !== null && !own.has(String(id)),
-    title: (docenten) => lockTitle(docenten.map(name), bestuur.map(name)),
+    title: (docenten) => lockTitle(docenten.map(name), bestuur),
   };
 }
 

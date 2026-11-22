@@ -213,10 +213,26 @@ export function editableStudents(
 
 /**
  * The lock tooltip of a group heading: who may change these scores (the group's teachers, the
- * voorzitter and the secretaris), in Dutch.
+ * voorzitter and the secretaris), in Dutch. A bestuur member who is not a teacher of the group
+ * gets "(als Sectievoorzitter)" / "(als Sectiesecretaris)": logged in as a teacher, they may not
+ * change these scores (manual check 35-36).
  */
-export function lockTitle(teachers: readonly string[], bestuur: readonly string[]): string {
-  const who = [...teachers, ...bestuur.filter((b) => !teachers.includes(b))];
+export interface BestuurName {
+  name: string;
+  role: 'voorzitter' | 'secretaris';
+}
+
+const BESTUUR_ROLE = { voorzitter: 'Sectievoorzitter', secretaris: 'Sectiesecretaris' } as const;
+
+export function lockTitle(teachers: readonly string[], bestuur: readonly BestuurName[]): string {
+  const roles = new Map<string, string[]>();
+  for (const b of bestuur) {
+    if (teachers.includes(b.name)) continue;
+    const list = roles.get(b.name) ?? [];
+    if (!list.includes(BESTUUR_ROLE[b.role])) list.push(BESTUUR_ROLE[b.role]);
+    roles.set(b.name, list);
+  }
+  const who = [...teachers, ...[...roles].map(([name, r]) => `${name} (als ${r.join(' of ')})`)];
   if (!who.length)
     return 'Alleen-lezen: alleen de sectievoorzitter of -secretaris kan deze scores wijzigen.';
   const list =

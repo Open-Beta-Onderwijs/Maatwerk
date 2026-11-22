@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   bestuurOf,
   changedExams,
+  lockTitle,
   ownStudentIds,
   scoreFile,
   teacherMayWrite,
@@ -109,5 +110,32 @@ describe('rights', () => {
   it('does not let another teacher clear a grading without projectgroep (review m3)', () => {
     const old = { scores: { p1: { c1: 3 } } };
     expect(teacherMayWrite('4', old, { scores: {} }, ctx())).toBe(false);
+  });
+});
+
+describe('lockTitle', () => {
+  const V = { name: 'Vera Vos', role: 'voorzitter' } as const;
+  const S = { name: 'Sam Smit', role: 'secretaris' } as const;
+
+  it('names the bestuur with the role they need to log in with (manual check 35-36)', () => {
+    expect(lockTitle(['Ann Aap'], [V, S])).toBe(
+      'Alleen-lezen: Ann Aap, Vera Vos (als Sectievoorzitter) of Sam Smit (als Sectiesecretaris) kan deze scores wijzigen.',
+    );
+  });
+
+  it('gives a teacher of the group no role, even when that teacher is the voorzitter', () => {
+    expect(lockTitle(['Vera Vos'], [V])).toBe('Alleen-lezen: Vera Vos kan deze scores wijzigen.');
+  });
+
+  it('joins both roles of one person', () => {
+    expect(lockTitle([], [V, { name: 'Vera Vos', role: 'secretaris' }])).toBe(
+      'Alleen-lezen: Vera Vos (als Sectievoorzitter of Sectiesecretaris) kan deze scores wijzigen.',
+    );
+  });
+
+  it('falls back to the roles when nobody is named', () => {
+    expect(lockTitle([], [])).toBe(
+      'Alleen-lezen: alleen de sectievoorzitter of -secretaris kan deze scores wijzigen.',
+    );
   });
 });

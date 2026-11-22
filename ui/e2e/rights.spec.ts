@@ -24,6 +24,7 @@ import { CLASS_3B, NEW_STUDENTS, PO_ID, poExam, poSeed } from './po-seed';
 const B = 'gebr-b';
 const S = 'gebr-s';
 const Q1 = 2; // first question column of Toets H2
+const OBS1 = 13; // its first observatie column
 /** Sections in name order: "3 nat cluster", "3a nat", "3b nat". */
 const G3B = 2;
 
@@ -78,11 +79,17 @@ test('a teacher changes only the scores of own students; other groups are locked
   await expect(section).toHaveClass(/score-group-section--locked/);
   await expect(section.locator('.sc-group-lock')).toHaveAttribute(
     'title',
-    'Alleen-lezen: Bea Bos of Sam Smit kan deze scores wijzigen.',
+    'Alleen-lezen: Bea Bos of Sam Smit (als Sectiesecretaris) kan deze scores wijzigen.',
   );
   await expect(page.locator('.sc-group-lock')).toHaveCount(1);
   await expect(cell(page, 0, Q1, G3B)).toHaveClass(/sc-locked/);
   await expect(cell(page, 0, Q1, 1)).not.toHaveClass(/sc-locked/);
+  // A locked row keeps its observatie boxes, disabled (manual check 35-36); a click does nothing.
+  const lockedBox = cell(page, 0, OBS1, G3B).locator('input[type="checkbox"]');
+  await expect(lockedBox).toBeDisabled();
+  await expect(cell(page, 0, OBS1, 1).locator('input[type="checkbox"]')).toBeEnabled();
+  await lockedBox.click({ force: true });
+  await expect(lockedBox).not.toBeChecked();
 
   // Typing, Delete and a paste do nothing on a locked row.
   await typeInto(page, 0, Q1, '3', G3B);

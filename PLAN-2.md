@@ -782,7 +782,7 @@ Storage, watcher and snapshot code.
 **41b-a: layout, crypto, keys**
 
 1. **Storage layout report (user, STOP):** `docs/phase-2/step-41b-storage-layout.md`, written
-   *before* any code, from the real layout in `maatwerk-core` (not from memory):
+   _before_ any code, from the real layout in `maatwerk-core` (not from memory):
    - a before/after tree of every top-level folder, sub-folder and file kind, each marked
      **encrypted name / plain name** and **encrypted content / plain content**, with example names;
    - what stays plain and why (`rapporten/`, opdrachten Typst sources, images and photos, the
@@ -793,6 +793,7 @@ Storage, watcher and snapshot code.
      before and after), compression yes/no.
 
    The user approves it; then ADR-0012 becomes accepted.
+
 2. **Crypto core:** `maatwerk-core::vault` (file format `MWK1`, XChaCha20-Poly1305 with the
    logical path as associated data, AES-SIV names in lowercase base32, HKDF subkeys, a wrapped DEK
    per school with key ids). Tests: round trip, known-answer vectors, tamper, swap, truncation,

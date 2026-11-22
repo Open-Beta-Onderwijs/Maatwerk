@@ -53,6 +53,11 @@
   accent-color: var(--accent);
   cursor: pointer;
 }
+/* A locked or gast row: the box shows the data, greyed under the stripes. */
+.score-grid-table td.sg-checkbox input:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
 
 /* Column headings: sticky under the group heading, bottom-aligned. */
 .score-grid-table th {
@@ -146,7 +151,9 @@
 }
 .score-grid-table .sc-stick1 {
   left: calc(72px - var(--sc-gutter, 0px));
-  box-shadow: 2px 0 0 var(--border);
+  /* Inset: an outer shadow covered the left edge of the active-cell ring in the first score
+     column (manual check 35-36). */
+  box-shadow: inset -2px 0 0 var(--border);
 }
 .score-grid-table th.sc-stick0,
 .score-grid-table th.sc-stick1 {
