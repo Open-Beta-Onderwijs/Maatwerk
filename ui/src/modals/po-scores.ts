@@ -98,7 +98,8 @@ export async function loadPoContext(
     subject,
     rubric: (rubricOf(exam) as Rubric | undefined) ?? null,
     students,
-    classTag: (id) => byStudent.get(id)?.[0] ?? '—',
+    // A placed student outside the matching classes: the stamklas (review 24 n5).
+    classTag: (id) => byStudent.get(id)?.[0] ?? (students.get(id)?.stamklas || '—'),
     name,
     records,
   };

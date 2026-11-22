@@ -3,10 +3,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { buildPoRapportData } from '../../src/domain/po-rapport';
+import { buildPoRapportData, skippedNoticeHtml } from '../../src/domain/po-rapport';
 import { normaliseForTypst } from '../../src/domain/rapport';
-import type { ScoreRecord } from '../../src/domain/types';
-import { EXAM_ID, fixtureInput, RECORDS } from './po-rapport.fixture';
+import type { Exam, ScoreRecord } from '../../src/domain/types';
+import { EXAM, EXAM_ID, fixtureInput, RECORDS } from './po-rapport.fixture';
 
 /** The Typst golden of the PO rapport: its data is this builder's output for the fixture. */
 const CASE_DIR = fileURLToPath(new URL('../../../tests/golden/typst/rapport-po/', import.meta.url));
@@ -25,7 +25,12 @@ describe('buildPoRapportData', () => {
       '5B Bas Vos',
       '5B Fleur de Wit',
     ]);
-    expect(data.skipped).toEqual({ unplaced: ['Lotte Bakker'], ungraded: ['Daan Jansen'] });
+    expect(data.skipped).toEqual({
+      unplaced: ['Lotte Bakker'],
+      ungraded: ['Daan Jansen'],
+      otherGroup: [],
+      partial: [],
+    });
   });
 
   it('takes points, grades and lines from the core (decisions 16, 17, 28)', () => {
@@ -155,6 +160,86 @@ describe('buildPoRapportData', () => {
     records.set('900101', rec);
     const sem = buildPoRapportData({ ...input, records }).students[0]!;
     expect(sem).toMatchObject({ grade: '6,0', grade_overridden: true, lines: [] });
+  });
+
+  it('no rapport for a member graded in another projectgroep (review 24 m4)', () => {
+    const input = fixtureInput();
+    const records = new Map(input.records);
+    // Bas is in Valtoren but his file holds Lichtsluis's grading (moved by hand or an older app).
+    const bas = structuredClone(RECORDS['900103']!) as ScoreRecord;
+    (bas.po![EXAM_ID] as { projectgroep: string }).projectgroep = 'pg-3';
+    records.set('900103', bas);
+    const out = buildPoRapportData({ ...input, records });
+    expect(out.students.map((s) => s.name)).not.toContain('Bas Vos');
+    expect(out.skipped.otherGroup).toEqual(['Bas Vos']);
+    // Sem's projectgroep still names Bas: he is a member of Valtoren.
+    expect(out.students[0]!.projectgroep.members.map((m) => m.name)).toContain('Bas Vos');
+  });
+
+  it('warns about a partly graded projectgroep, whose rapport shows "—" (review 24 m3)', () => {
+    const input = fixtureInput();
+    const records = new Map(input.records);
+    const rec = structuredClone(RECORDS['900104']!) as ScoreRecord;
+    delete (rec.scores![EXAM_ID] as Record<string, unknown>).theorie;
+    records.set('900104', rec);
+    const out = buildPoRapportData({ ...input, records });
+    const fleur = out.students.find((s) => s.name === 'Fleur de Wit')!;
+    expect(fleur.categories.find((c) => c.name === 'Theorie')!.score).toBeNull();
+    expect(out.skipped.partial).toEqual(['Projectgroep 2']);
+  });
+
+  it('a category added after grading makes the groups partly graded (review 24 m8)', () => {
+    const input = fixtureInput();
+    const rubric = structuredClone(input.rubric!);
+    rubric.categories.push({
+      ...structuredClone(rubric.categories[0]!),
+      id: 'nieuw',
+      naam: 'Nieuw',
+    });
+    const out = buildPoRapportData({ ...input, rubric });
+    expect(out.students).toHaveLength(4);
+    expect(out.students[0]!.categories.at(-1)).toMatchObject({ name: 'Nieuw', score: null });
+    expect(out.skipped.partial).toEqual(['Valtoren', 'Projectgroep 2']);
+  });
+
+  it('on a herkansing lists as unplaced only who has no grade on the original (review 24 m6)', () => {
+    const input = fixtureInput();
+    const resit = {
+      ...EXAM,
+      id: 'po-h',
+      parent_id: EXAM_ID,
+      description: 'HERKANSING',
+      projectgroepen: [{ id: 'pg-h', naam: '', student_ids: ['900103'] }],
+    } as Exam;
+    const records = new Map(input.records);
+    const bas = structuredClone(RECORDS['900103']!) as ScoreRecord;
+    bas.scores!['po-h'] = { ...(bas.scores![EXAM_ID] as object) };
+    bas.po!['po-h'] = { projectgroep: 'pg-h', groupLines: [], ownLines: [] } as never;
+    records.set('900103', bas);
+    const out = buildPoRapportData({ ...input, exam: resit, original: EXAM, records });
+    expect(out.students.map((s) => s.name)).toEqual(['Bas Vos']);
+    // Sem, Emma and Fleur have a grade on the original; Daan and Lotte have none.
+    expect(out.skipped.unplaced).toEqual(['Lotte Bakker', 'Daan Jansen']);
+  });
+
+  it('names who gets no rapport and why, in plain Dutch (review 24 n1)', () => {
+    expect(
+      skippedNoticeHtml({
+        unplaced: ['Lotte Bakker', 'Sam <Smit>'],
+        ungraded: ['Daan Jansen'],
+        otherGroup: ['Bas Vos'],
+        partial: ['Projectgroep 2'],
+      }),
+    ).toBe(
+      '<p class="rapport-skipped">Geen rapport voor Lotte Bakker en Sam &lt;Smit&gt;: niet ingedeeld in een projectgroep.</p>' +
+        '<p class="rapport-skipped">Geen rapport voor Daan Jansen: nog geen cijfer.</p>' +
+        '<p class="rapport-skipped">Geen rapport voor Bas Vos: beoordeeld in een andere projectgroep. Beoordeel de eigen projectgroep opnieuw via Scores invoeren.</p>' +
+        '<p class="rapport-skipped">Let op: Projectgroep 2 is nog niet helemaal beoordeeld. Een categorie zonder score staat in het rapport als —.</p>',
+    );
+    expect(
+      skippedNoticeHtml({ unplaced: [], ungraded: [], otherGroup: [], partial: ['A', 'B'] }),
+    ).toContain('Let op: A en B zijn nog niet helemaal beoordeeld.');
+    expect(skippedNoticeHtml({ unplaced: [], ungraded: [], otherGroup: [], partial: [] })).toBe('');
   });
 
   it('is the data of the rapport-po Typst golden', () => {
