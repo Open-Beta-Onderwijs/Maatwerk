@@ -48,6 +48,19 @@ export function ticks(max: number): number[] {
   return out;
 }
 
+/** Half the slider thumb: the track's first and last positions lie this far inside the input. */
+export const THUMB_HALF = 8;
+
+/**
+ * Where tick `t` of `max` sits under the slider, as a CSS `left` (applied as style data): the
+ * thumb's centre at that value, so every label lines up with its position (step 37, user: with
+ * `space-between` the wider two-digit labels drifted off, most in the middle).
+ */
+export function tickLeft(t: number, max: number): string {
+  const f = max > 0 ? Math.round((t / max) * 10000) / 10000 : 0;
+  return `calc(${THUMB_HALF}px + (100% - ${2 * THUMB_HALF}px) * ${f})`;
+}
+
 function levelRange(min: number, max: number): string {
   return min === max ? String(min) : `${min}–${max}`;
 }
@@ -97,7 +110,7 @@ export function categoryHtml(
         <div class="po-gr-slider">
           <input type="range" min="0" max="${max}" step="1" value="${v ?? 0}" aria-label="${esc(c.naam)}: score" aria-valuetext="${v === undefined ? 'nog geen score' : `${v} van ${max}`}" />
           <div class="po-gr-ticks" aria-hidden="true">${ticks(max)
-            .map((t) => `<span>${t}</span>`)
+            .map((t) => `<span data-left="${tickLeft(t, max)}">${t}</span>`)
             .join('')}</div>
         </div>
       </div>

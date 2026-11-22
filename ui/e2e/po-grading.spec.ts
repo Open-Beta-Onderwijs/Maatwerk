@@ -166,6 +166,52 @@ test.describe('the PO score table (step 23a, board 18)', () => {
 });
 
 test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
+  test('the slider labels line up with the slider positions, also for 20 points (step 37)', async ({
+    page,
+  }) => {
+    const files = await poSeed(page, { grading: true });
+    const rubric = await readMockJson<{ categories: Record<string, unknown>[] }>(
+      page,
+      `rubrics/${RUBRIC_ID}.json`,
+    );
+    const twenty = {
+      ...rubric.categories[0],
+      id: 'cat-twintig',
+      naam: 'Twintig',
+      max: 20,
+      obs_ids: [],
+      niveaus: [
+        { min: 0, max: 6, titel: 'Laag', uitleg: 'Onvoldoende.' },
+        { min: 7, max: 13, titel: 'Midden', uitleg: 'Voldoende.' },
+        { min: 14, max: 20, titel: 'Hoog', uitleg: 'Goed.' },
+      ],
+    };
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    await seedFiles(page, {
+      'rubrics/rubric-twintig.json': {
+        ...rubric,
+        id: 'rubric-twintig',
+        categories: [...rubric.categories, twenty],
+      },
+      ...files,
+      [examRel]: { ...(files[examRel] as object), rubric_id: 'rubric-twintig' },
+    });
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const cat = page.locator('.dlg--po-grade .po-gr-cat[data-cat="cat-twintig"]');
+    await cat.locator('.po-gr-ticks').scrollIntoViewIfNeeded();
+    const slider = (await cat.locator('input[type=range]').boundingBox())!;
+    // A click under the middle of a label sets exactly that value.
+    for (const t of [20, 0, 1, 5, 9, 10, 11, 12, 15, 19]) {
+      const label = (await cat
+        .locator('.po-gr-ticks > span', { hasText: new RegExp(`^${t}$`) })
+        .boundingBox())!;
+      await page.mouse.click(label.x + label.width / 2, slider.y + slider.height / 2);
+      await expect(cat.locator('.po-gr-v')).toHaveText(String(t));
+    }
+  });
+
   test('grading writes the group into every member file, own lines apart', async ({ page }) => {
     const errors = watchErrors(page);
     await seedFiles(page, await poSeed(page, { grading: true }));

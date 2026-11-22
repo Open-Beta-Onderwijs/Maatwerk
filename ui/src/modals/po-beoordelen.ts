@@ -38,6 +38,7 @@ import {
   type GroupGrading,
 } from '../domain/po-grading';
 import type { Exam, PoLine, ScoreRecord } from '../domain/types';
+import { applyStyleData } from '../legacy/style-data';
 import { LOCK_ICON, scoreLock } from '../services/score-lock';
 import { Store } from '../store.js';
 import {
@@ -222,6 +223,8 @@ export function openPoGrading(
       void save().finally(() => onChanged?.());
     },
     onShow: (el: HTMLElement) => {
+      // The slider ticks' positions (style data: the CSP allows no inline styles).
+      applyStyleData(el);
       const $ = <T extends HTMLElement = HTMLElement>(sel: string) => el.querySelector<T>(sel)!;
       const status = $('#po-gr-status');
       setStatus = (text, kind) => {
