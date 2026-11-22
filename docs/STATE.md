@@ -1,8 +1,7 @@
 # State
 
-Last updated: 2026-11-22 (steps 35-36, version 0.27.0) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
-`87ad870`, the 0.25.0 commit)
-Last tags: `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-22 (step 37, version 0.28.0) Branch: `step/37-po-completion`
+Last tags: `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -50,9 +49,24 @@ the user's manual check before the merge.
 10. 37.5 `7045331` profile observaties: a PO's rubric and category observaties count (user OK on
     the before/after: fixtures unchanged, e2e seed +1 Netjes gewerkt, +1 Bronnen ontbreken).
 
-**Next action:** gate (2.2), fresh-context review `docs/reviews/step-37.md`, fix blockers and
-majors, then report: the `modal-po-grade` diff (slider labels), the release 0.28.0, the real-exe
-check of saving on close.
+User 2026-11-22: `modal-po-grade` diff and the PO rapport golden approved; steps 35-36 merged
+into `main` (`82e7c92`, tags `step-35`, `step-36`, pushed), `main` merged into this branch.
+
+Gate (2026-11-22): cargo fmt, clippy, test, deny, SPDX, npm licences, lint (only the user's
+untracked file), typecheck, golden check, 931 Vitest + 127 node tests, Chromium e2e 425/425 (one
+unnamed failure in the first run before the fixes, green on rerun), visual 177/177 after the
+user-approved updates. `bindings.ts` was stale since 37.4 (`0247f18`).
+
+Version 0.28.0 (`422afba`): local baselines of `splash` and `modal-po-grade` updated, their CI
+baselines dropped on all three platforms.
+
+Review `docs/reviews/step-37.md`: 0 blockers, 1 major (M1 a failed save on quitting closed
+silently: fixed `ee3d955`, the app asks "Toch afsluiten?"), 5 minors (m1 in part, m3 fixed
+`2884204`; m2, m4, m5 backlog "From Step 37"), 7 nits (n2 fixed; rest backlog).
+
+**Next action:** push; CI writes the dropped baselines, commit them (`test(visual): CI
+baselines ...`). The user: real-exe check with the 0.28.0 exe (closing right after a grading
+edit saves and closes; a failed save asks). Then merge into `main`, tag `step-37`.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 

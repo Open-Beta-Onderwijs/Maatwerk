@@ -226,9 +226,9 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 33   | Toetsen as cards                                                 | M            | 0.24    | gate   |
 | 33b  | Perf hotfix: first tab visits, card swap clock, batch grades     | S            | 0.24.1  | gate   |
 | 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | gate   |
-| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | wip    |
-| 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | todo   |
-| 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | todo   |
+| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | done   |
+| 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | done   |
+| 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | gate   |
 | 38   | Grade numbers in Rust                                            | M            | 0.29    | todo   |
 | 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo   |
 | 40   | AI assistant follow-ups                                          | M            | 0.31    | todo   |
