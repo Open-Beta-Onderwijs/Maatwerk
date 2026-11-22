@@ -717,3 +717,76 @@ fn rubrics_toetstypes_and_rubric_references_are_checked() {
             .any(|i| i.kind == IssueKind::Placement)
     );
 }
+
+#[test]
+fn po_leftovers_and_odd_references_are_warned_about() {
+    // Review 22 n5 and 22, review 23 n4 (step 37).
+    let (_tmp, data) = copy();
+    let exam = |v: serde_json::Value| v.to_string();
+    let exams = data.join("2025-2026/exams");
+    fs::write(
+        exams.join("po-x.json"),
+        exam(
+            serde_json::json!({"id": "po-x", "title": "PO X", "subject": "nat", "kind": "po",
+            "rubric_id": "r-a", "rubric": {"id": "r-a"}, "questions": [],
+            "projectgroepen": [{"id": "pg1", "student_ids": ["1001"]}]}),
+        ),
+    )
+    .unwrap();
+    fs::write(
+        exams.join("po-x-h.json"),
+        exam(
+            serde_json::json!({"id": "po-x-h", "title": "PO X herkansing", "subject": "nat",
+            "kind": "po", "parent_id": "po-x", "rubric_id": "r-b", "questions": [],
+            "projectgroepen": []}),
+        ),
+    )
+    .unwrap();
+    let scores = data.join("2025-2026/scores/nat");
+    // 1002: PO scores but in no projectgroep of po-x.
+    fs::write(
+        scores.join("1002.json"),
+        serde_json::json!({"student_id": "1002", "scores": {"po-x": {"c1": 3}}}).to_string(),
+    )
+    .unwrap();
+    // 1001: a PO grading under a test's id.
+    let t = "nat-toets-1-2025-2026";
+    fs::write(
+        scores.join("1001.json"),
+        serde_json::json!({"student_id": "1001", "scores": {"po-x": {"c1": 2}},
+            "po": {"po-x": {"projectgroep": "pg1"}, t: {"projectgroep": "pg1"}}})
+        .to_string(),
+    )
+    .unwrap();
+    let report = validate(&data).unwrap();
+    for (path, message) in [
+        (
+            "2025-2026/exams/po-x.json",
+            "Bevat een veld rubric, dat nooit gelezen wordt",
+        ),
+        (
+            "2025-2026/exams/po-x-h.json",
+            "Andere rubric (r-b) dan het origineel po-x (r-a)",
+        ),
+        (
+            "2025-2026/scores/nat/1002.json",
+            "Scores voor PO po-x, maar de leerling zit in geen projectgroep",
+        ),
+        (
+            "2025-2026/scores/nat/1001.json",
+            "PO-beoordeling bij toets nat-toets-1-2025-2026",
+        ),
+    ] {
+        assert!(
+            has(&report, IssueKind::Shape, path, message),
+            "{message}: {:#?}",
+            report.issues
+        );
+    }
+    // 1001 is in pg1: its PO scores are fine.
+    assert!(
+        !issues_for(&report, "2025-2026/scores/nat/1001.json")
+            .iter()
+            .any(|i| i.message.contains("geen projectgroep"))
+    );
+}

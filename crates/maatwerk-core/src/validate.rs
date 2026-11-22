@@ -345,6 +345,7 @@ fn check_references(
         .collect();
     let years = year_ids(json, out);
     let empty = YearIds::default();
+    let exam_by = exams_by_id(json);
 
     for (&rel, value) in json {
         let (year, rest) = rel.split_once('/').unwrap_or(("", rel));
@@ -490,8 +491,117 @@ fn check_references(
                 out.missing(rel, format!("Rubric {r} bestaat niet"));
             }
             check_po_exam(rel, value, students, out);
+            check_exam_rubric_refs(rel, year, value, &exam_by, out);
         } else if rest.starts_with("scores/") {
             check_scores(rel, year, value, students, exams, out);
+            check_po_scores(rel, year, value, &exam_by, out);
+        }
+    }
+}
+
+/// Every exam by (year, id), for checks across exam and score files.
+type ExamsById<'a> = BTreeMap<(&'a str, &'a str), &'a Value>;
+
+fn exams_by_id<'a>(json: &'a BTreeMap<&'a str, Value>) -> ExamsById<'a> {
+    json.iter()
+        .filter_map(|(rel, v)| {
+            let (year, rest) = rel.split_once('/')?;
+            rest.strip_prefix("exams/")?;
+            Some(((year, v.get("id")?.as_str()?), v))
+        })
+        .collect()
+}
+
+/// An exam's rubric references (step 37, review 22 n5): a `rubric` field is never read (the rubric
+/// lives in `rubrics/`), and a PO herkansing uses its original's rubric (decision 22).
+fn check_exam_rubric_refs(
+    rel: &str,
+    year: &str,
+    exam: &Value,
+    exam_by: &ExamsById<'_>,
+    out: &mut Found,
+) {
+    if exam.get("rubric").is_some() {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            "Bevat een veld rubric, dat nooit gelezen wordt: de rubric staat in rubrics/".into(),
+        );
+    }
+    let Some(parent) = exam.get("parent_id").and_then(Value::as_str) else {
+        return;
+    };
+    let Some(original) = exam_by.get(&(year, parent)) else {
+        return;
+    };
+    let (mine, theirs) = (
+        crate::rubrics::exam_rubric_id(exam),
+        crate::rubrics::exam_rubric_id(original),
+    );
+    if crate::rubrics::is_po_exam(exam) && mine != theirs {
+        out.warn(
+            IssueKind::Shape,
+            rel,
+            format!(
+                "Andere rubric ({}) dan het origineel {parent} ({})",
+                mine.unwrap_or("geen"),
+                theirs.unwrap_or("geen")
+            ),
+        );
+    }
+}
+
+/// A score file's PO parts (step 37): a `po` grading under a test's id (review 23 n4), and PO
+/// scores of a student in no projectgroep of that PO (review 22: they never count).
+fn check_po_scores(
+    rel: &str,
+    year: &str,
+    record: &Value,
+    exam_by: &ExamsById<'_>,
+    out: &mut Found,
+) {
+    let exam = |id: &str| exam_by.get(&(year, id)).copied();
+    if let Some(Value::Object(po)) = record.get("po") {
+        for id in po.keys() {
+            if exam(id).is_some_and(|e| !crate::rubrics::is_po_exam(e)) {
+                out.warn(
+                    IssueKind::Shape,
+                    rel,
+                    format!("PO-beoordeling bij toets {id}: die telt niet mee"),
+                );
+            }
+        }
+    }
+    let (Some(student), Some(Value::Object(scores))) = (
+        record.get("student_id").and_then(Value::as_str),
+        record.get("scores"),
+    ) else {
+        return;
+    };
+    for (id, s) in scores {
+        let Some(e) = exam(id).filter(|e| crate::rubrics::is_po_exam(e)) else {
+            continue;
+        };
+        if s.as_object().is_none_or(|m| m.is_empty()) {
+            continue;
+        }
+        let placed = e
+            .get("projectgroepen")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|g| g.get("student_ids").and_then(Value::as_array))
+            .flatten()
+            .any(|m| m.as_str() == Some(student));
+        if !placed {
+            out.warn(
+                IssueKind::Shape,
+                rel,
+                format!(
+                    "Scores voor PO {id}, maar de leerling zit in geen projectgroep: ze tellen \
+                     niet mee"
+                ),
+            );
         }
     }
 }
