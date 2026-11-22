@@ -10,6 +10,7 @@ import {
   alertDialog,
   closeModal,
   modalRefresher,
+  onModalCleanup,
   onModalSync,
   openModal,
   showReloadNotice,
@@ -39,6 +40,7 @@ import {
 import type { Rubric } from '../domain/rubric';
 import { testBadgeClass } from '../domain/test-type';
 import type { Exam, PoLine, ScoreRecord, Student } from '../domain/types';
+import { onPoSave } from '../services/po-save-status';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { openPoEditModal } from './po-gegevens';
@@ -248,6 +250,14 @@ export async function openPoScoresModal(
       <span class="po-sc-hint">Scores per categorie wijzig je via <b>Beoordelen</b> of door dubbel te klikken op een rij; ze gelden voor de hele projectgroep.</span>
       <span class="po-sc-saved" role="status">● Alles opgeslagen</span>`,
     onShow: (el: HTMLElement) => {
+      // The footer follows the grading's saves (review 23 n3).
+      const saved = el.querySelector<HTMLElement>('.po-sc-saved')!;
+      onModalCleanup(
+        onPoSave((text, kind) => {
+          saved.textContent = text;
+          saved.dataset.kind = kind;
+        }),
+      );
       const reopen = () => openPoScoresModal(examId, year, grade);
       const refresh = modalRefresher(reopen, 200);
       let generation = Store.generation();

@@ -325,6 +325,16 @@ export class MockApi implements MaatwerkApi {
     this.writeDelayMs = ms;
   }
 
+  private writeHooks: { pathPart: string; run: () => void }[] = [];
+
+  /**
+   * Runs `run` once, when a writeJson for a path containing `pathPart` starts, before its CAS
+   * check: a colleague's write landing between a pre-check and the write (review 23 m1).
+   */
+  beforeWrite(pathPart: string, run: () => void): void {
+    this.writeHooks.push({ pathPart, run });
+  }
+
   /** A colleague's write arriving through OneDrive: changes the file and emits `data:changed`. */
   externalWrite(relPath: string, data: Json): void {
     const kind = this.files.has(relPath) ? 'changed' : 'added';
@@ -380,6 +390,8 @@ export class MockApi implements MaatwerkApi {
   ): Promise<FsResult> {
     this.record('writeJson', [relPath, data, opts]);
     if (this.writeDelayMs) await new Promise((res) => setTimeout(res, this.writeDelayMs));
+    const hook = this.writeHooks.findIndex((h) => relPath.includes(h.pathPart));
+    if (hook >= 0) this.writeHooks.splice(hook, 1)[0]!.run();
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
     if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
@@ -1490,6 +1502,21 @@ export class MockApi implements MaatwerkApi {
   onDataChanged(cb: (changes: DataChange[]) => void): Unsubscribe {
     this.dataListeners.add(cb);
     return () => this.dataListeners.delete(cb);
+  }
+
+  private closeListeners = new Set<() => Promise<void>>();
+  /** Set once the window "closed" (requestClose): e2e checks what was saved before. */
+  closed = false;
+
+  onCloseRequested(cb: () => Promise<void>): Unsubscribe {
+    this.closeListeners.add(cb);
+    return () => this.closeListeners.delete(cb);
+  }
+
+  /** Test hook: the teacher closes the window; resolves when it would close. */
+  async requestClose(): Promise<void> {
+    await Promise.all([...this.closeListeners].map((cb) => cb()));
+    this.closed = true;
   }
 
   onAssignmentProgress(cb: (progress: { done: number; total: number }) => void): Unsubscribe {

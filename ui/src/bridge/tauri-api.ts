@@ -6,6 +6,7 @@
 // so the legacy screens run unchanged.
 
 import { Channel, convertFileSrc } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import type * as Ai from './ai-api';
 import { normaliseForTypst } from '../domain/rapport';
 import {
@@ -42,6 +43,8 @@ export interface Backend {
   listenDataChanged(cb: (changes: DataChange[]) => void): Promise<() => void>;
   listenAssignmentProgress(cb: (progress: Progress) => void): Promise<() => void>;
   listenEditorUpdate(cb: (update: EditorUpdateEvent) => void): Promise<() => void>;
+  /** The window's close request; it closes once `cb` is done (absent in tests). */
+  listenCloseRequested?(cb: () => Promise<void>): Promise<() => void>;
   /** URL of a render output for the viewer iframe. */
   outputUrl(outputId: string): string;
 }
@@ -52,6 +55,11 @@ const tauriBackend: Backend = {
   listenDataChanged: (cb) => events.dataChanged.listen((e) => cb(e.payload as DataChange[])),
   listenAssignmentProgress: (cb) => events.assignmentProgress.listen((e) => cb(e.payload)),
   listenEditorUpdate: (cb) => events.editorUpdate.listen((e) => cb(e.payload)),
+  // Tauri awaits the handler, then destroys the window (core:window:allow-destroy).
+  listenCloseRequested: (cb) =>
+    getCurrentWindow().onCloseRequested(async () => {
+      await cb();
+    }),
   // `http://maatwerk-out.localhost/<id>` on Windows, `maatwerk-out://localhost/<id>` elsewhere.
   outputUrl: (outputId) => convertFileSrc(outputId, OUTPUT_SCHEME),
 };
@@ -425,6 +433,10 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
 
     // ── Events ──────────────────────────────────────────────────────────────
     onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),
+    onCloseRequested: (cb) =>
+      backend.listenCloseRequested
+        ? subscribe<void>((f) => backend.listenCloseRequested!(async () => f()), cb, 'close')
+        : () => {},
     onAssignmentProgress: (cb) =>
       subscribe((f) => backend.listenAssignmentProgress(f), cb, 'assignment progress'),
     pdfUrl: (pdfPath) => backend.outputUrl(pdfPath),

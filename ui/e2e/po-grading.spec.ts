@@ -166,6 +166,59 @@ test.describe('the PO score table (step 23a, board 18)', () => {
 });
 
 test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
+  test('quitting the app right after an edit saves it first (review 23 m4)', async ({ page }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    const uitvoering = d.locator('.po-gr-cat[data-cat="cat-uitvoering"]');
+    await uitvoering.locator('input[type=range]').fill('7');
+    await expect(uitvoering.locator('.po-gr-v')).toHaveText('7');
+    // Within the 10 s autosave: nothing on disk yet.
+    expect((await record(page, '900002')).scores?.[PO_ID]?.['cat-uitvoering']).toBeUndefined();
+    await withMock(page, (m) => m.requestClose());
+    // The window would close now: both members hold the edit, and the message is gone.
+    for (const id of ['900002', '900003'])
+      expect((await record(page, id)).scores?.[PO_ID]?.['cat-uitvoering']).toBe(7);
+    expect(await withMock(page, (m) => m.closed)).toBe(true);
+    await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  });
+
+  test('the score table footer follows the grading save (review 23 n3)', async ({ page }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    const footer = page.locator('.dlg--po-scores .po-sc-saved');
+    await expect(footer).toHaveText('● Alles opgeslagen');
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-uitvoering"] input[type=range]').fill('6');
+    await withMock(page, (m) => m.slowWrites(600));
+    await d.locator('#po-gr-done').click();
+    await expect(footer).toHaveText('Opslaan…');
+    await expect(footer).toHaveAttribute('data-kind', 'busy');
+    await expect(footer).toContainText('● Automatisch opgeslagen');
+    await expect(footer).toHaveAttribute('data-kind', 'ok');
+  });
+
+  test('the closing message shows while the saves run (step 37)', async ({ page }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-uitvoering"] input[type=range]').fill('5');
+    // Slow writes, so the message can be seen.
+    await withMock(page, (m) => {
+      m.slowWrites(600);
+      void m.requestClose();
+    });
+    await expect(page.locator('.busy-overlay')).toHaveText('Gegevens opslaan, dan afsluiten…');
+    await expect(page.locator('.busy-overlay')).toHaveCount(0);
+    await expect.poll(() => withMock(page, (m) => m.closed)).toBe(true);
+  });
+
   test('the slider labels line up with the slider positions, also for 20 points (step 37)', async ({
     page,
   }) => {
@@ -520,5 +573,76 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     expect((await record(page, '900001')).po?.[PO_ID]?.comment).toBe('Goed onderzoek.');
     await notice.locator('[data-action="ok"]').click();
     await expect(page.locator('#po-gr-overall')).toHaveValue('Versie van een collega.');
+  });
+
+  test('a colleague who writes between the check and the write: partly written, reported, reloaded (review 23 m1)', async ({
+    page,
+  }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-1"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('#po-gr-overall').fill('Mijn versie.');
+    // The colleague's save lands in D'Angelo O'Neill's file (written second) just as this dialog
+    // writes it: after the pre-check, so Noor Bakker's file is already written.
+    const rel = `${YEAR}/scores/nat/900001.json`;
+    const other = await record(page, '900001');
+    other.po![PO_ID]!.comment = 'Versie van een collega.';
+    await withMock(
+      page,
+      (m, [p, data]) =>
+        m.beforeWrite(p as string, () => m.externalWrite(p as string, data as never)),
+      [rel, other],
+    );
+    await d.locator('#po-gr-next').click();
+    const notice = page.locator('#reload-notice');
+    await expect(notice).toContainText("D'Angelo O'Neill is intussen door een collega beoordeeld");
+    // The group is partly written: the colleague's file stays as the colleague left it.
+    expect((await record(page, '900101')).po?.[PO_ID]?.comment).toBe('Mijn versie.');
+    expect((await record(page, '900001')).po?.[PO_ID]?.comment).toBe('Versie van een collega.');
+    // The reload starts from the colleague's version (review 23 m1).
+    await notice.locator('[data-action="ok"]').click();
+    await expect(page.locator('#po-gr-overall')).toHaveValue('Versie van een collega.');
+  });
+
+  test('a member without a score file is graded; it is created (review 23 m9)', async ({
+    page,
+  }) => {
+    const files = await poSeed(page, { grading: true });
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    const exam = files[examRel] as { projectgroepen: unknown[] };
+    // Daan Visser (900102) has no score file at all.
+    files[examRel] = {
+      ...exam,
+      projectgroepen: [
+        ...exam.projectgroepen,
+        { id: 'pg-3', naam: 'Alleen Daan', student_ids: ['900102'] },
+      ],
+    };
+    await seedFiles(page, files);
+    await login(page);
+    await openTable(page);
+    expect(await record(page, '900102')).toBeNull();
+    await page.locator('[data-grade-group="pg-3"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-theorie"] input[type=range]').fill('5');
+    await d.locator('#po-gr-done').click();
+    await expect(d).toHaveCount(0);
+    await expect
+      .poll(async () => (await record(page, '900102'))?.scores?.[PO_ID]?.['cat-theorie'])
+      .toBe(5);
+    expect((await record(page, '900102')).po?.[PO_ID]?.projectgroep).toBe('pg-3');
+  });
+
+  test('a PO without a rubric cannot be graded and says why (review 23 m9)', async ({ page }) => {
+    const files = await poSeed(page, { grading: true });
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    files[examRel] = { ...(files[examRel] as object), rubric_id: null };
+    await seedFiles(page, files);
+    await login(page);
+    await openTable(page);
+    await expect(page.locator('.po-sc-note')).toContainText('Deze PO heeft geen rubric');
+    await expect(page.locator('[data-grade-group]')).toHaveCount(0);
   });
 });
