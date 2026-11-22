@@ -91,6 +91,11 @@ User 2026-11-22: lock look approved, both visual diffs approved, release as **0.
 Version 0.27.0, local baselines of `splash` and `admin-gebruikers` updated (visual 177/177), CI
 baselines of both dropped on all three platforms; exe rebuilt for the user's manual check.
 
+User 2026-11-22 (planning, no code): encrypted storage designed in chat and recorded as
+`docs/adr/0012-encrypted-storage.md` (proposed) and a new step 41b in `PLAN-2.md` (release 0.33;
+42-44 shift to 0.34-0.36). Its first sub-task is the storage layout report the user asked for
+(which names and contents get encrypted, decided up front), then a STOP.
+
 **Next action:** the user: manual check on a copy of real data with the 0.27.0 exe (decision 8).
 Then: push (CI writes the dropped baselines), commit them, merge, tags `step-35`, `step-36`.
 Step 34 is merged (`49ad3d4`, tag `step-34`, CI run 44923939530 green after a rerun of the

@@ -233,9 +233,10 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo   |
 | 40   | AI assistant follow-ups                                          | M            | 0.31    | todo   |
 | 41   | Data and storage robustness, `rapporten/` cleanup                | M            | 0.32    | todo   |
-| 42   | Tests and CI hygiene                                             | M            | 0.33    | todo   |
-| 43   | Remaining backlog                                                | M            | 0.34    | todo   |
-| 44   | TypeScript complete, compat layer removed                        | L (44a, 44b) | 0.35    | todo   |
+| 41b  | Encrypted storage (ADR-0012)                                     | L (41b-a, b) | 0.33    | todo   |
+| 42   | Tests and CI hygiene                                             | M            | 0.34    | todo   |
+| 43   | Remaining backlog                                                | M            | 0.35    | todo   |
+| 44   | TypeScript complete, compat layer removed                        | L (44a, 44b) | 0.36    | todo   |
 | 45   | Signing-ready, dependencies, reviews, 1.0                        | L (45a, 45b) | 1.0     | todo   |
 
 ## 4. Steps
@@ -772,6 +773,52 @@ Bugs: failing test first.
    limits), 18 m4 (watermark cap), 18 n1/n4/n5, 6a n7, 6b n9, 5b n6, 9 n6, 7a n3-n6/n8, 4a m4.
 5. Gate, review, release 0.32.
 
+### Step 41b: Encrypted storage (L: 41b-a, 41b-b)
+
+Design: `docs/adr/0012-encrypted-storage.md` (proposed 2026-11-22, the user's answers). A
+data-format change: STOP gates at sub-tasks 1 and 5. After step 41 because it touches the same
+Storage, watcher and snapshot code.
+
+**41b-a: layout, crypto, keys**
+
+1. **Storage layout report (user, STOP):** `docs/phase-2/step-41b-storage-layout.md`, written
+   *before* any code, from the real layout in `maatwerk-core` (not from memory):
+   - a before/after tree of every top-level folder, sub-folder and file kind, each marked
+     **encrypted name / plain name** and **encrypted content / plain content**, with example names;
+   - what stays plain and why (`rapporten/`, opdrachten Typst sources, images and photos, the
+     `school.json` version stub) and where the real school settings move to;
+   - the key file (name, place, the second copy), snapshots, presence and claim files, OneDrive
+     conflict copies;
+   - the file extension (none or a neutral one), the path length budget (deepest real path,
+     before and after), compression yes/no.
+
+   The user approves it; then ADR-0012 becomes accepted.
+2. **Crypto core:** `maatwerk-core::vault` (file format `MWK1`, XChaCha20-Poly1305 with the
+   logical path as associated data, AES-SIV names in lowercase base32, HKDF subkeys, a wrapped DEK
+   per school with key ids). Tests: round trip, known-answer vectors, tamper, swap, truncation,
+   wrong key id, conflict-copy names, the test key refused by a release build. Licences and
+   `deny.toml` for the new crates.
+3. **Build key:** `MAATWERK_MASTER_KEY` read at build time; `.env` in `.gitignore`, `.env.example`
+   (placeholder) committed; a release build without the key fails; debug and test builds use the
+   public test key; CI reads a repository secret (the user adds it; fork PRs build with the test
+   key and do not package a release). The key backup outside GitHub is in place (user).
+
+**41b-b: storage, migration, tools**
+
+4. **Storage integration:** a logical/physical path mapping under `Storage` (write, read, list,
+   delete, CAS, watcher, snapshots, presence); writes are skipped when the plain content is
+   unchanged; the UI, bridge and TS mock keep logical paths (the e2e suite does not change).
+5. **Migration (STOP before the first real run):** automatic on the first start when the stub
+   has no format marker: claim file, `minAppVersion` raised, convert, verify that every file
+   decrypts, marker flipped last, resumable. Plain snapshots are converted or removed. Checked
+   with the 0.27 exe against migrated data (read-only, no crash). The user runs it on an offline
+   copy and replaces the online folder in one go.
+6. **Tamper and tools:** "gewijzigd buiten Maatwerk" message, the item read-only, restore from a
+   snapshot (Beheer); `maatwerk-cli decrypt` / `encrypt` with the key from `.env` (never shipped).
+   The docs say "afgeschermd", not "beveiligd"; what is not prevented (rollback, delete) is stated.
+7. Gate, review with a security focus (Appendix C plus the crypto checklist: nonces, associated
+   data, key handling, failure paths), manual check on a copy of real data, release 0.33.
+
 ### Step 42: Tests and CI hygiene (M)
 
 Items: X-05; backlog 0 n2, n3, n6, n9, 3a n5, 3b m8, 6a/6b "Command-level tests", 6b m3 rest, 7c
@@ -787,7 +834,7 @@ m5 rest, 7c `examMenuItem` retries, 9 m7, 13 "Possibly flaky Rust test", "Flaky 
 4. **CI and policy:** actions pinned by SHA with Dependabot, no double runs, no Windows target on
    Linux (0 n9); a bundle licence check (3b m8); one source for the two licence allowlists (0
    n2); SPDX decision for toml/yml (0 n6); the verbatim `LICENSE` (0 n3).
-5. Gate, review, release 0.33.
+5. Gate, review, release 0.34.
 
 ### Step 43: Remaining backlog (M)
 
@@ -804,7 +851,7 @@ at the start:** 29 m1 (which students the exam overview's Observaties percentage
    the version compare (15 n4), 29 m6 duplication, 25 n2 (keyboard handler module).
 3. Styling: raw colours to tokens (13 n5, 14 n4, RTTI colours), the 3a utility consolidation and
    unused classes (29 n-items). Visible changes: show the diff, baselines after the user's OK.
-4. Gate, review, release 0.34.
+4. Gate, review, release 0.35.
 
 ### Step 44: TypeScript complete, compat layer removed (L, two sessions)
 
@@ -824,7 +871,7 @@ lines): `store.js` 1.522, `editor-init.js` 2.087, `app.js` 827, `modals/groep-ed
   `pdf-viewer.js`, `editor-init.js` (split: toolbar, file tabs, preview sync, dialogs, keyboard).
   Then the compat layer: the reference result shapes in `bridge/tauri-api.ts` and `bridge/api.ts`
   and the compat mapping in `src-tauri/src/error.rs` go; callers use the typed `{ code, message }`
-  errors. `allowJs` off and a CI check for `.js` under `ui/src`. Gate, review, release 0.35.
+  errors. `allowJs` off and a CI check for `.js` under `ui/src`. Gate, review, release 0.36.
 
 ### Step 45: Signing-ready, dependencies, reviews, 1.0 (L, two sessions)
 
