@@ -32,7 +32,7 @@ import {
   wirePeriode,
 } from './exam-fields';
 import { showProjectgroepen } from './po-groepen';
-import { SCHOOLSOORTEN } from './toets-nieuw';
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
 /** The steps above a new PO; the other step cannot be clicked. */
 export function poSteps(active: 'gegevens' | 'groepen') {

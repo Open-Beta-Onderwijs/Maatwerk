@@ -36,8 +36,8 @@ import {
   obsChip,
   soortSegmented,
 } from './rubric-levels';
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
-const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
 const JAARLAGEN = ['1', '2', '3', '4', '5', '6'];
 
 const LOCK_ICON =
@@ -108,7 +108,7 @@ export function openRubricEditor(existing: Rubric | null, opts: RubricEditorOpti
   const schoolSS: string[] = Store.getSchoolSync().schoolsoort ?? [];
   const ssOptions = schoolSS.length
     ? SCHOOLSOORTEN.filter((s) => schoolSS.includes(s) || draft.schoolsoort.includes(s))
-    : SCHOOLSOORTEN;
+    : [...SCHOOLSOORTEN];
   const vak = (Store.SUBJECT_DISPLAY as Record<string, string>)[draft.subject] ?? draft.subject;
   const initial = JSON.stringify(draft);
   let check: RubricCheck = checkRubric(draft);

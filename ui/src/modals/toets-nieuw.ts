@@ -20,16 +20,7 @@ import {
   wirePeriode,
 } from './exam-fields';
 import { showExamEditor } from './toets-edit';
-
-export const SCHOOLSOORTEN = [
-  'Vmbo-bb',
-  'Vmbo-kb',
-  'Vmbo-gl',
-  'Vmbo-tl',
-  'Havo',
-  'Vwo',
-  'Gymnasium',
-];
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
 /** The steps above a new test; the other step cannot be clicked. */
 export function examSteps(active: 'gegevens' | 'vragen') {

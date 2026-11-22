@@ -64,15 +64,6 @@ let _listJob: IdleJob | null = null;
 let _grades: GradeFill | null = null;
 
 export const JAARLAGEN = ['1', '2', '3', '4', '5', '6'];
-export const SCHOOLSOORTEN = [
-  'Vmbo-bb',
-  'Vmbo-kb',
-  'Vmbo-gl',
-  'Vmbo-tl',
-  'Havo',
-  'Vwo',
-  'Gymnasium',
-];
 
 export function renderLeerlingen(): void {
   const cfg = Store.getConfigSync() as { activeYear: string };

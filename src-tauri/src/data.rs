@@ -181,13 +181,24 @@ pub async fn validate_data_folder(state: State<'_, Shared>) -> Res<DataCheck> {
     .await
 }
 
-/// One PO that uses a rubric (step 21).
+/// One PO that uses a rubric (step 21). The bindings' copy of `maatwerk_core::rubrics::RubricUse`:
+/// the core has no specta (review 21 n8 keeps it, with a `From`).
 #[derive(Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RubricUse {
     pub year: String,
     pub exam_id: String,
     pub naam: String,
+}
+
+impl From<maatwerk_core::rubrics::RubricUse> for RubricUse {
+    fn from(u: maatwerk_core::rubrics::RubricUse) -> Self {
+        Self {
+            year: u.year,
+            exam_id: u.exam_id,
+            naam: u.naam,
+        }
+    }
 }
 
 /// Per rubric id, the PO's in any school year that use it ("In gebruik bij n PO's"; decision 20
@@ -200,17 +211,7 @@ pub async fn rubric_usage(
     blocking(state, move |c| {
         Ok(maatwerk_core::rubrics::usage(c.storage()?)?
             .into_iter()
-            .map(|(id, uses)| {
-                let uses = uses
-                    .into_iter()
-                    .map(|u| RubricUse {
-                        year: u.year,
-                        exam_id: u.exam_id,
-                        naam: u.naam,
-                    })
-                    .collect();
-                (id, uses)
-            })
+            .map(|(id, uses)| (id, uses.into_iter().map(RubricUse::from).collect()))
             .collect())
     })
     .await

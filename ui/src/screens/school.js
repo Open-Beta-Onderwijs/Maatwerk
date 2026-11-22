@@ -2,6 +2,7 @@
 
 import { toast, escHtml, applyWatermerk } from '../app.js';
 import { ICONS } from '../utils/icons.js';
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
 // Image types the data folder takes for afbeeldingen/ (maatwerk-core IMAGE_EXTS) and Typst can show.
 const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'];
@@ -13,7 +14,6 @@ const LOGO_ACCEPT = IMAGE_EXTS.map((ext) => `.${ext}`).join(',');
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const FIELD_LABELS = { naam: 'Naam', ondertitel: 'Ondertitel', motto: 'Motto' };
-const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
 
 export async function renderSchool() {
   const container = document.getElementById('screen-school');

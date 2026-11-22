@@ -15,6 +15,7 @@ import { SUBJECT_DISPLAY } from '../domain/rapport';
 import { READ_ONLY_SAVE_TEXT, isReadOnlyError } from '../services/read-only';
 import { Store } from '../store.js';
 import { photoPathFor } from './foto-wijzigen';
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
 const openModal = openModalJs as (opts: DialogOptions) => Dialog;
 
@@ -35,7 +36,6 @@ export interface EditableUser {
 }
 
 const SUBJECTS = ['bio', 'nat', 'schk', 'wi'];
-const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
 
 /** The ring colours of board 12, in order. */
 export const RING_COLOURS = [

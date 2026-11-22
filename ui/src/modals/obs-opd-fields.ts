@@ -6,16 +6,7 @@
 import { escHtml } from '../app.js';
 import { VAK_CHIPS } from '../domain/vakken';
 import { Store } from '../store.js';
-
-export const SCHOOLSOORTEN = [
-  'Vmbo-bb',
-  'Vmbo-kb',
-  'Vmbo-gl',
-  'Vmbo-tl',
-  'Havo',
-  'Vwo',
-  'Gymnasium',
-] as const;
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
 /** The vak codes of observaties and opdrachten (wiskunde in its variants). */
 export { VAK_CHIPS };
