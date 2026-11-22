@@ -1026,6 +1026,10 @@ html[data-theme='dark'] .ov-tip__mute {
 .po-ov-table thead th.po-ov-col-grade {
   width: 70px;
 }
+/* Verzameloverzicht: room for the I/H dot that hangs right of the grade (as .xo-col-dot). */
+.po-ov-table thead th.po-ov-col-dot {
+  width: 30px;
+}
 .po-ov-sub {
   display: flex;
   align-items: center;

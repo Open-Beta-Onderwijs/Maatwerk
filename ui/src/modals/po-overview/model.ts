@@ -11,6 +11,10 @@ import { compareStudents, groupName } from '../../domain/po';
 import { gradingOf, ownLinesOf, type GroupGrading } from '../../domain/po-grading';
 import type { Rubric, RubricCategory } from '../../domain/rubric';
 import type { Exam, Observatie, PoLine, ScoreRecord, Student } from '../../domain/types';
+import { resitInfo } from '../../overview/resit-dot';
+
+/** "Herkansing (poging 2)": a resit's projectgroepen carry it in the verzameloverzicht. */
+const resitLabel = (a: Exam) => resitInfo(a)?.title ?? `poging ${a.attempt ?? 2}`;
 
 export interface PoGroupRef {
   id: string;
@@ -20,6 +24,8 @@ export interface PoGroupRef {
 export interface PoRow {
   id: string;
   name: string;
+  /** Verzameloverzicht: the resit that counts for this student (I/H dot); null: the original. */
+  attempt: Exam | null;
   /** The student's klas (the first matching class), or "—". */
   klas: string;
   group: PoGroupRef | null;
@@ -42,6 +48,8 @@ export interface PoGroup extends PoGroupRef {
 
 export interface PoModel {
   exam: Exam;
+  /** The verzameloverzicht (F-32): every row reads the attempt that counts. */
+  isSummary: boolean;
   rubric: Rubric | null;
   categories: RubricCategory[];
   /** Normal points (the grade's maximum). */
@@ -62,40 +70,63 @@ export interface PoModelInput {
   records: ReadonlyMap<string, ScoreRecord>;
   classTag: (id: string) => string;
   name: (id: string) => string;
-  results: (rec: ScoreRecord | undefined) => Results | null;
+  /** The grade rules' results of `attempt` for a student. */
+  results: (rec: ScoreRecord | undefined, attempt: Exam) => Results | null;
+  /**
+   * Verzameloverzicht (F-32): the resits after the original (`exam`), and per student the attempt
+   * that counts (the best grade). A student without a grade reads the first attempt that places
+   * them, else the original.
+   */
+  summary?: { resits: readonly Exam[]; best: ReadonlyMap<string, Exam> };
 }
 
 const klasOrder = (a: string, b: string) =>
   a === '—' ? 1 : b === '—' ? -1 : a.localeCompare(b, 'nl', { numeric: true });
 
 export function buildPoModel(input: PoModelInput): PoModel {
-  const { exam, rubric, students, records } = input;
+  const { exam, rubric, students, records, summary } = input;
   const categories = rubric?.categories ?? [];
   const sum = (soort: string) =>
     categories.filter((c) => c.soort === soort).reduce((s, c) => s + (c.max ?? 0), 0);
-  const groupOf = new Map<string, PoGroupRef>();
-  const refs = (exam.projectgroepen ?? []).map((g, i) => {
-    const ref = { id: g.id, name: groupName(g, i) };
-    for (const s of g.student_ids) if (!groupOf.has(String(s))) groupOf.set(String(s), ref);
-    return ref;
+  const attempts = [exam, ...(summary?.resits ?? [])];
+  // Per attempt, the projectgroep of each student. A resit's groups are named after the attempt,
+  // so "Valtoren" of the original and of the herkansing stay apart.
+  const groupIn = new Map<string, Map<string, PoGroupRef>>();
+  const refs = attempts.flatMap((a) => {
+    const byStudent = new Map<string, PoGroupRef>();
+    groupIn.set(a.id, byStudent);
+    const tag = a === exam ? null : resitLabel(a);
+    return (a.projectgroepen ?? []).map((g, i) => {
+      const ref = {
+        id: a === exam ? g.id : `${a.id}/${g.id}`,
+        name: tag ? `${groupName(g, i)} · ${tag}` : groupName(g, i),
+      };
+      for (const s of g.student_ids) if (!byStudent.has(String(s))) byStudent.set(String(s), ref);
+      return ref;
+    });
   });
-  const ids = [...new Set([...records.keys(), ...groupOf.keys()])].sort((a, b) =>
+  const attemptOf = (id: string): Exam =>
+    summary?.best.get(id) ?? attempts.find((a) => groupIn.get(a.id)!.has(id)) ?? exam;
+  const placedIds = [...groupIn.values()].flatMap((m) => [...m.keys()]);
+  const ids = [...new Set([...records.keys(), ...placedIds])].sort((a, b) =>
     compareStudents(students.get(a), students.get(b)),
   );
   const rows: PoRow[] = ids.map((id) => {
     const rec = records.get(id);
-    const group = groupOf.get(id) ?? null;
-    const grading = gradingOf(rec, exam.id);
-    const res = group ? input.results(rec) : null;
+    const attempt = attemptOf(id);
+    const group = groupIn.get(attempt.id)?.get(id) ?? null;
+    const grading = gradingOf(rec, attempt.id);
+    const res = group ? input.results(rec, attempt) : null;
     const scored = group && Object.keys(grading.scores).length > 0;
     return {
       id,
       name: input.name(id),
+      attempt: attempt === exam ? null : attempt,
       klas: input.classTag(id),
       group,
       grading,
       groupLines: group ? grading.groupLines : [],
-      ownLines: group ? ownLinesOf(rec, exam.id) : [],
+      ownLines: group ? ownLinesOf(rec, attempt.id) : [],
       points: scored && res ? res.scored : null,
       grade: res?.grade ?? null,
       rubricGrade: scored && res ? (res.rubricGrade ?? null) : null,
@@ -116,6 +147,7 @@ export function buildPoModel(input: PoModelInput): PoModel {
     .filter((g) => g.members.length);
   return {
     exam,
+    isSummary: !!summary,
     rubric,
     categories,
     max: sum('normaal'),

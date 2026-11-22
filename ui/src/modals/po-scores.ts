@@ -57,8 +57,15 @@ export interface PoContext {
   records: Map<string, ScoreRecord>;
 }
 
-/** Loads the PO, its rubric, its students and their score files. */
-export async function loadPoContext(examId: string, year: string): Promise<PoContext | null> {
+/**
+ * Loads the PO, its rubric, its students and their score files. `withResits` (the
+ * verzameloverzicht): also the members of the resits' projectgroepen.
+ */
+export async function loadPoContext(
+  examId: string,
+  year: string,
+  { withResits = false }: { withResits?: boolean } = {},
+): Promise<PoContext | null> {
   await Store.loadYear(year);
   const exam = ((await Store.getExams(year)) as Exam[]).find((e) => e.id === examId);
   if (!exam) return null;
@@ -73,7 +80,9 @@ export async function loadPoContext(examId: string, year: string): Promise<PoCon
   );
   const ids = new Set([
     ...byStudent.keys(),
-    ...(exam.projectgroepen ?? []).flatMap((g) => g.student_ids.map(String)),
+    ...[exam, ...(withResits ? (Store.getResitsSync(exam.id, year) as Exam[]) : [])].flatMap((e) =>
+      (e.projectgroepen ?? []).flatMap((g) => g.student_ids.map(String)),
+    ),
   ]);
   await Store.preloadScores(year, subject, [...ids]);
   const records = new Map<string, ScoreRecord>();

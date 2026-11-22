@@ -4,8 +4,8 @@
 // tooltip, the resit dot and the Stapgrootte toggle.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, seedFiles } from './helpers';
-import { PO_ID, poSeed } from './po-seed';
+import { login, seedFiles, YEAR } from './helpers';
+import { PO_ID, poExam, poSeed } from './po-seed';
 import { screen } from './views';
 
 async function openGroupOverview(page: Page, withPo = false) {
@@ -240,6 +240,55 @@ async function openPoOverview(page: Page) {
   await expect(d.locator('.po-ov-table')).toBeVisible();
   return d;
 }
+
+test.describe('PO verzameloverzicht (F-32)', () => {
+  test('the Verzamelkaart opens the overview over the attempt that counts, with the H dot', async ({
+    page,
+  }) => {
+    const resitId = `${PO_ID}-h`;
+    const files = await poSeed(page, { grading: true });
+    // 900003 (Bezig in the original, Theorie 4) does the herkansing in its own Valtoren: 17 of 17.
+    files[`${YEAR}/exams/${resitId}.json`] = poExam({
+      id: resitId,
+      parent_id: PO_ID,
+      title: 'PO Onderzoek valbeweging — HERKANSING',
+      description: 'HERKANSING',
+      attempt: 2,
+      volgnummer: undefined,
+      projectgroepen: [{ id: 'pg-1', naam: 'Valtoren', student_ids: ['900003'] }],
+    });
+    const rel = `${YEAR}/scores/nat/900003.json`;
+    const rec = files[rel] as { scores: Record<string, unknown> };
+    files[rel] = {
+      ...rec,
+      scores: { ...rec.scores, [resitId]: { 'cat-theorie': 8, 'cat-uitvoering': 9 } },
+      po: { [resitId]: { projectgroep: 'pg-1', groupLines: [], ownLines: [] } },
+    };
+    await seedFiles(page, files);
+    await login(page);
+    await screen(page, 'toetsen');
+    await page.locator(`[data-action="po-overview-best"][data-examid="${PO_ID}"]`).click();
+    const d = page.locator('.modal-po-overview');
+    await expect(d.locator('.po-ov-table')).toBeVisible();
+    // Every tab stays on: the attempts share the rubric and the observaties.
+    await expect(d.locator('[role="tab"]:disabled')).toHaveCount(0);
+    await expect(d.locator('.po-ov-table thead th.po-ov-col-dot')).toHaveCount(1);
+    const row = d.locator('.ov-row', { has: page.locator('[data-id="900003"]') });
+    await expect(row.locator('.ov-dot')).toHaveText('H');
+    await expect(row.locator('.ov-dot')).toHaveAttribute('title', 'Herkansing (poging 2)');
+    await expect(row.locator('.ov-pill')).toHaveText('10,0');
+    await expect(d.locator('.ov-dot')).toHaveCount(1);
+    await d.getByRole('button', { name: 'Per projectgroep' }).click();
+    await expect(d.locator('.ov-section__head')).toContainText([
+      'Valtoren · projectgroepcijfer 8,8',
+      'Projectgroep 2',
+      'Valtoren · Herkansing (poging 2) · projectgroepcijfer 10,0',
+    ]);
+    await expect(d.locator('.ov-dot')).toHaveCount(1);
+    await d.locator('[data-tab="categorieen"]').click();
+    await expect(d.locator('#tab-categorieen .po-ov-cat__name').first()).toHaveText('Theorie');
+  });
+});
 
 test.describe('PO overview (board 43)', () => {
   test('Resultaten per klas and per projectgroep, with the grade build-up', async ({ page }) => {

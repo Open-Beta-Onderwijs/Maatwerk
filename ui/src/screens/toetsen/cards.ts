@@ -28,10 +28,6 @@ const LOCK =
 const LOCK_TITLE =
   'Observaties worden bij het aanmaken overgenomen van het origineel en kunnen niet los worden gewijzigd';
 
-/** A PO's verzameloverzicht is not designed yet (backlog); each attempt has its own. */
-export const PO_SUMMARY_LATER =
-  'Een verzameloverzicht van een PO is er nog niet. Open het overzicht van een poging.';
-
 /** Wiskunde A/B/C/D before the code, from jaarlaag 4 on. */
 function subBadge(e: Exam): string {
   const letter = e.subject === 'wi' ? SUB_LETTER[e.subcategory ?? ''] : undefined;
@@ -44,16 +40,14 @@ function badge(e: Exam): string {
   return code ? `<span class="${testBadgeClass(e)}">${esc(code)}</span>` : '';
 }
 
-/** What a click on the card (or its title) opens; null: nothing (a PO's Verzamelkaart). */
-export function cardAction(e: Exam, kind: CardKind): string | null {
-  if (kind === 'summary') return isPo(e) ? null : 'exam-overview-best';
+/** What a click on the card (or its title) opens; a Verzamelkaart's is over the best attempts. */
+export function cardAction(e: Exam, kind: CardKind): string {
+  if (kind === 'summary') return isPo(e) ? 'po-overview-best' : 'exam-overview-best';
   return isPo(e) ? 'po-overview' : 'exam-overview';
 }
 
 function title(e: Exam, kind: CardKind, text: string): string {
   const action = cardAction(e, kind);
-  if (!action)
-    return `<span class="tcard-title" title="${esc(PO_SUMMARY_LATER)}">${esc(text)}</span>`;
   return `<button type="button" class="tcard-title" data-action="${action}" data-examid="${esc(e.id)}" title="Overzicht openen">${esc(text)}</button>`;
 }
 
@@ -114,9 +108,8 @@ export function examCardHtml(
   const presence = (summary ? attempts : [e])
     .map((a) => `<span class="presence-badges" data-presence-exam="${esc(a.id)}"></span>`)
     .join('');
-  const action = cardAction(e, kind);
   return `
-    <article class="tcard${diagnostic ? ' tcard--diagnostic' : ''}${isPo(e) ? ' tcard--po' : ''}${action ? ' tcard--link' : ''}" data-exam-card="${esc(e.id)}" data-kind="${kind}">
+    <article class="tcard tcard--link${diagnostic ? ' tcard--diagnostic' : ''}${isPo(e) ? ' tcard--po' : ''}" data-exam-card="${esc(e.id)}" data-kind="${kind}">
       <div class="tcard-head">
         ${subBadge(e)}${badge(e)}
         ${title(e, kind, (kind === 'attempt' ? original.title : e.title) ?? '')}

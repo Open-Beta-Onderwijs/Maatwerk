@@ -13,6 +13,7 @@ import { signedPoints } from '../../domain/po-grading';
 import type { RubricCategory } from '../../domain/rubric';
 import type { Observatie } from '../../domain/types';
 import { ovPillHtml, studentCount } from '../../overview/common';
+import { gradeWithDotHtml, resitInfo } from '../../overview/resit-dot';
 import { columnStats, sdText } from '../../overview/sections';
 import type { TipContent } from '../../overview/tooltip';
 import { esc } from '../../utils/html';
@@ -41,7 +42,10 @@ function chip(text: string, unplaced = false): string {
   return `<span class="po-ov-chip${unplaced ? ' po-ov-chip--none' : ''}" title="${esc(text)}">${esc(text)}</span>`;
 }
 
-function rowHtml(r: PoRow, view: PoView): string {
+/** The verzameloverzicht's empty cell under the dot column (the dot hangs out of the grade). */
+const dotTd = (m: PoModel) => (m.isSummary ? '<td></td>' : '');
+
+function rowHtml(m: PoModel, r: PoRow, view: PoView): string {
   const label =
     view === 'klas' ? (r.group ? chip(r.group.name) : chip('niet ingedeeld', true)) : chip(r.klas);
   const name = `<td class="ov-name-td"><button type="button" class="ov-name__link" data-action="open-student-from-po" data-id="${esc(r.id)}">${esc(r.name)}</button></td>`;
@@ -49,32 +53,35 @@ function rowHtml(r: PoRow, view: PoView): string {
     const empty = `<td class="po-ov-num po-ov-muted">${NONE}</td>`;
     return (
       `<tr class="ov-row">${name}<td class="po-ov-label">${label}</td>${empty.repeat(2)}` +
-      `<td class="po-ov-num">${ovPillHtml(null)}</td></tr>`
+      `<td class="po-ov-num">${ovPillHtml(null)}</td>${dotTd(m)}</tr>`
     );
   }
   const { lines, sum } = linesOfRow(r);
   const hasObs = poStudentObs(r).length > 0;
   const dotted = hasObs ? ' class="po-ov-tipv"' : '';
-  const pill = ovPillHtml(r.grade);
+  const pill = hasObs
+    ? ovPillHtml(r.grade).replace('class="ov-pill', 'class="ov-pill ov-pill--tip')
+    : ovPillHtml(r.grade);
+  const grade = m.isSummary ? gradeWithDotHtml(pill, resitInfo(r.attempt)) : pill;
   const tip = (col: string) => ` data-tip="${esc(`${r.id}|${col}`)}" data-tip-align="right"`;
   return (
     `<tr class="ov-row">${name}<td class="po-ov-label">${label}</td>` +
     `<td class="po-ov-num po-ov-pts"${tip('pts')}>${r.points === null ? NONE : `<span${dotted}>${r.points}</span>`}</td>` +
     `<td class="po-ov-num${lines.length ? (sum < 0 ? ' po-ov-minus' : '') : ' po-ov-muted'}"${tip('bm')}>${lines.length ? `<span${dotted}>${signed(sum)}</span>` : NONE}</td>` +
-    `<td class="po-ov-num"${tip('cijfer')}>${hasObs ? pill.replace('class="ov-pill', 'class="ov-pill ov-pill--tip') : pill}</td></tr>`
+    `<td class="po-ov-num"${tip('cijfer')}>${grade}</td>${dotTd(m)}</tr>`
   );
 }
 
-function footHtml(rows: PoRow[]): string {
+function footHtml(m: PoModel, rows: PoRow[]): string {
   const p = columnStats(rows.map((r) => r.points).filter((v): v is number => v !== null));
   const g = columnStats(gradesOf(rows));
   return (
     `<tr class="ov-foot ov-foot--mean"><td class="ov-foot__label">GEMIDDELDE</td><td></td>` +
     `<td class="po-ov-num po-ov-foot-v">${p.mean === null ? '' : formatFixed(p.mean)}</td>` +
-    `<td></td><td class="po-ov-num">${ovPillHtml(g.mean)}</td></tr>` +
+    `<td></td><td class="po-ov-num">${ovPillHtml(g.mean)}</td>${dotTd(m)}</tr>` +
     `<tr class="ov-foot ov-foot--sd"><td class="ov-foot__label">STANDAARDDEVIATIE</td><td></td>` +
     `<td class="po-ov-num">${p.mean === null ? '' : esc(sdText(p.sd))}</td>` +
-    `<td></td><td class="po-ov-num">${g.mean === null ? '' : esc(sdText(g.sd))}</td></tr>`
+    `<td></td><td class="po-ov-num">${g.mean === null ? '' : esc(sdText(g.sd))}</td>${dotTd(m)}</tr>`
   );
 }
 
@@ -125,18 +132,25 @@ export function resultatenHtml(m: PoModel, view: PoView): string {
     `<div class="po-ov-bar"><div class="btn-toggle-group" role="group" aria-label="Indeling">${btn('klas', 'Per klas')}${btn('groep', 'Per projectgroep')}</div>` +
     `<span class="ov-card__spacer"></span><span class="ov-meanline">Beweeg over punten of cijfer voor de categoriescores en observaties · categoriescores zijn van de projectgroep</span></div>`;
   if (!m.rows.length) return `${bar}<p class="hint ov-empty">Geen leerlingen bij deze PO.</p>`;
-  const nCols = 5;
+  const nCols = m.isSummary ? 6 : 5;
   const head =
     `<tr><th class="ov-name-th">Naam</th><th class="po-ov-col-label">${view === 'klas' ? 'Projectgroep' : 'Klas'}</th>` +
     `<th class="po-ov-col-pts"><div>Punten</div><div class="po-ov-sub">/ ${m.max}</div></th>` +
-    `<th class="po-ov-col-bm">Bonus / malus</th><th class="po-ov-col-grade">Cijfer</th></tr>`;
+    `<th class="po-ov-col-bm">Bonus / malus</th><th class="po-ov-col-grade">Cijfer</th>` +
+    (m.isSummary ? '<th class="po-ov-col-dot" title="Poging die telt"></th>' : '') +
+    `</tr>`;
   const body = sections(m, view)
     .map(
       (s) =>
         `<tbody class="po-ov-section"><tr class="ov-section"><th class="ov-section__head" colspan="${nCols}" scope="colgroup">` +
         `${esc(s.name)} <span class="ov-section__extra">· ${esc(s.extra)}</span></th></tr>` +
-        s.rows.map((r) => rowHtml(r, view)).join('') +
-        (s.foot ? footHtml(s.rows.filter((r) => r.group)) : '') +
+        s.rows.map((r) => rowHtml(m, r, view)).join('') +
+        (s.foot
+          ? footHtml(
+              m,
+              s.rows.filter((r) => r.group),
+            )
+          : '') +
         `</tbody>`,
     )
     .join('');
@@ -181,7 +195,7 @@ export function poCellTip(
   const group = linesOfRow({ ...r, ownLines: [] }).sum;
   const own = linesOfRow({ ...r, groupLines: [] }).sum;
   return {
-    head: `${r.name}: ${formatGrade(r.grade)}`,
+    head: `${r.name}: ${formatGrade(r.grade)}${r.attempt ? ` · ${resitInfo(r.attempt)!.title}` : ''}`,
     sub:
       `Projectgroep ${r.group.name} ${formatGrade(r.rubricGrade)}` +
       (r.groupLines.length ? ` · groep ${signed(group)}` : '') +

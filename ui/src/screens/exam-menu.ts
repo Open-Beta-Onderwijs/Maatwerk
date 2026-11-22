@@ -28,7 +28,7 @@ import { ICONS } from '../utils/icons.js';
 import { perfSpan } from '../utils/perf';
 import { openExamOverviewModal } from '../modals/exam-overview';
 import { openPoOverviewModal } from '../modals/po-overview';
-import { PO_SUMMARY_LATER, type CardKind } from './toetsen/cards';
+import type { CardKind } from './toetsen/cards';
 import { prebuildScoreModal } from './scores/build';
 import { openScoreModal } from './scores/modal';
 import { renderToetsenList } from './toetsen';
@@ -62,13 +62,12 @@ async function poMenuItems(examId: string, kind: CardKind, year: string): Promis
           label: 'Scores invoeren',
           run: () => openPoScoresModal(examId, year, openPoGrading),
         },
-    summary
-      ? { icon: ICONS.overview, label: 'Overzicht openen', disabled: PO_SUMMARY_LATER }
-      : {
-          icon: ICONS.overview,
-          label: 'Overzicht openen',
-          run: () => openPoOverviewModal(examId, year),
-        },
+    {
+      icon: ICONS.overview,
+      label: 'Overzicht openen',
+      // The Verzamelkaart's is the verzameloverzicht over the attempt that counts (F-32).
+      run: () => openPoOverviewModal(examId, year, 'resultaten', 'klas', summary),
+    },
     summary
       ? {
           icon: ICONS.rapport,
