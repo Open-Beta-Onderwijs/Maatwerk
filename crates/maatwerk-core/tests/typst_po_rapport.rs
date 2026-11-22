@@ -207,6 +207,44 @@ fn an_overwritten_grade_without_scores_shows_the_grade_only() {
     assert!(!page_text(&d, 1).contains("Beoordeling per categorie"));
 }
 
+/// Every text of the page with its y in pt, the footer (the lowest line) left out.
+fn body_items(doc: &PagedDocument, page: usize) -> Vec<(String, f64)> {
+    fn items(frame: &typst::layout::Frame, y0: f64, out: &mut Vec<(String, f64)>) {
+        for (pos, item) in frame.items() {
+            let y = y0 + pos.y.to_pt();
+            match item {
+                FrameItem::Group(g) => items(&g.frame, y, out),
+                FrameItem::Text(t) => out.push((t.text.to_string(), y)),
+                _ => {}
+            }
+        }
+    }
+    let mut all = Vec::new();
+    items(&doc.pages[page].frame, 0.0, &mut all);
+    let lowest = all.iter().map(|i| i.1).fold(f64::MIN, f64::max);
+    all.into_iter().filter(|i| i.1 < lowest).collect()
+}
+
+#[test]
+fn a_category_taller_than_a_page_breaks_instead_of_running_into_the_footer() {
+    // Review 24 m7: a block that cannot fit on any page used to overflow past the bottom margin.
+    let mut data = case_data();
+    let long = (1..=260)
+        .map(|i| format!("Zin {i} van een heel lange opmerking bij deze categorie."))
+        .collect::<Vec<_>>()
+        .join(" ");
+    data.students[0]["categories"][0]["comment"] = Value::String(format!("{long} EINDE"));
+    let d = doc(&data);
+    // A4 is 841.89 pt high with 2 cm (56.69 pt) margins: no body text below 785 pt.
+    let bottom = 841.89 - 56.69;
+    for p in 0..d.pages.len() {
+        for (text, y) in body_items(&d, p) {
+            assert!(y <= bottom + 1.0, "page {}: {text:?} at {y} pt", p + 1);
+        }
+    }
+    assert!((0..d.pages.len()).any(|p| page_text(&d, p).contains("EINDE")));
+}
+
 #[test]
 fn render_po_rapport_pdf_makes_a_pdf() {
     let (_tmp, dir) = data_dir();
