@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-21 (steps 35-36, gate done) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
+Last updated: 2026-11-22 (steps 35-36, version 0.27.0) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
 `87ad870`, the 0.25.0 commit)
 Last tags: `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -86,10 +86,13 @@ fixed; m4, m5, m6 backlog "From Steps 35-36"), 6 nits (n3, n5 fixed; rest backlo
 `docs/reviews/manual-test-step-32.md` had been committed in `69115b5`; untracked again (file on
 disk unchanged).
 
-**Next action:** the user: look at the lock look and gast screenshots and the 6 visual diffs
-(`splash` 0.26.0, `admin-gebruikers`), decide the release numbering (35 + 36 as 0.26, or 0.26
-and 0.27), and do the manual check on a copy of real data (decision 8). Then: local baselines,
-drop the CI baselines of `splash` and `admin-gebruikers`, push, merge, tags `step-35`, `step-36`.
+User 2026-11-22: lock look approved, both visual diffs approved, release as **0.27.0** (skip
+0.26 so the version matches the plan; `minAppVersion` stays 0.26.0, the gast flag is additive).
+Version 0.27.0, local baselines of `splash` and `admin-gebruikers` updated (visual 177/177), CI
+baselines of both dropped on all three platforms; exe rebuilt for the user's manual check.
+
+**Next action:** the user: manual check on a copy of real data with the 0.27.0 exe (decision 8).
+Then: push (CI writes the dropped baselines), commit them, merge, tags `step-35`, `step-36`.
 Step 34 is merged (`49ad3d4`, tag `step-34`, CI run 44923939530 green after a rerun of the
 flaky macOS test) and `main` is merged into `step/35-rights`; that branch is not pushed yet.
 
