@@ -174,7 +174,7 @@ function tableHtml(ctx: PoContext): string {
       ${cats
         .map(
           (c) =>
-            `<th class="po-sc-cat po-sc-cat--${c.soort}" scope="col"><div class="po-sc-slant"><span>${esc(c.naam)} <span class="po-sc-max">(${c.max ?? 0})</span></span></div></th>`,
+            `<th class="po-sc-cat po-sc-cat--${c.soort}" scope="col" title="${esc(`${c.naam} (${c.max ?? 0})`)}"><div class="po-sc-slant"><span><span class="po-sc-cat-name">${esc(c.naam)}</span> <span class="po-sc-max">(${c.max ?? 0})</span></span></div></th>`,
         )
         .join('')}
       <th class="po-sc-pts" scope="col">Punten</th>
@@ -210,7 +210,8 @@ function tableHtml(ctx: PoContext): string {
       </div></th></tr>
       ${free.map((m) => studentRow(ctx, m, null)).join('')}
     </tbody>`);
-  return `<div class="po-sc-wrap"><table class="po-sc-table">${head}${bodies.join('')}</table></div>`;
+  // The cover hides the rows scrolling by above the sticky head (step 37, user).
+  return `<div class="po-sc-cover" aria-hidden="true"></div><div class="po-sc-wrap"><table class="po-sc-table">${head}${bodies.join('')}</table></div>`;
 }
 
 const HELP =

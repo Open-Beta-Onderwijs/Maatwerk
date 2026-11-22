@@ -146,10 +146,13 @@ export async function loadScoreGrid(
     );
     session.gridInstances.push(grid);
 
-    // Center the grid (and its heading) when it is narrower than the modal.
+    // Center the grid (and its heading) when it is narrower than the modal. A fixed width, not a
+    // max-width: in a narrow window the section stays as wide as the grid, so its sticky heading
+    // (the white bar over the scrolling rows) covers the whole grid when it scrolls sideways
+    // (step 37, user).
     const tableWidth = grid.table.offsetWidth;
     if (tableWidth > 0) {
-      section.style.maxWidth = `${tableWidth + 2}px`;
+      section.style.width = `${tableWidth + 2}px`;
       section.style.marginInline = 'auto';
     }
     if (built++ === 0) onFirst?.();

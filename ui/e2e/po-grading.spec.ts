@@ -13,7 +13,7 @@ import {
   withMock,
   YEAR,
 } from './helpers';
-import { PO_ID, poSeed } from './po-seed';
+import { PO_ID, poSeed, RUBRIC_ID } from './po-seed';
 
 interface PoEntry {
   projectgroep?: string;
@@ -42,7 +42,67 @@ async function openTable(page: Page) {
 
 const row = (page: Page, id: string) => page.locator(`.po-sc-row[data-student="${id}"]`);
 
+/** What is drawn at a point of the dialog body: its class list, for the cover checks. */
+const classesAt = (page: Page, x: number, y: number) =>
+  page.evaluate(
+    ([px, py]) => {
+      const el = document.elementFromPoint(px!, py!);
+      return `${el?.className ?? ''} ${el?.closest('table') ? 'in-table' : ''}`;
+    },
+    [x, y],
+  );
+
 test.describe('the PO score table (step 23a, board 18)', () => {
+  test('a white cover over the rows above the sticky head, the whole width (step 37)', async ({
+    page,
+  }) => {
+    const files = await poSeed(page, { grading: true });
+    // A new rubric with a long category name (the mock refuses to change one a PO uses).
+    const rubric = await readMockJson<{ categories: Record<string, unknown>[] }>(
+      page,
+      `rubrics/${RUBRIC_ID}.json`,
+    );
+    const long = {
+      ...rubric.categories[0],
+      id: 'cat-lang',
+      naam: 'Een heel erg lange categorienaam die niet in de kop past',
+      obs_ids: [],
+    };
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    await seedFiles(page, {
+      'rubrics/rubric-lang.json': {
+        ...rubric,
+        id: 'rubric-lang',
+        categories: [...rubric.categories, long],
+      },
+      ...files,
+      [examRel]: { ...(files[examRel] as object), rubric_id: 'rubric-lang' },
+    });
+    await login(page);
+    await page.setViewportSize({ width: 900, height: 700 });
+    await openTable(page);
+    const body = page.locator('.dlg--po-scores .dlg-body');
+    await body.evaluate((b) => {
+      b.scrollTop = 80;
+      b.scrollLeft = 200;
+    });
+    const box = (await body.boundingBox())!;
+    // The strip above the head, at the left edge, the middle and the right edge of the body.
+    for (const x of [box.x + 4, box.x + box.width / 2, box.x + box.width - 20]) {
+      expect(await classesAt(page, x, box.y + 4)).toContain('po-sc-cover');
+    }
+    // A long name ends in "…" (the full name in the tooltip): no label runs out of the head.
+    await expect(page.locator('th.po-sc-cat').last()).toHaveAttribute(
+      'title',
+      'Een heel erg lange categorienaam die niet in de kop past (8)',
+    );
+    const head = (await page.locator('.po-sc-table thead').boundingBox())!;
+    for (const label of await page.locator('.po-sc-slant > span').all()) {
+      const l = (await label.boundingBox())!;
+      expect(l.y).toBeGreaterThanOrEqual(head.y - 1);
+    }
+  });
+
   test('grouped by projectgroep, with points, lines, grades and statuses', async ({ page }) => {
     const errors = watchErrors(page);
     await seedFiles(page, await poSeed(page, { grading: true }));
