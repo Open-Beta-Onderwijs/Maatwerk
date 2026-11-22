@@ -19,9 +19,18 @@ Done:
 2. `0475956` PO verzameloverzicht (F-32): `buildPoModel({ summary })`, the Verzamelkaart's click
    and ⋮ "Overzicht openen"; a resit's projectgroepen are named "<naam> · Herkansing (poging 2)".
 
-Next (the user's bug list, then the plan's 37.2-37.5): the PO overview tooltip stays on screen;
-the PO score modal's sticky header (taller, ellipsis, white cover at the top, full width) and the
-exam score modal's leak in a narrow window.
+3. `ff9a3fd` the grade tooltip stays on screen (`placeTip`: under, above, beside; two columns
+   when taller than the window).
+4. `d60cd41` PO score modal: white sticky cover at the top (full width), head 144 px, long
+   category names end in "…"; exam score modal: a section keeps its grid's width (`build.ts`),
+   so the white bar covers the grid when it scrolls sideways.
+
+Visual: `modal-po-scores` (three looks) differs (taller head); everything else 177 - 3 passes.
+Baselines not updated: the user sees the diff first.
+
+**Next action:** the user: OK on the `modal-po-scores` diff (then local baselines + drop the CI
+baselines of that view). Then the plan's 37.2 (PO rapport backlog), 37.3 (PO grading), 37.4
+(rubric guards), 37.5 (profile observaties), gate, review, release 0.28.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 
