@@ -47,8 +47,12 @@ the user's manual check before the merge.
 9. 37.4 rubric guards: `cbe8a84` m2/m3 (core), `1c4ce5c` n9, `b5676d0` n7, `2bf0f12` n8,
    `59e6b68` m6, validate-data warnings 22 n5, 22, 23 n4; m1 closed (obsolete since step 35).
 
-**Next action:** 37.5 (profile observaties: numbers change, before/after table for the user),
-gate, review, release 0.28. Show the user the `modal-po-grade` diff.
+10. 37.5 `7045331` profile observaties: a PO's rubric and category observaties count (user OK on
+    the before/after: fixtures unchanged, e2e seed +1 Netjes gewerkt, +1 Bronnen ontbreken).
+
+**Next action:** gate (2.2), fresh-context review `docs/reviews/step-37.md`, fix blockers and
+majors, then report: the `modal-po-grade` diff (slider labels), the release 0.28.0, the real-exe
+check of saving on close.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 

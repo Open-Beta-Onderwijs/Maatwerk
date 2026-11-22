@@ -72,8 +72,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   per-student reads without `preloadScores` / `{ loaded: true }`, `examStats` not memoised; m6
   duplication (histogram card, heat tint, info icon, `signed`, obs sort); m7 test gaps; nits
   n1-n7 (`docs/reviews/step-29.md`), among them ~45 unused utility classes in `style.css`.
-- **Profile observaties:** "Observaties per schooljaar" counts the observaties linked to a test
-  (`obs_ids`), as before; a PO's rubric and category observaties are not in it yet.
+- ~~**Profile observaties**~~: done in step 37 (`7045331`, the user's OK on the numbers).
 
 ## From the Step 10 manual test (`docs/reviews/manual-test-step-10.md`, 2026-11-03)
 
