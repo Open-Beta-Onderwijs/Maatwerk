@@ -184,7 +184,7 @@ test.describe('exam overview (board 46)', () => {
     ]);
   });
 
-  test('the verzameloverzicht shows the resit dot and disables the last three tabs', async ({
+  test('the verzameloverzicht shows the resit dot, disables Vraaganalyse and RTTI-analyse', async ({
     page,
   }) => {
     const d = await openExamOverview(page, true);
@@ -192,8 +192,13 @@ test.describe('exam overview (board 46)', () => {
     const dot = d.locator('.xo-table .ov-dot').first();
     await expect(dot).toBeVisible();
     await expect(dot).toHaveAttribute('title', /^(Herkansing|Inhaal) \(poging \d\)$/);
-    for (const tab of ['vraaganalyse', 'rtti-analyse', 'observaties'])
+    for (const tab of ['vraaganalyse', 'rtti-analyse'])
       await expect(d.locator(`[data-tab="${tab}"]`)).toBeDisabled();
+    // Every attempt shares the observaties (user 2026-11-22): the tab is open, over the best attempt.
+    await d.locator('[data-tab="observaties"]').click();
+    await expect(d.locator('#tab-observaties .ov-card__h3').first()).toHaveText(
+      'Observaties, alle leerlingen',
+    );
     await expect(d.locator('[data-tab="vraaganalyse"]')).toHaveAttribute(
       'title',
       /alleen beschikbaar voor individuele toetsen/,
