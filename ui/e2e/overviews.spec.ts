@@ -474,5 +474,9 @@ test.describe('student profile (board 44)', () => {
     await d.locator('.pf-tog[data-rtti="se"]').click();
     await expect(d.locator('.pf-rcard--avg .ov-card__title')).toHaveText('Gemiddeld examendossier');
     await expect(d.locator('#tab-analyse .ov-heat')).toBeVisible();
+    // The PO's rubric observatie (general) and category observatie count too (step 37, 29c).
+    const heat = d.locator('#tab-analyse .ov-heat tbody tr');
+    for (const naam of ['Netjes gewerkt', 'Bronnen ontbreken'])
+      await expect(heat.filter({ hasText: naam }).locator('.ov-heat__tot')).toHaveText('1');
   });
 });

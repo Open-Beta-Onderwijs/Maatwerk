@@ -8,7 +8,8 @@ import type { Results } from '../../domain/grades';
 import { setRubricLookup } from '../../domain/po';
 import type { Rubric } from '../../domain/rubric';
 import { barsHtml, barTip, dumbRowHtml, inBouw } from './cijferverloop';
-import type { ProfileTest } from './data';
+import type { Exam, ScoreRecord } from '../../domain/types';
+import { obsCounts, type ProfileTest } from './data';
 
 const test = (fields: Partial<ProfileTest['exam']>, grade: number, extra = {}): ProfileTest => ({
   exam: {
@@ -93,5 +94,31 @@ describe('profile Cijferverloop (spec 4.15.1)', () => {
     expect(html).toContain('+0,4');
     expect(html).toContain('pf-dumb__diff pf-dumb__diff--up');
     expect(dumbRowHtml('x', null, null, 'T', 'Sem')).toContain('Geen cijfer');
+  });
+});
+
+describe('obsCounts (step 37, backlog 29c)', () => {
+  const rubric = {
+    id: 'r',
+    obs_ids: ['o-netjes'],
+    categories: [{ id: 'th', obs_ids: ['o-bronnen'] }],
+  } as unknown as Rubric;
+  const toets = { id: 't', questions: [], obs_ids: ['o-toets'] } as unknown as Exam;
+  const po = { id: 'p', kind: 'po', rubric_id: 'r', questions: [], obs_ids: [] } as unknown as Exam;
+  const rec = {
+    observations: { t: ['o-toets', 'o-los'], p: ['o-netjes'] },
+    po: { p: { categoryObs: { th: ['o-bronnen', 'o-netjes'] } } },
+  } as unknown as ScoreRecord;
+
+  it("counts a PO's rubric and category observaties, each once per PO", () => {
+    expect(obsCounts([toets, po], rec, (e) => (e.id === 'p' ? rubric : null))).toEqual({
+      'o-toets': 1,
+      'o-netjes': 1,
+      'o-bronnen': 1,
+    });
+  });
+
+  it('a test still counts only what it links', () => {
+    expect(obsCounts([toets], rec, () => null)).toEqual({ 'o-toets': 1 });
   });
 });
