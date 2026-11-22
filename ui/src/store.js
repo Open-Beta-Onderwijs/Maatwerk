@@ -1071,6 +1071,39 @@ const Store = (() => {
     return false;
   }
 
+  /**
+   * Every year's exams and every vak's rubrics in the cache, so the observatie form's Toets/PO
+   * lock and the delete guard see all of them, not only the loaded year and the active vak
+   * (review 21 m6). One read per year; cached like the rest.
+   */
+  async function loadObsUsage() {
+    const years = (await window.maatwerk.listYears()) ?? [];
+    const subjects = Object.keys(SUBJECT_DISPLAY);
+    await Promise.all([
+      ...subjects.map((s) => loadRubrics(s)),
+      ...years.map(async (year) => {
+        if (subjects.every((s) => cache[`${year}/exams/${s}`] !== undefined)) return;
+        const all = await window.maatwerk.readAllJson(`${year}/exams`);
+        for (const s of subjects)
+          cache[`${year}/exams/${s}`] ??= all.filter((e) => e.subject === s);
+      }),
+    ]);
+  }
+
+  /** Whether a loaded rubric of any vak uses the observatie (general or in a category). */
+  function obsIsUsedInAnyRubric(obsId) {
+    return Object.entries(cache).some(
+      ([key, val]) =>
+        key.startsWith('rubrics/') &&
+        Array.isArray(val) &&
+        val.some(
+          (r) =>
+            (r.obs_ids ?? []).includes(obsId) ||
+            (r.categories ?? []).some((c) => (c.obs_ids ?? []).includes(obsId)),
+        ),
+    );
+  }
+
   function obsIsUsedInAnyExam(obsId) {
     return Object.entries(cache).some(
       ([key, val]) =>
@@ -1539,6 +1572,8 @@ const Store = (() => {
     studentHasScores,
     studentHasAnyScores,
     obsIsUsedInAnyExam,
+    obsIsUsedInAnyRubric,
+    loadObsUsage,
     removeObsFromExamScores,
     getResitsSync,
     examHasResits,

@@ -6,7 +6,7 @@
 
 import { choiceChip, type ChoiceChip } from '../components/choice-chip';
 import { esc } from '../components/dialog';
-import type { Rubric, Toetstype } from '../domain/rubric';
+import type { Toetstype } from '../domain/rubric';
 import { Store } from '../store.js';
 
 export type ToetstypeFilter = 'alle' | Toetstype;
@@ -30,12 +30,9 @@ export function toetstypeFilterChip(onChange: () => void): ChoiceChip<ToetstypeF
 }
 
 /** Whether a rubric (rubric or category observaties) names the observatie. */
+/** A rubric of any vak uses it (after `Store.loadObsUsage`, review 21 m6). */
 export function obsUsedInRubric(id: string): boolean {
-  return (Store.getRubricsSync() as Rubric[]).some(
-    (r) =>
-      (r.obs_ids ?? []).includes(id) ||
-      (r.categories ?? []).some((c) => (c.obs_ids ?? []).includes(id)),
-  );
+  return Store.obsIsUsedInAnyRubric(id) as boolean;
 }
 
 /**
