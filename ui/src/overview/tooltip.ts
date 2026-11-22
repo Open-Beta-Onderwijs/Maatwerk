@@ -4,7 +4,9 @@
 // score cell with `data-tip="<key>"` shows a title, a sub line and the observaties (icon and
 // name) or "Geen observaties", under the cell: aligned left in the left columns, right in the
 // right ones (`data-tip-align="right"`). Dark in the light theme, light in the dark theme (CSS).
-// One floating element per root, positioned with the CSSOM (the CSP allows that).
+// One floating element per root, positioned with the CSSOM (the CSP allows that). It always stays
+// on screen (step 37, user): under the cell, else above it, else beside it; one taller than the
+// window puts its rows in two columns first.
 
 import { esc } from '../utils/html';
 
@@ -42,6 +44,51 @@ export function tipHtml(t: TipContent): string {
   );
 }
 
+export interface Box {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+}
+
+const MARGIN = 8;
+const GAP = 4;
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, max));
+
+/**
+ * Where a `w` x `h` tooltip goes for `cell` in a `vw` x `vh` window: under the cell, else above
+ * it, else beside it (left of a right-aligned cell, right of a left-aligned one, whichever fits),
+ * vertically centred on the cell and kept on screen. Pure.
+ */
+export function placeTip(
+  cell: Box,
+  w: number,
+  h: number,
+  vw: number,
+  vh: number,
+  alignRight: boolean,
+): { left: number; top: number } {
+  const maxLeft = Math.max(MARGIN, vw - w - MARGIN);
+  const maxTop = Math.max(MARGIN, vh - h - MARGIN);
+  const left = clamp(alignRight ? cell.right - w : cell.left, MARGIN, maxLeft);
+  if (cell.bottom + GAP + h <= vh - MARGIN) return { left, top: cell.bottom + GAP };
+  if (cell.top - GAP - h >= MARGIN) return { left, top: cell.top - GAP - h };
+  const before = cell.left - GAP - w;
+  const after = cell.right + GAP;
+  const fitsBefore = before >= MARGIN;
+  const fitsAfter = after + w <= vw - MARGIN;
+  const side = alignRight
+    ? fitsBefore || !fitsAfter
+      ? before
+      : after
+    : fitsAfter || !fitsBefore
+      ? after
+      : before;
+  const middle = (cell.top + cell.bottom) / 2 - h / 2;
+  return { left: clamp(side, MARGIN, maxLeft), top: clamp(middle, MARGIN, maxTop) };
+}
+
 /**
  * Shows tooltips for the `[data-tip]` cells in `root`; `lookup` gives the content of a key.
  * Returns a function that removes the tooltip and the listeners.
@@ -69,15 +116,19 @@ export function installGradeTips(
     if (!content) return hide();
     current = cell;
     tip.innerHTML = tipHtml(content);
+    tip.classList.remove('ov-tip--wide');
     tip.hidden = false;
-    const r = cell.getBoundingClientRect();
-    const w = tip.offsetWidth;
-    const h = tip.offsetHeight;
-    const right = cell.dataset.tipAlign === 'right';
-    let left = right ? r.right - w : r.left;
-    left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
-    let top = r.bottom + 4;
-    if (top + h > window.innerHeight - 8) top = r.top - h - 4;
+    // Taller than the window (a rubric with many categories): the rows go in two columns.
+    // scrollHeight: the content's height; the CSS cap keeps offsetHeight under the window.
+    if (tip.scrollHeight > window.innerHeight - 2 * MARGIN) tip.classList.add('ov-tip--wide');
+    const { left, top } = placeTip(
+      cell.getBoundingClientRect(),
+      tip.offsetWidth,
+      tip.offsetHeight,
+      window.innerWidth,
+      window.innerHeight,
+      cell.dataset.tipAlign === 'right',
+    );
     tip.style.left = `${Math.round(left)}px`;
     tip.style.top = `${Math.round(top)}px`;
   };

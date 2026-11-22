@@ -4,8 +4,8 @@
 // tooltip, the resit dot and the Stapgrootte toggle.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, seedFiles, YEAR } from './helpers';
-import { PO_ID, poExam, poSeed } from './po-seed';
+import { login, readMockJson, seedFiles, YEAR } from './helpers';
+import { PO_ID, poExam, poSeed, RUBRIC_ID } from './po-seed';
 import { screen } from './views';
 
 async function openGroupOverview(page: Page, withPo = false) {
@@ -333,6 +333,49 @@ test.describe('PO overview (board 43)', () => {
     ]);
     await expect(tip.locator('.ov-tip__rows')).toContainText('Theorie6 / 8');
     await expect(tip.locator('.ov-tip__rows')).toContainText('Samenwerken (diagnostisch)3 / 3');
+  });
+
+  test('a tall grade tooltip stays on screen in a low window (step 37)', async ({ page }) => {
+    // A rubric with 24 categories: the tooltip fits neither under nor above the cell.
+    await page.goto('/');
+    const files = await poSeed(page, { grading: true });
+    // A new rubric (the mock refuses to change one a PO uses), written before the PO.
+    const rubric = await readMockJson<{ categories: Record<string, unknown>[] }>(
+      page,
+      `rubrics/${RUBRIC_ID}.json`,
+    );
+    const extra = Array.from({ length: 20 }, (_, i) => ({
+      ...rubric.categories[0],
+      id: `cat-extra-${i}`,
+      naam: `Extra categorie ${i + 1}`,
+      obs_ids: [],
+    }));
+    const big = { ...rubric, id: 'rubric-groot', categories: [...rubric.categories, ...extra] };
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    await seedFiles(page, {
+      'rubrics/rubric-groot.json': big,
+      ...files,
+      [examRel]: { ...(files[examRel] as object), rubric_id: 'rubric-groot' },
+    });
+    await login(page);
+    await screen(page, 'toetsen');
+    await page.locator(`[data-exam-card="${PO_ID}"] .tcard-title`).click();
+    const d = page.locator('.modal-po-overview');
+    await expect(d.locator('.po-ov-table')).toBeVisible();
+    for (const height of [560, 420]) {
+      await page.setViewportSize({ width: 1280, height });
+      const row = d.locator('.ov-row', { hasText: 'Noor Bakker' });
+      const cell = row.locator('[data-tip$="|cijfer"]');
+      await cell.scrollIntoViewIfNeeded();
+      await page.mouse.move(0, 0);
+      await cell.hover();
+      const tip = page.locator('.ov-tip');
+      await expect(tip).toBeVisible();
+      const box = (await tip.boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(height);
+      expect(box.x + box.width).toBeLessThanOrEqual(1280);
+    }
   });
 
   test('the name column is 360px wide, narrower in a narrow window so the table fits', async ({
