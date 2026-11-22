@@ -394,3 +394,59 @@ fn without_school_json_a_rubric_is_still_saved() {
     assert!(!tmp.path().join("data").join("school.json").exists());
     assert!(fs::metadata(tmp.path().join("data/rubrics/r1.json")).is_ok());
 }
+
+/// A rubric in use (r1 by p1) with a locked change: another max.
+fn locked_change() -> Value {
+    let mut changed = rubric("r1");
+    changed["categories"][0]["max"] = json!(5);
+    changed["categories"][0]["niveaus"][1]["max"] = json!(5);
+    changed
+}
+
+#[test]
+fn an_unreadable_exam_file_blocks_a_locked_change_and_a_delete() {
+    // Review 21 m2: the "in use" scan failed open (an unreadable exam file was skipped), so a
+    // locked change or a delete could pass. It now refuses and names the file.
+    let (_t, s) = setup();
+    let path = rel("rubrics/r1.json");
+    s.write_json(&path, &rubric("r1"), Expect::Missing).unwrap();
+    let exams = rel("2025-2026/exams");
+    fs::create_dir_all(s.data_dir().resolve(&exams).unwrap()).unwrap();
+    fs::write(
+        s.data_dir()
+            .resolve(&rel("2025-2026/exams/kapot.json"))
+            .unwrap(),
+        "{ niet af",
+    )
+    .unwrap();
+    let err = message(
+        s.write_json(&path, &locked_change(), Expect::Any)
+            .unwrap_err(),
+    );
+    assert!(err.contains("2025-2026/exams/kapot.json"), "{err}");
+    assert!(err.contains("Gegevenscontrole"), "{err}");
+    let err = message(s.delete(&path).unwrap_err());
+    assert!(err.contains("2025-2026/exams/kapot.json"), "{err}");
+    assert!(s.read_json(&path).unwrap().is_some());
+    // A change that locks nothing still saves (the scan only runs for a rubric that exists).
+    let mut renamed = rubric("r1");
+    renamed["naam"] = json!("Nieuwe naam");
+    s.write_json(&path, &renamed, Expect::Any).unwrap();
+    // The listing for the UI stays lenient: it skips the broken file.
+    assert!(usage(&s).unwrap().is_empty());
+}
+
+#[test]
+fn a_locked_change_to_a_rubric_in_use_is_still_refused() {
+    let (_t, s) = setup();
+    let path = rel("rubrics/r1.json");
+    s.write_json(&path, &rubric("r1"), Expect::Missing).unwrap();
+    let (exam_path, exam) = po_exam("2025-2026", "p1", "r1");
+    s.write_json(&exam_path, &exam, Expect::Any).unwrap();
+    let err = message(
+        s.write_json(&path, &locked_change(), Expect::Any)
+            .unwrap_err(),
+    );
+    assert!(err.contains("in gebruik bij 1 PO"), "{err}");
+    assert!(s.delete(&path).is_err());
+}
