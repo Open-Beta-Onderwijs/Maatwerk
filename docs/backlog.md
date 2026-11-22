@@ -566,20 +566,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 24
 
-- Review 24 m3: a partly graded projectgroep gets a PO rapport without a warning (status Bezig).
-- Review 24 m4: a member graded in another projectgroep ("andere groep" in the score table) gets
-  the rapport under the current group's name and members.
-- Review 24 m5: the category averages leave unscored students out, the Totaal average counts them
-  as 0 (as `class_questions` vs the grade), so the Gemiddeld column need not add up.
-- Review 24 m6: on a PO herkansing the "niet ingedeeld" notice lists every unplaced student of
-  the matching classes (most of the jaarlaag); limit it to students who made the original.
-- Review 24 m7: a category block or Algemene observaties taller than a page overflows into the
-  footer (unbreakable blocks); allow a break inside such a block.
-- Review 24 m8: tests for `skippedHtml`/`compilePoRapport`, the no-rubric message, a herkansing
-  PO, a category added after grading, the stale group.
-- Review 24 n1: the notice's Dutch ("Geen rapport voor niet ingedeeld in …") reads awkwardly.
-- Review 24 n3: an unscored category shows "—" but its dot shows 0 (as the toets rapport's "N").
-- Review 24 n5: a placed student outside the matching classes gets klas "—".
+- Done in step 37 (`236e1b2`, `0f98efd`, `27d2f08`, `d74fdb6`): m3 (partly graded warning), m4
+  (no rapport for a member graded in another group), m5 (averages add up, user's rule B), m6
+  (unplaced on a resit), m7 (a block taller than a page breaks), m8 (tests), n1, n3, n5.
 
 ## From Step 25
 

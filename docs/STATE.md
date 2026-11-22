@@ -30,8 +30,16 @@ Done:
 6. `344dd30` (user, 2026-11-22) slider labels at the thumb positions (`tickLeft`); visual
    `modal-po-grade` (three looks) differs only in the label positions: not updated, show the user.
 
-**Next action:** the plan's 37.2 (PO rapport backlog 24 m3-m8, n1, n3, n5), 37.3 (PO grading
-23 m4, n1, n3, m1/m9 tests), 37.4 (rubric guards 21 m1-m3, m6, n7-n9, validate-data warnings
+7. 37.2 PO rapport: `236e1b2` m7 (tall blocks break), `0f98efd` n3 (dash in an unscored dot;
+   golden blessed, p5), `27d2f08` m3, m4, m6, m8, n1, n5, `d74fdb6` m5 (user chose rule B: an
+   empty normal or bonus category is 0 in the averages; golden blessed, p1 and p5 Originaliteit
+   2 -> 1,5).
+
+Steps 35-36: CI run 45015305309 green on all four jobs (`ebfdaa1`, all baselines); waiting for
+the user's manual check before the merge.
+
+**Next action:** 37.3 (PO grading 23 m4, n1, n3,
+m1/m9 tests), 37.4 (rubric guards 21 m1-m3, m6, n7-n9, validate-data warnings
 22 n5, 22, 23 n4), 37.5 (profile observaties: numbers change, before/after table for the user),
 gate, review, release 0.28. Show the user the `modal-po-grade` diff.
 
