@@ -44,8 +44,10 @@ the user's manual check before the merge.
    **Check in the real exe:** closing the window right after a grading edit saves it, and the
    window still closes (the mock cannot show Tauri's close path).
 
-**Next action:** 37.4 (rubric guards 21 m1-m3, m6, n7-n9, validate-data warnings
-22 n5, 22, 23 n4), 37.5 (profile observaties: numbers change, before/after table for the user),
+9. 37.4 rubric guards: `cbe8a84` m2/m3 (core), `1c4ce5c` n9, `b5676d0` n7, `2bf0f12` n8,
+   `59e6b68` m6, validate-data warnings 22 n5, 22, 23 n4; m1 closed (obsolete since step 35).
+
+**Next action:** 37.5 (profile observaties: numbers change, before/after table for the user),
 gate, review, release 0.28. Show the user the `modal-po-grade` diff.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)

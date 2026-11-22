@@ -525,29 +525,19 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 21
 
-- Review 21 m1 (UI part): ticking PO on an observatie (or saving the first rubric) raises
-  `minAppVersion` to 0.12.0 without a notice; a one-time confirm ("collega's met een oudere
-  Maatwerk kunnen dan alleen nog lezen") would make it visible.
-- Review 21 m2: the "in use" scan fails open: `list_years` returns nothing on a read error and
-  unreadable exam files are skipped, so a locked change or a delete can pass then.
-- Review 21 m3: the guard reads the old rubric and the usage outside the commit lock (same-PC race;
-  colleagues sync later anyway).
-- Review 21 m6: the observatie form's Toets/PO lock and delete guard see only the loaded year's
-  exams and the active vak's rubrics.
-- Review 21 n7: the Store recognises a core refusal by the "Save failed for" prefix; a `code` on
-  the error of `update()` would be sturdier.
-- Review 21 n8: `SCHOOLSOORTEN` in seven files; `RubricUse` repeated in `src-tauri/src/data.rs`; the
-  mock guard repeats the core's Dutch messages.
-- Review 21 n9: `maatwerk-grades/src/rubric.rs` (~720 lines with tests): move the tests to
-  `rubric/tests.rs` as the core does.
+- Done in step 37: m2, m3 (`cbe8a84`: the guard fails closed and checks under the commit lock),
+  m6 (`59e6b68`: every year and vak), n7 (`b5676d0`: error code), n8 (`2bf0f12`: one
+  SCHOOLSOORTEN list, RubricUse with From), n9 (`1c4ce5c`).
+- m1 closed (step 37): since step 35 every login raises `minAppVersion` to 0.26.0, so the 0.12.0
+  raise of a PO observatie or the first rubric can no longer happen; no notice needed.
+- n8 rest, by design: the mock's rubric guard repeats the core's Dutch messages (the mock has no
+  core).
 - `observaties.js` stays JS (R-05, area step 30); the toetstype parts are in TS beside it.
 
 ## From Step 22
 
-- Review 22 n5: `validate-data` could warn when a herkansing's `rubric_id` differs from its
-  original's, and when an exam file holds a `rubric` field (it is never read from a file).
-- `validate-data` could warn about PO scores of a student in no projectgroep (review 22 M2 is
-  handled in the UI; a hand edit or an older app could still leave them).
+- Done in step 37 (`validate-data`): 22 n5 (a `rubric` field, a herkansing with another rubric) and
+  PO scores of a student in no projectgroep.
 - The Toetsen list re-renders after its statistics load and closes an open ⋮ menu (seen again in
   `po.spec.ts`; the helpers retry).
 
@@ -555,7 +545,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - Done in step 37 (`340fc97`, `2c970d2`): m1/m9 tests, m4 (save before the app closes, quit
   guard), n1 (one save at a time), n3 (live table status).
-- Review 23 n4: `validate-data` could warn about a `po` entry under a test's id.
+- Review 23 n4: done in step 37 (`validate-data`).
 - Local WebKit on Windows: Playwright's `dragTo` does not work (the step 22 and 23 drag tests fail
   there, also on `main`); CI runs WebKit on Linux and macOS, where they pass.
 
