@@ -6,6 +6,23 @@ Last tags: `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
+## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
+
+Started while steps 35-36 wait for the user's manual check (not merged yet). The user's design
+answer replaces the "design check" of 37.1: the PO verzameloverzicht is the exam one in almost
+every way, the best attempt per student with the circled I/H in Resultaten (both views), every
+tab on (shared rubric and observaties).
+
+Done:
+
+1. `bdae808` the exam verzameloverzicht keeps the Observaties tab (user, separate commit).
+2. `0475956` PO verzameloverzicht (F-32): `buildPoModel({ summary })`, the Verzamelkaart's click
+   and ⋮ "Overzicht openen"; a resit's projectgroepen are named "<naam> · Herkansing (poging 2)".
+
+Next (the user's bug list, then the plan's 37.2-37.5): the PO overview tooltip stays on screen;
+the PO score modal's sticky header (taller, ellipsis, white cover at the top, full width) and the
+exam score modal's leak in a narrow window.
+
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 
 The user approved step 34 and asked for steps 35 and 36 together, one gate at the end of 36.
