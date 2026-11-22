@@ -121,4 +121,9 @@ describe('obsCounts (step 37, backlog 29c)', () => {
   it('a test still counts only what it links', () => {
     expect(obsCounts([toets], rec, () => null)).toEqual({ 'o-toets': 1 });
   });
+
+  it('a test counts a duplicated id twice, as before step 37 (review 37 m3)', () => {
+    const dup = { observations: { t: ['o-toets', 'o-toets'] } } as unknown as ScoreRecord;
+    expect(obsCounts([toets], dup, () => null)).toEqual({ 'o-toets': 2 });
+  });
 });

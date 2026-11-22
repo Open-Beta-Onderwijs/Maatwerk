@@ -31,7 +31,10 @@ export function obsCounts(
     const po = isPo(exam);
     const linked = po ? poObsIds(exam, rubricOfExam(exam)) : (exam.obs_ids ?? []);
     const given = po ? poStudentObs(rec, exam.id) : (rec?.observations?.[exam.id] ?? []);
-    for (const id of new Set(given)) if (linked.includes(id)) counts[id] = (counts[id] ?? 0) + 1;
+    // A PO's union is counted once per id; a test counts its list as before step 37, a duplicate
+    // id included (review 37 m3: no number change outside the approved before/after).
+    for (const id of po ? new Set(given) : given)
+      if (linked.includes(id)) counts[id] = (counts[id] ?? 0) + 1;
   }
   return counts;
 }
