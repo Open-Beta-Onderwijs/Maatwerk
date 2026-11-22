@@ -25,12 +25,15 @@ Done:
    category names end in "…"; exam score modal: a section keeps its grid's width (`build.ts`),
    so the white bar covers the grid when it scrolls sideways.
 
-Visual: `modal-po-scores` (three looks) differs (taller head); everything else 177 - 3 passes.
-Baselines not updated: the user sees the diff first.
+5. User approved the taller head: local `modal-po-scores` baselines updated, CI baselines dropped
+   (`f88b421`).
+6. `344dd30` (user, 2026-11-22) slider labels at the thumb positions (`tickLeft`); visual
+   `modal-po-grade` (three looks) differs only in the label positions: not updated, show the user.
 
-**Next action:** the user: OK on the `modal-po-scores` diff (then local baselines + drop the CI
-baselines of that view). Then the plan's 37.2 (PO rapport backlog), 37.3 (PO grading), 37.4
-(rubric guards), 37.5 (profile observaties), gate, review, release 0.28.
+**Next action:** the plan's 37.2 (PO rapport backlog 24 m3-m8, n1, n3, n5), 37.3 (PO grading
+23 m4, n1, n3, m1/m9 tests), 37.4 (rubric guards 21 m1-m3, m6, n7-n9, validate-data warnings
+22 n5, 22, 23 n4), 37.5 (profile observaties: numbers change, before/after table for the user),
+gate, review, release 0.28. Show the user the `modal-po-grade` diff.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 

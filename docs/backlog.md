@@ -65,9 +65,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From step 29c (overviews, 2026-11-15)
 
-- **PO verzameloverzicht:** a PO with an inhaal or herkansing has no summary overview over the
-  attempts that count (not designed; PLAN-2 step 29c). The PO verzamelkaart's "Overzicht openen"
-  stays disabled with a tooltip; each attempt opens its own PO overview.
+- ~~**PO verzameloverzicht**~~: done in step 37 (`0475956`).
 - **Review 29 (deferred minors):** m1 exam overview Observaties counts students without a score
   but takes the percentage of those with one (asked the user which population to use); m4 a
   silent refresh of the group and exam overviews shows skeletons (load before `openModal`); m5
