@@ -38,8 +38,13 @@ Done:
 Steps 35-36: CI run 45015305309 green on all four jobs (`ebfdaa1`, all baselines); waiting for
 the user's manual check before the merge.
 
-**Next action:** 37.3 (PO grading 23 m4, n1, n3,
-m1/m9 tests), 37.4 (rubric guards 21 m1-m3, m6, n7-n9, validate-data warnings
+8. 37.3 PO grading: `340fc97` quit guard (bridge `onCloseRequested`, capability
+   `core:window:allow-destroy`, busy overlay "Gegevens opslaan, dan afsluiten…" (user)),
+   `oneAtATime` (n1), live table footer (n3), m1/m9 tests; `2c970d2` close handler never throws.
+   **Check in the real exe:** closing the window right after a grading edit saves it, and the
+   window still closes (the mock cannot show Tauri's close path).
+
+**Next action:** 37.4 (rubric guards 21 m1-m3, m6, n7-n9, validate-data warnings
 22 n5, 22, 23 n4), 37.5 (profile observaties: numbers change, before/after table for the user),
 gate, review, release 0.28. Show the user the `modal-po-grade` diff.
 

@@ -553,13 +553,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 23
 
-- Review 23 m1/m9: a test for a colleague's write between the pre-check and the CAS write of one
-  member (the group can then be partly written; the reload shows the colleague's version).
-- Review 23 m4: quitting the app within 10 s of an edit in Projectgroep beoordelen loses it (the
-  window closes without the dialog's close save).
-- Review 23 m9: e2e for a member without a score file and a PO without a rubric in the grading.
-- Review 23 n1: two saves waiting on a running save can both start afterwards (same writes).
-- Review 23 n3: the PO score table's footer status "● Alles opgeslagen" is static.
+- Done in step 37 (`340fc97`, `2c970d2`): m1/m9 tests, m4 (save before the app closes, quit
+  guard), n1 (one save at a time), n3 (live table status).
 - Review 23 n4: `validate-data` could warn about a `po` entry under a test's id.
 - Local WebKit on Windows: Playwright's `dragTo` does not work (the step 22 and 23 drag tests fail
   there, also on `main`); CI runs WebKit on Linux and macOS, where they pass.
