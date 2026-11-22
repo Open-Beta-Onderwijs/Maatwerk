@@ -2,6 +2,22 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 37 (review `docs/reviews/step-37.md`)
+
+- **m2 (step 41, robustness):** `loadObsUsage` (`ui/src/store.js`) throws on a read error in any
+  year, so the Observaties screen fails and Bewerken does nothing. Catch per year, mark the usage
+  incomplete; the delete guard and the Toets/PO lock then fail closed with a message. Test.
+- **m4 (step 41):** the rubric guard reads every year's exams under the commit lock, so other
+  writes from this PC wait on a slow shared folder. Scan outside the lock, re-check changed files
+  under it.
+- **m5 (user, real exe):** closing right after a grading edit saves it and the window closes; a
+  failed save asks first. Also a `tauri-api` unit test of the `listenCloseRequested` wiring.
+- n1 (43): bare block in `po-beoordelen.ts` `save()`. n3 (41): empty path and English OS text in
+  the Dutch refusal (`storage/mod.rs`, `Error::io("", e)`). n4 (39): `_keep` hard-codes margins
+  in `rapport-po.typ`. n5 (41): `IssueKind::Shape` for reference warnings in `validate.rs`. n6
+  (44): `loadObsUsage` reads `rubrics` four times; untyped logic in `store.js`. n7 (42): no test
+  for `2c970d2` (a throwing close handler still closes).
+
 ## From Steps 35-36 (review `docs/reviews/step-35-36.md`)
 
 - **m4 (step 37, PO completion):** the core compares raw member files with what the UI
