@@ -690,7 +690,7 @@
     "success": true
   },
   "port": {
-    "blessed": "step 24: PO rapport (rapport-po.typ), visual check OK by the user 2026-11-12 (no Totaal row, 24pt between categories, 5pt under category titles)"
+    "blessed": "step 37: an unscored PO category shows a dash in its dot (review 24 n3)"
   },
   "pdf": {
     "pageCount": 8,
@@ -728,7 +728,7 @@
           595.28,
           841.89
         ],
-        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n0\n2 / 4 (50%)\nSamenwerking\nD\n— / 3\n0\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n—\n2 / 4 (50%)\nSamenwerking\nD\n— / 3\n—\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
       },
       {
         "size": [
@@ -776,8 +776,8 @@
     },
     {
       "file": "p5.png",
-      "sha256": "7b22a83887ebea27618c87bc72744946a0487865187d6023d99bc68fe05a7186",
-      "bytes": 54224
+      "sha256": "9f77465c111d962833cecb20923a0ee58666e29071bf732ec97a5fdea8feaa6f",
+      "bytes": 54177
     },
     {
       "file": "p6.png",

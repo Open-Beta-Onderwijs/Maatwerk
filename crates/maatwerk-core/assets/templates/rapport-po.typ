@@ -86,7 +86,8 @@
         cell(c, _bd(c.soort)),
         cell(c, _score_str(c)),
         lollipop_track(
-          (score: c.score, max: c.max, class_avg: c.avg, dot_color: c.dot_color, rtti_color: none),
+          // An unscored category: "—" in its grey dot, as in the Jij column (review 24 n3).
+          (score: c.score, max: c.max, class_avg: c.avg, dot_color: c.dot_color, rtti_color: none, none_text: "—"),
           scale_max,
           dots,
         ),

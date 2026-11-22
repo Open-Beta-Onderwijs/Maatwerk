@@ -215,7 +215,8 @@
       (sx, BL), radius: dots.r,
       fill: _color(q.dot_color), stroke: none,
     )
-    if q.score == none { content((sx, BL), text(white, dots.size)[0]) }
+    // Not entered: "0" in the toets rapport; the PO rapport passes "—" (review 24 n3).
+    if q.score == none { content((sx, BL), text(white, dots.size, q.at("none_text", default: "0"))) }
     else { content((sx, BL), text(white, dots.size)[#_num(q.score)]) }
 
     // Class average diamond ◇  (raised if it would overlap the student circle)

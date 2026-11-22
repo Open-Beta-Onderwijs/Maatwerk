@@ -246,6 +246,17 @@ fn a_category_taller_than_a_page_breaks_instead_of_running_into_the_footer() {
 }
 
 #[test]
+fn an_unscored_category_shows_a_dash_in_its_dot_too() {
+    // Review 24 n3: the Jij column showed "—" but the dot "0".
+    let dashes = |d: &PagedDocument| page_text(d, 0).matches('—').count();
+    let before = dashes(&doc(&case_data()));
+    let mut data = case_data();
+    data.students[0]["categories"][1]["score"] = Value::Null;
+    data.students[0]["categories"][1]["dot_color"] = Value::String("#b0b8c1".into());
+    assert_eq!(dashes(&doc(&data)), before + 2);
+}
+
+#[test]
 fn render_po_rapport_pdf_makes_a_pdf() {
     let (_tmp, dir) = data_dir();
     let pdf = render_po_rapport_pdf(fonts(), &case_data(), &dir, fixed_now()).unwrap();
