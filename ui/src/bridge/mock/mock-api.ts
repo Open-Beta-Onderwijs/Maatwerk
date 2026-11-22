@@ -65,7 +65,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.27.0';
+export const MOCK_APP_VERSION = '0.28.0';
 /** `rights::RIGHTS_MIN_APP_VERSION`: raised at every login (step 35). */
 const RIGHTS_MIN_APP_VERSION = '0.26.0';
 export const MOCK_LOG_DIR =
