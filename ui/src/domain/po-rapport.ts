@@ -213,12 +213,20 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
   });
 
   // The averages over every graded student with scores (an overwritten grade alone has none).
+  // An empty normal or bonus category counts as 0, as in the grade, so the averages add up to the
+  // average points; a diagnostic one (not in the grade) is averaged over who has a score (review
+  // 24 m5, user 2026-11-22).
   const withScores = entries.filter((e) => Object.values(e.scores).some((v) => v !== null));
   const questions = cats.map((c, i) => ({ id: c.id, max_points: maxes[i] }) as unknown as Question);
+  const inGrade = new Set(cats.filter((c) => c.soort !== 'diagnostisch').map((c) => c.id));
   const classResults = classQuestions(
     questions,
     withScores.map((e) =>
-      Object.fromEntries(Object.entries(e.scores).filter(([, v]) => v !== null)),
+      Object.fromEntries(
+        Object.entries(e.scores)
+          .map(([id, v]) => [id, v === null && inGrade.has(id) ? 0 : v] as const)
+          .filter(([, v]) => v !== null),
+      ),
     ),
   );
 

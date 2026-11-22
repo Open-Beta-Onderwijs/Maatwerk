@@ -296,8 +296,8 @@
               "soort": "bonus",
               "max": 4,
               "score": 2,
-              "avg": 2,
-              "avg_pct": 50,
+              "avg": 1.5,
+              "avg_pct": 38,
               "dot_color": "#ffd54f",
               "levels": [
                 {
@@ -628,8 +628,8 @@
               "soort": "bonus",
               "max": 4,
               "score": null,
-              "avg": 2,
-              "avg_pct": 50,
+              "avg": 1.5,
+              "avg_pct": 38,
               "dot_color": "#b0b8c1",
               "levels": [
                 {
@@ -690,7 +690,7 @@
     "success": true
   },
   "port": {
-    "blessed": "step 37: an unscored PO category shows a dash in its dot (review 24 n3)"
+    "blessed": "step 37: PO averages count an empty normal or bonus category as 0, as the grade (review 24 m5, user rule B)"
   },
   "pdf": {
     "pageCount": 8,
@@ -700,7 +700,7 @@
           595.28,
           841.89
         ],
-        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5A — Sem Dijkstra (900101)\nJullie hebben 27 / 36 punten behaald en hadden dus 75% goed. De beoordeling van het groepswerk is \neen 7,5. Met bonus en malus voor de groep en je persoonlijke bonus en malus wordt je cijfer een \n7,3\n.\nProjectgroep Valtoren\nSem Dijkstra (5A), Emma Kok (5A) en Bas Vos (5B)\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n2 / 3\n2\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n3 / 4\n3\n3,3 / 4 (81%)\nTheorie\n6 / 8\n6\n6,3 / 8 (78%)\nMeetopstelling\n5 / 6\n5\n5,3 / 6 (88%)\nFiguren\n4 / 6\n4\n4,3 / 6 (71%)\nConclusie\n3 / 5\n3\n3,3 / 5 (65%)\nDiscussie\n2 / 4\n2\n2,3 / 4 (56%)\nOriginaliteit\nB\n2 / 4\n2\n2 / 4 (50%)\nSamenwerking\nD\n2 / 3\n2\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\nBonus / malus\nVoor\nOmschrijving\nCijfer\nProjectgroep\nVerslag een dag te laat ingeleverd\n−0,5\nPersoonlijk\nExtra meting met de lichtsluis gedaan\n+0,3\nOpmerking van de docent\nEen nette proef met een goed gekozen meetopstelling. Jullie conclusie volgt uit de metingen, maar laat \nde afleiding van g zien en zorg dat elke grafiek compleet is. Het verslag kwam een dag te laat binnen.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Sem Dijkstra"
+        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5A — Sem Dijkstra (900101)\nJullie hebben 27 / 36 punten behaald en hadden dus 75% goed. De beoordeling van het groepswerk is \neen 7,5. Met bonus en malus voor de groep en je persoonlijke bonus en malus wordt je cijfer een \n7,3\n.\nProjectgroep Valtoren\nSem Dijkstra (5A), Emma Kok (5A) en Bas Vos (5B)\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n2 / 3\n2\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n3 / 4\n3\n3,3 / 4 (81%)\nTheorie\n6 / 8\n6\n6,3 / 8 (78%)\nMeetopstelling\n5 / 6\n5\n5,3 / 6 (88%)\nFiguren\n4 / 6\n4\n4,3 / 6 (71%)\nConclusie\n3 / 5\n3\n3,3 / 5 (65%)\nDiscussie\n2 / 4\n2\n2,3 / 4 (56%)\nOriginaliteit\nB\n2 / 4\n2\n1,5 / 4 (38%)\nSamenwerking\nD\n2 / 3\n2\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\nBonus / malus\nVoor\nOmschrijving\nCijfer\nProjectgroep\nVerslag een dag te laat ingeleverd\n−0,5\nPersoonlijk\nExtra meting met de lichtsluis gedaan\n+0,3\nOpmerking van de docent\nEen nette proef met een goed gekozen meetopstelling. Jullie conclusie volgt uit de metingen, maar laat \nde afleiding van g zien en zorg dat elke grafiek compleet is. Het verslag kwam een dag te laat binnen.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Sem Dijkstra"
       },
       {
         "size": [
@@ -728,7 +728,7 @@
           595.28,
           841.89
         ],
-        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n—\n2 / 4 (50%)\nSamenwerking\nD\n— / 3\n—\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
+        "text": "Beoordeling Natuurkunde PO Onderzoek valbeweging\n5B — Fleur de Wit (900104)\nJe hebt 32 / 36 punten behaald en had dus 89% goed. Je cijfer is een \n8,9\n.\nScoretabel\nCategorie\nB / D\nJij (\n●\n)\n0\n1\n2\n3\n4\n5\n6\n7\n8\nGemiddeld (\n◇\n)\nIntroductie\n3 / 3\n3\n2,3 / 3 (75%)\nOnderzoeksvraag \nen hypothese\n4 / 4\n4\n3,3 / 4 (81%)\nTheorie\n7 / 8\n7\n6,3 / 8 (78%)\nMeetopstelling\n6 / 6\n6\n5,3 / 6 (88%)\nFiguren\n5 / 6\n5\n4,3 / 6 (71%)\nConclusie\n4 / 5\n4\n3,3 / 5 (65%)\nDiscussie\n3 / 4\n3\n2,3 / 4 (56%)\nOriginaliteit\nB\n— / 4\n—\n1,5 / 4 (38%)\nSamenwerking\nD\n— / 3\n—\n2 / 3 (67%)\nB = bonus: telt mee in de punten, niet in het maximum. D = diagnostisch: telt niet mee in het cijfer. Gemiddeld = alle leerlingen met \ndeze PO.\n1 / 4\nNatuurkunde PO Onderzoek valbeweging — Fleur de Wit"
       },
       {
         "size": [
@@ -756,8 +756,8 @@
   "png": [
     {
       "file": "p1.png",
-      "sha256": "85c04eb1a4ce295053216b6ed8f9cc6bdd9fefbf8d4754bb104e10d5d625407e",
-      "bytes": 89000
+      "sha256": "b5fea914484342af23efe746fa8f6188b00293764fe78b206ff131519adff3bf",
+      "bytes": 89112
     },
     {
       "file": "p2.png",
@@ -776,8 +776,8 @@
     },
     {
       "file": "p5.png",
-      "sha256": "9f77465c111d962833cecb20923a0ee58666e29071bf732ec97a5fdea8feaa6f",
-      "bytes": 54177
+      "sha256": "09b92c2493174bfd55fad708ed09425ccd623ceb4e87aa3d1d49027238329975",
+      "bytes": 54241
     },
     {
       "file": "p6.png",

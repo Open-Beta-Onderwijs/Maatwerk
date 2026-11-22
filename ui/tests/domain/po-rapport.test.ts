@@ -75,14 +75,22 @@ describe('buildPoRapportData', () => {
     expect(fleur.projectgroep.naam).toBe('Projectgroep 2');
   });
 
-  it('averages each category over the graded students (class_questions)', () => {
+  it('averages each category over the graded students (class_questions, m5 rule B)', () => {
     const intro = sem.categories[0]!;
     // 2, 2, 2 and 3 of 3: 2,25 -> 2,3 (one decimal), 75%.
     expect(intro).toMatchObject({ name: 'Introductie', soort: 'normaal', max: 3, score: 2 });
     expect([intro.avg, intro.avg_pct]).toEqual([2.3, 75]);
-    // An unscored category is left out of its average: only the Valtoren members scored it.
+    // An empty normal or bonus category counts as 0, as in the grade, so the averages add up to
+    // the average points (review 24 m5, user 2026-11-22: rule B): 2, 2, 2 and 0 of 4.
     const bonus = fleur.categories.find((c) => c.soort === 'bonus')!;
-    expect([bonus.score, bonus.avg, bonus.avg_pct]).toEqual([null, 2, 50]);
+    expect([bonus.score, bonus.avg, bonus.avg_pct]).toEqual([null, 1.5, 38]);
+    const counted = sem.categories.filter((c) => c.soort !== 'diagnostisch');
+    const sum = counted.reduce((t, c) => t + c.avg, 0);
+    const meanPoints = data.students.reduce((t, s) => t + s.points, 0) / data.students.length;
+    expect(Math.abs(sum - meanPoints)).toBeLessThan(0.05 * counted.length);
+    // A diagnostic category is not in the grade: averaged over who has a score (2, 2, 2 of 3).
+    const diag = fleur.categories.find((c) => c.soort === 'diagnostisch')!;
+    expect([diag.score, diag.avg, diag.avg_pct]).toEqual([null, 2, 67]);
     // No Totaal row (user, 2026-11-12).
     expect(sem).not.toHaveProperty('total');
     expect(data.poInfo).toEqual({
