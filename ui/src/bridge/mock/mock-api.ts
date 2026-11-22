@@ -1504,19 +1504,19 @@ export class MockApi implements MaatwerkApi {
     return () => this.dataListeners.delete(cb);
   }
 
-  private closeListeners = new Set<() => Promise<void>>();
+  private closeListeners = new Set<() => Promise<boolean>>();
   /** Set once the window "closed" (requestClose): e2e checks what was saved before. */
   closed = false;
 
-  onCloseRequested(cb: () => Promise<void>): Unsubscribe {
+  onCloseRequested(cb: () => Promise<boolean>): Unsubscribe {
     this.closeListeners.add(cb);
     return () => this.closeListeners.delete(cb);
   }
 
-  /** Test hook: the teacher closes the window; resolves when it would close. */
+  /** Test hook: the teacher closes the window; resolves when it closes or stays open. */
   async requestClose(): Promise<void> {
-    await Promise.all([...this.closeListeners].map((cb) => cb()));
-    this.closed = true;
+    const oks = await Promise.all([...this.closeListeners].map((cb) => cb()));
+    if (oks.every(Boolean)) this.closed = true;
   }
 
   onAssignmentProgress(cb: (progress: { done: number; total: number }) => void): Unsubscribe {

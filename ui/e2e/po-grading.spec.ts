@@ -219,6 +219,31 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     await expect.poll(() => withMock(page, (m) => m.closed)).toBe(true);
   });
 
+  test('a failed save on closing asks first; Terug keeps the window open (review 37 M1)', async ({
+    page,
+  }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-uitvoering"] input[type=range]').fill('4');
+    await withMock(page, (m) => {
+      m.fail('writeJson', '/scores/');
+      void m.requestClose();
+    });
+    const ask = page.locator('.dlg--confirm');
+    await expect(ask).toContainText('Niet alles is opgeslagen');
+    await ask.locator('[data-action="cancel"]').click();
+    await expect(ask).toHaveCount(0);
+    expect(await withMock(page, (m) => m.closed)).toBe(false);
+    // Asked again, "Toch afsluiten" closes.
+    await withMock(page, (m) => void m.requestClose());
+    await expect(ask).toBeVisible();
+    await ask.locator('[data-action="ok"]').click();
+    await expect.poll(() => withMock(page, (m) => m.closed)).toBe(true);
+  });
+
   test('the slider labels line up with the slider positions, also for 20 points (step 37)', async ({
     page,
   }) => {

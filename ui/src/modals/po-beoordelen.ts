@@ -452,8 +452,12 @@ export function openPoGrading(
       const timer = setInterval(() => {
         if (!stopped && snapshot() !== saved) void save();
       }, AUTOSAVE_MS);
-      // Quitting the app saves first, as closing the dialog does (review 23 m4).
-      const offQuit = beforeQuit(() => save());
+      // Quitting the app saves first, as closing the dialog does (review 23 m4); a failed save
+      // asks before the window closes (review 37 M1). Stopped with nothing pending (a reload in
+      // progress) is no failure.
+      const offQuit = beforeQuit(() =>
+        stopped && snapshot() === saved ? Promise.resolve(true) : save(),
+      );
       onModalCleanup(() => {
         clearInterval(timer);
         offQuit();
