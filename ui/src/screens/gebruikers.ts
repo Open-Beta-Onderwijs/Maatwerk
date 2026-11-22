@@ -40,9 +40,12 @@ export async function renderGebruikers(): Promise<void> {
       </div>
     </div>
     <div id="user-list" class="card-list users"></div>
-    <h3 class="list-section-header">Sectievoorzitters</h3>
-    <p class="hint">De sectievoorzitter van een vak wijzigt de leerlingen en docenten van de groepen
-       van dat vak, en logt daarvoor in met de eigen pincode via de aparte badge "Sectievoorzitter".</p>
+    <h3 class="list-section-header">Sectiebestuur</h3>
+    <p class="hint">De sectievoorzitter en de sectiesecretaris van een vak wijzigen alle scores van
+       dat vak en de leerlingen en docenten van de groepen. Ze loggen daarvoor in met de eigen
+       pincode via de aparte badge "Sectievoorzitter" of "Sectiesecretaris". Met "Gastaccount"
+       toont het inlogscherm van dat vak een Gast: zonder pincode, leest alles van het vak (ook
+       leerlinggegevens) en wijzigt niets.</p>
     <div id="voorzitter-list" class="card voorzitter-list"></div>`;
 
   await renderUserList();
@@ -140,53 +143,117 @@ async function renderUserList(): Promise<void> {
   };
 }
 
-// ── Sectievoorzitters (school.json `secties`, decision 13) ──────────────────
+// ── Sectiebestuur (school.json `secties`, decision 13; secretaris step 35) ─
+type SectieRole = 'voorzitter' | 'secretaris';
+type Secties = Record<
+  string,
+  { voorzitter?: string | null; secretaris?: string | null; gast?: boolean }
+>;
+
+const ROLE_NAME: Record<SectieRole, string> = {
+  voorzitter: 'Sectievoorzitter',
+  secretaris: 'Sectiesecretaris',
+};
+
+/** One dropdown: the active teachers of the vak, without the one holding the other role. */
+function roleSelect(
+  vak: string,
+  role: SectieRole,
+  teachers: EditableUser[],
+  current: string,
+  other: string,
+): string {
+  const offered = teachers.filter((u) => u.id !== other);
+  const options = [
+    `<option value="">Geen</option>`,
+    ...offered.map(
+      (u) =>
+        `<option value="${escHtml(u.id)}"${u.id === current ? ' selected' : ''}>${escHtml(fullName(u))}</option>`,
+    ),
+  ];
+  // Someone who no longer teaches the vak (or left) stays visible until changed.
+  if (current && !offered.some((u) => u.id === current)) {
+    options.push(
+      `<option value="${escHtml(current)}" selected>(niet meer actief voor dit vak)</option>`,
+    );
+  }
+  const id = `${role === 'voorzitter' ? 'vz' : 'sec'}-${vak}`;
+  return `
+    <div class="voorzitter-field">
+      <label class="voorzitter-field-label" for="${id}">${ROLE_NAME[role]}</label>
+      <select id="${id}" data-vak="${vak}" data-role="${role}">${options.join('')}</select>
+    </div>`;
+}
+
 async function renderVoorzitters(): Promise<void> {
   const container = document.getElementById('voorzitter-list');
   if (!container) return;
   const [users, school] = (await Promise.all([loadUsers(), Store.loadSchool()])) as [
     EditableUser[],
-    { secties?: Record<string, { voorzitter?: string }> } | null,
+    { secties?: Secties } | null,
   ];
   const secties = school?.secties ?? {};
   container.innerHTML = SUBJECTS.map((vak) => {
     const teachers = users.filter((u) => u.actief && !u.isAdmin && (u.vakken ?? []).includes(vak));
-    const current = secties[vak]?.voorzitter ?? '';
-    const options = [
-      `<option value="">Geen</option>`,
-      ...teachers.map(
-        (u) =>
-          `<option value="${escHtml(u.id)}"${u.id === current ? ' selected' : ''}>${escHtml(fullName(u))}</option>`,
-      ),
-    ];
-    // A voorzitter who no longer teaches the vak (or left) stays visible until changed.
-    if (current && !teachers.some((u) => u.id === current)) {
-      options.push(
-        `<option value="${escHtml(current)}" selected>(niet meer actief voor dit vak)</option>`,
-      );
-    }
+    const vz = secties[vak]?.voorzitter ?? '';
+    const sec = secties[vak]?.secretaris ?? '';
     return `
       <div class="voorzitter-row">
-        <label for="vz-${vak}"><span aria-hidden="true">${VAK_EMOJI[vak] ?? ''}</span>${escHtml(SUBJECT_LABEL[vak] ?? vak)}</label>
-        <select id="vz-${vak}" data-vak="${vak}">${options.join('')}</select>
+        <span class="voorzitter-vak"><span aria-hidden="true">${VAK_EMOJI[vak] ?? ''}</span>${escHtml(SUBJECT_LABEL[vak] ?? vak)}</span>
+        ${roleSelect(vak, 'voorzitter', teachers, vz, sec)}
+        ${roleSelect(vak, 'secretaris', teachers, sec, vz)}
+        <label class="voorzitter-gast" title="Een gast logt zonder pincode in, leest alles van dit vak (ook leerlinggegevens) en kan niets wijzigen.">
+          <input type="checkbox" data-gast-vak="${vak}"${secties[vak]?.gast === true ? ' checked' : ''} />
+          Gastaccount
+        </label>
       </div>`;
   }).join('');
-  container.querySelectorAll<HTMLSelectElement>('select[data-vak]').forEach((select) => {
-    select.addEventListener('change', async () => {
-      const vak = select.dataset.vak!;
-      const voorzitter = select.value || null;
+  // Step 36 (decision 81): the admin switches the sectie's gast on knowingly.
+  container.querySelectorAll<HTMLInputElement>('input[data-gast-vak]').forEach((box) => {
+    box.addEventListener('change', async () => {
+      const vak = box.dataset.gastVak!;
+      const on = box.checked;
       try {
-        await Store.updateSchool((s: { secties?: Record<string, { voorzitter?: string }> }) => {
+        await Store.updateSchool((s: { secties?: Secties }) => {
           const next = { ...(s.secties ?? {}) };
-          if (voorzitter) next[vak] = { ...(next[vak] ?? {}), voorzitter };
+          const sectie = { ...(next[vak] ?? {}) };
+          if (on) sectie.gast = true;
+          else delete sectie.gast;
+          if (Object.keys(sectie).length) next[vak] = sectie;
           else delete next[vak];
           s.secties = next;
         });
-        toast(`Sectievoorzitter ${SUBJECT_LABEL[vak]} opgeslagen.`, 'success');
+        toast(`Gastaccount ${SUBJECT_LABEL[vak]} ${on ? 'aangezet' : 'uitgezet'}.`, 'success');
       } catch (e) {
         toast(e instanceof Error ? e.message : String(e), 'error');
         await renderVoorzitters();
       }
+    });
+  });
+  container.querySelectorAll<HTMLSelectElement>('select[data-vak]').forEach((select) => {
+    select.addEventListener('change', async () => {
+      const vak = select.dataset.vak!;
+      const role = select.dataset.role as SectieRole;
+      const id = select.value || null;
+      try {
+        await Store.updateSchool((s: { secties?: Secties }) => {
+          const next = { ...(s.secties ?? {}) };
+          const sectie = { ...(next[vak] ?? {}) };
+          if (id) sectie[role] = id;
+          else delete sectie[role];
+          // One person holds one role (the other dropdown does not offer them).
+          const otherRole: SectieRole = role === 'voorzitter' ? 'secretaris' : 'voorzitter';
+          if (id && sectie[otherRole] === id) delete sectie[otherRole];
+          if (Object.keys(sectie).length) next[vak] = sectie;
+          else delete next[vak];
+          s.secties = next;
+        });
+        toast(`${ROLE_NAME[role]} ${SUBJECT_LABEL[vak]} opgeslagen.`, 'success');
+      } catch (e) {
+        toast(e instanceof Error ? e.message : String(e), 'error');
+      }
+      // The other dropdown leaves out whoever this one holds now.
+      await renderVoorzitters();
     });
   });
 }

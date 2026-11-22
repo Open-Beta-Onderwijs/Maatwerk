@@ -14,6 +14,22 @@
   gap: 14px;
   background: var(--bg);
 }
+/* Step 35: a projectgroep without one of the teacher's students (decision 79). */
+.po-gr-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+  font-size: var(--fs-secondary);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: help;
+}
+.po-gr-member-lines--locked .po-gr-member-name::after {
+  content: ' · alleen-lezen';
+  font-weight: 400;
+  color: var(--muted);
+}
 .po-gr-status {
   font-size: var(--fs-caption);
   font-weight: 600;

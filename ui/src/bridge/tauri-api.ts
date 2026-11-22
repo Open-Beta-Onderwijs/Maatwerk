@@ -148,7 +148,10 @@ async function orElse<T, F>(call: Promise<Result<T>>, fallback: F): Promise<T | 
   return fallback;
 }
 
-/** `{ ok: false, reason }`: `conflict`, `locked` and `read_only` by code, else the message. */
+/**
+ * `{ ok: false, reason }`: `conflict`, `locked` and `read_only` by code, else the message (a
+ * `forbidden` score write, step 35, gives its Dutch message).
+ */
 function fsFailure(error: unknown): FsResult {
   const code = asCommandError(error)?.code;
   if (code === 'conflict' || code === 'locked' || code === 'read_only')
@@ -376,8 +379,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     async acceptStamp(relPath) {
       await orThrow(c.acceptStamp(relPath));
     },
-    verifyPin: (userId, pin) => orThrow(c.verifyPin(userId, pin)),
-    setFirstPin: (userId, pin) => orThrow(c.setFirstPin(userId, pin)),
+    verifyPin: (userId, pin, role) => orThrow(c.verifyPin(userId, pin, role ?? null)),
+    setFirstPin: (userId, pin, role) => orThrow(c.setFirstPin(userId, pin, role ?? null)),
     changePin: (currentPin, newPin) => orThrow(c.changePin(currentPin, newPin)),
     resetPin: (userId) => orThrow(c.resetPin(userId)),
     recoverWithCode: (userId, code, newPin) => orThrow(c.recoverWithCode(userId, code, newPin)),
@@ -385,6 +388,11 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     async logout() {
       await orThrow(c.logout());
     },
+    async loginGast(vak) {
+      await orThrow(c.loginGast(vak));
+    },
+    copyOpdrachtToSectie: (fromId, vak, teacherId, pin) =>
+      orThrow(c.copyOpdrachtToSectie(fromId, vak, teacherId, pin)),
     saveTextAs: (defaultName, content) => orThrow(c.saveTextAs(defaultName, content)),
     listSnapshots: () => orThrow(c.listSnapshots()),
     snapshotForFile: (relPath) => orThrow(c.snapshotForFile(relPath)),

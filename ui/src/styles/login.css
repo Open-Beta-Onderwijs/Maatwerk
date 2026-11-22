@@ -31,12 +31,6 @@
   --on-accent: #111418;
 }
 
-/* The remembered vak is shown at once, without the movement. */
-.login--instant,
-.login--instant * {
-  transition: none !important;
-}
-
 /* ── Small logo, top left (stages vak and user) ───────────────────────────── */
 .login-brand {
   position: absolute;
@@ -168,6 +162,18 @@
 .login-tile:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+/* The previous login's vak, on the start stage (step 35). */
+.login[data-stage='start'] .login-tile--last {
+  border-color: var(--login-ink);
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+.login-tile-last {
+  font-size: 12px;
+  color: var(--muted);
+}
+.login:not([data-stage='start']) .login-tile-last {
+  display: none;
 }
 .login-tile[aria-pressed='true'] {
   border-color: var(--login-ink);

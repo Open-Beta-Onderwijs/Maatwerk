@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SLICE_MS, inIdleSlices, resetSlice, yieldSlice } from './idle';
 
 describe('inIdleSlices', () => {
@@ -67,12 +67,16 @@ describe('yieldSlice', () => {
     let t = 1_000;
     const now = () => t;
     await yieldSlice(now);
-    const order: string[] = [];
-    setTimeout(() => order.push('timer'), 0);
-    t += SLICE_MS + 1;
-    await yieldSlice(now);
-    order.push('yielded');
-    await new Promise((r) => setTimeout(r, 5));
-    expect(order).toEqual(['yielded', 'timer']);
+    // No ordering race against a real setTimeout(0): Node does not order a MessagePort task
+    // against a due 1 ms timer, so that version failed on a loaded Linux runner (CI run
+    // 45007769015). Instead: the yield must not schedule a timer at all.
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    try {
+      t += SLICE_MS + 1;
+      await yieldSlice(now);
+      expect(timers).not.toHaveBeenCalled();
+    } finally {
+      timers.mockRestore();
+    }
   });
 });

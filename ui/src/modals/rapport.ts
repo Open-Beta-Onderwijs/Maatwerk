@@ -37,6 +37,12 @@ function stopListening(): void {
 
 /** Saves a named copy of a render output in rapporten/ and opens it; toasts a failure. */
 export async function printOutput(outputId: string, name: unknown): Promise<void> {
+  if (Store.isGast()) {
+    // Step 36 (user): a gast previews only; the PDF opens, nothing goes into rapporten/.
+    const err = await window.maatwerk.openPath(outputId);
+    if (err) toast(`Openen mislukt: ${err}`, 'error');
+    return;
+  }
   try {
     await window.maatwerk.printPdf(
       outputId,

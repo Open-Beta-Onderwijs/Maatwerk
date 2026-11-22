@@ -80,9 +80,9 @@ export async function enterPin(page: Page, pin = PIN): Promise<void> {
 }
 
 /**
- * Chooses a vak on the login screen. The last vak is chosen already after a
- * logout, and clicking a chosen tile again goes back (spec 4.2), so a chosen
- * tile is left alone.
+ * Chooses a vak on the login screen. Clicking a chosen tile again goes back
+ * (spec 4.2), so a chosen tile is left alone (the last vak is only
+ * highlighted at the start since step 35).
  */
 export async function chooseVak(page: Page, subject: string): Promise<void> {
   const tile = page.locator(`.subject-card[data-subject="${subject}"]`);

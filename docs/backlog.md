@@ -2,6 +2,22 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Steps 35-36 (review `docs/reviews/step-35-36.md`)
+
+- **m4 (step 37, PO completion):** the core compares raw member files with what the UI
+  normalises (`gradingOf`/`linesOf`), so a regroup can be refused; po-beoordelen writes members
+  one by one, so a refusal on member k leaves the ones before it written. Normalise both sides
+  as `gradingKey` does, and check every member with `teacherMayWrite` before the first write.
+- **m5 (step 38, measured with the grade numbers):** every score write reads the user file,
+  `school.json`, every group of the year and the exam. Measure with the 33b spans; cache
+  `YearGroups` per (year, vak, user) if it shows.
+- **m6 (step 41, robustness):** the rights check and the write are two steps; with `Expect::Any`
+  a colleague's change in between is written unchecked, and deleting an unreadable foreign score
+  file passes. Return the hash read and write with `Expect::Hash`; fail closed on a read error.
+- n1 (42): e2e paste/cut on a locked row. n2 (41): limit the gast presence exemption to its own
+  file. n4 (42): share Rust/TS rule cases (number vs string ids, `1` vs `1.0`, case). n6: the
+  0.26/0.27 version text, settled at the release.
+
 ## Road to 1.0: which step takes what (2026-11-21, `PLAN-2.md` steps 35-45)
 
 Every open item below belongs to one step; the step's "Items" line names them. A step strikes an
@@ -36,6 +52,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 | 32                                             | 40                                                                        |
 | 33                                             | m3 43; m4 42                                                              |
 | 34                                             | m2, m4 (focus into the panel), nits 43; m6 42                             |
+| 35-36                                          | m4 37; m5 38; m6, n2 41; n1, n4 42; n6 at the release                     |
 | 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 unless 38 says otherwise |
 
 ## After 1.0
@@ -219,7 +236,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - **Colleague change on an unsaved cell (review 3b n4):** a background update can replace a cell
   whose save failed; the cell keeps its "not saved" mark. Clear the mark when a colleague's value
   replaces it.
-- **Queued saves stamp the user at run time:** `updateStudentScores` stamps `_meta.updatedBy` when
+- ~~**Queued saves stamp the user at run time:**~~ Closed in step 35: score files carry no
+  `updatedBy`; the core now checks every score write against the session, so the backend logout
+  waits for the queued saves and a new PIN check waits for that logout. Was: `updateStudentScores` stamps `_meta.updatedBy` when
   the save runs. Logging in waits for the queue (review 3b M1), so this only matters if the user
   could change without the login screen.
 
@@ -299,7 +318,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   background thread, re-read the state and give up if another PC claimed later.~~ Done (Step 10): 45 s settle wait.
 - ~~m6: test for losing the snapshot claim to a concurrent writer (needs a hook between read and
   CAS in `Storage`).~~ Done (Step 10): injected settle hook.
-- n4: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
+- ~~n4~~ (closed in step 35: the core re-checks the role at every guarded write, the UI's
+  `isSectiebestuurActive` reads `school.json` each time). Was: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
   admin takes effect at the next login.
 - n5: the Rust login session survives a webview reload (dev only; release builds have no reload).
 - After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only at
@@ -459,7 +479,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   stay JS: the filter bar was moved out verbatim (lower risk), not converted. Converting them,
   and splitting the rest of `app.js` (modal helpers, sync notices, navigation), is easier once
   `Store` has types (step 19); do it then or with step 22 (login), which touches the same code.
-- **Review 15 m5:** a teacher's look or year change bumps their user file's rev, so an admin's
+- **Review 15 m5** (step 35: not made worse; the secretaris dropdown writes `school.json`, not
+  user files; stays for 43): a teacher's look or year change bumps their user file's rev, so an admin's
   open Gebruikers edit of that teacher ends in a save conflict (the message tells them to reopen).
   Rare; if it bites, give the Gebruikers form a field-level merge.
 - **Review 15 m2 / step 18:** the migration must write `school.json` (with the higher
@@ -571,8 +592,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Steps 26-28
 
-- **Review 26-28 m2:** Gebruiker bewerken writes the photo before the user record (rev check); a
-  refused save leaves the new photo in place. Removing a photo (both dialogs) leaves the file.
+- **Review 26-28 m2:** ~~Gebruiker bewerken writes the photo before the user record (rev check); a
+  refused save leaves the new photo in place.~~ Fixed in step 35 (the old photo is put back, a new
+  one removed; no e2e: the crop needs a real file). Removing a photo (both dialogs) leaves the file.
 - **Review 26-28 m6:** the snapshot kinds in Instellingen repeat `maatwerk-core::snapshots::keep`
   in TypeScript; let `listSnapshots` return the kind instead.
 - **Review 26-28 m7:** board 12 "Vergelijken" (OneDrive conflict copy) and "Toets openen" (a broken

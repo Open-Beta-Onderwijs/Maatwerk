@@ -48,16 +48,16 @@ function card(r: Rubric): string {
   const uses = usesOf(r.id).length;
   const totals = checkRubric(r).totals;
   const del = uses
-    ? `<button class="btn btn--icon" data-action="del-rubric" data-id="${esc(r.id)}" disabled title="In gebruik: niet te verwijderen" aria-label="Verwijderen">${ICONS.trash}</button>`
-    : `<button class="btn btn--icon btn--icon-danger" data-action="del-rubric" data-id="${esc(r.id)}" title="Verwijderen" aria-label="Verwijderen">${ICONS.trash}</button>`;
+    ? `<button class="btn btn--icon" data-action="del-rubric" data-write data-id="${esc(r.id)}" disabled title="In gebruik: niet te verwijderen" aria-label="Verwijderen">${ICONS.trash}</button>`
+    : `<button class="btn btn--icon btn--icon-danger" data-action="del-rubric" data-write data-id="${esc(r.id)}" title="Verwijderen" aria-label="Verwijderen">${ICONS.trash}</button>`;
   return `<article class="card rubric-card" data-rubric-id="${esc(r.id)}">
     <div class="rubric-card-head">
       <div class="rubric-card-title">
         <a href="#" class="rubric-card-name" data-action="edit-rubric" data-id="${esc(r.id)}">${esc(r.naam || 'Naamloze rubric')}</a>
         <span class="muted">${esc(rubricMeta(r))}</span>
       </div>
-      <button class="btn btn--icon" data-action="edit-rubric" data-id="${esc(r.id)}" title="Bewerken" aria-label="Bewerken">${ICONS.pen}</button>
-      <button class="btn btn--icon" data-action="dup-rubric" data-id="${esc(r.id)}" title="Dupliceren" aria-label="Dupliceren">${ICONS.copy}</button>
+      <button class="btn btn--icon" data-action="edit-rubric" data-write data-id="${esc(r.id)}" title="Bewerken" aria-label="Bewerken">${ICONS.pen}</button>
+      <button class="btn btn--icon" data-action="dup-rubric" data-write data-id="${esc(r.id)}" title="Dupliceren" aria-label="Dupliceren">${ICONS.copy}</button>
       ${del}
     </div>
     <div class="rubric-chips">${r.categories.map(rubricChip).join('')}</div>
@@ -97,7 +97,7 @@ export async function renderRubrics(): Promise<void> {
   container.innerHTML = list.map(card).join('');
   container.onclick = (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
-    if (!btn || (btn as HTMLButtonElement).disabled) return;
+    if (!btn || (btn as HTMLButtonElement).disabled || Store.isGast()) return;
     e.preventDefault();
     const r = all.find((x) => x.id === btn.dataset.id);
     if (!r) return;

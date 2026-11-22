@@ -24,6 +24,8 @@ pub enum ErrorCode {
     InvalidArgument,
     /// `school.json` asks for a newer app (`minAppVersion`): writes are refused.
     ReadOnly,
+    /// The session's role does not allow the write (step 35); the message is Dutch.
+    Forbidden,
     /// No data folder set, chosen or beside the program yet (first run, step 16a).
     NoDataFolder,
     Io,
@@ -90,9 +92,9 @@ impl From<Error> for CommandError {
     fn from(e: Error) -> CommandError {
         // These messages are already the Dutch text for the UI (`Ongeldige opdracht.`).
         let message = match &e {
-            Error::InvalidArgument { message } | Error::MigrationBlocked { message } => {
-                message.clone()
-            }
+            Error::InvalidArgument { message }
+            | Error::MigrationBlocked { message }
+            | Error::Forbidden { message } => message.clone(),
             other => other.to_string(),
         };
         let path = |p: &str| ErrorDetails {
@@ -139,6 +141,14 @@ impl From<Error> for CommandError {
                     ..ErrorDetails::default()
                 },
             ),
+            Error::Forbidden { .. } => (ErrorCode::Forbidden, ErrorDetails::default()),
+            Error::GuestReadOnly => (
+                ErrorCode::ReadOnly,
+                ErrorDetails {
+                    found: Some("gast".to_owned()),
+                    ..ErrorDetails::default()
+                },
+            ),
             Error::Io { path: p, .. } => (ErrorCode::Io, path(p)),
         };
         CommandError {
@@ -182,6 +192,10 @@ mod tests {
                 min_version: "9.0.0".into(),
                 app_version: "0.6.0".into(),
             },
+            Error::Forbidden {
+                message: "m".into(),
+            },
+            Error::GuestReadOnly,
             Error::Io {
                 path: "a".into(),
                 source: std::io::Error::other("x"),

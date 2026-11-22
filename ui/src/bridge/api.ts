@@ -21,6 +21,7 @@ export type Json = unknown;
 
 export type { PrintName } from '../domain/print';
 import type {
+  CopiedTo,
   DataFolderStatus,
   EditorClickJump,
   EditorCompletions,
@@ -290,10 +291,13 @@ export interface MaatwerkApi {
   // ── Accounts and snapshots (Step 7b) ──────────────────────────────────────
   // PINs are checked in Rust; the backend remembers who logged in, so the
   // admin-only methods do not trust the UI. Rejections carry a Dutch message.
-  /** Login; `noPin`: the user sets a PIN first (`setFirstPin`). */
-  verifyPin(userId: string, pin: string): Promise<PinCheck>;
+  /**
+   * Login; `noPin`: the user sets a PIN first (`setFirstPin`). `role` (step 35): `docent`,
+   * `bestuur:<vak>` or `beheer`, checked by the backend; absent: beheer for the admin, else docent.
+   */
+  verifyPin(userId: string, pin: string, role?: string): Promise<PinCheck>;
   /** First login or after a reset; the admin also gets `recoveryCodes` (show once). */
-  setFirstPin(userId: string, pin: string): Promise<PinCheck>;
+  setFirstPin(userId: string, pin: string, role?: string): Promise<PinCheck>;
   /** The logged-in user's own PIN. */
   changePin(currentPin: string, newPin: string): Promise<PinCheck>;
   /** Admin only: the teacher sets a new PIN at the next login. Resolves to the user as written. */
@@ -303,6 +307,21 @@ export interface MaatwerkApi {
   /** Admin, with the PIN: ten new recovery codes replace the old ones. */
   renewRecoveryCodes(pin: string): Promise<PinCheck>;
   logout(): Promise<void>;
+  /**
+   * Step 36: the gast of `vak` logs in without a PIN (the admin's switch); from then on the
+   * backend refuses every write (`read_only`) until logout.
+   */
+  loginGast(vak: string): Promise<void>;
+  /**
+   * "Kopieer naar…" (step 36): a gast copies an opdracht to sectie `vak` as teacher `teacherId`,
+   * who confirms with their PIN. `opdracht` is the copy when `outcome` is `ok`.
+   */
+  copyOpdrachtToSectie(
+    fromId: string,
+    vak: string,
+    teacherId: string,
+    pin: string,
+  ): Promise<CopiedTo>;
   /** "Opslaan als" dialog for a text file; the path, or null when cancelled. */
   saveTextAs(defaultName: string, content: string): Promise<string | null>;
   /** `snapshots/*.zip`, newest first. */

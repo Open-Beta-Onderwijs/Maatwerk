@@ -185,7 +185,9 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
     td.className = editable ? '' : 'sg-readonly';
     if (isCheckbox(col)) {
       let box = td.querySelector<HTMLInputElement>('input[type="checkbox"]');
-      if (editable) {
+      // A read-only cell with a boolean (a locked or gast row) shows a disabled box; other
+      // read-only cells (summary rows) are emptied for the renderer (manual check 35-36).
+      if (editable || typeof value === 'boolean') {
         if (!box) {
           td.textContent = '';
           box = document.createElement('input');
@@ -194,6 +196,7 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
           td.appendChild(box);
         }
         box.checked = value === true;
+        box.disabled = !editable;
       } else if (box || td.textContent) {
         td.textContent = '';
       }
@@ -545,7 +548,7 @@ export function createScoreGrid(container: HTMLElement, options: ScoreGridOption
 
   function onClick(e: MouseEvent): void {
     const box = e.target as HTMLInputElement;
-    if (box.type !== 'checkbox') return;
+    if (box.type !== 'checkbox' || box.disabled) return;
     const pos = coordsOf(box);
     if (!pos) return;
     // The data decides what the box shows; report the toggle instead.

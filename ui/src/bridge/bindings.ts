@@ -14,7 +14,8 @@ export const commands = {
 	readJsonVersioned: (relPath: string) => typedError<VersionedJson | null, CommandError>(__TAURI_INVOKE("read_json_versioned", { relPath })),
 	/**
 	 *  Writes JSON atomically; returns the hash written. With `cas`, the file must still hash to
-	 *  `expectedHash` (`null`: must not exist), else error `conflict`.
+	 *  `expectedHash` (`null`: must not exist), else error `conflict`. A score file the session may
+	 *  not change is refused with `forbidden` (step 35, `maatwerk_core::rights`).
 	 */
 	writeJson: (relPath: string, data: Value, cas: boolean, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("write_json", { relPath, data, cas, expectedHash })),
 	/**  Year folders, newest first. */
@@ -30,7 +31,7 @@ export const commands = {
 	readJsonDir: (dirRelPath: string) => typedError<NamedJson[], CommandError>(__TAURI_INVOKE("read_json_dir", { dirRelPath })),
 	/**  Every `opdrachten/<id>/opdracht.json` (C14). */
 	readOpdrachten: () => typedError<Value[], CommandError>(__TAURI_INVOKE("read_opdrachten")),
-	/**  Deletes the file; a missing file is fine. */
+	/**  Deletes the file; a missing file is fine. Score files as [`write_json`]. */
 	deleteFile: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_file", { relPath })),
 	ensureDir: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("ensure_dir", { relPath })),
 	/**  Absolute data folder. */
@@ -114,10 +115,14 @@ export const commands = {
 	stampIssues: () => typedError<StampIssue[], CommandError>(__TAURI_INVOKE("stamp_issues")),
 	/**  "Accepteren": re-stamps the file as it is now. */
 	acceptStamp: (relPath: string) => typedError<null, CommandError>(__TAURI_INVOKE("accept_stamp", { relPath })),
-	/**  Login with a PIN; on success the user is logged in on this PC. */
-	verifyPin: (userId: string, pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("verify_pin", { userId, pin })),
+	/**
+	 *  Login with a PIN; on success the user is logged in on this PC with `role` (`docent`,
+	 *  `bestuur:<vak>` or `beheer`, step 35), which must be theirs; none: beheer for the admin,
+	 *  else docent.
+	 */
+	verifyPin: (userId: string, pin: string, role: string | null) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("verify_pin", { userId, pin, role })),
 	/**  First login (or after a reset): sets the PIN of a user without one and logs them in. */
-	setFirstPin: (userId: string, pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("set_first_pin", { userId, pin })),
+	setFirstPin: (userId: string, pin: string, role: string | null) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("set_first_pin", { userId, pin, role })),
 	/**  The logged-in user changes their PIN. */
 	changePin: (currentPin: string, newPin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("change_pin", { currentPin, newPin })),
 	/**  Admin only: removes a teacher's PIN. Returns the user record as written. */
@@ -128,6 +133,16 @@ export const commands = {
 	renewRecoveryCodes: (pin: string) => typedError<PinCheck, CommandError>(__TAURI_INVOKE("renew_recovery_codes", { pin })),
 	/**  Back to the login screen. */
 	logout: () => typedError<null, CommandError>(__TAURI_INVOKE("logout")),
+	/**
+	 *  Step 36 (decision 81): the gast of `vak` logs in without a PIN; from then on this app writes
+	 *  nothing to the data folder (presence excepted) until logout.
+	 */
+	loginGast: (vak: string) => typedError<null, CommandError>(__TAURI_INVOKE("login_gast", { vak })),
+	/**
+	 *  "Kopieer naar…" (decision 82): a gast copies opdracht `fromId` to sectie `vak` as teacher
+	 *  `teacherId`, who confirms with their PIN.
+	 */
+	copyOpdrachtToSectie: (fromId: string, vak: string, teacherId: string, pin: string) => typedError<CopiedTo, CommandError>(__TAURI_INVOKE("copy_opdracht_to_sectie", { fromId, vak, teacherId, pin })),
 	/**
 	 *  "Opslaan als" for the recovery codes: a save dialog, then the text as a UTF-8 file. Returns
 	 *  the path, `null` when cancelled.
@@ -334,6 +349,15 @@ export type CommandError = {
 	details: ErrorDetails,
 };
 
+/**  What "Kopieer naar…" did (step 36). */
+export type CopiedTo = {
+	outcome: PinOutcome,
+	retryAfterMs: number,
+	/**  The new `opdracht.json`, when copied. */
+	opdracht: Value | null,
+	droppedObservaties: number,
+};
+
 /**  `data:changed` item (`ipc-api.md`, "Main -> renderer events"). */
 export type DataChange = {
 	relPath: string,
@@ -506,6 +530,8 @@ export type EditorVragen = {
 export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflict" | "locked" | "unsupported_schema" | "needs_migration" | "migration_blocked" | "invalid_argument" | 
 /**  `school.json` asks for a newer app (`minAppVersion`): writes are refused. */
 "read_only" | 
+/**  The session's role does not allow the write (step 35); the message is Dutch. */
+"forbidden" | 
 /**  No data folder set, chosen or beside the program yet (first run, step 16a). */
 "no_data_folder" | "io" | "typst" | "internal";
 

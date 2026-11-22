@@ -273,6 +273,13 @@ pub async fn ai_send(
     request: Value,
     on_event: Channel<Value>,
 ) -> Res<Value> {
+    // A gast has no AI assistant (step 36); the UI shows none.
+    if state
+        .get()
+        .is_some_and(|c| c.storage().is_ok_and(|s| s.is_guest()))
+    {
+        return Err(bad("Een gast kan de AI-assistent niet gebruiken."));
+    }
     let layout = layout(&app, &gebruiker)?;
     let key = key(&provider)?;
     opdracht_images::check_opdracht_id(&opdracht_id)?;

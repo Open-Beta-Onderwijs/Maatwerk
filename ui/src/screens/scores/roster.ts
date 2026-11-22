@@ -71,6 +71,7 @@ export function rosterSignature(exam: Exam, year: string): string {
     groups: examGroups(exam, year).map((g) => [
       g.id,
       g.name,
+      g.docenten ?? [], // the score lock follows the teachers (step 35)
       groupStudentsOf(g, allStudents).map((s) => [s.id, Store.fullName(s)]),
     ]),
     obs: (exam.obs_ids ?? []).map((id) => {

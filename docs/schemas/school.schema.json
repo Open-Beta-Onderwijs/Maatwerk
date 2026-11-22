@@ -27,6 +27,25 @@
     "watermerk": {
       "type": "string",
       "description": "fotos/school-watermerk.<ext>"
+    },
+    "minAppVersion": {
+      "type": "string",
+      "description": "Older apps open read-only (PLAN-2 decision 5); 0.26.0 from step 35."
+    },
+    "secties": {
+      "type": "object",
+      "description": "Per vak key: the sectievoorzitter (step 7b) and the sectiesecretaris (step 35), user ids.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "voorzitter": { "type": ["string", "null"] },
+          "secretaris": { "type": ["string", "null"] },
+          "gast": {
+            "type": "boolean",
+            "description": "Step 36: the login list of the vak shows a Gast (reads, never writes)."
+          }
+        }
+      }
     }
   }
 }

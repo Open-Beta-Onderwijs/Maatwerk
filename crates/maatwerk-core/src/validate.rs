@@ -376,7 +376,8 @@ fn check_references(
                     out.missing(rel, format!("{key} {f} ontbreekt"));
                 }
             }
-            // Step 7b: `secties: { <vak>: { voorzitter: <userId> } }`.
+            // Step 7b: `secties: { <vak>: { voorzitter: <userId> } }`; step 35 adds
+            // `secretaris`: an active teacher of the vak, not the voorzitter.
             let secties = value.get("secties").and_then(Value::as_object);
             for (vak, sectie) in secties.into_iter().flatten() {
                 let voorzitter = sectie.get("voorzitter").and_then(Value::as_str);
@@ -384,6 +385,41 @@ fn check_references(
                     out.missing(
                         rel,
                         format!("Sectievoorzitter {vak}: gebruiker {u} bestaat niet"),
+                    );
+                }
+                let Some(sec) = sectie
+                    .get("secretaris")
+                    .and_then(Value::as_str)
+                    .filter(|u| !u.is_empty())
+                else {
+                    continue;
+                };
+                if !users.contains(sec) {
+                    out.missing(
+                        rel,
+                        format!("Sectiesecretaris {vak}: gebruiker {sec} bestaat niet"),
+                    );
+                    continue;
+                }
+                if voorzitter == Some(sec) {
+                    out.warn(
+                        IssueKind::Shape,
+                        rel,
+                        format!("Sectiesecretaris {vak}: {sec} is ook de sectievoorzitter"),
+                    );
+                }
+                let user = json.get(format!("gebruikers/{sec}.json").as_str());
+                let teaches = user.is_some_and(|u| {
+                    u.get("actief") != Some(&Value::Bool(false))
+                        && u.get("vakken")
+                            .and_then(Value::as_array)
+                            .is_some_and(|v| v.iter().any(|x| x.as_str() == Some(vak.as_str())))
+                });
+                if !teaches {
+                    out.warn(
+                        IssueKind::Reference,
+                        rel,
+                        format!("Sectiesecretaris {vak}: {sec} is geen actieve docent van dit vak"),
                     );
                 }
             }

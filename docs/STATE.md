@@ -1,10 +1,105 @@
 # State
 
-Last updated: 2026-11-21 (step 34) Branch: `step/34-obs-opd-cards` (from `step/33b-perf` at
-`334cc77`, `main` merged in after the merges below)
-Last tags: `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-22 (steps 35-36, version 0.27.0) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
+`87ad870`, the 0.25.0 commit)
+Last tags: `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Steps 35 and 36 in one go (2026-11-21, user's request)
+
+The user approved step 34 and asked for steps 35 and 36 together, one gate at the end of 36.
+Answer at the start of 36 (asked early): a Gast may **preview only**, never print into
+`rapporten/`. Added to 35 by the user: the app starts on the vak tiles with the last vak
+highlighted, not chosen.
+
+Step 34 merge: version 0.25.0 (`87ad870`), the CI baselines of
+`screen-observaties`, `screen-opdrachten` and `splash` dropped; CI run 44921940112 wrote them (the
+only failures); committed as `b90d91b` and pushed; CI run 44923939530 checks it. **Then:** merge `step/34-obs-opd-cards` into `main` with a
+merge commit, tag `step-34`, merge `main` into `step/35-rights`.
+
+### Step 35 (on `step/35-rights`, version 0.26.0)
+
+Done:
+
+1. `964163c` core: `maatwerk-core::rights` (Role `docent` / `bestuur:<vak>` / `beheer`, Session,
+   `check_json_write`), `Auth` keeps a Session (`verify_pin_as`, `set_first_pin_as`; the old
+   calls log in with the default role), `write_json` / `delete_file` refuse with the new
+   `forbidden` code; every login raises `minAppVersion` to 0.26.0; version 0.26.0. TS mirror
+   `domain/rights.ts` (mock: same rule, but writes without a login pass).
+2. `b3274ba` data: `secties.<vak>.secretaris`, `validate-data` checks, school schema, data format
+   doc, ADR-0006 amendment "Roles and rights" (the rights table).
+3. `420e9c3` UI: Gebruikers voorzitter + secretaris dropdowns; SECTIESECRETARIS login group, the
+   role sent to the backend; `Store.isSectiebestuurActive`; start on the tiles (user); backend
+   logout after queued score saves (3b); photo put back on a refused save (26-28 m2).
+4. `b6e25ac` UI lock: score grid rows, lock in the group heading (tooltip), PO beoordelen
+   read-only / own lines locked (`services/score-lock.ts`).
+5. e2e `rights.spec.ts` (5 tests) + fix: `ownLines: []` = none.
+
+Not done in 35: the manual check on a copy of real data (decision 8, user's), the lock look is
+new (stop and ask before the visual baselines: show the user at the end of 36).
+
+Choices made without a spec line (tell the user):
+
+- Fixtures: the generator is unchanged (its groups feed many visual baselines); the e2e seeds a
+  second teacher, the secretaris and B's group instead.
+- Score changes an exam edit brings stay open to every teacher of the vak (dropping observaties
+  the exam no longer lists, removing a deleted exam's or a left PO's entries, a projectgroep move
+  that copies a staying member's grading).
+- The admin may write every score file (no score screens, but restores and imports).
+- The mock lets score writes without a login through (unit tests write without logging in).
+
+### Step 36 (same branch, version stays 0.26.0 until the release decision)
+
+Done:
+
+1. `69115b5` core: `Role::Gast`, `Auth::login_gast` (no PIN, `secties.<vak>.gast`),
+   `Storage::set_guest` / `refuse_guest` (every write refused with `GuestReadOnly`, code
+   `read_only`, presence excepted), `print_copy` refused (preview only, user), `ai_send` refused,
+   `copy_to_sectie` (Kopieer naar: target teacher's PIN, written as that teacher via a
+   thread-local `as_teacher`, `vakken` = target, observaties dropped); a test classifies every
+   Tauri command for the gast guard.
+2. `ef1c84c` UI: Gastaccount checkbox (Gebruikers), GAST login group without PIN, "Alleen lezen
+   (gast)" pill, `html[data-gast]` hides every `data-write` control, exam menu reads only,
+   score grid / PO read-only, print opens the PDF, user menu without PIN/photo/AI, presence
+   "Gast (<vak>)", Kopieer naar… dialog (⋮ menu and preview panel). Mock mirrors it. 15 n6.
+3. `5c0925e` hide Toets bewerken / Projectgroepen / PO bewerken from a gast. `eb4b2b5` flaky
+   `ai_fake_cli` test fixed (stderr may come first; it failed step 34's macOS CI once).
+
+Gate (2026-11-21, 35 + 36): cargo fmt, clippy, test (all suites), deny, SPDX, npm licences,
+typecheck, 893 Vitest + 127 node tests, Chromium e2e 411/411. Lint: only the user's untracked
+`docs/reviews/manual-test-step-32.md`. Visual (local): 6 diffs = `splash` (0.26.0) and
+`admin-gebruikers` (secretaris dropdown, Gastaccount) in three looks; baselines not updated. The
+lock look is not in a visual view (the fixture locks nothing); screenshots for the user.
+
+Choices made without a spec line (36):
+
+- The editor is not opened read-only for a gast: "Openen in editor" is hidden (the preview panel
+  shows the PDF). The plan said "the editor opens read-only".
+- A gast may change the look and year on screen (not saved), and keeps its filters (local).
+- Opdrachten genereren is off for a gast (it links opdrachten to the test, a write).
+- Kopieer naar keeps the opdracht's name (no "(kopie)"): it lands in another sectie.
+
+Review `docs/reviews/step-35-36.md`: 0 blockers, 3 majors (all fixed), 7 minors (m1-m3, m7
+fixed; m4, m5, m6 backlog "From Steps 35-36"), 6 nits (n3, n5 fixed; rest backlog). Fixes
+`a4230fc`. M1 was a mistake of this session: the user's untracked
+`docs/reviews/manual-test-step-32.md` had been committed in `69115b5`; untracked again (file on
+disk unchanged).
+
+User 2026-11-22: lock look approved, both visual diffs approved, release as **0.27.0** (skip
+0.26 so the version matches the plan; `minAppVersion` stays 0.26.0, the gast flag is additive).
+Version 0.27.0, local baselines of `splash` and `admin-gebruikers` updated (visual 177/177), CI
+baselines of both dropped on all three platforms; exe rebuilt for the user's manual check.
+
+User 2026-11-22 (planning, no code): encrypted storage designed in chat and recorded as
+`docs/adr/0012-encrypted-storage.md` (proposed) and a new step 41b in `PLAN-2.md` (release 0.33;
+42-44 shift to 0.34-0.36). Its first sub-task is the storage layout report the user asked for
+(which names and contents get encrypted, decided up front), then a STOP.
+
+**Next action:** the user: manual check on a copy of real data with the 0.27.0 exe (decision 8).
+Then: push (CI writes the dropped baselines), commit them, merge, tags `step-35`, `step-36`.
+Step 34 is merged (`49ad3d4`, tag `step-34`, CI run 44923939530 green after a rerun of the
+flaky macOS test) and `main` is merged into `step/35-rights`; that branch is not pushed yet.
 
 ## Steps 32, 33, 33b merged (2026-11-21)
 

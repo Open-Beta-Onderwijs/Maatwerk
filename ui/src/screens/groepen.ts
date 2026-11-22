@@ -167,7 +167,7 @@ function groupCardHtml(g: Group, students: Person[], users: Person[]): string {
     ? `
         <button class="btn btn--icon" data-action="edit-group" data-id="${id}" title="Groep bewerken" aria-label="Groep bewerken">${ICONS.pen}</button>
         <button class="btn btn--icon btn--icon-danger" data-action="del-group" data-id="${id}"${n > 0 ? ' disabled title="Deze groep heeft leerlingen en kan dus niet worden verwijderd."' : ' title="Groep verwijderen"'} aria-label="Groep verwijderen">${ICONS.trash}</button>`
-    : Store.isVoorzitterActive(g.subject)
+    : Store.isSectiebestuurActive(g.subject)
       ? `
         <button class="btn btn--icon" data-action="edit-group" data-id="${id}" title="Leerlingen en docenten van de groep (sectievoorzitter)" aria-label="Groep bewerken">${ICONS.pen}</button>`
       : '';

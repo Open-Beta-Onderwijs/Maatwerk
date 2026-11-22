@@ -240,7 +240,8 @@ test.describe('projectgroepen (decisions 18, 19)', () => {
       [undefined, ['900005']],
     ]);
     const school = await readMockJson<{ minAppVersion: string }>(page, 'school.json');
-    expect(school.minAppVersion).toBe('0.13.0');
+    // The login (step 35) raised it past the PO guard's 0.13.0 already.
+    expect(school.minAppVersion).toBe('0.26.0');
 
     // The card (spec 4.7): striped badge, kind pill, the rubric's points; no RTTI line; the
     // groups and the rubric in the tooltip of line 1.

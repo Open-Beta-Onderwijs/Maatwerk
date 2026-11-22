@@ -10,12 +10,15 @@ import { escHtml, toast } from '../../app.js';
 import type { PinCheck } from '../../bridge/api';
 import { setBusy } from '../../components/button';
 import { fullUserName, newPinProblem } from '../../domain/accounts';
-import { roleLabel, type LoginRole, type LoginUser } from '../../domain/login';
+import { backendRole, roleLabel, type LoginRole, type LoginUser } from '../../domain/login';
 import { errorMessage, holdOff, recoverDialog, showRecoveryCodes, type PinApi } from '../pin';
+import { backendLogoutDone } from '../scores/session';
 
 export interface PinPanelOptions {
   user: LoginUser;
   role: LoginRole;
+  /** The vak key: a bestuur login is for this vak (step 35). */
+  vak: string;
   vakName: string;
   api: PinApi;
   /** "← Andere gebruiker" or Escape. */
@@ -56,6 +59,7 @@ function fieldsHtml(first: boolean, isAdmin: boolean): string {
  */
 export function mountPinPanel(form: HTMLFormElement, opts: PinPanelOptions): { focus: () => void } {
   const { user, api } = opts;
+  const role = backendRole(opts.role, opts.vak);
   let hasPin = Boolean(user.pinHash);
 
   form.noValidate = true;
@@ -111,7 +115,7 @@ export function mountPinPanel(form: HTMLFormElement, opts: PinPanelOptions): { f
     }
     let check: PinCheck;
     try {
-      check = await api.setFirstPin(user.id, pin);
+      check = await api.setFirstPin(user.id, pin, role);
     } catch (e) {
       // Set on another PC meanwhile: log in with that PIN instead.
       if (String((e as Error)?.message).includes('al een pincode')) {
@@ -128,7 +132,7 @@ export function mountPinPanel(form: HTMLFormElement, opts: PinPanelOptions): { f
 
   async function knownPin(): Promise<void> {
     const pin = input('pin-input')!;
-    const check = await api.verifyPin(user.id, pin.value.trim());
+    const check = await api.verifyPin(user.id, pin.value.trim(), role);
     if (check.outcome === 'ok') {
       await finish(user);
       return;
@@ -150,6 +154,8 @@ export function mountPinPanel(form: HTMLFormElement, opts: PinPanelOptions): { f
     box.textContent = '';
     setBusy(ok, true);
     try {
+      // The previous user's logout waits for their score saves; it must not end this login.
+      await backendLogoutDone();
       await (hasPin ? knownPin() : firstPin());
     } catch (e) {
       box.textContent = errorMessage(e);

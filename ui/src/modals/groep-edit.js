@@ -41,7 +41,7 @@ export async function openGroupModal(id) {
   const isEdit = !!id;
   // Step 7b, decision 13: the sectievoorzitter changes only the composition
   // and the teachers of the groups of their vak; the other fields stay locked.
-  const voorzitter = isEdit && !Store.isAdminActive() && Store.isVoorzitterActive(group.subject);
+  const voorzitter = isEdit && !Store.isAdminActive() && Store.isSectiebestuurActive(group.subject);
   if (!Store.isAdminActive() && !voorzitter) return;
   const locked = hasStudents || voorzitter;
 

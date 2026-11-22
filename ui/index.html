@@ -253,6 +253,12 @@
           <span>Instellingen</span>
         </button>
       </nav>
+      <span
+        id="gast-pill"
+        class="gast-pill hidden"
+        title="Je bent ingelogd als gast: je kunt alles van dit vak bekijken, maar niets wijzigen."
+        >Alleen lezen (gast)</span
+      >
       <button
         id="user-badge-btn"
         class="avatar avatar--38 avatar--round avatar--ring-accent hidden"
@@ -272,10 +278,12 @@
           <div class="screen-header screen-header--h32">
             <h2>Leerlingen</h2>
             <div class="header-actions">
-              <button class="btn btn--secondary" id="btn-import-students">
+              <button class="btn btn--secondary" id="btn-import-students" data-write>
                 &#8593; CSV importeren
               </button>
-              <button class="btn btn--primary" id="btn-add-student">+ Leerling toevoegen</button>
+              <button class="btn btn--primary" id="btn-add-student" data-write>
+                + Leerling toevoegen
+              </button>
               <input id="student-search" type="search" placeholder="Zoeken…" class="search-input" />
               <label class="toolbar-inline-label">Schooljaar:</label>
               <div id="student-year-select" class="csel-host"></div>
@@ -459,13 +467,15 @@
           <div class="screen-header screen-header--h32">
             <h2>Groepen</h2>
             <div class="header-actions">
-              <button class="btn btn--secondary" id="btn-import-groups">
+              <button class="btn btn--secondary" id="btn-import-groups" data-write>
                 &#8593; Groepen CSV importeren
               </button>
-              <button class="btn btn--secondary" id="btn-import-group-assignment">
+              <button class="btn btn--secondary" id="btn-import-group-assignment" data-write>
                 &#8593; Groepsindeling CSV importeren
               </button>
-              <button class="btn btn--primary" id="btn-add-group">+ Groep toevoegen</button>
+              <button class="btn btn--primary" id="btn-add-group" data-write>
+                + Groep toevoegen
+              </button>
               <label class="toolbar-inline-label">Schooljaar:</label>
               <div id="groups-year-select" class="csel-host"></div>
             </div>
@@ -481,11 +491,13 @@
           <div class="screen-header screen-header--h32">
             <h2>Toetsen</h2>
             <div class="header-actions">
-              <button id="btn-toetsen-rtti-uitleg" class="btn btn--secondary u-nowrap">
+              <button id="btn-toetsen-rtti-uitleg" data-write class="btn btn--secondary u-nowrap">
                 RTTI uitleg / leeradvies
               </button>
-              <button class="btn btn--secondary" id="btn-add-po">+ PO toevoegen</button>
-              <button class="btn btn--primary" id="btn-add-exam">+ Toets toevoegen</button>
+              <button class="btn btn--secondary" id="btn-add-po" data-write>+ PO toevoegen</button>
+              <button class="btn btn--primary" id="btn-add-exam" data-write>
+                + Toets toevoegen
+              </button>
               <label class="toolbar-inline-label">Schooljaar:</label>
               <div id="toetsen-year-select" class="csel-host"></div>
             </div>
@@ -508,7 +520,9 @@
           <div class="screen-header screen-header--h32">
             <h2>Rubrics</h2>
             <div class="header-actions">
-              <button class="btn btn--primary" id="btn-add-rubric">+ Rubric toevoegen</button>
+              <button class="btn btn--primary" id="btn-add-rubric" data-write>
+                + Rubric toevoegen
+              </button>
             </div>
           </div>
           <div class="filter-row" id="filter-row-rubrics"></div>
@@ -522,7 +536,9 @@
           <div class="screen-header screen-header--h32">
             <h2>Observaties</h2>
             <div class="header-actions">
-              <button class="btn btn--primary" id="btn-add-obs">+ Observatie toevoegen</button>
+              <button class="btn btn--primary" id="btn-add-obs" data-write>
+                + Observatie toevoegen
+              </button>
             </div>
           </div>
           <div class="filter-row" id="filter-row-observaties"></div>
@@ -536,7 +552,9 @@
           <div class="screen-header screen-header--h32">
             <h2>Opdrachten</h2>
             <div class="header-actions">
-              <button class="btn btn--primary" id="btn-add-opdracht">+ Opdracht toevoegen</button>
+              <button class="btn btn--primary" id="btn-add-opdracht" data-write>
+                + Opdracht toevoegen
+              </button>
             </div>
           </div>
           <div class="filter-row" id="filter-row-opdrachten"></div>

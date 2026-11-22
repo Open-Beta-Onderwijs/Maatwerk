@@ -98,13 +98,25 @@ test('keyboard: Enter on a tile and a user, Escape back out, Enter logs in', asy
   await expect(page.locator('#topbar')).toBeVisible();
 });
 
-test('the last vak is chosen already; a known PIN is one field', async ({ page }) => {
+test('the last vak is highlighted on the start screen; a known PIN is one field', async ({
+  page,
+}) => {
   await page.goto('/');
+  await expect(page.locator('.login-tile--last')).toHaveCount(0);
   await tile(page, 'nat').click();
   await badge(page).click();
   await enterPin(page);
   await logout(page);
+  // Step 35 (user): the start screen, the last vak highlighted and focused, not chosen.
+  await expect(stage(page)).toHaveAttribute('data-stage', 'start');
+  await expect(tile(page, 'nat')).toHaveClass(/login-tile--last/);
+  await expect(tile(page, 'nat')).toHaveAttribute('aria-pressed', 'false');
+  await expect(tile(page, 'nat')).toContainText('Laatst gekozen');
+  await expect(tile(page, 'bio')).not.toHaveClass(/login-tile--last/);
+  await expect(tile(page, 'nat')).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(stage(page)).toHaveAttribute('data-stage', 'vak');
+  await expect(tile(page, 'nat').locator('.login-tile-last')).toBeHidden();
   await badge(page).click();
   await expect(page.locator('#pin-input')).toBeFocused();
   await expect(page.locator('#pin-new')).toHaveCount(0);

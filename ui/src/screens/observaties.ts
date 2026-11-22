@@ -78,12 +78,14 @@ function wireList(container: HTMLElement): void {
     const action = target.closest<HTMLElement>('[data-action]');
     if (action && container.contains(action)) {
       if (action.dataset.action === 'obs-menu') toggleMenu(action);
-      else if (action.dataset.action === 'edit-obs') openObsModal(action.dataset.id ?? null);
+      else if (action.dataset.action === 'edit-obs' && !Store.isGast())
+        openObsModal(action.dataset.id ?? null);
       return;
     }
     // A click anywhere else on a card opens Observatie bewerken, not on a text selection.
     const card = target.closest<HTMLElement>('[data-obs-card]');
     if (!card || target.closest('a, button, input') || window.getSelection()?.toString()) return;
+    if (Store.isGast()) return; // a gast reads the card only (step 36)
     openObsModal(card.dataset.obsCard ?? null);
   });
 }

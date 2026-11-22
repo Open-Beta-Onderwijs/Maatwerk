@@ -16,6 +16,7 @@ import { formatNumber } from '../../domain/format';
 import { testBadgeClass } from '../../domain/test-type';
 import type { Exam } from '../../domain/types';
 import * as Presence from '../../presence.js';
+import { presenceUser } from '../../domain/login';
 import { Store } from '../../store.js';
 import { afterPaint, perfSpan } from '../../utils/perf';
 import { spinnerValue, wireSpinners } from '../../utils/spinners';
@@ -118,7 +119,7 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
         title="Aangevinkt: de punt op het numpad vult N in (niet gemaakt). Halve punten typ je dan met een komma.">
         <input type="checkbox" id="sc-dot-n" ${session.numpadDotIsN ? 'checked' : ''} /> . → N
       </label>
-      <button type="button" class="btn btn--secondary btn--sm" id="sc-edit-exam">Toets bewerken</button>
+      <button type="button" class="btn btn--secondary btn--sm" id="sc-edit-exam" data-write>Toets bewerken</button>
       <span class="sc-nterm">N-term
         <span class="num-spinner spinner-wrap-sm" id="sc-nterm"
           data-val="${escHtml(String(exam.n_term ?? 1))}" data-step="0.1" data-min="0" data-max="3">
@@ -138,10 +139,17 @@ export function openScoreModal(examId: string, year: string, deps: ScoreModalDep
       wireSpinners(el);
       const ntermSp = el.querySelector<HTMLElement>('#sc-nterm')!;
       const ntermInput = ntermSp.querySelector<HTMLInputElement>('.spin-val')!;
+      if (Store.isGast()) {
+        // A gast reads the scores only (step 36).
+        ntermInput.disabled = true;
+        ntermSp
+          .querySelectorAll<HTMLButtonElement>('.spin-btn')
+          .forEach((b) => (b.disabled = true));
+      }
       const handleNtermChange = async () => {
         const val = spinnerValue(ntermSp);
         const active = session.activeExam;
-        if (isNaN(val) || !active) return;
+        if (isNaN(val) || !active || Store.isGast()) return;
         active.n_term = val;
         await Store.setExamNTerm(active.id, val, year);
         recomputeAllRows();
@@ -293,7 +301,7 @@ async function renderPresence(el: HTMLElement, examId: string, year: string): Pr
   if (!host) return;
   const users = (await Store.loadUsers()) as PresenceUser[];
   const others = (Presence.inScoreModal(year, Store.getActiveSubject(), examId) as PresenceEntry[])
-    .map((o) => ({ ...o, user: users.find((u) => u.id === o.userId) }))
+    .map((o) => ({ ...o, user: presenceUser(users, o.userId) as PresenceUser | undefined }))
     .filter((o): o is PresenceEntry & { user: PresenceUser } => !!o.user);
   host.innerHTML = others
     .map((o) => {

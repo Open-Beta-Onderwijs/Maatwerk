@@ -232,9 +232,9 @@ fn project_file_status(
                 match storage.write_text(rel, file.bundled(), Expect::Hash(&hash)) {
                     Ok(new) => status(ProjectFileState::Updated, Some(bundled_version), Some(new)),
                     Err(Error::Conflict { .. }) => continue,
-                    // A read-only app (newer `minAppVersion`) leaves the old copy: the
-                    // opdracht still opens, and a newer app updates it.
-                    Err(Error::ReadOnly { .. }) => {
+                    // A read-only app (newer `minAppVersion`, or a gast) leaves the old copy:
+                    // the opdracht still opens, and a newer app updates it.
+                    Err(Error::ReadOnly { .. } | Error::GuestReadOnly) => {
                         status(ProjectFileState::Outdated, version, Some(hash))
                     }
                     Err(e) => return Err(e),

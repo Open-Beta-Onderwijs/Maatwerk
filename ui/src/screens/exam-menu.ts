@@ -221,6 +221,20 @@ async function buildMenuItems(examId: string, kind: CardKind, year: string): Pro
   return items;
 }
 
+/**
+ * Step 36: a gast keeps what only reads (scores read-only, overview, rapport as a preview);
+ * Opdrachten genereren links opdrachten to the test, and everything below the line writes.
+ */
+function gastItems(items: MenuItem[]): MenuItem[] {
+  if (!Store.isGast()) return items;
+  const cut = items.indexOf('sep');
+  return (cut < 0 ? items : items.slice(0, cut)).map((item) =>
+    item !== 'sep' && item.label === 'Opdrachten genereren'
+      ? { ...item, disabled: 'Een gast kan geen opdrachten genereren.' }
+      : item,
+  );
+}
+
 export async function toggleExamMenu(btn: HTMLElement, year: string): Promise<void> {
   if (isCardMenuOpen(btn)) {
     closeCardMenu();
@@ -234,7 +248,7 @@ export async function toggleExamMenu(btn: HTMLElement, year: string): Promise<vo
   if (kind !== 'summary' && !po) prebuildScoreModal(examId, year);
 
   const endMenu = perfSpan('menu:exam');
-  const items = await buildMenuItems(examId, kind, year);
+  const items = gastItems(await buildMenuItems(examId, kind, year));
   endMenu();
   await showCardMenu(btn, items);
 }

@@ -231,6 +231,24 @@
   font-weight: 700;
   color: var(--accent-text);
 }
+/* Step 35: a group of another teacher; its rows are read-only (decision 78). */
+.sc-group-lock {
+  align-self: center;
+  display: inline-flex;
+  color: var(--muted);
+  cursor: help;
+}
+.score-group-section--locked .group-heading {
+  color: var(--muted);
+}
+.score-grid-table td.sc-locked {
+  color: var(--muted);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--border) 45%, transparent) 6px 7px
+  );
+}
 .sc-group-info {
   font-size: var(--fs-secondary);
   color: var(--muted);

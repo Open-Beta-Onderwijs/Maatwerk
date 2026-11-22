@@ -91,7 +91,8 @@ const Store = (() => {
   let _years = null;
   let _activeSubject = null;
   let _activeUser = null;
-  // Step 7b: `{ voorzitter: <vak> }` when logged in through the sectievoorzitter badge.
+  // Step 7b, 35: `{ bestuur: <vak>, kind: 'voorzitter' | 'secretaris' }` when logged in through
+  // the sectievoorzitter or sectiesecretaris badge (the same rights, decision 80).
   let _activeRole = null;
 
   async function load(relPath) {
@@ -218,13 +219,30 @@ const Store = (() => {
   function getActiveRole() {
     return _activeRole;
   }
-  /** Sectievoorzitter of `vak` in this session (Step 7b, decision 13). */
-  function isVoorzitterActive(vak) {
-    return Boolean(vak) && _activeRole?.voorzitter === vak;
+  /**
+   * Logged in as sectievoorzitter or sectiesecretaris of `vak` (decisions 13, 80), and still
+   * named so in school.json: an admin's change takes effect at once, as in the core (7b n4).
+   */
+  function isSectiebestuurActive(vak) {
+    if (!vak || _activeRole?.bestuur !== vak || !_activeUser) return false;
+    const id = _activeUser.id;
+    return voorzitterOf(vak) === id || secretarisOf(vak) === id;
+  }
+  /** Logged in as the gast of a sectie (step 36): reads everything of the vak, writes nothing. */
+  function isGast() {
+    return Boolean(_activeRole?.gast);
+  }
+  /** `school.json` `secties.<vak>.gast` (step 36): the vak's login list shows a Gast. */
+  function gastEnabled(vak) {
+    return getSchoolSync().secties?.[vak]?.gast === true;
   }
   /** The teacher assigned as sectievoorzitter of `vak` in school.json, or null. */
   function voorzitterOf(vak) {
     return getSchoolSync().secties?.[vak]?.voorzitter ?? null;
+  }
+  /** The teacher assigned as sectiesecretaris of `vak` in school.json, or null (step 35). */
+  function secretarisOf(vak) {
+    return getSchoolSync().secties?.[vak]?.secretaris ?? null;
   }
   function getActiveUser() {
     return _activeUser;
@@ -240,6 +258,11 @@ const Store = (() => {
       cache['gebruikers'] = all.filter((u) => u && u.id);
     }
     return cache['gebruikers'];
+  }
+
+  /** The users loaded by `loadUsers` (the login screen loads them first), or null. */
+  function getUsersSync() {
+    return cache['gebruikers'] ?? null;
   }
 
   // ── School ─────────────────────────────────────────────────────────────────
@@ -1435,8 +1458,12 @@ const Store = (() => {
     getActiveUser,
     setActiveUser,
     getActiveRole,
-    isVoorzitterActive,
+    isSectiebestuurActive,
+    isGast,
+    gastEnabled,
+    getUsersSync,
     voorzitterOf,
+    secretarisOf,
     isAdminActive,
     loadUsers,
     upsertUser,

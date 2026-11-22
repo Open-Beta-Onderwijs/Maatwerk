@@ -69,7 +69,12 @@ fn streams_events_and_reports() {
     assert_eq!(report.collected.answer.as_deref(), Some("Klaar"));
     assert_eq!(report.collected.tail, ["a warning"]);
     let events = events.lock().unwrap();
-    assert_eq!(events[0], AiEvent::Session { id: "s-7".into() });
+    // stdout and stderr are two pipes read on their own threads: a stderr line may come first
+    // (CI macOS, run 44923939530). The session is the first event from stdout.
+    let first_out = events
+        .iter()
+        .find(|e| !matches!(e, AiEvent::Output { stderr: true, .. }));
+    assert_eq!(first_out, Some(&AiEvent::Session { id: "s-7".into() }));
     assert!(events.iter().any(
         |e| matches!(e, AiEvent::Step { title, .. } if title == "Bestand bewerken: opdracht.typ")
     ));

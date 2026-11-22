@@ -178,7 +178,44 @@ ai: { enabled: false }
 - `validate-data` does not check `instellingen.json` fields (as before: unusable values count
   as the default).
 
+## Roles and the score lock (0.26, step 35)
+
+Additive within v3 (PLAN-2 decisions 78-80; ADR-0006 "Roles and rights").
+
+```
+school.json   secties: { <vak>: { voorzitter: <userId>, secretaris: <userId> } }
+```
+
+- `secretaris` (new): the sectiesecretaris, set by the admin on Gebruikers. Same rights as the
+  voorzitter; an active teacher of the vak and not the voorzitter (the dropdown offers only those;
+  `validate-data` warns otherwise). Absent or `null`: none.
+- The score lock is not stored: a teacher changes the score file of a student only when the
+  student is in one of the teacher's groups of that vak (`docenten`), unless logged in as the
+  voorzitter or secretaris of the vak (`maatwerk_core::rights`).
+- Guard: every login raises `school.json` `minAppVersion` to **0.26.0**: an older app would ignore
+  the lock, so it opens read-only.
+
+## Gastaccount (0.27, step 36)
+
+Additive within v3 (PLAN-2 decisions 81-82).
+
+```
+school.json   secties: { <vak>: { ..., gast: true } }
+```
+
+- `gast: true`: the admin ticked "Gastaccount" for the sectie on Gebruikers. The vak's login list
+  shows a Gast that logs in without a PIN, reads everything of the vak and writes nothing: the
+  core refuses every data-folder write of that session (`read_only`), presence excepted
+  (`aanwezigheid/gast-<vak>.json`, "Gast (<vak>)"), and no copy goes into `rapporten/` (preview
+  only, user 2026-11-21). Absent or any other value: no Gast.
+- "Kopieer naar…": the gast's one write, as the target teacher after their PIN; the copy's
+  `vakken` is the target vak, `observaties` is emptied.
+- No guard: an older app (0.26) ignores the field and shows no Gast.
+
 ## `validate-data`
+
+Step 35 adds: `secties.<vak>.secretaris` naming no user (missing), the voorzitter (warning), or no
+active teacher of the vak (warning).
 
 Step 23 adds: `po` under an exam id that does not exist (missing), a `po` entry that is not an
 object, `groupLines`/`ownLines` that are not lists, and lines that do not count (warnings).
