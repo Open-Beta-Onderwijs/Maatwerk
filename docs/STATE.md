@@ -72,6 +72,8 @@ one source of truth, `maatwerk-grades`", spec "Shown averages" in
 `docs/phase-2/step-19-grade-rules.md`; step 38 is now L (two sessions) and adds the
 Cijfergemiddelden setting.
 
+Test set for the shown averages made ahead of step 38 (user's request): `crates/maatwerk-grades/tests/data/shown_averages.json` from `tools/fixtures/shown-averages.mjs`; `tests/shown_averages.rs` pins `a1` (today's rule) on all 7221 cases and 200 groups, green.
+
 **Next action:** check CI on `876c137` is green. The user: real-exe check with the 0.28.0 exe (closing right after a grading
 edit saves and closes; a failed save asks). Then merge into `main`, tag `step-37`.
 
