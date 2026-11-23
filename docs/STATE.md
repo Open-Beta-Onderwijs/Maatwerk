@@ -64,8 +64,15 @@ Review `docs/reviews/step-37.md`: 0 blockers, 1 major (M1 a failed save on quitt
 silently: fixed `ee3d955`, the app asks "Toch afsluiten?"), 5 minors (m1 in part, m3 fixed
 `2884204`; m2, m4, m5 backlog "From Step 37"), 7 nits (n2 fixed; rest backlog).
 
-**Next action:** push; CI writes the dropped baselines, commit them (`test(visual): CI
-baselines ...`). The user: real-exe check with the 0.28.0 exe (closing right after a grading
+CI run `45039040176` wrote the dropped baselines (`splash`, `modal-po-scores`, `modal-po-grade`,
+3 platforms): committed `876c137`, pushed; that push's CI run is the check.
+
+Step 38 re-planned with the user (2026-11-23): decisions 90-93, CLAUDE.md rule "grade numbers:
+one source of truth, `maatwerk-grades`", spec "Shown averages" in
+`docs/phase-2/step-19-grade-rules.md`; step 38 is now L (two sessions) and adds the
+Cijfergemiddelden setting.
+
+**Next action:** check CI on `876c137` is green. The user: real-exe check with the 0.28.0 exe (closing right after a grading
 edit saves and closes; a failed save asks). Then merge into `main`, tag `step-37`.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)

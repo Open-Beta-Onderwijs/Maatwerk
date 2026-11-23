@@ -143,20 +143,24 @@ Open questions of the design round, answered (user, 2026-11-18):
 
 Road to 1.0 (user, 2026-11-21; new steps 35-45, ROADMAP F-29..F-32, X-09..X-11):
 
-| #   | Decision                                                                                                                                                                                                                                                                                                               | Source |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| 78  | Score lock (F-29): a teacher changes scores only of students in groups whose `docenten` include them; other groups of the same exam are shown, locked. Only the scores are locked: every teacher of the vak still adds, edits and deletes exams as today                                                               | user   |
-| 79  | Logged in as Sectievoorzitter or Sectiesecretaris, a teacher changes every score of that vak. A PO projectgroep may be graded by the teacher of any of its members; a student's own bonus/malus lines only by that student's teacher (or the voorzitter/secretaris)                                                    | user   |
-| 80  | Sectiesecretaris (F-30): a second role per sectie with exactly the voorzitter's rights; a dropdown next to Sectievoorzitter on the Gebruikers tab; a login group of its own                                                                                                                                            | user   |
-| 81  | Gastaccount (F-31): a checkbox per sectie on the Gebruikers tab, next to the two dropdowns. Checked, the login screen shows a Gast for that sectie that logs in without a PIN and reads **everything** of that sectie (student data included; the admin switches it on knowingly). It never writes, creates or deletes | user   |
-| 82  | A Gast copies an Opdracht to another sectie with "Kopieer naar…": pick the target sectie, pick yourself as a teacher there, enter your PIN; the copy is made under that teacher's name; linked observaties (of the source vak) are dropped, with a note                                                                | user   |
-| 83  | Grade numbers of the list screens are computed in Rust (backlog "Grade cache", part 1), then measured; a disk cache only if the measurement asks for it (where it lives is then decided with the user)                                                                                                                 | user   |
-| 84  | Typst is upgraded before 1.0 (X-01) in its own step, after the v1 code and goldens are gone; 1.0 ships without ignored advisories                                                                                                                                                                                      | user   |
-| 85  | `rapporten/` (X-06): Beheer › Instellingen shows its size and an "Opruimen" button that deletes printed copies older than a chosen school year, after a confirm. Nothing automatic                                                                                                                                     | user   |
-| 86  | PO verzameloverzicht (F-32) before 1.0: the PO overview with the attempt that counts per student and the I/H dot (as decision 35), after a short design check with the user                                                                                                                                            | user   |
-| 87  | 1.0 ships portable, as now (plus the step 16 bundles), but signing-ready: at the start of step 45 the user gets a to-do list for Windows and macOS signing, and the build is prepared so that signing later is only certificates and secrets, not a code change                                                        | user   |
-| 88  | The v1 (Electron) paths go at 1.0: v1 import and migration, v1 helpers, the compat layer, v1-only goldens and parity checks. v2 -> v3 migration stays                                                                                                                                                                  | user   |
-| 89  | AI CLIs not yet checked against the real program get a "bèta" tag in the rail and AI-instellingen until their manual check passes; 1.0 does not wait for them                                                                                                                                                          | user   |
+| #   | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                   | Source |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| 78  | Score lock (F-29): a teacher changes scores only of students in groups whose `docenten` include them; other groups of the same exam are shown, locked. Only the scores are locked: every teacher of the vak still adds, edits and deletes exams as today                                                                                                                                                                                   | user   |
+| 79  | Logged in as Sectievoorzitter or Sectiesecretaris, a teacher changes every score of that vak. A PO projectgroep may be graded by the teacher of any of its members; a student's own bonus/malus lines only by that student's teacher (or the voorzitter/secretaris)                                                                                                                                                                        | user   |
+| 80  | Sectiesecretaris (F-30): a second role per sectie with exactly the voorzitter's rights; a dropdown next to Sectievoorzitter on the Gebruikers tab; a login group of its own                                                                                                                                                                                                                                                                | user   |
+| 81  | Gastaccount (F-31): a checkbox per sectie on the Gebruikers tab, next to the two dropdowns. Checked, the login screen shows a Gast for that sectie that logs in without a PIN and reads **everything** of that sectie (student data included; the admin switches it on knowingly). It never writes, creates or deletes                                                                                                                     | user   |
+| 82  | A Gast copies an Opdracht to another sectie with "Kopieer naar…": pick the target sectie, pick yourself as a teacher there, enter your PIN; the copy is made under that teacher's name; linked observaties (of the source vak) are dropped, with a note                                                                                                                                                                                    | user   |
+| 83  | Grade numbers of the list screens are computed in Rust (backlog "Grade cache", part 1), then measured; a disk cache only if the measurement asks for it (where it lives is then decided with the user)                                                                                                                                                                                                                                     | user   |
+| 84  | Typst is upgraded before 1.0 (X-01) in its own step, after the v1 code and goldens are gone; 1.0 ships without ignored advisories                                                                                                                                                                                                                                                                                                          | user   |
+| 85  | `rapporten/` (X-06): Beheer › Instellingen shows its size and an "Opruimen" button that deletes printed copies older than a chosen school year, after a confirm. Nothing automatic                                                                                                                                                                                                                                                         | user   |
+| 86  | PO verzameloverzicht (F-32) before 1.0: the PO overview with the attempt that counts per student and the I/H dot (as decision 35), after a short design check with the user                                                                                                                                                                                                                                                                | user   |
+| 87  | 1.0 ships portable, as now (plus the step 16 bundles), but signing-ready: at the start of step 45 the user gets a to-do list for Windows and macOS signing, and the build is prepared so that signing later is only certificates and secrets, not a code change                                                                                                                                                                            | user   |
+| 88  | The v1 (Electron) paths go at 1.0: v1 import and migration, v1 helpers, the compat layer, v1-only goldens and parity checks. v2 -> v3 migration stays                                                                                                                                                                                                                                                                                      | user   |
+| 89  | AI CLIs not yet checked against the real program get a "bèta" tag in the rail and AI-instellingen until their manual check passes; 1.0 does not wait for them                                                                                                                                                                                                                                                                              | user   |
+| 90  | (2026-11-23, replaces "no rule changes" in 83) The grades crate is the single source of truth for every grade number (CLAUDE.md rule). Where step 38's Rust numbers differ from today's UI (JS/WASM) numbers, Rust wins; every difference goes in a before/after table with its cause, shown to the user at the end of the step, without stopping the work                                                                                 | user   |
+| 91  | Cijfergemiddelden (admin Instellingen, school-wide): per average, r (jaargemiddelde) and SE independently, a method (Afronden / Afkappen) and decimals (0 / 1 / 2). Default afronden 1 (today). Only student r/SE averages follow it; exam numbers stay afronden 1                                                                                                                                                                         | user   |
+| 92  | Where the setting applies: Leerlingen cards (r, SE), Groepsoverzicht Resultaten (r, SE columns, both views), Profiel (r per school year, SE). Group numbers (Groepen card mean/SD/% onv., group overview footer, jaarlaag average, profile peers) use the student averages **as shown** under the setting (decision 21) and are shown at afronden 1. Pass/fail colour and % onvoldoende use the shown value (afkappen 0: 5,9 shows 5, red) | user   |
+| 93  | Every affected student r/SE has a hover text with the setting ("Afgerond op 1 decimaal", "Afgekapt op 0 decimalen"), also at the default; group means get "Gemiddelde van de getoonde cijfers, afgerond op 1 decimaal". An existing tooltip gets the line added. The settings section is a table (rows Methode, Decimalen, Voorbeelden; columns r, SE) with 3-4 live examples per column                                                   | user   |
 
 Choices made without the user (2026-11-21, tell the user if they bite): the rights of decisions
 78-82 are enforced in the UI **and** in `maatwerk-core` (the session carries the role; the core
@@ -229,7 +233,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | done   |
 | 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | done   |
 | 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | gate   |
-| 38   | Grade numbers in Rust                                            | M            | 0.29    | todo   |
+| 38   | Grade numbers in Rust, Cijfergemiddelden                         | L            | 0.29    | todo   |
 | 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo   |
 | 40   | AI assistant follow-ups                                          | M            | 0.31    | todo   |
 | 41   | Data and storage robustness, `rapporten/` cleanup                | M            | 0.32    | todo   |
@@ -697,26 +701,50 @@ numbers, so a before/after table and the user's OK.
 5. **Profile observaties:** include a PO's rubric and category observaties (29c).
 6. Gate, review, release 0.28.
 
-### Step 38: Grade numbers in Rust (M)
+### Step 38: Grade numbers in Rust, Cijfergemiddelden (L, two sessions)
 
 Items: X-09; backlog 33b "Grade cache" part 1 and its "smaller wins", 7c "First tab visit", 7c m4
-rest, 7c n2, 7c n5, 19 m6, 29 m4, 29 m5; 10 "Perf at 4x" (closed: re-measured in 0.24.1).
-Decision 83. No rule changes: every number must stay the same.
+rest, 7c n2, 7c n5, 19 m6, 29 m4, 29 m5; 10 "Perf at 4x" (closed: re-measured in 0.24.1); new
+feature Cijfergemiddelden. Decisions 83, 90-93. Spec of the new rule:
+`docs/phase-2/step-19-grade-rules.md` section 3 "Shown averages".
 
-1. **`maatwerk-core::numbers`:** per (year, vak) everything the list screens show: results per
+1. **Inventory (no code):** every place in `ui/src` and `maatwerk-core` that computes a grade
+   number itself instead of calling the crate (formulas in JS/TS: averages, sums, rounding,
+   `toFixed`, % onvoldoende). Write it to `docs/phase-2/step-38-numbers.md` (place, what it
+   computes, crate function that replaces it). A number with no crate function: **stop and ask**
+   (CLAUDE.md rule), with a proposal and worked examples.
+2. **Rule in the crate (test first, user's OK on the spec is given in decisions 91-92):**
+   `round.rs` gets `AverageFormat { method: Afronden | Afkappen, decimals: 0..=2 }` and
+   `shown_average(x, fmt)`: noise removed in billionths first (as `round_to`), then half-up or
+   towards zero. `mean_of_averages` / `stats_of_averages` take the format (shown values in, mean
+   at `round1`); pass/fail on the shown value. Tests: every example of the spec, plus a property
+   test over a large generated set (seeded): weighted averages of 2-8 grades (1,0-10,0, one
+   decimal) with weights 0-5, compared against exact rational arithmetic (integers in tenths x
+   weights), for all six formats; no case may differ. WASM binding, `npm run bindings`.
+3. **`maatwerk-core::numbers`:** per (year, vak) everything the list screens show: results per
    exam and attempt, year average, SE over the years (upper school), per exam the card numbers
    (Verzamelkaart included), per group the card numbers, observatie counts; computed with
-   `maatwerk-grades`. Test first: identical to the WASM path for every number on `tiny` and
-   `school` (the before/after table is "no change"; state that to the user).
-2. **Command and screens:** a Tauri command under `spawn_blocking`; Leerlingen, Groepen and
-   Toetsen cards and the overviews' slow parts use it. The WASM rules stay for the live score grid
-   and the modals. Invalidation per data generation (own writes too).
-3. **Small wins** of the backlog item (WASM parse once, `getStudentHistory` map, `yieldSlice` in
+   `maatwerk-grades`, shown under the school's format. Test: compare with the WASM/JS path for
+   every number on `tiny` and `school` at the default format; every difference goes in the
+   before/after table with its cause (decision 90: Rust wins), shown to the user at the end.
+4. **Setting:** additive field in the school settings (`gemiddelden: { r: {methode, decimalen},
+se: {...} }`, missing = afronden 1), fixture test, minimum-version guard if an older app would
+   misread it; only the admin edits. Beheer › Instellingen section "Cijfergemiddelden" (decision
+   93): table, segmented toggles, 3-4 live examples per column (5,45; 5,3 + 5,7 = 5,5; 5,9;
+   6,95), note "Geldt voor leerlinggemiddelden. Toetsgemiddelden blijven afgerond op 1 decimaal."
+   Show the user a mock before building (board in `docs/design/`).
+5. **Command and screens:** a Tauri command under `spawn_blocking`; Leerlingen, Groepen and
+   Toetsen cards, Groepsoverzicht and Profiel use it; the shown r/SE follow the format with the
+   hover text (decision 93), the group numbers decision 92. The WASM rules stay for the live
+   score grid and the modals, but compute nothing of their own. Invalidation per data generation
+   (own writes and a changed setting too).
+6. **Small wins** of the backlog item (WASM parse once, `getStudentHistory` map, `yieldSlice` in
    `cards/student-grades.ts`, `topbar-fit.ts` layout, fills after login), 29 m4/m5, 7c m4/n2/n5.
-4. **Measure** with `tools/perf/measure.mjs` at 1x and 4x, and on the user's real copy
+7. **Measure** with `tools/perf/measure.mjs` at 1x and 4x, and on the user's real copy
    (M-PERF-1); `docs/perf.md`. **Ask the user:** is a disk cache still needed? If yes, it becomes
    an "After 1.0" item with the location question of the backlog, unless the user wants it now.
-5. Gate, review, release 0.29.
+8. Gate (before/after tables: 3 at default format, 2 per non-default format on `school`), review,
+   release 0.29.
 
 ### Step 39: v1 removal and Typst upgrade (L, two sessions)
 
