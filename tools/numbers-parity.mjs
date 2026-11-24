@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Step 38.3: compares the Rust list-screen numbers (`maatwerk-cli numbers`) with the UI's path
-// on a generated fixture, for every year and vak. Run from PowerShell (cargo, see CLAUDE.md):
+// Step 38: compares the Rust list-screen numbers (`maatwerk-cli numbers`) with the MockApi's
+// mirror (ui/tests/numbers-parity.test.ts) on a generated fixture, for every year and vak. Run
+// from PowerShell (cargo, see CLAUDE.md):
 //
 //   node tools/numbers-parity.mjs <tiny|school> [a0|a1|a2|k0|k1|k2 [a0..k2]]
 //
 // The optional formats are the school's Cijfergemiddelden for r and SE (default a1 a1), written
-// into the fixture's instellingen.json. At a1 a1 the old screen path is compared too.
+// into the fixture's instellingen.json.
 //
-// Writes the differences (the before/after table of decision 90) to
-// target/numbers-parity/<name>.md and exits non-zero when there are any.
+// Writes the differences to target/numbers-parity/<name>[-r-se].md and exits non-zero when there
+// are any.
 
 import { execFileSync, execSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -66,10 +67,7 @@ for (const year of fs.readdirSync(data).filter((n) => /^\d{4}-\d{4}$/.test(n))) 
 
 const outFile = path.join(ROOT, 'target', 'numbers-parity', `${tag}.md`);
 const manifest = path.join(work, 'manifest.json');
-fs.writeFileSync(
-  manifest,
-  JSON.stringify({ data, out: outFile, defaultFormat: tag === name, cases }, null, 2),
-);
+fs.writeFileSync(manifest, JSON.stringify({ data, out: outFile, cases }, null, 2));
 console.log(`${cases.length} year/vak cases; differences go to ${outFile}`);
 try {
   // One command string: npx is a .cmd on Windows, which needs a shell.
