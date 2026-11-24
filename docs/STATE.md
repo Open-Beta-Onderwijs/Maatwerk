@@ -40,7 +40,7 @@ the user's manual check before the merge.
 8. 37.3 PO grading: `340fc97` quit guard (bridge `onCloseRequested`, capability
    `core:window:allow-destroy`, busy overlay "Gegevens opslaan, dan afsluiten…" (user)),
    `oneAtATime` (n1), live table footer (n3), m1/m9 tests; `2c970d2` close handler never throws.
-   **Check in the real exe:** closing the window right after a grading edit saves it, and the
+   **Check in the real exe (passed, user 2026-11-24):** closing the window right after a grading edit saves it, and the
    window still closes (the mock cannot show Tauri's close path).
 
 9. 37.4 rubric guards: `cbe8a84` m2/m3 (core), `1c4ce5c` n9, `b5676d0` n7, `2bf0f12` n8,
@@ -78,8 +78,10 @@ CI run `45136605945` (`393521f`) green on all four jobs, with two flaky tests: w
 `po-grading.spec.ts` "stored lines survive…" (it read the record before the fire-and-forget
 close save landed; now polls) and a macOS WebKit "Target crashed" during login (runner, not code).
 
-**Next action:** check CI on the flaky-test fix is green. The user: real-exe check with the 0.28.0 exe (closing right after a grading
-edit saves and closes; a failed save asks). Then merge into `main`, tag `step-37`.
+User 2026-11-24: real-exe check with the 0.28.0 exe passed (closing right after a grading edit
+saves and closes; a failed save asks).
+
+**Next action:** check CI on the flaky-test fix is green, then merge into `main`, tag `step-37`.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 
