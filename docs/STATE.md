@@ -14,10 +14,16 @@ Baseline green (cargo test). Done:
    `tests/shown_averages.rs` all six formats, 0 differences; WASM `shownAverage` + optional
    format; TS `domain/statistics.ts`.
 
-In progress: 38.1 inventory (`docs/phase-2/step-38-numbers.md`) by a subagent.
+2. 38.4 (part) `82d6ec9` core `numbers::format`: `instellingen.json` `gemiddelden.{r,se}`.
+3. 38.1 `ab1553b` inventory `docs/phase-2/step-38-numbers.md`: 20 places to change; the user
+   answered A-E (2026-11-24, in that file): crate `pct` (0 stays 0), profile delta = difference of
+   shown values, export `scoreValid`, PO Categorieën follows rule B.
 
-**Next action:** finish 38.1 (stop and ask for numbers without a crate function), then 38.3
-`maatwerk-core::numbers`.
+Open choice (tell the user at 38.4): no `minAppVersion` raise for `gemiddelden` (as the AI
+switch); an older app shows afronden 1 until updated.
+
+**Next action:** crate additions from A, B, D (+ WASM exports `isFailShown`, `pointsPct`), then
+38.3 `maatwerk-core::numbers`.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 

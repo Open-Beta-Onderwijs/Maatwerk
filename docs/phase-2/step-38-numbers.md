@@ -65,11 +65,15 @@ the format), **format only** / **layout** / **threshold** (allowed, listed so th
 
 No grade formula of its own (`validate.rs:888` only warns on weging < 0).
 
-## Open questions (stop and ask, CLAUDE.md)
+## Answers (user, 2026-11-24)
 
-See the step 38 notes in `docs/STATE.md` for the answers.
-
-- **A** percentage of a count (#18).
-- **B** profile delta (#19).
-- **D** score validity (#20).
-- **E** PO Categorieën: an unscored category (#17).
+- **A** percentage of a count (#18): a crate function `pct(part, whole)` = `round0(100 * part /
+whole)`; `whole <= 0` gives 0, as today. 1 of 8 -> 13; 2 of 8 -> 25; 17,25 of 20 -> 86.
+- **B** profile delta (#19): the difference of the shown values, `round1(shown(own) -
+shown(mean))`. Own 6,84 and peers 6,75 (both shown 6,8) -> 0,0; 7,0 vs 6,45 (shown 6,5) -> +0,5.
+- **C** RTTI GEMIDDELDE rows: stay as they are (built from crate functions).
+- **D** score validity (#20): export the crate's check (`scoreValid(raw, max)`) and use it in the
+  grid and the rapport; behaviour unchanged.
+- **E** PO Categorieën (#17): follows rule B of the rapport (an empty normal or bonus category of
+  a graded student is 0), through the rapport's crate path. Max 10, scores 8, 6, empty: 7,0 (70%)
+  becomes 4,7 (47%); goes in the before/after table.
