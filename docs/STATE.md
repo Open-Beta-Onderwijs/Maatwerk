@@ -33,6 +33,12 @@ Baseline green (cargo test). Done:
    doc; **board 64** `docs/phase-2/design/mocks/Cijfergemiddelden.dc.html` waits for the
    user's look before the Instellingen UI is built.
 
+7. 38.5 (part): `b7acd51` command `vak_numbers` (spawn_blocking, Gast no-write list), core
+   argument check, bridge, MockApi mirror `bridge/mock/mock-numbers.ts`; parity mock = Rust on
+   school at a1/a1, k0/a2, a0/k2 (0 differences each; `node tools/numbers-parity.mjs school k0
+   a2`). `3e89a5f` Leerlingen cards (shown r/SE, hover texts, `services/vak-numbers.ts` cache
+   per generation), `ecbe8e6` Groepen and Toetsen cards. e2e and visual unchanged (177/177).
+
 Open choices (tell the user at the end of the step):
 
 - No `minAppVersion` raise for `gemiddelden` (as the AI switch); an older app shows afronden 1
@@ -43,8 +49,11 @@ Open choices (tell the user at the end of the step):
 - `maatwerk-cli stats` still has its own copy of the selection logic: move it onto
   `numbers` in 38.6 (the inventory covered only `ui/src` and core).
 
-**Next action:** 38.5 Tauri command `vak_numbers` (spawn_blocking), bridge + mock; then the
-screens. The Instellingen section after the user's OK on board 64.
+**Next action:** 38.5 rest: Groepsoverzicht (Resultaten pills, footer) and Profiel (year/SE
+rows, peers, delta = `shownDifference`) on the Rust numbers / format; then the inventory's other
+"must change" rows (pct, scorePoints, PO Categorieën rule B, point sums); then drop the old JS
+card path (`studentCardNumbers`, `groupCardNumbers`, `block-numbers.ts`) and the parity test's
+old-path part. Instellingen section after the user's OK on board 64.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 
