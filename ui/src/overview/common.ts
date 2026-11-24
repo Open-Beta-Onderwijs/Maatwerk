@@ -52,7 +52,7 @@ export function ovShownPillHtml(s: Shown | null, fmt: AverageFormat): string {
   if (s === null) return '<span class="ov-pill ov-pill--none">—</span>';
   const fail = s.fails ? ' ov-pill--fail' : '';
   const border = s.fails ? GRADE_BAR.fail : gradeBarColor(s.shown);
-  return `<span class="ov-pill${fail}" title="${formatHint(fmt)}" data-border-color="${border}" data-color="${shownTextColor(s)}">${formatShown(s.shown, fmt)}</span>`;
+  return `<span class="ov-pill${fail}" title="${esc(formatHint(fmt))}" data-border-color="${border}" data-color="${shownTextColor(s)}">${formatShown(s.shown, fmt)}</span>`;
 }
 
 /** Position of a grade on a 1-10 axis, in percent (clamped). */
