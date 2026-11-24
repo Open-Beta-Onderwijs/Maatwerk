@@ -2,7 +2,7 @@
 
 // Fills the grade part of the student cards (F-07) after the cards are on
 // screen: the numbers come from Rust in one call per year and vak (step 38,
-// services/vak-numbers.ts); the cards are filled in small batches so the list
+// services/vak-numbers.ts); the cards are filled in ~8 ms slices so the list
 // stays responsive. Cards added later (idle slices) get their numbers as they
 // appear.
 
@@ -10,6 +10,7 @@ import { studentCard } from '../../domain/cards';
 import type { Exam } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
 import { vakNumbers } from '../../services/vak-numbers';
+import { yieldSlice } from '../../utils/idle';
 import { Store } from '../../store.js';
 import { perfSpan } from '../../utils/perf';
 import { studentGradesHtml } from './card-html';
@@ -27,8 +28,6 @@ interface CardStudent {
   jaarlaag?: string | number;
 }
 
-const BATCH = 40;
-
 /**
  * Card numbers already computed, per data generation (Store.generation: any change to cached
  * data starts a new one), so a search keystroke or a filter change shows them at once instead
@@ -44,8 +43,6 @@ function cached(): Map<string, string> {
   }
   return cache.html;
 }
-
-const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 export function fillStudentGrades(
   container: HTMLElement,
@@ -84,18 +81,15 @@ export function fillStudentGrades(
     const numbers = await vakNumbers(year, subject, Store.generation() as number);
     if (cancelled) return;
     const exams = Store.getExamsSync(year, subject) as Exam[];
-    for (let i = 0; i < todo.length; i += BATCH) {
-      for (const s of todo.slice(i, i + BATCH)) {
-        const value = studentGradesHtml(
-          studentCard(numbers.students[s.id], exams, numbers.formats),
-        );
-        html.set(s.id, value);
-        // The generation may have moved while the data loaded: store under the current one.
-        cached().set(keyOf(s.id), value);
-        put(s.id);
-      }
-      await nextFrame();
+    // Slices of ~8 ms (yieldSlice, step 38.6) instead of fixed batches of 40 per frame.
+    for (const s of todo) {
+      await yieldSlice();
       if (cancelled) return;
+      const value = studentGradesHtml(studentCard(numbers.students[s.id], exams, numbers.formats));
+      html.set(s.id, value);
+      // The generation may have moved while the data loaded: store under the current one.
+      cached().set(keyOf(s.id), value);
+      put(s.id);
     }
     end();
   }

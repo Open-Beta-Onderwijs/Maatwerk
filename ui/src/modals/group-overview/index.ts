@@ -73,10 +73,35 @@ function placeholder(tab: TabId, n: number): string {
   return skelRegion(`<div class="ov-stack">${skelBlock(220)}${skelBlock(220)}</div>`);
 }
 
+/** What the overview shows besides the group itself: loaded before a refresh opens it. */
+interface GroupData {
+  yearExams: Exam[];
+  records: Map<string, ScoreRecord | null>;
+  numbers: VakNumbers | null;
+}
+
+/** The scores of the year for the cells; the r and SE columns are the core's (step 38). */
+async function loadGroupData(group: Group, students: Student[], year: string): Promise<GroupData> {
+  const yearExams = Store.getExamsSync(year) as Exam[];
+  const records = new Map<string, ScoreRecord | null>();
+  // One folder read instead of one per student (review 29 m5).
+  await (Store.preloadScores(year) as Promise<void>).catch(() => {});
+  for (const s of students)
+    records.set(String(s.id), (await Store.getStudentScores(s.id, year)) as ScoreRecord);
+  const subject = group.subject ?? (Store.getActiveSubject() as string | null);
+  const numbers = subject ? await vakNumbers(year, subject, Store.generation() as number) : null;
+  return { yearExams, records, numbers };
+}
+
+/**
+ * Opens the group overview. `prefetched`: a background refresh loaded the data first, so the
+ * new window shows the tables at once instead of placeholders (review 29 m4).
+ */
 export async function openGroupStudentsModal(
   groupId: string,
   year: string,
   initialTab: TabId = 'resultaten',
+  prefetched?: GroupData,
 ): Promise<void> {
   const group = (Store.getGroupsSync(year) as (Group & { schoolsoort?: string[] })[]).find(
     (g) => g.id === groupId,
@@ -140,7 +165,12 @@ export async function openGroupStudentsModal(
     onShow: (el: HTMLElement) => {
       root = el;
       const reopen = () => openGroupStudentsModal(groupId, year, active);
-      const refresh = modalRefresher(reopen);
+      // A refresh loads first, then swaps the window (review 29 m4); on a failed load the
+      // current window stays.
+      const refresh = modalRefresher(async () => {
+        const data = await loadGroupData(group, students, year).catch(() => null);
+        if (data) await openGroupStudentsModal(groupId, year, active, data);
+      });
       onModalSync('scores', (ev: { year: string; subject: string; id: string }) => {
         if (ev.year !== year || ev.subject !== Store.getActiveSubject()) return;
         if (group.student_ids.some((id) => String(id) === ev.id)) refresh();
@@ -194,15 +224,9 @@ export async function openGroupStudentsModal(
     if (sub) sub.textContent = subtitle(d);
   });
 
-  // The scores of the year for the cells; the r and SE columns are the core's (step 38).
-  const yearExams = Store.getExamsSync(year) as Exam[];
-  const records = new Map<string, ScoreRecord | null>();
-  let numbers: VakNumbers | null = null;
+  let data: GroupData;
   try {
-    for (const s of students)
-      records.set(String(s.id), (await Store.getStudentScores(s.id, year)) as ScoreRecord);
-    const subject = group.subject ?? (Store.getActiveSubject() as string | null);
-    if (subject) numbers = await vakNumbers(year, subject, Store.generation() as number);
+    data = prefetched ?? (await loadGroupData(group, students, year));
   } catch {
     if (dialog.isOpen)
       dialog.el
@@ -211,6 +235,6 @@ export async function openGroupStudentsModal(
     return;
   }
   if (!dialog.isOpen) return;
-  model = buildGroupModel({ group, students, yearExams, records, numbers });
+  model = buildGroupModel({ group, students, ...data });
   render(active);
 }

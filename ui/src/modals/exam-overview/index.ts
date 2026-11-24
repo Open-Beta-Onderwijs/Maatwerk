@@ -44,13 +44,18 @@ function summaryHtml(data: ExamOverviewData): string {
   );
 }
 
-/** @param scoreOverride per student: the attempt that counts (the verzameloverzicht). */
+/**
+ * @param scoreOverride per student: the attempt that counts (the verzameloverzicht).
+ * @param prefetched a background refresh loaded the data first, so the new window shows it at
+ *   once instead of placeholders (review 29 m4).
+ */
 export async function openExamOverviewModal(
   examId: string,
   year: string,
   scoreOverride: Record<string, BestEntry> | null = null,
   isSummary = false,
   initialTab: TabId = 'resultaten',
+  prefetched?: ExamOverviewData,
 ): Promise<void> {
   const exam = ((await Store.getExams(year)) as Exam[]).find((e) => e.id === examId);
   if (!exam) return;
@@ -174,9 +179,12 @@ export async function openExamOverviewModal(
       // the same tab. (The verzameloverzicht is computed by the caller, so it is not refreshed.)
       if (!scoreOverride) {
         const currentTab = () => (dialog.activeTab ?? 'resultaten') as TabId;
-        const refresh = modalRefresher(() =>
-          openExamOverviewModal(examId, year, null, isSummary, currentTab()),
-        );
+        // Load first, then swap the window (review 29 m4); a failed load keeps the current one.
+        const refresh = modalRefresher(async () => {
+          const fresh = await loadExamOverview(exam, year, null, isSummary).catch(() => null);
+          if (fresh)
+            await openExamOverviewModal(examId, year, null, isSummary, currentTab(), fresh);
+        });
         onModalSync('scores', (ev: { year: string; subject: string }) => {
           if (ev.year === year && ev.subject === Store.getActiveSubject()) refresh();
         });
@@ -190,7 +198,7 @@ export async function openExamOverviewModal(
   });
 
   try {
-    data = await loadExamOverview(exam, year, scoreOverride, isSummary);
+    data = prefetched ?? (await loadExamOverview(exam, year, scoreOverride, isSummary));
   } catch {
     if (dialog.isOpen)
       dialog.el

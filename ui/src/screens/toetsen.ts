@@ -303,7 +303,16 @@ function listHtml(exams: Exam[], attemptsOf: (e: Exam) => Exam[]): string {
     .join('');
 }
 
+/** Called at the start of every list render (app.js: the kept-screen key, review 7c n2). */
+let onListRender: () => void = () => {};
+
+/** Sets what a list render reports, so a redraw from a modal also counts as rendered. */
+export function setListRenderHook(hook: () => void): void {
+  onListRender = hook;
+}
+
 export async function renderToetsenList() {
+  onListRender();
   const year: string = SEL.toetsenYear.getValue();
   const exams = filteredExams(year);
   const container = document.getElementById('exam-list')!;

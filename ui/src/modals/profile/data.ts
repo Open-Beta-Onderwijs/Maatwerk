@@ -10,7 +10,7 @@
 import type { HistoryEntry } from '../../domain/attempts';
 import type { Results } from '../../domain/grades';
 import type { Shown } from '../../domain/numbers';
-import { stats, statsOfAverages, type AverageFormat, type Stats } from '../../domain/statistics';
+import { statsOfAverages, type AverageFormat, type Stats } from '../../domain/statistics';
 import type { Exam, Observatie, ScoreRecord, Student } from '../../domain/types';
 import { isPo, rubricOf } from '../../domain/po';
 import { poObsIds, poStudentObs } from '../../domain/po-grading';
@@ -103,15 +103,16 @@ export async function loadProfile(studentId: string, year: string): Promise<Prof
   };
 }
 
-/** Mean and SD of a test's grades over the students of its school year. */
+/**
+ * Mean and SD of a test's grades over the students of its school year: the core's card numbers
+ * of that attempt (step 38; kept per year and data generation, so a school-year toggle does not
+ * read every student again, review 29 m5).
+ */
 export async function examStats(year: string, exam: Exam): Promise<Stats | null> {
-  const grades: number[] = [];
-  for (const s of Store.getStudentsSync(year) as Student[]) {
-    const rec = (await Store.getStudentScores(s.id, year)) as ScoreRecord | null;
-    const res = Store.examResults(rec, exam) as Results | null;
-    if (res && res.grade !== null) grades.push(res.grade);
-  }
-  return grades.length ? stats(grades) : null;
+  const subject = Store.getActiveSubject() as string | null;
+  if (!subject) return null;
+  const numbers = await vakNumbers(year, subject, Store.generation() as number);
+  return numbers.exams[exam.id]?.stats ?? null;
 }
 
 export interface YearComparison {

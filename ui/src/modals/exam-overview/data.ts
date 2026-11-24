@@ -113,6 +113,8 @@ export async function loadExamOverview(
   const attempts: StatAttempt[] = [];
   const groupStats = new Map<string, GroupStats>();
 
+  // One folder read instead of one per student (review 29 m5).
+  await (Store.preloadScores(year) as Promise<void>).catch(() => {});
   for (const s of students) {
     const rec = (await Store.getStudentScores(s.id, year)) as ScoreRecord | null;
     const best = scoreOverride ? (scoreOverride[s.id] ?? null) : null;

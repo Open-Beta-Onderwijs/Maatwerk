@@ -382,9 +382,16 @@ const Store = (() => {
   }
 
   // ── Instellingen (instellingen.json, Step 7b; admin) ────────────────────
+  // Always read fresh (another admin may have saved), but keep the cached object when nothing
+  // changed: dropping it counted as a data change, so the kept screens rendered once more for
+  // nothing (review 7c m4, step 38.6).
   async function loadInstellingen() {
-    invalidate('instellingen.json');
-    return await load('instellingen.json');
+    const rel = 'instellingen.json';
+    const fresh = decode(rel, await window.maatwerk.readJson(rel));
+    const old = cache[rel];
+    if (old !== undefined && JSON.stringify(old) === JSON.stringify(fresh)) return old;
+    cache[rel] = fresh;
+    return fresh;
   }
 
   async function saveInstellingen(data, baseRev) {
@@ -819,14 +826,16 @@ const Store = (() => {
     const results = [];
     for (const year of years) {
       if (!loaded) await loadYear(year, subject);
-      const exams = getExamsSync(year, subject);
+      // Exam id -> exam, once per year (step 38.6: was a `find` per score entry). Built per call:
+      // cached exam lists are edited in place (putCachedExam), so a kept map could go stale.
+      const exams = new Map(getExamsSync(year, subject).map((e) => [e.id, e]));
       const record = await getStudentScores(studentId, year, subject);
       const examIds = new Set([
         ...Object.keys(record.scores ?? {}),
         ...Object.keys(record.overrides ?? {}),
       ]);
       for (const examId of examIds) {
-        const exam = exams.find((e) => e.id === examId);
+        const exam = exams.get(examId);
         if (!exam) continue;
         results.push({
           exam: { ...exam, academic_year: year },

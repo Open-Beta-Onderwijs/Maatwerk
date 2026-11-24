@@ -34,13 +34,30 @@ export function fitTopbar(): void {
   setTooltips(nav, bar.classList.contains(ICONS));
 }
 
+let fitQueued = false;
+
+/**
+ * Fits in the next frame, once however many changes come in (step 38.6): fitting right in the
+ * mutation callback of a tab switch forced a synchronous layout of the whole new screen
+ * (~250-370 ms at 4x CPU on a cold Toetsen). In the frame the browser lays out anyway.
+ */
+function scheduleFit(): void {
+  if (fitQueued) return;
+  fitQueued = true;
+  requestAnimationFrame(() => {
+    fitQueued = false;
+    fitTopbar();
+  });
+}
+
 /** Refits on every size change of the bar and when tabs are shown, hidden or activated. */
 export function watchTopbar(): void {
   const bar = document.getElementById('topbar');
   const nav = document.getElementById('main-nav');
   if (!bar || !nav) return;
+  // A ResizeObserver runs after layout: fitting there costs no extra layout.
   new ResizeObserver(() => fitTopbar()).observe(bar);
-  new MutationObserver(() => fitTopbar()).observe(nav, {
+  new MutationObserver(scheduleFit).observe(nav, {
     subtree: true,
     attributes: true,
     attributeFilter: ['class'],
@@ -51,7 +68,7 @@ export function watchTopbar(): void {
     const now = bar.classList.contains('hidden');
     if (now !== hidden) {
       hidden = now;
-      fitTopbar();
+      scheduleFit();
     }
   }).observe(bar, { attributes: true, attributeFilter: ['class'] });
   void document.fonts?.ready.then(fitTopbar);

@@ -16,7 +16,7 @@ import { watchTopbar } from './shell/topbar-fit';
 import { renderChooseFolder } from './screens/choose-folder';
 import { renderLeerlingen, renderStudentList, leerlingenState } from './screens/leerlingen';
 import { renderGroepen, renderGroepenForYear } from './screens/groepen';
-import { renderToetsen, renderToetsenList } from './screens/toetsen';
+import { renderToetsen, renderToetsenList, setListRenderHook } from './screens/toetsen';
 import { renderObservaties } from './screens/observaties';
 import { renderRubrics } from './screens/rubrics';
 import { renderOpdrachten } from './screens/opdrachten';
@@ -148,6 +148,12 @@ function viewKey() {
     Store.getActiveSubject(),
   ]);
 }
+
+// Every Toetsen list render counts as rendered for the current view, also a redraw after the
+// score modal closes (review 7c n2: the next visit rendered once more for nothing).
+setListRenderHook(() => {
+  _renderedAs.toetsen = viewKey();
+});
 
 function needsRender(name) {
   return !KEPT_SCREENS.has(name) || _renderedAs[name] !== viewKey();
