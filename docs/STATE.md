@@ -74,7 +74,11 @@ Cijfergemiddelden setting.
 
 Test set for the shown averages made ahead of step 38 (user's request): `crates/maatwerk-grades/tests/data/shown_averages.json` from `tools/fixtures/shown-averages.mjs`; `tests/shown_averages.rs` pins `a1` (today's rule) on all 7221 cases and 200 groups, green.
 
-**Next action:** check CI on `876c137` is green. The user: real-exe check with the 0.28.0 exe (closing right after a grading
+CI run `45136605945` (`393521f`) green on all four jobs, with two flaky tests: webkit
+`po-grading.spec.ts` "stored lines survive…" (it read the record before the fire-and-forget
+close save landed; now polls) and a macOS WebKit "Target crashed" during login (runner, not code).
+
+**Next action:** check CI on the flaky-test fix is green. The user: real-exe check with the 0.28.0 exe (closing right after a grading
 edit saves and closes; a failed save asks). Then merge into `main`, tag `step-37`.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)

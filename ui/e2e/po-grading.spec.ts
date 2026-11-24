@@ -533,8 +533,11 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     await d.locator('#po-gr-overall').fill('Alleen het commentaar.');
     await d.locator('#po-gr-done').click();
     await expect(d).toHaveCount(0);
+    // Closing saves without waiting (onClose), so the write may land after the dialog is gone.
+    await expect
+      .poll(async () => (await record(page, '900001')).po?.[PO_ID]?.comment)
+      .toBe('Alleen het commentaar.');
     const rec = await record(page, '900001');
-    expect(rec.po?.[PO_ID]?.comment).toBe('Alleen het commentaar.');
     expect(rec.po?.[PO_ID]?.ownLines).toEqual(odd);
   });
 
