@@ -29,6 +29,10 @@ Baseline green (cargo test). Done:
    (1 case) and school (8 year/vak cases) at the default format. POs are not in the fixtures:
    Rust unit tests cover them.
 
+6. 38.4 (part) `f7ee204`: core guard (only the admin changes `gemiddelden`, test), data format
+   doc; **board 64** `docs/phase-2/design/mocks/Cijfergemiddelden.dc.html` waits for the
+   user's look before the Instellingen UI is built.
+
 Open choices (tell the user at the end of the step):
 
 - No `minAppVersion` raise for `gemiddelden` (as the AI switch); an older app shows afronden 1
@@ -39,9 +43,8 @@ Open choices (tell the user at the end of the step):
 - `maatwerk-cli stats` still has its own copy of the selection logic: move it onto
   `numbers` in 38.6 (the inventory covered only `ui/src` and core).
 
-**Next action:** 38.4 rest (core write guard: only the admin changes `gemiddelden`; the
-Beheer › Instellingen section, mock board first: ask the user), then 38.5 (Tauri command under
-`spawn_blocking`, screens use it, the inventory's "must change" list).
+**Next action:** 38.5 Tauri command `vak_numbers` (spawn_blocking), bridge + mock; then the
+screens. The Instellingen section after the user's OK on board 64.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 
