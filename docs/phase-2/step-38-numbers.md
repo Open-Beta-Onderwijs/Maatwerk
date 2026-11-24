@@ -77,3 +77,16 @@ shown(mean))`. Own 6,84 and peers 6,75 (both shown 6,8) -> 0,0; 7,0 vs 6,45 (sho
 - **E** PO Categorieën (#17): follows rule B of the rapport (an empty normal or bonus category of
   a graded student is 0), through the rapport's crate path. Max 10, scores 8, 6, empty: 7,0 (70%)
   becomes 4,7 (47%); goes in the before/after table.
+
+## Before/after (decision 90: Rust wins; shown to the user at the end of the step)
+
+Parity (`node tools/numbers-parity.mjs`): Rust = the old screen path on `tiny` and `school` at
+the default format, Rust = the MockApi mirror at a1/a1, k0/a2, a0/k2, k1/k0: 0 differences.
+Visible changes come from the user's answers, not from the move to Rust:
+
+| Where                                                     | Before                                          | After                                   | Cause    |
+| --------------------------------------------------------- | ----------------------------------------------- | --------------------------------------- | -------- |
+| Profiel › Cijferverloop, year row 2025-2026 (900001, e2e) | `5,4 vs 5,1 +0,2`, dot at the unrounded average | `5,4 vs 5,1 +0,3`, dot at the shown 5,4 | answer B |
+
+Visual baselines `modal-profiel-cijferverloop` (light, dark, geel; 63-71 px) wait for the user's
+OK.
