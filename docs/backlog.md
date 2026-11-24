@@ -2,6 +2,24 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 38 (review `docs/reviews/step-38.md`)
+
+- **m2 rest (step 41, robustness):** Rust and the MockApi mirror differ on input the fixtures
+  lack: `decimalen: 2.0` (Rust: afronden 1, UI card: 2), the settings guard (missing vs `null`,
+  key order, a write without a login in the mock), the vak limit (64 bytes vs 64 characters).
+  Align and add each as a case to the numbers golden (`tools/numbers-golden.mjs`).
+- **m4 (step 43, measure first):** a Profiel makes one `vak_numbers` call per school year, and
+  each upper-school year loads every year again. Measure `modal:profiel` at 4x; if over budget,
+  one core call for several years from a single load.
+- **m5 (step 43):** the Groepsoverzicht takes its cells from the active vak and its r/SE from
+  `group.subject`; use one subject for both.
+- n1 (41): `numbers/load.rs` module doc claims one bad file never fails the call. n2 (44):
+  `Store.studentYearAverage` and `getAllExamsSync` have no callers. n3 (43): the `vak-numbers.ts`
+  cache resets on an older generation. n4 (43): the Toetsen cards compute stats and histogram
+  again although Rust sends them. n5 (43): `vak_numbers` serialises twice (typed result would
+  also give specta the shape). n7 (42): the numbers golden could add r at a2/k2 and SE at a0/k1
+  (the crate test covers all six already).
+
 ## From Step 37 (review `docs/reviews/step-37.md`)
 
 - **m2 (step 41, robustness):** `loadObsUsage` (`ui/src/store.js`) throws on a read error in any

@@ -176,3 +176,16 @@ without `esc`. Its input is the validated format, so it is safe today. Escape it
 
 **n7.** The parity runs in `step-38-numbers.md` cover r at a0/a1/k0/k1 and SE at a1/a2/k2/k0. r is never run at a2/k2 and SE never at a0/k1. The crate test covers all six, so
 the risk is small. A run at a2/k1 closes the gap.
+
+## Resolution (2026-11-24)
+
+- M1 fixed `e037d67` (cache only while the generation is unchanged; Vitest).
+- M2 fixed `b92f58b` (committed golden `crates/maatwerk-core/tests/fixtures/numbers`, checked by
+  `numbers_golden.rs` and `ui/tests/numbers-golden.test.ts`; both fail on a mutated value).
+- m1 fixed `ed56e9e` (`instellingen.json` is an external-change type that always moves the
+  generation). The other-year SE limit stays as before step 38 (the watcher polls the active
+  year only).
+- m2 numeric `stamklas` fixed `5f114b7`; the rest in the backlog "From Step 38".
+- m3: as in `1de50a0` and `876c137`, the CI run writes the dropped baselines; they are looked at
+  and committed from its artifacts before the merge (STATE "Next action").
+- m4, m5, n1-n5, n7: backlog "From Step 38". n6 fixed `ed56e9e`.
