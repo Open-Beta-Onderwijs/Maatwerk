@@ -6,7 +6,6 @@
 // port: T26 (non-numeric score), T27 (`$` guard) and B9 (wiskunde advice file).
 // The numbers come from the core (crates/maatwerk-grades, decisions 4, 5, 6, 15, 16, 17).
 
-import { round0 } from './core';
 import { formatCompact, formatGrade, formatNumber } from './format';
 import { calcResults, qKind, type RttiCategory } from './grades';
 import {
@@ -18,6 +17,8 @@ import {
   rapportTotals,
   studentGroup,
   type ClassQuestion,
+  pct,
+  scorePoints,
 } from './statistics';
 import { fullName, jaarlaagFromStamklas } from './ids';
 import {
@@ -91,10 +92,9 @@ export function assembleVragen(
 ): Vraag[] {
   return exam.questions.map((q, i) => {
     const raw = questionScores?.[q.id];
-    const num = isNotEntered(raw) ? NaN : Number(raw);
     // N, empty and invalid (text, negative, over the maximum) earn nothing: shown as "N / max"
-    // with a grey dot (T26, decisions 4 and 5).
-    const score = num >= 0 && num <= q.max_points ? num : null;
+    // with a grey dot (T26, decisions 4 and 5). The check is the grade rules' (step 38 answer D).
+    const score = isNotEntered(raw) ? null : scorePoints(raw, q.max_points);
     const { classAvg, classPct } = classResults[i]!;
 
     const label = q.section ? `${q.section}${q.number}` : String(q.number);
@@ -218,8 +218,8 @@ export function buildLeeradviesRows(
     const { scored, max } = totals[cat];
     if (max === 0) continue;
 
-    const pct = round0((scored / max) * 100);
-    const score_str = `${fmtNum(scored)} / ${formatNumber(max)} (${pct}%)`;
+    const share = pct(scored, max);
+    const score_str = `${fmtNum(scored)} / ${formatNumber(max)} (${share}%)`;
 
     let advies = '—';
     if (adviesData) {
@@ -390,7 +390,7 @@ export function buildRapportData({
       grade_only: !e.hasScores,
       ranking: e.grade === null ? null : ranking(e.grade, allGrades),
       rtti_points: totals,
-      score_pct: e.normalMax > 0 ? round0((e.scored / e.normalMax) * 100) : null,
+      score_pct: e.normalMax > 0 ? pct(e.scored, e.normalMax) : null,
       grade_bin: e.grade === null ? null : rapportBin(e.grade),
       vragen: e.hasScores ? vragen : [],
       observaties: e.observaties,

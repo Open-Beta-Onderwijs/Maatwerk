@@ -88,5 +88,11 @@ Visible changes come from the user's answers, not from the move to Rust:
 | --------------------------------------------------------- | ----------------------------------------------- | --------------------------------------- | -------- |
 | Profiel › Cijferverloop, year row 2025-2026 (900001, e2e) | `5,4 vs 5,1 +0,2`, dot at the unrounded average | `5,4 vs 5,1 +0,3`, dot at the shown 5,4 | answer B |
 
-Visual baselines `modal-profiel-cijferverloop` (light, dark, geel; 63-71 px) wait for the user's
-OK.
+| PO overzicht › Categorieën (e2e PO "Onderzoek valbeweging", 4 placed, 2 with empty categories) | Uitvoering 7,0 / 9 (78%), Extra onderzoek 2,0 / 4 (50%); the rows did not add up to TOTAAL 9,5 | Uitvoering 3,5 / 9 (39%, red), Extra onderzoek 1,0 / 4 (25%, red); 5,0 + 3,5 + 1,0 = 9,5 | answer E (rule B) |
+| Question editor footer, RTTI % (`questionSummary`) | % of all normal points | % of the RTTI points (`rapportTotals.share`); differs only while a normal question has no RTTI category | crate |
+| PO maxima (`checkRubric.totals`) | sum of `max` | the rubric rules' whole maxima: an invalid max counts 0 | crate |
+
+Visual baselines: `modal-profiel-cijferverloop` (light, dark, geel) updated after the user's OK
+(2026-11-24). `modal-po-overzicht-categorieen` (light, dark, geel) **waits for the user's look**
+(run `npx playwright test --project=visual -g modal-po-overzicht-categorieen` in `ui/` to see
+the diff).

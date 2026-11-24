@@ -5,7 +5,7 @@
 // `Results.grade` has them: rounded to one decimal.
 
 import type { HistoryEntry } from './attempts';
-import { coreCall, round0 } from './core';
+import { coreCall } from './core';
 import { recordFor, type Points, type RttiCategory, type RttiPoints } from './grades';
 import { forGrading } from './po';
 import type { Exam, Group, Question, QuestionScores, ScoreRecord } from './types';
@@ -183,7 +183,7 @@ export function studentGroup(studentId: string, exam: Exam, groups: Group[]): st
 export const rttiPercents = (points: RttiPoints, cats: RttiCategory[]): (number | null)[] =>
   cats.map((cat) => {
     const { scored, max } = points[cat];
-    return max > 0 ? round0((100 * scored) / max) : null;
+    return max > 0 ? pct(scored, max) : null;
   });
 
 export type TrendLevel = 'strongUp' | 'slightUp' | 'level' | 'slightDown' | 'strongDown';

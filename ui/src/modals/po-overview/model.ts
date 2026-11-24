@@ -9,7 +9,7 @@
 import { poLinesSum, type Results } from '../../domain/grades';
 import { compareStudents, groupName } from '../../domain/po';
 import { gradingOf, ownLinesOf, type GroupGrading } from '../../domain/po-grading';
-import type { Rubric, RubricCategory } from '../../domain/rubric';
+import { checkRubric, type Rubric, type RubricCategory } from '../../domain/rubric';
 import type { Exam, Observatie, PoLine, ScoreRecord, Student } from '../../domain/types';
 import { resitInfo } from '../../overview/resit-dot';
 
@@ -86,8 +86,8 @@ const klasOrder = (a: string, b: string) =>
 export function buildPoModel(input: PoModelInput): PoModel {
   const { exam, rubric, students, records, summary } = input;
   const categories = rubric?.categories ?? [];
-  const sum = (soort: string) =>
-    categories.filter((c) => c.soort === soort).reduce((s, c) => s + (c.max ?? 0), 0);
+  // The maxima are the grade rules' (rubric totals, step 38: no sums in the UI).
+  const totals = rubric ? checkRubric(rubric).totals : { normal: 0, bonus: 0 };
   const attempts = [exam, ...(summary?.resits ?? [])];
   // Per attempt, the projectgroep of each student. A resit's groups are named after the attempt,
   // so "Valtoren" of the original and of the herkansing stay apart.
@@ -150,8 +150,8 @@ export function buildPoModel(input: PoModelInput): PoModel {
     isSummary: !!summary,
     rubric,
     categories,
-    max: sum('normaal'),
-    bonusMax: sum('bonus'),
+    max: totals.normal,
+    bonusMax: totals.bonus,
     rows,
     placed,
     groups,
@@ -162,7 +162,7 @@ export function buildPoModel(input: PoModelInput): PoModel {
 /** The group's and the student's lines together, and their sum. */
 export function linesOfRow(r: PoRow): { lines: PoLine[]; sum: number } {
   const lines = [...r.groupLines, ...r.ownLines].filter((l) => l.value !== null);
-  return { lines, sum: poLinesSum(r.groupLines) + poLinesSum(r.ownLines) };
+  return { lines, sum: poLinesSum([...r.groupLines, ...r.ownLines]) };
 }
 
 /** Grades of the rows that have one. */

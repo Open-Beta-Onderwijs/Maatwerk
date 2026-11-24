@@ -16,7 +16,7 @@ import {
 } from '../domain/grade-colors';
 import type { Shown } from '../domain/numbers';
 import { testBadgeClass, testKind, type TestKind } from '../domain/test-type';
-import type { AverageFormat, Stats } from '../domain/statistics';
+import { pct, type AverageFormat, type Stats } from '../domain/statistics';
 import type { Exam } from '../domain/types';
 import { esc } from '../utils/html';
 
@@ -76,7 +76,7 @@ export function studentCount(n: number): string {
 
 /** A whole percentage of `n` out of `of` (0 when `of` is 0). */
 export function pctOf(n: number, of: number): number {
-  return of > 0 ? Math.round((100 * n) / of) : 0;
+  return pct(n, of);
 }
 
 /** A tab or card whose data could not be read (review 29 m3). */

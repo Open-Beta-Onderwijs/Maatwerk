@@ -7,8 +7,7 @@
 
 import { qKind } from '../../domain/grades';
 import { RTTI_HEX } from '../../domain/rtti-names';
-import { round0 } from '../../domain/core';
-import { questionStats, stats, type StatAttempt } from '../../domain/statistics';
+import { pct, questionStats, stats, type StatAttempt } from '../../domain/statistics';
 import { testKind } from '../../domain/test-type';
 import type { Exam, Student } from '../../domain/types';
 import { emptyHtml, examBadgeHtml, meanLineHtml, studentCount } from '../../overview/common';
@@ -96,7 +95,7 @@ function questionRows(exam: Exam, attempts: StatAttempt[]) {
     return {
       q,
       label: q.section ? `${q.section}${q.number}` : String(q.number ?? ''),
-      pct: p && p.max > 0 ? round0((100 * p.scored) / p.max) : null,
+      pct: p && p.max > 0 ? pct(p.scored, p.max) : null,
     };
   });
 }
