@@ -1,9 +1,23 @@
 # State
 
-Last updated: 2026-11-24 (step 37 merged, version 0.28.0) Branch: `main`
+Last updated: 2026-11-24 (step 38 started) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
 Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2)
+
+Baseline green (cargo test). Done:
+
+1. 38.2 `97a546d` crate: `AverageFormat` (`{methode, decimalen}`, missing = afronden 1),
+   `shown_average`, `is_fail_shown`; `mean_of_averages` / `stats_of_averages(…, fmt)`;
+   `tests/shown_averages.rs` all six formats, 0 differences; WASM `shownAverage` + optional
+   format; TS `domain/statistics.ts`.
+
+In progress: 38.1 inventory (`docs/phase-2/step-38-numbers.md`) by a subagent.
+
+**Next action:** finish 38.1 (stop and ask for numbers without a crate function), then 38.3
+`maatwerk-core::numbers`.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 
