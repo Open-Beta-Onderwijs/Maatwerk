@@ -59,9 +59,10 @@ pub fn is_upper(jaarlaag: Option<&Value>) -> bool {
         .is_some_and(|n| (4.0..=6.0).contains(&n))
 }
 
-/// The leading digits of a stamklas (`jaarlaagFromStamklas`): "4h2" is "4".
+/// The leading digits of a stamklas (`jaarlaagFromStamklas`): "4h2" is "4"; a number counts as
+/// its text, as the UI's `String(stamklas)`.
 fn jaarlaag_from_stamklas(stamklas: Option<&Value>) -> Value {
-    let text = stamklas.and_then(Value::as_str).unwrap_or("");
+    let text = stamklas.and_then(id_text).unwrap_or_default();
     Value::String(text.chars().take_while(char::is_ascii_digit).collect())
 }
 
@@ -185,6 +186,9 @@ mod tests {
         assert!(!is_upper(None));
         assert_eq!(jaarlaag_from_stamklas(Some(&json!("4h2"))), json!("4"));
         assert_eq!(jaarlaag_from_stamklas(Some(&json!("h4"))), json!(""));
+        // `String(stamklas)` of the UI: a number counts as its text (review 38 m2).
+        assert_eq!(jaarlaag_from_stamklas(Some(&json!(4))), json!("4"));
+        assert_eq!(jaarlaag_from_stamklas(Some(&json!(null))), json!(""));
     }
 
     #[test]
