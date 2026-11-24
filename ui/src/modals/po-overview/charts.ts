@@ -22,14 +22,7 @@ import {
   type HistStep,
 } from '../../overview/histogram';
 import { esc } from '../../utils/html';
-import {
-  gradesOf,
-  levelCounts,
-  levelText,
-  obsSections,
-  type PoModel,
-  type PoRow,
-} from './model';
+import { gradesOf, levelCounts, levelText, obsSections, type PoModel, type PoRow } from './model';
 
 const NO_GRADES = 'Nog geen cijfers: beoordeel eerst een projectgroep.';
 
