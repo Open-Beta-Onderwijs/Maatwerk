@@ -25,9 +25,11 @@ pub use grade::{Results, RttiPct, calc_grade, calc_results, calc_results_with, e
 pub use groups::student_group;
 pub use model::{
     Exam, Group, Override, PoGrading, PoLine, Question, QuestionKind, ScoreRecord, ScoreValue,
+    score_points,
 };
 pub use round::{
-    AverageFormat, Method, clean, is_fail, is_fail_shown, round0, round1, shown_average,
+    AverageFormat, Method, clean, is_fail, is_fail_shown, pct, round0, round1, shown_average,
+    shown_difference,
 };
 pub use stats::{BoxStats, Stats, box_stats, grade_group, histogram, stats};
 pub use trend::{Trend, TrendLevel, trend};

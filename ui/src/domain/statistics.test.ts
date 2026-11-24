@@ -5,8 +5,12 @@ import type { HistoryEntry } from './attempts';
 import {
   pooledRtti,
   rttiGemHistory,
+  isFailShown,
+  pct,
   rttiPercents,
+  scorePoints,
   shownAverage,
+  shownDifference,
   statsOfAverages,
   type AverageFormat,
 } from './statistics';
@@ -79,5 +83,32 @@ describe('shown averages (Cijfergemiddelden, decisions 91-93)', () => {
     expect(statsOfAverages([5.9, 7.2], k0)).toMatchObject({ mean: 6, fails: 50 });
     expect(statsOfAverages([5.45, 7], a2)).toMatchObject({ fails: 50 });
     expect(statsOfAverages([5.45, 7])).toMatchObject({ fails: 0 });
+  });
+});
+
+describe('the step 38 answers A, B, D through WASM', () => {
+  it('pct: half-up, 0 for nothing', () => {
+    expect([pct(1, 8), pct(2, 8), pct(17.25, 20), pct(5, 0)]).toEqual([13, 25, 86, 0]);
+  });
+  it('isFailShown: the shown value against 5,5', () => {
+    expect([isFailShown(5.45), isFailShown(5.5)]).toEqual([true, false]);
+  });
+  it('shownDifference: agrees with the numbers on screen', () => {
+    expect(shownDifference(6.84, undefined, 6.75)).toBe(0);
+    expect(shownDifference(7, undefined, 6.45)).toBe(0.5);
+    expect(shownDifference(6.9, { methode: 'afkappen', decimalen: 0 }, 6.3)).toBe(-0.3);
+  });
+  it('scorePoints: N, text, negative and over the maximum earn nothing', () => {
+    expect([7.5, '7.5', 9, -1, 'N', null, '', 'abc', 0].map((v) => scorePoints(v, 8))).toEqual([
+      7.5,
+      7.5,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      0,
+    ]);
   });
 });

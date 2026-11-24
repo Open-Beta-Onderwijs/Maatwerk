@@ -139,6 +139,24 @@ fn cut_to(x: f64, decimals: u32) -> f64 {
     units as f64 / scale as f64
 }
 
+/// `part` of `whole` as a whole percent (step 38 answer A): the observatie counts, a share of
+/// points. 0 when `whole` is 0 or less, as the screens showed. 1 of 8 is 12,5 and gives 13.
+pub fn pct(part: f64, whole: f64) -> f64 {
+    if whole > 0.0 {
+        round0(100.0 * part / whole)
+    } else {
+        0.0
+    }
+}
+
+/// A student's number against an average, as the profile shows it (step 38 answer B): the
+/// difference of the shown values, so it agrees with the two numbers on screen. `own` is shown
+/// under `own_fmt` (a test grade: the default, it is already rounded), `mean` at afronden 1.
+/// Own 6,84 and mean 6,75 both show 6,8: the difference is 0,0.
+pub fn shown_difference(own: f64, own_fmt: AverageFormat, mean: f64) -> f64 {
+    round1(shown_average(own, own_fmt) - round1(mean))
+}
+
 /// The pass mark, compared with the rounded grade.
 pub const PASS: f64 = 5.5;
 
@@ -271,6 +289,26 @@ mod tests {
         assert!(is_fail_shown(5.0));
         assert!(!is_fail_shown(5.5));
         assert!(!is_fail_shown(5.5 - 1e-15));
+    }
+
+    #[test]
+    fn percentages_of_a_count() {
+        assert_eq!(pct(1.0, 8.0), 13.0);
+        assert_eq!(pct(2.0, 8.0), 25.0);
+        assert_eq!(pct(1.0, 3.0), 33.0);
+        assert_eq!(pct(17.25, 20.0), 86.0);
+        assert_eq!(pct(5.0, 0.0), 0.0);
+        assert_eq!(pct(0.0, 4.0), 0.0);
+    }
+
+    #[test]
+    fn the_difference_of_the_shown_values() {
+        let d = AverageFormat::default();
+        assert_eq!(shown_difference(6.84, d, 6.75), 0.0);
+        assert_eq!(shown_difference(7.0, d, 6.45), 0.5);
+        assert_eq!(shown_difference(5.0, d, 6.25), -1.3);
+        let k0 = fmt(Method::Afkappen, 0);
+        assert_eq!(shown_difference(6.9, k0, 6.3), -0.3);
     }
 
     #[test]

@@ -145,6 +145,22 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             let (values, fmt): (Vec<f64>, Option<g::AverageFormat>) = parse(pad(args, 2))?;
             json(g::stats_of_averages(&values, fmt.unwrap_or_default()))
         }
+        "isFailShown" => {
+            let (x,): (f64,) = parse(args)?;
+            json(g::is_fail_shown(x))
+        }
+        "pct" => {
+            let (part, whole): (f64, f64) = parse(args)?;
+            json(g::pct(part, whole))
+        }
+        "shownDifference" => {
+            let (own, fmt, mean): (f64, Option<g::AverageFormat>, f64) = parse(args)?;
+            json(g::shown_difference(own, fmt.unwrap_or_default(), mean))
+        }
+        "scorePoints" => {
+            let (value, max): (Value, f64) = parse(pad(args, 2))?;
+            json(g::score_points(&value, max))
+        }
         "shownAverage" => {
             let (x, fmt): (f64, Option<g::AverageFormat>) = parse(pad(args, 2))?;
             json(g::shown_average(x, fmt.unwrap_or_default()))
@@ -408,6 +424,11 @@ mod tests {
             ),
             ("meanOfAverages", json!([[5.0], null])),
             ("shownAverage", json!([5.45])),
+            ("isFailShown", json!([5.45])),
+            ("pct", json!([1, 0])),
+            ("shownDifference", json!([6.84, null, 6.75])),
+            ("scorePoints", json!([null, 8])),
+            ("scorePoints", json!([[1], 8])),
             ("histogram", json!([[5.0], 0.5])),
             ("gradeGroup", json!([5.0])),
             ("boxStats", json!([[5.0]])),

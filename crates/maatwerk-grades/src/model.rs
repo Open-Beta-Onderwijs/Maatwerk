@@ -241,6 +241,13 @@ impl ScoreValue {
     }
 }
 
+/// The points of a stored or typed score for a question of `max` points, `None` for `N`, empty,
+/// text, negative or over the maximum (decisions 4, 5; step 38 answer D: the grid and the
+/// rapport use this instead of their own range check).
+pub fn score_points(value: &Value, max: f64) -> Option<f64> {
+    ScoreValue::of(value).valid_points(max)
+}
+
 /// `question id -> entry`, as stored.
 pub type QuestionScores = HashMap<String, Value>;
 
@@ -342,6 +349,19 @@ mod tests {
         assert_eq!(ScoreValue::Points(12.0).valid_points(10.0), None);
         assert_eq!(ScoreValue::Points(-1.0).valid_points(10.0), None);
         assert_eq!(ScoreValue::NotMade.valid_points(10.0), None);
+    }
+
+    #[test]
+    fn score_points_of_stored_values() {
+        assert_eq!(score_points(&json!(7.5), 8.0), Some(7.5));
+        assert_eq!(score_points(&json!("7.5"), 8.0), Some(7.5));
+        assert_eq!(score_points(&json!(9), 8.0), None);
+        assert_eq!(score_points(&json!(-1), 8.0), None);
+        assert_eq!(score_points(&json!("N"), 8.0), None);
+        assert_eq!(score_points(&json!(null), 8.0), None);
+        assert_eq!(score_points(&json!(""), 8.0), None);
+        assert_eq!(score_points(&json!("abc"), 8.0), None);
+        assert_eq!(score_points(&json!(0), 8.0), Some(0.0));
     }
 
     #[test]

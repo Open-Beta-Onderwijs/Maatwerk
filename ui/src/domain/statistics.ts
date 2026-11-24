@@ -34,6 +34,29 @@ export interface AverageFormat {
 export const shownAverage = (x: number, fmt?: AverageFormat): number =>
   coreCall('shownAverage', x, fmt ?? null);
 
+/** A shown student average below 5,5 (decision 92; afronden 2 shows 5,45 and that fails). */
+export const isFailShown = (shown: number): boolean => coreCall('isFailShown', shown);
+
+/** `part` of `whole` as a whole percent; 0 when `whole` is 0 (step 38 answer A). */
+export const pct = (part: number, whole: number): number => coreCall('pct', part, whole);
+
+/**
+ * A student's number against an average (profile, step 38 answer B): the difference of the
+ * shown values. `own` under `fmt` (a test grade: omit it), `mean` at afronden 1.
+ */
+export const shownDifference = (
+  own: number,
+  fmt: AverageFormat | undefined,
+  mean: number,
+): number => coreCall('shownDifference', own, fmt ?? null, mean);
+
+/**
+ * The points of a stored or typed score for a question of `max` points; null for N, empty, text,
+ * negative or over the maximum (step 38 answer D).
+ */
+export const scorePoints = (value: unknown, max: number): number | null =>
+  coreCall('scorePoints', value ?? null, max);
+
 /** Mean, SD and % onvoldoende of students' averages, as shown under `fmt` (decisions 21, 92). */
 export const statsOfAverages = (averages: number[], fmt?: AverageFormat): Stats | null =>
   coreCall('statsOfAverages', averages, fmt ?? null);
