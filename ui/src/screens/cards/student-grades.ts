@@ -78,7 +78,8 @@ export function fillStudentGrades(
     const end = perfSpan('leerlingen:grades');
     // The exams name the bars; the numbers are the core's.
     await (Store.loadYear(year, subject) as Promise<void>).catch(() => {});
-    const numbers = await vakNumbers(year, subject, Store.generation() as number);
+    const generation = Store.generation() as number;
+    const numbers = await vakNumbers(year, subject, generation);
     if (cancelled) return;
     const exams = Store.getExamsSync(year, subject) as Exam[];
     // Slices of ~8 ms (yieldSlice, step 38.6) instead of fixed batches of 40 per frame.
@@ -87,8 +88,9 @@ export function fillStudentGrades(
       if (cancelled) return;
       const value = studentGradesHtml(studentCard(numbers.students[s.id], exams, numbers.formats));
       html.set(s.id, value);
-      // The generation may have moved while the data loaded: store under the current one.
-      cached().set(keyOf(s.id), value);
+      // Numbers of an older generation are shown until the refresh, never cached as current
+      // ones: the next render asks Rust again (review 38 M1).
+      if (Store.generation() === generation) cached().set(keyOf(s.id), value);
       put(s.id);
     }
     end();
