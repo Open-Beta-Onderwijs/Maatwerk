@@ -23,7 +23,7 @@ describe('MockApi numbers = the committed Rust golden', () => {
   it('has cases', () => expect(cases.length).toBeGreaterThanOrEqual(2));
 
   it.each(cases)('format %s', (name) => {
-    const [r, se] = name.split('-');
+    const [r, se] = name.split('-') as [string, string];
     const dir = path.join(GOLDEN, 'expected', name);
     const files = fs.readdirSync(dir).map((f) => ({
       year: f.slice(0, 9),

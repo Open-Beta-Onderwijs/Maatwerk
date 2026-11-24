@@ -19,6 +19,10 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
   again although Rust sends them. n5 (43): `vak_numbers` serialises twice (typed result would
   also give specta the shape). n7 (42): the numbers golden could add r at a2/k2 and SE at a0/k1
   (the crate test covers all six already).
+- **WebKit on Windows (step 42):** three projectgroepen drag-and-drop tests fail locally under
+  `--project webkit` on Windows, on `main` (`66c6909`) too (`po-grading.spec.ts:431`,
+  `po.spec.ts:261`, `po.spec.ts:318`); CI runs WebKit on macOS/Linux, where they pass.
+  `po-grading.spec.ts:188` (footer "opgeslagen") failed once under load, then 3/3 alone.
 
 ## From Step 37 (review `docs/reviews/step-37.md`)
 
