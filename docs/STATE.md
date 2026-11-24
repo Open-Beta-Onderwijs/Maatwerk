@@ -19,11 +19,29 @@ Baseline green (cargo test). Done:
    answered A-E (2026-11-24, in that file): crate `pct` (0 stays 0), profile delta = difference of
    shown values, export `scoreValid`, PO Categorieën follows rule B.
 
-Open choice (tell the user at 38.4): no `minAppVersion` raise for `gemiddelden` (as the AI
-switch); an older app shows afronden 1 until updated.
+4. `1d85745` crate `pct`, `shown_difference`, `score_points` (answers A, B, D); WASM + TS
+   `isFailShown`, `pct`, `shownDifference`, `scorePoints`. No screen uses them yet.
+5. 38.3 `maatwerk-core::numbers` (`load`, `compute`, `vak_numbers`; commits up to `a9e0632`):
+   per student results, bars, shown r/SE (+ fails), trend; per attempt the card numbers, the
+   Verzamelkaart per test with resits; per group the stats under the format. CLI
+   `maatwerk-cli numbers`. Parity `node tools/numbers-parity.mjs <tiny|school>` (PowerShell;
+   `ui/tests/numbers-parity.test.ts`, skipped without the script): **0 differences** on tiny
+   (1 case) and school (8 year/vak cases) at the default format. POs are not in the fixtures:
+   Rust unit tests cover them.
 
-**Next action:** crate additions from A, B, D (+ WASM exports `isFailShown`, `pointsPct`), then
-38.3 `maatwerk-core::numbers`.
+Open choices (tell the user at the end of the step):
+
+- No `minAppVersion` raise for `gemiddelden` (as the AI switch); an older app shows afronden 1
+  until updated.
+- The trend arrow keeps decision 12 at afronden 1 (crate `trend`), whatever the r format.
+- Card bar order: volgnummer, then id by byte order (the UI used `localeCompare`; ids are
+  generated, so no visible change expected).
+- `maatwerk-cli stats` still has its own copy of the selection logic: move it onto
+  `numbers` in 38.6 (the inventory covered only `ui/src` and core).
+
+**Next action:** 38.4 rest (core write guard: only the admin changes `gemiddelden`; the
+Beheer › Instellingen section, mock board first: ask the user), then 38.5 (Tauri command under
+`spawn_blocking`, screens use it, the inventory's "must change" list).
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 
