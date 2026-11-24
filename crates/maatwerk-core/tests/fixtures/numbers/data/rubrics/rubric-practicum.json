@@ -1,0 +1,84 @@
+{
+  "id": "rubric-practicum",
+  "naam": "Practicum",
+  "subject": "nat",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "jaarlagen": [
+    "3"
+  ],
+  "obs_ids": [],
+  "categories": [
+    {
+      "id": "cat-voorbereiding",
+      "naam": "Voorbereiding",
+      "max": 4,
+      "soort": "normaal",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 2,
+          "titel": "",
+          "uitleg": "Voorbereiding: onvoldoende."
+        },
+        {
+          "min": 3,
+          "max": 4,
+          "titel": "",
+          "uitleg": "Voorbereiding: voldoende."
+        }
+      ]
+    },
+    {
+      "id": "cat-meten",
+      "naam": "Meten",
+      "max": 6,
+      "soort": "normaal",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 3,
+          "titel": "",
+          "uitleg": "Meten: onvoldoende."
+        },
+        {
+          "min": 4,
+          "max": 6,
+          "titel": "",
+          "uitleg": "Meten: voldoende."
+        }
+      ]
+    },
+    {
+      "id": "cat-verslag",
+      "naam": "Verslag",
+      "max": 5,
+      "soort": "normaal",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 2,
+          "titel": "",
+          "uitleg": "Verslag: onvoldoende."
+        },
+        {
+          "min": 3,
+          "max": 5,
+          "titel": "",
+          "uitleg": "Verslag: voldoende."
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1756713600001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600001",
+    "updatedAt": "2025-09-01T08:00:00.000Z"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "id": "nat-toets-h1-krachten-nergie-2025-2026",
+  "title": "Toets H1 Krachten & Énergie",
+  "jaarlaag": "3",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 1,
+  "periode": "1",
+  "type": "regular",
+  "structureMode": "roman",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 2,
+      "rtti": "R"
+    },
+    {
+      "id": "q2",
+      "section": "I",
+      "number": 2,
+      "max_points": 2,
+      "rtti": "T1"
+    },
+    {
+      "id": "q3",
+      "section": "II",
+      "number": 3,
+      "max_points": 4,
+      "rtti": "T2"
+    },
+    {
+      "id": "q4",
+      "section": "II",
+      "number": 4,
+      "max_points": 3,
+      "rtti": "I"
+    },
+    {
+      "id": "q5",
+      "section": "III",
+      "number": 5,
+      "max_points": 4,
+      "rtti": "R"
+    },
+    {
+      "id": "q6",
+      "section": "III",
+      "number": 6,
+      "max_points": 1,
+      "rtti": "T1"
+    },
+    {
+      "id": "q7",
+      "section": "III",
+      "number": 7,
+      "max_points": 2,
+      "rtti": "T2",
+      "kind": "bonus"
+    }
+  ],
+  "obs_ids": [
+    "obs-1756713600100",
+    "obs-1756713600101",
+    "obs-1756713600102"
+  ],
+  "subject": "nat",
+  "volgnummer": 301,
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1756713600001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600001",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  },
+  "opdrachten": {
+    "obs-1756713600100": [
+      "opdracht_1756713600200",
+      "opdracht_1756713600201"
+    ],
+    "obs-1756713600101": [],
+    "obs-1756713600102": [
+      "opdracht_1756713600200",
+      "opdracht_0000000000000"
+    ]
+  },
+  "opdrachtenCijfer": [
+    {
+      "id": "cijfer-1756713600300",
+      "onder": 5.5,
+      "opdrachten": [
+        "opdracht_1756713600200"
+      ]
+    }
+  ],
+  "kind": "toets",
+  "diagnostic": false
+}

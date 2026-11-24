@@ -1,0 +1,121 @@
+{
+  "id": "rubric-onderzoek",
+  "naam": "Onderzoeksverslag",
+  "beschrijving": "Verslag van een eigen onderzoek.",
+  "subject": "nat",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "jaarlagen": [
+    "3",
+    "4"
+  ],
+  "obs_ids": [
+    "obs-po-planning",
+    "obs-po-netjes"
+  ],
+  "categories": [
+    {
+      "id": "cat-theorie",
+      "naam": "Theorie",
+      "max": 8,
+      "soort": "normaal",
+      "obs_ids": [
+        "obs-po-bronnen"
+      ],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 2,
+          "titel": "Onvoldoende",
+          "uitleg": "De theorie ontbreekt of klopt niet."
+        },
+        {
+          "min": 3,
+          "max": 5,
+          "titel": "Voldoende",
+          "uitleg": "De belangrijkste begrippen zijn goed uitgelegd."
+        },
+        {
+          "min": 6,
+          "max": 8,
+          "titel": "Goed",
+          "uitleg": "Volledig, met bronnen en eigen voorbeelden."
+        }
+      ]
+    },
+    {
+      "id": "cat-uitvoering",
+      "naam": "Uitvoering",
+      "max": 9,
+      "soort": "normaal",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 4,
+          "titel": "",
+          "uitleg": "Metingen onvolledig of onnauwkeurig."
+        },
+        {
+          "min": 5,
+          "max": 9,
+          "titel": "",
+          "uitleg": "Metingen volledig, herhaald en nauwkeurig."
+        }
+      ]
+    },
+    {
+      "id": "cat-extra",
+      "naam": "Extra onderzoek",
+      "max": 4,
+      "soort": "bonus",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 1,
+          "titel": "",
+          "uitleg": "Geen of weinig extra."
+        },
+        {
+          "min": 2,
+          "max": 4,
+          "titel": "",
+          "uitleg": "Een eigen vervolgvraag onderzocht."
+        }
+      ]
+    },
+    {
+      "id": "cat-samen",
+      "naam": "Samenwerken",
+      "max": 3,
+      "soort": "diagnostisch",
+      "obs_ids": [
+        "obs-po-samen"
+      ],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 1,
+          "titel": "",
+          "uitleg": "Taken niet verdeeld."
+        },
+        {
+          "min": 2,
+          "max": 3,
+          "titel": "",
+          "uitleg": "Taken verdeeld en afspraken nagekomen."
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1756713600001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600001",
+    "updatedAt": "2025-09-01T08:00:00.000Z"
+  }
+}

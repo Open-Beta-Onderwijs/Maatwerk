@@ -1,0 +1,102 @@
+{
+  "id": "nat-toets-h2-2025-2026",
+  "title": "Toets H2",
+  "jaarlaag": "3",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "n_term": 0,
+  "weging": 2,
+  "periode": "2",
+  "type": "pta",
+  "structureMode": "roman",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 4,
+      "rtti": "R"
+    },
+    {
+      "id": "q2",
+      "section": "I",
+      "number": 2,
+      "max_points": 3,
+      "rtti": "T1"
+    },
+    {
+      "id": "q3",
+      "section": "I",
+      "number": 3,
+      "max_points": 4,
+      "rtti": "T2"
+    },
+    {
+      "id": "q4",
+      "section": "I",
+      "number": 4,
+      "max_points": 5,
+      "rtti": "I"
+    },
+    {
+      "id": "q5",
+      "section": "II",
+      "number": 5,
+      "max_points": 2,
+      "rtti": "R"
+    },
+    {
+      "id": "q6",
+      "section": "II",
+      "number": 6,
+      "max_points": 4,
+      "rtti": "T1"
+    },
+    {
+      "id": "q7",
+      "section": "II",
+      "number": 7,
+      "max_points": 1,
+      "rtti": "T2"
+    },
+    {
+      "id": "q8",
+      "section": "III",
+      "number": 8,
+      "max_points": 2,
+      "rtti": "I"
+    },
+    {
+      "id": "q9",
+      "section": "III",
+      "number": 9,
+      "max_points": 3,
+      "rtti": "R"
+    },
+    {
+      "id": "q10",
+      "section": "III",
+      "number": 10,
+      "max_points": 2,
+      "rtti": "T1"
+    }
+  ],
+  "obs_ids": [
+    "obs-1756713600100",
+    "obs-1756713600101",
+    "obs-1756713600102"
+  ],
+  "subject": "nat",
+  "volgnummer": 302,
+  "_meta": {
+    "rev": 2,
+    "createdBy": "gebr-1756713600001",
+    "createdAt": "2025-09-02T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600001",
+    "updatedAt": "2025-09-03T08:00:00.000Z"
+  },
+  "kind": "toets",
+  "diagnostic": false
+}

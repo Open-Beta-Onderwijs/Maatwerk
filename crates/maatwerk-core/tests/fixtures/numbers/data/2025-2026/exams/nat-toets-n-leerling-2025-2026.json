@@ -1,0 +1,64 @@
+{
+  "id": "nat-toets-n-leerling-2025-2026",
+  "title": "Toets één leerling",
+  "jaarlaag": "3",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 1,
+  "periode": "2",
+  "type": "regular",
+  "structureMode": "alpha",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 5,
+      "rtti": "R"
+    },
+    {
+      "id": "q2",
+      "section": "I",
+      "number": 2,
+      "max_points": 5,
+      "rtti": "T1"
+    },
+    {
+      "id": "q3",
+      "section": "II",
+      "number": 3,
+      "max_points": 5,
+      "rtti": "T2"
+    },
+    {
+      "id": "q4",
+      "section": "III",
+      "number": 4,
+      "max_points": 1,
+      "rtti": "I"
+    },
+    {
+      "id": "q5",
+      "section": "III",
+      "number": 5,
+      "max_points": 2,
+      "rtti": "T2",
+      "kind": "bonus"
+    }
+  ],
+  "obs_ids": [],
+  "subject": "nat",
+  "volgnummer": 351,
+  "_meta": {
+    "rev": 1,
+    "createdBy": "admin",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "admin",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  },
+  "kind": "toets",
+  "diagnostic": false
+}
