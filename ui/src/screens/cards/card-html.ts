@@ -8,10 +8,22 @@ import {
   FAILS_ALARM,
   TREND_WORDS,
   type GroupCardNumbers,
-  type StudentCardNumbers,
+  type ShownAverage,
+  type StudentCard,
 } from '../../domain/cards';
-import { formatFixed, formatGrade } from '../../domain/format';
-import { GRADE_BAR, gradeBarColor, gradeTextColor } from '../../domain/grade-colors';
+import {
+  GROUP_MEAN_HINT,
+  formatFixed,
+  formatGrade,
+  formatHint,
+  formatShown,
+} from '../../domain/format';
+import {
+  GRADE_BAR,
+  gradeBarColor,
+  gradeTextColor,
+  shownTextColor,
+} from '../../domain/grade-colors';
 import type { Stats } from '../../domain/statistics';
 
 function esc(s: string): string {
@@ -43,16 +55,25 @@ function gradeB(g: number): string {
   return `<b data-color="${gradeTextColor(g)}">${formatGrade(g)}</b>`;
 }
 
+const shownText = (s: ShownAverage) => formatShown(s.value, s.fmt);
+
+/** A shown student average (decision 93: the hover names the school's format). */
+function shownB(s: ShownAverage): string {
+  const color = shownTextColor({ shown: s.value, fails: s.fails });
+  return `<b data-color="${color}" title="${esc(formatHint(s.fmt))}">${shownText(s)}</b>`;
+}
+
 /**
  * The right part of a student card: bars, year average with the trend, and
  * "laatste X,X" (upper school: alternating with "SE X,X").
  */
-export function studentGradesHtml(n: StudentCardNumbers): string {
+export function studentGradesHtml(n: StudentCard): string {
   if (n.average === null && n.se === null)
     return `<span class="s-card__none">Nog geen cijfers</span>`;
   if (n.average === null)
     // No grade this year yet, but an SE from earlier years (review 26-28 m5).
-    return `<span class="s-card__nums"><span class="s-card__small">SE ${gradeB(n.se!)}</span></span>`;
+    return `<span class="s-card__nums"><span class="s-card__small">SE ${shownB(n.se!)}</span></span>`;
+  const avg = n.average;
   const bars = n.bars
     .map(
       (b) =>
@@ -62,13 +83,11 @@ export function studentGradesHtml(n: StudentCardNumbers): string {
     .join('');
   const barsLabel = `Cijfers: ${n.bars.map((b) => formatGrade(b.grade)).join(', ')}`;
   const last = n.last === null ? '' : `laatste ${gradeB(n.last)}`;
-  const se = n.se === null ? '' : `SE ${gradeB(n.se)}`;
-  const both = [
-    n.last === null ? '' : `Laatste ${formatGrade(n.last)}`,
-    se ? `SE ${formatGrade(n.se!)}` : '',
-  ]
-    .filter(Boolean)
-    .join(' · ');
+  const se = n.se === null ? '' : `SE ${shownB(n.se)}`;
+  const both =
+    [n.last === null ? '' : `Laatste ${formatGrade(n.last)}`, se ? `SE ${shownText(n.se!)}` : '']
+      .filter(Boolean)
+      .join(' · ') + (se ? `\nSE: ${formatHint(n.se!.fmt).toLowerCase()}` : '');
   const small =
     se && last
       ? // Years 4-6 (spec 4.3): the two alternate; reduced motion shows both on one line.
@@ -81,9 +100,9 @@ export function studentGradesHtml(n: StudentCardNumbers): string {
   return `
     <span class="s-card__bars" role="img" aria-label="${esc(barsLabel)}">${bars}</span>
     <span class="s-card__nums">
-      <span class="s-card__avg" title="Jaargemiddelde">
+      <span class="s-card__avg" title="${esc(`Jaargemiddelde\n${formatHint(avg.fmt)}`)}">
         ${n.trend ? trendArrowHtml(n.trend.level) : ''}
-        <span class="s-card__avg-value" data-color="${gradeTextColor(n.average)}">${formatGrade(n.average)}</span>
+        <span class="s-card__avg-value" data-color="${shownTextColor({ shown: avg.value, fails: avg.fails })}">${shownText(avg)}</span>
       </span>
       ${small}
     </span>`;
@@ -97,7 +116,7 @@ function failsHtml(s: Stats): string {
 function meanSd(s: Stats, label = ''): string {
   const tag = label ? `<span class="g-card__tag">${label}</span> ` : '';
   return (
-    `${tag}<b class="g-card__mean" data-color="${gradeTextColor(s.mean)}">${formatFixed(s.mean)}</b>` +
+    `${tag}<b class="g-card__mean" data-color="${gradeTextColor(s.mean)}" title="${GROUP_MEAN_HINT}">${formatFixed(s.mean)}</b>` +
     ` <span class="g-card__sd">± ${formatFixed(s.sd)}</span>`
   );
 }

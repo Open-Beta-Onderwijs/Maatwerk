@@ -64,6 +64,16 @@ export function gradeTextColor(g: number | null): string {
   return mixVar('--grade-pass-lo-text', '--grade-pass-hi-text', passT(g));
 }
 
+/**
+ * Text colour of a shown student average (decision 92): red when the shown value fails (the
+ * core's `Shown.fails`: afronden 2 shows 5,45, a fail), else the pass gradient.
+ */
+export function shownTextColor(shown: { shown: number; fails: boolean } | null): string {
+  if (shown === null) return 'var(--grade-none-text)';
+  if (shown.fails) return 'var(--grade-fail-text)';
+  return mixVar('--grade-pass-lo-text', '--grade-pass-hi-text', passT(shown.shown));
+}
+
 /** Bar / pill-border colour of a grade (hex). */
 export function gradeBarColor(g: number | null): string {
   if (g === null) return GRADE_BAR.none;
