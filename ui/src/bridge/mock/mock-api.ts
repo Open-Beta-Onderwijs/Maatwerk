@@ -1032,6 +1032,7 @@ export class MockApi implements MaatwerkApi {
    * without logging in).
    */
   private rightsGuard(relPath: string, data: Json): string | null {
+    if (relPath.toLowerCase() === 'instellingen.json') return this.settingsGuard(data);
     const parts = scoreFile(relPath);
     const userId = this.authSession;
     if (!parts || !userId) return null;
@@ -1069,6 +1070,35 @@ export class MockApi implements MaatwerkApi {
       },
     );
     return ok ? null : forbiddenMessage(student);
+  }
+
+  /**
+   * `rights::check_settings_write` (step 38): only the admin changes `gemiddelden`; a write that
+   * keeps it passes. As the score lock, the mock lets a write without a login through.
+   */
+  private settingsGuard(data: Json): string | null {
+    const userId = this.authSession;
+    if (!userId) return null;
+    const field = (v: unknown) =>
+      JSON.stringify((v as { gemiddelden?: unknown } | null)?.gemiddelden ?? null);
+    const old = (() => {
+      try {
+        return JSON.parse(this.readText('instellingen.json') ?? 'null') as unknown;
+      } catch {
+        return null;
+      }
+    })();
+    if (field(old) === field(data)) return null;
+    const admin = (() => {
+      try {
+        return this.authRole === 'beheer' && this.roleAllowed(userId, 'beheer');
+      } catch {
+        return false;
+      }
+    })();
+    return admin
+      ? null
+      : 'Alleen de beheerder mag de cijfergemiddelden wijzigen (Beheer › Instellingen).';
   }
 
   private schoolJson(): {

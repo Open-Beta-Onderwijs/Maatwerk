@@ -338,3 +338,48 @@
   background: var(--ok-soft);
   color: var(--ok);
 }
+
+/* ── Cijfergemiddelden (step 38, board 64) ───────────────────────────────── */
+.inst-gem__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0 10px;
+  font-variant-numeric: tabular-nums;
+}
+.inst-gem__table th,
+.inst-gem__table td {
+  padding: 10px 12px 10px 0;
+  text-align: left;
+  vertical-align: top;
+}
+.inst-gem__table tbody tr {
+  border-top: 1px solid var(--border);
+}
+.inst-gem__col {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+.inst-gem__row {
+  width: 110px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.inst-gem__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.inst-gem__list li {
+  display: flex;
+  gap: 8px;
+}
+.inst-gem__from {
+  min-width: 90px;
+  color: var(--muted);
+}

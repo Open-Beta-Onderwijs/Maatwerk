@@ -48,3 +48,22 @@ describe('MockApi vakNumbers', () => {
     }
   });
 });
+
+describe('MockApi: only the admin changes the Cijfergemiddelden (rights, step 38)', () => {
+  it('refuses a teacher, lets other settings through', async () => {
+    const api = new MockApi(seed);
+    await api.setFirstPin('gebr-1756713600001', '12345');
+    const inst = ((await api.readJson('instellingen.json')) ?? {}) as Record<string, unknown>;
+    const refused = await api.writeJson('instellingen.json', {
+      ...inst,
+      gemiddelden: { r: { methode: 'afkappen', decimalen: 0 } },
+    } as never);
+    expect(refused).toMatchObject({ ok: false });
+    expect((refused as { reason: string }).reason).toMatch(/Alleen de beheerder/);
+    const other = await api.writeJson('instellingen.json', {
+      ...inst,
+      editor: { compileTimeoutSeconds: 60 },
+    } as never);
+    expect(other).toMatchObject({ ok: true });
+  });
+});
