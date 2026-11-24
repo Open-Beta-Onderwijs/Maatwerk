@@ -6,10 +6,17 @@
 // style="", legacy/style-data.ts).
 
 import { attemptCode } from '../domain/exam-info';
-import { formatFixed, formatGrade } from '../domain/format';
-import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
+import { formatFixed, formatGrade, formatHint, formatShown } from '../domain/format';
+import {
+  GRADE_BAR,
+  gradeBarColor,
+  gradeTextColor,
+  isFail,
+  shownTextColor,
+} from '../domain/grade-colors';
+import type { Shown } from '../domain/numbers';
 import { testBadgeClass, testKind, type TestKind } from '../domain/test-type';
-import type { Stats } from '../domain/statistics';
+import type { AverageFormat, Stats } from '../domain/statistics';
 import type { Exam } from '../domain/types';
 import { esc } from '../utils/html';
 
@@ -35,6 +42,17 @@ export function ovPillHtml(g: number | null, diagnostic = false): string {
   if (diagnostic) return `<span class="ov-pill ov-pill--diag">${formatGrade(g)}</span>`;
   const fail = isFail(g) ? ' ov-pill--fail' : '';
   return `<span class="ov-pill${fail}" data-border-color="${gradeBarColor(g)}" data-color="${gradeTextColor(g)}">${formatGrade(g)}</span>`;
+}
+
+/**
+ * The pill of a student average as shown (decisions 91-93): the core's value with the format's
+ * decimals, red from its fail flag, the format in the hover text.
+ */
+export function ovShownPillHtml(s: Shown | null, fmt: AverageFormat): string {
+  if (s === null) return '<span class="ov-pill ov-pill--none">—</span>';
+  const fail = s.fails ? ' ov-pill--fail' : '';
+  const border = s.fails ? GRADE_BAR.fail : gradeBarColor(s.shown);
+  return `<span class="ov-pill${fail}" title="${formatHint(fmt)}" data-border-color="${border}" data-color="${shownTextColor(s)}">${formatShown(s.shown, fmt)}</span>`;
 }
 
 /** Position of a grade on a 1-10 axis, in percent (clamped). */

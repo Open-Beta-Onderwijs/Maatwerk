@@ -6,7 +6,8 @@
 // averages, decision 21); the SD is the population SD the cards and rapport use.
 
 import { formatFixed } from '../domain/format';
-import { stats, statsOfAverages, type Stats } from '../domain/statistics';
+import { stats, statsOfAverages, type AverageFormat, type Stats } from '../domain/statistics';
+import { GROUP_MEAN_HINT } from '../domain/format';
 import { esc } from '../utils/html';
 import { ovPillHtml } from './common';
 
@@ -21,9 +22,9 @@ export function columnStats(grades: readonly number[]): SectionCell {
   return { mean: s?.mean ?? null, sd: s?.sd ?? null };
 }
 
-/** Mean and SD of students' averages, as shown (decision 21). */
-export function averagesStats(averages: readonly number[]): SectionCell {
-  const s: Stats | null = averages.length ? statsOfAverages([...averages]) : null;
+/** Mean and SD of students' averages, as shown under `fmt` (decisions 21, 92). */
+export function averagesStats(averages: readonly number[], fmt?: AverageFormat): SectionCell {
+  const s: Stats | null = averages.length ? statsOfAverages([...averages], fmt) : null;
   return { mean: s?.mean ?? null, sd: s?.sd ?? null };
 }
 
@@ -40,6 +41,8 @@ export interface FootColumn {
   className?: string;
   /** Columns this cell spans (a grade and its dot column). */
   span?: number;
+  /** A mean of shown student averages: its hover text (decision 93). */
+  meanOfShown?: boolean;
 }
 
 /**
@@ -50,7 +53,12 @@ export function meanSdRowsHtml(columns: FootColumn[], { lead = 1 } = {}): string
   const pad = '<td></td>'.repeat(Math.max(0, lead - 1));
   const td = (c: FootColumn, inner: string) =>
     `<td class="ov-foot__cell${c.className ? ` ${c.className}` : ''}"${c.span && c.span > 1 ? ` colspan="${c.span}"` : ''}>${inner}</td>`;
-  const mean = columns.map((c) => td(c, ovPillHtml(c.cell.mean, c.diagnostic))).join('');
+  const mean = columns
+    .map((c) => {
+      const pill = ovPillHtml(c.cell.mean, c.diagnostic);
+      return td(c, c.meanOfShown ? `<span title="${GROUP_MEAN_HINT}">${pill}</span>` : pill);
+    })
+    .join('');
   const sd = columns.map((c) => td(c, esc(sdText(c.cell.sd)))).join('');
   return (
     `<tr class="ov-foot ov-foot--mean"><td class="ov-foot__label">GEMIDDELDE</td>${pad}${mean}</tr>` +

@@ -15,7 +15,8 @@ use crate::paths::is_year_name;
 use crate::storage::Storage;
 
 /// Everything the list screens show for one year and vak, under the school's formats. The SE
-/// needs every year; those are read only when a student or group of the year is upper school.
+/// needs every year; those are read only when a student or group of the year is upper school, or
+/// the year has a PTA test.
 pub fn vak_numbers(storage: &Storage, year: &str, vak: &str) -> Result<VakNumbers> {
     check_args(year, vak)?;
     let rubrics = load::load_rubrics(storage)?;
@@ -23,6 +24,7 @@ pub fn vak_numbers(storage: &Storage, year: &str, vak: &str) -> Result<VakNumber
     let students = load::load_students(storage, year)?;
     let groups = load::load_groups(storage, year, vak)?;
     let upper = students.iter().any(|s| s.upper)
+        || current.exams.iter().any(crate::grades::Exam::is_pta)
         || groups
             .iter()
             .any(|g| load::is_upper(g.jaarlaag.clone().map(serde_json::Value::String).as_ref()));

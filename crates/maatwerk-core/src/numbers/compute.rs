@@ -66,8 +66,9 @@ pub struct StudentNumbers {
     /// The year average (r).
     pub average: Option<Shown>,
     pub trend: Option<Trend>,
-    /// The SE average over all years; only for upper-school students and members of an
-    /// upper-school group.
+    /// The SE average over all years; only for upper-school students, members of an
+    /// upper-school group, and every student of a year with a PTA test (the group overview's SE
+    /// column).
     pub se: Option<Shown>,
 }
 
@@ -262,6 +263,7 @@ pub fn compute(
         .flat_map(|g| g.student_ids.iter().map(String::as_str))
         .collect();
     let all_exams: Vec<Exam> = all_years.iter().flat_map(|y| y.exams.clone()).collect();
+    let any_pta = exams.iter().any(Exam::is_pta);
 
     let mut cards: HashMap<&str, Card> = exams
         .iter()
@@ -313,7 +315,7 @@ pub fn compute(
                 }
             }
         }
-        let needs_se = s.upper || in_upper_group.contains(s.id.as_str());
+        let needs_se = s.upper || any_pta || in_upper_group.contains(s.id.as_str());
         let se_raw = if needs_se {
             se_average(&history(&s.id, all_years), &all_exams)
         } else {

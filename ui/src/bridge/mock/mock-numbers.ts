@@ -179,7 +179,8 @@ export function vakNumbers(
     }));
   const upperGroups = groups.filter((g) => isUpper(g.jaarlaag));
   const inUpper = new Set(upperGroups.flatMap((g) => [...g.members]));
-  const needAll = students.some((s) => s.upper) || upperGroups.length > 0;
+  const anyPta = current.exams.some((e) => e.type === 'pta');
+  const needAll = students.some((s) => s.upper) || anyPta || upperGroups.length > 0;
   const all = needAll ? f.years().map((y) => (y === year ? current : loadYear(f, y, vak))) : [];
   const allExams = all.flatMap((y) => y.exams);
 
@@ -232,7 +233,8 @@ export function vakNumbers(
       }
     });
     const rec = recs[k] ?? ({} as ScoreRecord);
-    const se = s.upper || inUpper.has(s.id) ? seAverage(history(s.id, all), allExams) : null;
+    const se =
+      s.upper || anyPta || inUpper.has(s.id) ? seAverage(history(s.id, all), allExams) : null;
     outStudents.set(s.id, {
       upper: s.upper,
       results: byKey(new Map(Object.entries(res))),

@@ -10,11 +10,15 @@ import { isUpperSchool } from '../../domain/cards';
 import { groupName, isPo, rubricOf } from '../../domain/po';
 import { poObsIds, poStudentObs } from '../../domain/po-grading';
 import { RTTI_CATS } from '../../domain/rtti-names';
+import { DEFAULT_FORMAT, type Formats, type Shown, type VakNumbers } from '../../domain/numbers';
 import {
+  isFailShown,
   pooledRtti,
   rttiPercents,
+  shownAverage,
   trend,
   yearAverage,
+  type AverageFormat,
   type TrendLevel,
 } from '../../domain/statistics';
 import { testKind, type TestKind } from '../../domain/test-type';
@@ -52,8 +56,12 @@ export interface Cell {
 export interface Row {
   student: Student;
   cells: Cell[];
+  /** Unrounded, for the footer statistics (`statsOfAverages` under the format). */
   yearAvg: number | null;
   seAvg: number | null;
+  /** As shown under the school's format (decisions 91-93). */
+  year: Shown | null;
+  se: Shown | null;
   trend: TrendLevel | null;
 }
 
@@ -65,6 +73,8 @@ export interface GroupModel {
   periodes: { label: string; span: number }[];
   /** The SE column: for groups whose tests count for an examendossier. */
   showSe: boolean;
+  /** The school's Cijfergemiddelden. */
+  formats: Formats;
 }
 
 export interface ModelInput {
@@ -74,8 +84,17 @@ export interface ModelInput {
   /** Every test of the vak and school year (the year average takes them all, decision 25). */
   yearExams: Exam[];
   records: Map<string, ScoreRecord | null>;
-  /** SE averages per student id (null: none, or not computed). */
-  seAverages?: Map<string, number | null>;
+  /**
+   * The core's numbers of the year and vak (step 38): the shown r and SE per student, and the
+   * formats. Without them (unit tests) the year average is the crate's at afronden 1, no SE.
+   */
+  numbers?: VakNumbers | null;
+}
+
+function shownOf(raw: number | null, fmt: AverageFormat): Shown | null {
+  if (raw === null) return null;
+  const shown = shownAverage(raw, fmt);
+  return { raw, shown, fails: isFailShown(shown) };
 }
 
 function periodeOf(e: Exam): string {
@@ -160,17 +179,23 @@ export function buildGroupModel({
   students,
   yearExams,
   records,
-  seAverages,
+  numbers,
 }: ModelInput): GroupModel {
+  const formats = numbers?.formats ?? { r: DEFAULT_FORMAT, se: DEFAULT_FORMAT };
   const columns = columnsOf(group, yearExams);
   const rows = students.map((student) => {
     const rec = records.get(String(student.id)) ?? null;
+    const n = numbers?.students[String(student.id)];
+    const year = numbers ? (n?.average ?? null) : shownOf(yearAverage(yearExams, rec), formats.r);
+    const se = n?.se ?? null;
     return {
       student,
       cells: columns.map((c) => cellOf(c, student, rec)),
-      yearAvg: yearAverage(yearExams, rec),
-      seAvg: seAverages?.get(String(student.id)) ?? null,
-      trend: trend(yearExams, rec)?.level ?? null,
+      yearAvg: year?.raw ?? null,
+      seAvg: se?.raw ?? null,
+      year,
+      se,
+      trend: (numbers ? n?.trend : trend(yearExams, rec))?.level ?? null,
     };
   });
   const periodes: { label: string; span: number }[] = [];
@@ -181,7 +206,7 @@ export function buildGroupModel({
     else periodes.push({ label, span: 1 });
   }
   const showSe = isUpperSchool(group.jaarlaag) || columns.some((c) => c.original.type === 'pta');
-  return { group, columns, rows, periodes, showSe };
+  return { group, columns, rows, periodes, showSe, formats };
 }
 
 /** The grades of one column (diagnostic ones too: their mean is shown grey). */

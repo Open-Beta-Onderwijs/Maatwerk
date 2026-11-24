@@ -15,12 +15,12 @@ import {
   showReloadNotice,
 } from '../../app.js';
 import { skelBlock, skelRegion, skelRows } from '../../components/skeleton';
-import type { HistoryEntry } from '../../domain/attempts';
-import { seAverage } from '../../domain/statistics';
+import type { VakNumbers } from '../../domain/numbers';
 import type { Exam, Group, Observatie, ScoreRecord, Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
 import { installGradeTips } from '../../overview/tooltip';
 import { emptyHtml, LOAD_FAILED } from '../../overview/common';
+import { vakNumbers } from '../../services/vak-numbers';
 import { Store } from '../../store.js';
 import { openProfielModal } from '../profile';
 import { boxHtml, rttiHtml, verdelingHtml } from './charts';
@@ -194,23 +194,15 @@ export async function openGroupStudentsModal(
     if (sub) sub.textContent = subtitle(d);
   });
 
-  // The scores of the year, and for the SE column every year's history (decision 10).
+  // The scores of the year for the cells; the r and SE columns are the core's (step 38).
   const yearExams = Store.getExamsSync(year) as Exam[];
   const records = new Map<string, ScoreRecord | null>();
-  let first: ReturnType<typeof buildGroupModel>;
-  let seAverages: Map<string, number | null> | undefined;
+  let numbers: VakNumbers | null = null;
   try {
     for (const s of students)
       records.set(String(s.id), (await Store.getStudentScores(s.id, year)) as ScoreRecord);
-    first = buildGroupModel({ group, students, yearExams, records });
-    if (first.showSe) {
-      const allExams = Store.getAllExamsSync() as Exam[];
-      seAverages = new Map();
-      for (const s of students) {
-        const history = (await Store.getStudentHistory(s.id)) as HistoryEntry[];
-        seAverages.set(String(s.id), seAverage(history, allExams));
-      }
-    }
+    const subject = group.subject ?? (Store.getActiveSubject() as string | null);
+    if (subject) numbers = await vakNumbers(year, subject, Store.generation() as number);
   } catch {
     if (dialog.isOpen)
       dialog.el
@@ -219,6 +211,6 @@ export async function openGroupStudentsModal(
     return;
   }
   if (!dialog.isOpen) return;
-  model = seAverages ? buildGroupModel({ group, students, yearExams, records, seAverages }) : first;
+  model = buildGroupModel({ group, students, yearExams, records, numbers });
   render(active);
 }
