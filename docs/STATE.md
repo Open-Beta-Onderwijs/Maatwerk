@@ -1,68 +1,76 @@
 # State
 
-Last updated: 2026-11-24 (step 38 started) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
+Last updated: 2026-11-24 (step 38.1-38.6 done) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
 Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
-## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2)
+## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
-Baseline green (cargo test). Done:
+**Fresh context, start here.** The user asked for 38.1-38.6 in session 1; session 2 does **38.7
+(measure) and 38.8 (gate, review, release 0.29)** of `PLAN-2.md` step 38. Version is still
+0.28.0 (raise to 0.29.0 at the release).
 
-1. 38.2 `97a546d` crate: `AverageFormat` (`{methode, decimalen}`, missing = afronden 1),
-   `shown_average`, `is_fail_shown`; `mean_of_averages` / `stats_of_averages(…, fmt)`;
-   `tests/shown_averages.rs` all six formats, 0 differences; WASM `shownAverage` + optional
-   format; TS `domain/statistics.ts`.
+What step 38 built (details in the commits and `docs/phase-2/step-38-numbers.md`):
 
-2. 38.4 (part) `82d6ec9` core `numbers::format`: `instellingen.json` `gemiddelden.{r,se}`.
-3. 38.1 `ab1553b` inventory `docs/phase-2/step-38-numbers.md`: 20 places to change; the user
-   answered A-E (2026-11-24, in that file): crate `pct` (0 stays 0), profile delta = difference of
-   shown values, export `scoreValid`, PO Categorieën follows rule B.
+- **Crate** (`97a546d`, `1d85745`): `AverageFormat` / `shown_average` / `is_fail_shown`,
+  `mean_of_averages` / `stats_of_averages(…, fmt)`; user answers A, B, D as `pct`,
+  `shown_difference`, `score_points`. `tests/shown_averages.rs`: all six formats, 0 differences.
+  WASM: `shownAverage`, `isFailShown`, `pct`, `shownDifference`, `scorePoints`, optional format;
+  arguments parsed once (`24e10ad`).
+- **Core** `maatwerk_core::numbers` (`load`, `compute`, `format`, `vak_numbers`): per year and
+  vak the list screens' numbers under the school's format (`instellingen.json` `gemiddelden`);
+  SE for upper-school students, members of upper-school groups and every student of a year
+  with a PTA test. Guard: only the admin changes `gemiddelden` (`rights::check_json_write`).
+  CLI `maatwerk-cli numbers`. Tauri command `vak_numbers` (spawn_blocking, Gast no-write list).
+- **UI**: `services/vak-numbers.ts` (cache per data generation); Leerlingen, Groepen, Toetsen
+  cards, Groepsoverzicht, Profiel and `examStats` use it; shown r/SE with the format's
+  decimals, fail colour from the core, hover texts of decision 93. MockApi mirror
+  `bridge/mock/mock-numbers.ts`. Inventory rows #8-#20 through the crate (point totals, `pct`,
+  `scorePoints`, PO maxima, PO Categorieën rule B). Old JS card path removed. Beheer ›
+  Instellingen › Cijfergemiddelden (`9db0101`, board 64 approved by the user).
+- **38.6** (`24e10ad`, `bae4004`): WASM parse once, history map, `yieldSlice`, topbar fit in the
+  next frame, 7c m4/n2 (n5 already fixed), 29 m4/m5, 19 m6 closed; backlog updated.
+- **Parity:** `node tools/numbers-parity.mjs <tiny|school> [r se]` (PowerShell) compares Rust
+  with the MockApi mirror; before the switch also with the old screen path: 0 differences on
+  tiny and school at a1/a1, k0/a2, a0/k2, k1/k0.
 
-4. `1d85745` crate `pct`, `shown_difference`, `score_points` (answers A, B, D); WASM + TS
-   `isFailShown`, `pct`, `shownDifference`, `scorePoints`. No screen uses them yet.
-5. 38.3 `maatwerk-core::numbers` (`load`, `compute`, `vak_numbers`; commits up to `a9e0632`):
-   per student results, bars, shown r/SE (+ fails), trend; per attempt the card numbers, the
-   Verzamelkaart per test with resits; per group the stats under the format. CLI
-   `maatwerk-cli numbers`. Parity `node tools/numbers-parity.mjs <tiny|school>` (PowerShell;
-   `ui/tests/numbers-parity.test.ts`, skipped without the script): **0 differences** on tiny
-   (1 case) and school (8 year/vak cases) at the default format. POs are not in the fixtures:
-   Rust unit tests cover them.
+Checks at `bae4004`: cargo test/clippy green (grades, wasm, core, cli, app), Vitest 950, node
+128 + goldens unchanged, e2e chromium 426/426, visual 171/177.
 
-6. 38.4 (part) `f7ee204`: core guard (only the admin changes `gemiddelden`, test), data format
-   doc; **board 64** `docs/phase-2/design/mocks/Cijfergemiddelden.dc.html` waits for the
-   user's look before the Instellingen UI is built.
+**Waiting for the user (show at the start of session 2, then update the local baselines with
+`npx playwright test --project=visual -g <name> --update-snapshots` in `ui/` and drop the three
+CI copies in `ui/e2e/visual-baselines/*/` as in `1de50a0`):**
 
-7. 38.5 (part): `b7acd51` command `vak_numbers` (spawn_blocking, Gast no-write list), core
-   argument check, bridge, MockApi mirror `bridge/mock/mock-numbers.ts`; parity mock = Rust on
-   school at a1/a1, k0/a2, a0/k2 (0 differences each; `node tools/numbers-parity.mjs school k0
-   a2`). `3e89a5f` Leerlingen cards (shown r/SE, hover texts, `services/vak-numbers.ts` cache
-   per generation), `ecbe8e6` Groepen and Toetsen cards. e2e and visual unchanged (177/177).
+1. `modal-po-overzicht-categorieen` (light/dark/geel): answer E, Uitvoering 7,0 -> 3,5 / 9,
+   Extra onderzoek 2,0 -> 1,0 / 4; the rows now add up to TOTAAL 9,5.
+2. `admin-instellingen` (light/dark/geel): the new Cijfergemiddelden card (as board 64; the
+   column head keeps a small r: "JAARGEMIDDELDE (r)").
 
-8. `badeb11` Groepsoverzicht r/SE (shown pills, footer under the format, hint); core SE also
-   for every student of a year with a PTA test (the overview's SE column). `5c6ab5c` Profiel
-   year/SE rows from the core, delta = `shownDifference` (answer B). Visual
-   `modal-profiel-cijferverloop` (light/dark/geel, 63-71 px): "5,4 vs 5,1 +0,2" -> "+0,3", dot at
-   the shown value; **baselines wait for the user's OK** (before/after table in
-   `docs/phase-2/step-38-numbers.md`).
+Approved and done: `modal-profiel-cijferverloop` (answer B, +0,2 -> +0,3), CI copies dropped.
 
-Waiting for the user: board 64 (Instellingen › Cijfergemiddelden) and the cijferverloop diff.
+**Next action (session 2):**
 
-Open choices (tell the user at the end of the step):
+1. Show the two diffs above; update baselines on the user's OK.
+2. 38.7: `tools/perf/measure.mjs` at 1x and 4x (backlog "Grade cache" "How to measure"), the
+   user's real copy (M-PERF-1, the user runs it); write `docs/perf.md`; **ask the user** whether
+   a disk cache is still needed (else it stays "After 1.0").
+3. 38.8 gate (PLAN.md 2.2): fmt, clippy, test, deny, SPDX, npm licences, lint, typecheck,
+   Vitest, node, e2e chromium + webkit, visual; before/after tables (3 at the default format, 2
+   per non-default format on `school`: run the parity script and pick numbers from
+   `target/numbers-parity/*` JSON; `docs/phase-2/step-38-numbers.md` has the visible ones);
+   fresh-context reviewer subagent -> `docs/reviews/step-38.md`; fix blockers/majors; version
+   0.29.0; CI; merge on the user's OK.
 
-- No `minAppVersion` raise for `gemiddelden` (as the AI switch); an older app shows afronden 1
-  until updated.
-- The trend arrow keeps decision 12 at afronden 1 (crate `trend`), whatever the r format.
-- Card bar order: volgnummer, then id by byte order (the UI used `localeCompare`; ids are
-  generated, so no visible change expected).
-- `maatwerk-cli stats` still has its own copy of the selection logic: move it onto
-  `numbers` in 38.6 (the inventory covered only `ui/src` and core).
+Open choices to tell the user at the end of the step:
 
-**Next action:** 38.5 rest: the inventory's other "must change" rows (#8-18, #20: point sums,
-RTTI/question/rapport percentages through `pct`/`Points`, `scorePoints` in the grid and rapport,
-PO Categorieën rule B, `pctOf` -> `pct`); then drop the old JS card path (`studentCardNumbers`,
-`groupCardNumbers`, `screens/toetsen/block-numbers.ts`) and the parity test's old-path part;
-`maatwerk-cli stats` onto `numbers`. Then 38.4 UI (after board 64 OK), 38.6, 38.7, gate.
+- No `minAppVersion` raise for `gemiddelden` (as the AI switch): an older app shows afronden 1.
+- The trend arrow keeps decision 12 at afronden 1, whatever the r format.
+- Card bar order: volgnummer, then id by byte order (was `localeCompare`; ids are generated).
+- `maatwerk-cli stats` keeps its own record-based selection (no student list needed); every
+  number in it is a crate function, so it does not break the rule. Not moved onto `numbers`.
+- Question editor footer RTTI % is now of the RTTI points (crate `rapportTotals.share`); differs
+  only while a normal question has no RTTI category. PO maxima are the rubric rules' whole maxima.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 

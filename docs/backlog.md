@@ -83,9 +83,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - ~~**PO verzameloverzicht**~~: done in step 37 (`0475956`).
 - **Review 29 (deferred minors):** m1 exam overview Observaties counts students without a score
-  but takes the percentage of those with one (asked the user which population to use); m4 a
-  silent refresh of the group and exam overviews shows skeletons (load before `openModal`); m5
-  per-student reads without `preloadScores` / `{ loaded: true }`, `examStats` not memoised; m6
+  but takes the percentage of those with one (asked the user which population to use); ~~m4~~
+  and ~~m5~~ done in step 38.6 (`bae4004`: refresh loads first; preload, `examStats` from the Rust
+  numbers); m6
   duplication (histogram card, heat tint, info icon, `signed`, obs sort); m7 test gaps; nits
   n1-n7 (`docs/reviews/step-29.md`), among them ~45 unused utility classes in `style.css`.
 - ~~**Profile observaties**~~: done in step 37 (`7045331`, the user's OK on the numbers).
@@ -349,15 +349,15 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   admin Groepen 154 p90; `docs/perf.md`): the first folder reads and statistics. If the real
   copy (M-PERF-1) shows it at 1x too: start `preloadScores` for the active year in idle time
   right after login.
-- **Review 7c m4 (rest):** `loadInstellingen` and `invalidateSchool` (School screen) drop a cached
+- ~~**Review 7c m4 (rest):**~~ Done in step 38.6 (`bae4004`): `loadInstellingen` keeps the cached object when nothing changed. Was: `loadInstellingen` and `invalidateSchool` (School screen) drop a cached
   entry on every visit, which counts as a change, so the kept screens render once more for nothing.
   Load Instellingen without invalidating (the versioned read gives the rev).
 - **Review 7c m5 (rest):** e2e for a colleague's change to a group still waiting for idle time
   (stub `requestIdleCallback`), closing the score modal while groups are pending, and the 15 s
   prebuild TTL.
-- **Review 7c n2:** closing the score modal after a save redraws the exam list without updating
+- ~~**Review 7c n2:**~~ Done in step 38.6 (`bae4004`, list render hook). Was: closing the score modal after a save redraws the exam list without updating
   the kept-screen key, so the next Toetsen visit renders once more.
-- **Review 7c n5:** `contain-intrinsic-size: auto 40px` on student cards is an estimate; measure a
+- ~~**Review 7c n5:**~~ Closed (step 38.6 check): the card has a fixed `height: 66px` since step 27 and the intrinsic size is the same 66 px. Was: `contain-intrinsic-size: auto 40px` on student cards is an estimate; measure a
   real card (cards not shown yet count as 40 px for the scrollbar).
 - **e2e `examMenuItem` retries** because Playwright's scroll-into-view delivers a `scroll` event a
   frame after the click, which closes the menu. Replace the retry with the scroll-first click of
@@ -520,7 +520,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 19
 
-- m6: send only the fields the rules read in each WebAssembly call (today's cost is acceptable; the rapport and grid were measured).
+- ~~m6~~ Closed in step 38: the list screens compute in Rust (`vak_numbers`); the WASM entry parses its arguments once (`24e10ad`). Was: send only the fields the rules read in each WebAssembly call.
 - m8: a message when WebAssembly cannot start; today an empty window. Check the oldest supported macOS WebKit for `'wasm-unsafe-eval'`.
 - m9: tests of how the screens call the rules (the rules are tested; which arguments a screen passes is not).
 - n3, n6, n7 in `docs/reviews/step-19.md`.
@@ -709,7 +709,9 @@ needs a before/after table on the fixtures and the user's OK. Test: cached == li
 number on `tiny` and `school` (and a property test over random edits). The cache holds derived
 student data: never in the repo, never in fixtures, covered by the "Gegevens" reset.
 
-**Smaller wins found on the way (independent of the cache):**
+**Smaller wins found on the way (independent of the cache):** all done in step 38.6
+(`24e10ad` WASM parse once; `bae4004` history map, `yieldSlice`, `topbar-fit` next frame). The
+fills after login no longer compete: the list numbers come from one native call per year and vak.
 
 - `maatwerk-grades-wasm` `parse` decodes JSON text to a `Value` and then to the type: use
   `serde_json::from_str` per argument (or one typed tuple) to parse once.
