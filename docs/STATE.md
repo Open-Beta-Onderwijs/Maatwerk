@@ -39,6 +39,15 @@ Baseline green (cargo test). Done:
    a2`). `3e89a5f` Leerlingen cards (shown r/SE, hover texts, `services/vak-numbers.ts` cache
    per generation), `ecbe8e6` Groepen and Toetsen cards. e2e and visual unchanged (177/177).
 
+8. `badeb11` Groepsoverzicht r/SE (shown pills, footer under the format, hint); core SE also
+   for every student of a year with a PTA test (the overview's SE column). `5c6ab5c` Profiel
+   year/SE rows from the core, delta = `shownDifference` (answer B). Visual
+   `modal-profiel-cijferverloop` (light/dark/geel, 63-71 px): "5,4 vs 5,1 +0,2" -> "+0,3", dot at
+   the shown value; **baselines wait for the user's OK** (before/after table in
+   `docs/phase-2/step-38-numbers.md`).
+
+Waiting for the user: board 64 (Instellingen › Cijfergemiddelden) and the cijferverloop diff.
+
 Open choices (tell the user at the end of the step):
 
 - No `minAppVersion` raise for `gemiddelden` (as the AI switch); an older app shows afronden 1
@@ -49,11 +58,11 @@ Open choices (tell the user at the end of the step):
 - `maatwerk-cli stats` still has its own copy of the selection logic: move it onto
   `numbers` in 38.6 (the inventory covered only `ui/src` and core).
 
-**Next action:** 38.5 rest: Groepsoverzicht (Resultaten pills, footer) and Profiel (year/SE
-rows, peers, delta = `shownDifference`) on the Rust numbers / format; then the inventory's other
-"must change" rows (pct, scorePoints, PO Categorieën rule B, point sums); then drop the old JS
-card path (`studentCardNumbers`, `groupCardNumbers`, `block-numbers.ts`) and the parity test's
-old-path part. Instellingen section after the user's OK on board 64.
+**Next action:** 38.5 rest: the inventory's other "must change" rows (#8-18, #20: point sums,
+RTTI/question/rapport percentages through `pct`/`Points`, `scorePoints` in the grid and rapport,
+PO Categorieën rule B, `pctOf` -> `pct`); then drop the old JS card path (`studentCardNumbers`,
+`groupCardNumbers`, `screens/toetsen/block-numbers.ts`) and the parity test's old-path part;
+`maatwerk-cli stats` onto `numbers`. Then 38.4 UI (after board 64 OK), 38.6, 38.7, gate.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 
