@@ -14,7 +14,10 @@ use maatwerk_grades::{
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+
 use serde_json::Value;
+use serde_json::value::RawValue;
 
 /// One attempt in a statistic, as the UI sends it.
 #[derive(Deserialize)]
@@ -52,27 +55,32 @@ fn best_arg(rec: &ScoreRecord, exams: &[&Exam]) -> Option<BestArg> {
     })
 }
 
-/// Decodes the JSON argument list into a tuple.
-fn parse<T: DeserializeOwned>(args: Value) -> Result<T, String> {
-    serde_json::from_value(args).map_err(|e| format!("bad arguments: {e}"))
+/// Decodes the JSON argument list (text) straight into a tuple: one pass, no `Value` tree in
+/// between (step 38, backlog "Grade cache" smaller wins).
+fn parse<T: DeserializeOwned>(args: impl AsRef<str>) -> Result<T, String> {
+    serde_json::from_str(args.as_ref()).map_err(|e| format!("bad arguments: {e}"))
 }
 
-/// Pads an argument list with `null` up to `n`, for trailing optional arguments.
-fn pad(mut args: Value, n: usize) -> Value {
-    if let Value::Array(items) = &mut args {
-        while items.len() < n {
-            items.push(Value::Null);
+/// Pads an argument list with `null` up to `n`, for trailing optional arguments. A full list is
+/// passed on as it is; a short one is scanned into raw elements (no tree) and joined again.
+fn pad(args: &str, n: usize) -> Cow<'_, str> {
+    match serde_json::from_str::<Vec<&RawValue>>(args) {
+        Ok(items) if items.len() < n => {
+            let mut parts: Vec<&str> = items.iter().map(|v| v.get()).collect();
+            parts.resize(n, "null");
+            Cow::Owned(format!("[{}]", parts.join(",")))
         }
+        _ => Cow::Borrowed(args),
     }
-    args
 }
 
-fn json<T: Serialize>(value: T) -> Result<Value, String> {
-    serde_json::to_value(value).map_err(|e| e.to_string())
+/// The reply value as JSON text.
+fn json<T: Serialize>(value: T) -> Result<String, String> {
+    serde_json::to_string(&value).map_err(|e| e.to_string())
 }
 
-/// Calls the rule `name` with the JSON array `args`.
-pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
+/// Calls the rule `name` with the JSON array `args` (text); the reply value as JSON text.
+pub fn dispatch(name: &str, args: &str) -> Result<String, String> {
     match name {
         "calcGrade" => {
             let (s, l, n): (f64, f64, f64) = parse(args)?;
@@ -280,14 +288,10 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
 
 /// `dispatch` on text: `{"ok": value}` or `{"error": message}`. Never panics on bad input.
 pub fn call(name: &str, args: &str) -> String {
-    let result = serde_json::from_str(args)
-        .map_err(|e| format!("bad JSON: {e}"))
-        .and_then(|args| dispatch(name, args));
-    let reply = match result {
-        Ok(value) => serde_json::json!({ "ok": value }),
-        Err(message) => serde_json::json!({ "error": message }),
-    };
-    reply.to_string()
+    match dispatch(name, args) {
+        Ok(value) => format!("{{\"ok\":{value}}}"),
+        Err(message) => serde_json::json!({ "error": message }).to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -475,7 +479,7 @@ mod tests {
             (s["mean"].clone(), s["fails"].clone()),
             (json!(6.0), json!(50.0))
         );
-        assert!(dispatch("shownAverage", json!([5.0, {"decimalen": 3}])).is_err());
+        assert!(dispatch("shownAverage", r#"[5.0, {"decimalen": 3}]"#).is_err());
     }
 
     #[test]

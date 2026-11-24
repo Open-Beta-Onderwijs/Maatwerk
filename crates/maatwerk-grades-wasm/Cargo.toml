@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 maatwerk-grades.workspace = true
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true, features = ["float_roundtrip"] }
+serde_json = { workspace = true, features = ["float_roundtrip", "raw_value"] }
 
 # Not `workspace = true`: this is the only crate that needs `unsafe`, for the memory interface in
 # `abi.rs`, which exists only in the wasm build.
