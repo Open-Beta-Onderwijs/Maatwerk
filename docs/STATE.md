@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-24 (step 38.1-38.6 done) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
+Last updated: 2026-11-24 (step 38.7 done, 38.8 gate running) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
 Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
@@ -38,29 +38,22 @@ What step 38 built (details in the commits and `docs/phase-2/step-38-numbers.md`
 Checks at `bae4004`: cargo test/clippy green (grades, wasm, core, cli, app), Vitest 950, node
 128 + goldens unchanged, e2e chromium 426/426, visual 171/177.
 
-**Waiting for the user (show at the start of session 2, then update the local baselines with
-`npx playwright test --project=visual -g <name> --update-snapshots` in `ui/` and drop the three
-CI copies in `ui/e2e/visual-baselines/*/` as in `1de50a0`):**
+**Session 2 (2026-11-24):**
 
-1. `modal-po-overzicht-categorieen` (light/dark/geel): answer E, Uitvoering 7,0 -> 3,5 / 9,
-   Extra onderzoek 2,0 -> 1,0 / 4; the rows now add up to TOTAAL 9,5.
-2. `admin-instellingen` (light/dark/geel): the new Cijfergemiddelden card (as board 64; the
-   column head keeps a small r: "JAARGEMIDDELDE (r)").
+- User approved the two visual diffs: local baselines of `modal-po-overzicht-categorieen` and
+  `admin-instellingen` updated, CI copies dropped (`143e0de`). User's manual test of step 32
+  tracked (`4c0bd3e`).
+- 38.7 done: `docs/perf.md` "Grade numbers in Rust" (0.28.0 exe vs this branch, 4x twice, 1x
+  once): Groepen stats 2,9 s -> 5 ms (cache hit, the cost moved to `leerlingen:grades`, 3,2 ->
+  0,9 s), Toetsen stats 1,2 -> 0,2-0,4 s, long tasks 5,5 -> 2,7 s at 4x. **User: disk cache
+  stays After 1.0.** M-PERF-1 on the real copy: the user runs it.
+- 38.8: cargo gate green (fmt, clippy, test, deny); parity 0 differences (tiny, school, k0/a2,
+  a0/k2, k1/k0); before/after tables in `docs/phase-2/step-38-numbers.md`. Running: SPDX,
+  licences, lint, typecheck, Vitest/node, e2e chromium + webkit, visual; reviewer subagent ->
+  `docs/reviews/step-38.md`.
 
-Approved and done: `modal-profiel-cijferverloop` (answer B, +0,2 -> +0,3), CI copies dropped.
-
-**Next action (session 2):**
-
-1. Show the two diffs above; update baselines on the user's OK.
-2. 38.7: `tools/perf/measure.mjs` at 1x and 4x (backlog "Grade cache" "How to measure"), the
-   user's real copy (M-PERF-1, the user runs it); write `docs/perf.md`; **ask the user** whether
-   a disk cache is still needed (else it stays "After 1.0").
-3. 38.8 gate (PLAN.md 2.2): fmt, clippy, test, deny, SPDX, npm licences, lint, typecheck,
-   Vitest, node, e2e chromium + webkit, visual; before/after tables (3 at the default format, 2
-   per non-default format on `school`: run the parity script and pick numbers from
-   `target/numbers-parity/*` JSON; `docs/phase-2/step-38-numbers.md` has the visible ones);
-   fresh-context reviewer subagent -> `docs/reviews/step-38.md`; fix blockers/majors; version
-   0.29.0; CI; merge on the user's OK.
+**Next action:** fix review blockers/majors, version 0.29.0, CI, then stop and report; merge
+on the user's OK.
 
 Open choices to tell the user at the end of the step:
 
