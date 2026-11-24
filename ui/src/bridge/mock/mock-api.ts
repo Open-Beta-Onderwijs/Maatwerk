@@ -42,6 +42,8 @@ import type {
   Value,
 } from '../bindings';
 import { MockAi } from './mock-ai';
+import { vakNumbers as mockVakNumbers } from './mock-numbers';
+import { readFormats, type VakNumbers } from '../../domain/numbers';
 import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
@@ -919,6 +921,31 @@ export class MockApi implements MaatwerkApi {
     const result = structuredClone(this.migration);
     if (!dryRun) return result;
     return { ...result, applied: false, backup: null, validation: null, reportFile: null };
+  }
+
+  async vakNumbers(year: string, vak: string): Promise<VakNumbers> {
+    this.record('vakNumbers', [year, vak]);
+    if (!/^\d{4}-\d{4}$/.test(year) || !/^[\p{L}\p{N}_-]{1,64}$/u.test(vak))
+      throw new Error(`Geen geldig schooljaar of vak: ${year}, ${vak}.`);
+    const read = (rel: string): unknown => {
+      const text = this.readText(rel);
+      if (text === null) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
+    };
+    const files = {
+      read,
+      readAll: (dir: string) => this.jsonFilesIn(dir),
+      years: () =>
+        this.list('')
+          .filter((n) => /^\d{4}-\d{4}$/.test(n))
+          .sort()
+          .reverse(),
+    };
+    return mockVakNumbers(files, year, vak, readFormats(read('instellingen.json')));
   }
 
   async rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>> {

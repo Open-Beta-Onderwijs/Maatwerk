@@ -10,12 +10,14 @@ pub mod load;
 pub use compute::{VakNumbers, compute};
 pub use format::{Formats, school_formats, school_formats_in};
 
-use crate::error::Result;
+use crate::error::{Error, Result};
+use crate::paths::is_year_name;
 use crate::storage::Storage;
 
 /// Everything the list screens show for one year and vak, under the school's formats. The SE
 /// needs every year; those are read only when a student or group of the year is upper school.
 pub fn vak_numbers(storage: &Storage, year: &str, vak: &str) -> Result<VakNumbers> {
+    check_args(year, vak)?;
     let rubrics = load::load_rubrics(storage)?;
     let current = load::load_year(storage, year, vak, &rubrics)?;
     let students = load::load_students(storage, year)?;
@@ -42,4 +44,40 @@ pub fn vak_numbers(storage: &Storage, year: &str, vak: &str) -> Result<VakNumber
         &groups,
         school_formats_in(storage),
     ))
+}
+
+/// From the UI: a school year folder name and one plain vak name, never a path.
+fn check_args(year: &str, vak: &str) -> Result<()> {
+    let plain = !vak.is_empty()
+        && vak.len() <= 64
+        && vak
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_');
+    if is_year_name(year) && plain {
+        Ok(())
+    } else {
+        Err(Error::InvalidArgument {
+            message: format!("Geen geldig schooljaar of vak: {year:?}, {vak:?}."),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn year_and_vak_are_names_not_paths() {
+        assert!(check_args("2025-2026", "nat").is_ok());
+        assert!(check_args("2025-2026", "wi_a").is_ok());
+        for (y, v) in [
+            ("2025-2026", "../x"),
+            ("2025-2026", "a/b"),
+            ("2025-2026", ""),
+            ("..", "nat"),
+            ("2025-2026/scores", "nat"),
+        ] {
+            assert!(check_args(y, v).is_err(), "{y} {v}");
+        }
+    }
 }

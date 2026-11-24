@@ -18,6 +18,8 @@ import { normaliseRubric } from '../src/domain/rubric';
 import { seAverage, yearAverage } from '../src/domain/statistics';
 import type { Exam, Group, ScoreRecord } from '../src/domain/types';
 import { addRecords, newBlock } from '../src/screens/toetsen/block-numbers';
+import { vakNumbers } from '../src/bridge/mock/mock-numbers';
+import { readFormats } from '../src/domain/numbers';
 
 interface Case {
   year: string;
@@ -27,6 +29,8 @@ interface Case {
 interface Manifest {
   data: string;
   out: string;
+  /** Afronden 1 on both averages: only then is the old screen path a reference too. */
+  defaultFormat: boolean;
   cases: Case[];
 }
 
@@ -98,6 +102,28 @@ function compare(m: Manifest): string[] {
       const b = JSON.stringify(canon(rs ?? null));
       if (a !== b) diffs.push(`| ${where(what)} | ${a} | ${b} |`);
     };
+
+    // The MockApi's numbers (the TS mirror) against Rust, entry by entry, at any format.
+    const files = {
+      read: (rel: string) => readJson(path.join(data, rel)),
+      readAll: (dir: string) => {
+        const abs = path.join(data, dir);
+        if (!fs.existsSync(abs)) return [];
+        return fs
+          .readdirSync(abs)
+          .filter((n) => n.endsWith('.json'))
+          .map((name) => ({ name, data: readJson(path.join(abs, name)) }))
+          .filter((f) => f.data !== null);
+      },
+      years: () => years,
+    };
+    const mock = vakNumbers(files, c.year, c.vak, readFormats(files.read('instellingen.json')));
+    same('formats', mock.formats, rust.formats);
+    for (const part of ['students', 'exams', 'summaries', 'groups'] as const) {
+      const keys = new Set([...Object.keys(mock[part]), ...Object.keys(rust[part] ?? {})]);
+      for (const k of keys) same(`mock ${part} ${k}`, mock[part][k], rust[part]?.[k]);
+    }
+    if (!m.defaultFormat) continue;
 
     const file = readJson(path.join(data, c.year, `students-${c.year}.json`));
     const students = (Array.isArray(file) ? file : (file?.students ?? [])) as any[];

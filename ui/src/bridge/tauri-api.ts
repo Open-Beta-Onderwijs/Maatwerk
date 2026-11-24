@@ -8,6 +8,7 @@
 import { Channel, convertFileSrc } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import type * as Ai from './ai-api';
+import type { VakNumbers } from '../domain/numbers';
 import { normaliseForTypst } from '../domain/rapport';
 import {
   PORTED_METHODS,
@@ -391,6 +392,9 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     migrateDataFolder: (dryRun) => orThrow(c.migrateDataFolder(dryRun ?? null)),
     validateDataFolder: () => orThrow(c.validateDataFolder()),
     rubricUsage: () => orThrow(c.rubricUsage()),
+    // The command returns JSON; its shape is `VakNumbers` (maatwerk_core::numbers).
+    vakNumbers: async (year, vak) =>
+      (await orThrow(c.vakNumbers(year, vak))) as unknown as VakNumbers,
     stampIssues: () => orThrow(c.stampIssues()),
     async acceptStamp(relPath) {
       await orThrow(c.acceptStamp(relPath));
