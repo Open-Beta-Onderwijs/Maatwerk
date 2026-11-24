@@ -1,0 +1,147 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Maatwerk: cijfergemiddelden</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+.mw-seg{display:inline-flex;border:1px solid #C9CED8;border-radius:8px;overflow:hidden;height:30px}
+.mw-seg button{border:0;border-right:1px solid #E1E4EA;font:inherit;font-size:13px;cursor:pointer;padding:0 12px;min-width:44px}
+.mw-seg button:last-child{border-right:0}
+.mw-tip{position:absolute;left:0;top:calc(100% + 6px);z-index:2;white-space:nowrap;background:#1B2230;color:#FFFFFF;font-size:12px;line-height:1.4;padding:6px 9px;border-radius:6px;box-shadow:0 4px 14px rgba(16,24,40,.18)}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 960px; box-sizing: border-box; padding: 28px 40px; background: #F5F6F8; font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif; color: #1B2230; font-size: 14px">
+  <div style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">BEHEER › INSTELLINGEN · onder de kaart AI-assistent (bord 62)</div>
+  <div style="margin-top: 14px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start">
+
+    <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h2 style="margin: 0; font-size: 16px">Cijfergemiddelden</h2>
+        <p style="margin: 0; color: #5D6675; font-size: 13px; line-height: 1.5">Hoe het gemiddelde van een leerling wordt getoond, voor de hele school. Het jaargemiddelde (r) en het SE-gemiddelde hebben elk hun eigen instelling.</p>
+      </div>
+      <table style="border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums">
+        <thead>
+          <tr>
+            <th style="width: 120px"></th>
+            <th style="text-align: left; padding: 0 12px 10px 0; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">JAARGEMIDDELDE (r)</th>
+            <th style="text-align: left; padding: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">SE-GEMIDDELDE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-top: 1px solid #EEF0F3">
+            <th style="text-align: left; padding: 12px 12px 12px 0; font-size: 13px; font-weight: 600">Methode</th>
+            <td style="padding: 12px 12px 12px 0">
+              <span class="mw-seg" role="group" aria-label="Methode r">
+                <sc-for list="{{rMethod}}" as="b" hint-placeholder-count="2"><button aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="background: {{b.bg}}; color: {{b.fg}}; font-weight: {{b.fw}}">{{b.label}}</button></sc-for>
+              </span>
+            </td>
+            <td style="padding: 12px 0">
+              <span class="mw-seg" role="group" aria-label="Methode SE">
+                <sc-for list="{{seMethod}}" as="b" hint-placeholder-count="2"><button aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="background: {{b.bg}}; color: {{b.fg}}; font-weight: {{b.fw}}">{{b.label}}</button></sc-for>
+              </span>
+            </td>
+          </tr>
+          <tr style="border-top: 1px solid #EEF0F3">
+            <th style="text-align: left; padding: 12px 12px 12px 0; font-size: 13px; font-weight: 600">Decimalen</th>
+            <td style="padding: 12px 12px 12px 0">
+              <span class="mw-seg" role="group" aria-label="Decimalen r">
+                <sc-for list="{{rDec}}" as="b" hint-placeholder-count="3"><button aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="background: {{b.bg}}; color: {{b.fg}}; font-weight: {{b.fw}}">{{b.label}}</button></sc-for>
+              </span>
+            </td>
+            <td style="padding: 12px 0">
+              <span class="mw-seg" role="group" aria-label="Decimalen SE">
+                <sc-for list="{{seDec}}" as="b" hint-placeholder-count="3"><button aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="background: {{b.bg}}; color: {{b.fg}}; font-weight: {{b.fw}}">{{b.label}}</button></sc-for>
+              </span>
+            </td>
+          </tr>
+          <tr style="border-top: 1px solid #EEF0F3; vertical-align: top">
+            <th style="text-align: left; padding: 12px 12px 12px 0; font-size: 13px; font-weight: 600">Voorbeelden</th>
+            <td style="padding: 12px 12px 12px 0">
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+                <sc-for list="{{rEx}}" as="x" hint-placeholder-count="4"><div style="display: flex; gap: 8px"><span style="width: 120px; color: #5D6675">{{x.from}}</span><span>→</span><b style="color: {{x.color}}">{{x.to}}</b></div></sc-for>
+              </div>
+            </td>
+            <td style="padding: 12px 0">
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+                <sc-for list="{{seEx}}" as="x" hint-placeholder-count="4"><div style="display: flex; gap: 8px"><span style="width: 120px; color: #5D6675">{{x.from}}</span><span>→</span><b style="color: {{x.color}}">{{x.to}}</b></div></sc-for>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin: 0; font-size: 12px; color: #5D6675; line-height: 1.5">Geldt voor leerlinggemiddelden. Toetsgemiddelden blijven afgerond op 1 decimaal. Rood: onder 5,5 zoals getoond.</p>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px solid #E1E4EA; border-radius: 12px; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px">Zo verschijnt het (niet in de app)</h2>
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">LEERLINGKAART, BIJ HOVER</div>
+      <div style="display: flex; gap: 24px; align-items: flex-start; padding-bottom: 44px">
+        <div style="position: relative; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 11px; color: #5D6675">gem.</span>
+          <b style="font-size: 18px; color: {{cardRColor}}; text-decoration: underline dotted #C9CED8">{{cardR}}</b>
+          <span class="mw-tip">{{tipR}}</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; margin-left: 150px">
+          <span style="font-size: 11px; color: #5D6675">SE</span>
+          <b style="font-size: 18px; color: {{cardSeColor}}">{{cardSe}}</b>
+        </div>
+      </div>
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #5D6675">GROEPSKAART, BIJ HOVER</div>
+      <div style="position: relative; padding-bottom: 44px; font-variant-numeric: tabular-nums">
+        <span style="text-decoration: underline dotted #C9CED8">{{groupLine}}</span>
+        <span class="mw-tip">Gemiddelde van de getoonde cijfers, afgerond op 1 decimaal</span>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #5D6675; line-height: 1.5">Leerling: r uit 5,3 en 5,7 (5,5), SE 5,45. Groep: leerlingen met r 5,9, 5,5 en 7,2. Ook in het groepsoverzicht (kolommen gem. en SE) en het profiel.</p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { rm: 'afronden', rd: 1, sm: 'afronden', sd: 1 }; }
+  renderVals() {
+    // Mock only: the values come from the spec table (step-19-grade-rules.md, "Shown averages").
+    const T = {
+      '5,45': { a0: '5', a1: '5,5', a2: '5,45', k0: '5', k1: '5,4', k2: '5,45' },
+      '5,5': { a0: '6', a1: '5,5', a2: '5,50', k0: '5', k1: '5,5', k2: '5,50' },
+      '5,9': { a0: '6', a1: '5,9', a2: '5,90', k0: '5', k1: '5,9', k2: '5,90' },
+      '6,95': { a0: '7', a1: '7,0', a2: '6,95', k0: '6', k1: '6,9', k2: '6,95' },
+      '7,2': { a0: '7', a1: '7,2', a2: '7,20', k0: '7', k1: '7,2', k2: '7,20' },
+    };
+    const FROM = [['5,45', '5,45'], ['5,3 + 5,7', '5,5'], ['5,9', '5,9'], ['6,95', '6,95']];
+    const key = (m, d) => (m === 'afronden' ? 'a' : 'k') + d;
+    const fail = (s) => Number(s.replace(',', '.')) < 5.5;
+    const red = (s) => (fail(s) ? '#B42318' : '#1B2230');
+    const seg = (opts, cur, set) => opts.map(([v, label]) => ({
+      label, on: String(v === cur), pick: () => this.setState(set(v)),
+      bg: v === cur ? '#2E3E50' : '#FFFFFF', fg: v === cur ? '#FFFFFF' : '#1B2230', fw: v === cur ? 600 : 400,
+    }));
+    const methods = [['afronden', 'Afronden'], ['afkappen', 'Afkappen']];
+    const decs = [[0, '0'], [1, '1'], [2, '2']];
+    const ex = (k) => FROM.map(([from, v]) => ({ from, to: T[v][k], color: red(T[v][k]) }));
+    const { rm, rd, sm, sd } = this.state;
+    const rk = key(rm, rd), sk = key(sm, sd);
+    const words = (m, d) => `${m === 'afronden' ? 'Afgerond' : 'Afgekapt'} op ${d} ${d === 1 ? 'decimaal' : 'decimalen'}`;
+    const shown = ['5,9', '5,5', '7,2'].map((v) => Number(T[v][rk].replace(',', '.')));
+    const mean = shown.reduce((a, b) => a + b, 0) / shown.length;
+    const onv = shown.filter((x) => x < 5.5).length;
+    return {
+      rMethod: seg(methods, rm, (v) => ({ rm: v })), seMethod: seg(methods, sm, (v) => ({ sm: v })),
+      rDec: seg(decs, rd, (v) => ({ rd: v })), seDec: seg(decs, sd, (v) => ({ sd: v })),
+      rEx: ex(rk), seEx: ex(sk),
+      cardR: T['5,5'][rk], cardRColor: red(T['5,5'][rk]), tipR: `Jaargemiddelde 5,5 · ${words(rm, rd)}`,
+      cardSe: T['5,45'][sk], cardSeColor: red(T['5,45'][sk]),
+      groupLine: `${mean.toFixed(1).replace('.', ',')} gem. · ${Math.round((100 * onv) / 3)}% onvoldoende`,
+    };
+  }
+}
+</script>
+</body>
+</html>

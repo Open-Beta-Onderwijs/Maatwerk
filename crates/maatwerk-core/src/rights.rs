@@ -198,14 +198,20 @@ pub fn score_file(rel: &str) -> Option<(&str, &str, &str)> {
         .then_some((year, vak, stem))
 }
 
-/// Checks a JSON write from the UI against the session's rights. Only score files are guarded
-/// (step 35); `new` = `None` is a delete.
+/// Checks a JSON write from the UI against the session's rights. Guarded: score files (step 35)
+/// and the Cijfergemiddelden in `instellingen.json` (step 38); `new` = `None` is a delete.
 pub fn check_json_write(
     storage: &Storage,
     session: Option<&Session>,
     rel: &RelPath,
     new: Option<&Value>,
 ) -> Result<()> {
+    if rel
+        .as_str()
+        .eq_ignore_ascii_case(crate::snapshots::SETTINGS_FILE)
+    {
+        return check_settings_write(storage, session, rel, new);
+    }
     let Some((year, vak, student)) = score_file(rel.as_str()) else {
         return Ok(());
     };
@@ -245,6 +251,34 @@ pub fn check_json_write(
         }
     }
     Ok(())
+}
+
+/// Only the admin changes the school's Cijfergemiddelden (decision 91): a write that leaves
+/// `gemiddelden` as it is passes for everyone, as before step 38.
+fn check_settings_write(
+    storage: &Storage,
+    session: Option<&Session>,
+    rel: &RelPath,
+    new: Option<&Value>,
+) -> Result<()> {
+    let field = crate::numbers::format::SCHOOL_FIELD;
+    let old = storage.read_json(rel).ok().flatten();
+    let before = old.as_ref().and_then(|v| v.get(field));
+    let after = new.and_then(|v| v.get(field));
+    if before == after {
+        return Ok(());
+    }
+    let admin = match session {
+        Some(session) => effective_role(storage, session)? == Some(Role::Beheer),
+        None => false,
+    };
+    if admin {
+        Ok(())
+    } else {
+        Err(forbidden(
+            "Alleen de beheerder mag de cijfergemiddelden wijzigen (Beheer › Instellingen).",
+        ))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
