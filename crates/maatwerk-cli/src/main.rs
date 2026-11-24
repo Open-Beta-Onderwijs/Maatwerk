@@ -23,6 +23,7 @@ usage: maatwerk-cli typst compile <file.typ> [--out <file.pdf>] [--input <key>=<
        maatwerk-cli migrate <data-folder> (--dry-run | --apply --backup-dir <dir>) [--json] [-v]
        maatwerk-cli admin reset-pin <data-folder>
        maatwerk-cli stats <data-folder> --year <school-year> --vak <vak> [--json]
+       maatwerk-cli numbers <data-folder> --year <school-year> --vak <vak>
        maatwerk-cli rubric check <rubric.json | data-folder> [--json]
        maatwerk-cli assignment check <opdracht> [--json] [--answers] [--ignore-system-fonts]
                                     [--timeout <seconds>]
@@ -49,6 +50,9 @@ and gets new codes. Last resort when both are lost (docs/cutover-runbook.md).
 stats: prints the numbers of one school year and vak, for checking them by hand: per test the
 mean, SD and % onvoldoende, per student (by number) the year average, SE average and trend. Reads
 only (docs/phase-2/step-19-grade-rules.md).
+
+numbers: prints, as JSON, everything the list screens show for one school year and vak (cards,
+Verzamelkaarten, group statistics, shown r/SE under the school's Cijfergemiddelden). Reads only.
 
 rubric check: checks the levels of one rubric file, or of every rubric in a data folder (with
 the number of PO's that use it): 2-5 levels per category, whole points, no two levels with the
@@ -111,6 +115,10 @@ fn main() -> ExitCode {
         },
         ["stats", rest @ ..] => match stats::StatsArgs::parse(rest) {
             Ok(args) => args.run(),
+            Err(message) => usage_error(&message),
+        },
+        ["numbers", rest @ ..] => match stats::StatsArgs::parse(rest) {
+            Ok(args) => args.run_numbers(),
             Err(message) => usage_error(&message),
         },
         ["--help" | "-h"] => {

@@ -374,3 +374,185 @@ pub fn compute(
         groups: out_groups,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::grades::Method;
+    use serde_json::json;
+
+    fn exam(v: Value) -> Exam {
+        serde_json::from_value(v).unwrap()
+    }
+
+    fn year(exams: Vec<Value>, records: Vec<(&str, Value)>) -> YearData {
+        let diagnostic = exams
+            .iter()
+            .filter(|e| e["diagnostic"] == json!(true))
+            .map(|e| e["id"].as_str().unwrap().to_owned())
+            .collect();
+        YearData {
+            year: "2026-2027".into(),
+            exams: exams.into_iter().map(exam).collect(),
+            records: records
+                .into_iter()
+                .map(|(id, v)| (id.to_owned(), v))
+                .collect(),
+            diagnostic,
+        }
+    }
+
+    fn student(id: &str, upper: bool) -> Student {
+        Student {
+            id: id.into(),
+            upper,
+        }
+    }
+
+    fn q(points: u32) -> Value {
+        json!([{"id": "q1", "max_points": points, "rtti": "R"}])
+    }
+
+    fn rubric() -> Value {
+        json!({"id": "r", "subject": "nat", "categories": [
+            {"id": "c1", "naam": "Inhoud", "max": 10, "soort": "normaal", "niveaus": []}
+        ]})
+    }
+
+    #[test]
+    fn cards_bars_verzamelkaart_and_formats() {
+        let data = year(
+            vec![
+                json!({"id": "t1", "volgnummer": 1, "n_term": 1, "questions": q(10)}),
+                json!({"id": "h1", "parent_id": "t1", "attempt": 2, "n_term": 1, "questions": q(10)}),
+                json!({"id": "d", "volgnummer": 2, "diagnostic": true, "weging": 0, "n_term": 1, "questions": q(10)}),
+            ],
+            vec![
+                // t1 4,6, resit 6,4: the resit counts.
+                (
+                    "a",
+                    json!({"scores": {"t1": {"q1": 4}, "h1": {"q1": 6}, "d": {"q1": 9}},
+                             "observations": {"t1": ["o1", "o1", 3], "h1": ["o2"]}}),
+                ),
+                // No grade anywhere: the Verzamelkaart counts the observaties of every attempt.
+                (
+                    "b",
+                    json!({"observations": {"t1": ["o1"], "h1": ["o1", "o3"]}}),
+                ),
+            ],
+        );
+        let k0 = Formats {
+            r: AverageFormat::new(Method::Afkappen, 0).unwrap(),
+            ..Formats::default()
+        };
+        let n = compute(
+            "nat",
+            &data,
+            &[],
+            &[student("a", false), student("b", false)],
+            &[],
+            k0,
+        );
+        let a = &n.students["a"];
+        assert_eq!(a.results["t1"], 4.6);
+        assert_eq!(a.results["h1"], 6.4);
+        assert_eq!(
+            a.bars,
+            vec![
+                Bar {
+                    exam_id: "t1".into(),
+                    grade: 6.4,
+                    diagnostic: false
+                },
+                Bar {
+                    exam_id: "d".into(),
+                    grade: 9.1,
+                    diagnostic: true
+                },
+            ]
+        );
+        // Year average 6,4 (d has weging 0); afkappen 0 shows 6.
+        let avg = a.average.unwrap();
+        assert_eq!((avg.raw, avg.shown, avg.fails), (6.4, 6.0, false));
+        assert!(n.students["b"].average.is_none());
+        assert_eq!(n.exams["t1"].grades, vec![4.6]);
+        assert_eq!(n.exams["t1"].obs, BTreeMap::from([("o1".into(), 2)]));
+        let v = &n.summaries["t1"];
+        assert_eq!(v.grades, vec![6.4]);
+        assert_eq!(
+            v.obs,
+            BTreeMap::from([("o2".into(), 1), ("o1".into(), 1), ("o3".into(), 1)])
+        );
+        assert!(!n.summaries.contains_key("d"));
+        assert_eq!(n.exams["t1"].stats.unwrap().n, 1);
+        assert_eq!(n.exams["t1"].histogram.bins.iter().sum::<usize>(), 1);
+    }
+
+    #[test]
+    fn a_po_is_graded_with_its_rubric_and_counts_category_observaties() {
+        let mut po = json!({"id": "p", "kind": "po", "subject": "nat", "rubric_id": "r"});
+        po["rubric"] = rubric();
+        let data = year(
+            vec![po],
+            vec![(
+                "a",
+                json!({"scores": {"p": {"c1": 7}}, "observations": {"p": ["o1"]},
+                       "po": {"p": {"categoryObs": {"c1": ["o1", "o2"]}}}}),
+            )],
+        );
+        let n = compute(
+            "nat",
+            &data,
+            &[],
+            &[student("a", false)],
+            &[],
+            Formats::default(),
+        );
+        assert_eq!(n.students["a"].results["p"], 7.0);
+        assert_eq!(
+            n.exams["p"].obs,
+            BTreeMap::from([("o1".into(), 1), ("o2".into(), 1)])
+        );
+    }
+
+    #[test]
+    fn group_numbers_use_the_shown_values_and_the_se_of_all_years() {
+        let pta = |id: &str, nr: u32| json!({"id": id, "volgnummer": nr, "type": "pta", "n_term": 1, "questions": q(10)});
+        let mut old = year(
+            vec![pta("x", 1)],
+            vec![("a", json!({"scores": {"x": {"q1": 2}}}))],
+        );
+        old.year = "2025-2026".into();
+        for e in &mut old.exams {
+            e.academic_year = Some("2025-2026".into());
+        }
+        let mut now = year(
+            vec![pta("t", 1)],
+            vec![
+                ("a", json!({"scores": {"t": {"q1": 5}}})),
+                ("b", json!({"scores": {"t": {"q1": 6}}})),
+            ],
+        );
+        for e in &mut now.exams {
+            e.academic_year = Some("2026-2027".into());
+        }
+        let group: Group = serde_json::from_value(
+            json!({"id": "g", "subject": "nat", "jaarlaag": "4", "student_ids": ["a", "b"]}),
+        )
+        .unwrap();
+        let k0 = Formats {
+            r: AverageFormat::new(Method::Afkappen, 0).unwrap(),
+            se: AverageFormat::new(Method::Afkappen, 0).unwrap(),
+        };
+        let all = [now.clone(), old];
+        let students = [student("a", false), student("b", false)];
+        let n = compute("nat", &now, &all, &students, &[group], k0);
+        // a: r 5,5 -> 5 (fail); b: 6,4 -> 6. SE of a over both years: (2,8 + 5,5) / 2 = 4,15 -> 4.
+        let g = &n.groups["g"];
+        assert!(g.upper);
+        let year = g.year.unwrap();
+        assert_eq!((year.mean, year.fails), (5.5, 50.0));
+        assert_eq!(n.students["a"].se.unwrap().shown, 4.0);
+        assert_eq!(g.se.unwrap().mean, 5.0);
+    }
+}

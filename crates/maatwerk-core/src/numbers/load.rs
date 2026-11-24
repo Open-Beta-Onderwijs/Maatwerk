@@ -134,8 +134,14 @@ pub fn load_year(storage: &Storage, year: &str, vak: &str, rubrics: &[Value]) ->
 /// The year's students (`students-<year>.json`), in file order.
 pub fn load_students(storage: &Storage, year: &str) -> Result<Vec<Student>> {
     let list = storage.read_json(&rel(&format!("{year}/students-{year}.json"))?)?;
-    let Some(Value::Array(items)) = list else {
-        return Ok(vec![]);
+    // v2/v3: `{ "students": [...] }`; a bare array as v1 wrote it.
+    let items = match &list {
+        Some(Value::Array(items)) => items,
+        Some(v) => match v.get("students") {
+            Some(Value::Array(items)) => items,
+            _ => return Ok(vec![]),
+        },
+        None => return Ok(vec![]),
     };
     Ok(items
         .iter()
