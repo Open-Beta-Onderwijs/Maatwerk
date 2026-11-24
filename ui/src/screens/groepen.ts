@@ -15,13 +15,9 @@ import {
   getEigenOnly,
   getAdminSubjectFilter,
 } from '../app.js';
-import { groupCardNumbers, isUpperSchool } from '../domain/cards';
-import { seAverage } from '../domain/statistics';
-import type { HistoryEntry } from '../domain/attempts';
-import type { Exam, ScoreRecord } from '../domain/types';
 import { applyStyleData } from '../legacy/style-data';
+import { vakNumbers } from '../services/vak-numbers';
 import { Store } from '../store.js';
-import { yieldSlice } from '../utils/idle';
 import { perfSpan } from '../utils/perf';
 import { openGroupStudentsModal } from './leerlingen';
 import { groupGradesHtml } from './cards/card-html';
@@ -236,67 +232,27 @@ export async function renderGroepenForYear(year: string): Promise<void> {
 
 // ── Grade stats ──────────────────────────────────────────────────────────────
 
-async function groupNumbers(group: Group, year: string) {
-  const subject = group.subject;
-  if (!subject) return null;
-  const students = (Store.getStudentsSync(year) as Person[]).filter((s) =>
-    group.student_ids.includes(s.id),
-  );
-  if (students.length === 0) return null;
-  const upper = isUpperSchool(group.jaarlaag);
-
-  // All the students' tests of the year, whatever the group's jaarlaag (decision 25).
-  await Store.getExams(year, subject);
-  const allExams = upper ? (Store.getAllExamsSync(subject) as Exam[]) : [];
-  const members: { year: number | null; se: number | null }[] = [];
-  // One student at a time, in slices: the tab paints first and stays responsive (perf hotfix
-  // 0.24.1; cached reads are microtasks, so all groups ran as one long task).
-  for (const s of students) {
-    await yieldSlice();
-    const rec = (await Store.getStudentScores(s.id, year, subject)) as ScoreRecord;
-    const se = upper
-      ? seAverage(
-          (await Store.getStudentHistory(s.id, subject, { loaded: true })) as HistoryEntry[],
-          allExams,
-        )
-      : null;
-    members.push({ year: Store.studentYearAverage(rec, year, subject) as number | null, se });
-  }
-  // Decision 21: mean, SD and % onvoldoende of the averages as shown.
-  return groupCardNumbers(members, upper);
-}
-
 /** Each render starts a new fill; an older one stops (review 26-28 m4). */
 let fillRun = 0;
 
 async function fillGroupGradeStats(groups: Group[], year: string, container: HTMLElement) {
   const run = ++fillRun;
   const end = perfSpan('groepen:stats');
-  // One folder read per vak (and per year for the SE) instead of one read per student (Step 7c).
+  // The numbers are the core's (step 38): one call per vak, shared with Leerlingen and Toetsen.
   const subjects = [...new Set(groups.map((g) => g.subject).filter((s): s is string => !!s))];
-  const years = groups.some((g) => isUpperSchool(g.jaarlaag))
-    ? (Store.listYearsSync() as string[])
-    : [year];
-  // Every year once (not once per student, review 26-28 M2); the SE needs all of them.
-  await Promise.all(
-    subjects.flatMap((s) =>
-      years.map((y) =>
-        Promise.all([
-          (Store.loadYear(y, s) as Promise<void>).catch(() => {}),
-          (Store.preloadScores(y, s) as Promise<void>).catch(() => {}),
-        ]),
-      ),
-    ),
+  const generation = Store.generation() as number;
+  const results = await Promise.all(
+    subjects.map((s) => vakNumbers(year, s, generation).catch(() => null)),
   );
+  if (run !== fillRun) return;
+  const bySubject = new Map(subjects.map((s, i) => [s, results[i]]));
   for (const g of groups) {
-    if (run !== fillRun) return;
-    const numbers = await groupNumbers(g, year);
-    // groupNumbers yields per student: a newer draw may have taken over (review 33b m2).
-    if (run !== fillRun) return;
+    const numbers = g.subject ? bySubject.get(g.subject)?.groups[g.id] : undefined;
     if (!numbers) continue;
     const el = container.querySelector<HTMLElement>(`[data-grade-stats="${CSS.escape(g.id)}"]`);
     if (!el) continue;
-    el.innerHTML = groupGradesHtml(numbers);
+    // Decision 21/92: mean, SD and % onvoldoende of the members' averages as shown.
+    el.innerHTML = groupGradesHtml({ year: numbers.year, se: numbers.upper ? numbers.se : null });
     applyStyleData(el);
   }
   end();
