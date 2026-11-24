@@ -92,7 +92,39 @@ Visible changes come from the user's answers, not from the move to Rust:
 | Question editor footer, RTTI % (`questionSummary`) | % of all normal points | % of the RTTI points (`rapportTotals.share`); differs only while a normal question has no RTTI category | crate |
 | PO maxima (`checkRubric.totals`) | sum of `max` | the rubric rules' whole maxima: an invalid max counts 0 | crate |
 
-Visual baselines: `modal-profiel-cijferverloop` (light, dark, geel) updated after the user's OK
-(2026-11-24). `modal-po-overzicht-categorieen` (light, dark, geel) **waits for the user's look**
-(run `npx playwright test --project=visual -g modal-po-overzicht-categorieen` in `ui/` to see
-the diff).
+Visual baselines: `modal-profiel-cijferverloop`, `modal-po-overzicht-categorieen` and
+`admin-instellingen` (light, dark, geel) updated after the user's OK (2026-11-24).
+
+### Gate tables (step 38.8, `school` fixture)
+
+From `node tools/numbers-parity.mjs school [r se]` (`target/numbers-parity/*/<year>-<vak>.json`;
+every number is the crate's). "Before" is the default format (a1), which is also what 0.28.0
+shows: parity with the old screen path is 0 differences at a1/a1 on `tiny` and `school`, and Rust
+= MockApi mirror on every run below (k0/a2, a0/k2, k1/k0). "Raw" is the unrounded average the
+crate gets before the format applies. A shown value under 5,5 is red.
+
+Default format (a1/a1), unchanged:
+
+| Student (year, vak)  | Number | Raw               | 0.28.0    | 0.29.0    |
+| -------------------- | ------ | ----------------- | --------- | --------- |
+| 900001 (2025-26 nat) | r      | 4.611111111111111 | 4,6 (red) | 4,6 (red) |
+| 900002 (2025-26 nat) | r      | 4.366666666666666 | 4,4 (red) | 4,4 (red) |
+| 900003 (2025-26 nat) | r      | 3.428571428571428 | 3,4 (red) | 3,4 (red) |
+
+Other formats (two per format; picked where the shown value changes, pass/fail flips first):
+
+| Student (year, vak)   | Number, format | Raw               | Before (a1) | After      |
+| --------------------- | -------------- | ----------------- | ----------- | ---------- |
+| 900015 (2024-25 schk) | r, afronden 0  | 5.485714285714286 | 5,5         | 5 (red)    |
+| 900348 (2024-25 schk) | r, afronden 0  | 5.485714285714286 | 5,5         | 5 (red)    |
+| 900126 (2024-25 bio)  | SE, afronden 2 | 5.45              | 5,5         | 5,45 (red) |
+| 900169 (2024-25 nat)  | SE, afronden 2 | 5.45              | 5,5         | 5,45 (red) |
+| 900004 (2024-25 bio)  | r, afkappen 0  | 5.914285714285714 | 5,9         | 5 (red)    |
+| 900059 (2024-25 bio)  | SE, afkappen 0 | 5.95              | 6,0         | 5 (red)    |
+| 900117 (2024-25 wi)   | r, afkappen 1  | 5.471428571428571 | 5,5         | 5,4 (red)  |
+| 900197 (2025-26 bio)  | r, afkappen 1  | 5.466666666666666 | 5,5         | 5,4 (red)  |
+| 900148 (2024-25 schk) | SE, afkappen 2 | 5.45              | 5,5         | 5,45 (red) |
+| 900594 (2024-25 schk) | SE, afkappen 2 | 5.449999999999999 | 5,5         | 5,45 (red) |
+
+900594 is the float-noise case of decision 91: the raw sum lands just under 5,45, and the noise
+is removed in billionths before afkappen, so it shows 5,45 and not 5,44.
