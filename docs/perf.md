@@ -410,8 +410,7 @@ Findings:
 
 - The background fills are 3-700x shorter: Groepen's statistics are a lookup now (2,9 s -> 5 ms
   at 4x), the Leerlingen grades 3,2 s -> 0,9 s, the Toetsen statistics 1,2 s -> 0,2-0,4 s. At 4x
-  the long tasks halve (5,5 s -> 2,7 s in total); the longest stays ~200 ms (a screen's own
-  build, not the numbers).
+  the long tasks halve (5,5 s -> 2,7 s in total); the longest stays ~200 ms (not profiled).
 - The first visits stay within the 0.24.1 range; at 1x all are under 50 ms. The first Toetsen
   visit at 4x reads 200-250 ms against 175-185 ms before: within the run-to-run spread seen in
   0.24.1 (141-266 ms); Groepen 112-137 ms against 93-94 ms likewise. Neither cause is profiled yet.
