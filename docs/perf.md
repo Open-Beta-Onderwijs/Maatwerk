@@ -417,5 +417,21 @@ Findings:
 - The synthetic fixture gives every student scores in every exam of the vak (worst case); real
   data has far fewer graded records per exam. Not measured: WebKit (macOS, Linux) and the
   user's real copy (M-PERF-1, the user runs it).
-- A disk cache (backlog "Grade cache" part 2) is not needed for these numbers: the user decides
-  (step 38.7).
+- A disk cache (backlog "Grade cache" part 2) is not needed for now (user, 2026-11-24): it stays
+  "After 1.0".
+
+**Why Groepen went to milliseconds and Leerlingen did not** (user's question). The three screens
+share one `vak_numbers` call per year and vak, cached per data generation
+(`services/vak-numbers.ts`). The script visits Leerlingen first, so Leerlingen pays for the call
+and Groepen, visited next, gets the cached result: `groepen:stats` now times only writing the
+group cards (in 0.28.0 it computed every group's statistics itself in WebAssembly). The cost
+moved, it did not vanish. `leerlingen:grades` (~0,9 s at 4x) holds:
+
+1. `Store.loadYear` (the exams that name the bars; `store:readDir` alone is 200-300 ms at 4x);
+2. the native call: `maatwerk-cli numbers` on the same data takes ~240 ms (process start and
+   file reads included; the CPU throttle does not apply to Rust), and its answer is ~690 KB of
+   JSON that the webview parses;
+3. 600 cards' HTML, built in ~8 ms slices that share the main thread with `leerlingen:rest`
+   (the other cards' DOM, built at the same time).
+
+A Groepen visit before Leerlingen would show the call's cost in `groepen:stats` instead.
