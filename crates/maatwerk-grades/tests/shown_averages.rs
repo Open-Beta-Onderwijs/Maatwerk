@@ -4,18 +4,30 @@
 //! `tools/fixtures/shown-averages.mjs` with exact integer arithmetic; spec "Shown averages" in
 //! `docs/phase-2/step-19-grade-rules.md`, decisions 91-93).
 //!
-//! Today the crate has only the default format, afronden 1 (`round1`): these tests pin it on
-//! every case. Step 38 adds afkappen and 0/2 decimals (`shown_average`) and extends them to all
-//! six formats (`a0` .. `k2`).
+//! Every case and every group under all six formats (`a0` .. `k2`) through `shown_average` and
+//! the formatted group statistics. No case may differ.
 
 use std::path::PathBuf;
 
-use maatwerk_grades::{round1, stats_of_averages};
+use maatwerk_grades::{
+    AverageFormat, Method, mean_of_averages, round1, shown_average, stats_of_averages,
+};
 use serde_json::Value;
+
+const FORMATS: [&str; 6] = ["a0", "a1", "a2", "k0", "k1", "k2"];
 
 fn data() -> Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/shown_averages.json");
     serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn format(key: &str) -> AverageFormat {
+    let method = match &key[..1] {
+        "a" => Method::Afronden,
+        "k" => Method::Afkappen,
+        other => panic!("unknown method {other}"),
+    };
+    AverageFormat::new(method, key[1..].parse().unwrap()).unwrap()
 }
 
 fn nums(v: &Value) -> Vec<f64> {
@@ -44,21 +56,53 @@ fn expected(v: &Value) -> Option<f64> {
 }
 
 #[test]
-fn every_case_afronden_1_matches_exact_arithmetic() {
+fn the_formats_of_the_test_set_are_the_six_of_the_spec() {
     let d = data();
-    let mut checked = 0;
-    for part in ["edge", "pairs", "random"] {
-        for case in d[part].as_array().unwrap() {
-            let got = average(case).map(round1);
-            assert_eq!(got, expected(&case["a1"]), "{part}: {case}");
-            checked += 1;
-        }
-    }
-    assert!(checked > 7000, "the test set shrank: {checked} cases");
+    let keys: Vec<&str> = d["formats"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f.as_str().unwrap())
+        .collect();
+    assert_eq!(keys, FORMATS);
+    assert_eq!(AverageFormat::default(), format("a1"));
 }
 
 #[test]
-fn every_group_afronden_1_matches_exact_arithmetic() {
+fn every_case_in_every_format_matches_exact_arithmetic() {
+    let d = data();
+    let mut checked = 0;
+    for key in FORMATS {
+        let fmt = format(key);
+        for part in ["edge", "pairs", "random"] {
+            for case in d[part].as_array().unwrap() {
+                let got = average(case).map(|a| shown_average(a, fmt));
+                assert_eq!(got, expected(&case[key]), "{key} {part}: {case}");
+                checked += 1;
+            }
+        }
+    }
+    assert!(checked > 6 * 7000, "the test set shrank: {checked} cases");
+}
+
+#[test]
+fn afronden_1_is_round1() {
+    let d = data();
+    for part in ["edge", "pairs", "random"] {
+        for case in d[part].as_array().unwrap() {
+            if let Some(a) = average(case) {
+                assert_eq!(
+                    shown_average(a, AverageFormat::default()),
+                    round1(a),
+                    "{case}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn every_group_in_every_format_matches_exact_arithmetic() {
     let d = data();
     for group in d["groups"].as_array().unwrap() {
         let averages: Vec<f64> = group["students"]
@@ -67,13 +111,32 @@ fn every_group_afronden_1_matches_exact_arithmetic() {
             .iter()
             .map(|s| average(s).unwrap())
             .collect();
-        let stats = stats_of_averages(&averages).unwrap();
-        let want = &group["a1"];
-        assert_eq!(Some(round1(stats.mean)), expected(&want["mean"]), "{group}");
-        assert_eq!(
-            stats.fails,
-            want["onvoldoende"].as_f64().unwrap(),
-            "{group}"
-        );
+        for key in FORMATS {
+            let fmt = format(key);
+            let want = &group[key];
+            let shown: Vec<Option<f64>> = averages
+                .iter()
+                .map(|a| Some(shown_average(*a, fmt)))
+                .collect();
+            let want_shown: Vec<Option<f64>> = want["shown"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(expected)
+                .collect();
+            assert_eq!(shown, want_shown, "{key}: {group}");
+            let stats = stats_of_averages(&averages, fmt).unwrap();
+            assert_eq!(Some(round1(stats.mean)), expected(&want["mean"]), "{key}");
+            assert_eq!(
+                mean_of_averages(&averages, fmt).map(round1),
+                expected(&want["mean"]),
+                "{key}"
+            );
+            assert_eq!(
+                stats.fails,
+                want["onvoldoende"].as_f64().unwrap(),
+                "{key}: {group}"
+            );
+        }
     }
 }

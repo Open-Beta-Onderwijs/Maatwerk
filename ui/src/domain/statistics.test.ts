@@ -2,7 +2,14 @@
 
 import { describe, expect, it } from 'vitest';
 import type { HistoryEntry } from './attempts';
-import { pooledRtti, rttiGemHistory, rttiPercents } from './statistics';
+import {
+  pooledRtti,
+  rttiGemHistory,
+  rttiPercents,
+  shownAverage,
+  statsOfAverages,
+  type AverageFormat,
+} from './statistics';
 import type { Exam } from './types';
 
 const YEAR = '2026-2027';
@@ -49,5 +56,28 @@ describe('the RTTI Gem. of a student (decision 27)', () => {
   it('the examendossier is the PTA tests, as before', () => {
     const pta = entry('pta', 5, 10, { type: 'pta' });
     expect(rttiGemHistory([NORMAL, pta, DIAGNOSTIC], 'se')).toEqual([pta]);
+  });
+});
+
+describe('shown averages (Cijfergemiddelden, decisions 91-93)', () => {
+  const k0: AverageFormat = { methode: 'afkappen', decimalen: 0 };
+  const a2: AverageFormat = { methode: 'afronden', decimalen: 2 };
+
+  it('defaults to afronden 1', () => {
+    expect(shownAverage(5.45)).toBe(5.5);
+    expect(shownAverage(6.75)).toBe(6.8);
+  });
+
+  it('follows the format, noise removed first', () => {
+    expect(shownAverage(5.9, k0)).toBe(5);
+    expect(shownAverage((5.3 + 5.7) / 2, k0)).toBe(5);
+    expect(shownAverage(5.999999999999999, k0)).toBe(6);
+    expect(shownAverage((8.6 + 8.7) / 2, a2)).toBe(8.65);
+  });
+
+  it('group numbers use the shown values', () => {
+    expect(statsOfAverages([5.9, 7.2], k0)).toMatchObject({ mean: 6, fails: 50 });
+    expect(statsOfAverages([5.45, 7], a2)).toMatchObject({ fails: 50 });
+    expect(statsOfAverages([5.45, 7])).toMatchObject({ fails: 0 });
   });
 });

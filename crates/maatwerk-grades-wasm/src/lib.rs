@@ -136,13 +136,18 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             let (grades,): (Vec<f64>,) = parse(args)?;
             json(g::stats(&grades))
         }
+        // The format (`{methode, decimalen}`) is optional: missing is afronden 1.
         "meanOfAverages" => {
-            let (values,): (Vec<f64>,) = parse(args)?;
-            json(g::mean_of_averages(&values))
+            let (values, fmt): (Vec<f64>, Option<g::AverageFormat>) = parse(pad(args, 2))?;
+            json(g::mean_of_averages(&values, fmt.unwrap_or_default()))
         }
         "statsOfAverages" => {
-            let (values,): (Vec<f64>,) = parse(args)?;
-            json(g::stats_of_averages(&values))
+            let (values, fmt): (Vec<f64>, Option<g::AverageFormat>) = parse(pad(args, 2))?;
+            json(g::stats_of_averages(&values, fmt.unwrap_or_default()))
+        }
+        "shownAverage" => {
+            let (x, fmt): (f64, Option<g::AverageFormat>) = parse(pad(args, 2))?;
+            json(g::shown_average(x, fmt.unwrap_or_default()))
         }
         "mean" => {
             let (values,): (Vec<f64>,) = parse(args)?;
@@ -397,6 +402,12 @@ mod tests {
             ("mean", json!([[5.0, 6.0]])),
             ("meanOfAverages", json!([[5.0, 6.0]])),
             ("statsOfAverages", json!([[5.0, 6.0]])),
+            (
+                "statsOfAverages",
+                json!([[5.0], {"methode": "afkappen", "decimalen": 0}]),
+            ),
+            ("meanOfAverages", json!([[5.0], null])),
+            ("shownAverage", json!([5.45])),
             ("histogram", json!([[5.0], 0.5])),
             ("gradeGroup", json!([5.0])),
             ("boxStats", json!([[5.0]])),
@@ -431,6 +442,19 @@ mod tests {
         ] {
             run(name, args);
         }
+    }
+
+    #[test]
+    fn the_average_format_reaches_the_ui() {
+        let k0 = json!({"methode": "afkappen", "decimalen": 0});
+        assert_eq!(run("shownAverage", json!([5.9, k0.clone()])), json!(5.0));
+        assert_eq!(run("shownAverage", json!([5.45])), json!(5.5));
+        let s = run("statsOfAverages", json!([[5.9, 7.2], k0]));
+        assert_eq!(
+            (s["mean"].clone(), s["fails"].clone()),
+            (json!(6.0), json!(50.0))
+        );
+        assert!(dispatch("shownAverage", json!([5.0, {"decimalen": 3}])).is_err());
     }
 
     #[test]

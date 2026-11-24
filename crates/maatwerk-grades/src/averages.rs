@@ -4,7 +4,7 @@
 
 use crate::attempts::{HistoryEntry, best_attempt, families, resolve_best_attempts};
 use crate::model::{Exam, ScoreRecord};
-use crate::round::round1;
+use crate::round::{AverageFormat, is_fail_shown, round0, shown_average};
 use crate::stats::{Stats, mean, stats};
 
 /// `sum(weight x grade) / sum(weight)`; a weight of 0 or less falls out; `None` when nothing counts.
@@ -58,17 +58,22 @@ pub fn se_average(history: &[HistoryEntry], exams: &[Exam]) -> Option<f64> {
     }))
 }
 
-/// The mean of students' averages as shown, rounded to one decimal (decision 21): the jaarlaag
-/// average, and the group overview's footer.
-pub fn mean_of_averages(averages: &[f64]) -> Option<f64> {
-    let shown: Vec<f64> = averages.iter().map(|a| round1(*a)).collect();
+/// The mean of students' averages as shown under `fmt` (decisions 21, 92): the jaarlaag average,
+/// and the group overview's footer. Not rounded: the caller shows it through `round1`.
+pub fn mean_of_averages(averages: &[f64], fmt: AverageFormat) -> Option<f64> {
+    let shown: Vec<f64> = averages.iter().map(|a| shown_average(*a, fmt)).collect();
     mean(&shown)
 }
 
-/// Mean, SD and % onvoldoende of students' averages as shown (decision 21): the group card.
-pub fn stats_of_averages(averages: &[f64]) -> Option<Stats> {
-    let shown: Vec<f64> = averages.iter().map(|a| round1(*a)).collect();
-    stats(&shown)
+/// Mean, SD and % onvoldoende of students' averages as shown under `fmt` (decisions 21, 92): the
+/// group card. A student fails when the shown value is below 5,5 (afronden 2: 5,45 fails).
+pub fn stats_of_averages(averages: &[f64], fmt: AverageFormat) -> Option<Stats> {
+    let shown: Vec<f64> = averages.iter().map(|a| shown_average(*a, fmt)).collect();
+    let fails = shown.iter().filter(|s| is_fail_shown(**s)).count();
+    Some(Stats {
+        fails: round0(100.0 * fails as f64 / shown.len().max(1) as f64),
+        ..stats(&shown)?
+    })
 }
 
 #[cfg(test)]
@@ -77,6 +82,7 @@ mod tests {
 
     use super::*;
     use crate::grade::tests::exam_of;
+    use crate::round::round1;
 
     fn exam(id: &str, extra: Value) -> Exam {
         let mut v = json!({"id": id, "n_term": 1, "questions": [{"id": "q1", "max_points": 10, "rtti": "R"}]});
@@ -221,11 +227,27 @@ mod tests {
     #[test]
     fn averages_of_averages_use_the_numbers_shown() {
         // Decision 21: 6,44 6,44 6,54 show as 6,4 6,4 6,5; mean 6,43 shows 6,4 (exact would be 6,5).
+        let d = AverageFormat::default();
         let averages = [6.44, 6.44, 6.54];
-        assert_eq!(round1(mean_of_averages(&averages).unwrap()), 6.4);
-        assert_eq!(round1(stats_of_averages(&averages).unwrap().mean), 6.4);
-        assert_eq!(stats_of_averages(&[5.45, 5.44]).unwrap().fails, 50.0);
-        assert_eq!(mean_of_averages(&[]), None);
+        assert_eq!(round1(mean_of_averages(&averages, d).unwrap()), 6.4);
+        assert_eq!(round1(stats_of_averages(&averages, d).unwrap().mean), 6.4);
+        assert_eq!(stats_of_averages(&[5.45, 5.44], d).unwrap().fails, 50.0);
+        assert_eq!(mean_of_averages(&[], d), None);
+        assert_eq!(stats_of_averages(&[], d), None);
+    }
+
+    #[test]
+    fn group_numbers_follow_the_shown_values() {
+        use crate::round::Method;
+        // Decision 92: afkappen 0 shows 5,9 as 5, a fail; afronden 2 shows 5,45, also a fail.
+        let k0 = AverageFormat::new(Method::Afkappen, 0).unwrap();
+        let a2 = AverageFormat::new(Method::Afronden, 2).unwrap();
+        let s = stats_of_averages(&[5.9, 7.2], k0).unwrap();
+        assert_eq!((s.mean, s.fails), (6.0, 50.0));
+        let s = stats_of_averages(&[5.45, 7.0], a2).unwrap();
+        assert_eq!(s.fails, 50.0);
+        let s = stats_of_averages(&[5.45, 7.0], AverageFormat::default()).unwrap();
+        assert_eq!(s.fails, 0.0);
     }
 
     fn entry(exam: Exam, grade: f64) -> HistoryEntry {

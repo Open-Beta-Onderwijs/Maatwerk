@@ -21,13 +21,26 @@ export interface Stats {
 export const stats = (grades: number[]): Stats | null => coreCall('stats', grades);
 export const mean = (values: number[]): number | null => coreCall('mean', values);
 
-/** Mean, SD and % onvoldoende of students' averages, as shown (decision 21). */
-export const statsOfAverages = (averages: number[]): Stats | null =>
-  coreCall('statsOfAverages', averages);
+/**
+ * How a student's r or SE average is shown (Cijfergemiddelden, decisions 91-93), as stored in
+ * the school settings. Missing means afronden 1.
+ */
+export interface AverageFormat {
+  methode: 'afronden' | 'afkappen';
+  decimalen: 0 | 1 | 2;
+}
 
-/** The mean of students' averages, as shown (decision 21). */
-export const meanOfAverages = (averages: number[]): number | null =>
-  coreCall('meanOfAverages', averages);
+/** A student's average as shown under `fmt` (default afronden 1). */
+export const shownAverage = (x: number, fmt?: AverageFormat): number =>
+  coreCall('shownAverage', x, fmt ?? null);
+
+/** Mean, SD and % onvoldoende of students' averages, as shown under `fmt` (decisions 21, 92). */
+export const statsOfAverages = (averages: number[], fmt?: AverageFormat): Stats | null =>
+  coreCall('statsOfAverages', averages, fmt ?? null);
+
+/** The mean of students' averages, as shown under `fmt` (decisions 21, 92). */
+export const meanOfAverages = (averages: number[], fmt?: AverageFormat): number | null =>
+  coreCall('meanOfAverages', averages, fmt ?? null);
 
 /** The weighted year average over one year's tests, unrounded (decision 9). */
 export const yearAverage = (exams: Exam[], rec: ScoreRecord | null | undefined): number | null =>
