@@ -4,8 +4,8 @@
 // tooltip, the resit dot and the Stapgrootte toggle.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { login, seedFiles } from './helpers';
-import { PO_ID, poSeed } from './po-seed';
+import { login, readMockJson, seedFiles, YEAR } from './helpers';
+import { PO_ID, poExam, poSeed, RUBRIC_ID } from './po-seed';
 import { screen } from './views';
 
 async function openGroupOverview(page: Page, withPo = false) {
@@ -184,7 +184,7 @@ test.describe('exam overview (board 46)', () => {
     ]);
   });
 
-  test('the verzameloverzicht shows the resit dot and disables the last three tabs', async ({
+  test('the verzameloverzicht shows the resit dot, disables Vraaganalyse and RTTI-analyse', async ({
     page,
   }) => {
     const d = await openExamOverview(page, true);
@@ -192,8 +192,13 @@ test.describe('exam overview (board 46)', () => {
     const dot = d.locator('.xo-table .ov-dot').first();
     await expect(dot).toBeVisible();
     await expect(dot).toHaveAttribute('title', /^(Herkansing|Inhaal) \(poging \d\)$/);
-    for (const tab of ['vraaganalyse', 'rtti-analyse', 'observaties'])
+    for (const tab of ['vraaganalyse', 'rtti-analyse'])
       await expect(d.locator(`[data-tab="${tab}"]`)).toBeDisabled();
+    // Every attempt shares the observaties (user 2026-11-22): the tab is open, over the best attempt.
+    await d.locator('[data-tab="observaties"]').click();
+    await expect(d.locator('#tab-observaties .ov-card__h3').first()).toHaveText(
+      'Observaties, alle leerlingen',
+    );
     await expect(d.locator('[data-tab="vraaganalyse"]')).toHaveAttribute(
       'title',
       /alleen beschikbaar voor individuele toetsen/,
@@ -235,6 +240,55 @@ async function openPoOverview(page: Page) {
   await expect(d.locator('.po-ov-table')).toBeVisible();
   return d;
 }
+
+test.describe('PO verzameloverzicht (F-32)', () => {
+  test('the Verzamelkaart opens the overview over the attempt that counts, with the H dot', async ({
+    page,
+  }) => {
+    const resitId = `${PO_ID}-h`;
+    const files = await poSeed(page, { grading: true });
+    // 900003 (Bezig in the original, Theorie 4) does the herkansing in its own Valtoren: 17 of 17.
+    files[`${YEAR}/exams/${resitId}.json`] = poExam({
+      id: resitId,
+      parent_id: PO_ID,
+      title: 'PO Onderzoek valbeweging — HERKANSING',
+      description: 'HERKANSING',
+      attempt: 2,
+      volgnummer: undefined,
+      projectgroepen: [{ id: 'pg-1', naam: 'Valtoren', student_ids: ['900003'] }],
+    });
+    const rel = `${YEAR}/scores/nat/900003.json`;
+    const rec = files[rel] as { scores: Record<string, unknown> };
+    files[rel] = {
+      ...rec,
+      scores: { ...rec.scores, [resitId]: { 'cat-theorie': 8, 'cat-uitvoering': 9 } },
+      po: { [resitId]: { projectgroep: 'pg-1', groupLines: [], ownLines: [] } },
+    };
+    await seedFiles(page, files);
+    await login(page);
+    await screen(page, 'toetsen');
+    await page.locator(`[data-action="po-overview-best"][data-examid="${PO_ID}"]`).click();
+    const d = page.locator('.modal-po-overview');
+    await expect(d.locator('.po-ov-table')).toBeVisible();
+    // Every tab stays on: the attempts share the rubric and the observaties.
+    await expect(d.locator('[role="tab"]:disabled')).toHaveCount(0);
+    await expect(d.locator('.po-ov-table thead th.po-ov-col-dot')).toHaveCount(1);
+    const row = d.locator('.ov-row', { has: page.locator('[data-id="900003"]') });
+    await expect(row.locator('.ov-dot')).toHaveText('H');
+    await expect(row.locator('.ov-dot')).toHaveAttribute('title', 'Herkansing (poging 2)');
+    await expect(row.locator('.ov-pill')).toHaveText('10,0');
+    await expect(d.locator('.ov-dot')).toHaveCount(1);
+    await d.getByRole('button', { name: 'Per projectgroep' }).click();
+    await expect(d.locator('.ov-section__head')).toContainText([
+      'Valtoren · projectgroepcijfer 8,8',
+      'Projectgroep 2',
+      'Valtoren · Herkansing (poging 2) · projectgroepcijfer 10,0',
+    ]);
+    await expect(d.locator('.ov-dot')).toHaveCount(1);
+    await d.locator('[data-tab="categorieen"]').click();
+    await expect(d.locator('#tab-categorieen .po-ov-cat__name').first()).toHaveText('Theorie');
+  });
+});
 
 test.describe('PO overview (board 43)', () => {
   test('Resultaten per klas and per projectgroep, with the grade build-up', async ({ page }) => {
@@ -279,6 +333,49 @@ test.describe('PO overview (board 43)', () => {
     ]);
     await expect(tip.locator('.ov-tip__rows')).toContainText('Theorie6 / 8');
     await expect(tip.locator('.ov-tip__rows')).toContainText('Samenwerken (diagnostisch)3 / 3');
+  });
+
+  test('a tall grade tooltip stays on screen in a low window (step 37)', async ({ page }) => {
+    // A rubric with 24 categories: the tooltip fits neither under nor above the cell.
+    await page.goto('/');
+    const files = await poSeed(page, { grading: true });
+    // A new rubric (the mock refuses to change one a PO uses), written before the PO.
+    const rubric = await readMockJson<{ categories: Record<string, unknown>[] }>(
+      page,
+      `rubrics/${RUBRIC_ID}.json`,
+    );
+    const extra = Array.from({ length: 20 }, (_, i) => ({
+      ...rubric.categories[0],
+      id: `cat-extra-${i}`,
+      naam: `Extra categorie ${i + 1}`,
+      obs_ids: [],
+    }));
+    const big = { ...rubric, id: 'rubric-groot', categories: [...rubric.categories, ...extra] };
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    await seedFiles(page, {
+      'rubrics/rubric-groot.json': big,
+      ...files,
+      [examRel]: { ...(files[examRel] as object), rubric_id: 'rubric-groot' },
+    });
+    await login(page);
+    await screen(page, 'toetsen');
+    await page.locator(`[data-exam-card="${PO_ID}"] .tcard-title`).click();
+    const d = page.locator('.modal-po-overview');
+    await expect(d.locator('.po-ov-table')).toBeVisible();
+    for (const height of [560, 420]) {
+      await page.setViewportSize({ width: 1280, height });
+      const row = d.locator('.ov-row', { hasText: 'Noor Bakker' });
+      const cell = row.locator('[data-tip$="|cijfer"]');
+      await cell.scrollIntoViewIfNeeded();
+      await page.mouse.move(0, 0);
+      await cell.hover();
+      const tip = page.locator('.ov-tip');
+      await expect(tip).toBeVisible();
+      const box = (await tip.boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(height);
+      expect(box.x + box.width).toBeLessThanOrEqual(1280);
+    }
   });
 
   test('the name column is 360px wide, narrower in a narrow window so the table fits', async ({
@@ -377,5 +474,9 @@ test.describe('student profile (board 44)', () => {
     await d.locator('.pf-tog[data-rtti="se"]').click();
     await expect(d.locator('.pf-rcard--avg .ov-card__title')).toHaveText('Gemiddeld examendossier');
     await expect(d.locator('#tab-analyse .ov-heat')).toBeVisible();
+    // The PO's rubric observatie (general) and category observatie count too (step 37, 29c).
+    const heat = d.locator('#tab-analyse .ov-heat tbody tr');
+    for (const naam of ['Netjes gewerkt', 'Bronnen ontbreken'])
+      await expect(heat.filter({ hasText: naam }).locator('.ov-heat__tot')).toHaveText('1');
   });
 });

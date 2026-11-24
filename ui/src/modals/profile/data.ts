@@ -11,7 +11,33 @@ import type { HistoryEntry } from '../../domain/attempts';
 import type { Results } from '../../domain/grades';
 import { seAverage, stats, statsOfAverages, type Stats } from '../../domain/statistics';
 import type { Exam, Observatie, ScoreRecord, Student } from '../../domain/types';
+import { isPo, rubricOf } from '../../domain/po';
+import { poObsIds, poStudentObs } from '../../domain/po-grading';
+import type { Rubric } from '../../domain/rubric';
 import { Store } from '../../store.js';
+
+/**
+ * Per observatie, in how many of the year's tests and PO's the student got it. A test counts the
+ * observaties it links (`obs_ids`); a PO also those of its rubric and of every category, given in
+ * general or per category (step 37, backlog 29c "Profile observaties"). Pure.
+ */
+export function obsCounts(
+  exams: readonly Exam[],
+  rec: ScoreRecord | null | undefined,
+  rubricOfExam: (exam: Exam) => Rubric | null,
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const exam of exams) {
+    const po = isPo(exam);
+    const linked = po ? poObsIds(exam, rubricOfExam(exam)) : (exam.obs_ids ?? []);
+    const given = po ? poStudentObs(rec, exam.id) : (rec?.observations?.[exam.id] ?? []);
+    // A PO's union is counted once per id; a test counts its list as before step 37, a duplicate
+    // id included (review 37 m3: no number change outside the approved before/after).
+    for (const id of po ? new Set(given) : given)
+      if (linked.includes(id)) counts[id] = (counts[id] ?? 0) + 1;
+  }
+  return counts;
+}
 
 export type YearExam = Exam & { academic_year?: string };
 
@@ -60,14 +86,7 @@ export async function loadProfile(studentId: string, year: string): Promise<Prof
   for (const yr of years) {
     const exams = Store.getExamsSync(yr) as Exam[];
     const rec = (await Store.getStudentScores(studentId, yr)) as ScoreRecord | null;
-    const given = rec?.observations ?? {};
-    const counts: Record<string, number> = {};
-    for (const exam of exams) {
-      const linked = exam.obs_ids ?? [];
-      for (const id of given[exam.id] ?? [])
-        if (linked.includes(id)) counts[id] = (counts[id] ?? 0) + 1;
-    }
-    obsPerYear[yr] = counts;
+    obsPerYear[yr] = obsCounts(exams, rec, (e) => (rubricOf(e) as Rubric | undefined) ?? null);
   }
   return {
     student,

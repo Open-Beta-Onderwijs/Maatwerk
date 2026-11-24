@@ -4,11 +4,24 @@
    by projectgroep, slanted category headings, sticky group headings. */
 
 .dlg--po-scores {
-  --po-sc-head-h: 120px;
+  /* 20% taller than 120 px for long category names (step 37, user). */
+  --po-sc-head-h: 144px;
+  --po-sc-cover-h: 8px;
   width: 1320px;
 }
 .dlg-body.po-sc-body {
-  padding-top: 8px;
+  padding-top: 0;
+}
+/* A white bar at the top of the body: the head sticks under it, so no row shows above the head.
+   It spans the body's whole width, side padding included, also when the table scrolls sideways. */
+.po-sc-cover {
+  position: sticky;
+  top: 0;
+  left: calc(-1 * var(--dlg-pad-x));
+  z-index: 4;
+  height: var(--po-sc-cover-h);
+  margin: 0 calc(-1 * var(--dlg-pad-x));
+  background: var(--surface);
 }
 .po-sc-note {
   margin: 24px auto;
@@ -40,7 +53,7 @@
    next columns (a sticky cell's own background would cover its neighbour's label). */
 .po-sc-table thead {
   position: sticky;
-  top: 0;
+  top: var(--po-sc-cover-h);
   z-index: 3;
   background: var(--surface-2);
 }
@@ -80,11 +93,22 @@
   position: absolute;
   left: 50%;
   bottom: 10px;
+  display: flex;
+  gap: 0.3em;
+  /* The longest label that fits the head at 55°; a longer name ends in "…" (full name in the
+     column's tooltip). */
+  max-width: calc((var(--po-sc-head-h) - 26px) * 1.22);
   transform-origin: left bottom;
   transform: rotate(-55deg);
   white-space: nowrap;
 }
+.po-sc-cat-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .po-sc-max {
+  flex: none;
   color: var(--muted);
   font-weight: 400;
 }
@@ -109,7 +133,7 @@
 /* A projectgroep's heading row stays under the column headings while its rows scroll. */
 .po-sc-ghead th {
   position: sticky;
-  top: var(--po-sc-head-h);
+  top: calc(var(--po-sc-cover-h) + var(--po-sc-head-h));
   z-index: 2;
   height: 40px;
   padding: 0 10px;
@@ -235,4 +259,11 @@
 .po-sc-saved {
   color: var(--ok);
   font-weight: 600;
+}
+/* It follows the grading's saves (review 23 n3), as .po-gr-status does. */
+.po-sc-saved[data-kind='busy'] {
+  color: var(--warn);
+}
+.po-sc-saved[data-kind='error'] {
+  color: var(--danger);
 }

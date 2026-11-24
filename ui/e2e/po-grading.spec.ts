@@ -13,7 +13,7 @@ import {
   withMock,
   YEAR,
 } from './helpers';
-import { PO_ID, poSeed } from './po-seed';
+import { PO_ID, poSeed, RUBRIC_ID } from './po-seed';
 
 interface PoEntry {
   projectgroep?: string;
@@ -42,7 +42,67 @@ async function openTable(page: Page) {
 
 const row = (page: Page, id: string) => page.locator(`.po-sc-row[data-student="${id}"]`);
 
+/** What is drawn at a point of the dialog body: its class list, for the cover checks. */
+const classesAt = (page: Page, x: number, y: number) =>
+  page.evaluate(
+    ([px, py]) => {
+      const el = document.elementFromPoint(px!, py!);
+      return `${el?.className ?? ''} ${el?.closest('table') ? 'in-table' : ''}`;
+    },
+    [x, y],
+  );
+
 test.describe('the PO score table (step 23a, board 18)', () => {
+  test('a white cover over the rows above the sticky head, the whole width (step 37)', async ({
+    page,
+  }) => {
+    const files = await poSeed(page, { grading: true });
+    // A new rubric with a long category name (the mock refuses to change one a PO uses).
+    const rubric = await readMockJson<{ categories: Record<string, unknown>[] }>(
+      page,
+      `rubrics/${RUBRIC_ID}.json`,
+    );
+    const long = {
+      ...rubric.categories[0],
+      id: 'cat-lang',
+      naam: 'Een heel erg lange categorienaam die niet in de kop past',
+      obs_ids: [],
+    };
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    await seedFiles(page, {
+      'rubrics/rubric-lang.json': {
+        ...rubric,
+        id: 'rubric-lang',
+        categories: [...rubric.categories, long],
+      },
+      ...files,
+      [examRel]: { ...(files[examRel] as object), rubric_id: 'rubric-lang' },
+    });
+    await login(page);
+    await page.setViewportSize({ width: 900, height: 700 });
+    await openTable(page);
+    const body = page.locator('.dlg--po-scores .dlg-body');
+    await body.evaluate((b) => {
+      b.scrollTop = 80;
+      b.scrollLeft = 200;
+    });
+    const box = (await body.boundingBox())!;
+    // The strip above the head, at the left edge, the middle and the right edge of the body.
+    for (const x of [box.x + 4, box.x + box.width / 2, box.x + box.width - 20]) {
+      expect(await classesAt(page, x, box.y + 4)).toContain('po-sc-cover');
+    }
+    // A long name ends in "…" (the full name in the tooltip): no label runs out of the head.
+    await expect(page.locator('th.po-sc-cat').last()).toHaveAttribute(
+      'title',
+      'Een heel erg lange categorienaam die niet in de kop past (8)',
+    );
+    const head = (await page.locator('.po-sc-table thead').boundingBox())!;
+    for (const label of await page.locator('.po-sc-slant > span').all()) {
+      const l = (await label.boundingBox())!;
+      expect(l.y).toBeGreaterThanOrEqual(head.y - 1);
+    }
+  });
+
   test('grouped by projectgroep, with points, lines, grades and statuses', async ({ page }) => {
     const errors = watchErrors(page);
     await seedFiles(page, await poSeed(page, { grading: true }));
@@ -106,6 +166,130 @@ test.describe('the PO score table (step 23a, board 18)', () => {
 });
 
 test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
+  test('quitting the app right after an edit saves it first (review 23 m4)', async ({ page }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    const uitvoering = d.locator('.po-gr-cat[data-cat="cat-uitvoering"]');
+    await uitvoering.locator('input[type=range]').fill('7');
+    await expect(uitvoering.locator('.po-gr-v')).toHaveText('7');
+    // Within the 10 s autosave: nothing on disk yet.
+    expect((await record(page, '900002')).scores?.[PO_ID]?.['cat-uitvoering']).toBeUndefined();
+    await withMock(page, (m) => m.requestClose());
+    // The window would close now: both members hold the edit, and the message is gone.
+    for (const id of ['900002', '900003'])
+      expect((await record(page, id)).scores?.[PO_ID]?.['cat-uitvoering']).toBe(7);
+    expect(await withMock(page, (m) => m.closed)).toBe(true);
+    await expect(page.locator('.busy-overlay')).toHaveCount(0);
+  });
+
+  test('the score table footer follows the grading save (review 23 n3)', async ({ page }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    const footer = page.locator('.dlg--po-scores .po-sc-saved');
+    await expect(footer).toHaveText('● Alles opgeslagen');
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-uitvoering"] input[type=range]').fill('6');
+    await withMock(page, (m) => m.slowWrites(600));
+    await d.locator('#po-gr-done').click();
+    await expect(footer).toHaveText('Opslaan…');
+    await expect(footer).toHaveAttribute('data-kind', 'busy');
+    await expect(footer).toContainText('● Automatisch opgeslagen');
+    await expect(footer).toHaveAttribute('data-kind', 'ok');
+  });
+
+  test('the closing message shows while the saves run (step 37)', async ({ page }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-uitvoering"] input[type=range]').fill('5');
+    // Slow writes, so the message can be seen.
+    await withMock(page, (m) => {
+      m.slowWrites(600);
+      void m.requestClose();
+    });
+    await expect(page.locator('.busy-overlay')).toHaveText('Gegevens opslaan, dan afsluiten…');
+    await expect(page.locator('.busy-overlay')).toHaveCount(0);
+    await expect.poll(() => withMock(page, (m) => m.closed)).toBe(true);
+  });
+
+  test('a failed save on closing asks first; Terug keeps the window open (review 37 M1)', async ({
+    page,
+  }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-uitvoering"] input[type=range]').fill('4');
+    await withMock(page, (m) => {
+      m.fail('writeJson', '/scores/');
+      void m.requestClose();
+    });
+    const ask = page.locator('.dlg--confirm');
+    await expect(ask).toContainText('Niet alles is opgeslagen');
+    await ask.locator('[data-action="cancel"]').click();
+    await expect(ask).toHaveCount(0);
+    expect(await withMock(page, (m) => m.closed)).toBe(false);
+    // Asked again, "Toch afsluiten" closes.
+    await withMock(page, (m) => void m.requestClose());
+    await expect(ask).toBeVisible();
+    await ask.locator('[data-action="ok"]').click();
+    await expect.poll(() => withMock(page, (m) => m.closed)).toBe(true);
+  });
+
+  test('the slider labels line up with the slider positions, also for 20 points (step 37)', async ({
+    page,
+  }) => {
+    const files = await poSeed(page, { grading: true });
+    const rubric = await readMockJson<{ categories: Record<string, unknown>[] }>(
+      page,
+      `rubrics/${RUBRIC_ID}.json`,
+    );
+    const twenty = {
+      ...rubric.categories[0],
+      id: 'cat-twintig',
+      naam: 'Twintig',
+      max: 20,
+      obs_ids: [],
+      niveaus: [
+        { min: 0, max: 6, titel: 'Laag', uitleg: 'Onvoldoende.' },
+        { min: 7, max: 13, titel: 'Midden', uitleg: 'Voldoende.' },
+        { min: 14, max: 20, titel: 'Hoog', uitleg: 'Goed.' },
+      ],
+    };
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    await seedFiles(page, {
+      'rubrics/rubric-twintig.json': {
+        ...rubric,
+        id: 'rubric-twintig',
+        categories: [...rubric.categories, twenty],
+      },
+      ...files,
+      [examRel]: { ...(files[examRel] as object), rubric_id: 'rubric-twintig' },
+    });
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-2"]').click();
+    const cat = page.locator('.dlg--po-grade .po-gr-cat[data-cat="cat-twintig"]');
+    await cat.locator('.po-gr-ticks').scrollIntoViewIfNeeded();
+    const slider = (await cat.locator('input[type=range]').boundingBox())!;
+    // A click under the middle of a label sets exactly that value.
+    for (const t of [20, 0, 1, 5, 9, 10, 11, 12, 15, 19]) {
+      const label = (await cat
+        .locator('.po-gr-ticks > span', { hasText: new RegExp(`^${t}$`) })
+        .boundingBox())!;
+      await page.mouse.click(label.x + label.width / 2, slider.y + slider.height / 2);
+      await expect(cat.locator('.po-gr-v')).toHaveText(String(t));
+    }
+  });
+
   test('grading writes the group into every member file, own lines apart', async ({ page }) => {
     const errors = watchErrors(page);
     await seedFiles(page, await poSeed(page, { grading: true }));
@@ -349,8 +533,11 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     await d.locator('#po-gr-overall').fill('Alleen het commentaar.');
     await d.locator('#po-gr-done').click();
     await expect(d).toHaveCount(0);
+    // Closing saves without waiting (onClose), so the write may land after the dialog is gone.
+    await expect
+      .poll(async () => (await record(page, '900001')).po?.[PO_ID]?.comment)
+      .toBe('Alleen het commentaar.');
     const rec = await record(page, '900001');
-    expect(rec.po?.[PO_ID]?.comment).toBe('Alleen het commentaar.');
     expect(rec.po?.[PO_ID]?.ownLines).toEqual(odd);
   });
 
@@ -414,5 +601,76 @@ test.describe('projectgroep beoordelen (step 23b, board 18)', () => {
     expect((await record(page, '900001')).po?.[PO_ID]?.comment).toBe('Goed onderzoek.');
     await notice.locator('[data-action="ok"]').click();
     await expect(page.locator('#po-gr-overall')).toHaveValue('Versie van een collega.');
+  });
+
+  test('a colleague who writes between the check and the write: partly written, reported, reloaded (review 23 m1)', async ({
+    page,
+  }) => {
+    await seedFiles(page, await poSeed(page, { grading: true }));
+    await login(page);
+    await openTable(page);
+    await page.locator('[data-grade-group="pg-1"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('#po-gr-overall').fill('Mijn versie.');
+    // The colleague's save lands in D'Angelo O'Neill's file (written second) just as this dialog
+    // writes it: after the pre-check, so Noor Bakker's file is already written.
+    const rel = `${YEAR}/scores/nat/900001.json`;
+    const other = await record(page, '900001');
+    other.po![PO_ID]!.comment = 'Versie van een collega.';
+    await withMock(
+      page,
+      (m, [p, data]) =>
+        m.beforeWrite(p as string, () => m.externalWrite(p as string, data as never)),
+      [rel, other],
+    );
+    await d.locator('#po-gr-next').click();
+    const notice = page.locator('#reload-notice');
+    await expect(notice).toContainText("D'Angelo O'Neill is intussen door een collega beoordeeld");
+    // The group is partly written: the colleague's file stays as the colleague left it.
+    expect((await record(page, '900101')).po?.[PO_ID]?.comment).toBe('Mijn versie.');
+    expect((await record(page, '900001')).po?.[PO_ID]?.comment).toBe('Versie van een collega.');
+    // The reload starts from the colleague's version (review 23 m1).
+    await notice.locator('[data-action="ok"]').click();
+    await expect(page.locator('#po-gr-overall')).toHaveValue('Versie van een collega.');
+  });
+
+  test('a member without a score file is graded; it is created (review 23 m9)', async ({
+    page,
+  }) => {
+    const files = await poSeed(page, { grading: true });
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    const exam = files[examRel] as { projectgroepen: unknown[] };
+    // Daan Visser (900102) has no score file at all.
+    files[examRel] = {
+      ...exam,
+      projectgroepen: [
+        ...exam.projectgroepen,
+        { id: 'pg-3', naam: 'Alleen Daan', student_ids: ['900102'] },
+      ],
+    };
+    await seedFiles(page, files);
+    await login(page);
+    await openTable(page);
+    expect(await record(page, '900102')).toBeNull();
+    await page.locator('[data-grade-group="pg-3"]').click();
+    const d = page.locator('.dlg--po-grade');
+    await d.locator('.po-gr-cat[data-cat="cat-theorie"] input[type=range]').fill('5');
+    await d.locator('#po-gr-done').click();
+    await expect(d).toHaveCount(0);
+    await expect
+      .poll(async () => (await record(page, '900102'))?.scores?.[PO_ID]?.['cat-theorie'])
+      .toBe(5);
+    expect((await record(page, '900102')).po?.[PO_ID]?.projectgroep).toBe('pg-3');
+  });
+
+  test('a PO without a rubric cannot be graded and says why (review 23 m9)', async ({ page }) => {
+    const files = await poSeed(page, { grading: true });
+    const examRel = `${YEAR}/exams/${PO_ID}.json`;
+    files[examRel] = { ...(files[examRel] as object), rubric_id: null };
+    await seedFiles(page, files);
+    await login(page);
+    await openTable(page);
+    await expect(page.locator('.po-sc-note')).toContainText('Deze PO heeft geen rubric');
+    await expect(page.locator('[data-grade-group]')).toHaveCount(0);
   });
 });

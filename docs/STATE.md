@@ -1,10 +1,87 @@
 # State
 
-Last updated: 2026-11-22 (steps 35-36, version 0.27.0) Branch: `step/35-rights` (from `step/34-obs-opd-cards` at
-`87ad870`, the 0.25.0 commit)
-Last tags: `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-22 (step 37, version 0.28.0) Branch: `step/37-po-completion`
+Last tags: `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
+
+Started while steps 35-36 wait for the user's manual check (not merged yet). The user's design
+answer replaces the "design check" of 37.1: the PO verzameloverzicht is the exam one in almost
+every way, the best attempt per student with the circled I/H in Resultaten (both views), every
+tab on (shared rubric and observaties).
+
+Done:
+
+1. `bdae808` the exam verzameloverzicht keeps the Observaties tab (user, separate commit).
+2. `0475956` PO verzameloverzicht (F-32): `buildPoModel({ summary })`, the Verzamelkaart's click
+   and ⋮ "Overzicht openen"; a resit's projectgroepen are named "<naam> · Herkansing (poging 2)".
+
+3. `ff9a3fd` the grade tooltip stays on screen (`placeTip`: under, above, beside; two columns
+   when taller than the window).
+4. `d60cd41` PO score modal: white sticky cover at the top (full width), head 144 px, long
+   category names end in "…"; exam score modal: a section keeps its grid's width (`build.ts`),
+   so the white bar covers the grid when it scrolls sideways.
+
+5. User approved the taller head: local `modal-po-scores` baselines updated, CI baselines dropped
+   (`f88b421`).
+6. `344dd30` (user, 2026-11-22) slider labels at the thumb positions (`tickLeft`); visual
+   `modal-po-grade` (three looks) differs only in the label positions: not updated, show the user.
+
+7. 37.2 PO rapport: `236e1b2` m7 (tall blocks break), `0f98efd` n3 (dash in an unscored dot;
+   golden blessed, p5), `27d2f08` m3, m4, m6, m8, n1, n5, `d74fdb6` m5 (user chose rule B: an
+   empty normal or bonus category is 0 in the averages; golden blessed, p1 and p5 Originaliteit
+   2 -> 1,5).
+
+Steps 35-36: CI run 45015305309 green on all four jobs (`ebfdaa1`, all baselines); waiting for
+the user's manual check before the merge.
+
+8. 37.3 PO grading: `340fc97` quit guard (bridge `onCloseRequested`, capability
+   `core:window:allow-destroy`, busy overlay "Gegevens opslaan, dan afsluiten…" (user)),
+   `oneAtATime` (n1), live table footer (n3), m1/m9 tests; `2c970d2` close handler never throws.
+   **Check in the real exe (passed, user 2026-11-24):** closing the window right after a grading edit saves it, and the
+   window still closes (the mock cannot show Tauri's close path).
+
+9. 37.4 rubric guards: `cbe8a84` m2/m3 (core), `1c4ce5c` n9, `b5676d0` n7, `2bf0f12` n8,
+   `59e6b68` m6, validate-data warnings 22 n5, 22, 23 n4; m1 closed (obsolete since step 35).
+
+10. 37.5 `7045331` profile observaties: a PO's rubric and category observaties count (user OK on
+    the before/after: fixtures unchanged, e2e seed +1 Netjes gewerkt, +1 Bronnen ontbreken).
+
+User 2026-11-22: `modal-po-grade` diff and the PO rapport golden approved; steps 35-36 merged
+into `main` (`82e7c92`, tags `step-35`, `step-36`, pushed), `main` merged into this branch.
+
+Gate (2026-11-22): cargo fmt, clippy, test, deny, SPDX, npm licences, lint (only the user's
+untracked file), typecheck, golden check, 931 Vitest + 127 node tests, Chromium e2e 425/425 (one
+unnamed failure in the first run before the fixes, green on rerun), visual 177/177 after the
+user-approved updates. `bindings.ts` was stale since 37.4 (`0247f18`).
+
+Version 0.28.0 (`422afba`): local baselines of `splash` and `modal-po-grade` updated, their CI
+baselines dropped on all three platforms.
+
+Review `docs/reviews/step-37.md`: 0 blockers, 1 major (M1 a failed save on quitting closed
+silently: fixed `ee3d955`, the app asks "Toch afsluiten?"), 5 minors (m1 in part, m3 fixed
+`2884204`; m2, m4, m5 backlog "From Step 37"), 7 nits (n2 fixed; rest backlog).
+
+CI run `45039040176` wrote the dropped baselines (`splash`, `modal-po-scores`, `modal-po-grade`,
+3 platforms): committed `876c137`, pushed; that push's CI run is the check.
+
+Step 38 re-planned with the user (2026-11-23): decisions 90-93, CLAUDE.md rule "grade numbers:
+one source of truth, `maatwerk-grades`", spec "Shown averages" in
+`docs/phase-2/step-19-grade-rules.md`; step 38 is now L (two sessions) and adds the
+Cijfergemiddelden setting.
+
+Test set for the shown averages made ahead of step 38 (user's request): `crates/maatwerk-grades/tests/data/shown_averages.json` from `tools/fixtures/shown-averages.mjs`; `tests/shown_averages.rs` pins `a1` (today's rule) on all 7221 cases and 200 groups, green.
+
+CI run `45136605945` (`393521f`) green on all four jobs, with two flaky tests: webkit
+`po-grading.spec.ts` "stored lines survive…" (it read the record before the fire-and-forget
+close save landed; now polls) and a macOS WebKit "Target crashed" during login (runner, not code).
+
+User 2026-11-24: real-exe check with the 0.28.0 exe passed (closing right after a grading edit
+saves and closes; a failed save asks).
+
+**Next action:** check CI on the flaky-test fix is green, then merge into `main`, tag `step-37`.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 

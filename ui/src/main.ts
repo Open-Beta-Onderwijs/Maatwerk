@@ -5,6 +5,7 @@
 // awaited and app.js is imported dynamically.
 import { installBridge } from './bridge';
 import { installErrorReporting } from './services/problems';
+import { installQuitGuard } from './services/quit-guard';
 import { watchStyleData } from './legacy/style-data';
 import { blockFileDrops } from './utils/no-file-drop';
 import { installLook } from './theme';
@@ -15,6 +16,8 @@ installLook(import.meta.env.DEV || import.meta.env.MODE === 'mock');
 blockFileDrops();
 watchStyleData();
 await installBridge();
+// Open work is saved before the window closes (step 37).
+installQuitGuard(window.maatwerk);
 // Emoji in the embedded font, as in the PDFs (where the webview can draw it).
 registerEmojiFont(window.maatwerk.emojiFontUrl());
 // Errors nobody handled: logged, plus one message pointing to "Probleem melden".

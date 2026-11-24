@@ -160,6 +160,8 @@
 }
 .po-gr-slider input[type='range'] {
   width: 100%;
+  /* No side margin: the ticks are placed from the input's edges (po-grade-view tickLeft). */
+  margin-inline: 0;
   accent-color: var(--accent);
 }
 /* Not scored yet: the thumb is faded until the slider is moved. */
@@ -167,11 +169,19 @@
   opacity: 0.45;
 }
 .po-gr-ticks {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 6px;
+  position: relative;
   font-size: 11px;
   color: var(--muted);
+}
+/* An invisible line keeps the row as tall as one line of labels (they are out of the flow). */
+.po-gr-ticks::before {
+  content: '\00a0';
+}
+/* Each label centred under the thumb's position for its value (left: style data). */
+.po-gr-ticks > span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
 }
 .po-gr-cat-side {
   display: flex;

@@ -38,6 +38,10 @@ import {
   type GroupGrading,
 } from '../domain/po-grading';
 import type { Exam, PoLine, ScoreRecord } from '../domain/types';
+import { applyStyleData } from '../legacy/style-data';
+import { reportPoSave } from '../services/po-save-status';
+import { beforeQuit } from '../services/quit-guard';
+import { oneAtATime } from '../utils/one-at-a-time';
 import { LOCK_ICON, scoreLock } from '../services/score-lock';
 import { Store } from '../store.js';
 import {
@@ -153,7 +157,6 @@ export function openPoGrading(
   const snapshot = () =>
     JSON.stringify([gradingKey(toSave()), members.map((m) => ownToSave(m) ?? null)]);
   let saved = snapshot();
-  let saving: Promise<boolean> | null = null;
   /** Set after a conflict, a deleted PO or a reload: nothing is saved any more. */
   let stopped = false;
   let closed = false;
@@ -222,9 +225,13 @@ export function openPoGrading(
       void save().finally(() => onChanged?.());
     },
     onShow: (el: HTMLElement) => {
+      // The slider ticks' positions (style data: the CSP allows no inline styles).
+      applyStyleData(el);
       const $ = <T extends HTMLElement = HTMLElement>(sel: string) => el.querySelector<T>(sel)!;
       const status = $('#po-gr-status');
       setStatus = (text, kind) => {
+        // The table's footer follows, also after this dialog closed (review 23 n3).
+        if (text) reportPoSave(text, kind);
         if (closed) return;
         status.textContent = text;
         status.dataset.kind = kind;
@@ -445,14 +452,23 @@ export function openPoGrading(
       const timer = setInterval(() => {
         if (!stopped && snapshot() !== saved) void save();
       }, AUTOSAVE_MS);
-      onModalCleanup(() => clearInterval(timer));
+      // Quitting the app saves first, as closing the dialog does (review 23 m4); a failed save
+      // asks before the window closes (review 37 M1). Stopped with nothing pending (a reload in
+      // progress) is no failure.
+      const offQuit = beforeQuit(() =>
+        stopped && snapshot() === saved ? Promise.resolve(true) : save(),
+      );
+      onModalCleanup(() => {
+        clearInterval(timer);
+        offQuit();
+      });
 
       // A colleague's change to a member file: reload if nothing is pending here; otherwise the
       // next save reports the conflict.
       const reload = modalRefresher(() => reopenFresh());
       onModalSync('scores', (ev: { year: string; subject: string; id: string }) => {
         if (ev.year !== year || ev.subject !== subject || !members.includes(ev.id)) return;
-        if (snapshot() === saved && !saving && !stopped) {
+        if (snapshot() === saved && !save.busy() && !stopped) {
           stopped = true; // the reload replaces this dialog; do not save on its close
           setStatus('Gewijzigd door een collega: opnieuw laden…', 'busy');
           reload();
@@ -477,14 +493,17 @@ export function openPoGrading(
     },
   });
 
-  /** Saves the grading into every member file; false on a conflict or an error. */
-  async function save(): Promise<boolean> {
-    if (saving) await saving;
+  /**
+   * Saves the grading into every member file; false on a conflict or an error. One save at a
+   * time: a call during a save waits and then saves what is still unsaved (review 23 n1).
+   */
+  // The handlers above call it only after the dialog is open, by then this line has run.
+  const save = oneAtATime(async (): Promise<boolean> => {
     if (readOnly) return true; // nothing here is this session's to save (step 35)
     if (stopped) return false;
     const want = snapshot();
     if (want === saved) return true;
-    saving = (async () => {
+    {
       setStatus('Opslaan…', 'busy');
       const g = toSave();
       // A member file that is neither as read nor already as wanted: a colleague's change.
@@ -543,11 +562,6 @@ export function openPoGrading(
         }
         return false;
       }
-    })();
-    try {
-      return await saving;
-    } finally {
-      saving = null;
     }
-  }
+  });
 }

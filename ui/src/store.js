@@ -60,6 +60,9 @@ import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
 import { timed } from './utils/perf';
 
+/** The `code` of an Error from a refused write (review 21 n7). */
+export const SAVE_FAILED = 'save_failed';
+
 const Store = (() => {
   // ── Cache ─────────────────────────────────────────────────────────────────
   // Exam/group/obs entries keyed as: `${year}/exams/${subject}`, `obs/${subject}`, etc.
@@ -141,13 +144,23 @@ const Store = (() => {
           noteReadOnly();
           throw readOnlyError();
         }
-        if (result?.reason !== 'conflict') {
-          throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
-        }
+        if (result?.reason !== 'conflict') throw saveFailed(relPath, result?.reason);
       }
-      throw new Error(`Save failed for ${relPath}: conflict`);
+      throw saveFailed(relPath, 'conflict');
     };
     return serialize(relPath, run);
+  }
+
+  /**
+   * A write the backend refused: the message as before (logs, Probleem melden), plus `code`
+   * SAVE_FAILED, the `relPath` and the backend's `reason` (a core refusal's Dutch text).
+   */
+  function saveFailed(relPath, reason) {
+    const err = new Error(`Save failed for ${relPath}: ${reason}`);
+    err.code = SAVE_FAILED;
+    err.relPath = relPath;
+    err.reason = reason;
+    return err;
   }
 
   // Whole-file editors (RTTI templates): read a file with its content hash and
@@ -174,7 +187,7 @@ const Store = (() => {
       noteReadOnly();
       throw readOnlyError();
     }
-    throw new Error(`Save failed for ${relPath}: ${result?.reason}`);
+    throw saveFailed(relPath, result?.reason);
   }
 
   // Version info stored in single-object files (exams, groups, observaties, opdrachten).
@@ -905,9 +918,9 @@ const Store = (() => {
   // A refusal by the core (invalid, or a locked change while a PO uses the
   // rubric) throws an Error whose message is the core's Dutch text.
   function refusal(relPath, e) {
-    const prefix = `Save failed for ${relPath}: `;
-    if (e instanceof Error && e.message.startsWith(prefix)) {
-      const err = new Error(e.message.slice(prefix.length));
+    // By code, not by the message's prefix (review 21 n7).
+    if (e?.code === SAVE_FAILED && e.relPath === relPath && e.reason !== 'conflict') {
+      const err = new Error(String(e.reason));
       err.code = 'refused';
       return err;
     }
@@ -1056,6 +1069,39 @@ const Store = (() => {
       }
     }
     return false;
+  }
+
+  /**
+   * Every year's exams and every vak's rubrics in the cache, so the observatie form's Toets/PO
+   * lock and the delete guard see all of them, not only the loaded year and the active vak
+   * (review 21 m6). One read per year; cached like the rest.
+   */
+  async function loadObsUsage() {
+    const years = (await window.maatwerk.listYears()) ?? [];
+    const subjects = Object.keys(SUBJECT_DISPLAY);
+    await Promise.all([
+      ...subjects.map((s) => loadRubrics(s)),
+      ...years.map(async (year) => {
+        if (subjects.every((s) => cache[`${year}/exams/${s}`] !== undefined)) return;
+        const all = await window.maatwerk.readAllJson(`${year}/exams`);
+        for (const s of subjects)
+          cache[`${year}/exams/${s}`] ??= all.filter((e) => e.subject === s);
+      }),
+    ]);
+  }
+
+  /** Whether a loaded rubric of any vak uses the observatie (general or in a category). */
+  function obsIsUsedInAnyRubric(obsId) {
+    return Object.entries(cache).some(
+      ([key, val]) =>
+        key.startsWith('rubrics/') &&
+        Array.isArray(val) &&
+        val.some(
+          (r) =>
+            (r.obs_ids ?? []).includes(obsId) ||
+            (r.categories ?? []).some((c) => (c.obs_ids ?? []).includes(obsId)),
+        ),
+    );
   }
 
   function obsIsUsedInAnyExam(obsId) {
@@ -1526,6 +1572,8 @@ const Store = (() => {
     studentHasScores,
     studentHasAnyScores,
     obsIsUsedInAnyExam,
+    obsIsUsedInAnyRubric,
+    loadObsUsage,
     removeObsFromExamScores,
     getResitsSync,
     examHasResits,

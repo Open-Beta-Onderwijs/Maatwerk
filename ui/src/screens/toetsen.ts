@@ -274,6 +274,9 @@ function openFromCard(btn: HTMLElement): void {
     case 'po-overview':
       void openPoOverviewModal(id, year);
       break;
+    case 'po-overview-best':
+      void openPoOverviewModal(id, year, 'resultaten', 'klas', true);
+      break;
     case 'exam-overview-best':
       openBestGradesOverviewModal(id, year);
       break;

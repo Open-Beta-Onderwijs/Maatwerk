@@ -16,6 +16,7 @@ import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
 import { CSV_EXAMPLES, csvExampleHtml, wireCsvExample } from '../utils/csv-example';
 import { groupOverwrites, withImportIds } from '../domain/groups';
 import { renderGroepen } from '../screens/groepen';
+import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
 export async function openGroupModal(id) {
   const year = SEL.groupsYear.getValue() || Store.getConfigSync().activeYear;
@@ -46,7 +47,6 @@ export async function openGroupModal(id) {
   const locked = hasStudents || voorzitter;
 
   const JAARLAGEN = ['1', '2', '3', '4', '5', '6'];
-  const SCHOOLSOORTEN = ['Vmbo-bb', 'Vmbo-kb', 'Vmbo-gl', 'Vmbo-tl', 'Havo', 'Vwo', 'Gymnasium'];
   const VAKKEN = [
     { code: 'bio', label: 'Biologie' },
     { code: 'nat', label: 'Natuurkunde' },
@@ -441,15 +441,6 @@ export async function deleteGroup(id) {
   renderGroepen();
 }
 
-const VALID_SCHOOLSOORTEN = [
-  'Vmbo-bb',
-  'Vmbo-kb',
-  'Vmbo-gl',
-  'Vmbo-tl',
-  'Havo',
-  'Vwo',
-  'Gymnasium',
-];
 const VAKKEN_MAP = {
   bio: 'bio',
   biologie: 'bio',
@@ -564,7 +555,7 @@ export async function openGroupCSVImport() {
             continue;
           }
 
-          const matchedSS = VALID_SCHOOLSOORTEN.find(
+          const matchedSS = SCHOOLSOORTEN.find(
             (ss) => ss.toLowerCase() === schoolsoortRaw.toLowerCase(),
           );
           if (!matchedSS) {

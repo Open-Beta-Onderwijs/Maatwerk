@@ -10,11 +10,12 @@ import { formatGrade } from './format';
 import { poLineValid, type Results } from './grades';
 import { fullName } from './ids';
 import { compareStudents, groupName } from './po';
-import { gradingOf, ownLinesOf, signedPoints } from './po-grading';
+import { gradedGroupOf, gradingOf, gradingStatus, ownLinesOf, signedPoints } from './po-grading';
 import { sanitizeTypstMarkup, scoreDotColor, subjectDisplayName } from './rapport';
 import type { Rubric, RubricCategory } from './rubric';
 import { classQuestions } from './statistics';
 import type { Exam, Observatie, PoLine, Question, ScoreRecord, Student } from './types';
+import { esc } from '../utils/html';
 
 /** What the builder reads of one PO (a `PoContext` of the score table fits). */
 export interface PoRapportInput {
@@ -26,6 +27,8 @@ export interface PoRapportInput {
   /** The student's class name, or "—". */
   classTag: (id: string) => string;
   observaties: readonly Observatie[];
+  /** A herkansing or inhaal: its original (same rubric), for who counts as unplaced (m6). */
+  original?: Exam;
 }
 
 export interface PoRapportObservatie {
@@ -77,8 +80,19 @@ export interface PoRapportStudent {
 export interface PoRapportData {
   poInfo: { name: string; subject_display: string; scale_max: number };
   students: PoRapportStudent[];
-  /** Students without a rapport, by name: not in a projectgroep, or without a grade yet. */
-  skipped: { unplaced: string[]; ungraded: string[] };
+  skipped: PoRapportSkipped;
+}
+
+/** Who gets no rapport, by name and reason, and the projectgroepen graded only in part. */
+export interface PoRapportSkipped {
+  /** Not in a projectgroep (decision 18: no grade). On a resit: only without an original grade. */
+  unplaced: string[];
+  /** In a projectgroep, without a grade yet. */
+  ungraded: string[];
+  /** Graded in another projectgroep than their own (review 24 m4). */
+  otherGroup: string[];
+  /** Projectgroepen with a rapport but not every normal category scored (Bezig, review 24 m3). */
+  partial: string[];
 }
 
 /**
@@ -138,8 +152,26 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
 
   const groups = exam.projectgroepen ?? [];
   const placed = new Set(groups.flatMap((g) => g.student_ids.map(String)));
-  const unplaced = [...records.keys()].filter((id) => !placed.has(id)).sort(byName);
+  // On a resit most of the jaarlaag is unplaced: only who has no grade on the original counts.
+  const original = input.original;
+  const hasOriginalGrade = (id: string) => {
+    if (!original) return false;
+    const rec = records.get(id);
+    const r = coreCall<Results>(
+      'calcResults',
+      { ...original, rubric },
+      rec?.scores?.[original.id] ?? {},
+      rec?.overrides?.[original.id] ?? null,
+      rec?.po?.[original.id] ?? null,
+    );
+    return r.grade !== null;
+  };
+  const unplaced = [...records.keys()]
+    .filter((id) => !placed.has(id) && !hasOriginalGrade(id))
+    .sort(byName);
   const ungraded: string[] = [];
+  const otherGroup: string[] = [];
+  const partial: string[] = [];
 
   interface Entry {
     id: string;
@@ -151,8 +183,15 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
   const entries: Entry[] = [];
   groups.forEach((g, i) => {
     const ids = g.student_ids.map(String);
+    const naam = groupName(g, i);
     for (const id of ids) {
       const rec = records.get(id);
+      // Graded in another projectgroep: that grading is not this group's (review 24 m4).
+      const from = gradedGroupOf(rec, exam.id);
+      if (from !== null && from !== g.id) {
+        otherGroup.push(id);
+        continue;
+      }
       const res = coreCall<Results>(
         'calcResults',
         graded,
@@ -167,17 +206,27 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
       const scores = Object.fromEntries(
         cats.map((c) => [c.id, coreCategory(exam, c, rec?.scores?.[exam.id]?.[c.id]).score]),
       );
-      entries.push({ id, group: { naam: groupName(g, i), ids }, rec, res, scores });
+      entries.push({ id, group: { naam, ids }, rec, res, scores });
+      const status = gradingStatus(rubric, gradingOf(rec, exam.id));
+      if (status === 'busy' && !partial.includes(naam)) partial.push(naam);
     }
   });
 
   // The averages over every graded student with scores (an overwritten grade alone has none).
+  // An empty normal or bonus category counts as 0, as in the grade, so the averages add up to the
+  // average points; a diagnostic one (not in the grade) is averaged over who has a score (review
+  // 24 m5, user 2026-11-22).
   const withScores = entries.filter((e) => Object.values(e.scores).some((v) => v !== null));
   const questions = cats.map((c, i) => ({ id: c.id, max_points: maxes[i] }) as unknown as Question);
+  const inGrade = new Set(cats.filter((c) => c.soort !== 'diagnostisch').map((c) => c.id));
   const classResults = classQuestions(
     questions,
     withScores.map((e) =>
-      Object.fromEntries(Object.entries(e.scores).filter(([, v]) => v !== null)),
+      Object.fromEntries(
+        Object.entries(e.scores)
+          .map(([id, v]) => [id, v === null && inGrade.has(id) ? 0 : v] as const)
+          .filter(([, v]) => v !== null),
+      ),
     ),
   );
 
@@ -247,6 +296,36 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
       scale_max: Math.max(1, ...maxes),
     },
     students: studentData,
-    skipped: { unplaced: unplaced.map(nameOf), ungraded: ungraded.sort(byName).map(nameOf) },
+    skipped: {
+      unplaced: unplaced.map(nameOf),
+      ungraded: ungraded.sort(byName).map(nameOf),
+      otherGroup: otherGroup.sort(byName).map(nameOf),
+      partial,
+    },
   };
+}
+
+/** "Lotte Bakker en Daan Jansen": names as one line. */
+function names(list: readonly string[]): string {
+  return list.length < 2 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} en ${list.at(-1)}`;
+}
+
+/** The notice above the rapport: who gets none and why, and groups graded in part (24 n1). */
+export function skippedNoticeHtml(s: PoRapportSkipped): string {
+  const p = (text: string) => `<p class="rapport-skipped">${text}</p>`;
+  const none = (list: string[], why: string) =>
+    list.length ? p(`Geen rapport voor ${esc(names(list))}: ${why}`) : '';
+  return (
+    none(s.unplaced, 'niet ingedeeld in een projectgroep.') +
+    none(s.ungraded, 'nog geen cijfer.') +
+    none(
+      s.otherGroup,
+      'beoordeeld in een andere projectgroep. Beoordeel de eigen projectgroep opnieuw via Scores invoeren.',
+    ) +
+    (s.partial.length
+      ? p(
+          `Let op: ${esc(names(s.partial))} ${s.partial.length === 1 ? 'is' : 'zijn'} nog niet helemaal beoordeeld. Een categorie zonder score staat in het rapport als —.`,
+        )
+      : '')
+  );
 }

@@ -6,6 +6,7 @@
 // so the legacy screens run unchanged.
 
 import { Channel, convertFileSrc } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import type * as Ai from './ai-api';
 import { normaliseForTypst } from '../domain/rapport';
 import {
@@ -42,6 +43,8 @@ export interface Backend {
   listenDataChanged(cb: (changes: DataChange[]) => void): Promise<() => void>;
   listenAssignmentProgress(cb: (progress: Progress) => void): Promise<() => void>;
   listenEditorUpdate(cb: (update: EditorUpdateEvent) => void): Promise<() => void>;
+  /** The window's close request; it closes once `cb` is done, unless it resolves false. */
+  listenCloseRequested?(cb: () => Promise<boolean>): Promise<() => void>;
   /** URL of a render output for the viewer iframe. */
   outputUrl(outputId: string): string;
 }
@@ -52,6 +55,19 @@ const tauriBackend: Backend = {
   listenDataChanged: (cb) => events.dataChanged.listen((e) => cb(e.payload as DataChange[])),
   listenAssignmentProgress: (cb) => events.assignmentProgress.listen((e) => cb(e.payload)),
   listenEditorUpdate: (cb) => events.editorUpdate.listen((e) => cb(e.payload)),
+  // Tauri awaits the handler, then destroys the window (core:window:allow-destroy) unless the
+  // handler called preventDefault (the teacher chose to stay, review 37 M1). A handler that
+  // throws would leave the window open for good, so nothing gets out: an error closes.
+  listenCloseRequested: (cb) =>
+    getCurrentWindow().onCloseRequested(async (event) => {
+      let close = true;
+      try {
+        close = await cb();
+      } catch (e) {
+        console.error('[close]', e);
+      }
+      if (!close) event.preventDefault();
+    }),
   // `http://maatwerk-out.localhost/<id>` on Windows, `maatwerk-out://localhost/<id>` elsewhere.
   outputUrl: (outputId) => convertFileSrc(outputId, OUTPUT_SCHEME),
 };
@@ -425,6 +441,22 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
 
     // ── Events ──────────────────────────────────────────────────────────────
     onDataChanged: (cb) => subscribe((f) => backend.listenDataChanged(f), cb, 'sync'),
+    onCloseRequested: (cb) => {
+      const listen = backend.listenCloseRequested;
+      if (!listen) return () => {};
+      let stopped = false;
+      let unlisten: (() => void) | null = null;
+      listen(cb)
+        .then((fn) => {
+          if (stopped) fn();
+          else unlisten = fn;
+        })
+        .catch((e) => console.error('[close] cannot listen:', e));
+      return () => {
+        stopped = true;
+        unlisten?.();
+      };
+    },
     onAssignmentProgress: (cb) =>
       subscribe((f) => backend.listenAssignmentProgress(f), cb, 'assignment progress'),
     pdfUrl: (pdfPath) => backend.outputUrl(pdfPath),

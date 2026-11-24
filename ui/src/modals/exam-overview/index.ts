@@ -3,8 +3,8 @@
 // The exam overview modal (F-11; design spec 4.6, board 46; PLAN-2 decisions 35, 36): tabs
 // Resultaten, Cijferverdeling, Boxplot cijfers, Vraaganalyse, RTTI-analyse and Observaties, each
 // rendered when first opened. The verzameloverzicht (best attempt over the original and its
-// resits, computed by the caller) is the same modal with the last three tabs disabled. R-05:
-// was modals/toets-overzicht.js.
+// resits, computed by the caller) is the same modal with Vraaganalyse and RTTI-analyse disabled.
+// R-05: was modals/toets-overzicht.js.
 
 import { closeModal, modalRefresher, onModalSync, openModal, showReloadNotice } from '../../app.js';
 import { skelBlock, skelRegion, skelRows } from '../../components/skeleton';
@@ -29,6 +29,11 @@ type TabId =
 
 const ONLY_INDIVIDUAL =
   'Dit tabblad is alleen beschikbaar voor individuele toetsen, niet voor het verzameloverzicht.';
+/**
+ * Off in the verzameloverzicht: the attempts' questions differ. Observaties stay on: every attempt
+ * shares them, so the tab counts those of the attempt that counts (user 2026-11-22).
+ */
+const SUMMARY_DISABLED = new Set<TabId>(['vraaganalyse', 'rtti-analyse']);
 
 function summaryHtml(data: ExamOverviewData): string {
   const s = data.grades.length ? stats(data.grades) : null;
@@ -59,7 +64,9 @@ export async function openExamOverviewModal(
       { id: 'rtti-analyse', label: 'RTTI-analyse' },
       { id: 'observaties', label: 'Observaties' },
     ] as { id: TabId; label: string; disabled?: boolean; title?: string }[]
-  ).map((t, i) => (isSummary && i >= 3 ? { ...t, disabled: true, title: ONLY_INDIVIDUAL } : t));
+  ).map((t) =>
+    isSummary && SUMMARY_DISABLED.has(t.id) ? { ...t, disabled: true, title: ONLY_INDIVIDUAL } : t,
+  );
   const start: TabId =
     isSummary && tabs.find((t) => t.id === initialTab)?.disabled ? 'resultaten' : initialTab;
 

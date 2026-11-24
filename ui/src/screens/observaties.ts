@@ -24,7 +24,10 @@ import { filterObservaties, type ObsFilters } from './observaties/filter';
 
 /** Observatie bewerken (modals/observatie-edit.ts); the list re-renders after a save. */
 export function openObsModal(existingId: string | null): void {
-  openObsModalTs(existingId, () => void renderObservaties());
+  // The Toets/PO lock needs every year's tests and every vak's rubrics (review 21 m6).
+  void (Store.loadObsUsage() as Promise<void>).then(() =>
+    openObsModalTs(existingId, () => void renderObservaties()),
+  );
 }
 
 type OwnGroup = NonNullable<ObsFilters['ownGroups']>[number] & { docenten?: string[] };
@@ -101,10 +104,12 @@ export async function renderObservaties(): Promise<void> {
 
   // The use counts read this year's tests and the opdrachten.
   const year: string = Store.getConfigSync().activeYear;
+  // Also every year's tests and every vak's rubrics, for the delete guard (review 21 m6).
   const [exams, opdrachten] = (await Promise.all([
     Store.getExams(year),
     Store.getOpdrachten(),
-  ])) as [Exam[], Opdracht[]];
+    Store.loadObsUsage(),
+  ])) as [Exam[], Opdracht[], void];
   const obs = filterObservaties(Store.getObservatiesSync() as ObsFields[], {
     toetstype: chip.value(),
     subject: Store.getActiveSubject(),

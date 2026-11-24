@@ -165,6 +165,61 @@ describe('PO overview model (spec 4.14)', () => {
     expect(groep.match(/GEMIDDELDE/g)).toHaveLength(2);
   });
 
+  it('verzameloverzicht: each student reads the attempt that counts (F-32)', () => {
+    const resit: Exam = {
+      ...exam,
+      id: 'po-h',
+      parent_id: 'po',
+      description: 'HERKANSING',
+      attempt: 2,
+      projectgroepen: [{ id: 'g1', naam: 'Valtoren', student_ids: ['1'] }],
+    };
+    const recs = new Map(records);
+    recs.set('1', {
+      scores: { po: { th: 3, pl: 1 }, 'po-h': { th: 7, pl: 2 } },
+      po: {
+        po: { projectgroep: 'g1', groupLines: [], ownLines: [] },
+        'po-h': { projectgroep: 'g1', groupLines: [], ownLines: [] },
+      },
+    });
+    const m = buildPoModel({
+      exam,
+      rubric,
+      students,
+      records: recs,
+      classTag: () => '3a',
+      name: (id) => `${students.get(id)!.voornaam} ${students.get(id)!.achternaam}`,
+      results: (rec, attempt) => {
+        const th = rec?.scores?.[attempt.id]?.th;
+        return typeof th !== 'number'
+          ? null
+          : ({ scored: th, grade: th + 1, rubricGrade: th + 1 } as Results);
+      },
+      summary: { resits: [resit], best: new Map([['1', resit]]) },
+    });
+    expect(m.isSummary).toBe(true);
+    const anna = m.rows.find((r) => r.id === '1')!;
+    expect(anna.attempt?.id).toBe('po-h');
+    expect(anna.grading.scores).toEqual({ th: 7, pl: 2 });
+    expect([anna.points, anna.grade]).toEqual([7, 8]);
+    expect(anna.group?.name).toBe('Valtoren · Herkansing (poging 2)');
+    // Bas still counts with the original: Valtoren of the original keeps only him.
+    expect(m.rows.find((r) => r.id === '2')!.attempt).toBeNull();
+    expect(m.groups.map((g) => [g.name, g.members.map((r) => r.id)])).toEqual([
+      ['Valtoren', ['2']],
+      ['Projectgroep 2', ['3']],
+      ['Valtoren · Herkansing (poging 2)', ['1']],
+    ]);
+    // Resultaten (both views): the dot column and an H dot right of Anna's grade.
+    for (const view of ['klas', 'groep'] as const) {
+      const html = resultatenHtml(m, view);
+      expect(html).toContain('po-ov-col-dot');
+      expect(html.match(/attempt-badge ov-dot/g)).toHaveLength(1);
+      expect(html).toContain('title="Herkansing (poging 2)">H<');
+    }
+    expect(poCellTip(m, obs, '1|cijfer')!.head).toBe('Anna Smit: 8,0 · Herkansing (poging 2)');
+  });
+
   it('shades the levels from light to dark', () => {
     expect(levelColor(0, 3, false)).toContain('22%');
     expect(levelColor(2, 3, false)).toContain('100%');

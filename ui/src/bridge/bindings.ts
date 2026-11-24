@@ -671,7 +671,10 @@ export type RenderedSvg = {
 	warnings: string[],
 };
 
-/**  One PO that uses a rubric (step 21). */
+/**
+ *  One PO that uses a rubric (step 21). The bindings' copy of `maatwerk_core::rubrics::RubricUse`:
+ *  the core has no specta (review 21 n8 keeps it, with a `From`).
+ */
 export type RubricUse = {
 	year: string,
 	examId: string,

@@ -238,6 +238,12 @@ export interface MaatwerkApi {
   // ── Events ────────────────────────────────────────────────────────────────
   onDataChanged(cb: (changes: DataChange[]) => void): Unsubscribe;
   onAssignmentProgress(cb: (progress: { done: number; total: number }) => void): Unsubscribe;
+  /**
+   * The window is about to close (the teacher quits the app): `cb` runs first and the window
+   * closes when it is done (step 37, review 23 m4); resolving `false` keeps it open (review 37
+   * M1). Keep it short: it holds the window open.
+   */
+  onCloseRequested(cb: () => Promise<boolean>): Unsubscribe;
 
   // ── New in the port (not a reference IPC method) ──────────────────────────
   /**

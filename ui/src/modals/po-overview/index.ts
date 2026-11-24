@@ -3,12 +3,15 @@
 // The PO overview modal (F-24; design spec 4.14, board 43): tabs Resultaten (Per klas / Per
 // projectgroep), Cijferverdeling, Boxplot, Categorieën and Observaties, each rendered when first
 // opened. Opened from "Overzicht openen" on a PO card; a PO herkansing opens it for its own
-// attempt (a PO verzameloverzicht is not designed yet: backlog).
+// attempt. The verzameloverzicht (F-32, decision 86; the Verzamelkaart) is the same modal over the
+// attempt that counts per student (the best grade), with the I/H dot right of the grade; every tab
+// stays on, as all attempts share the rubric and the observaties (user 2026-11-22).
 
 import { closeModal, modalRefresher, onModalSync, openModal, showReloadNotice } from '../../app.js';
 import { skelBlock, skelRegion, skelRows } from '../../components/skeleton';
 import { checkRubric, totalsText } from '../../domain/rubric';
-import type { Observatie, Student } from '../../domain/types';
+import { bestAttemptMany } from '../../domain/attempts';
+import type { Exam, Observatie, Student } from '../../domain/types';
 import { applyStyleData } from '../../legacy/style-data';
 import { examBadgeHtml } from '../../overview/common';
 import { keepNameColumnFitted } from '../../overview/fit-name';
@@ -46,9 +49,22 @@ export async function openPoOverviewModal(
   year: string,
   initialTab: TabId = 'resultaten',
   initialView: PoView = 'klas',
+  isSummary = false,
 ): Promise<void> {
-  const ctx = await loadPoContext(examId, year);
+  const ctx = await loadPoContext(examId, year, { withResits: isSummary });
   if (!ctx) return;
+  const resits = isSummary ? (Store.getResitsSync(examId, year) as Exam[]) : [];
+  const attempts = [ctx.exam, ...resits];
+  const best = new Map<string, Exam>();
+  if (isSummary) {
+    const ids = [...ctx.records.keys()];
+    bestAttemptMany(
+      ids.map((id) => ctx.records.get(id)),
+      attempts,
+    ).forEach((b, i) => {
+      if (b) best.set(ids[i]!, b.exam);
+    });
+  }
   const model = buildPoModel({
     exam: ctx.exam,
     rubric: ctx.rubric,
@@ -56,7 +72,8 @@ export async function openPoOverviewModal(
     records: ctx.records,
     classTag: ctx.classTag,
     name: ctx.name,
-    results: (rec) => Store.examResults(rec, ctx.exam),
+    results: (rec, attempt) => Store.examResults(rec, attempt),
+    ...(isSummary ? { summary: { resits, best } } : {}),
   });
   const allObs = Store.getObservatiesSync() as Observatie[];
   let view: PoView = initialView;
@@ -143,14 +160,20 @@ export async function openPoOverviewModal(
       const currentTab = () => (dialog.activeTab ?? 'resultaten') as TabId;
       const refresh = modalRefresher(() => {
         stopTips();
-        return openPoOverviewModal(examId, year, currentTab(), view);
+        return openPoOverviewModal(examId, year, currentTab(), view, isSummary);
       });
       onModalSync('scores', (ev: { year: string; subject: string; id: string }) => {
         if (ev.year === year && ev.subject === ctx.subject && ctx.records.has(ev.id)) refresh();
       });
       onModalSync('exam', (ev: { id: string; year: string; after?: unknown }) => {
-        if (ev.id !== examId || ev.year !== year) return;
-        if (ev.after) refresh();
+        if (ev.year !== year) return;
+        // The verzameloverzicht also follows its resits, and a new one (its parent_id).
+        const after = ev.after as Exam | undefined;
+        const mine =
+          ev.id === examId ||
+          (isSummary && (attempts.some((a) => a.id === ev.id) || after?.parent_id === examId));
+        if (!mine) return;
+        if (ev.after || ev.id !== examId) refresh();
         else showReloadNotice('Deze PO is verwijderd door een collega.', closeModal);
       });
       onModalSync('rubric', () => refresh());

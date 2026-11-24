@@ -100,8 +100,38 @@ fn text(v: &Value, key: &str) -> String {
     v.get(key).and_then(Value::as_str).unwrap_or("").to_owned()
 }
 
+/// How many exams use rubric `id`, for the guards: fails closed (review 21 m2). A year folder
+/// that cannot be listed or an exam file that cannot be read is a refusal naming it, not a skip:
+/// a skipped file could be the PO that locks the rubric.
 fn uses_of(storage: &Storage, id: &str) -> Result<usize> {
-    Ok(usage(storage)?.get(id).map_or(0, Vec::len))
+    let unreadable = |what: &str, e: &dyn std::fmt::Display| {
+        refuse(format!(
+            "Kan niet nagaan of deze rubric in gebruik is: {what} is onleesbaar ({e}). Herstel het \
+             via Gegevenscontrole en probeer het opnieuw."
+        ))
+    };
+    let mut n = 0;
+    for year in storage
+        .try_list_years()
+        .map_err(|e| unreadable("de gedeelde map", &e))?
+    {
+        let dir = RelPath::parse(&format!("{year}/exams"))?;
+        let names = storage
+            .list_dir(&dir, false)
+            .map_err(|e| unreadable(dir.as_str(), &e))?;
+        for name in names {
+            if !name.to_ascii_lowercase().ends_with(".json") {
+                continue;
+            }
+            let file = RelPath::parse(&format!("{}/{name}", dir.as_str()))?;
+            match storage.read_json(&file) {
+                Ok(Some(exam)) => n += usize::from(exam_rubric_id(&exam) == Some(id)),
+                Ok(None) => {} // gone meanwhile, or `null`
+                Err(e) => return Err(unreadable(file.as_str(), &e)),
+            }
+        }
+    }
+    Ok(n)
 }
 
 fn refuse(message: String) -> Error {
@@ -116,7 +146,8 @@ pub fn is_po_observatie(obs: &Value) -> bool {
 }
 
 /// Checks a JSON write before it is committed (see the module docs). Called by
-/// `Storage::write_json`; `school.json` itself is never guarded.
+/// `Storage::write_json`; `school.json` itself is never guarded. The rubric's lock (decision 20)
+/// is checked later, under the commit lock: [`guard_under_lock`].
 pub(crate) fn guard_write(
     storage: &Storage,
     rel: &RelPath,
@@ -124,7 +155,7 @@ pub(crate) fn guard_write(
     expect: Expect<'_>,
 ) -> Result<()> {
     let raise = if let Some(id) = rubric_id_of(rel.as_str()) {
-        check_rubric_write(storage, rel, id, value)?;
+        check_rubric_valid(id, value)?;
         Some(PO_MIN_APP_VERSION)
     } else if json_in(rel.as_str(), "observaties").is_some() && is_po_observatie(value) {
         Some(PO_MIN_APP_VERSION)
@@ -179,7 +210,8 @@ pub fn is_po_exam(exam: &Value) -> bool {
     exam.get("kind").and_then(Value::as_str) == Some("po")
 }
 
-fn check_rubric_write(storage: &Storage, rel: &RelPath, id: &str, value: &Value) -> Result<()> {
+/// The rubric's own rules: its id matches the file, and `check_rubric` passes.
+fn check_rubric_valid(id: &str, value: &Value) -> Result<()> {
     if value.get("id").and_then(Value::as_str) != Some(id) {
         return Err(refuse(format!(
             "Rubric niet opgeslagen: het id hoort {id} te zijn"
@@ -200,32 +232,48 @@ fn check_rubric_write(storage: &Storage, rel: &RelPath, id: &str, value: &Value)
             problems.join("; ")
         )));
     }
+    Ok(())
+}
+
+/// The part of the guard that runs under `Storage`'s commit lock, right before the rename
+/// (review 21 m3): a rubric in use may not change what decision 20 locks. Under the lock no PO
+/// from this PC can start using the rubric between this check and the write. It only reads: the
+/// usage scan runs only when the change touches a locked field.
+pub(crate) fn guard_under_lock(storage: &Storage, rel: &RelPath, value: &Value) -> Result<()> {
+    let Some(id) = rubric_id_of(rel.as_str()) else {
+        return Ok(());
+    };
     let Some(old) = storage.read_json(rel)? else {
         return Ok(());
     };
+    // Valid: guard_write checked it.
+    let new: Rubric = serde_json::from_value(value.clone())
+        .map_err(|e| refuse(format!("Rubric niet opgeslagen: {e}")))?;
+    let Ok(old) = serde_json::from_value::<Rubric>(old) else {
+        return match uses_of(storage, id)? {
+            0 => Ok(()),
+            n => Err(refuse(format!(
+                "Rubric niet opgeslagen: de rubric op schijf is onleesbaar en in gebruik bij {n} \
+                 PO('s). Herstel het bestand via Gegevenscontrole."
+            ))),
+        };
+    };
+    let locked = rubric::locked_changes(&old, &new);
+    if locked.is_empty() {
+        return Ok(());
+    }
     let n = uses_of(storage, id)?;
     if n == 0 {
         return Ok(());
     }
-    let old: Rubric = serde_json::from_value(old).map_err(|_| {
-        refuse(format!(
-            "Rubric niet opgeslagen: de rubric op schijf is onleesbaar en in gebruik bij {n} \
-             PO('s). Herstel het bestand via Gegevenscontrole."
-        ))
-    })?;
-    let locked = rubric::locked_changes(&old, &new);
-    if locked.is_empty() {
-        Ok(())
-    } else {
-        Err(refuse(format!(
-            "Rubric niet opgeslagen: in gebruik bij {n} {}, dus maxima en soort liggen vast. {}",
-            if n == 1 { "PO" } else { "PO's" },
-            locked.join("; ")
-        )))
-    }
+    Err(refuse(format!(
+        "Rubric niet opgeslagen: in gebruik bij {n} {}, dus maxima en soort liggen vast. {}",
+        if n == 1 { "PO" } else { "PO's" },
+        locked.join("; ")
+    )))
 }
 
-/// Refuses deleting a rubric that a PO uses (decision 20).
+/// Refuses deleting a rubric that a PO uses (decision 20). Runs under the commit lock (m3).
 pub(crate) fn guard_delete(storage: &Storage, rel: &RelPath) -> Result<()> {
     let Some(id) = rubric_id_of(rel.as_str()) else {
         return Ok(());

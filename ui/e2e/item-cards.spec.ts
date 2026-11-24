@@ -4,7 +4,7 @@
 // filters, the ⋮ actions, and a click on an Observatie card opens Observatie bewerken.
 
 import { expect, test } from '@playwright/test';
-import { cardMenu, login, watchErrors, withMock } from './helpers';
+import { cardMenu, login, readMockJson, seedFiles, watchErrors, withMock } from './helpers';
 
 const count = (page: import('@playwright/test').Page, row: string) =>
   page.locator(`#filter-row-${row} .filter-count`);
@@ -222,4 +222,58 @@ test.describe('Opdracht preview', () => {
     await expect.poll(async () => (await renders(page)).filter((x) => x === id).length).toBe(2);
     expect(errors).toEqual([]);
   });
+});
+
+test('Observaties: a test in another year or a rubric of another vak blocks the delete (review 21 m6)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const rubric = await readMockJson<
+    Record<string, unknown> & { categories: Record<string, unknown>[] }
+  >(page, 'rubrics/rubric-onderzoek.json');
+  const obs = (id: string, naam: string, toetstypes: string[]) => ({
+    id,
+    naam,
+    icon: '🧪',
+    uitleg: '',
+    leeradvies: '',
+    schoolsoort: [],
+    subjects: ['nat', 'bio'],
+    jaarlagen: [],
+    toetstypes,
+    _meta: { rev: 1 },
+  });
+  await seedFiles(page, {
+    'observaties/obs-m6-toets.json': obs('obs-m6-toets', 'M6 oude toets', ['toets']),
+    'observaties/obs-m6-rubric.json': obs('obs-m6-rubric', 'M6 rubric biologie', ['po']),
+    // Only a test of 2023-2024 uses the first; only a biologie rubric the second.
+    '2023-2024/exams/oud.json': {
+      id: 'oud',
+      title: 'Oude toets',
+      subject: 'nat',
+      jaarlaag: '3',
+      questions: [],
+      obs_ids: ['obs-m6-toets'],
+      _meta: { rev: 1 },
+    },
+    'rubrics/rubric-bio.json': {
+      ...rubric,
+      id: 'rubric-bio',
+      subject: 'bio',
+      categories: rubric.categories.map((c, i) =>
+        i === 0 ? { ...c, obs_ids: ['obs-m6-rubric'] } : c,
+      ),
+    },
+  });
+  await login(page);
+  await page.locator('.nav-btn[data-screen="observaties"]').click();
+  for (const naam of ['M6 oude toets', 'M6 rubric biologie']) {
+    const card = page.locator('#obs-list .icard', { hasText: naam });
+    await card.getByRole('button', { name: 'Meer acties' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Verwijderen' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    await page.keyboard.press('Escape');
+  }
 });

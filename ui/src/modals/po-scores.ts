@@ -10,6 +10,7 @@ import {
   alertDialog,
   closeModal,
   modalRefresher,
+  onModalCleanup,
   onModalSync,
   openModal,
   showReloadNotice,
@@ -39,6 +40,7 @@ import {
 import type { Rubric } from '../domain/rubric';
 import { testBadgeClass } from '../domain/test-type';
 import type { Exam, PoLine, ScoreRecord, Student } from '../domain/types';
+import { onPoSave } from '../services/po-save-status';
 import { Store } from '../store.js';
 import { ICONS } from '../utils/icons.js';
 import { openPoEditModal } from './po-gegevens';
@@ -57,8 +59,15 @@ export interface PoContext {
   records: Map<string, ScoreRecord>;
 }
 
-/** Loads the PO, its rubric, its students and their score files. */
-export async function loadPoContext(examId: string, year: string): Promise<PoContext | null> {
+/**
+ * Loads the PO, its rubric, its students and their score files. `withResits` (the
+ * verzameloverzicht): also the members of the resits' projectgroepen.
+ */
+export async function loadPoContext(
+  examId: string,
+  year: string,
+  { withResits = false }: { withResits?: boolean } = {},
+): Promise<PoContext | null> {
   await Store.loadYear(year);
   const exam = ((await Store.getExams(year)) as Exam[]).find((e) => e.id === examId);
   if (!exam) return null;
@@ -73,7 +82,9 @@ export async function loadPoContext(examId: string, year: string): Promise<PoCon
   );
   const ids = new Set([
     ...byStudent.keys(),
-    ...(exam.projectgroepen ?? []).flatMap((g) => g.student_ids.map(String)),
+    ...[exam, ...(withResits ? (Store.getResitsSync(exam.id, year) as Exam[]) : [])].flatMap((e) =>
+      (e.projectgroepen ?? []).flatMap((g) => g.student_ids.map(String)),
+    ),
   ]);
   await Store.preloadScores(year, subject, [...ids]);
   const records = new Map<string, ScoreRecord>();
@@ -89,7 +100,8 @@ export async function loadPoContext(examId: string, year: string): Promise<PoCon
     subject,
     rubric: (rubricOf(exam) as Rubric | undefined) ?? null,
     students,
-    classTag: (id) => byStudent.get(id)?.[0] ?? '—',
+    // A placed student outside the matching classes: the stamklas (review 24 n5).
+    classTag: (id) => byStudent.get(id)?.[0] ?? (students.get(id)?.stamklas || '—'),
     name,
     records,
   };
@@ -165,7 +177,7 @@ function tableHtml(ctx: PoContext): string {
       ${cats
         .map(
           (c) =>
-            `<th class="po-sc-cat po-sc-cat--${c.soort}" scope="col"><div class="po-sc-slant"><span>${esc(c.naam)} <span class="po-sc-max">(${c.max ?? 0})</span></span></div></th>`,
+            `<th class="po-sc-cat po-sc-cat--${c.soort}" scope="col" title="${esc(`${c.naam} (${c.max ?? 0})`)}"><div class="po-sc-slant"><span><span class="po-sc-cat-name">${esc(c.naam)}</span> <span class="po-sc-max">(${c.max ?? 0})</span></span></div></th>`,
         )
         .join('')}
       <th class="po-sc-pts" scope="col">Punten</th>
@@ -201,7 +213,8 @@ function tableHtml(ctx: PoContext): string {
       </div></th></tr>
       ${free.map((m) => studentRow(ctx, m, null)).join('')}
     </tbody>`);
-  return `<div class="po-sc-wrap"><table class="po-sc-table">${head}${bodies.join('')}</table></div>`;
+  // The cover hides the rows scrolling by above the sticky head (step 37, user).
+  return `<div class="po-sc-cover" aria-hidden="true"></div><div class="po-sc-wrap"><table class="po-sc-table">${head}${bodies.join('')}</table></div>`;
 }
 
 const HELP =
@@ -237,6 +250,14 @@ export async function openPoScoresModal(
       <span class="po-sc-hint">Scores per categorie wijzig je via <b>Beoordelen</b> of door dubbel te klikken op een rij; ze gelden voor de hele projectgroep.</span>
       <span class="po-sc-saved" role="status">● Alles opgeslagen</span>`,
     onShow: (el: HTMLElement) => {
+      // The footer follows the grading's saves (review 23 n3).
+      const saved = el.querySelector<HTMLElement>('.po-sc-saved')!;
+      onModalCleanup(
+        onPoSave((text, kind) => {
+          saved.textContent = text;
+          saved.dataset.kind = kind;
+        }),
+      );
       const reopen = () => openPoScoresModal(examId, year, grade);
       const refresh = modalRefresher(reopen, 200);
       let generation = Store.generation();

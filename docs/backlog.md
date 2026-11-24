@@ -2,6 +2,22 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 37 (review `docs/reviews/step-37.md`)
+
+- **m2 (step 41, robustness):** `loadObsUsage` (`ui/src/store.js`) throws on a read error in any
+  year, so the Observaties screen fails and Bewerken does nothing. Catch per year, mark the usage
+  incomplete; the delete guard and the Toets/PO lock then fail closed with a message. Test.
+- **m4 (step 41):** the rubric guard reads every year's exams under the commit lock, so other
+  writes from this PC wait on a slow shared folder. Scan outside the lock, re-check changed files
+  under it.
+- **m5 (user, real exe):** closing right after a grading edit saves it and the window closes; a
+  failed save asks first. Also a `tauri-api` unit test of the `listenCloseRequested` wiring.
+- n1 (43): bare block in `po-beoordelen.ts` `save()`. n3 (41): empty path and English OS text in
+  the Dutch refusal (`storage/mod.rs`, `Error::io("", e)`). n4 (39): `_keep` hard-codes margins
+  in `rapport-po.typ`. n5 (41): `IssueKind::Shape` for reference warnings in `validate.rs`. n6
+  (44): `loadObsUsage` reads `rubrics` four times; untyped logic in `store.js`. n7 (42): no test
+  for `2c970d2` (a throwing close handler still closes).
+
 ## From Steps 35-36 (review `docs/reviews/step-35-36.md`)
 
 - **m4 (step 37, PO completion):** the core compares raw member files with what the UI
@@ -65,17 +81,14 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From step 29c (overviews, 2026-11-15)
 
-- **PO verzameloverzicht:** a PO with an inhaal or herkansing has no summary overview over the
-  attempts that count (not designed; PLAN-2 step 29c). The PO verzamelkaart's "Overzicht openen"
-  stays disabled with a tooltip; each attempt opens its own PO overview.
+- ~~**PO verzameloverzicht**~~: done in step 37 (`0475956`).
 - **Review 29 (deferred minors):** m1 exam overview Observaties counts students without a score
   but takes the percentage of those with one (asked the user which population to use); m4 a
   silent refresh of the group and exam overviews shows skeletons (load before `openModal`); m5
   per-student reads without `preloadScores` / `{ loaded: true }`, `examStats` not memoised; m6
   duplication (histogram card, heat tint, info icon, `signed`, obs sort); m7 test gaps; nits
   n1-n7 (`docs/reviews/step-29.md`), among them ~45 unused utility classes in `style.css`.
-- **Profile observaties:** "Observaties per schooljaar" counts the observaties linked to a test
-  (`obs_ids`), as before; a PO's rubric and category observaties are not in it yet.
+- ~~**Profile observaties**~~: done in step 37 (`7045331`, the user's OK on the numbers).
 
 ## From the Step 10 manual test (`docs/reviews/manual-test-step-10.md`, 2026-11-03)
 
@@ -527,61 +540,35 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 21
 
-- Review 21 m1 (UI part): ticking PO on an observatie (or saving the first rubric) raises
-  `minAppVersion` to 0.12.0 without a notice; a one-time confirm ("collega's met een oudere
-  Maatwerk kunnen dan alleen nog lezen") would make it visible.
-- Review 21 m2: the "in use" scan fails open: `list_years` returns nothing on a read error and
-  unreadable exam files are skipped, so a locked change or a delete can pass then.
-- Review 21 m3: the guard reads the old rubric and the usage outside the commit lock (same-PC race;
-  colleagues sync later anyway).
-- Review 21 m6: the observatie form's Toets/PO lock and delete guard see only the loaded year's
-  exams and the active vak's rubrics.
-- Review 21 n7: the Store recognises a core refusal by the "Save failed for" prefix; a `code` on
-  the error of `update()` would be sturdier.
-- Review 21 n8: `SCHOOLSOORTEN` in seven files; `RubricUse` repeated in `src-tauri/src/data.rs`; the
-  mock guard repeats the core's Dutch messages.
-- Review 21 n9: `maatwerk-grades/src/rubric.rs` (~720 lines with tests): move the tests to
-  `rubric/tests.rs` as the core does.
+- Done in step 37: m2, m3 (`cbe8a84`: the guard fails closed and checks under the commit lock),
+  m6 (`59e6b68`: every year and vak), n7 (`b5676d0`: error code), n8 (`2bf0f12`: one
+  SCHOOLSOORTEN list, RubricUse with From), n9 (`1c4ce5c`).
+- m1 closed (step 37): since step 35 every login raises `minAppVersion` to 0.26.0, so the 0.12.0
+  raise of a PO observatie or the first rubric can no longer happen; no notice needed.
+- n8 rest, by design: the mock's rubric guard repeats the core's Dutch messages (the mock has no
+  core).
 - `observaties.js` stays JS (R-05, area step 30); the toetstype parts are in TS beside it.
 
 ## From Step 22
 
-- Review 22 n5: `validate-data` could warn when a herkansing's `rubric_id` differs from its
-  original's, and when an exam file holds a `rubric` field (it is never read from a file).
-- `validate-data` could warn about PO scores of a student in no projectgroep (review 22 M2 is
-  handled in the UI; a hand edit or an older app could still leave them).
+- Done in step 37 (`validate-data`): 22 n5 (a `rubric` field, a herkansing with another rubric) and
+  PO scores of a student in no projectgroep.
 - The Toetsen list re-renders after its statistics load and closes an open ⋮ menu (seen again in
   `po.spec.ts`; the helpers retry).
 
 ## From Step 23
 
-- Review 23 m1/m9: a test for a colleague's write between the pre-check and the CAS write of one
-  member (the group can then be partly written; the reload shows the colleague's version).
-- Review 23 m4: quitting the app within 10 s of an edit in Projectgroep beoordelen loses it (the
-  window closes without the dialog's close save).
-- Review 23 m9: e2e for a member without a score file and a PO without a rubric in the grading.
-- Review 23 n1: two saves waiting on a running save can both start afterwards (same writes).
-- Review 23 n3: the PO score table's footer status "● Alles opgeslagen" is static.
-- Review 23 n4: `validate-data` could warn about a `po` entry under a test's id.
+- Done in step 37 (`340fc97`, `2c970d2`): m1/m9 tests, m4 (save before the app closes, quit
+  guard), n1 (one save at a time), n3 (live table status).
+- Review 23 n4: done in step 37 (`validate-data`).
 - Local WebKit on Windows: Playwright's `dragTo` does not work (the step 22 and 23 drag tests fail
   there, also on `main`); CI runs WebKit on Linux and macOS, where they pass.
 
 ## From Step 24
 
-- Review 24 m3: a partly graded projectgroep gets a PO rapport without a warning (status Bezig).
-- Review 24 m4: a member graded in another projectgroep ("andere groep" in the score table) gets
-  the rapport under the current group's name and members.
-- Review 24 m5: the category averages leave unscored students out, the Totaal average counts them
-  as 0 (as `class_questions` vs the grade), so the Gemiddeld column need not add up.
-- Review 24 m6: on a PO herkansing the "niet ingedeeld" notice lists every unplaced student of
-  the matching classes (most of the jaarlaag); limit it to students who made the original.
-- Review 24 m7: a category block or Algemene observaties taller than a page overflows into the
-  footer (unbreakable blocks); allow a break inside such a block.
-- Review 24 m8: tests for `skippedHtml`/`compilePoRapport`, the no-rubric message, a herkansing
-  PO, a category added after grading, the stale group.
-- Review 24 n1: the notice's Dutch ("Geen rapport voor niet ingedeeld in …") reads awkwardly.
-- Review 24 n3: an unscored category shows "—" but its dot shows 0 (as the toets rapport's "N").
-- Review 24 n5: a placed student outside the matching classes gets klas "—".
+- Done in step 37 (`236e1b2`, `0f98efd`, `27d2f08`, `d74fdb6`): m3 (partly graded warning), m4
+  (no rapport for a member graded in another group), m5 (averages add up, user's rule B), m6
+  (unplaced on a resit), m7 (a block taller than a page breaks), m8 (tests), n1, n3, n5.
 
 ## From Step 25
 

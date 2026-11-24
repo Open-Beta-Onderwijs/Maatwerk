@@ -62,6 +62,14 @@ npm run build:exe                        # target/release/maatwerk.exe (portable
   `tools/check-npm-licenses.mjs`.
 - Every source file starts with `SPDX-License-Identifier: AGPL-3.0-or-later` (comment syntax of
   the language).
+- **Grade numbers: one source of truth, `maatwerk-grades`** (user, 2026-11-23). Every grade,
+  average, weighting, best attempt, SD, percentage, rounding or truncation is computed by the
+  grades crate (through `maatwerk-core` or the WASM build). The UI and core never compute grade
+  numbers with their own formulas; they only format the crate's result (decimal comma, fixed
+  decimals). A derived number (another average, a new statistic) is built from crate functions.
+  If no crate function fits: **stop and ask the user**. Propose what to add to the crate, give
+  the alternatives with concrete worked examples (input grades and weights -> output under each
+  option, edge cases included), and wait for the OK. Crate changes need the user's OK anyway.
 - Paths from the UI: reject `..`, absolute paths and symlink escapes (`maatwerk-core::paths`).
 - Heavy work (Typst, merge, directory walks) via `spawn_blocking`, never on the async runtime.
 - Bugs: failing test first. Reference ambiguities: record in `docs/reference/quirks.md`, do not

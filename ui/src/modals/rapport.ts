@@ -9,6 +9,7 @@ import { toast, openModal } from '../app.js';
 import { esc } from '../components/dialog';
 import { renderWarningsHtml } from '../components/render-warnings';
 import { isPo } from '../domain/po';
+import { skippedNoticeHtml } from '../domain/po-rapport';
 import { printName } from '../domain/print';
 import type { Exam, Observatie } from '../domain/types';
 import { compilePoRapport, compileRapport } from '../services/rapport';
@@ -67,24 +68,6 @@ async function toetsOutcome(exam: Exam, year: string): Promise<Outcome> {
   return { result, groupNames };
 }
 
-/** "Lotte Bakker en Daan Jansen": names as one line. */
-function names(list: readonly string[]): string {
-  return list.length < 2 ? (list[0] ?? '') : `${list.slice(0, -1).join(', ')} en ${list.at(-1)}`;
-}
-
-/** The PO's students without a rapport (decision 18: unplaced students have no grade). */
-export function skippedHtml(skipped: { unplaced: string[]; ungraded: string[] }): string {
-  const parts = [
-    skipped.unplaced.length
-      ? `niet ingedeeld in een projectgroep: ${esc(names(skipped.unplaced))}`
-      : '',
-    skipped.ungraded.length ? `nog geen cijfer: ${esc(names(skipped.ungraded))}` : '',
-  ].filter(Boolean);
-  return parts.length
-    ? `<p class="rapport-skipped">Geen rapport voor ${parts.join('; ')}.</p>`
-    : '';
-}
-
 async function poOutcome(exam: Exam, year: string): Promise<Outcome> {
   const ctx = await loadPoContext(exam.id, year);
   if (!ctx) return { result: null, groupNames: [], empty: 'Deze PO bestaat niet meer.' };
@@ -95,14 +78,18 @@ async function poOutcome(exam: Exam, year: string): Promise<Outcome> {
       empty: 'Deze PO heeft geen rubric, dus geen cijfers. Kies een rubric via PO bewerken.',
     };
   const observaties = (await Store.getObservaties(ctx.subject)) as Observatie[];
+  // A herkansing or inhaal: who has no grade on the original counts as unplaced (review 24 m6).
+  const original = exam.parent_id
+    ? (Store.getExamsSync(year) as Exam[]).find((e) => e.id === exam.parent_id)
+    : undefined;
   const { result, skipped, classes } = await compilePoRapport(
-    { ...ctx, observaties },
+    { ...ctx, observaties, ...(original ? { original } : {}) },
     { renderPoRapportPdf: (...a) => window.maatwerk.renderPoRapportPdf(...a) },
   );
   return {
     result: result as Rendered | null,
     groupNames: classes,
-    notice: skippedHtml(skipped),
+    notice: skippedNoticeHtml(skipped),
     empty:
       'Nog geen leerling van deze PO heeft een cijfer. Beoordeel eerst de projectgroepen via Scores invoeren.',
   };

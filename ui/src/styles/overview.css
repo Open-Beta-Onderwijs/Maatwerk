@@ -597,6 +597,19 @@ html[data-theme='dark'] .ov-box__box {
 .ov-tip[hidden] {
   display: none;
 }
+/* Taller than the window (many categories): wider, the rows in two columns. The cap is a last
+   resort; overview/tooltip.ts places it on screen. */
+.ov-tip {
+  max-height: calc(100vh - 16px);
+  overflow: hidden;
+}
+.ov-tip--wide {
+  width: 560px;
+  max-width: calc(100vw - 16px);
+}
+.ov-tip--wide .ov-tip__rows {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+}
 html[data-theme='dark'] .ov-tip {
   background: #e7eaf0;
   color: #1b2230;
@@ -1025,6 +1038,10 @@ html[data-theme='dark'] .ov-tip__mute {
 }
 .po-ov-table thead th.po-ov-col-grade {
   width: 70px;
+}
+/* Verzameloverzicht: room for the I/H dot that hangs right of the grade (as .xo-col-dot). */
+.po-ov-table thead th.po-ov-col-dot {
+  width: 30px;
 }
 .po-ov-sub {
   display: flex;

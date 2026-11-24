@@ -9,6 +9,7 @@ import { recomputeRow, recomputeSummaryRow, type GridData } from '../../domain/s
 import type { Exam, Observatie, ScoreRecord, Student } from '../../domain/types';
 import * as Presence from '../../presence.js';
 import { READ_ONLY_SAVE_TEXT, isReadOnlyError, noteReadOnly } from '../../services/read-only';
+import { beforeQuit } from '../../services/quit-guard';
 import { Store } from '../../store.js';
 
 /** A colleague's position in a grid (presence). */
@@ -62,6 +63,11 @@ let saveChain: Promise<unknown> = Promise.resolve();
 // Cells with a save in flight ("studentId:col" -> count). Background updates skip these, so a
 // slightly older file on disk never overwrites fresh input.
 export const pendingSaves = new Map<string, number>();
+/** Registered with the quit guard while saves are queued. */
+let quitTask: (() => void) | null = null;
+// Saves that failed (conflict included) since the quit task was registered: closing the app
+// then asks first (review 37 M1).
+let failedSinceQuitTask = 0;
 // Cells whose last save failed ("studentId:col"); typing the same value again retries (G53).
 const unsavedCells = new Set<string>();
 
@@ -88,6 +94,14 @@ export function saveCell(
 ): Promise<unknown> {
   const key = cellKey(student, col);
   pendingSaves.set(key, (pendingSaves.get(key) ?? 0) + 1);
+  // Closing the app waits for the queued saves (step 37), only while there are any.
+  if (!quitTask) {
+    failedSinceQuitTask = 0;
+    quitTask = beforeQuit(async () => {
+      await saveChain;
+      return failedSinceQuitTask === 0;
+    });
+  }
   session.onSaveState?.();
   Presence.markEdit();
   const run = saveChain.then(async () => {
@@ -95,6 +109,7 @@ export function saveCell(
       await write();
       if (unsavedCells.delete(key)) renderAllGrids();
     } catch (err) {
+      failedSinceQuitTask++;
       const e = err as { code?: string; message?: string } | null;
       if (e?.code === 'conflict') throw err;
       if (isReadOnlyError(err)) noteReadOnly();
@@ -110,6 +125,10 @@ export function saveCell(
       const n = (pendingSaves.get(key) ?? 1) - 1;
       if (n > 0) pendingSaves.set(key, n);
       else pendingSaves.delete(key);
+      if (!pendingSaves.size) {
+        quitTask?.();
+        quitTask = null;
+      }
       session.onSaveState?.();
     }
   });

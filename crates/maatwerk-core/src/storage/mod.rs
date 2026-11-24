@@ -463,9 +463,13 @@ impl Storage {
 
     /// Year folders (`YYYY-YYYY`), newest first; empty on any error (`fs:listYears`).
     pub fn list_years(&self) -> Vec<String> {
-        let Ok(entries) = fs::read_dir(self.dir.root()) else {
-            return vec![];
-        };
+        self.try_list_years().unwrap_or_default()
+    }
+
+    /// [`Self::list_years`], but an unreadable data folder is an error: for checks that must
+    /// fail closed (the rubric guard, review 21 m2).
+    pub fn try_list_years(&self) -> Result<Vec<String>> {
+        let entries = fs::read_dir(self.dir.root()).map_err(|e| Error::io("", e))?;
         let mut years: Vec<String> = entries
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
@@ -473,7 +477,7 @@ impl Storage {
             .filter(|n| is_year_name(n))
             .collect();
         years.sort_by(|a, b| b.cmp(a));
-        years
+        Ok(years)
     }
 
     /// `data:<mime>;base64,...`, `None` if missing or unreadable (`fs:readPhotoAsDataUrl`).
@@ -503,8 +507,12 @@ impl Storage {
     /// raises `minAppVersion` first (`rubrics::guard_write`, step 21).
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
         crate::rubrics::guard_write(self, rel, value, expect)?;
-        let (value, text) = integrity::stamped_text(value);
-        self.commit_bytes(rel, text.as_bytes(), expect, true)?;
+        let (stamped, text) = integrity::stamped_text(value);
+        // The rubric's lock is checked under the commit lock (review 21 m3).
+        self.commit_bytes_checked(rel, text.as_bytes(), expect, true, || {
+            crate::rubrics::guard_under_lock(self, rel, value)
+        })?;
+        let value = stamped;
         self.note_stamp(rel.as_str(), &value);
         Ok(hash_hex(text.as_bytes()))
     }
@@ -548,6 +556,19 @@ impl Storage {
         expect: Expect<'_>,
         note: bool,
     ) -> Result<()> {
+        self.commit_bytes_checked(rel, bytes, expect, note, || Ok(()))
+    }
+
+    /// [`Self::commit_bytes`] with `check` run under the commit lock, after the CAS check and
+    /// before the rename. `check` may only read (a write would wait for the lock it holds).
+    fn commit_bytes_checked(
+        &self,
+        rel: &RelPath,
+        bytes: &[u8],
+        expect: Expect<'_>,
+        note: bool,
+        check: impl FnOnce() -> Result<()>,
+    ) -> Result<()> {
         let path = self.dir.resolve(rel)?;
         self.check_writable(rel)?;
         // The temp file is written before the commit lock, so the lock covers only the check
@@ -560,6 +581,7 @@ impl Storage {
                 updated_by: None,
             });
         }
+        check()?;
         let observer = self.observer.as_ref().filter(|_| note);
         if let Some(observer) = observer {
             observer.will_change(rel);
@@ -579,8 +601,9 @@ impl Storage {
     pub fn delete(&self, rel: &RelPath) -> Result<()> {
         let path = self.dir.resolve(rel)?;
         self.check_writable(rel)?;
-        crate::rubrics::guard_delete(self, rel)?;
         let _guard = self.commit.acquire()?;
+        // Under the lock: no PO from this PC can start using the rubric meanwhile (21 m3).
+        crate::rubrics::guard_delete(self, rel)?;
         if let Some(observer) = &self.observer {
             observer.will_change(rel);
         }

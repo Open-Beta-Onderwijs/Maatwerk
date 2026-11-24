@@ -72,6 +72,31 @@ test.describe('layout', () => {
       .count();
     await expect(cell(page, n - 2, H2.obs1)).toHaveText(String(ticked));
   });
+
+  test('the group heading covers the whole width when the grid scrolls sideways (step 37)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 900, height: 700 });
+    await openGrid(page, EXAMS.h2);
+    const c = page.locator('#sc-grid-container');
+    await c.evaluate((el) => {
+      el.scrollTop = 140;
+      el.scrollLeft = 300;
+    });
+    const box = (await c.boundingBox())!;
+    // Just under the top of the container, from the left to the right edge: the stuck heading
+    // (the white bar), never a table cell scrolling by.
+    for (const x of [box.x + 20, box.x + box.width / 2, box.x + box.width - 30]) {
+      const at = await page.evaluate(
+        ([px, py]) => {
+          const el = document.elementFromPoint(px!, py!);
+          return { head: !!el?.closest('.sc-group-head'), table: !!el?.closest('table') };
+        },
+        [x, box.y + 6],
+      );
+      expect(at).toEqual({ head: true, table: false });
+    }
+  });
 });
 
 test.describe('entering scores', () => {

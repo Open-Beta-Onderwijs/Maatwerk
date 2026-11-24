@@ -86,7 +86,8 @@
         cell(c, _bd(c.soort)),
         cell(c, _score_str(c)),
         lollipop_track(
-          (score: c.score, max: c.max, class_avg: c.avg, dot_color: c.dot_color, rtti_color: none),
+          // An unscored category: "—" in its grey dot, as in the Jij column (review 24 n3).
+          (score: c.score, max: c.max, class_avg: c.avg, dot_color: c.dot_color, rtti_color: none, none_text: "—"),
           scale_max,
           dots,
         ),
@@ -177,8 +178,16 @@
   )
 }
 
+// A block that stays on one page, unless it is taller than a page: then it breaks rather than
+// running past the bottom margin into the footer (review 24 m7). The margins are setup's 2 cm.
+#let _keep(below: auto, body) = context {
+  let avail = page.height - 4cm
+  let h = measure(body, width: page.width - 4cm).height
+  block(breakable: h > avail, below: below, body)
+}
+
 // 24pt between categories (user, 2026-11-12: 14pt was tight); inside a block unchanged.
-#let _category(c) = block(breakable: false, below: 24pt, {
+#let _category(c) = _keep(below: 24pt, {
   set text(size: 9.5pt)
   let tag = _soort_tag(c.soort)
   _block_heading(
@@ -208,7 +217,7 @@
   v(2pt)
   for c in s.categories { _category(c) }
   if s.observaties.len() > 0 {
-    block(breakable: false, {
+    _keep({
       set text(size: 9.5pt)
       _block_heading(text(size: 11pt, weight: "bold")[Algemene observaties], [])
       _obs_list(s.observaties)

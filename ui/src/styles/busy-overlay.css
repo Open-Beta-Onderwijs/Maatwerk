@@ -1,0 +1,38 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+/* A blocking busy message over the whole window (components/busy-overlay.ts): above dialogs
+   (1000) and below the toasts (9998+), so an error toast still shows. */
+.busy-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  cursor: progress;
+}
+.busy-overlay__box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow-popover);
+  color: var(--text);
+  font-weight: 600;
+}
+.busy-overlay__spin {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--accent);
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .busy-overlay__spin {
+    animation-duration: 2.4s;
+  }
+}
