@@ -1,7 +1,7 @@
 # State
 
-Last updated: 2026-11-22 (step 37, version 0.28.0) Branch: `step/37-po-completion`
-Last tags: `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-24 (step 37 merged, version 0.28.0) Branch: `main`
+Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -81,7 +81,10 @@ close save landed; now polls) and a macOS WebKit "Target crashed" during login (
 User 2026-11-24: real-exe check with the 0.28.0 exe passed (closing right after a grading edit
 saves and closes; a failed save asks).
 
-**Next action:** check CI on the flaky-test fix is green, then merge into `main`, tag `step-37`.
+CI run `45363022595` (`c53d3d8`, cookie 0.18.3 for RUSTSEC-2026-0594) green on all four jobs, no
+flaky tests. Merged into `main` (`c9677c0`), tag `step-37`, pushed (2026-11-24).
+
+**Next action:** step 38 (Cijfergemiddelden), see `PLAN-2.md`.
 
 ## Steps 35 and 36 in one go (2026-11-21, user's request)
 
