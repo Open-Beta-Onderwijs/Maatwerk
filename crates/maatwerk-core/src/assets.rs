@@ -46,21 +46,23 @@ impl ProjectFile {
     }
 
     /// Every released version with the SHA-1 of its normalised text, oldest first. Add a row
-    /// (never change one) when the bundled file changes; a test checks the last row.
+    /// (never change one) when the bundled file changes; a test checks the last row. The hashes
+    /// were recomputed when the normalisation changed (step 39b, backlog 5b n4); a test checks
+    /// every row against the released text in `tests/fixtures/project-files`.
     fn releases(self) -> &'static [(u32, &'static str)] {
         match self {
             ProjectFile::Lib => &[
-                (1, "e340d281c7d275c2df798a12adf916adf3634b57"),
-                (2, "47a3c6689cf3fdab4636f91758240084ab002d96"),
+                (1, "280515f2dabec73a64857797a52467b6361f661e"),
+                (2, "0d0e3803d2a16e68e797ce328a96e588298dafd0"),
             ],
             ProjectFile::Main => &[
-                (1, "7b59d765923398c424fe61cc3fa0b3d76f967548"),
+                (1, "48dbdd9d89bf18c5823434b3ebdee24eabf0c502"),
                 // 2: `setup_extra(body)` as a show rule (quirk T31) and no cursor marker
                 // (review 8b n4), 0.3.1.
-                (2, "46159ead80b65e7da0800ddcc610b5fb2e02872b"),
+                (2, "b014d50a08eff3ed6ee81c8bcc5adf2d15212b8e"),
                 // 3: mode "plain" (an opdracht without the student block, printed from the
                 // Opdrachten tab), 0.23.1.
-                (3, "2de3ae8ed858c95d0b55bfd82a6c86bcb4647640"),
+                (3, "baa86708af3fb718369bae988d5c6b8f975ebdf3"),
             ],
         }
     }
@@ -85,8 +87,8 @@ impl ProjectFile {
             .and_then(|v| v.trim().parse().ok())
     }
 
-    /// `Some(version)` when `text` is exactly a released version (line endings and a BOM
-    /// aside), `None` when the teacher changed it.
+    /// `Some(version)` when `text` is exactly a released version (a BOM, line endings, spaces
+    /// and tabs at line ends and trailing empty lines aside), `None` when the teacher changed it.
     pub fn released_version(self, text: &str) -> Option<u32> {
         let hash = normalised_sha1(text);
         self.releases()
@@ -96,14 +98,18 @@ impl ProjectFile {
     }
 }
 
-/// SHA-1 (hex) of the text with a BOM removed and CRLF as LF, so a copy saved by an editor that
-/// changes line endings still counts as unmodified.
+/// SHA-1 (hex) of the text without a BOM, with CRLF as LF, without spaces and tabs at line ends
+/// and without trailing empty lines, so a copy saved by an editor that changes only those still
+/// counts as unmodified (backlog 5b n4, user 2026-11-25). None of them changes what Typst renders
+/// in these code files.
 fn normalised_sha1(text: &str) -> String {
-    let text = text
-        .strip_prefix('\u{feff}')
-        .unwrap_or(text)
-        .replace("\r\n", "\n");
-    crate::storage::hash_hex(text.as_bytes())
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    let lines: Vec<&str> = text
+        .split('\n')
+        .map(|l| l.trim_end_matches(['\r', ' ', '\t']))
+        .collect();
+    let joined = lines.join("\n");
+    crate::storage::hash_hex(joined.trim_end_matches('\n').as_bytes())
 }
 
 /// `(file name, bytes)` of a font in `assets/fonts/`.
@@ -209,6 +215,52 @@ mod tests {
             );
             assert_eq!(file.released_version(text), Some(file.current_version()));
         }
+    }
+
+    #[test]
+    fn every_released_text_has_its_version() {
+        let fixture = |name| -> &'static str {
+            match name {
+                "lib-v1" => include_str!("../tests/fixtures/project-files/lib-v1.typ"),
+                "main-v1" => include_str!("../tests/fixtures/project-files/main-v1.typ"),
+                "main-v2" => include_str!("../tests/fixtures/project-files/main-v2.typ"),
+                _ => unreachable!(),
+            }
+        };
+        for (file, version, text) in [
+            (ProjectFile::Lib, 1, fixture("lib-v1")),
+            (ProjectFile::Lib, 2, LIB_TYP),
+            (ProjectFile::Main, 1, fixture("main-v1")),
+            (ProjectFile::Main, 2, fixture("main-v2")),
+            (ProjectFile::Main, 3, OPDRACHT_MAIN_TYP),
+        ] {
+            assert_eq!(
+                file.released_version(text),
+                Some(version),
+                "{file:?} {version}"
+            );
+        }
+    }
+
+    #[test]
+    fn review_5b_n4_whitespace_at_line_ends_and_the_end_is_ignored() {
+        let lib = ProjectFile::Lib;
+        let stripped = LIB_TYP.trim_end();
+        assert_ne!(stripped, LIB_TYP);
+        let spaces: String = LIB_TYP.lines().map(|l| format!("{l}  \t\r\n")).collect();
+        for text in [
+            stripped.to_owned(),
+            format!("{LIB_TYP}\n\n"),
+            spaces,
+            format!("\u{feff}{}", LIB_TYP.replace('\n', "\r\n")),
+        ] {
+            assert_eq!(lib.released_version(&text), Some(2));
+        }
+        // Leading spaces and an empty line in between are a change.
+        let indented = LIB_TYP.replacen("\n", "\n ", 1);
+        assert_eq!(lib.released_version(&indented), None);
+        let blank = LIB_TYP.replacen("\n", "\n\n", 1);
+        assert_eq!(lib.released_version(&blank), None);
     }
 
     #[test]

@@ -193,8 +193,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   arrive if a real class batch gets heavy.
 - ~~**Review 5b n3:** tofu warnings repeat once per job in a batch~~ Done (6a): the batch
   command deduplicates the warning texts across jobs.
-- **Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
-  normalisation also ignores trailing whitespace/final newline.
+- ~~**Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
+  normalisation also ignores trailing whitespace/final newline.~~ Done (39b, user 2026-11-25: yes): release hashes recomputed, a test per released text.
 - ~~**Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
   opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.~~ Done (39a, `b9fab11`): only opdracht folders are mounted; a junction to another opdracht is denied (test).
 - **Review 5b n6:** the CLI panics on a non-UTF-8 argument and writes its output non-atomically.
