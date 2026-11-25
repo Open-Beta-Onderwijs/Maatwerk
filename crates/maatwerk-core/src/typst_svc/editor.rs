@@ -1339,13 +1339,18 @@ mod tests {
         rx.recv_timeout(WAIT).unwrap();
         let editor = Arc::new(editor);
         // A slow query holds the compile thread; the next one gives up before its turn.
+        let (started_tx, started) = mpsc::channel();
         let slow = {
             let editor = editor.clone();
             std::thread::spawn(move || {
-                editor.query(WAIT, |_| std::thread::sleep(Duration::from_millis(300)))
+                editor.query(WAIT, move |_| {
+                    started_tx.send(()).unwrap();
+                    std::thread::sleep(Duration::from_millis(300));
+                })
             })
         };
-        std::thread::sleep(Duration::from_millis(50));
+        // Not a fixed sleep: on a busy runner the slow query may start late (review 39 m3).
+        started.recv_timeout(WAIT).unwrap();
         let ran = Arc::new(AtomicBool::new(false));
         let flag = ran.clone();
         let quick = editor.query(Duration::from_millis(10), move |_| {

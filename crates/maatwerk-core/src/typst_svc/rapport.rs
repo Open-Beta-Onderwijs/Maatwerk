@@ -116,16 +116,7 @@ fn world<D: Serialize>(
         WorldSpec {
             main: file("main.typ"),
             files,
-            mounts: vec![
-                // The folder as spelled on disk: a Windows-made `Afbeeldingen/` on Linux
-                // (security review n2).
-                Mount::dir(
-                    "/data/afbeeldingen",
-                    super::world::find_ignoring_case(data_dir.root(), [IMAGES_DIR])
-                        .unwrap_or_else(|| data_dir.root().join(IMAGES_DIR)),
-                )
-                .within(data_dir.root()),
-            ],
+            mounts: vec![images_mount(data_dir)],
             inputs: None,
             now,
         },
@@ -140,7 +131,7 @@ pub fn render_rapport_pdf(
     now: OffsetDateTime,
 ) -> Result<Compiled<Vec<u8>>, CompileError> {
     compile_pdf(&rapport_world(fonts.clone(), data, data_dir, now))
-        .map_err(|e| name_eval_field(e, &fonts, now, &rapport_eval_fields(data)))
+        .map_err(|e| name_eval_field(e, &fonts, data_dir, now, &rapport_eval_fields(data)))
 }
 
 /// Compiles the PO rapport to PDF.
@@ -151,7 +142,7 @@ pub fn render_po_rapport_pdf(
     now: OffsetDateTime,
 ) -> Result<Compiled<Vec<u8>>, CompileError> {
     compile_pdf(&po_rapport_world(fonts.clone(), data, data_dir, now))
-        .map_err(|e| name_eval_field(e, &fonts, now, &po_eval_fields(data)))
+        .map_err(|e| name_eval_field(e, &fonts, data_dir, now, &po_eval_fields(data)))
 }
 
 /// A teacher text the template evaluates as markup (`eval` in `rapport.typ`), and where the
@@ -215,12 +206,24 @@ fn po_eval_fields(data: &PoRapportData) -> Vec<EvalField> {
     out
 }
 
+/// `/data/afbeeldingen`: the folder as spelled on disk, so a Windows-made `Afbeeldingen/` works
+/// on Linux (security review n2).
+fn images_mount(data_dir: &DataDir) -> Mount {
+    Mount::dir(
+        "/data/afbeeldingen",
+        super::world::find_ignoring_case(data_dir.root(), [IMAGES_DIR])
+            .unwrap_or_else(|| data_dir.root().join(IMAGES_DIR)),
+    )
+    .within(data_dir.root())
+}
+
 /// Review 5a m3: an error in an eval'd text points into `rapport.typ`, not at the text. After a
 /// failed rapport, each distinct text is compiled on its own; the first one that fails is named
 /// in a hint on the first error. Costs nothing when the rapport compiles.
 fn name_eval_field(
     mut err: CompileError,
     fonts: &Arc<FontStore>,
+    data_dir: &DataDir,
     now: OffsetDateTime,
     fields: &[EvalField],
 ) -> CompileError {
@@ -228,7 +231,7 @@ fn name_eval_field(
     let failing = fields
         .iter()
         .filter(|f| !f.text.is_empty() && seen.insert(f.text.as_str()))
-        .find(|f| compile_document(&eval_world(fonts.clone(), &f.text, now)).is_err());
+        .find(|f| compile_document(&eval_world(fonts.clone(), &f.text, data_dir, now)).is_err());
     if let (Some(field), Some(first)) = (failing, err.diagnostics.first_mut()) {
         first
             .hints
@@ -237,8 +240,14 @@ fn name_eval_field(
     err
 }
 
-/// A World that evaluates one text as the rapport template does.
-fn eval_world(fonts: Arc<FontStore>, text: &str, now: OffsetDateTime) -> MaatwerkWorld {
+/// A World that evaluates one text as the rapport template does, with the same image folder
+/// (review 39 n4: a text drawing an image would otherwise be blamed).
+fn eval_world(
+    fonts: Arc<FontStore>,
+    text: &str,
+    data_dir: &DataDir,
+    now: OffsetDateTime,
+) -> MaatwerkWorld {
     const MAIN: &str = "#import \"rapport.typ\": _guard_markup, _eval_scope\n\
         #eval(_guard_markup(json(\"data.json\").text), mode: \"markup\", scope: _eval_scope)\n";
     let json = serde_json::to_vec(&serde_json::json!({ "text": text }))
@@ -253,7 +262,7 @@ fn eval_world(fonts: Arc<FontStore>, text: &str, now: OffsetDateTime) -> Maatwer
                 (file("rapport.typ"), Bytes::from_string(assets::RAPPORT_TYP)),
                 (file("data.json"), Bytes::new(json)),
             ],
-            mounts: Vec::new(),
+            mounts: vec![images_mount(data_dir)],
             inputs: None,
             now,
         },

@@ -109,7 +109,7 @@ need a lib version bump and the user's OK for the silent update.
 
 **m1. Batch cache eviction every 8 jobs keeps about 80 jobs of memoised entries, not 8.**
 `batch.rs:271-273` (comment), `batch.rs:215`, `compile.rs:79`. `comemo::evict(10)` drops
-entries unused in the last 10 *evictions*. With one eviction per 8 jobs, a per-student entry
+entries unused in the last 10 _evictions_. With one eviction per 8 jobs, a per-student entry
 lives about 80 jobs, against about 10 before. The comment ("the cache holds about this many
 jobs' entries at most") is wrong, and the peak memory of a class batch can grow roughly 8x.
 `evict()` also runs while the `done` lock is held, so the other workers block on their progress
@@ -181,3 +181,18 @@ conversion is byte-faithful to the old converter (verified by script). The Typst
 consistent. The one major (M1) is a product decision: lib 3 changes printed vraag letters and
 answer-key labels of existing opdrachten through the silent update, and can produce duplicate
 labels. It needs the user's OK, or a lib 3 that leaves printing alone.
+
+## Triage (implementer)
+
+- **M1 fixed** (`a3b453b`): lib 3 prints as lib 2; the marker keeps lib 2's `opgave` and adds
+  `in_opgave`, which only the editor check reads. lib 3 was not released yet, so its release row
+  was replaced. Test `review_39_m1_lib_3_prints_what_lib_2_printed` renders both libs to
+  identical SVG for vragen before, in and after an opgave, with the answer list.
+- **m1 fixed:** the batch evicts every 4 jobs (about 40 jobs' entries; a 30-job batch ages the
+  editor 8 steps), comment corrected, eviction outside the `done` lock.
+- **m2 fixed:** quirk T34 in `docs/reference/quirks.md`; release notes name it.
+- **m3 fixed:** the slow query signals that it started.
+- **m4 fixed:** `docs/specs/storage-spec.md` marked history.
+- **n4, n5 fixed** (image mount in the check world; punten strings digits and one separator).
+- **n6 fixed:** `docs/testing.md` says the converted `data` cases have no `main.typ`/`lib.typ`.
+- **n1, n2, n3** to `docs/backlog.md` ("From Step 39"). **n7:** in the end-of-step report.

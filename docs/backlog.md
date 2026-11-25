@@ -2,6 +2,17 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 39 (review `docs/reviews/step-39.md`)
+
+- **n1:** the batch's poisoned-lock recovery around the merge cursor cannot help (a panic in
+  `PdfMerger::push` ends the scope anyway); simplify or document.
+- **n2:** `PdfMerger::push` changes its state (index, last key, a blank page) before it can fail;
+  harmless today (the batch stops merging on an error), but not a clean API.
+- **n3:** the "eerdere compilatie loopt nog" count is the one of the last update; it can stay
+  shown after the abandoned compile ended, until the next update.
+- **8b "Jumps after an error":** considered in 39b, not done (needs the last good source kept and
+  its offsets mapped onto the edited text).
+
 ## From Step 38 (review `docs/reviews/step-38.md`)
 
 - **m2 rest (step 41, robustness):** Rust and the MockApi mirror differ on input the fixtures
@@ -395,8 +406,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 ## From Step 8a (review `docs/reviews/step-08a.md`)
 
 - ~~**m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
-  editor's cache out.~~ Done (39b): batch workers defer eviction and the batch evicts every 8
-  jobs and at the end (a 30-job batch ages the editor's entries 4 steps, not 30). Option: evict by the editor's own compile count only, or evict less
+  editor's cache out.~~ Done (39b): batch workers defer eviction and the batch evicts every 4
+  jobs and at the end (a 30-job batch ages the editor's entries 8 steps, not 30; the cache holds
+  about 40 jobs' entries, review 39 m1). Option: evict by the editor's own compile count only, or evict less
   often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
   a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
 - ~~**m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.~~

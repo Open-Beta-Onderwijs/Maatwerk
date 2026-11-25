@@ -210,15 +210,19 @@ fn run_batch(
                             Err(TryLockError::WouldBlock) => {}
                         }
                         // A skipped job counts as done, so the progress reaches the total (T23).
-                        let mut finished = lock(&done);
-                        *finished += 1;
+                        let finished = {
+                            let mut finished = lock(&done);
+                            *finished += 1;
+                            progress(BatchProgress {
+                                done: *finished,
+                                total,
+                            });
+                            *finished
+                        };
+                        // Outside the lock: other workers report progress meanwhile.
                         if finished.is_multiple_of(EVICT_EVERY) {
                             evict();
                         }
-                        progress(BatchProgress {
-                            done: *finished,
-                            total,
-                        });
                     }
                 })
             });
@@ -268,9 +272,10 @@ fn run_batch(
     Ok(BatchOutput { merged, warnings })
 }
 
-/// Jobs per cache eviction (review 8a m2): an open editor's entries survive a class batch, and
-/// the cache holds about this many jobs' entries at most.
-const EVICT_EVERY: usize = 8;
+/// Jobs per cache eviction (review 8a m2). `evict` keeps what was used in its last 10 calls, so
+/// the cache holds the entries of about 10 x 4 = 40 jobs (4x as many as evicting per job), and a
+/// 30-job class batch ages an open editor's entries 8 steps, not 30: they survive it.
+const EVICT_EVERY: usize = 4;
 
 /// A job's state: waiting or running, skipped (its opdracht failed), or done.
 enum Slot {

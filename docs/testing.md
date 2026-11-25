@@ -40,7 +40,8 @@ the port with `MAATWERK_BLESS=<why> MAATWERK_BLESS_IDS=<ids> cargo test` after t
 check, with the reason in the commit message. The logic goldens' `data` cases (and the score
 files of `score-writes`) were captured as v1 folders and converted once to the current format
 in step 39b (user's OK: string student ids, `"N"` for `null`, the students wrapper, one file
-per user, opdracht folders, the v3 exam fields); the tests read them as they are.
+per user, opdracht folders, the v3 exam fields); the tests read them as they are. The opdracht
+folders there have no `main.typ`/`lib.typ` (the domain tests do not compile them).
 
 ## Layout
 

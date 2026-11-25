@@ -779,6 +779,16 @@ Paths in this section are relative to `_reference/renderer/`.
   `TMP` in a folder made case-sensitive (`fsutil file setCaseSensitiveInfo <dir> enable`), and
   natively in the Linux CI job.
 
+### T34. Backslashes in Typst paths (Typst 0.15)
+
+- Where: the reference CLI (Typst 0.14) on Windows split a path such as
+  `image("images\\figuur.png")` on the backslash, so a teacher could write it either way.
+- **Port (step 39b, Typst 0.15.1):** Typst itself refuses it ("path contains backslash",
+  `typst-syntax` `path.rs`). Not worked around: the opdracht shows the error in the editor and
+  the teacher writes `/`. Other 0.15 language changes can break hand-edited `opdracht.typ` or
+  `lib.typ` copies the same way; the editor shows the error with its place. Named in the 0.30.0
+  release notes (review 39 m2).
+
 ## U. UI
 
 Read from code only; "probable" means the code path is clear but not confirmed in the running app.
