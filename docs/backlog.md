@@ -394,8 +394,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 8a (review `docs/reviews/step-08a.md`)
 
-- **m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
-  editor's cache out. Option: evict by the editor's own compile count only, or evict less
+- ~~**m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
+  editor's cache out.~~ Done (39b): batch workers defer eviction and the batch evicts every 8
+  jobs and at the end (a 30-job batch ages the editor's entries 4 steps, not 30). Option: evict by the editor's own compile count only, or evict less
   often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
   a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
 - **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.

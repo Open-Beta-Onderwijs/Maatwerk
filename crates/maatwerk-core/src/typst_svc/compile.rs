@@ -3,6 +3,8 @@
 //! Compiling a [`MaatwerkWorld`] to a document or a PDF. Blocking and CPU-heavy: callers on an
 //! async runtime use `spawn_blocking` (PLAN 2.5).
 
+use std::cell::Cell;
+
 use time::OffsetDateTime;
 use typst::diag::Warned;
 use typst::foundations::Datetime;
@@ -50,7 +52,9 @@ pub fn compile_document(world: &MaatwerkWorld) -> Result<Compiled<PagedDocument>
     let Warned { output, warnings } = typst::compile::<PagedDocument>(world);
     let mut warnings = diagnostics::convert(world, &warnings);
     // Bound the memoisation cache between compiles, as the Typst CLI does.
-    typst::comemo::evict(10);
+    if !DEFER_EVICTION.get() {
+        evict();
+    }
     match output {
         Ok(document) => {
             warnings.extend(diagnostics::tofu_warnings(world, &document));
@@ -65,6 +69,29 @@ pub fn compile_document(world: &MaatwerkWorld) -> Result<Compiled<PagedDocument>
             Err(CompileError { diagnostics })
         }
     }
+}
+
+thread_local! {
+    static DEFER_EVICTION: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Ages the memoisation cache by one step and drops what was not used in the last 10 steps.
+pub(crate) fn evict() {
+    typst::comemo::evict(10);
+}
+
+/// Runs `f` without an [`evict`] after each compile on this thread; the caller evicts itself.
+/// The cache is process-wide: a batch that evicted after every job aged an open editor's
+/// entries out (review 8a m2), so the batch evicts every few jobs instead.
+pub(crate) fn deferring_eviction<R>(f: impl FnOnce() -> R) -> R {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            DEFER_EVICTION.set(self.0);
+        }
+    }
+    let _reset = Reset(DEFER_EVICTION.replace(true));
+    f()
 }
 
 /// Compiles to PDF (standard Typst PDF, no PDF/A, as the reference). The creation date is
@@ -113,4 +140,23 @@ fn pdf_timestamp(now: OffsetDateTime) -> Option<Timestamp> {
 /// One page as SVG, as the CLI's `--format svg` (page bounds, compact).
 pub(crate) fn svg_page(page: &typst_layout::Page) -> String {
     typst_svg::svg(page, &typst_svg::SvgOptions::default())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn review_8a_m2_eviction_is_deferred_only_inside_and_restored_after_a_panic() {
+        assert!(!DEFER_EVICTION.get());
+        deferring_eviction(|| {
+            assert!(DEFER_EVICTION.get());
+            deferring_eviction(|| assert!(DEFER_EVICTION.get()));
+            assert!(DEFER_EVICTION.get(), "nested calls keep it");
+        });
+        assert!(!DEFER_EVICTION.get());
+        let panicked = std::panic::catch_unwind(|| deferring_eviction(|| panic!("boom")));
+        assert!(panicked.is_err());
+        assert!(!DEFER_EVICTION.get());
+    }
 }

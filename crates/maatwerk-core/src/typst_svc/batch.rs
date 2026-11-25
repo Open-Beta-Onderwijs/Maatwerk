@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex, TryLockError};
 
 use time::OffsetDateTime;
 
-use super::compile::{CompileError, Compiled};
+use super::compile::{CompileError, Compiled, deferring_eviction, evict};
 use super::diagnostics::Diagnostic;
 use super::fonts::FontStore;
 use super::opdracht::{OpdrachtInputs, render_assignment_pdf};
@@ -184,39 +184,47 @@ fn run_batch(
     std::thread::scope(|scope| {
         for _ in 0..workers {
             scope.spawn(|| {
-                loop {
-                    let index = next.fetch_add(1, Ordering::SeqCst);
-                    let Some(slot) = queue.get(index) else {
-                        break;
-                    };
-                    let job = lock(slot).take().expect("each job is taken once");
-                    if lock(&failed).contains(&opdrachten[index]) {
-                        *lock(&results[index]) = Slot::Skipped;
-                    } else {
-                        let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
-                            .map_err(|payload| panic_message(payload.as_ref()));
-                        if !matches!(result, Ok(Ok(_))) {
-                            lock(&failed).insert(opdrachten[index].clone());
+                deferring_eviction(|| {
+                    loop {
+                        let index = next.fetch_add(1, Ordering::SeqCst);
+                        let Some(slot) = queue.get(index) else {
+                            break;
+                        };
+                        let job = lock(slot).take().expect("each job is taken once");
+                        if lock(&failed).contains(&opdrachten[index]) {
+                            *lock(&results[index]) = Slot::Skipped;
+                        } else {
+                            let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
+                                .map_err(|payload| panic_message(payload.as_ref()));
+                            if !matches!(result, Ok(Ok(_))) {
+                                lock(&failed).insert(opdrachten[index].clone());
+                            }
+                            *lock(&results[index]) = Slot::Done(result);
                         }
-                        *lock(&results[index]) = Slot::Done(result);
+                        // Another worker merging carries on with this result; never wait for it.
+                        match merge.try_lock() {
+                            Ok(mut m) => m.advance(&results, &keys),
+                            Err(TryLockError::Poisoned(e)) => {
+                                e.into_inner().advance(&results, &keys)
+                            }
+                            Err(TryLockError::WouldBlock) => {}
+                        }
+                        // A skipped job counts as done, so the progress reaches the total (T23).
+                        let mut finished = lock(&done);
+                        *finished += 1;
+                        if finished.is_multiple_of(EVICT_EVERY) {
+                            evict();
+                        }
+                        progress(BatchProgress {
+                            done: *finished,
+                            total,
+                        });
                     }
-                    // Another worker merging carries on with this result; never wait for it.
-                    match merge.try_lock() {
-                        Ok(mut m) => m.advance(&results, &keys),
-                        Err(TryLockError::Poisoned(e)) => e.into_inner().advance(&results, &keys),
-                        Err(TryLockError::WouldBlock) => {}
-                    }
-                    // A skipped job counts as done, so the progress reaches the total (T23).
-                    let mut finished = lock(&done);
-                    *finished += 1;
-                    progress(BatchProgress {
-                        done: *finished,
-                        total,
-                    });
-                }
+                })
             });
         }
     });
+    evict();
     // What arrived while another worker was merging.
     let mut merge = merge.into_inner().unwrap_or_else(|e| e.into_inner());
     merge.advance(&results, &keys);
@@ -259,6 +267,10 @@ fn run_batch(
     let merged = merge.merger.expect("merged without an error").finish()?;
     Ok(BatchOutput { merged, warnings })
 }
+
+/// Jobs per cache eviction (review 8a m2): an open editor's entries survive a class batch, and
+/// the cache holds about this many jobs' entries at most.
+const EVICT_EVERY: usize = 8;
 
 /// A job's state: waiting or running, skipped (its opdracht failed), or done.
 enum Slot {
