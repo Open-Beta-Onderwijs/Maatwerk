@@ -42,6 +42,8 @@ let dirty = false;
 let compiling = false;
 let busyTimer: ReturnType<typeof setTimeout> | null = null;
 let aiBusy: string | null = null;
+/** Compiles over the time limit that still run (review 8b n6), from the last update. */
+let abandoned = 0;
 /** What the pill shows now; a render of the same state changes nothing (review m6). */
 let shownKey = '';
 
@@ -96,7 +98,12 @@ function state(): { kind: PillKind; text: string; details: string | null } {
     return { kind: 'error', text: message.text, details: message.details };
   if (renderError !== null) return { kind: 'error', text: RENDER_ERROR_TEXT, details: renderError };
   if (aiBusy !== null) return { kind: 'busy', text: aiBusy, details: null };
-  if (compiling && busyTimer === null) return { kind: 'busy', text: 'Compileren…', details: null };
+  if (compiling && busyTimer === null) {
+    const still =
+      abandoned === 1 ? '1 eerdere compilatie loopt' : `${abandoned} eerdere compilaties lopen`;
+    const text = abandoned > 0 ? `Compileren… (${still} nog)` : 'Compileren…';
+    return { kind: 'busy', text, details: null };
+  }
   if (message.error) return { kind: 'error', text: message.text, details: null };
   const done = message.text === '' || message.text === 'Opgeslagen';
   if (renderWarnings !== null && (dirty || done)) {
@@ -168,6 +175,13 @@ export function setAiBusy(text: string | null): void {
 /** The text has edits that are not saved yet. */
 export function setDirty(on: boolean): void {
   dirty = on;
+  render();
+}
+
+/** Compiles over the time limit that still run in the background, as the last update says. */
+export function setAbandoned(n: number): void {
+  if (n === abandoned) return;
+  abandoned = n;
   render();
 }
 

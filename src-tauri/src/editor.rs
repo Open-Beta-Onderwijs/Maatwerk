@@ -82,6 +82,9 @@ pub struct EditorUpdateEvent {
     pub vragen: Option<EditorVragen>,
     pub compile_ms: u64,
     pub render_ms: u64,
+    /// Compiles given up on after the time limit that still run; the next compile waits while
+    /// there are two (review 8b n6).
+    pub abandoned: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -190,6 +193,7 @@ impl EditorUpdateEvent {
             }),
             compile_ms: u.compile_ms,
             render_ms: u.render_ms,
+            abandoned: u32_of(u.abandoned),
         }
     }
 }

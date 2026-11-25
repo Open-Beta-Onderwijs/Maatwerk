@@ -145,6 +145,10 @@ pub struct EditorUpdate {
     pub compile_ms: u64,
     /// Time spent rendering the changed pages to SVG.
     pub render_ms: u64,
+    /// Compiles given up on after the time limit that still run when this update is sent; the
+    /// next compile waits while there are `MAX_ABANDONED` (review 8b n6: the client says so).
+    /// Set by [`LiveEditor`]; 0 from [`EditorSession`].
+    pub abandoned: usize,
 }
 
 /// An opdracht (or any Typst project) open in the editor. Blocking and CPU-heavy: callers on an
@@ -322,6 +326,7 @@ impl EditorSession {
             vragen: if ok { self.vragen.clone() } else { None },
             compile_ms,
             render_ms: millis(start.elapsed()),
+            abandoned: 0,
         })
     }
 
@@ -379,6 +384,7 @@ fn failed_update(
         vragen: None,
         compile_ms: 0,
         render_ms: 0,
+        abandoned: 0,
     }
 }
 
@@ -794,7 +800,8 @@ fn coordinate(
             return;
         }
         drop(state);
-        if let Some(update) = update {
+        if let Some(mut update) = update {
+            update.abandoned = shared.abandoned();
             preview.apply(&update);
             // A panicking sink must not end the thread: later updates would never be compiled
             // (review 8a m1).
@@ -1399,6 +1406,8 @@ mod tests {
             timed_out.diagnostics[0].message,
             timeout_message(options.timeout)
         );
+        // Review 8b n6: the given-up compile still runs, and the client is told.
+        assert_eq!(timed_out.abandoned, 1);
 
         // The fresh session has the buffer (the next edit) and sends every page again.
         let fixed = editor.update_ok(main_typ(), pages_text("A", "B"));

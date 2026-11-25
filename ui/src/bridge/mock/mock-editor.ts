@@ -322,6 +322,7 @@ export class MockEditor {
       generation,
       compileMs: 1,
       renderMs: 0,
+      abandoned: 0,
     };
     if (text.includes('#traag')) {
       this.emit({
@@ -339,6 +340,8 @@ export class MockEditor {
         pageCount: s.shown.length,
         pages: [],
         vragen: null,
+        // The given-up compile runs on (in the mock it ends before the next one).
+        abandoned: 1,
       });
       return;
     }

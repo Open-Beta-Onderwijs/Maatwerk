@@ -510,6 +510,11 @@ export type EditorUpdateEvent = {
 	vragen: EditorVragen | null,
 	compileMs: number,
 	renderMs: number,
+	/**
+	 *  Compiles given up on after the time limit that still run; the next compile waits while
+	 *  there are two (review 8b n6).
+	 */
+	abandoned: number,
 };
 
 export type EditorVraag = {

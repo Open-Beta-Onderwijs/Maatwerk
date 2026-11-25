@@ -418,7 +418,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**n4:** the bundled `main.typ` still has the cursor-marker code~~ Done in `maatwerk-main 2`
   (0.3.1): no marker in `main.typ`, no `cursor` in `OpdrachtInputs` or `render_assignment_svg`.
   The command itself has no caller in the editor any more; remove it in phase 2.
-- **n6:** while two abandoned compiles still run, the editor waits silently; say so.
+- ~~**n6:** while two abandoned compiles still run, the editor waits silently; say so.~~ Done
+  (39b): updates carry `abandoned`; the pill says "Compileren… (1 eerdere compilatie loopt nog)".
 - ~~**n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.~~
   Done (39b): shared start and end lines first, LCS on the middle, removed/added above 2M cells.
 - **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do

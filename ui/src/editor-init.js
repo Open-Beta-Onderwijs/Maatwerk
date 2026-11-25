@@ -50,6 +50,7 @@ import {
   initStatus,
   setCompiling,
   setDirty,
+  setAbandoned,
   setAiBusy,
   setRenderError,
   setRenderWarnings,
@@ -720,6 +721,7 @@ function applyUpdate(u) {
     setStatus('');
   }
   lastResult = Math.max(lastResult, u.generation);
+  setAbandoned(u.abandoned ?? 0);
   updateCompiling();
   if (u.pages.length || u.pageCount !== svgViewer.querySelectorAll('.svg-page').length) {
     patchPages(svgViewer, u);
