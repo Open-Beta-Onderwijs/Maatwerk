@@ -56,9 +56,8 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 
 - `render_assignment_svg` stays (id-based, used by the step 34b preview and the AI preview);
   the plan listed it under v1 removal.
-- `tools/fixtures/to-current.mjs` (was `to-v2.mjs`) stays as fixture tooling: the generator and
-  the captured reference goldens are v1 by origin, and converting the golden inputs once would
-  change the inputs of the grade tests (`null` -> `"N"`), which needs the user's OK. 7a m6 is moot.
+- (Withdrawn: `to-current.mjs` was kept at first; the user then OK'd the one-time golden
+  conversion, see `7512337` below.)
 - A v1 folder gets the startup error screen with "Zet de map eerst om met Maatwerk 0.29" (no
   migration offer); the CLI `migrate` refuses with the same text.
 
@@ -69,6 +68,11 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 ### 39b progress (Typst upgrade, started in session 1)
 
 - `55d0da2`: 5b n4 done (user: also ignore trailing whitespace / final newline).
+- `7512337` (user's OK, 2026-11-25): logic goldens' `data` cases and score-writes files converted
+  once to the current format; `generate.mjs` writes the current format directly (byte-identical
+  to the old generate + toCurrent; manifest tiny 70, school 5130 files); `scenario.mjs` too;
+  `to-current.mjs` and its test deleted (CI, `data:dev`, mock plugin, numbers tools). Grade
+  reference tests, Vitest 959, node 47, cargo core/grades green. 7a m6 is moot.
 - `2a39c3f`: **Typst 0.15.1** (X-01). Port: `typst-layout` direct dependency (`PagedDocument`),
   typst-kit features `scan-fonts`/`embedded-fonts` with our `FontStore` on top of typst-kit's,
   `FileId` from `RootedPath` (`world::project_id`, `package_of`), `today(Duration)`,
