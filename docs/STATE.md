@@ -77,6 +77,12 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   het leeradvies bij T1 voor <naam>", toets and PO rapport). `4978181` 5a n8: Typst's fonts
   before system fonts. `e8d18d2` 6a: editor warnings outside the open file in the status pill
   (the modals had them since F-04).
+- `fe62a6b` 5b n2: batch PDFs merged in job order as jobs finish (`PdfMerger`, same bytes).
+  `9271647` 8a n2/n6: the editor preview changes only after its pages rendered; stale check
+  between pages. `1867c7d` 8b m5: given-up help queries are skipped. `a16bad5` + `790526c` 8b
+  n1: string punten, "(zonder tekst)", **`maatwerk-lib 3`** (a vraag after an opgave is outside
+  it; release row 3, lib 2 fixture; Typst goldens unchanged). `838282d`/`1dd3b86` 8b n8: line
+  diff trims shared lines, capped table.
 - `2a39c3f`: **Typst 0.15.1** (X-01). Port: `typst-layout` direct dependency (`PagedDocument`),
   typst-kit features `scan-fonts`/`embedded-fonts` with our `FontStore` on top of typst-kit's,
   `FileId` from `RootedPath` (`world::project_id`, `package_of`), `today(Duration)`,
@@ -92,7 +98,8 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 - Package `compiler` minimums (cetz 0.13, zero 0.12) fine; emoji goldens pass (COLRv1 ok).
 
 **Next action (39b, session 2):** CI green on `2a39c3f` (incl. `real-pdf` e2e; local commits
-after it not pushed yet). Done this session: golden conversion, 5a m3, 5a n8, 6a. Left: 5b n2, the `LiveEditor` items of 8a and 8b, `typst-ide` checked for the editor (0.15.1 pulls in
+after it not pushed yet). Done this session: golden conversion, 5a m3, 5a n8, 6a, 5b n2, 8a n2/n6, 8b m5/n1/n8. Left:
+8a m2, m6 rest, n5; 8b n6 and "Jumps after an error"; 9 m3 if any; `typst-ide` checked for the editor (0.15.1 pulls in
 `typst-html`). Then gate, reviewer subagent (`docs/reviews/step-39.md`), version 0.30.0,
 release; merge on the user's OK.
 
