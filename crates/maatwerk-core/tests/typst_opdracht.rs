@@ -19,7 +19,7 @@ use maatwerk_core::typst_svc::{
 use serde_json::Value;
 use support::{assert_matches_golden, decode, fonts, frame_text, load_case};
 use time::OffsetDateTime;
-use typst::layout::PagedDocument;
+use typst_layout::PagedDocument;
 
 /// 2026-01-01 00:00 UTC.
 fn fixed_now() -> OffsetDateTime {
@@ -141,7 +141,7 @@ fn golden(id: &str) -> PagedDocument {
 
 fn page_text(doc: &PagedDocument, page: usize) -> String {
     let mut text = String::new();
-    frame_text(&doc.pages[page].frame, &mut text);
+    frame_text(&doc.pages()[page].frame, &mut text);
     text
 }
 
@@ -203,13 +203,18 @@ fn svg_golden(id: &str) {
     let want = case["svg"].as_array().unwrap();
     assert_eq!(pages.len(), want.len(), "{id}: SVG pages");
     for (n, (svg, want)) in pages.iter().zip(want).enumerate() {
-        assert!(svg.starts_with("<svg class=\"typst-doc\""), "{id} p{n}");
+        assert!(svg.starts_with("<svg "), "{id} p{n}");
+        // typst-svg 0.15 rounds numbers to 9 decimals; the golden has the full f64 text.
+        let nums = |v: &str| -> Vec<f64> { v.split(' ').map(|x| x.parse().unwrap()).collect() };
+        let got = svg
+            .split_once("viewBox=\"")
+            .and_then(|(_, rest)| rest.split_once('"'))
+            .map(|(v, _)| nums(v))
+            .unwrap_or_default();
+        let want_box = nums(want["viewBox"].as_str().unwrap());
         assert!(
-            svg.contains(&format!(
-                "viewBox=\"{}\"",
-                want["viewBox"].as_str().unwrap()
-            )),
-            "{id} p{n}: viewBox"
+            got.len() == 4 && got.iter().zip(&want_box).all(|(a, b)| (a - b).abs() < 1e-6),
+            "{id} p{n}: viewBox {got:?}"
         );
         // The golden counts the reference's cursor links (`want["cursorLinks"]`). `main.typ` 2
         // dropped the marker (review 8b n4; the editor jumps with `editor_jump_from_cursor`), so
@@ -327,7 +332,7 @@ fn svg_preview_error_names_the_opdracht_file_with_line_and_column() {
     );
     assert!(text.contains("┌─ opdracht.typ:9:28"), "{text}");
     assert!(
-        text.contains("help: error occurred in this call of function `render_opgaven`"),
+        text.contains("help: while calling `render_opgaven`"),
         "{text}"
     );
     assert!(text.contains("┌─ main.typ:"), "{text}");
@@ -362,8 +367,8 @@ fn main_typ_without_inputs_uses_the_placeholder_header_and_student_mode() {
     let with = compile(project(), &OpdrachtInputs::preview("Titel"))
         .unwrap()
         .output;
-    assert_eq!(plain.pages.len(), with.pages.len());
-    for p in 0..plain.pages.len() {
+    assert_eq!(plain.pages().len(), with.pages().len());
+    for p in 0..plain.pages().len() {
         assert_eq!(page_text(&plain, p), page_text(&with, p));
     }
     assert!(page_text(&plain, 0).contains("Leerling Voornaam Achternaam"));
@@ -382,7 +387,7 @@ fn answers_mode_ignores_the_student_fields() {
         ..OpdrachtInputs::default()
     };
     let doc = compile(project, &inputs).unwrap().output;
-    assert_eq!(doc.pages.len(), 1);
+    assert_eq!(doc.pages().len(), 1);
     let text = page_text(&doc, 0);
     assert!(text.starts_with("SleutelAntwoordsleutel"), "{text}");
 }
@@ -416,14 +421,14 @@ fn plain_mode_has_the_title_but_no_student_block() {
         assert!(!first.contains(gone), "{gone} in {first}");
     }
     assert!(page_text(&student, 0).contains("N.a.v."));
-    assert_eq!(plain.pages.len(), student.pages.len());
-    for p in 1..plain.pages.len() {
+    assert_eq!(plain.pages().len(), student.pages().len());
+    for p in 1..plain.pages().len() {
         assert_eq!(page_text(&plain, p), page_text(&student, p), "page {p}");
     }
     let with_answers = render(Mode::Plain, true);
     let student_answers = render(Mode::Student, true);
-    assert_eq!(with_answers.pages.len(), student_answers.pages.len());
-    let last = with_answers.pages.len() - 1;
+    assert_eq!(with_answers.pages().len(), student_answers.pages().len());
+    let last = with_answers.pages().len() - 1;
     assert_eq!(
         page_text(&with_answers, last),
         page_text(&student_answers, last),
@@ -462,7 +467,10 @@ fn the_opdracht_world_sees_its_own_images_and_nothing_else() {
         let err = compile_source(&format!("#read(\"{path}\")")).unwrap_err();
         let message = &err.diagnostics[0].message;
         assert!(
-            message.starts_with("file not found") || message.contains("access denied"),
+            message.starts_with("file not found")
+                || message.contains("access denied")
+                // Typst 0.15 refuses a `..` above the root itself.
+                || message.contains("would escape the project root"),
             "{path}: {message}"
         );
         assert!(
@@ -517,7 +525,7 @@ fn a_folder_project_compiles_main_typ_from_disk() {
         .unwrap()
         .output;
     // TC 10.1: the base template is 2 pages in student mode.
-    assert_eq!(doc.pages.len(), 2);
+    assert_eq!(doc.pages().len(), 2);
     assert!(page_text(&doc, 0).starts_with("Remweg"));
 }
 

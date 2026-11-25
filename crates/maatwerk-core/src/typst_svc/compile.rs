@@ -6,7 +6,7 @@
 use time::OffsetDateTime;
 use typst::diag::Warned;
 use typst::foundations::Datetime;
-use typst::layout::PagedDocument;
+use typst_layout::PagedDocument;
 use typst_pdf::{PdfOptions, Timestamp};
 
 use super::diagnostics::{self, Diagnostic, Severity};
@@ -93,7 +93,7 @@ pub fn compile_pdf(world: &MaatwerkWorld) -> Result<Compiled<Vec<u8>>, CompileEr
 pub fn compile_svg_pages(world: &MaatwerkWorld) -> Result<Compiled<Vec<String>>, CompileError> {
     let Compiled { output, warnings } = compile_document(world)?;
     Ok(Compiled {
-        output: output.pages.iter().map(typst_svg::svg).collect(),
+        output: output.pages().iter().map(svg_page).collect(),
         warnings,
     })
 }
@@ -108,4 +108,9 @@ fn pdf_timestamp(now: OffsetDateTime) -> Option<Timestamp> {
         now.second(),
     )?;
     Timestamp::new_local(datetime, i32::from(now.offset().whole_minutes()))
+}
+
+/// One page as SVG, as the CLI's `--format svg` (page bounds, compact).
+pub(crate) fn svg_page(page: &typst_layout::Page) -> String {
+    typst_svg::svg(page, &typst_svg::SvgOptions::default())
 }

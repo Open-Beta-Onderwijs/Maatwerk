@@ -12,7 +12,7 @@ maatwerk-core.workspace = true
 serde = { workspace = true }
 serde_json.workspace = true
 # Same pinned version as maatwerk-core (`sys.inputs` values).
-typst = "=0.14.2"
+typst = "=0.15.1"
 
 [dev-dependencies]
 tempfile = "3.27.0"

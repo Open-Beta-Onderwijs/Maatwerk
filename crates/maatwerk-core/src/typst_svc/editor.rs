@@ -27,8 +27,8 @@ use serde::Serialize;
 use serde_json::Value;
 use time::OffsetDateTime;
 use typst::foundations::Bytes;
-use typst::layout::PagedDocument;
 use typst::utils::hash128;
+use typst_layout::PagedDocument;
 
 use super::compile::{Compiled, compile_document, local_now};
 use super::diagnostics::Diagnostic;
@@ -329,14 +329,14 @@ impl EditorSession {
             return Vec::new();
         };
         let mut out = Vec::new();
-        let mut shown = Vec::with_capacity(document.pages.len());
-        for (index, page) in document.pages.iter().enumerate() {
+        let mut shown = Vec::with_capacity(document.pages().len());
+        for (index, page) in document.pages().iter().enumerate() {
             let hash = hash128(page);
             if self.shown.get(index) != Some(&hash) {
                 out.push(PageUpdate {
                     index,
                     hash: format!("{hash:032x}"),
-                    svg: typst_svg::svg(page),
+                    svg: super::compile::svg_page(page),
                 });
             }
             shown.push(hash);
@@ -1270,7 +1270,7 @@ mod tests {
     fn queries_run_on_the_session_after_the_compile() {
         let (_tmp, editor, rx) = live(&pages("A", "B", "C"), Duration::ZERO);
         rx.recv_timeout(WAIT).unwrap();
-        let pages = editor.query(WAIT, |s| s.document().map(|d| d.pages.len()));
+        let pages = editor.query(WAIT, |s| s.document().map(|d| d.pages().len()));
         assert_eq!(pages, Some(Some(3)));
         // A panicking query gives `None` and leaves the editor working.
         assert_eq!(editor.query(WAIT, |_| -> u8 { panic!("boom") }), None);

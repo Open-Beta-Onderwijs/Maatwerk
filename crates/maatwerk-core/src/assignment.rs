@@ -266,7 +266,7 @@ pub fn check(
             let v = vragen(&output);
             let answers = options.mode == Mode::Answers;
             report.ok = true;
-            report.page_count = Some(output.pages.len());
+            report.page_count = Some(output.pages().len());
             report.diagnostics = warnings.iter().map(diagnostic).collect();
             report.vragen = v
                 .items

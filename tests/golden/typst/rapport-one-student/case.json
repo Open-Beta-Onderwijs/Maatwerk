@@ -145,16 +145,16 @@
   "png": [
     {
       "file": "p1.png",
-      "sha256": "25f042fe404b7bdbb85d709a075b0db01e9bd6eacb8c5bd911e505d6f868b4de",
-      "bytes": 21518
+      "sha256": "850e467b5645c000c1bc1711257d60786f2c489aa2d325fd871fdc6ae691daa2",
+      "bytes": 12640
     },
     {
       "file": "p2.png",
-      "sha256": "014a0825952c03787eac28553f55abbf70134bef003100e37f0e69f09f18479c",
-      "bytes": 20712
+      "sha256": "5802d599e7323ce327858d0c1753b414a88ec537f891ff1f23df41a895766faf",
+      "bytes": 9798
     }
   ],
   "port": {
-    "blessed": "step 17: leeradvies score column 3 cm -> 2,5 cm (user 2026-11-08)"
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
   }
 }

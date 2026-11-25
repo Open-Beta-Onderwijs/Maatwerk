@@ -8,9 +8,9 @@
 
 use serde::Serialize;
 use typst::foundations::{Dict, Label, Selector, Value};
-use typst::introspection::MetadataElem;
-use typst::layout::PagedDocument;
+use typst::introspection::{Introspector, MetadataElem};
 use typst::utils::PicoStr;
+use typst_layout::PagedDocument;
 
 /// The marker label (`lib.typ`, renamed from `__rtti_vraag`).
 const VRAAG_LABEL: &str = "__maatwerk_vraag";
@@ -44,7 +44,11 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
     let label = Label::new(PicoStr::intern(VRAAG_LABEL)).expect("a non-empty label");
     let mut raw = Vec::new();
     let mut punten_known = true;
-    for content in document.introspector.query(&Selector::Label(label)).iter() {
+    for content in document
+        .introspector()
+        .query(&Selector::Label(label))
+        .iter()
+    {
         let Some(meta) = content.to_packed::<MetadataElem>() else {
             continue;
         };
@@ -53,7 +57,7 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
         };
         let (page, y) = content
             .location()
-            .map(|loc| document.introspector.position(loc))
+            .and_then(|loc| document.introspector().position(loc))
             .map_or((0, 0.0), |pos| (pos.page.get() - 1, pos.point.y.to_pt()));
         punten_known &= dict.contains("punten");
         raw.push((dict.clone(), page, y));

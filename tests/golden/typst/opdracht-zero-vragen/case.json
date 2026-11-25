@@ -57,27 +57,30 @@
           595.28,
           841.89
         ],
-        "text": "Zonder vragen\nAnna N.a.v. Toets\n3a nat 📏 Eenheden vergeten\nAlleen uitleg, geen vragen."
+        "text": "Zonder vragen\nAnna\nN.a.v.\n Toets\n3a nat\n \n📏\n Eenheden vergeten\nAlleen uitleg, geen vragen."
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "Opgave 1 (Lezen)\nLees de tekst hierboven."
+        "text": "Opgave \n1\n (Lezen)\nLees de tekst hierboven."
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "274282915036a39a083c09a3a23e45d625a57682e97fac46ce028a38a5d24291",
-      "bytes": 6249
+      "sha256": "bb15a1430748a796d3bb55f2cf4dd25939e5a954265b06a8137b4889d08da77a",
+      "bytes": 3409
     },
     {
       "file": "p2.png",
-      "sha256": "88a2fea80e11b9fdad2c725df37337b93be2f3240854249aea4cd0898d3807e1",
-      "bytes": 4404
+      "sha256": "55f2328a704ec6785e3e34dd02f06f82d993fc470c642c0acc1d6cf9b7525c5d",
+      "bytes": 2105
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

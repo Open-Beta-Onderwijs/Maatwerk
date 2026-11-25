@@ -65,27 +65,30 @@
           595.28,
           841.89
         ],
-        "text": "Opdracht nat 1 (images)\nMarie-Claire 't Hart N.a.v. Toets H1 \"Krachten\" & Énergie\n3a nat 📏 Eenheden vergeten, 👩‍🔬 Formule \"niet\" genoteerd #1 $x$ @a\n<b> \\c, 5️⃣ Cijfer onder 5,5\nUitleg met drie figuren.\nFiguur 1: Een PNG.\nFiguur 2: Een JPG.\nschema\nFiguur 3: Een SVG."
+        "text": "Opdracht nat 1 (images)\nMarie-Claire 't Hart\nN.a.v.\n Toets H1 \"Krachten\" & Énergie\n3a nat\n \n📏\n Eenheden vergeten, \n👩‍🔬\n Formule \"niet\" genoteerd #1 $x$ @a \n<b> \\c, \n5️⃣\n Cijfer onder 5,5\nUitleg met drie figuren.\nFiguur 1: Een PNG.\nFiguur 2: Een JPG.\nFiguur 3: Een SVG."
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "Opgave 1 (Figuren)\nZie Figuur 1.\na Wat zie je in de figuur? 2p\nb Geef de formule. 1,5p\nAntwoorden\n1a Een rechte lijn. 1b 𝑣 = 𝑠\n𝑡"
+        "text": "Opgave \n1\n (Figuren)\nZie \nFiguur 1\n.\na\nWat zie je in de figuur?\n2p\nb\nGeef de formule.\n1,5p\nAntwoorden\n1a\n Een rechte lijn.\n1b\n \n𝑣\n=\n𝑠\n𝑡"
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "77645828f9a74d94680bfd2223ecfb42e5b73ef2d1a1a15a7b6ed4aaddfbc4c1",
-      "bytes": 29073
+      "sha256": "f6280c1bb501324953076244cf5e4be77182a08401757f20869186fb62d2545d",
+      "bytes": 15623
     },
     {
       "file": "p2.png",
-      "sha256": "f1ed351c9565d08f59181a9328bca203dc021be238cabba63b531b80e3e32e78",
-      "bytes": 6573
+      "sha256": "e45f304c32d97fbfc98e93c2573551bb6a3f69f0520916f3e8a14e6dfdb4e0d3",
+      "bytes": 3402
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

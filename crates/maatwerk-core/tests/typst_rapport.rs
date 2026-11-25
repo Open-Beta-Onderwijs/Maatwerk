@@ -12,7 +12,8 @@ use maatwerk_core::typst_svc::{
 use serde_json::Value;
 use support::{WATERMARK_SVG, assert_matches_golden, decode, fonts, frame_text, load_case, squash};
 use time::OffsetDateTime;
-use typst::layout::{Frame, FrameItem, PagedDocument};
+use typst::layout::{Frame, FrameItem};
+use typst_layout::PagedDocument;
 
 /// 2026-01-01 00:00 UTC.
 fn fixed_now() -> OffsetDateTime {
@@ -124,7 +125,7 @@ fn compile(data: &RapportData, watermark: bool) -> Result<Compiled<PagedDocument
 
 fn page_text(doc: &PagedDocument, page: usize) -> String {
     let mut text = String::new();
-    frame_text(&doc.pages[page].frame, &mut text);
+    frame_text(&doc.pages()[page].frame, &mut text);
     text
 }
 
@@ -157,14 +158,14 @@ fn t4_a_rapport_without_watermark_compiles_without_one() {
     let doc = compile(&data, false)
         .unwrap_or_else(|e| panic!("{}", e.to_text()))
         .output;
-    assert_eq!(doc.pages.len(), 2 * students);
+    assert_eq!(doc.pages().len(), 2 * students);
     // No image on the page: the background is empty.
     let mut images = 0;
-    count_images(&doc.pages[0].frame, &mut images);
+    count_images(&doc.pages()[0].frame, &mut images);
     assert_eq!(images, 0);
     let with = compile(&data, true).unwrap().output;
     let mut images = 0;
-    count_images(&with.pages[0].frame, &mut images);
+    count_images(&with.pages()[0].frame, &mut images);
     assert_eq!(images, 1);
 }
 
@@ -189,7 +190,7 @@ fn t4_the_watermark_is_found_in_other_case() {
     .unwrap_or_else(|e| panic!("{}", e.to_text()))
     .output;
     let mut images = 0;
-    count_images(&doc.pages[0].frame, &mut images);
+    count_images(&doc.pages()[0].frame, &mut images);
     assert_eq!(images, 1);
 }
 
@@ -221,7 +222,7 @@ fn dot_diameters(frame: &Frame, out: &mut Vec<f64>) {
         match item {
             FrameItem::Group(g) => dot_diameters(&g.frame, out),
             FrameItem::Shape(shape, _) if shape.fill.is_some() => {
-                let size = shape.geometry.bbox_size();
+                let size = shape.bbox(false).size();
                 let (w, h) = (size.x.to_pt(), size.y.to_pt());
                 if (w - h).abs() < 0.1 && (5.0..15.0).contains(&w) {
                     out.push((w * 10.0).round() / 10.0);
@@ -233,10 +234,10 @@ fn dot_diameters(frame: &Frame, out: &mut Vec<f64>) {
 }
 
 fn footer_numbers(doc: &PagedDocument) -> Vec<String> {
-    (0..doc.pages.len())
+    (0..doc.pages().len())
         .map(|p| {
             let mut items = Vec::new();
-            text_items(&doc.pages[p].frame, 0.0, &mut items);
+            text_items(&doc.pages()[p].frame, 0.0, &mut items);
             let lowest = items.iter().map(|i| i.1).fold(f64::MIN, f64::max);
             items
                 .iter()
@@ -326,7 +327,7 @@ fn t25_the_rapport_is_dutch() {
     let case = load_case("rapport-one-student");
     let doc = compile(&case_data(&case), true).unwrap().output;
     let mut items = Vec::new();
-    text_items(&doc.pages[0].frame, 0.0, &mut items);
+    text_items(&doc.pages()[0].frame, 0.0, &mut items);
     assert!(items.iter().all(|i| i.2 == "nl"), "{items:?}");
 }
 
@@ -337,7 +338,7 @@ fn b06_the_leeradvies_score_stays_on_one_line() {
     data.students[0]["leeradvies_rows"][0]["score_str"] = Value::from("12,5 / 20 (63%)");
     let doc = compile(&data, true).unwrap().output;
     let mut items = Vec::new();
-    text_items(&doc.pages[0].frame, 0.0, &mut items);
+    text_items(&doc.pages()[0].frame, 0.0, &mut items);
     let y_of = |s: &str| {
         items
             .iter()
@@ -354,7 +355,7 @@ fn b07_score_dots_are_larger_only_when_the_exam_has_half_points() {
     let diameters = |data: &RapportData| {
         let doc = compile(data, true).unwrap().output;
         let mut d = Vec::new();
-        dot_diameters(&doc.pages[0].frame, &mut d);
+        dot_diameters(&doc.pages()[0].frame, &mut d);
         d.into_iter().fold(0.0, f64::max)
     };
     let half = case_data(&case);
@@ -380,11 +381,11 @@ fn other_invalid_teacher_markup_still_fails_with_a_call_trace() {
     assert_eq!(err.diagnostics[0].message, "unknown variable: bestaatniet");
     let text = err.to_text();
     assert!(
-        text.contains("help: error occurred in this call of function `rtti_uitleg_section`"),
+        text.contains("help: while calling `rtti_uitleg_section`"),
         "{text}"
     );
     assert!(
-        !text.contains("error occurred error occurred"),
+        !text.contains("while calling while calling"),
         "review m1: {text}"
     );
 }
@@ -401,8 +402,8 @@ fn t27_rapport_markup_with_the_old_guard_output_now_compiles() {
     let doc = compile(&data, true)
         .unwrap_or_else(|e| panic!("{}", e.to_text()))
         .output;
-    assert_eq!(doc.pages.len(), 2 * students);
-    let all: String = (0..doc.pages.len()).map(|p| page_text(&doc, p)).collect();
+    assert_eq!(doc.pages().len(), 2 * students);
+    let all: String = (0..doc.pages().len()).map(|p| page_text(&doc, p)).collect();
     assert!(all.contains("$-teken niet gesloten"), "{all}");
 }
 
@@ -417,7 +418,7 @@ fn t26_a_score_colour_that_is_not_a_colour_does_not_break_the_rapport() {
     let doc = compile(&data, true)
         .unwrap_or_else(|e| panic!("{}", e.to_text()))
         .output;
-    assert_eq!(doc.pages.len(), 2 * students);
+    assert_eq!(doc.pages().len(), 2 * students);
     // Review 5a n5: the two rows with the broken colour are drawn. Their score arrives as 0
     // (`toTypst(NaN)` in the old payload), so they read "0 / max", as the reference would have.
     let vragen = data.students[0]["vragen"].as_array().unwrap();
@@ -542,7 +543,7 @@ fn one_student(change: impl FnOnce(&mut serde_json::Map<String, Value>)) -> Rapp
 }
 
 fn all_text(doc: &PagedDocument) -> String {
-    (0..doc.pages.len()).map(|p| page_text(doc, p)).collect()
+    (0..doc.pages().len()).map(|p| page_text(doc, p)).collect()
 }
 
 #[test]
@@ -562,7 +563,7 @@ fn decision_6_an_override_without_scores_shows_only_the_grade() {
     assert!(text.contains(&squash("met de hand overschreven")), "{text}");
     assert!(!text.contains(&squash("punten behaald")), "{text}");
     assert!(!text.contains(&squash("Uitleg RTTI")), "{text}");
-    assert_eq!(doc.pages.len() % 2, 0, "each student has whole sheets");
+    assert_eq!(doc.pages().len() % 2, 0, "each student has whole sheets");
 }
 
 #[test]

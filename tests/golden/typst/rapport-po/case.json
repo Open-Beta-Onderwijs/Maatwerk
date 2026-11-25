@@ -690,7 +690,7 @@
     "success": true
   },
   "port": {
-    "blessed": "step 37: PO averages count an empty normal or bonus category as 0, as the grade (review 24 m5, user rule B)"
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
   },
   "pdf": {
     "pageCount": 8,
@@ -756,43 +756,43 @@
   "png": [
     {
       "file": "p1.png",
-      "sha256": "b5fea914484342af23efe746fa8f6188b00293764fe78b206ff131519adff3bf",
-      "bytes": 89112
+      "sha256": "ef582f4cdb5248cf5cbfb0d40652264dbebc03f77773bc299bf1a48629900d34",
+      "bytes": 48014
     },
     {
       "file": "p2.png",
-      "sha256": "4a3bce6702cb60a2c063b7461a49152c54eba63ff52911ff11776bd45a00ec03",
-      "bytes": 136692
+      "sha256": "75e44789b537106da6cd7629bec57b774434f199602690ceb955dceaace70c1d",
+      "bytes": 67277
     },
     {
       "file": "p3.png",
-      "sha256": "f491280af7ef24e6265f58746a7839379c247d34a8549fe0569fd9cefd737f8c",
-      "bytes": 46164
+      "sha256": "37ce54101bfe447e2e216e6dd52788f01d04bc99dda02934a407515e7d259f3b",
+      "bytes": 24087
     },
     {
       "file": "p4.png",
-      "sha256": "0b24b499d749b7b68d9df56eb538e7f1bc0d4fa939faac5cefe3a1a142a96e12",
-      "bytes": 11478
+      "sha256": "f2645262d8f80eacda980fb8da208e1c4bee3262a69e5f2f3f6c2cfa48d3789e",
+      "bytes": 4656
     },
     {
       "file": "p5.png",
-      "sha256": "09b92c2493174bfd55fad708ed09425ccd623ceb4e87aa3d1d49027238329975",
-      "bytes": 54241
+      "sha256": "6f1ef8601ee930b80cacff8ebf1b83ea4611146cc1309e05c548db8e9cf0ad0e",
+      "bytes": 30128
     },
     {
       "file": "p6.png",
-      "sha256": "b05b7c9e3bf0c9f544ede353e7730dbc7bab8cf17e9d0751cb5589687d0a0037",
-      "bytes": 119147
+      "sha256": "a642b87a7cc9682dd04ec5273892e55274a025f91a4bcd18794e9b202c242248",
+      "bytes": 60164
     },
     {
       "file": "p7.png",
-      "sha256": "cf5d22a2356cd88d09d8625a3104145a1794cf2185238547f1246be928268e4c",
-      "bytes": 18572
+      "sha256": "ccb8f0f4f60a0dfe59cdd4ff86dcc31a23db413e70fc6d14bceedad7f0ddb5e3",
+      "bytes": 8874
     },
     {
       "file": "p8.png",
-      "sha256": "1542b78160a1281d3cc0e7c4b13ca01bdf1283ef7198c487594a642df495334a",
-      "bytes": 11519
+      "sha256": "c0d2fd5d0ef389f02489ea26bb5489a306139f207583b2a470c4eae9297ca1d2",
+      "bytes": 4657
     }
   ]
 }

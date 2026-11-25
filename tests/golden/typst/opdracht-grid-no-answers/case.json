@@ -52,27 +52,30 @@
           595.28,
           841.89
         ],
-        "text": "Opdracht nat 3 (grid)\nHash#Tag Dollar$ \"Quote\" \\Back N.a.v. Toets\nFormule 1 (Snelheid)\n𝑣 = 𝑠\n𝑡\nBelangrijk!\nLet op de eenheden: 3,5 m s−1."
+        "text": "Opdracht nat 3 (grid)\nHash#Tag Dollar$ \"Quote\" \\Back\nN.a.v.\n Toets\nFormule \n1\n (Snelheid)\n𝑣\n=\n𝑠\n𝑡\nBelangrijk!\nLet op de eenheden: \n3\n,5\n \nm\n \ns\n−\n1\n."
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "Opgave 1 (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag in een grid. 1p\nFiguur\nOpgave 2 (Vraag in een figuur)\nVoorbeeld 1 (In een figuur)\na Schrijf als getal. 2p\nb Vraag zonder punten en zonder antwoord."
+        "text": "Opgave \n1\n (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag in een grid.\n1p\nFiguur\nOpgave \n2\n (Vraag in een figuur)\nVoorbeeld \n1\n (In een figuur)\na\nSchrijf als getal.\n2p\nb\nVraag zonder punten en zonder antwoord."
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "043529c31e268fe5131f37b6ebe9599785701c342a94fa62321c55892123de3e",
-      "bytes": 8786
+      "sha256": "4eab25fdea4cce3b6e821157072025bffed026c828646c9cff6cfbe2a014bdaf",
+      "bytes": 5239
     },
     {
       "file": "p2.png",
-      "sha256": "f645f18afb6fccdbcee8f8d70baa403edb37320d76f929aef3383f2374029522",
-      "bytes": 10804
+      "sha256": "1e0484025e774d0dbd698f8ea37e4e736eb726791fe256d9333ff134b0ce3dda",
+      "bytes": 5635
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

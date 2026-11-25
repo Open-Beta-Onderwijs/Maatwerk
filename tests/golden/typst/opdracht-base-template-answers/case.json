@@ -48,15 +48,18 @@
           595.28,
           841.89
         ],
-        "text": "Remweg\nAntwoordsleutel\n1a Antwoord op de eerste vraag. 1b Antwoord op de tweede vraag. 1c Antwoord op de derde vraag.\n2 Het antwoord."
+        "text": "Remweg\nAntwoordsleutel\n1a\n Antwoord op de eerste vraag.\n1b\n Antwoord op de tweede vraag.\n1c\n Antwoord op de derde vraag.\n2\n Het antwoord."
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "288729bcd55f84cbedaac9ee07b50f4c2f85a40b1de86119e189fb413c97f128",
-      "bytes": 7432
+      "sha256": "57a517c14b3bafa67077c8800ecd97e25d100d7ebf5851702908487033d9417a",
+      "bytes": 3875
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

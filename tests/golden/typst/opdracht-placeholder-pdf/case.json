@@ -33,27 +33,30 @@
           595.28,
           841.89
         ],
-        "text": "Titel met \"quotes\" en \\\nLeerling Voornaam Achternaam N.a.v. Voorbeeldtoets Toetsweek X\nKlas Z vak W ❌ Een voorbeeldobservatie met een behoorlijk lange naam,\nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
+        "text": "Titel met \"quotes\" en \\\nLeerling Voornaam Achternaam\nN.a.v.\n Voorbeeldtoets Toetsweek X\nKlas Z vak W\n \n❌\n Een voorbeeldobservatie met een behoorlijk lange naam, \nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "Opgave 1 (Oefening)\na Eerste vraag. 2p\nb Tweede vraag. 1p\nAntwoorden\n1a Antwoord a. 1b Antwoord b."
+        "text": "Opgave \n1\n (Oefening)\na\nEerste vraag.\n2p\nb\nTweede vraag.\n1p\nAntwoorden\n1a\n Antwoord a.\n1b\n Antwoord b."
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "d4754ae7946cb0baa30507f98f8ccf1992ab7a388bd0abcb7dcec4e1fb1204fa",
-      "bytes": 10395
+      "sha256": "c28041be4d36f9bd8f7ca3466a97f2e71d93590daeb02fb79daedbfb3272035b",
+      "bytes": 5464
     },
     {
       "file": "p2.png",
-      "sha256": "0a7353365fc3cc2f67c8df9a2a071b3c40e711aea83773b3285ad985cf7a331e",
-      "bytes": 5770
+      "sha256": "fa28bcd5585e0a3e3dae4392cfa11022587d80a317e50312ce9f74d587e95ecd",
+      "bytes": 2926
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

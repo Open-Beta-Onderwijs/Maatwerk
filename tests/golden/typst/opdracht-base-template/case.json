@@ -33,27 +33,30 @@
           595.28,
           841.89
         ],
-        "text": "Remweg\nLeerling Voornaam Achternaam N.a.v. Voorbeeldtoets Toetsweek X\nKlas Z vak W ❌ Een voorbeeldobservatie met een behoorlijk lange naam,\nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
+        "text": "Remweg\nLeerling Voornaam Achternaam\nN.a.v.\n Voorbeeldtoets Toetsweek X\nKlas Z vak W\n \n❌\n Een voorbeeldobservatie met een behoorlijk lange naam, \nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
       },
       {
         "size": [
           595.28,
           841.89
         ],
-        "text": "Opgave 1 (Titel van de opgave)\nInleidende tekst van de opgave.\na Eerste vraag. 2p\nb Tweede vraag. 1p\nExtra informatie tussen de vragen.\nc Derde vraag. 1p\nOpgave 2 (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag. 1p\nFiguur\nAntwoorden\n1a Antwoord op de eerste vraag. 1b Antwoord op de tweede vraag. 1c Antwoord op de derde vraag.\n2 Het antwoord."
+        "text": "Opgave \n1\n (Titel van de opgave)\nInleidende tekst van de opgave.\na\nEerste vraag.\n2p\nb\nTweede vraag.\n1p\nExtra informatie tussen de vragen.\nc\nDerde vraag.\n1p\nOpgave \n2\n (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag.\n1p\nFiguur\nAntwoorden\n1a\n Antwoord op de eerste vraag.\n1b\n Antwoord op de tweede vraag.\n1c\n Antwoord op de derde vraag.\n2\n Het antwoord."
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "7c55f356e243b131be4feff1f1759a21e942423ca9a44f0c5fec66ead992e963",
-      "bytes": 9531
+      "sha256": "38f9dfb25c71300c94c110635524045f9d3f02c56e1c41a01617e9eaa4fe15c6",
+      "bytes": 5039
     },
     {
       "file": "p2.png",
-      "sha256": "bb3cfe34938040fc9edb24303e4495075ad3b7a7bb9ed5537affc0a08eb4c76b",
-      "bytes": 13539
+      "sha256": "3f93e546b8e5cbca6bfcc62b90f24d9ccc25c389a77d8b96f02ac2168914e621",
+      "bytes": 6352
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

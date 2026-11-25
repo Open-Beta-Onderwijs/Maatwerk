@@ -10,20 +10,14 @@ use std::sync::{Arc, OnceLock};
 use typst::foundations::Bytes;
 use typst::text::{Coverage, Font, FontBook, FontInfo};
 use typst::utils::LazyHash;
-use typst_kit::fonts::{FontSearcher, FontSlot};
+use typst_kit::fonts::FontStore as KitStore;
 
 use crate::assets;
 
 /// The font book and the fonts behind it. Cheap to share between compiles and threads.
 pub struct FontStore {
-    book: LazyHash<FontBook>,
-    slots: Vec<Slot>,
-}
-
-enum Slot {
-    Embedded(Font),
-    /// System or Typst-embedded font, loaded on first use.
-    Kit(FontSlot),
+    kit: KitStore,
+    len: usize,
 }
 
 impl FontStore {
@@ -38,58 +32,49 @@ impl FontStore {
 
     /// A new store; `system_fonts: false` gives a machine-independent set (tests, headless use).
     pub fn new(system_fonts: bool) -> FontStore {
-        let mut book = FontBook::new();
-        let mut slots = Vec::new();
+        let mut kit = KitStore::new();
+        let mut len = 0;
         let mut emoji = Vec::new();
         for (_, data) in assets::FONTS {
             for font in Font::iter(Bytes::new(*data)) {
                 if font.info().family == EMOJI_FAMILY {
                     emoji.extend(font.info().coverage.iter().filter(|&c| c >= 0x80));
                 }
-                book.push(font.info().clone());
-                slots.push(Slot::Embedded(font));
+                let info = font.info().clone();
+                kit.push((font, info));
+                len += 1;
             }
         }
         emoji.sort_unstable();
-        let kit = FontSearcher::new()
-            .include_system_fonts(system_fonts)
-            .include_embedded_fonts(true)
-            .search();
-        for (index, slot) in kit.fonts.into_iter().enumerate() {
-            if let Some(info) = kit.book.info(index) {
-                // Typst-embedded fonts (no path) stay as they are, as in the goldens.
-                let info = match slot.path() {
-                    Some(_) => without_emoji(info, &emoji),
-                    None => info.clone(),
-                };
-                book.push(info);
-                slots.push(Slot::Kit(slot));
+        if system_fonts {
+            for (path, info) in typst_kit::fonts::system() {
+                kit.push((path, without_emoji(&info, &emoji)));
+                len += 1;
             }
         }
-        FontStore {
-            book: LazyHash::new(book),
-            slots,
+        // Typst's own fonts stay as they are, as in the goldens.
+        for entry in typst_kit::fonts::embedded() {
+            kit.push(entry);
+            len += 1;
         }
+        FontStore { kit, len }
     }
 
     pub fn book(&self) -> &LazyHash<FontBook> {
-        &self.book
+        self.kit.book()
     }
 
     pub fn font(&self, index: usize) -> Option<Font> {
-        match self.slots.get(index)? {
-            Slot::Embedded(font) => Some(font.clone()),
-            Slot::Kit(slot) => slot.get(),
-        }
+        self.kit.font(index)
     }
 
     /// Number of font faces (for diagnostics and tests).
     pub fn len(&self) -> usize {
-        self.slots.len()
+        self.len
     }
 
     pub fn is_empty(&self) -> bool {
-        self.slots.is_empty()
+        self.len == 0
     }
 }
 

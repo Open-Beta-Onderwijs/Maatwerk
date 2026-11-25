@@ -530,8 +530,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 17 (review `docs/reviews/step-17.md`)
 
-- **Review 17 m2:** a blessed Typst golden keeps the reference's `call`/`result` but its `pdf`
-  text and PNGs are the port's; split into `reference.pdf` / `port.pdf` so both stay readable.
+- ~~**Review 17 m2:** a blessed Typst golden keeps the reference's `call`/`result` but its `pdf`
+  text and PNGs are the port's; split into `reference.pdf` / `port.pdf` so both stay readable.~~
+  Closed (39b): every Typst golden is now the port's output on Typst 0.15.1 (`port.blessed`); the
+  reference's renders are history (decision 9).
 
 ## From Step 18 (reviews `docs/reviews/step-18.md`, `step-17-18-security.md`)
 
