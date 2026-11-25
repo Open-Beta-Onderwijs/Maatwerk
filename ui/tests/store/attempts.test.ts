@@ -18,7 +18,7 @@ interface Entry {
   override: unknown;
   grade?: number;
 }
-// Same projection as tests/reference-harness/suites/attempts.mjs.
+// Same projection as the reference harness suite attempts (removed at 1.0).
 const slimEntry = (e: Entry | null) =>
   e && {
     examId: e.exam?.id ?? e.examId,

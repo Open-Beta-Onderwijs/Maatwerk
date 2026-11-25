@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Runs the ported Store (src/store.js) on a MockApi, like the reference harness
-// runs the reference Store on a real folder (tests/reference-harness/session.mjs).
+// ran the reference Store on a real folder (the harness, removed at 1.0).
 // Used to check the Store against the goldens whose `data` case holds the
 // scenario's data folder.
 

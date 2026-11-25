@@ -1,23 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Logic goldens: structure is checked everywhere (CI has no `_reference/`);
-// with `_reference/` present the reference is re-run and must match byte for byte.
+// Logic goldens: their structure. They were captured from the reference app (the harness went at
+// 1.0, PLAN-2 decision 88) and are checked against the port by the Vitest and Rust tests.
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
-import { FORMAT, LOGIC_DIR, goldenPath, readGolden } from '../reference-harness/golden.mjs';
-import { REFERENCE_COMMIT, referenceAvailable } from '../reference-harness/reference.mjs';
-import { runSuite, suiteNames } from '../reference-harness/regen.mjs';
+import { FORMAT, LOGIC_DIR, REFERENCE_COMMIT, readGolden } from '../support/golden.mjs';
 
-const names = suiteNames();
+const names = fs
+  .readdirSync(LOGIC_DIR)
+  .filter((f) => f.endsWith('.json'))
+  .map((f) => f.replace(/\.json$/, ''))
+  .sort();
 
-test('every suite has a golden and every golden has a suite', () => {
-  const files = fs
-    .readdirSync(LOGIC_DIR)
-    .filter((f) => f.endsWith('.json'))
-    .map((f) => f.replace(/\.json$/, ''))
-    .sort();
-  assert.deepEqual(files, names);
+test('the logic goldens are there', () => {
+  assert.ok(names.length >= 11, names.join(', '));
 });
 
 for (const name of names) {
@@ -37,12 +34,4 @@ for (const name of names) {
       assert.ok('input' in c && 'output' in c, `${c.id}: input and output`);
     }
   });
-
-  test(
-    `golden ${name}: matches the reference`,
-    { skip: referenceAvailable() ? false : '_reference/ not available' },
-    () => {
-      assert.equal(runSuite(name), fs.readFileSync(goldenPath(name), 'utf8'));
-    },
-  );
 }

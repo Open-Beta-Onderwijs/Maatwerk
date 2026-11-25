@@ -8,13 +8,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  YEAR,
-  buildData,
-  exam,
-  readTree,
-  student,
-} from '../../../tests/reference-harness/scenario.mjs';
+import { YEAR, buildData, exam, readTree, student } from '../../../tests/support/scenario.mjs';
 import { goldenCase, loadGolden, run, v2File } from '../golden';
 import { openStore } from '../store-session';
 

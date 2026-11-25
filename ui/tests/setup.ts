@@ -4,7 +4,7 @@
 // assumptions"): TZ Europe/Amsterdam, Dutch default collation, clock frozen at
 // 2026-03-02T10:00 local.
 
-import { freezeClock, setupEnvironment } from '../../tests/reference-harness/environment.mjs';
+import { freezeClock, setupEnvironment } from '../../tests/support/environment.mjs';
 
 setupEnvironment();
 freezeClock();

@@ -11,7 +11,6 @@ package-lock.json
 LICENSE
 PLAN.md
 tests/golden/
-tools/reference-shims/*.cjs
 ui/e2e/visual.spec.ts-snapshots/
 ui/src/bridge/bindings.ts
 # Vendored third-party files, kept byte-for-byte.

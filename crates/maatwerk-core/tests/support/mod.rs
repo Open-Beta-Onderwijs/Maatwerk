@@ -33,7 +33,7 @@ pub fn load_case(id: &str) -> Value {
     serde_json::from_str(&text).unwrap()
 }
 
-/// Undoes the golden encoding (`tests/reference-harness/golden.mjs` `decode`) the way the data
+/// Undoes the golden encoding (`tests/support/golden.mjs` `decode`) the way the data
 /// reaches Rust: through `normaliseForTypst` (ui/src/domain/rapport.ts) and JSON, which gives
 /// the `toTypst` values: `{"$undefined": true}` becomes `null` (key kept) and a non-finite
 /// `{"$number": "NaN"}` becomes `0`.

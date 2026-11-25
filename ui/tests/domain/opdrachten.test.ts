@@ -18,7 +18,7 @@ interface Assignments {
   obsStudents: unknown;
   cijferStudents: unknown;
 }
-// Same projection as tests/reference-harness/suites/opdrachten.mjs.
+// Same projection as the reference harness suite opdrachten (removed at 1.0).
 const slimAssignments = (res: Assignments) => ({
   students: res.students.map((x) => ({
     studentId: x.student.id,

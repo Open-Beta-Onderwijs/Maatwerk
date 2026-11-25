@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Golden file format for logic suites (docs/testing.md, "Golden format").
+// Golden file format for logic suites (docs/testing.md, "Golden format"). The goldens were
+// captured from the reference app by a harness that went at 1.0 (PLAN-2 decision 88); they stay
+// as regression tests (decision 9). This module only reads them.
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { REFERENCE_COMMIT, REPO_ROOT } from './reference.mjs';
+import { fileURLToPath } from 'node:url';
 
+export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+/** The reference commit every logic golden and reference Typst golden was captured at. */
+export const REFERENCE_COMMIT = '0e30a70cbe4e9286bd54efa5722fb7532c1be308';
 export const LOGIC_DIR = path.join(REPO_ROOT, 'tests', 'golden', 'logic');
 export const FORMAT = 1;
 
@@ -57,33 +62,5 @@ export async function capture(fn) {
   }
 }
 
-/** Collects cases for one suite. */
-export class Suite {
-  constructor(name, description) {
-    this.name = name;
-    this.description = description;
-    this.refs = new Set();
-    this.cases = [];
-  }
-  ref(...refs) {
-    for (const r of refs.flat()) this.refs.add(r);
-  }
-  /** id: unique within the suite; rule: business-rules.md / quirks.md pointer. */
-  add(id, rule, input, output) {
-    if (this.cases.some((c) => c.id === id)) throw new Error(`${this.name}: duplicate case ${id}`);
-    this.cases.push({ id, rule, input: encode(input), output: encode(output) });
-  }
-  toJSON() {
-    return {
-      format: FORMAT,
-      suite: this.name,
-      description: this.description,
-      reference: { commit: REFERENCE_COMMIT, code: [...this.refs].sort() },
-      cases: this.cases,
-    };
-  }
-}
-
-export const serialize = (suite) => `${JSON.stringify(suite.toJSON(), null, 2)}\n`;
 export const goldenPath = (name) => path.join(LOGIC_DIR, `${name}.json`);
 export const readGolden = (name) => JSON.parse(fs.readFileSync(goldenPath(name), 'utf8'));

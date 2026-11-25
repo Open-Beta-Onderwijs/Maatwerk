@@ -28,7 +28,7 @@ fn fixed_now() -> OffsetDateTime {
 
 /// The tiny fixture's opdracht folders (tools/fixtures/export-opdrachten.mjs: `opdracht.typ` and
 /// `images/`) with the bundled `main.typ` and `lib.typ`, plus the folders the golden cases add
-/// (`basis`, `kapot`, tests/reference-harness/typst/cases.mjs).
+/// (`basis`, `kapot`, as the reference harness did).
 fn data_dir() -> (tempfile::TempDir, DataDir) {
     let tmp = tempfile::tempdir().unwrap();
     let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/opdrachten");
