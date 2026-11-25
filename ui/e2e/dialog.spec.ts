@@ -120,6 +120,60 @@ test.describe('sticky screen headers', () => {
   }
 });
 
+test.describe('step 39: scrolling with a modal open', () => {
+  // Short window: the screen behind scrolls (as in "sticky screen headers"), and so do the
+  // overview bodies.
+  test.use({ viewport: { width: 1280, height: 320 } });
+  const pageTop = (page: Page) => page.evaluate(() => document.scrollingElement!.scrollTop);
+
+  for (const name of ['modal-groep-leerlingen', 'modal-profiel-cijferverloop']) {
+    test(`${name}: the wheel over the backdrop or the dialog does not scroll the page behind`, async ({
+      page,
+    }) => {
+      await openView(page, view(name));
+      await expect(topDialog(page)).toBeVisible();
+      // The screen behind is taller than the window, so it could scroll.
+      expect(
+        await page.evaluate(
+          () => document.querySelector('main, .screen.active, body')!.scrollHeight,
+        ),
+      ).toBeGreaterThan(320);
+      // Beside the dialog (backdrop), then over the dialog past the end of its body.
+      await page.mouse.move(20, 200);
+      await page.mouse.wheel(0, 1500);
+      await page.mouse.move(640, 200);
+      await page.mouse.wheel(0, 4000);
+      await page.waitForTimeout(300);
+      expect(await pageTop(page)).toBe(0);
+      // Closed: the page scrolls again.
+      await page.keyboard.press('Escape');
+      await expect(page.locator('.dlg')).toHaveCount(0);
+      await page.mouse.wheel(0, 1500);
+      await expect.poll(() => pageTop(page)).toBeGreaterThan(0);
+    });
+  }
+
+  for (const name of [
+    'modal-groep-leerlingen',
+    'modal-overzicht-resultaten',
+    'modal-po-overzicht-resultaten',
+  ]) {
+    test(`${name}: no row shows above the sticky table head`, async ({ page }) => {
+      await openView(page, view(name));
+      const body = topDialog(page).locator('.dlg-body');
+      const head = body.locator('.ov-table thead');
+      await expect(head).toBeVisible();
+      // Scrolled to the end, the head sticks flush with the body's top edge (it stuck 20 px
+      // lower, in the body's padding, and rows showed above it).
+      await body.evaluate((b) => (b.scrollTop = b.scrollHeight));
+      expect(await body.evaluate((b) => b.scrollTop)).toBeGreaterThan(50);
+      const bodyBox = (await body.boundingBox())!;
+      const headBox = (await head.boundingBox())!;
+      expect(Math.round(headBox.y)).toBe(Math.round(bodyBox.y));
+    });
+  }
+});
+
 for (const v of VIEWS.filter((x) => x.target === 'modal')) {
   test(`${v.name}: footer has the primary action last`, async ({ page }) => {
     await openView(page, v);
