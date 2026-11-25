@@ -54,6 +54,11 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 
 **Choices made without the user (tell at the end of step 39):**
 
+- 8b "Jumps after an error" (a "consider" item): not done. Mapping clicks through the last good
+  source needs that source kept and its offsets mapped onto the edited text; jumps work again
+  after the next good compile, as designed in 8a n7.
+- 8b n1 needed `maatwerk-lib 3` (a state in `opgave()`): unmodified copies update silently on
+  open, as for lib 2; a vraag after an opgave now has opgave 0 in the answer key too.
 - `render_assignment_svg` stays (id-based, used by the step 34b preview and the AI preview);
   the plan listed it under v1 removal.
 - (Withdrawn: `to-current.mjs` was kept at first; the user then OK'd the one-time golden
@@ -97,11 +102,16 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   told the user; re-check in 45a.
 - Package `compiler` minimums (cetz 0.13, zero 0.12) fine; emoji goldens pass (COLRv1 ok).
 
-**Next action (39b, session 2):** CI green on `2a39c3f` (incl. `real-pdf` e2e; local commits
-after it not pushed yet). Done this session: golden conversion, 5a m3, 5a n8, 6a, 5b n2, 8a n2/n6, 8b m5/n1/n8. Left:
-8a m2, m6 rest, n5; 8b n6 and "Jumps after an error"; 9 m3 if any; `typst-ide` checked for the editor (0.15.1 pulls in
-`typst-html`). Then gate, reviewer subagent (`docs/reviews/step-39.md`), version 0.30.0,
-release; merge on the user's OK.
+- `ff50783` 8b n6 (`abandoned` in editor updates, pill text), `f2a0a74` 8a m2 (batch evicts
+  every 8 jobs), `fa44298` 8a n5, `486f1af` 8a m6 tests, 9 m3 struck (done in step 32).
+  `typst-ide` checked: already 0.15.1, same API; `typst-html` comes with `typst` itself.
+  `b039aa4`: fixture manifest for lib 3.
+- **39b gate (local) green at `b039aa4`:** fmt, clippy, cargo test (core 396), deny, SPDX,
+  licences, lint, typecheck, Vitest 961, node 47, e2e chromium 431/431, visual 177/177. Pushed;
+  CI pending.
+
+**Next action (39b, session 2):** reviewer subagent running (`docs/reviews/step-39.md`); then
+fix blockers/majors, version 0.30.0, release; merge on the user's OK.
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
