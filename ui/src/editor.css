@@ -144,6 +144,11 @@ body {
   background: #fdecea;
   color: #b42318;
 }
+/* The app's --warn and --warn-soft (styles/tokens.css). */
+.status-pill[data-kind='warning'] {
+  background: #fdf3d3;
+  color: #8a6a00;
+}
 .status-pill svg {
   flex-shrink: 0;
 }
@@ -1005,6 +1010,10 @@ body {
   white-space: nowrap;
 }
 
+#error-popover[data-kind='warning'] {
+  color: #8a6a00;
+  border-color: #e8d48a;
+}
 #error-popover {
   position: fixed;
   z-index: 3000;

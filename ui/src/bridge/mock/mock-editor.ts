@@ -115,6 +115,19 @@ function diag(text: string, from: number, to: number, message: string): EditorDi
   };
 }
 
+/** U+E000 (private use, no font has it) gives Typst's tofu warning, here located in lib.typ. */
+function warningsOf(text: string): EditorDiagnostic[] {
+  if (!text.includes('\u{E000}')) return [];
+  return [
+    {
+      severity: 'warning',
+      message: 'no font can display `\u{E000}` (U+E000); it is shown as a box',
+      hints: [],
+      location: { file: 'lib.typ', line: 1, column: 1, from: 0, to: 1 },
+    },
+  ];
+}
+
 function errorsOf(text: string): EditorDiagnostic[] {
   const out: EditorDiagnostic[] = [];
   const stack: number[] = [];
@@ -356,7 +369,7 @@ export class MockEditor {
     this.emit({
       ...base,
       ok: true,
-      diagnostics: [],
+      diagnostics: warningsOf(text),
       previewGeneration: generation,
       pageCount: shown.length,
       pages,

@@ -162,9 +162,11 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 6a
 
-- **Typst warnings are only logged:** the render commands return compile warnings (tofu etc.,
+- ~~**Typst warnings are only logged:** the render commands return compile warnings (tofu etc.,
   deduplicated); `TauriApi` writes them to the console. Show them in the editor preview and the
-  generate/rapport modals (6b or Step 8).
+  generate/rapport modals (6b or Step 8).~~ Done: the modals since F-04 (`render-warnings.ts`);
+  the editor marks warnings in the open file, and since 39b the others (no place, or in
+  `lib.typ`/`main.typ`) show in the status pill ("Opgeslagen · 1 waarschuwing", details).
 - **`rapporten/` retention:** printed copies are never cleaned up (ADR-0002 section 9). Decide on
   a policy with the user.
 - **Command-level tests:** the Tauri commands are thin and their core functions are tested, but

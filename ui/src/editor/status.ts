@@ -8,8 +8,10 @@
 // Three separate inputs (review 30-31 M1): an action message (`setStatus`: "Fout bij opslaan",
 // "Staat in lib.typ"), the compile error of the current text (`setRenderError`), and whether the
 // text has unsaved edits (`setDirty`). "Opgeslagen" only shows when nothing is unsaved.
+// Warnings of a good compile that the text does not mark (`setRenderWarnings`: a box for a
+// missing glyph in lib.typ, a warning without a place) turn that state into a warning button.
 
-export type PillKind = 'busy' | 'ok' | 'info' | 'error';
+export type PillKind = 'busy' | 'ok' | 'info' | 'warning' | 'error';
 
 interface Message {
   text: string;
@@ -35,6 +37,7 @@ let popover: HTMLElement;
 let popoverOpen = false;
 let message: Message = { text: 'Laden…', details: null, error: false };
 let renderError: string | null = null;
+let renderWarnings: { count: number; details: string } | null = null;
 let dirty = false;
 let compiling = false;
 let busyTimer: ReturnType<typeof setTimeout> | null = null;
@@ -71,8 +74,9 @@ function dismiss(e: MouseEvent): void {
   if (!popover.contains(e.target as Node)) closePopover();
 }
 
-function errorButton(el: HTMLElement, text: string, details: string): void {
+function detailsButton(el: HTMLElement, kind: PillKind, text: string, details: string): void {
   popover.textContent = details;
+  popover.dataset.kind = kind;
   const btn = document.createElement('button');
   btn.id = 'btn-render-error';
   btn.type = 'button';
@@ -94,9 +98,15 @@ function state(): { kind: PillKind; text: string; details: string | null } {
   if (aiBusy !== null) return { kind: 'busy', text: aiBusy, details: null };
   if (compiling && busyTimer === null) return { kind: 'busy', text: 'Compileren…', details: null };
   if (message.error) return { kind: 'error', text: message.text, details: null };
+  const done = message.text === '' || message.text === 'Opgeslagen';
+  if (renderWarnings !== null && (dirty || done)) {
+    const n = renderWarnings.count;
+    const what = n === 1 ? '1 waarschuwing' : `${n} waarschuwingen`;
+    const text = `${dirty ? 'Niet opgeslagen' : 'Opgeslagen'} · ${what}`;
+    return { kind: 'warning', text, details: renderWarnings.details };
+  }
   if (dirty) return { kind: 'info', text: DIRTY_TEXT, details: null };
-  if (message.text === '' || message.text === 'Opgeslagen')
-    return { kind: 'ok', text: OK_TEXT, details: null };
+  if (done) return { kind: 'ok', text: OK_TEXT, details: null };
   return { kind: 'info', text: message.text, details: null };
 }
 
@@ -108,7 +118,7 @@ function render(): void {
   shownKey = key;
   closePopover();
   pill.dataset.kind = s.kind;
-  if (s.details !== null) errorButton(pill, s.text, s.details);
+  if (s.details !== null) detailsButton(pill, s.kind, s.text, s.details);
   else if (s.kind === 'busy') pill.innerHTML = `${SPINNER}<span>${s.text}</span>`;
   else if (s.kind === 'ok') pill.innerHTML = `${CHECK}<span>${s.text}</span>`;
   else pill.textContent = s.text;
@@ -132,6 +142,15 @@ export function hasActionError(): boolean {
 /** The compile error of the current text (`null`: it compiles). */
 export function setRenderError(details: string | null): void {
   renderError = details;
+  render();
+}
+
+/**
+ * Warnings of the last good compile that are not marked in the open file (`count` of them,
+ * `details` for the popover); `null`: none.
+ */
+export function setRenderWarnings(warnings: { count: number; details: string } | null): void {
+  renderWarnings = warnings;
   render();
 }
 

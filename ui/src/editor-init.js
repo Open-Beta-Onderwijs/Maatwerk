@@ -52,6 +52,7 @@ import {
   setDirty,
   setAiBusy,
   setRenderError,
+  setRenderWarnings,
   setStatus,
 } from './editor/status';
 import { createEditorAi } from './editor/ai/client';
@@ -68,6 +69,7 @@ import {
   renderVragen,
   showDiagnostics,
   showPoint,
+  unmarkedWarnings,
   vragenSummary,
 } from './editor-live';
 
@@ -699,6 +701,8 @@ const liveHost = {
 function applyDiagnostics() {
   if (!view || !lastUpdate) return;
   showDiagnostics(view, lastUpdate.diagnostics, current);
+  const rest = lastUpdate.ok ? unmarkedWarnings(lastUpdate.diagnostics, current) : [];
+  setRenderWarnings(rest.length ? { count: rest.length, details: diagnosticsText(rest) } : null);
 }
 
 window.addEventListener('message', (evt) => {
