@@ -399,12 +399,12 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
   a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
 - **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
-- **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
-  never got (set `document` only after the render succeeded).
+- ~~**n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
+  never got (set `document` only after the render succeeded).~~ Done (39b).
 - **n3:** `close()` called from the sink would join its own thread. The app's sink only emits an
   event (never blocks, never closes); keep it that way (documented on `LiveEditor`).
 - **n5:** one moved mount drops the disk files of every mount (performance only).
-- **n6:** check staleness between pages of the SVG render too.
+- ~~**n6:** check staleness between pages of the SVG render too.~~ Done (39b).
 
 ## From Step 8b (review `docs/reviews/step-08b.md`)
 

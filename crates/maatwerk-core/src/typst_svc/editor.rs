@@ -284,21 +284,34 @@ impl EditorSession {
         if stale() {
             return None;
         }
-        let (ok, diagnostics) = match result {
+        let start = Instant::now();
+        let (ok, diagnostics, pages) = match result {
             Ok(Compiled { output, warnings }) => {
+                // The new document becomes the preview only once its pages are rendered: after
+                // a panic or a stale stop in the render, the preview is still the old one
+                // (review 8a n2).
+                let (pages, shown) = changed_pages(&output, &self.shown, stale)?;
+                self.shown = shown;
                 self.vragen = Some(vragen(&output));
                 self.document = Some(output);
                 self.preview_generation = Some(generation);
                 self.current = true;
-                (true, warnings)
+                (true, warnings, pages)
             }
             Err(e) => {
                 self.current = false;
-                (false, e.diagnostics)
+                // The last good pages the client lacks (after `resend_all`).
+                let pages = match &self.document {
+                    Some(document) => {
+                        let (pages, shown) = changed_pages(document, &self.shown, stale)?;
+                        self.shown = shown;
+                        pages
+                    }
+                    None => Vec::new(),
+                };
+                (false, e.diagnostics, pages)
             }
         };
-        let start = Instant::now();
-        let pages = self.changed_pages();
         Some(EditorUpdate {
             generation,
             ok,
@@ -321,29 +334,33 @@ impl EditorSession {
             self.shown.len(),
         )
     }
+}
 
-    /// The pages of the last good document that the client does not have; afterwards the
-    /// client has them all.
-    fn changed_pages(&mut self) -> Vec<PageUpdate> {
-        let Some(document) = &self.document else {
-            return Vec::new();
-        };
-        let mut out = Vec::new();
-        let mut shown = Vec::with_capacity(document.pages().len());
-        for (index, page) in document.pages().iter().enumerate() {
-            let hash = hash128(page);
-            if self.shown.get(index) != Some(&hash) {
-                out.push(PageUpdate {
-                    index,
-                    hash: format!("{hash:032x}"),
-                    svg: super::compile::svg_page(page),
-                });
+/// The pages of `document` that the client (`shown`: hashes of its pages) does not have, and
+/// the hashes it has afterwards. `None` when the compile went stale between two pages: a newer
+/// edit is waiting and this render is wasted (review 8a n6).
+fn changed_pages(
+    document: &PagedDocument,
+    shown: &[u128],
+    stale: &dyn Fn() -> bool,
+) -> Option<(Vec<PageUpdate>, Vec<u128>)> {
+    let mut out = Vec::new();
+    let mut hashes = Vec::with_capacity(document.pages().len());
+    for (index, page) in document.pages().iter().enumerate() {
+        let hash = hash128(page);
+        if shown.get(index) != Some(&hash) {
+            if !out.is_empty() && stale() {
+                return None;
             }
-            shown.push(hash);
+            out.push(PageUpdate {
+                index,
+                hash: format!("{hash:032x}"),
+                svg: super::compile::svg_page(page),
+            });
         }
-        self.shown = shown;
-        out
+        hashes.push(hash);
     }
+    Some((out, hashes))
 }
 
 fn failed_update(
@@ -964,6 +981,27 @@ mod tests {
         s.set_file(&main_typ(), pages("A2", "B", "C2")).unwrap();
         let update = compile(&mut s, 2);
         assert_eq!(indices(&update), vec![0, 2], "compared with generation 0");
+    }
+
+    #[test]
+    fn review_8a_n2_n6_a_render_that_goes_stale_keeps_the_old_preview() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut s = session(tmp.path(), &pages("A", "B", "C"));
+        compile(&mut s, 0);
+        s.set_file(&main_typ(), pages("A2", "B2", "C2")).unwrap();
+        // Fresh after the layout, stale after the first rendered page (n6).
+        let checks = std::cell::Cell::new(0);
+        let stale = || {
+            checks.set(checks.get() + 1);
+            checks.get() > 1
+        };
+        assert_eq!(s.compile(1, &stale), None);
+        assert_eq!(checks.get(), 2, "checked before the second page");
+        // Generation 0 is still the preview (n2): a failed compile reports it, and the next
+        // good one sends every page the client lacks.
+        assert_eq!(s.failed(2, "x").preview_generation, Some(0));
+        let update = compile(&mut s, 3);
+        assert_eq!(indices(&update), vec![0, 1, 2]);
     }
 
     #[test]
