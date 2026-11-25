@@ -261,11 +261,11 @@ jobs:
       # Unix-only code paths (cfg(not(windows))) are only linted here.
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
-      # The migration on a case-sensitive file system.
-      - name: Migrate and validate the school fixture
+      # The data check on a case-sensitive file system (the v1 migration went at 1.0, decision 88).
+      - name: Validate the school fixture
         run: |
           node tools/fixtures/generate.mjs school "$RUNNER_TEMP/mig/shared/data"
-          cargo run -q -p maatwerk-cli -- migrate "$RUNNER_TEMP/mig/shared/data" --apply --backup-dir "$RUNNER_TEMP/mig/backups"
+          node tools/fixtures/to-current.mjs "$RUNNER_TEMP/mig/shared/data"
           cargo run -q -p maatwerk-cli -- validate-data "$RUNNER_TEMP/mig/shared/data" > /dev/null
       - run: npx playwright test --project=webkit real-pdf
         working-directory: ui
