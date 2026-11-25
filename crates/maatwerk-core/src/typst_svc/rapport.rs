@@ -8,13 +8,15 @@
 //! `/__maatwerk/data.json` (this request), and mounts only `/data/afbeeldingen` (the watermark,
 //! drawn only when it exists).
 
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use time::OffsetDateTime;
 use typst::foundations::Bytes;
 
-use super::compile::{CompileError, Compiled, compile_pdf};
+use super::compile::{CompileError, Compiled, compile_document, compile_pdf};
 use super::fonts::FontStore;
 use super::world::{INTERNAL_DIR, MaatwerkWorld, Mount, WorldSpec};
 use crate::assets;
@@ -137,7 +139,8 @@ pub fn render_rapport_pdf(
     data_dir: &DataDir,
     now: OffsetDateTime,
 ) -> Result<Compiled<Vec<u8>>, CompileError> {
-    compile_pdf(&rapport_world(fonts, data, data_dir, now))
+    compile_pdf(&rapport_world(fonts.clone(), data, data_dir, now))
+        .map_err(|e| name_eval_field(e, &fonts, now, &rapport_eval_fields(data)))
 }
 
 /// Compiles the PO rapport to PDF.
@@ -147,5 +150,112 @@ pub fn render_po_rapport_pdf(
     data_dir: &DataDir,
     now: OffsetDateTime,
 ) -> Result<Compiled<Vec<u8>>, CompileError> {
-    compile_pdf(&po_rapport_world(fonts, data, data_dir, now))
+    compile_pdf(&po_rapport_world(fonts.clone(), data, data_dir, now))
+        .map_err(|e| name_eval_field(e, &fonts, now, &po_eval_fields(data)))
+}
+
+/// A teacher text the template evaluates as markup (`eval` in `rapport.typ`), and where the
+/// teacher finds it, in the words of the hint.
+struct EvalField {
+    place: String,
+    text: String,
+}
+
+fn str_of<'a>(v: &'a Value, key: &str) -> &'a str {
+    v.get(key).and_then(Value::as_str).unwrap_or("")
+}
+
+fn items(v: &Value) -> &[Value] {
+    v.as_array().map_or(&[], Vec::as_slice)
+}
+
+/// The toets rapport's markup texts: the RTTI explanations, then each student's leeradvies rows.
+fn rapport_eval_fields(data: &RapportData) -> Vec<EvalField> {
+    let mut out: Vec<EvalField> = ["R", "T1", "T2", "I"]
+        .into_iter()
+        .map(|cat| EvalField {
+            place: format!("de uitleg bij {cat}"),
+            text: str_of(&data.exam_info["uitleg_rtti"], cat).to_owned(),
+        })
+        .collect();
+    for s in items(&data.students) {
+        for row in items(&s["leeradvies_rows"]) {
+            out.push(EvalField {
+                place: format!(
+                    "het leeradvies bij {} voor {}",
+                    str_of(row, "cat"),
+                    str_of(s, "name")
+                ),
+                text: str_of(row, "advies").to_owned(),
+            });
+        }
+    }
+    out
+}
+
+/// The PO rapport's markup texts: the leeradvies of each observatie, general or per category.
+fn po_eval_fields(data: &PoRapportData) -> Vec<EvalField> {
+    let mut out = Vec::new();
+    for s in items(&data.students) {
+        let general = items(&s["observaties"]).iter();
+        let per_category = items(&s["categories"])
+            .iter()
+            .flat_map(|c| items(&c["observaties"]));
+        for o in general.chain(per_category) {
+            out.push(EvalField {
+                place: format!(
+                    "het leeradvies bij de observatie {} voor {}",
+                    str_of(o, "naam"),
+                    str_of(s, "name")
+                ),
+                text: str_of(o, "leeradvies").to_owned(),
+            });
+        }
+    }
+    out
+}
+
+/// Review 5a m3: an error in an eval'd text points into `rapport.typ`, not at the text. After a
+/// failed rapport, each distinct text is compiled on its own; the first one that fails is named
+/// in a hint on the first error. Costs nothing when the rapport compiles.
+fn name_eval_field(
+    mut err: CompileError,
+    fonts: &Arc<FontStore>,
+    now: OffsetDateTime,
+    fields: &[EvalField],
+) -> CompileError {
+    let mut seen = HashSet::new();
+    let failing = fields
+        .iter()
+        .filter(|f| !f.text.is_empty() && seen.insert(f.text.as_str()))
+        .find(|f| compile_document(&eval_world(fonts.clone(), &f.text, now)).is_err());
+    if let (Some(field), Some(first)) = (failing, err.diagnostics.first_mut()) {
+        first
+            .hints
+            .insert(0, format!("de fout zit in {}", field.place));
+    }
+    err
+}
+
+/// A World that evaluates one text as the rapport template does.
+fn eval_world(fonts: Arc<FontStore>, text: &str, now: OffsetDateTime) -> MaatwerkWorld {
+    const MAIN: &str = "#import \"rapport.typ\": _guard_markup, _eval_scope\n\
+        #eval(_guard_markup(json(\"data.json\").text), mode: \"markup\", scope: _eval_scope)\n";
+    let json = serde_json::to_vec(&serde_json::json!({ "text": text }))
+        .expect("JSON values always serialise");
+    let file = |name: &str| format!("/{INTERNAL_DIR}/{name}");
+    MaatwerkWorld::new(
+        fonts,
+        WorldSpec {
+            main: file("main.typ"),
+            files: vec![
+                (file("main.typ"), Bytes::from_string(MAIN)),
+                (file("rapport.typ"), Bytes::from_string(assets::RAPPORT_TYP)),
+                (file("data.json"), Bytes::new(json)),
+            ],
+            mounts: Vec::new(),
+            inputs: None,
+            now,
+        },
+    )
 }

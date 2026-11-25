@@ -610,3 +610,31 @@ fn decision_16_the_ranking_line_says_what_is_true() {
     assert!(!text.contains(&squash("beste 33%")));
     assert!(!text.contains(&squash("beste 67%")));
 }
+
+#[test]
+fn review_5a_m3_a_failing_teacher_text_is_named() {
+    let case = load_case("rapport-one-student");
+    let (_tmp, dir) = data_dir(true);
+    let name = case_data(&case).students[0]["name"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    let mut data = case_data(&case);
+    data.exam_info["uitleg_rtti"]["I"] = Value::from("#bestaatniet()");
+    let err = render_rapport_pdf(fonts(), &data, &dir, fixed_now()).unwrap_err();
+    assert_eq!(
+        err.diagnostics[0].hints[0],
+        "de fout zit in de uitleg bij I"
+    );
+
+    let mut data = case_data(&case);
+    let row = &mut data.students[0]["leeradvies_rows"][1];
+    let cat = row["cat"].as_str().unwrap().to_owned();
+    row["advies"] = Value::from("Oefen met #ook_niet.");
+    let err = render_rapport_pdf(fonts(), &data, &dir, fixed_now()).unwrap_err();
+    assert_eq!(
+        err.diagnostics[0].hints[0],
+        format!("de fout zit in het leeradvies bij {cat} voor {name}")
+    );
+}

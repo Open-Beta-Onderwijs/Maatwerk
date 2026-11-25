@@ -286,3 +286,18 @@ fn preview() {
     }
     eprintln!("{} pages in {}", d.pages().len(), out.display());
 }
+
+#[test]
+fn review_5a_m3_a_failing_observatie_leeradvies_is_named() {
+    let (_tmp, dir) = data_dir();
+    let mut data = case_data();
+    let name = data.students[0]["name"].as_str().unwrap().to_owned();
+    data.students[0]["observaties"] = serde_json::json!([{
+        "icon": "📚", "naam": "Bronnen ontbreken", "uitleg": "", "leeradvies": "#oeps()"
+    }]);
+    let err = render_po_rapport_pdf(fonts(), &data, &dir, fixed_now()).unwrap_err();
+    assert_eq!(
+        err.diagnostics[0].hints[0],
+        format!("de fout zit in het leeradvies bij de observatie Bronnen ontbreken voor {name}")
+    );
+}
