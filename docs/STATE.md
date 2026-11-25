@@ -117,8 +117,12 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 - `53bd1ce`: version 0.30.0 (splash baselines: version digits only; CI copies dropped). Gate
   after the fixes: core 397, Vitest 961, node 47, e2e 431/431, visual 177/177, deny, audit clean.
 
-**Next action:** CI green on `53bd1ce` (new CI splash baselines from its artifacts: look and
-commit). Then on the user's OK: merge into `main` (merge commit), tag `step-39`, version tag
+- CI run 45611932264 on `53bd1ce`: only the dropped `splash` baselines failed (Linux, Windows;
+  macOS cancelled, the user reruns it 2026-11-26 morning). Linux and Windows splash baselines
+  committed from its artifacts (checked: version text 0.30.0, layout unchanged).
+
+**Next action:** macOS CI (user, 2026-11-26 morning) writes `visual-ci-webkit-darwin/splash.png`:
+look and commit from its artifact, then CI green on all jobs. Then on the user's OK: merge into `main` (merge commit), tag `step-39`, version tag
 `v0.30.0` only when the user says so, GitHub release with Dutch notes (draft in the step 39
 report; name T34, backslash paths).
 
