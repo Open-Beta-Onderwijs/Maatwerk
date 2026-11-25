@@ -217,6 +217,23 @@ pub async fn rubric_usage(
     .await
 }
 
+/// Everything the list screens show for one school year and vak (step 38,
+/// `maatwerk_core::numbers`): cards, Verzamelkaarten, group statistics, shown r/SE under the
+/// school's Cijfergemiddelden. Typed in the UI as `VakNumbers` (`ui/src/domain/numbers.ts`).
+#[tauri::command]
+#[specta::specta]
+pub async fn vak_numbers(
+    state: State<'_, Shared>,
+    year: String,
+    vak: String,
+) -> Res<serde_json::Value> {
+    blocking(state, move |c| {
+        let numbers = maatwerk_core::numbers::vak_numbers(c.storage()?, &year, &vak)?;
+        serde_json::to_value(numbers).map_err(|e| CommandError::internal(e.to_string()))
+    })
+    .await
+}
+
 /// Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd").
 #[tauri::command]
 #[specta::specta]

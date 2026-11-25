@@ -3,12 +3,14 @@
 // Beheer > Instellingen (Step 7b): `instellingen.json`: the snapshot interval
 // and how many snapshots are kept (maatwerk-core::snapshots), and since Step 8b
 // the editor's compile time limit (maatwerk-core::typst_svc::EditorSettings,
-// ADR-0002 section 12), and since step 32c the school's AI switch (`ai.enabled`). The app that starts first after the interval writes
+// ADR-0002 section 12), since step 32c the school's AI switch (`ai.enabled`), and since step 38
+// the Cijfergemiddelden (`gemiddelden`, instellingen-gemiddelden.ts). The app that starts first after the interval writes
 // `snapshots/<datum tijd>.zip` in the background; restoring the whole folder is
 // a manual step (docs/cutover-runbook.md).
 
 import type { MaatwerkApi } from '../bridge/api';
 import { switchControl } from '../components/switch';
+import { gemiddeldenCard } from './instellingen-gemiddelden';
 
 type Api = Pick<MaatwerkApi, 'listSnapshots' | 'openDataFolder'>;
 
@@ -288,7 +290,9 @@ export async function renderInstellingen(
   });
   showTag(aiSwitch.checked());
   aiCard.append(aiHead, aiSwitch.element);
-  left.append(snapCard, editorCard, aiCard);
+  // Cijfergemiddelden (board 64, decisions 91-93): below the AI card.
+  const gemiddelden = gemiddeldenCard(instellingen);
+  left.append(snapCard, editorCard, aiCard, gemiddelden.element);
 
   // Right: the snapshots there are, with their kind, and "Map openen".
   const listCard = el('section', 'card inst-card inst-snapshots');
@@ -347,7 +351,13 @@ export async function renderInstellingen(
     save.disabled = true;
     try {
       await store.saveInstellingen(
-        { ...(instellingen ?? {}), snapshots: { ...current, ...next }, editor, ai },
+        {
+          ...(instellingen ?? {}),
+          snapshots: { ...current, ...next },
+          editor,
+          ai,
+          gemiddelden: gemiddelden.value(),
+        },
         baseRev,
       );
       toast('Instellingen opgeslagen.', 'success');

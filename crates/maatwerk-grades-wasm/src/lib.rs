@@ -14,7 +14,10 @@ use maatwerk_grades::{
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+
 use serde_json::Value;
+use serde_json::value::RawValue;
 
 /// One attempt in a statistic, as the UI sends it.
 #[derive(Deserialize)]
@@ -52,27 +55,32 @@ fn best_arg(rec: &ScoreRecord, exams: &[&Exam]) -> Option<BestArg> {
     })
 }
 
-/// Decodes the JSON argument list into a tuple.
-fn parse<T: DeserializeOwned>(args: Value) -> Result<T, String> {
-    serde_json::from_value(args).map_err(|e| format!("bad arguments: {e}"))
+/// Decodes the JSON argument list (text) straight into a tuple: one pass, no `Value` tree in
+/// between (step 38, backlog "Grade cache" smaller wins).
+fn parse<T: DeserializeOwned>(args: impl AsRef<str>) -> Result<T, String> {
+    serde_json::from_str(args.as_ref()).map_err(|e| format!("bad arguments: {e}"))
 }
 
-/// Pads an argument list with `null` up to `n`, for trailing optional arguments.
-fn pad(mut args: Value, n: usize) -> Value {
-    if let Value::Array(items) = &mut args {
-        while items.len() < n {
-            items.push(Value::Null);
+/// Pads an argument list with `null` up to `n`, for trailing optional arguments. A full list is
+/// passed on as it is; a short one is scanned into raw elements (no tree) and joined again.
+fn pad(args: &str, n: usize) -> Cow<'_, str> {
+    match serde_json::from_str::<Vec<&RawValue>>(args) {
+        Ok(items) if items.len() < n => {
+            let mut parts: Vec<&str> = items.iter().map(|v| v.get()).collect();
+            parts.resize(n, "null");
+            Cow::Owned(format!("[{}]", parts.join(",")))
         }
+        _ => Cow::Borrowed(args),
     }
-    args
 }
 
-fn json<T: Serialize>(value: T) -> Result<Value, String> {
-    serde_json::to_value(value).map_err(|e| e.to_string())
+/// The reply value as JSON text.
+fn json<T: Serialize>(value: T) -> Result<String, String> {
+    serde_json::to_string(&value).map_err(|e| e.to_string())
 }
 
-/// Calls the rule `name` with the JSON array `args`.
-pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
+/// Calls the rule `name` with the JSON array `args` (text); the reply value as JSON text.
+pub fn dispatch(name: &str, args: &str) -> Result<String, String> {
     match name {
         "calcGrade" => {
             let (s, l, n): (f64, f64, f64) = parse(args)?;
@@ -136,13 +144,34 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
             let (grades,): (Vec<f64>,) = parse(args)?;
             json(g::stats(&grades))
         }
+        // The format (`{methode, decimalen}`) is optional: missing is afronden 1.
         "meanOfAverages" => {
-            let (values,): (Vec<f64>,) = parse(args)?;
-            json(g::mean_of_averages(&values))
+            let (values, fmt): (Vec<f64>, Option<g::AverageFormat>) = parse(pad(args, 2))?;
+            json(g::mean_of_averages(&values, fmt.unwrap_or_default()))
         }
         "statsOfAverages" => {
-            let (values,): (Vec<f64>,) = parse(args)?;
-            json(g::stats_of_averages(&values))
+            let (values, fmt): (Vec<f64>, Option<g::AverageFormat>) = parse(pad(args, 2))?;
+            json(g::stats_of_averages(&values, fmt.unwrap_or_default()))
+        }
+        "isFailShown" => {
+            let (x,): (f64,) = parse(args)?;
+            json(g::is_fail_shown(x))
+        }
+        "pct" => {
+            let (part, whole): (f64, f64) = parse(args)?;
+            json(g::pct(part, whole))
+        }
+        "shownDifference" => {
+            let (own, fmt, mean): (f64, Option<g::AverageFormat>, f64) = parse(args)?;
+            json(g::shown_difference(own, fmt.unwrap_or_default(), mean))
+        }
+        "scorePoints" => {
+            let (value, max): (Value, f64) = parse(pad(args, 2))?;
+            json(g::score_points(&value, max))
+        }
+        "shownAverage" => {
+            let (x, fmt): (f64, Option<g::AverageFormat>) = parse(pad(args, 2))?;
+            json(g::shown_average(x, fmt.unwrap_or_default()))
         }
         "mean" => {
             let (values,): (Vec<f64>,) = parse(args)?;
@@ -259,14 +288,10 @@ pub fn dispatch(name: &str, args: Value) -> Result<Value, String> {
 
 /// `dispatch` on text: `{"ok": value}` or `{"error": message}`. Never panics on bad input.
 pub fn call(name: &str, args: &str) -> String {
-    let result = serde_json::from_str(args)
-        .map_err(|e| format!("bad JSON: {e}"))
-        .and_then(|args| dispatch(name, args));
-    let reply = match result {
-        Ok(value) => serde_json::json!({ "ok": value }),
-        Err(message) => serde_json::json!({ "error": message }),
-    };
-    reply.to_string()
+    match dispatch(name, args) {
+        Ok(value) => format!("{{\"ok\":{value}}}"),
+        Err(message) => serde_json::json!({ "error": message }).to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -397,6 +422,17 @@ mod tests {
             ("mean", json!([[5.0, 6.0]])),
             ("meanOfAverages", json!([[5.0, 6.0]])),
             ("statsOfAverages", json!([[5.0, 6.0]])),
+            (
+                "statsOfAverages",
+                json!([[5.0], {"methode": "afkappen", "decimalen": 0}]),
+            ),
+            ("meanOfAverages", json!([[5.0], null])),
+            ("shownAverage", json!([5.45])),
+            ("isFailShown", json!([5.45])),
+            ("pct", json!([1, 0])),
+            ("shownDifference", json!([6.84, null, 6.75])),
+            ("scorePoints", json!([null, 8])),
+            ("scorePoints", json!([[1], 8])),
             ("histogram", json!([[5.0], 0.5])),
             ("gradeGroup", json!([5.0])),
             ("boxStats", json!([[5.0]])),
@@ -431,6 +467,19 @@ mod tests {
         ] {
             run(name, args);
         }
+    }
+
+    #[test]
+    fn the_average_format_reaches_the_ui() {
+        let k0 = json!({"methode": "afkappen", "decimalen": 0});
+        assert_eq!(run("shownAverage", json!([5.9, k0.clone()])), json!(5.0));
+        assert_eq!(run("shownAverage", json!([5.45])), json!(5.5));
+        let s = run("statsOfAverages", json!([[5.9, 7.2], k0]));
+        assert_eq!(
+            (s["mean"].clone(), s["fails"].clone()),
+            (json!(6.0), json!(50.0))
+        );
+        assert!(dispatch("shownAverage", r#"[5.0, {"decimalen": 3}]"#).is_err());
     }
 
     #[test]

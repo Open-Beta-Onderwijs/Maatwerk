@@ -2,6 +2,28 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 38 (review `docs/reviews/step-38.md`)
+
+- **m2 rest (step 41, robustness):** Rust and the MockApi mirror differ on input the fixtures
+  lack: `decimalen: 2.0` (Rust: afronden 1, UI card: 2), the settings guard (missing vs `null`,
+  key order, a write without a login in the mock), the vak limit (64 bytes vs 64 characters).
+  Align and add each as a case to the numbers golden (`tools/numbers-golden.mjs`).
+- **m4 (step 43, measure first):** a Profiel makes one `vak_numbers` call per school year, and
+  each upper-school year loads every year again. Measure `modal:profiel` at 4x; if over budget,
+  one core call for several years from a single load.
+- **m5 (step 43):** the Groepsoverzicht takes its cells from the active vak and its r/SE from
+  `group.subject`; use one subject for both.
+- n1 (41): `numbers/load.rs` module doc claims one bad file never fails the call. n2 (44):
+  `Store.studentYearAverage` and `getAllExamsSync` have no callers. n3 (43): the `vak-numbers.ts`
+  cache resets on an older generation. n4 (43): the Toetsen cards compute stats and histogram
+  again although Rust sends them. n5 (43): `vak_numbers` serialises twice (typed result would
+  also give specta the shape). n7 (42): the numbers golden could add r at a2/k2 and SE at a0/k1
+  (the crate test covers all six already).
+- **WebKit on Windows (step 42):** three projectgroepen drag-and-drop tests fail locally under
+  `--project webkit` on Windows, on `main` (`66c6909`) too (`po-grading.spec.ts:431`,
+  `po.spec.ts:261`, `po.spec.ts:318`); CI runs WebKit on macOS/Linux, where they pass.
+  `po-grading.spec.ts:188` (footer "opgeslagen") failed once under load, then 3/3 alone.
+
 ## From Step 37 (review `docs/reviews/step-37.md`)
 
 - **m2 (step 41, robustness):** `loadObsUsage` (`ui/src/store.js`) throws on a read error in any
@@ -39,42 +61,43 @@ Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 Every open item below belongs to one step; the step's "Items" line names them. A step strikes an
 item through with its commit when done, or moves it to "After 1.0" with a reason.
 
-| Section                                        | Step                                                                      |
-| ---------------------------------------------- | ------------------------------------------------------------------------- |
-| 29c PO verzameloverzicht, profile observaties  | 37                                                                        |
-| 29c review 29: m1, m6, nits                    | 43 (m1 needs the user's answer)                                           |
-| 29c review 29: m4, m5 / m7                     | 38 / 42                                                                   |
-| Manual tests 6 and 10 (re-checks, M-SYNC-1..4) | 45b (M-START-3: closed with v1 in 39a)                                    |
-| 6b, 6a                                         | compat layer 44b; typst warnings 39b; tests 42; images, messages 41       |
-| 5b, 5a                                         | 39 (Typst, v1); 5a m4 and 5b n6 in 41                                     |
-| 4b, 4a                                         | 41 (4b overflow: After 1.0)                                               |
-| 3b                                             | n4 41; m8 42; "queued saves" 35                                           |
-| 3a                                             | styling, m7, U18 43; n5 42; dependency updates 45a (X-02)                 |
-| Step 2, 2a, 17 m2                              | 39a (most concern v1 goldens) and 39b                                     |
-| Step 0 review: n2, n3, n6, n9                  | 42                                                                        |
-| 7a                                             | m6, n1 39a; m2 drop or use in 41; n3-n6, n8 41                            |
-| 7b                                             | n4 35; reload after Herstellen 41; n5 closed (dev only)                   |
-| 7c                                             | perf items 38; read vs. colleague change 41; tests 42                     |
-| 8a, 8b                                         | 39b (`LiveEditor`); 8b m6 and "CSP report" 43 (check)                     |
-| 9                                              | m3 39b (if left); m7 42; n6 41; n9 43                                     |
-| Other (`rapporten/`, Tauri 3)                  | X-06 41; Tauri 3 After 1.0                                                |
-| 10                                             | m3, m6, n1, n2 41; n7 42; "Perf at 4x" closed in 38                       |
-| 13, 14, 15                                     | 43 (helpers, styling, dialogs); test items 42; R-05 44; 15 m5 35, n6 36   |
-| 18, 19                                         | security items 41; 19 m6 38, m8 43, m9 42                                 |
-| 20                                             | m5 43; m6 42; attempt numbering and `_meta` copy: quirks, 43              |
-| 21, 22, 23, 24                                 | 37 (tests of 23 m1/m9 in 37; "Local WebKit" note 42)                      |
-| 25                                             | m3/m6 42; n2 43                                                           |
-| 26-28                                          | m2 35; m6 41; m7 After 1.0; m8 42; R-05 44                                |
-| 32                                             | 40                                                                        |
-| 33                                             | m3 43; m4 42                                                              |
-| 34                                             | m2, m4 (focus into the panel), nits 43; m6 42                             |
-| 35-36                                          | m4 37; m5 38; m6, n2 41; n1, n4 42; n6 at the release                     |
-| 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 unless 38 says otherwise |
+| Section                                        | Step                                                                    |
+| ---------------------------------------------- | ----------------------------------------------------------------------- |
+| 29c PO verzameloverzicht, profile observaties  | 37                                                                      |
+| 29c review 29: m1, m6, nits                    | 43 (m1 needs the user's answer)                                         |
+| 29c review 29: m4, m5 / m7                     | 38 / 42                                                                 |
+| Manual tests 6 and 10 (re-checks, M-SYNC-1..4) | 45b (M-START-3: closed with v1 in 39a)                                  |
+| 6b, 6a                                         | compat layer 44b; typst warnings 39b; tests 42; images, messages 41     |
+| 5b, 5a                                         | 39 (Typst, v1); 5a m4 and 5b n6 in 41                                   |
+| 4b, 4a                                         | 41 (4b overflow: After 1.0)                                             |
+| 3b                                             | n4 41; m8 42; "queued saves" 35                                         |
+| 3a                                             | styling, m7, U18 43; n5 42; dependency updates 45a (X-02)               |
+| Step 2, 2a, 17 m2                              | 39a (most concern v1 goldens) and 39b                                   |
+| Step 0 review: n2, n3, n6, n9                  | 42                                                                      |
+| 7a                                             | m6, n1 39a; m2 drop or use in 41; n3-n6, n8 41                          |
+| 7b                                             | n4 35; reload after Herstellen 41; n5 closed (dev only)                 |
+| 7c                                             | perf items 38; read vs. colleague change 41; tests 42                   |
+| 8a, 8b                                         | 39b (`LiveEditor`); 8b m6 and "CSP report" 43 (check)                   |
+| 9                                              | m3 39b (if left); m7 42; n6 41; n9 43                                   |
+| Other (`rapporten/`, Tauri 3)                  | X-06 41; Tauri 3 After 1.0                                              |
+| 10                                             | m3, m6, n1, n2 41; n7 42; "Perf at 4x" closed in 38                     |
+| 13, 14, 15                                     | 43 (helpers, styling, dialogs); test items 42; R-05 44; 15 m5 35, n6 36 |
+| 18, 19                                         | security items 41; 19 m6 38, m8 43, m9 42                               |
+| 20                                             | m5 43; m6 42; attempt numbering and `_meta` copy: quirks, 43            |
+| 21, 22, 23, 24                                 | 37 (tests of 23 m1/m9 in 37; "Local WebKit" note 42)                    |
+| 25                                             | m3/m6 42; n2 43                                                         |
+| 26-28                                          | m2 35; m6 41; m7 After 1.0; m8 42; R-05 44                              |
+| 32                                             | 40                                                                      |
+| 33                                             | m3 43; m4 42                                                            |
+| 34                                             | m2, m4 (focus into the panel), nits 43; m6 42                           |
+| 35-36                                          | m4 37; m5 38; m6, n2 41; n1, n4 42; n6 at the release                   |
+| 33b "Grade cache"                              | part 1 and smaller wins 38; disk cache After 1.0 (user, after 38.7)     |
 
 ## After 1.0
 
 - **Tauri 3** (X-03) once 3.0 and its plugins are stable.
-- **Disk grade cache** (33b "Grade cache" parts 2-4), unless step 38's measurement asks for it.
+- **Disk grade cache** (33b "Grade cache" parts 2-4): not needed after step 38's measurement
+  (`docs/perf.md`, user 2026-11-24); reopen if M-PERF-1 on a real copy is slow.
 - **Installer and updater**, and the signing itself once the user has the certificates (X-11).
 - **4b `ReadDirectoryChangesW` overflow:** revisit if colleagues report missed changes.
 - **26-28 m7:** "Vergelijken" (OneDrive conflict copy) and "Toets openen" behind board 12.
@@ -83,9 +106,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - ~~**PO verzameloverzicht**~~: done in step 37 (`0475956`).
 - **Review 29 (deferred minors):** m1 exam overview Observaties counts students without a score
-  but takes the percentage of those with one (asked the user which population to use); m4 a
-  silent refresh of the group and exam overviews shows skeletons (load before `openModal`); m5
-  per-student reads without `preloadScores` / `{ loaded: true }`, `examStats` not memoised; m6
+  but takes the percentage of those with one (asked the user which population to use); ~~m4~~
+  and ~~m5~~ done in step 38.6 (`bae4004`: refresh loads first; preload, `examStats` from the Rust
+  numbers); m6
   duplication (histogram card, heat tint, info icon, `signed`, obs sort); m7 test gaps; nits
   n1-n7 (`docs/reviews/step-29.md`), among them ~45 unused utility classes in `style.css`.
 - ~~**Profile observaties**~~: done in step 37 (`7045331`, the user's OK on the numbers).
@@ -349,15 +372,15 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   admin Groepen 154 p90; `docs/perf.md`): the first folder reads and statistics. If the real
   copy (M-PERF-1) shows it at 1x too: start `preloadScores` for the active year in idle time
   right after login.
-- **Review 7c m4 (rest):** `loadInstellingen` and `invalidateSchool` (School screen) drop a cached
+- ~~**Review 7c m4 (rest):**~~ Done in step 38.6 (`bae4004`): `loadInstellingen` keeps the cached object when nothing changed. Was: `loadInstellingen` and `invalidateSchool` (School screen) drop a cached
   entry on every visit, which counts as a change, so the kept screens render once more for nothing.
   Load Instellingen without invalidating (the versioned read gives the rev).
 - **Review 7c m5 (rest):** e2e for a colleague's change to a group still waiting for idle time
   (stub `requestIdleCallback`), closing the score modal while groups are pending, and the 15 s
   prebuild TTL.
-- **Review 7c n2:** closing the score modal after a save redraws the exam list without updating
+- ~~**Review 7c n2:**~~ Done in step 38.6 (`bae4004`, list render hook). Was: closing the score modal after a save redraws the exam list without updating
   the kept-screen key, so the next Toetsen visit renders once more.
-- **Review 7c n5:** `contain-intrinsic-size: auto 40px` on student cards is an estimate; measure a
+- ~~**Review 7c n5:**~~ Closed (step 38.6 check): the card has a fixed `height: 66px` since step 27 and the intrinsic size is the same 66 px. Was: `contain-intrinsic-size: auto 40px` on student cards is an estimate; measure a
   real card (cards not shown yet count as 40 px for the scrollbar).
 - **e2e `examMenuItem` retries** because Playwright's scroll-into-view delivers a `scroll` event a
   frame after the click, which closes the menu. Replace the retry with the scroll-first click of
@@ -520,7 +543,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 19
 
-- m6: send only the fields the rules read in each WebAssembly call (today's cost is acceptable; the rapport and grid were measured).
+- ~~m6~~ Closed in step 38: the list screens compute in Rust (`vak_numbers`); the WASM entry parses its arguments once (`24e10ad`). Was: send only the fields the rules read in each WebAssembly call.
 - m8: a message when WebAssembly cannot start; today an empty window. Check the oldest supported macOS WebKit for `'wasm-unsafe-eval'`.
 - m9: tests of how the screens call the rules (the rules are tested; which arguments a screen passes is not).
 - n3, n6, n7 in `docs/reviews/step-19.md`.
@@ -709,7 +732,9 @@ needs a before/after table on the fixtures and the user's OK. Test: cached == li
 number on `tiny` and `school` (and a property test over random edits). The cache holds derived
 student data: never in the repo, never in fixtures, covered by the "Gegevens" reset.
 
-**Smaller wins found on the way (independent of the cache):**
+**Smaller wins found on the way (independent of the cache):** all done in step 38.6
+(`24e10ad` WASM parse once; `bae4004` history map, `yieldSlice`, `topbar-fit` next frame). The
+fills after login no longer compete: the list numbers come from one native call per year and vak.
 
 - `maatwerk-grades-wasm` `parse` decodes JSON text to a `Value` and then to the type: use
   `serde_json::from_str` per argument (or one typed tuple) to parse once.

@@ -42,6 +42,8 @@ import type {
   Value,
 } from '../bindings';
 import { MockAi } from './mock-ai';
+import { vakNumbers as mockVakNumbers } from './mock-numbers';
+import { readFormats, type VakNumbers } from '../../domain/numbers';
 import { MockEditor } from './mock-editor';
 import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
@@ -65,7 +67,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.28.0';
+export const MOCK_APP_VERSION = '0.29.0';
 /** `rights::RIGHTS_MIN_APP_VERSION`: raised at every login (step 35). */
 const RIGHTS_MIN_APP_VERSION = '0.26.0';
 export const MOCK_LOG_DIR =
@@ -921,6 +923,31 @@ export class MockApi implements MaatwerkApi {
     return { ...result, applied: false, backup: null, validation: null, reportFile: null };
   }
 
+  async vakNumbers(year: string, vak: string): Promise<VakNumbers> {
+    this.record('vakNumbers', [year, vak]);
+    if (!/^\d{4}-\d{4}$/.test(year) || !/^[\p{L}\p{N}_-]{1,64}$/u.test(vak))
+      throw new Error(`Geen geldig schooljaar of vak: ${year}, ${vak}.`);
+    const read = (rel: string): unknown => {
+      const text = this.readText(rel);
+      if (text === null) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
+    };
+    const files = {
+      read,
+      readAll: (dir: string) => this.jsonFilesIn(dir),
+      years: () =>
+        this.list('')
+          .filter((n) => /^\d{4}-\d{4}$/.test(n))
+          .sort()
+          .reverse(),
+    };
+    return mockVakNumbers(files, year, vak, readFormats(read('instellingen.json')));
+  }
+
   async rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>> {
     this.record('rubricUsage', []);
     return this.rubricUses();
@@ -1005,6 +1032,7 @@ export class MockApi implements MaatwerkApi {
    * without logging in).
    */
   private rightsGuard(relPath: string, data: Json): string | null {
+    if (relPath.toLowerCase() === 'instellingen.json') return this.settingsGuard(data);
     const parts = scoreFile(relPath);
     const userId = this.authSession;
     if (!parts || !userId) return null;
@@ -1042,6 +1070,35 @@ export class MockApi implements MaatwerkApi {
       },
     );
     return ok ? null : forbiddenMessage(student);
+  }
+
+  /**
+   * `rights::check_settings_write` (step 38): only the admin changes `gemiddelden`; a write that
+   * keeps it passes. As the score lock, the mock lets a write without a login through.
+   */
+  private settingsGuard(data: Json): string | null {
+    const userId = this.authSession;
+    if (!userId) return null;
+    const field = (v: unknown) =>
+      JSON.stringify((v as { gemiddelden?: unknown } | null)?.gemiddelden ?? null);
+    const old = (() => {
+      try {
+        return JSON.parse(this.readText('instellingen.json') ?? 'null') as unknown;
+      } catch {
+        return null;
+      }
+    })();
+    if (field(old) === field(data)) return null;
+    const admin = (() => {
+      try {
+        return this.authRole === 'beheer' && this.roleAllowed(userId, 'beheer');
+      } catch {
+        return false;
+      }
+    })();
+    return admin
+      ? null
+      : 'Alleen de beheerder mag de cijfergemiddelden wijzigen (Beheer › Instellingen).';
   }
 
   private schoolJson(): {

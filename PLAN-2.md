@@ -204,44 +204,44 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 
 ## 3. Status (keep up to date)
 
-| Step | Title                                                            | Size         | Release | Status |
-| ---- | ---------------------------------------------------------------- | ------------ | ------- | ------ |
-| 12   | Triage and open decisions                                        | S (user)     | -       | done   |
-| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done   |
-| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done   |
-| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done   |
-| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done   |
-| 17   | Rapport fixes                                                    | M            | 0.8     | done   |
-| 18   | Data format v3                                                   | M            | 0.9     | done   |
-| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done   |
-| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done   |
-| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done   |
-| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done   |
-| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done   |
-| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done   |
-| 25   | Score entry                                                      | M            | 0.16    | done   |
-| 26   | Login and splash                                                 | M            | 0.17    | done   |
-| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done   |
-| 28   | Beheer screens                                                   | M            | 0.19    | done   |
-| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done   |
-| 30   | Observaties and opdrachten                                       | M            | 0.21    | gate   |
-| 31   | Opdrachten-editor                                                | M            | 0.22    | gate   |
-| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | gate   |
-| 33   | Toetsen as cards                                                 | M            | 0.24    | gate   |
-| 33b  | Perf hotfix: first tab visits, card swap clock, batch grades     | S            | 0.24.1  | gate   |
-| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | gate   |
-| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | done   |
-| 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | done   |
-| 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | gate   |
-| 38   | Grade numbers in Rust, Cijfergemiddelden                         | L            | 0.29    | todo   |
-| 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo   |
-| 40   | AI assistant follow-ups                                          | M            | 0.31    | todo   |
-| 41   | Data and storage robustness, `rapporten/` cleanup                | M            | 0.32    | todo   |
-| 41b  | Encrypted storage (ADR-0012)                                     | L (41b-a, b) | 0.33    | todo   |
-| 42   | Tests and CI hygiene                                             | M            | 0.34    | todo   |
-| 43   | Remaining backlog                                                | M            | 0.35    | todo   |
-| 44   | TypeScript complete, compat layer removed                        | L (44a, 44b) | 0.36    | todo   |
-| 45   | Signing-ready, dependencies, reviews, 1.0                        | L (45a, 45b) | 1.0     | todo   |
+| Step | Title                                                            | Size         | Release | Status                     |
+| ---- | ---------------------------------------------------------------- | ------------ | ------- | -------------------------- |
+| 12   | Triage and open decisions                                        | S (user)     | -       | done                       |
+| 13   | Foundation a: tokens, themes, buttons, inputs, formats           | M            | 0.4     | done                       |
+| 14   | Foundation b: dialog component, placeholders, sticky, form rules | L (14a, 14b) | 0.5     | done                       |
+| 15   | Shell: tab bar, logo, user menu, theme per user, version guard   | M            | 0.6     | done                       |
+| 16   | Platforms: macOS and Linux                                       | L (16a, 16b) | 0.7     | done                       |
+| 17   | Rapport fixes                                                    | M            | 0.8     | done                       |
+| 18   | Data format v3                                                   | M            | 0.9     | done                       |
+| 19   | Domain logic in `maatwerk-core`                                  | L (19a, 19b) | 0.10    | done                       |
+| 20   | Toetsen: test kinds, attempts, test modals, resits               | L (20a, 20b) | 0.11    | done                       |
+| 21   | PO a: Rubrics, observatie toetstype                              | L (21a, 21b) | 0.12    | done                       |
+| 22   | PO b: PO in Toetsen, projectgroepen                              | L (22a, 22b) | 0.13    | done                       |
+| 23   | PO c: PO beoordelen                                              | L (23a, 23b) | 0.14    | done                       |
+| 24   | PO d: PO rapport                                                 | L (24a, 24b) | 0.15    | done                       |
+| 25   | Score entry                                                      | M            | 0.16    | done                       |
+| 26   | Login and splash                                                 | M            | 0.17    | done                       |
+| 27   | Leerlingen and Groepen cards                                     | M            | 0.18    | done                       |
+| 28   | Beheer screens                                                   | M            | 0.19    | done                       |
+| 29   | Overviews and profile                                            | L+ (29a-29c) | 0.20    | done                       |
+| 30   | Observaties and opdrachten                                       | M            | 0.21    | done                       |
+| 31   | Opdrachten-editor                                                | M            | 0.22    | done                       |
+| 32   | AI assistant                                                     | L+ (32a-32c) | 0.23    | done (M-AI-9, 10, 12 open) |
+| 33   | Toetsen as cards                                                 | M            | 0.24    | done                       |
+| 33b  | Perf hotfix: first tab visits, card swap clock, batch grades     | S            | 0.24.1  | done                       |
+| 34   | Observaties and Opdrachten as cards, preview panel               | L (34a, 34b) | 0.25    | done                       |
+| 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | done                       |
+| 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | done                       |
+| 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | done                       |
+| 38   | Grade numbers in Rust, Cijfergemiddelden                         | L            | 0.29    | gate                       |
+| 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo                       |
+| 40   | AI assistant follow-ups                                          | M            | 0.31    | todo                       |
+| 41   | Data and storage robustness, `rapporten/` cleanup                | M            | 0.32    | todo                       |
+| 41b  | Encrypted storage (ADR-0012)                                     | L (41b-a, b) | 0.33    | todo                       |
+| 42   | Tests and CI hygiene                                             | M            | 0.34    | todo                       |
+| 43   | Remaining backlog                                                | M            | 0.35    | todo                       |
+| 44   | TypeScript complete, compat layer removed                        | L (44a, 44b) | 0.36    | todo                       |
+| 45   | Signing-ready, dependencies, reviews, 1.0                        | L (45a, 45b) | 1.0     | todo                       |
 
 ## 4. Steps
 

@@ -382,9 +382,16 @@ const Store = (() => {
   }
 
   // ── Instellingen (instellingen.json, Step 7b; admin) ────────────────────
+  // Always read fresh (another admin may have saved), but keep the cached object when nothing
+  // changed: dropping it counted as a data change, so the kept screens rendered once more for
+  // nothing (review 7c m4, step 38.6).
   async function loadInstellingen() {
-    invalidate('instellingen.json');
-    return await load('instellingen.json');
+    const rel = 'instellingen.json';
+    const fresh = decode(rel, await window.maatwerk.readJson(rel));
+    const old = cache[rel];
+    if (old !== undefined && JSON.stringify(old) === JSON.stringify(fresh)) return old;
+    cache[rel] = fresh;
+    return fresh;
   }
 
   async function saveInstellingen(data, baseRev) {
@@ -819,14 +826,16 @@ const Store = (() => {
     const results = [];
     for (const year of years) {
       if (!loaded) await loadYear(year, subject);
-      const exams = getExamsSync(year, subject);
+      // Exam id -> exam, once per year (step 38.6: was a `find` per score entry). Built per call:
+      // cached exam lists are edited in place (putCachedExam), so a kept map could go stale.
+      const exams = new Map(getExamsSync(year, subject).map((e) => [e.id, e]));
       const record = await getStudentScores(studentId, year, subject);
       const examIds = new Set([
         ...Object.keys(record.scores ?? {}),
         ...Object.keys(record.overrides ?? {}),
       ]);
       for (const examId of examIds) {
-        const exam = exams.find((e) => e.id === examId);
+        const exam = exams.get(examId);
         if (!exam) continue;
         results.push({
           exam: { ...exam, academic_year: year },
@@ -1296,7 +1305,7 @@ const Store = (() => {
   // Brings the cache up to date for one changed file and describes the change:
   //   { type, kind, relPath, year, subject, id, before, after, meta, inScope }
   // type: 'scores' | 'exam' | 'group' | 'students' | 'observatie' | 'opdracht'
-  //       | 'opdrachtTyp' | 'gebruikers' | 'school' | 'presence' | 'other'
+  //       | 'opdrachtTyp' | 'gebruikers' | 'school' | 'instellingen' | 'presence' | 'other'
   // Only data that is already cached is re-read; the rest loads lazily as before.
   // inScope: the change concerns the active subject (admin: any) and active year.
   const YEAR = '(\\d{4}-\\d{4})';
@@ -1311,6 +1320,7 @@ const Store = (() => {
     ['opdrachtTyp', /^opdrachten\/([^/]+)\/[^/]+\.typ$/],
     ['gebruikers', /^gebruikers\/([^/]+)\.json$/],
     ['school', /^school\.json$/],
+    ['instellingen', /^instellingen\.json$/],
     ['presence', /^aanwezigheid\/([^/]+)\.json$/],
   ];
 
@@ -1459,6 +1469,14 @@ const Store = (() => {
           ev.before = cache[relPath];
           ev.after = await readFresh();
           cache[relPath] = ev.after;
+          break;
+        case 'instellingen':
+          ev.before = cache[relPath] ?? null;
+          ev.after = await readFresh();
+          if (cache[relPath] !== undefined) cache[relPath] = ev.after;
+          // Always a change: Rust reads the Cijfergemiddelden for the list numbers even when
+          // this cache never did (review 38 m1).
+          changed();
           break;
       }
     });

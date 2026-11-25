@@ -456,6 +456,14 @@
       "h": 1100,
       "is_interactive": true,
       "title": "58 · Opdrachten als kaarten met voorbeeld: klik een kaart, de kaarten schuiven naar links, rechts het PDF-voorbeeld"
+    },
+    "Cijfergemiddelden.dc.html": {
+      "h": 960,
+      "is_interactive": true,
+      "title": "64 · Cijfergemiddelden: Beheer › Instellingen (methode en decimalen voor r en SE, live voorbeelden) en de hovertekst",
+      "w": 1440,
+      "x": 0,
+      "y": 27600
     }
   },
   "createdOnFiles": {
@@ -710,7 +718,8 @@
     "ToetsenStapelA2.dc.html",
     "ToetsenStapelA3.dc.html",
     "ObservatiesKaarten.dc.html",
-    "OpdrachtenVoorbeeld.dc.html"
+    "OpdrachtenVoorbeeld.dc.html",
+    "Cijfergemiddelden.dc.html"
   ],
   "pages": [],
   "title": "Maatwerk redesign"

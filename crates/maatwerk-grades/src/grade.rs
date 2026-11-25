@@ -7,7 +7,7 @@ use serde::{Serialize, Serializer};
 use crate::model::{
     Exam, Override, PoGrading, QuestionKind, QuestionScores, ScoreRecord, ScoreValue,
 };
-use crate::round::{clean, round0, round1};
+use crate::round::{clean, pct, round1};
 
 /// The grade from points with the n-term and the CvTE bounds, unrounded (decision 1).
 ///
@@ -59,7 +59,7 @@ impl Points {
 
     pub fn pct(self) -> RttiPct {
         if self.max > 0.0 {
-            RttiPct::Pct(round0(100.0 * self.scored / self.max))
+            RttiPct::Pct(pct(self.scored, self.max))
         } else {
             RttiPct::Nvt
         }

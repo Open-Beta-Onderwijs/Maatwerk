@@ -1,90 +1,65 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+// The card model from the Rust numbers (step 38). The numbers themselves are tested in Rust
+// (maatwerk_core::numbers) and against the UI path by tools/numbers-parity.mjs.
+
 import { describe, expect, it } from 'vitest';
-import { groupCardNumbers, isUpperSchool, studentCardNumbers } from './cards';
-import type { Exam, ScoreRecord } from './types';
+import { isUpperSchool, studentCard } from './cards';
+import type { Formats, Shown, StudentNumbers } from './numbers';
+import type { Exam } from './types';
 
-function exam(id: string, nr: number, fields: Partial<Exam> = {}): Exam {
-  return {
-    id,
-    title: `Toets ${nr}`,
-    volgnummer: nr,
-    weging: 1,
-    n_term: 1,
-    questions: [{ id: 'q1', max_points: 10, rtti: 'T1' }],
-    ...fields,
-  } as Exam;
-}
+const A1 = { methode: 'afronden', decimalen: 1 } as const;
+const K0 = { methode: 'afkappen', decimalen: 0 } as const;
+const FORMATS: Formats = { r: K0, se: A1 };
 
-/** Grades as overrides (cijfer), the simplest record. */
-function rec(grades: Record<string, number>): ScoreRecord {
-  return {
-    overrides: Object.fromEntries(Object.entries(grades).map(([id, g]) => [id, { cijfer: g }])),
-  } as ScoreRecord;
-}
+const shown = (raw: number, value: number): Shown => ({ raw, shown: value, fails: value < 5.5 });
 
-describe('student card numbers (F-07, F-08)', () => {
-  // The approved example of decision 13: 6,0 (w1), 7,0 (w1), 8,0 (w2).
-  const EXAMS = [exam('a', 1), exam('b', 2), exam('c', 3, { weging: 2 })];
+const EXAMS = [
+  { id: 'a', title: 'Krachten', volgnummer: 1 },
+  { id: 'd', title: 'Diagnose', volgnummer: 2 },
+] as Exam[];
 
-  it('bars in volgnummer order, the year average, last grade and trend', () => {
-    const n = studentCardNumbers([EXAMS[2]!, EXAMS[0]!, EXAMS[1]!], rec({ a: 6, b: 7, c: 8 }));
-    expect(n.bars.map((b) => b.grade)).toEqual([6, 7, 8]);
-    expect(n.bars[0]?.title).toBe('1 · Toets 1: 6,0');
-    expect(n.average).toBe(7.3);
-    expect(n.last).toBe(8);
-    expect(n.trend?.level).toBe('slightUp');
-    expect(n.se).toBeNull();
-  });
+const NUMBERS: StudentNumbers = {
+  upper: false,
+  results: { a: 6.4, d: 9.1 },
+  bars: [
+    { examId: 'a', grade: 6.4, diagnostic: false },
+    { examId: 'd', grade: 9.1, diagnostic: true },
+  ],
+  average: shown(5.9, 5),
+  trend: { last: 6.4, average: 5.9, d: 0.5, level: 'slightUp' },
+  se: shown(6.84, 6.8),
+};
 
-  it('one bar per test: the best attempt of a test and its resit', () => {
-    const resit = exam('a2', 1, { parent_id: 'a', attempt: 2 });
-    const n = studentCardNumbers([EXAMS[0]!, resit], rec({ a: 4, a2: 6.5 }));
-    expect(n.bars.map((b) => b.grade)).toEqual([6.5]);
-    expect(n.average).toBe(6.5);
-  });
-
-  it('a diagnostic test is a grey bar and counts for nothing', () => {
-    const diag = exam('d', 4, { diagnostic: true, weging: 0 });
-    const n = studentCardNumbers([EXAMS[0]!, diag], rec({ a: 6, d: 9 }));
-    expect(n.bars.map((b) => [b.grade, b.diagnostic])).toEqual([
-      [6, false],
-      [9, true],
+describe('student card from the Rust numbers (F-07, F-08, step 38)', () => {
+  it('names the bars after the exams and keeps the shown average with its format', () => {
+    const c = studentCard(NUMBERS, EXAMS, FORMATS);
+    expect(c.bars).toEqual([
+      { grade: 6.4, title: '1 · Krachten: 6,4', diagnostic: false },
+      { grade: 9.1, title: '2 · Diagnose: 9,1', diagnostic: true },
     ]);
-    expect(n.average).toBe(6);
-    expect(n.last).toBe(6);
+    expect(c.average).toEqual({ value: 5, fails: true, fmt: K0 });
+    expect(c.last).toBe(6.4);
+    expect(c.trend?.level).toBe('slightUp');
   });
 
-  it('no grades: no bars, no numbers', () => {
-    const n = studentCardNumbers(EXAMS, rec({}));
-    expect(n).toEqual({ bars: [], average: null, last: null, trend: null, se: null });
-  });
-
-  it('the SE average over all years (upper school)', () => {
-    const pta = exam('p', 1, {
-      type: 'pta',
-      weging: 2,
-      academic_year: '2025-2026',
-    } as Partial<Exam>);
-    const n = studentCardNumbers([pta], rec({ p: 6.84 }), {
-      history: [{ exam: pta, questionScores: {}, override: { cijfer: 6.84 } }],
-      allExams: [pta],
+  it('shows the SE only in years 4-6 (the core also has it for other reasons)', () => {
+    expect(studentCard(NUMBERS, EXAMS, FORMATS).se).toBeNull();
+    expect(studentCard({ ...NUMBERS, upper: true }, EXAMS, FORMATS).se).toEqual({
+      value: 6.8,
+      fails: false,
+      fmt: A1,
     });
-    expect(n.se).toBe(6.8);
   });
-});
 
-describe('group card numbers (F-09)', () => {
-  it('mean, SD and % onvoldoende of the year averages; SE only upstairs', () => {
-    const members = [
-      { year: 5.0, se: 6.0 },
-      { year: 7.0, se: 7.0 },
-      { year: null, se: null },
-    ];
-    const lower = groupCardNumbers(members, false);
-    expect(lower.year).toMatchObject({ n: 2, mean: 6, fails: 50 });
-    expect(lower.se).toBeNull();
-    expect(groupCardNumbers(members, true).se).toMatchObject({ n: 2, mean: 6.5, fails: 0 });
+  it('a student without numbers has an empty card', () => {
+    expect(studentCard(undefined, EXAMS, FORMATS)).toEqual({
+      bars: [],
+      average: null,
+      last: null,
+      trend: null,
+      se: null,
+    });
   });
 
   it('years 4 to 6 are upper school', () => {

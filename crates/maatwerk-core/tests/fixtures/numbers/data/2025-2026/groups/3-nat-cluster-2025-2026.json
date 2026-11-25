@@ -1,0 +1,23 @@
+{
+  "id": "3-nat-cluster-2025-2026",
+  "name": "3 nat cluster",
+  "jaarlaag": "3",
+  "subject": "nat",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "docenten": [],
+  "student_ids": [
+    "900001",
+    "900004",
+    "900007"
+  ],
+  "_meta": {
+    "rev": 1,
+    "createdBy": "admin",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "admin",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  }
+}

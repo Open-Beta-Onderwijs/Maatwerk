@@ -5,7 +5,7 @@
 // `Results.grade` has them: rounded to one decimal.
 
 import type { HistoryEntry } from './attempts';
-import { coreCall, round0 } from './core';
+import { coreCall } from './core';
 import { recordFor, type Points, type RttiCategory, type RttiPoints } from './grades';
 import { forGrading } from './po';
 import type { Exam, Group, Question, QuestionScores, ScoreRecord } from './types';
@@ -21,13 +21,49 @@ export interface Stats {
 export const stats = (grades: number[]): Stats | null => coreCall('stats', grades);
 export const mean = (values: number[]): number | null => coreCall('mean', values);
 
-/** Mean, SD and % onvoldoende of students' averages, as shown (decision 21). */
-export const statsOfAverages = (averages: number[]): Stats | null =>
-  coreCall('statsOfAverages', averages);
+/**
+ * How a student's r or SE average is shown (Cijfergemiddelden, decisions 91-93), as stored in
+ * the school settings. Missing means afronden 1.
+ */
+export interface AverageFormat {
+  methode: 'afronden' | 'afkappen';
+  decimalen: 0 | 1 | 2;
+}
 
-/** The mean of students' averages, as shown (decision 21). */
-export const meanOfAverages = (averages: number[]): number | null =>
-  coreCall('meanOfAverages', averages);
+/** A student's average as shown under `fmt` (default afronden 1). */
+export const shownAverage = (x: number, fmt?: AverageFormat): number =>
+  coreCall('shownAverage', x, fmt ?? null);
+
+/** A shown student average below 5,5 (decision 92; afronden 2 shows 5,45 and that fails). */
+export const isFailShown = (shown: number): boolean => coreCall('isFailShown', shown);
+
+/** `part` of `whole` as a whole percent; 0 when `whole` is 0 (step 38 answer A). */
+export const pct = (part: number, whole: number): number => coreCall('pct', part, whole);
+
+/**
+ * A student's number against an average (profile, step 38 answer B): the difference of the
+ * shown values. `own` under `fmt` (a test grade: omit it), `mean` at afronden 1.
+ */
+export const shownDifference = (
+  own: number,
+  fmt: AverageFormat | undefined,
+  mean: number,
+): number => coreCall('shownDifference', own, fmt ?? null, mean);
+
+/**
+ * The points of a stored or typed score for a question of `max` points; null for N, empty, text,
+ * negative or over the maximum (step 38 answer D).
+ */
+export const scorePoints = (value: unknown, max: number): number | null =>
+  coreCall('scorePoints', value ?? null, max);
+
+/** Mean, SD and % onvoldoende of students' averages, as shown under `fmt` (decisions 21, 92). */
+export const statsOfAverages = (averages: number[], fmt?: AverageFormat): Stats | null =>
+  coreCall('statsOfAverages', averages, fmt ?? null);
+
+/** The mean of students' averages, as shown under `fmt` (decisions 21, 92). */
+export const meanOfAverages = (averages: number[], fmt?: AverageFormat): number | null =>
+  coreCall('meanOfAverages', averages, fmt ?? null);
 
 /** The weighted year average over one year's tests, unrounded (decision 9). */
 export const yearAverage = (exams: Exam[], rec: ScoreRecord | null | undefined): number | null =>
@@ -147,7 +183,7 @@ export function studentGroup(studentId: string, exam: Exam, groups: Group[]): st
 export const rttiPercents = (points: RttiPoints, cats: RttiCategory[]): (number | null)[] =>
   cats.map((cat) => {
     const { scored, max } = points[cat];
-    return max > 0 ? round0((100 * scored) / max) : null;
+    return max > 0 ? pct(scored, max) : null;
   });
 
 export type TrendLevel = 'strongUp' | 'slightUp' | 'level' | 'slightDown' | 'strongDown';

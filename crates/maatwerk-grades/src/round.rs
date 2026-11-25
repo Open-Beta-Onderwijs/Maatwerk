@@ -5,6 +5,10 @@
 //! `8,65` can be computed as `8,6499999...`; rounding that directly gives `8,6`. So the value goes
 //! to whole billionths first, which absorbs the noise, and is then rounded in integers, where a
 //! half is exactly a half.
+//!
+//! Students' averages have their own, school-wide format (`AverageFormat`, step 38).
+
+use serde::{Deserialize, Serialize};
 
 /// Billionths per unit: far finer than any real score, far coarser than double-precision noise.
 const NANOS: i128 = 1_000_000_000;
@@ -40,8 +44,127 @@ pub fn clean(x: f64) -> f64 {
     round_to(x, 9)
 }
 
+/// How a student's average is shown (Cijfergemiddelden, decisions 91-93): rounded half-up
+/// (afronden) or towards zero (afkappen).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Method {
+    #[default]
+    Afronden,
+    Afkappen,
+}
+
+/// The school's format for one kind of student average (r or SE): a method and 0, 1 or 2
+/// decimals. The default is afronden 1, the rule before the setting existed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "RawFormat", into = "RawFormat")]
+pub struct AverageFormat {
+    method: Method,
+    decimals: u8,
+}
+
+/// The stored form, as in the school settings: `{ "methode": "afkappen", "decimalen": 0 }`.
+#[derive(Serialize, Deserialize)]
+struct RawFormat {
+    #[serde(default)]
+    methode: Method,
+    #[serde(default = "one")]
+    decimalen: u8,
+}
+
+fn one() -> u8 {
+    1
+}
+
+impl TryFrom<RawFormat> for AverageFormat {
+    type Error = String;
+    fn try_from(raw: RawFormat) -> Result<Self, String> {
+        AverageFormat::new(raw.methode, raw.decimalen)
+            .ok_or_else(|| format!("decimalen must be 0, 1 or 2, not {}", raw.decimalen))
+    }
+}
+
+impl From<AverageFormat> for RawFormat {
+    fn from(f: AverageFormat) -> Self {
+        RawFormat {
+            methode: f.method,
+            decimalen: f.decimals,
+        }
+    }
+}
+
+impl Default for AverageFormat {
+    fn default() -> Self {
+        AverageFormat {
+            method: Method::Afronden,
+            decimals: 1,
+        }
+    }
+}
+
+impl AverageFormat {
+    /// `None` for more than 2 decimals.
+    pub fn new(method: Method, decimals: u8) -> Option<Self> {
+        (decimals <= 2).then_some(AverageFormat { method, decimals })
+    }
+
+    pub fn method(self) -> Method {
+        self.method
+    }
+
+    pub fn decimals(self) -> u8 {
+        self.decimals
+    }
+}
+
+/// A student's average as shown under `fmt`: noise removed in billionths first (as `round1`),
+/// so an exact half or an exact decimal stays exact, then rounded half-up or cut towards zero.
+/// 5,45: afronden 0 gives 5, afronden 1 5,5, afkappen 1 5,4; 5,999... (noise) afkappen 0 gives 6.
+pub fn shown_average(x: f64, fmt: AverageFormat) -> f64 {
+    let decimals = u32::from(fmt.decimals);
+    match fmt.method {
+        Method::Afronden => round_to(x, decimals),
+        Method::Afkappen => cut_to(x, decimals),
+    }
+}
+
+/// `x` cut towards zero to `decimals` decimals, at most 9, after removing noise.
+fn cut_to(x: f64, decimals: u32) -> f64 {
+    if !x.is_finite() || x.abs() > 1e15 {
+        return x;
+    }
+    let scale = 10_i128.pow(decimals);
+    // Integer division truncates towards zero.
+    let units = to_nanos(x) / (NANOS / scale);
+    units as f64 / scale as f64
+}
+
+/// `part` of `whole` as a whole percent (step 38 answer A): the observatie counts, a share of
+/// points. 0 when `whole` is 0 or less, as the screens showed. 1 of 8 is 12,5 and gives 13.
+pub fn pct(part: f64, whole: f64) -> f64 {
+    if whole > 0.0 {
+        round0(100.0 * part / whole)
+    } else {
+        0.0
+    }
+}
+
+/// A student's number against an average, as the profile shows it (step 38 answer B): the
+/// difference of the shown values, so it agrees with the two numbers on screen. `own` is shown
+/// under `own_fmt` (a test grade: the default, it is already rounded), `mean` at afronden 1.
+/// Own 6,84 and mean 6,75 both show 6,8: the difference is 0,0.
+pub fn shown_difference(own: f64, own_fmt: AverageFormat, mean: f64) -> f64 {
+    round1(shown_average(own, own_fmt) - round1(mean))
+}
+
 /// The pass mark, compared with the rounded grade.
 pub const PASS: f64 = 5.5;
+
+/// A shown student average below 5,5 (decision 92: pass/fail follows the shown value, so
+/// afronden 2 shows 5,45 and that fails; afkappen 0 shows 5,9 as 5).
+pub fn is_fail_shown(shown: f64) -> bool {
+    clean(shown) < PASS
+}
 
 /// A grade below 5,5 after rounding.
 pub fn is_fail(grade: f64) -> bool {
@@ -96,6 +219,96 @@ mod tests {
         assert!(round1(f64::NAN).is_nan());
         assert_eq!(round1(f64::INFINITY), f64::INFINITY);
         assert_eq!(round1(1e30), 1e30);
+    }
+
+    fn fmt(method: Method, decimals: u8) -> AverageFormat {
+        AverageFormat::new(method, decimals).unwrap()
+    }
+
+    #[test]
+    fn the_spec_table_of_shown_averages() {
+        use Method::{Afkappen as K, Afronden as A};
+        // Rows of "Shown averages" in step-19-grade-rules.md: a0 a1 a2 k0 k1 k2.
+        let rows: [(f64, [f64; 6]); 5] = [
+            (5.45, [5.0, 5.5, 5.45, 5.0, 5.4, 5.45]),
+            (5.9, [6.0, 5.9, 5.9, 5.0, 5.9, 5.9]),
+            (6.75, [7.0, 6.8, 6.75, 6.0, 6.7, 6.75]),
+            (22.0 / 3.0, [7.0, 7.3, 7.33, 7.0, 7.3, 7.33]),
+            (6.95, [7.0, 7.0, 6.95, 6.0, 6.9, 6.95]),
+        ];
+        let formats = [
+            fmt(A, 0),
+            fmt(A, 1),
+            fmt(A, 2),
+            fmt(K, 0),
+            fmt(K, 1),
+            fmt(K, 2),
+        ];
+        for (x, want) in rows {
+            for (f, w) in formats.iter().zip(want) {
+                assert_eq!(shown_average(x, *f), w, "{x} {f:?}");
+            }
+        }
+        // (5,3 + 5,7) / 2 in doubles.
+        assert_eq!(shown_average((5.3 + 5.7) / 2.0, fmt(K, 0)), 5.0);
+        assert_eq!(shown_average((5.3 + 5.7) / 2.0, fmt(A, 0)), 6.0);
+    }
+
+    #[test]
+    fn afkappen_survives_noise_just_below_a_decimal() {
+        assert_eq!(
+            shown_average(5.999_999_999_999_999, fmt(Method::Afkappen, 0)),
+            6.0
+        );
+        assert_eq!(
+            shown_average(8.649_999_999_999_999, fmt(Method::Afkappen, 2)),
+            8.65
+        );
+        assert_eq!(shown_average(-0.25, fmt(Method::Afkappen, 1)), -0.2);
+    }
+
+    #[test]
+    fn a_format_has_at_most_two_decimals_and_reads_the_stored_form() {
+        assert!(AverageFormat::new(Method::Afronden, 3).is_none());
+        let f: AverageFormat =
+            serde_json::from_str(r#"{"methode":"afkappen","decimalen":0}"#).unwrap();
+        assert_eq!(f, fmt(Method::Afkappen, 0));
+        assert_eq!(
+            serde_json::to_value(f).unwrap(),
+            serde_json::json!({"methode": "afkappen", "decimalen": 0})
+        );
+        let missing: AverageFormat = serde_json::from_str("{}").unwrap();
+        assert_eq!(missing, AverageFormat::default());
+        assert!(serde_json::from_str::<AverageFormat>(r#"{"decimalen":3}"#).is_err());
+        assert!(serde_json::from_str::<AverageFormat>(r#"{"methode":"x"}"#).is_err());
+    }
+
+    #[test]
+    fn a_shown_value_below_the_pass_mark_fails() {
+        assert!(is_fail_shown(5.45));
+        assert!(is_fail_shown(5.0));
+        assert!(!is_fail_shown(5.5));
+        assert!(!is_fail_shown(5.5 - 1e-15));
+    }
+
+    #[test]
+    fn percentages_of_a_count() {
+        assert_eq!(pct(1.0, 8.0), 13.0);
+        assert_eq!(pct(2.0, 8.0), 25.0);
+        assert_eq!(pct(1.0, 3.0), 33.0);
+        assert_eq!(pct(17.25, 20.0), 86.0);
+        assert_eq!(pct(5.0, 0.0), 0.0);
+        assert_eq!(pct(0.0, 4.0), 0.0);
+    }
+
+    #[test]
+    fn the_difference_of_the_shown_values() {
+        let d = AverageFormat::default();
+        assert_eq!(shown_difference(6.84, d, 6.75), 0.0);
+        assert_eq!(shown_difference(7.0, d, 6.45), 0.5);
+        assert_eq!(shown_difference(5.0, d, 6.25), -1.3);
+        let k0 = fmt(Method::Afkappen, 0);
+        assert_eq!(shown_difference(6.9, k0, 6.3), -0.3);
     }
 
     #[test]

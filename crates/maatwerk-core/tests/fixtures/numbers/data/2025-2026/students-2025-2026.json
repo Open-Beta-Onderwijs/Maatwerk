@@ -1,0 +1,108 @@
+{
+  "students": [
+    {
+      "id": "900001",
+      "voornaam": "D'Angelo",
+      "tussenvoegsel": "",
+      "achternaam": "O'Neill",
+      "stamklas": "3a",
+      "geslacht": "V",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900002",
+      "voornaam": "Marie-Claire",
+      "tussenvoegsel": "'t",
+      "achternaam": "Hart",
+      "stamklas": "3a",
+      "geslacht": "M",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900003",
+      "voornaam": "Olivia",
+      "tussenvoegsel": "ter",
+      "achternaam": "Østergaard",
+      "stamklas": "3a",
+      "geslacht": "M",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900004",
+      "voornaam": "Sem",
+      "tussenvoegsel": "van den",
+      "achternaam": "Dekker",
+      "stamklas": "3a",
+      "geslacht": "X",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900005",
+      "voornaam": "Mila",
+      "tussenvoegsel": "de",
+      "achternaam": "Meijer",
+      "stamklas": "3a",
+      "geslacht": "V",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900006",
+      "voornaam": "Gijs",
+      "tussenvoegsel": "",
+      "achternaam": "Kok",
+      "stamklas": "3a",
+      "geslacht": "M",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900007",
+      "voornaam": "Lars",
+      "tussenvoegsel": "'t",
+      "achternaam": "Vos",
+      "stamklas": "3a",
+      "geslacht": "M",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    },
+    {
+      "id": "900008",
+      "voornaam": "Bram",
+      "tussenvoegsel": "van",
+      "achternaam": "Willems",
+      "stamklas": "3a",
+      "geslacht": "X",
+      "jaarlaag": "3",
+      "schoolsoort": [
+        "Havo",
+        "Vwo"
+      ]
+    }
+  ]
+}

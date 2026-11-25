@@ -16,7 +16,7 @@ import { resitsOf } from '../domain/attempts';
 import { attemptLabel } from '../domain/exam-info';
 import { gradeTextColor } from '../domain/grade-colors';
 import { TEST_KINDS, testKindBadgeClass } from '../domain/test-type';
-import type { Exam, Observatie, ScoreRecord, ScoreValue } from '../domain/types';
+import type { Exam, Observatie, ScoreValue } from '../domain/types';
 import { applyStyleData } from '../legacy/style-data';
 import { openExamOverviewModal } from '../modals/exam-overview';
 import { openPoOverviewModal } from '../modals/po-overview';
@@ -29,8 +29,9 @@ import { presenceUser } from '../domain/login';
 import { Store } from '../store.js';
 import { yieldSlice } from '../utils/idle';
 import { afterPaint, perfSpan } from '../utils/perf';
-import { addRecords, newBlock, type BlockNumbers } from './toetsen/block-numbers';
 import { cardSummary, miniHistogram, topObservaties, type CardNumbers } from './toetsen/card-model';
+import type { ExamNumbers, VakNumbers } from '../domain/numbers';
+import { vakNumbers } from '../services/vak-numbers';
 import { gridHtml, miniHistHtml, periodeNr, type CardKind } from './toetsen/cards';
 import { initStacks, toggleStack } from './toetsen/stack';
 import { toggleExamMenu } from './exam-menu';
@@ -207,32 +208,6 @@ function applyWarning(el: HTMLElement, lines: string[]): void {
 /** Bumped on every draw: fills of an older draw must not touch the new list (review 33 m2). */
 let generation = 0;
 
-/**
- * The numbers of a test's cards, chunk by chunk of students (one call into the grade rules per
- * chunk, between slices). Null when a newer draw took over (review 33b m1).
- */
-async function blockNumbers(
-  year: string,
-  original: Exam,
-  resits: readonly Exam[],
-  current: () => boolean,
-): Promise<BlockNumbers | null> {
-  const block = newBlock([original, ...resits]);
-  const students = Store.getStudentsSync(year) as { id: string }[];
-  for (let i = 0; i < students.length; i += CHUNK) {
-    await yieldSlice();
-    if (!current()) return null;
-    const recs = (await Promise.all(
-      students.slice(i, i + CHUNK).map((s) => Store.getStudentScores(s.id, year)),
-    )) as (ScoreRecord | null)[];
-    addRecords(block, recs, original, resits);
-  }
-  return block;
-}
-
-/** Students per call into the grade rules. */
-const CHUNK = 60;
-
 /** Fills the bottom of a card and its mini histogram. */
 function fillCard(card: HTMLElement, numbers: CardNumbers, best: boolean, diagnostic: boolean) {
   const sum = cardSummary(numbers, best);
@@ -328,7 +303,16 @@ function listHtml(exams: Exam[], attemptsOf: (e: Exam) => Exam[]): string {
     .join('');
 }
 
+/** Called at the start of every list render (app.js: the kept-screen key, review 7c n2). */
+let onListRender: () => void = () => {};
+
+/** Sets what a list render reports, so a redraw from a modal also counts as rendered. */
+export function setListRenderHook(hook: () => void): void {
+  onListRender = hook;
+}
+
 export async function renderToetsenList() {
+  onListRender();
   const year: string = SEL.toetsenYear.getValue();
   const exams = filteredExams(year);
   const container = document.getElementById('exam-list')!;
@@ -373,23 +357,32 @@ async function fillNumbers(
     container.querySelector<HTMLElement>(
       `.tcard[data-exam-card="${CSS.escape(id)}"][data-kind="${kind}"]`,
     );
+  // The card numbers are the core's (step 38): one call for the year and vak.
+  const subject = Store.getActiveSubject() as string | null;
+  let all: VakNumbers | null = null;
+  try {
+    if (subject) all = await vakNumbers(year, subject, Store.generation() as number);
+  } catch (err) {
+    console.warn('[toetsen] cijfers', err);
+  }
+  if (!current()) return;
+  const cardNumbers = (n: ExamNumbers | undefined): CardNumbers => ({
+    grades: n?.grades ?? [],
+    obs: new Map(Object.entries(n?.obs ?? {})),
+  });
   for (const e of exams.filter((x) => !x.parent_id)) {
     if (!current()) return;
     const resits = attemptsOf(e);
     const stack = resits.length > 0;
-    try {
-      const numbers = await blockNumbers(year, e, resits, current);
-      if (!numbers || !current()) return;
+    if (all) {
       if (stack) {
         const card = cardEl(e.id, 'summary');
-        if (card) fillCard(card, numbers.summary, true, !!e.diagnostic);
+        if (card) fillCard(card, cardNumbers(all.summaries[e.id]), true, !!e.diagnostic);
       }
       for (const a of [e, ...resits]) {
         const card = cardEl(a.id, stack ? 'attempt' : 'solo');
-        if (card) fillCard(card, numbers.per.get(a.id)!, false, !!a.diagnostic);
+        if (card) fillCard(card, cardNumbers(all.exams[a.id]), false, !!a.diagnostic);
       }
-    } catch (err) {
-      console.warn('[toetsen] cijfers', e.id, err);
     }
     try {
       const list: { a: Exam; problems: ScoreProblem[] }[] = [];

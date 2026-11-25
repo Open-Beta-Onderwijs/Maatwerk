@@ -147,3 +147,14 @@ describe('review 7c', () => {
     expect(api.calls.filter(([m]) => m === 'readJsonDir')).toEqual([]);
   });
 });
+
+describe('review 38', () => {
+  it('m1: a colleague change to instellingen.json moves generation, read or not', async () => {
+    // The list numbers (vak-numbers.ts) follow the school's Cijfergemiddelden.
+    const g = Store.generation!();
+    const ev = await Store.applyExternalChange!({ relPath: 'instellingen.json', kind: 'modified' });
+    expect(Store.generation!()).toBeGreaterThan(g);
+    expect((ev as { type: string; inScope: boolean }).type).toBe('instellingen');
+    expect((ev as { inScope: boolean }).inScope).toBe(true);
+  });
+});

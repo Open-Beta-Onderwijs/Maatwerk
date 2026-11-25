@@ -1,0 +1,726 @@
+{
+  "year": "2025-2026",
+  "vak": "nat",
+  "formats": {
+    "r": {
+      "methode": "afkappen",
+      "decimalen": 0
+    },
+    "se": {
+      "methode": "afronden",
+      "decimalen": 2
+    }
+  },
+  "students": {
+    "900001": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 6.9,
+        "nat-toets-h1-krachten-nergie-herkansing-2025-2026": 5.5,
+        "nat-toets-h1-krachten-nergie-inhaal-2025-2026": 4.8,
+        "nat-toets-h2-2025-2026": 3.5,
+        "nat-toets-h3-2025-2026": 6.7,
+        "nat-toets-n-leerling-2025-2026": 6.9
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 6.9,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 3.5,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 6.7,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-n-leerling-2025-2026",
+          "grade": 6.9,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 5.366666666666666,
+        "shown": 5.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 6.9,
+        "average": 5.4,
+        "d": 1.5,
+        "level": "strongUp"
+      },
+      "se": {
+        "raw": 3.5,
+        "shown": 3.5,
+        "fails": true
+      }
+    },
+    "900002": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 4.4,
+        "nat-toets-h2-2025-2026": 3.0,
+        "nat-toets-h3-2025-2026": 8.5
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 4.4,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 3.0,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 8.5,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 4.185714285714286,
+        "shown": 4.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 8.5,
+        "average": 4.2,
+        "d": 4.3,
+        "level": "strongUp"
+      },
+      "se": {
+        "raw": 3.0,
+        "shown": 3.0,
+        "fails": true
+      }
+    },
+    "900003": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 6.1,
+        "nat-toets-h2-2025-2026": 4.1,
+        "nat-toets-h3-2025-2026": 6.2
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 6.1,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 4.1,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 6.2,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 4.971428571428571,
+        "shown": 4.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 6.2,
+        "average": 5.0,
+        "d": 1.2,
+        "level": "strongUp"
+      },
+      "se": {
+        "raw": 4.1,
+        "shown": 4.1,
+        "fails": true
+      }
+    },
+    "900004": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 8.8,
+        "nat-toets-h2-2025-2026": 8.9,
+        "nat-toets-h3-2025-2026": 5.0
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 8.8,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 8.9,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 5.0,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 8.314285714285715,
+        "shown": 8.0,
+        "fails": false
+      },
+      "trend": {
+        "last": 5.0,
+        "average": 8.3,
+        "d": -3.3,
+        "level": "strongDown"
+      },
+      "se": {
+        "raw": 8.9,
+        "shown": 8.9,
+        "fails": false
+      }
+    },
+    "900005": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 3.8,
+        "nat-toets-h1-krachten-nergie-herkansing-2025-2026": 4.9,
+        "nat-toets-h2-2025-2026": 5.4
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 4.9,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 5.4,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 5.233333333333333,
+        "shown": 5.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 5.4,
+        "average": 5.2,
+        "d": 0.2,
+        "level": "level"
+      },
+      "se": {
+        "raw": 5.4,
+        "shown": 5.4,
+        "fails": true
+      }
+    },
+    "900006": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 4.4,
+        "nat-toets-h2-2025-2026": 2.7,
+        "nat-toets-h3-2025-2026": 7.3
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 4.4,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 2.7,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 7.3,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 3.842857142857143,
+        "shown": 3.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 7.3,
+        "average": 3.8,
+        "d": 3.5,
+        "level": "strongUp"
+      },
+      "se": {
+        "raw": 2.7,
+        "shown": 2.7,
+        "fails": true
+      }
+    },
+    "900007": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 3.8,
+        "nat-toets-h2-2025-2026": 4.4,
+        "nat-toets-h3-2025-2026": 6.6
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 3.8,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 4.4,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 6.6,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 4.542857142857144,
+        "shown": 4.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 6.6,
+        "average": 4.5,
+        "d": 2.1,
+        "level": "strongUp"
+      },
+      "se": {
+        "raw": 4.4,
+        "shown": 4.4,
+        "fails": true
+      }
+    },
+    "900008": {
+      "upper": false,
+      "results": {
+        "nat-toets-h1-krachten-nergie-2025-2026": 5.2,
+        "nat-toets-h1-krachten-nergie-inhaal-2025-2026": 2.7,
+        "nat-toets-h2-2025-2026": 4.1,
+        "nat-toets-h3-2025-2026": 5.7
+      },
+      "bars": [
+        {
+          "examId": "nat-toets-h1-krachten-nergie-2025-2026",
+          "grade": 5.2,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h2-2025-2026",
+          "grade": 4.1,
+          "diagnostic": false
+        },
+        {
+          "examId": "nat-toets-h3-2025-2026",
+          "grade": 5.7,
+          "diagnostic": false
+        }
+      ],
+      "average": {
+        "raw": 4.642857142857143,
+        "shown": 4.0,
+        "fails": true
+      },
+      "trend": {
+        "last": 5.7,
+        "average": 4.6,
+        "d": 1.1,
+        "level": "strongUp"
+      },
+      "se": {
+        "raw": 4.1,
+        "shown": 4.1,
+        "fails": true
+      }
+    }
+  },
+  "exams": {
+    "nat-lege-toets-2025-2026": {
+      "grades": [],
+      "stats": null,
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {}
+    },
+    "nat-toets-h1-krachten-nergie-2025-2026": {
+      "grades": [
+        6.9,
+        4.4,
+        6.1,
+        8.8,
+        3.8,
+        4.4,
+        3.8,
+        5.2
+      ],
+      "stats": {
+        "n": 8,
+        "mean": 5.425,
+        "sd": 1.637643123516232,
+        "fails": 63.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          0,
+          4,
+          1,
+          1,
+          1,
+          0,
+          1,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {
+        "obs-1756713600100": 4,
+        "obs-1756713600101": 1,
+        "obs-1756713600102": 2
+      }
+    },
+    "nat-toets-h1-krachten-nergie-herkansing-2025-2026": {
+      "grades": [
+        5.5,
+        4.9
+      ],
+      "stats": {
+        "n": 2,
+        "mean": 5.2,
+        "sd": 0.2999999999999998,
+        "fails": 50.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {}
+    },
+    "nat-toets-h1-krachten-nergie-inhaal-2025-2026": {
+      "grades": [
+        4.8,
+        2.7
+      ],
+      "stats": {
+        "n": 2,
+        "mean": 3.75,
+        "sd": 1.0499999999999998,
+        "fails": 100.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {
+        "obs-1756713600100": 1
+      }
+    },
+    "nat-toets-h2-2025-2026": {
+      "grades": [
+        3.5,
+        3.0,
+        4.1,
+        8.9,
+        5.4,
+        2.7,
+        4.4,
+        4.1
+      ],
+      "stats": {
+        "n": 8,
+        "mean": 4.5125,
+        "sd": 1.8367345344387687,
+        "fails": 88.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          2,
+          4,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {
+        "obs-1756713600100": 1,
+        "obs-1756713600101": 1,
+        "obs-1756713600102": 1
+      }
+    },
+    "nat-toets-h3-2025-2026": {
+      "grades": [
+        6.7,
+        8.5,
+        6.2,
+        5.0,
+        7.3,
+        6.6,
+        5.7
+      ],
+      "stats": {
+        "n": 7,
+        "mean": 6.571428571428571,
+        "sd": 1.0443238218569753,
+        "fails": 14.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          2,
+          3,
+          0,
+          1,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {
+        "obs-1756713600100": 3,
+        "obs-1756713600101": 2,
+        "obs-1756713600102": 1
+      }
+    },
+    "nat-toets-n-leerling-2025-2026": {
+      "grades": [
+        6.9
+      ],
+      "stats": {
+        "n": 1,
+        "mean": 6.9,
+        "sd": 0.0,
+        "fails": 0.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {}
+    }
+  },
+  "summaries": {
+    "nat-toets-h1-krachten-nergie-2025-2026": {
+      "grades": [
+        6.9,
+        4.4,
+        6.1,
+        8.8,
+        4.9,
+        4.4,
+        3.8,
+        5.2
+      ],
+      "stats": {
+        "n": 8,
+        "mean": 5.5625,
+        "sd": 1.5386174800774883,
+        "fails": 63.0
+      },
+      "histogram": {
+        "bins": [
+          0,
+          0,
+          0,
+          3,
+          2,
+          1,
+          1,
+          0,
+          1,
+          0
+        ],
+        "upper": [
+          1.5,
+          2.5,
+          3.5,
+          4.5,
+          5.5,
+          6.5,
+          7.5,
+          8.5,
+          9.5,
+          10.0
+        ],
+        "passBin": 5
+      },
+      "obs": {
+        "obs-1756713600100": 3,
+        "obs-1756713600101": 1,
+        "obs-1756713600102": 2
+      }
+    }
+  },
+  "groups": {
+    "3-nat-cluster-2025-2026": {
+      "upper": false,
+      "year": {
+        "n": 3,
+        "mean": 5.666666666666667,
+        "sd": 1.699673171197595,
+        "fails": 67.0
+      },
+      "se": null
+    },
+    "3a-nat-2025-2026": {
+      "upper": false,
+      "year": {
+        "n": 8,
+        "mean": 4.625,
+        "sd": 1.4086784586980805,
+        "fails": 88.0
+      },
+      "se": null
+    }
+  }
+}

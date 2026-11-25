@@ -119,6 +119,7 @@ import type { MigrationResult, DataCheck, StampIssue, PinCheck, RubricUse } from
 export type { PinCheck, PinOutcome } from './bindings';
 
 import type { PrintName } from '../domain/print';
+import type { VakNumbers } from '../domain/numbers';
 import type { AiApi } from './ai-api';
 
 export interface MaatwerkApi {
@@ -289,6 +290,11 @@ export interface MaatwerkApi {
   validateDataFolder(): Promise<DataCheck>;
   /** Per rubric id, the PO's in any school year that use it (step 21, decision 20). */
   rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>>;
+  /**
+   * Everything the list screens show for one school year and vak, computed in Rust (step 38):
+   * cards, Verzamelkaarten, group statistics, shown r/SE under the school's Cijfergemiddelden.
+   */
+  vakNumbers(year: string, vak: string): Promise<VakNumbers>;
   /** JSON files read with a missing or wrong stamp since start (C19). */
   stampIssues(): Promise<StampIssue[]>;
   /** "Accepteren": re-stamps the file as it is. */

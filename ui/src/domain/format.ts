@@ -4,6 +4,7 @@
 // the core (decision 3, quirk B8).
 
 import { round0, round1 } from './core';
+import type { AverageFormat } from './statistics';
 
 /** Shown for a missing grade. */
 export const NO_GRADE = '—';
@@ -24,6 +25,24 @@ export function formatFixed(x: number, digits = 1): string {
   if (digits === 0) return round0(x).toFixed(0);
   return comma(x.toFixed(digits));
 }
+
+/**
+ * A student average as shown (Cijfergemiddelden, decisions 91-93): `shown` is already the core's
+ * value under `fmt` (`Shown.shown`), so this only writes its decimals: `5`, `5,5`, `5,50`.
+ */
+export function formatShown(shown: number | null | undefined, fmt: AverageFormat): string {
+  if (shown === null || shown === undefined || !Number.isFinite(shown)) return NO_GRADE;
+  return comma(shown.toFixed(fmt.decimalen));
+}
+
+/** The hover text of a shown average (decision 93): "Afgerond op 1 decimaal". */
+export function formatHint(fmt: AverageFormat): string {
+  const how = fmt.methode === 'afkappen' ? 'Afgekapt' : 'Afgerond';
+  return `${how} op ${fmt.decimalen} ${fmt.decimalen === 1 ? 'decimaal' : 'decimalen'}`;
+}
+
+/** The hover text of a group mean of shown averages (decision 93). */
+export const GROUP_MEAN_HINT = 'Gemiddelde van de getoonde cijfers, afgerond op 1 decimaal';
 
 /** A stored value (weging, n-term, score) as written, with a comma: `0,5`, `2`. */
 export function formatNumber(x: number | string): string {

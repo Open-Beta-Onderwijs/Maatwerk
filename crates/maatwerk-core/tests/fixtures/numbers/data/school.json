@@ -1,0 +1,12 @@
+{
+  "naam": "Synthetische School",
+  "ondertitel": "Testomgeving & co",
+  "motto": "Leren #door $doen",
+  "schoolsoort": [
+    "Havo",
+    "Vwo"
+  ],
+  "logo": "afbeeldingen/school-logo.png",
+  "watermerk": "afbeeldingen/school-watermerk.svg",
+  "minAppVersion": "0.12.0"
+}

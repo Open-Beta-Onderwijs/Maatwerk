@@ -18,7 +18,7 @@
 import { round1 } from './core';
 import { formatFixed, formatGrade, formatNumber, parseDecimal, parseDecimalLoose } from './format';
 import { calcResults } from './grades';
-import { classQuestions, stats } from './statistics';
+import { classQuestions, scorePoints, stats } from './statistics';
 import type { Exam, Override, Question, QuestionScores } from './types';
 
 export type GridCell = string | boolean | number | null | undefined;
@@ -77,7 +77,8 @@ export function normalizeScore(
   if (raw === '') return { cell: '', value: undefined };
   if (raw.toUpperCase() === 'N') return { cell: 'N', value: null };
   const num = parseScoreNum(raw);
-  if (isNaN(num) || num < 0 || num > q.max_points) return { cell: raw, value: raw };
+  // The range check is the grade rules' (step 38 answer D).
+  if (isNaN(num) || scorePoints(num, q.max_points) === null) return { cell: raw, value: raw };
   return { cell: scoreCellText(num), value: num };
 }
 
@@ -100,7 +101,7 @@ export function computeRowStatus(
     const upper = String(val).toUpperCase().trim();
     if (upper === 'N') continue;
     const num = parseScoreNum(val);
-    if (isNaN(num) || num < 0 || num > q.max_points) invalid = true;
+    if (isNaN(num) || scorePoints(num, q.max_points) === null) invalid = true;
   }
   if (invalid) return 'invalid';
   if (filled > 0 && filled < exam.questions.length) return 'partial';

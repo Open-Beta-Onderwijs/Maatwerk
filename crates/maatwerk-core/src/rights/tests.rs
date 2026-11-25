@@ -443,3 +443,59 @@ fn review_m3_a_grading_without_projectgroep_is_not_cleared_by_another_teacher() 
         .is_ok()
     );
 }
+
+#[test]
+fn only_the_admin_changes_the_cijfergemiddelden() {
+    let (_t, s) = setup();
+    let rel = RelPath::parse("instellingen.json").unwrap();
+    s.write_json(&rel, &json!({ "editor": { "timeout": 30 } }), Expect::Any)
+        .unwrap();
+    let k0 = json!({ "editor": { "timeout": 30 },
+                     "gemiddelden": { "r": { "methode": "afkappen", "decimalen": 0 } } });
+    let admin = session("admin", Role::Beheer);
+    let teacher = session("gebr-a", Role::Docent);
+    let voorzitter = session("gebr-v", Role::Bestuur("nat".into()));
+    assert!(check_json_write(&s, Some(&admin), &rel, Some(&k0)).is_ok());
+    assert!(is_forbidden(check_json_write(
+        &s,
+        Some(&teacher),
+        &rel,
+        Some(&k0)
+    )));
+    assert!(is_forbidden(check_json_write(
+        &s,
+        Some(&voorzitter),
+        &rel,
+        Some(&k0)
+    )));
+    assert!(is_forbidden(check_json_write(&s, None, &rel, Some(&k0))));
+    // A non-admin claiming the role is refused too.
+    let fake = session("gebr-a", Role::Beheer);
+    assert!(is_forbidden(check_json_write(
+        &s,
+        Some(&fake),
+        &rel,
+        Some(&k0)
+    )));
+    // Other settings stay open, as before; so does a write that keeps the field.
+    let other = json!({ "editor": { "timeout": 60 } });
+    assert!(check_json_write(&s, Some(&teacher), &rel, Some(&other)).is_ok());
+    s.write_json(&rel, &k0, Expect::Any).unwrap();
+    let mut kept = k0.clone();
+    kept["editor"]["timeout"] = json!(60);
+    assert!(check_json_write(&s, Some(&teacher), &rel, Some(&kept)).is_ok());
+    // Dropping the field, or deleting the file, is a change.
+    assert!(is_forbidden(check_json_write(
+        &s,
+        Some(&teacher),
+        &rel,
+        Some(&other)
+    )));
+    assert!(is_forbidden(check_json_write(
+        &s,
+        Some(&teacher),
+        &rel,
+        None
+    )));
+    assert!(check_json_write(&s, Some(&admin), &rel, None).is_ok());
+}

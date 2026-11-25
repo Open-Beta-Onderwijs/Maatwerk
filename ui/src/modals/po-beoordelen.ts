@@ -27,6 +27,7 @@ import { esc } from '../components/dialog';
 import { formatGrade } from '../domain/format';
 import { gradeCellColor } from '../domain/grade-colors';
 import { calcResults, poLinesSum, poWithLines } from '../domain/grades';
+import { checkRubric } from '../domain/rubric';
 import { groupName } from '../domain/po';
 import {
   gradedGroupOf,
@@ -149,7 +150,7 @@ export function openPoGrading(
       )
     : '';
   const cats = rubric.categories;
-  const maxNormal = cats.filter((c) => c.soort === 'normaal').reduce((s, c) => s + (c.max ?? 0), 0);
+  const maxNormal = checkRubric(rubric).totals.normal;
 
   const toSave = (): GroupGrading => ({ ...grading, groupLines: validLines(groupDrafts) });
   const ownToSave = (m: string): PoLine[] | undefined =>

@@ -46,6 +46,27 @@ impl StatsArgs {
         })
     }
 
+    /// `maatwerk-cli numbers`: what the list screens show (`maatwerk_core::numbers`, step 38),
+    /// as JSON. Reads the data folder and never writes.
+    pub fn run_numbers(self) -> ExitCode {
+        let result = maatwerk_core::storage::Storage::open(&self.data).and_then(|storage| {
+            maatwerk_core::numbers::vak_numbers(&storage, &self.year, &self.vak)
+        });
+        match result {
+            Ok(numbers) => {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&numbers).expect("plain data")
+                );
+                ExitCode::SUCCESS
+            }
+            Err(e) => {
+                eprintln!("error: {e}");
+                ExitCode::FAILURE
+            }
+        }
+    }
+
     pub fn run(self) -> ExitCode {
         match report(&self.data, &self.year, &self.vak) {
             Ok(report) => {

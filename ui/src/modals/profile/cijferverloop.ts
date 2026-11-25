@@ -10,13 +10,14 @@
 // jaarlaag.
 
 import { attemptCode } from '../../domain/exam-info';
-import { formatFixed, formatGrade } from '../../domain/format';
-import { gradeTextColor, PASS } from '../../domain/grade-colors';
+import { formatFixed, formatGrade, formatHint, formatShown } from '../../domain/format';
+import { gradeTextColor, PASS, shownTextColor } from '../../domain/grade-colors';
 import { poLinesSum } from '../../domain/grades';
 import { groupName, isPo, rubricOf } from '../../domain/po';
 import { signedPoints } from '../../domain/po-grading';
 import type { Rubric } from '../../domain/rubric';
-import type { Stats } from '../../domain/statistics';
+import type { Shown } from '../../domain/numbers';
+import { shownDifference, type AverageFormat, type Stats } from '../../domain/statistics';
 import { testKind } from '../../domain/test-type';
 import { axisPct, examBadgeHtml, kindClass } from '../../overview/common';
 import type { TipContent } from '../../overview/tooltip';
@@ -144,21 +145,32 @@ export function dumbLegend(first: string, avg: string): string {
 
 const pct = (g: number) => axisPct(g).toFixed(2);
 
-/** One track row: the label (HTML, escaped by the caller), the student's grade and the average. */
+/**
+ * One track row: the label (HTML, escaped by the caller), the student's grade and the average.
+ * `own`: the student's number is a shown average (a year or the SE, decisions 91-93), drawn with
+ * the format's decimals and hover text; `g` is then its shown value. The delta is the difference
+ * of the shown values (step 38 answer B), so it agrees with the two numbers on screen.
+ */
 export function dumbRowHtml(
   labelHtml: string,
   g: number | null,
   avg: Stats | null,
   avgLabel: string,
   who: string,
+  own?: { shown: Shown; fmt: AverageFormat },
 ): string {
   const label = `<div class="pf-dumb__label">${labelHtml}</div>`;
+  const color = (x: number) => (own ? shownTextColor(own.shown) : gradeTextColor(x));
+  const text = (x: number) => (own ? formatShown(own.shown.shown, own.fmt) : formatGrade(x));
+  const hint = own ? ` title="${esc(formatHint(own.fmt))}"` : '';
   if (g === null || !avg)
-    return `<div class="pf-dumb__row">${label}<div class="pf-dumb__track"><div class="pf-dumb__line"></div></div><div class="pf-dumb__text ov-meanline">${g === null ? 'Geen cijfer' : `<b data-color="${gradeTextColor(g)}">${formatGrade(g)}</b> · geen vergelijking`}</div></div>`;
+    return `<div class="pf-dumb__row">${label}<div class="pf-dumb__track"><div class="pf-dumb__line"></div></div><div class="pf-dumb__text ov-meanline">${g === null ? 'Geen cijfer' : `<b data-color="${color(g)}"${hint}>${text(g)}</b> · geen vergelijking`}</div></div>`;
   const lo = Math.max(1, avg.mean - avg.sd);
   const hi = Math.min(10, avg.mean + avg.sd);
-  const diff = g - avg.mean;
-  const up = diff >= 0;
+  const delta = own
+    ? shownDifference(own.shown.raw, own.fmt, avg.mean)
+    : shownDifference(g, undefined, avg.mean);
+  const up = delta >= 0;
   const a = axisPct(Math.min(g, avg.mean));
   const w = Math.abs(axisPct(g) - axisPct(avg.mean));
   const avgText = `${formatFixed(avg.mean)} ± ${formatFixed(avg.sd)}`;
@@ -168,9 +180,9 @@ export function dumbRowHtml(
     `<div class="pf-dumb__sd" title="${esc(`${avgLabel} ${avgText}`)}" data-left="${pct(lo)}%" data-w="${(axisPct(hi) - axisPct(lo)).toFixed(2)}%"></div>` +
     `<div class="pf-dumb__diff${up ? ' pf-dumb__diff--up' : ''}" data-left="${a.toFixed(2)}%" data-w="${w.toFixed(2)}%"></div>` +
     `<div class="pf-dumb__avg" title="${esc(`${avgLabel} ${formatFixed(avg.mean)}`)}" data-left="${pct(avg.mean)}%"></div>` +
-    `<div class="pf-dumb__dot" title="${esc(`${who} ${formatGrade(g)}`)}" data-left="${pct(g)}%" data-bg="${gradeTextColor(g)}"></div></div>` +
-    `<div class="pf-dumb__text"><b data-color="${gradeTextColor(g)}">${formatGrade(g)}</b> <span class="po-ov-muted">vs ${formatFixed(avg.mean)}</span>` +
-    `<span class="pf-dumb__delta${up ? ' pf-dumb__delta--up' : ''}">${signed(Math.round(diff * 10) / 10)}</span></div></div>`
+    `<div class="pf-dumb__dot" title="${esc(`${who} ${text(g)}`)}" data-left="${pct(g)}%" data-bg="${color(g)}"></div></div>` +
+    `<div class="pf-dumb__text"><b data-color="${color(g)}"${hint}>${text(g)}</b> <span class="po-ov-muted">vs ${formatFixed(avg.mean)}</span>` +
+    `<span class="pf-dumb__delta${up ? ' pf-dumb__delta--up' : ''}">${signed(delta)}</span></div></div>`
   );
 }
 
@@ -191,10 +203,11 @@ export function yearRowsHtml(
       .map((r) =>
         dumbRowHtml(
           `<span class="pf-dumb__title">${esc(r.key === 'se' ? 'Examendossier (SE)' : yearLabel(r.key))}</span>`,
-          r.student,
+          r.student?.shown ?? null,
           r.peers,
           'Jaarlaaggemiddelde',
           who,
+          r.student ? { shown: r.student, fmt: r.fmt } : undefined,
         ),
       )
       .join('') + axisRowHtml()

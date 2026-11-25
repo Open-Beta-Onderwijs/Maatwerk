@@ -212,6 +212,28 @@ school.json   secties: { <vak>: { ..., gast: true } }
   `vakken` is the target vak, `observaties` is emptied.
 - No guard: an older app (0.26) ignores the field and shows no Gast.
 
+## Cijfergemiddelden (0.29, step 38)
+
+Additive within v3 (PLAN-2 decisions 91-93). `instellingen.json` gets, next to `snapshots`,
+`editor` and `ai`:
+
+```
+gemiddelden: {
+  r:  { methode: "afronden" | "afkappen", decimalen: 0 | 1 | 2 },
+  se: { methode: "afronden" | "afkappen", decimalen: 0 | 1 | 2 }
+}
+```
+
+- How a student's year average (r) and SE average are shown, school-wide
+  (`maatwerk_core::numbers::format`, rule `maatwerk_grades::shown_average`). Missing, or an
+  unusable value, is afronden 1 for that average only (a missing `methode` is afronden, a
+  missing `decimalen` is 1). Exam numbers are not affected.
+- Only the admin changes the field: the core refuses a write by anyone else that changes it
+  (`rights::check_json_write`, code `forbidden`); writes that keep it pass for everyone.
+- No guard: an older app shows afronden 1 and writes the whole settings object back (the field
+  survives).
+- `validate-data` does not check it (unusable values count as the default).
+
 ## `validate-data`
 
 Step 35 adds: `secties.<vak>.secretaris` naming no user (missing), the voorzitter (warning), or no

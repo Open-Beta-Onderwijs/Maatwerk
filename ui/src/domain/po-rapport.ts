@@ -5,7 +5,7 @@
 // crates/maatwerk-core/assets/templates/rapport-po.typ. Every number comes from the core
 // (crates/maatwerk-grades through WebAssembly): grades, points, averages and their rounding.
 
-import { coreCall, round0 } from './core';
+import { coreCall } from './core';
 import { formatGrade } from './format';
 import { poLineValid, type Results } from './grades';
 import { fullName } from './ids';
@@ -13,7 +13,7 @@ import { compareStudents, groupName } from './po';
 import { gradedGroupOf, gradingOf, gradingStatus, ownLinesOf, signedPoints } from './po-grading';
 import { sanitizeTypstMarkup, scoreDotColor, subjectDisplayName } from './rapport';
 import type { Rubric, RubricCategory } from './rubric';
-import { classQuestions } from './statistics';
+import { classQuestions, pct } from './statistics';
 import type { Exam, Observatie, PoLine, Question, ScoreRecord, Student } from './types';
 import { esc } from '../utils/html';
 
@@ -248,7 +248,7 @@ export function buildPoRapportData(input: PoRapportInput): PoRapportData {
       grade_only: !Object.values(e.scores).some((v) => v !== null),
       points: res.scored,
       max: res.normalMax,
-      pct: res.normalMax > 0 ? round0((res.scored / res.normalMax) * 100) : null,
+      pct: res.normalMax > 0 ? pct(res.scored, res.normalMax) : null,
       rubric_grade: typeof res.rubricGrade === 'number' ? formatGrade(res.rubricGrade) : null,
       group_size: e.group.ids.length,
       projectgroep: {

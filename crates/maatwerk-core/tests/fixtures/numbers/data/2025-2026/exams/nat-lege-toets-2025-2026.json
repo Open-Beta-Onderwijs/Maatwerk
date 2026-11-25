@@ -1,0 +1,49 @@
+{
+  "id": "nat-lege-toets-2025-2026",
+  "title": "Lege toets",
+  "jaarlaag": "3",
+  "schoolsoort": [
+    "Havo"
+  ],
+  "n_term": 1,
+  "weging": 1,
+  "weging_se": 1,
+  "periode": "2",
+  "type": "regular",
+  "structureMode": "roman",
+  "questions": [
+    {
+      "id": "q1",
+      "section": "I",
+      "number": 1,
+      "max_points": 5,
+      "rtti": "R"
+    },
+    {
+      "id": "q2",
+      "section": "II",
+      "number": 2,
+      "max_points": 5,
+      "rtti": "T1"
+    },
+    {
+      "id": "q3",
+      "section": "III",
+      "number": 3,
+      "max_points": 4,
+      "rtti": "T2"
+    }
+  ],
+  "obs_ids": [],
+  "subject": "nat",
+  "volgnummer": 350,
+  "_meta": {
+    "rev": 1,
+    "createdBy": "admin",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "admin",
+    "updatedAt": "2025-09-02T08:00:00.000Z"
+  },
+  "kind": "toets",
+  "diagnostic": false
+}

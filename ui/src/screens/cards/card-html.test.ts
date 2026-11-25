@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
-import type { StudentCardNumbers } from '../../domain/cards';
+import type { ShownAverage, StudentCard } from '../../domain/cards';
 import { barHeight, groupGradesHtml, studentGradesHtml, trendArrowHtml } from './card-html';
 
-const BASE: StudentCardNumbers = {
+const a1 = (value: number): ShownAverage => ({
+  value,
+  fails: value < 5.5,
+  fmt: { methode: 'afronden', decimalen: 1 },
+});
+
+const BASE: StudentCard = {
   bars: [
     { grade: 6, title: '1 · Toets 1: 6,0', diagnostic: false },
     { grade: 9, title: '2 · Diagnose: 9,0', diagnostic: true },
   ],
-  average: 6.5,
+  average: a1(6.5),
   last: 7.2,
   trend: { last: 7.2, average: 6.5, d: 0.7, level: 'slightUp' },
   se: null,
@@ -33,8 +39,10 @@ describe('student card markup (F-07)', () => {
   });
 
   it('years 4-6: "laatste" and "SE" alternate, both in the tooltip and the reduced-motion line', () => {
-    const html = studentGradesHtml({ ...BASE, se: 6.8 });
-    expect(html).toContain('class="s-card__swap" title="Laatste 7,2 · SE 6,8"');
+    const html = studentGradesHtml({ ...BASE, se: a1(6.8) });
+    expect(html).toContain(
+      'class="s-card__swap" title="Laatste 7,2 · SE 6,8\nSE: afgerond op 1 decimaal"',
+    );
     expect(html).toMatch(/s-card__swap-a">laatste <b[^>]*>7,2<\/b>/);
     expect(html).toMatch(/s-card__swap-b">SE <b[^>]*>6,8<\/b>/);
     expect(html).toMatch(/s-card__swap-both">laatste <b[^>]*>7,2<\/b> · SE <b[^>]*>6,8<\/b>/);
@@ -46,8 +54,32 @@ describe('student card markup (F-07)', () => {
   });
 
   it('no grade this year but an SE from earlier years: the SE only', () => {
-    const html = studentGradesHtml({ bars: [], average: null, last: null, trend: null, se: 6.4 });
+    const html = studentGradesHtml({
+      bars: [],
+      average: null,
+      last: null,
+      trend: null,
+      se: a1(6.4),
+    });
     expect(text(html)).toBe('SE 6,4');
+  });
+
+  it('the shown averages follow the format, with the hover text (decisions 91-93)', () => {
+    const k0: ShownAverage = { value: 5, fails: true, fmt: { methode: 'afkappen', decimalen: 0 } };
+    const html = studentGradesHtml({ ...BASE, average: k0 });
+    expect(text(html)).toBe('5 laatste 7,2');
+    expect(html).toContain('title="Jaargemiddelde\nAfgekapt op 0 decimalen"');
+    expect(html).toContain('data-color="var(--grade-fail-text)">5<');
+    // Afronden 2: 5,45 is shown as such and fails (the core's flag), though round1 gives 5,5.
+    const a2: ShownAverage = {
+      value: 5.45,
+      fails: true,
+      fmt: { methode: 'afronden', decimalen: 2 },
+    };
+    const two = studentGradesHtml({ ...BASE, se: a2 });
+    expect(two).toMatch(
+      /SE <b data-color="var\(--grade-fail-text\)" title="Afgerond op 2 decimalen">5,45<\/b>/,
+    );
   });
 
   it('bar heights in proportion, 28 px for a 10', () => {
@@ -66,6 +98,7 @@ describe('group card markup (F-09)', () => {
   it('lower school: mean ± SD and % onvoldoende', () => {
     const html = groupGradesHtml({ year, se: null });
     expect(text(html)).toBe('6,6 ± 1,5 14% onvoldoende');
+    expect(html).toContain('title="Gemiddelde van de getoonde cijfers, afgerond op 1 decimaal"');
     expect(html).not.toContain('g-card__fails--alarm');
   });
 

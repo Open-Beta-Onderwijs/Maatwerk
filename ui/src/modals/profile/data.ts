@@ -9,11 +9,13 @@
 
 import type { HistoryEntry } from '../../domain/attempts';
 import type { Results } from '../../domain/grades';
-import { seAverage, stats, statsOfAverages, type Stats } from '../../domain/statistics';
+import type { Shown } from '../../domain/numbers';
+import { statsOfAverages, type AverageFormat, type Stats } from '../../domain/statistics';
 import type { Exam, Observatie, ScoreRecord, Student } from '../../domain/types';
 import { isPo, rubricOf } from '../../domain/po';
 import { poObsIds, poStudentObs } from '../../domain/po-grading';
 import type { Rubric } from '../../domain/rubric';
+import { vakNumbers } from '../../services/vak-numbers';
 import { Store } from '../../store.js';
 
 /**
@@ -101,71 +103,81 @@ export async function loadProfile(studentId: string, year: string): Promise<Prof
   };
 }
 
-/** Mean and SD of a test's grades over the students of its school year. */
+/**
+ * Mean and SD of a test's grades over the students of its school year: the core's card numbers
+ * of that attempt (step 38; kept per year and data generation, so a school-year toggle does not
+ * read every student again, review 29 m5).
+ */
 export async function examStats(year: string, exam: Exam): Promise<Stats | null> {
-  const grades: number[] = [];
-  for (const s of Store.getStudentsSync(year) as Student[]) {
-    const rec = (await Store.getStudentScores(s.id, year)) as ScoreRecord | null;
-    const res = Store.examResults(rec, exam) as Results | null;
-    if (res && res.grade !== null) grades.push(res.grade);
-  }
-  return grades.length ? stats(grades) : null;
+  const subject = Store.getActiveSubject() as string | null;
+  if (!subject) return null;
+  const numbers = await vakNumbers(year, subject, Store.generation() as number);
+  return numbers.exams[exam.id]?.stats ?? null;
 }
 
 export interface YearComparison {
   /** A school year, or `se` for the examendossier. */
   key: string;
-  student: number | null;
+  /** The student's average as shown (the core's, decisions 91-93). */
+  student: Shown | null;
+  /** The format it is shown under. */
+  fmt: AverageFormat;
+  /** Mean and SD of the peers' shown averages (decisions 21, 92). */
   peers: Stats | null;
 }
 
 /**
- * The student's year average against the jaarlaag's (mean and SD of the students' averages,
- * decision 21) per school year, then the SE average against the jaarlaag's, the peers taken from
- * the student's own last year (B16, decision 12).
+ * The student's year average against the jaarlaag's (mean and SD of the students' averages as
+ * shown, decisions 21, 92) per school year, then the SE average against the jaarlaag's, the
+ * peers taken from the student's own last year (B16, decision 12). Every average is the core's
+ * (`vakNumbers`, step 38).
  */
 export async function yearComparisons(d: ProfileData): Promise<YearComparison[]> {
-  const id = d.student.id;
-  const own: Record<string, number | null> = {};
-  for (const yr of d.years) {
-    const rec = (await Store.getStudentScores(id, yr)) as ScoreRecord | null;
-    own[yr] = Store.studentYearAverage(rec, yr) as number | null;
-  }
+  const id = String(d.student.id);
+  const subject = Store.getActiveSubject() as string | null;
+  if (!subject) return [];
+  const generation = Store.generation() as number;
+  const numbersOf = (yr: string) => vakNumbers(yr, subject, generation);
+  const peersOf = (yr: string, jl: string) =>
+    (Store.getStudentsSync(yr) as Student[]).filter(
+      (s) => Store.jaarlaagFromStamklas(s.stamklas ?? '') === jl,
+    );
   const out: YearComparison[] = [];
   for (const yr of d.years) {
+    const n = await numbersOf(yr);
     const jl = d.jaarlaagByYear[yr];
-    const avgs: number[] = [];
-    if (jl) {
-      for (const s of Store.getStudentsSync(yr) as Student[]) {
-        if (Store.jaarlaagFromStamklas(s.stamklas ?? '') !== jl) continue;
-        const avg =
-          s.id === id
-            ? own[yr]
-            : (Store.studentYearAverage(
-                (await Store.getStudentScores(s.id, yr)) as ScoreRecord | null,
-                yr,
-              ) as number | null);
-        if (avg !== null && avg !== undefined) avgs.push(avg);
-      }
-    }
+    const raws = jl
+      ? peersOf(yr, jl)
+          .map((s) => n.students[String(s.id)]?.average?.raw)
+          .filter((x): x is number => x !== undefined)
+      : [];
     out.push({
       key: yr,
-      student: own[yr] ?? null,
-      peers: avgs.length ? statsOfAverages(avgs) : null,
+      student: n.students[id]?.average ?? null,
+      fmt: n.formats.r,
+      peers: raws.length ? statsOfAverages(raws, n.formats.r) : null,
     });
   }
-  const allExams = Store.getAllExamsSync() as Exam[];
-  const studentSe = seAverage(d.history, allExams);
   const last = d.years[d.years.length - 1];
-  if (studentSe !== null && last) {
-    const jl = d.jaarlaagByYear[last] ?? String(d.currentJaarlaag);
-    const avgs = [studentSe];
-    for (const s of Store.getStudentsSync(last) as Student[]) {
-      if (s.id === id || Store.jaarlaagFromStamklas(s.stamklas ?? '') !== jl) continue;
-      const avg = seAverage((await Store.getStudentHistory(s.id)) as HistoryEntry[], allExams);
-      if (avg !== null) avgs.push(avg);
+  if (last) {
+    const n = await numbersOf(last);
+    const studentSe = n.students[id]?.se ?? null;
+    if (studentSe) {
+      const jl = d.jaarlaagByYear[last] ?? String(d.currentJaarlaag);
+      const raws = [
+        studentSe.raw,
+        ...peersOf(last, jl)
+          .filter((s) => String(s.id) !== id)
+          .map((s) => n.students[String(s.id)]?.se?.raw)
+          .filter((x): x is number => x !== undefined),
+      ];
+      out.push({
+        key: 'se',
+        student: studentSe,
+        fmt: n.formats.se,
+        peers: statsOfAverages(raws, n.formats.se),
+      });
     }
-    out.push({ key: 'se', student: studentSe, peers: statsOfAverages(avgs) });
   }
   return out;
 }

@@ -8,7 +8,7 @@
 import { formatGrade } from '../../domain/format';
 import { testKindLabel } from '../../domain/test-type';
 import type { Observatie } from '../../domain/types';
-import { examBadgeHtml, ovPillHtml } from '../../overview/common';
+import { examBadgeHtml, ovPillHtml, ovShownPillHtml } from '../../overview/common';
 import { gradeWithDotHtml, resitSubline } from '../../overview/resit-dot';
 import {
   averagesStats,
@@ -87,8 +87,8 @@ export function resultatenHtml(m: GroupModel, nameOf: NameOf): string {
         })
         .join('');
       const jaar =
-        `<td class="ov-col-jaar">${ovPillHtml(r.yearAvg)}</td>` +
-        (m.showSe ? `<td class="ov-col-jaar">${ovPillHtml(r.seAvg)}</td>` : '');
+        `<td class="ov-col-jaar">${ovShownPillHtml(r.year, m.formats.r)}</td>` +
+        (m.showSe ? `<td class="ov-col-jaar">${ovShownPillHtml(r.se, m.formats.se)}</td>` : '');
       return `<tr class="ov-row">${name}${cells}${jaar}</tr>`;
     })
     .join('');
@@ -98,14 +98,22 @@ export function resultatenHtml(m: GroupModel, nameOf: NameOf): string {
       diagnostic: c.diagnostic,
     })),
     {
-      cell: averagesStats(m.rows.map((r) => r.yearAvg).filter((g): g is number => g !== null)),
+      cell: averagesStats(
+        m.rows.map((r) => r.yearAvg).filter((g): g is number => g !== null),
+        m.formats.r,
+      ),
       className: 'ov-col-jaar',
+      meanOfShown: true,
     },
     ...(m.showSe
       ? [
           {
-            cell: averagesStats(m.rows.map((r) => r.seAvg).filter((g): g is number => g !== null)),
+            cell: averagesStats(
+              m.rows.map((r) => r.seAvg).filter((g): g is number => g !== null),
+              m.formats.se,
+            ),
             className: 'ov-col-jaar',
+            meanOfShown: true,
           },
         ]
       : []),

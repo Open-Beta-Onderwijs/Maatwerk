@@ -131,6 +131,39 @@ test('Instellingen: the school AI switch is saved in instellingen.json (step 32c
   ).toHaveAttribute('aria-checked', 'false');
 });
 
+test('Instellingen: Cijfergemiddelden per average, live examples, saved (step 38)', async ({
+  page,
+}) => {
+  await admin(page, 'instellingen');
+  const r = page.getByRole('group', { name: 'Methode Jaargemiddelde (r)' });
+  const rDec = page.getByRole('group', { name: 'Decimalen Jaargemiddelde (r)' });
+  const examples = page.locator('.inst-gem__list').first();
+  await expect(r.getByRole('button', { name: 'Afronden' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(examples.locator('b')).toHaveText(['5,5', '5,5', '5,9', '7,0']);
+  await r.getByRole('button', { name: 'Afkappen' }).click();
+  await rDec.getByRole('button', { name: '0' }).click();
+  await expect(examples.locator('b')).toHaveText(['5', '5', '5', '6']);
+  // The SE column keeps its own format.
+  await expect(page.locator('.inst-gem__list').nth(1).locator('b')).toHaveText([
+    '5,5',
+    '5,5',
+    '5,9',
+    '7,0',
+  ]);
+  await page.locator('#inst-save').click();
+  await expect(page.locator('.toast').last()).toContainText('Instellingen opgeslagen');
+  const saved = await withMock(page, (m) => JSON.parse(m.peek('instellingen.json') ?? 'null'));
+  expect(saved.gemiddelden).toEqual({
+    r: { methode: 'afkappen', decimalen: 0 },
+    se: { methode: 'afronden', decimalen: 1 },
+  });
+  await expect(
+    page.getByRole('group', { name: 'Methode Jaargemiddelde (r)' }).getByRole('button', {
+      name: 'Afkappen',
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+});
+
 test('F-02: the CSV import shows an example that can be saved', async ({ page }) => {
   await admin(page, 'leerlingen');
   await page.locator('#btn-import-students').click();

@@ -1089,3 +1089,51 @@ fn review_18_m1_seeding_never_stamps_a_folder_that_has_data() {
     s.seed_initial_data().unwrap();
     assert_eq!(s.read_json(&rel("config.json")).unwrap(), None);
 }
+
+/// Folder listings come sorted by name on every platform: the order of the files feeds float
+/// sums (a year average over the exams), and APFS or ext4 list in another order than NTFS, so
+/// macOS CI got a raw average one ulp off the golden (step 38 CI run 45568955569).
+#[test]
+fn listings_are_sorted_by_name_not_in_directory_order() {
+    let (_t, s) = setup();
+    let names: Vec<String> = (0..40).map(|i| format!("e{:02}", (i * 17) % 40)).collect();
+    for n in &names {
+        put(
+            &s,
+            &format!("exams/{n}.json"),
+            format!("{{\"id\":\"{n}\"}}").as_bytes(),
+        );
+        put(&s, &format!("exams/{n}/x.txt"), b"");
+    }
+    let mut sorted = names.clone();
+    sorted.sort();
+    let ids: Vec<String> = s
+        .read_all_json(&rel("exams"))
+        .unwrap()
+        .iter()
+        .map(|v| v["id"].as_str().unwrap().to_owned())
+        .collect();
+    assert_eq!(ids, sorted);
+    let named: Vec<String> = s
+        .read_all_json_named(&rel("exams"))
+        .unwrap()
+        .into_iter()
+        .map(|(n, _)| n)
+        .collect();
+    assert_eq!(
+        named,
+        sorted
+            .iter()
+            .map(|n| format!("{n}.json"))
+            .collect::<Vec<_>>()
+    );
+    let files = s.list_dir(&rel("exams"), false).unwrap();
+    assert_eq!(
+        files,
+        sorted
+            .iter()
+            .map(|n| format!("{n}.json"))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(s.list_dir(&rel("exams"), true).unwrap(), sorted);
+}

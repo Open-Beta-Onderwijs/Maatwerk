@@ -111,6 +111,12 @@ export const commands = {
 	 *  locks max and soort while this is not empty).
 	 */
 	rubricUsage: () => typedError<{ [key in string]: RubricUse[] }, CommandError>(__TAURI_INVOKE("rubric_usage")),
+	/**
+	 *  Everything the list screens show for one school year and vak (step 38,
+	 *  `maatwerk_core::numbers`): cards, Verzamelkaarten, group statistics, shown r/SE under the
+	 *  school's Cijfergemiddelden. Typed in the UI as `VakNumbers` (`ui/src/domain/numbers.ts`).
+	 */
+	vakNumbers: (year: string, vak: string) => typedError<Value, CommandError>(__TAURI_INVOKE("vak_numbers", { year, vak })),
 	/**  Files read with a missing or wrong stamp since start ("Buiten Maatwerk gewijzigd"). */
 	stampIssues: () => typedError<StampIssue[], CommandError>(__TAURI_INVOKE("stamp_issues")),
 	/**  "Accepteren": re-stamps the file as it is now. */

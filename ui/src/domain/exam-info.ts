@@ -5,9 +5,9 @@
 // percentages (design spec 4.7, 4.11), and how the original's observaties reach
 // its attempts (F-12).
 
-import { clean, round0 } from './core';
 import { formatNTerm, formatNumber } from './format';
-import { qKind, type RttiCategory } from './grades';
+import { calcResults, type RttiCategory } from './grades';
+import { rapportTotals } from './statistics';
 import { groupCountText, isPo } from './po';
 import type { Exam, Question } from './types';
 
@@ -18,21 +18,22 @@ export interface PointTotals {
   normal: number;
   bonus: number;
   byRtti: Record<RttiCategory, number>;
+  /** Whole percent of the RTTI points that is this category (0 without any). */
+  share: Record<RttiCategory, number>;
 }
 
+/** The point totals of a list of questions, from the grade rules (step 38: no sums here). */
 export function pointTotals(questions: readonly Question[]): PointTotals {
-  const sum = (filter: (q: Question) => boolean) =>
-    clean(questions.filter(filter).reduce((s, q) => s + (Number(q.max_points) || 0), 0));
-  const normal = (q: Question) => qKind(q) === 'normal';
+  const exam = { id: '', n_term: 1, questions: [...questions] };
+  const res = calcResults(exam, {});
+  const rtti = rapportTotals(exam, {});
+  const per = (f: (c: RttiCategory) => number) =>
+    Object.fromEntries(RTTI.map((c) => [c, f(c)])) as Record<RttiCategory, number>;
   return {
-    normal: sum(normal),
-    bonus: sum((q) => qKind(q) === 'bonus'),
-    byRtti: {
-      R: sum((q) => normal(q) && q.rtti === 'R'),
-      T1: sum((q) => normal(q) && q.rtti === 'T1'),
-      T2: sum((q) => normal(q) && q.rtti === 'T2'),
-      I: sum((q) => normal(q) && q.rtti === 'I'),
-    },
+    normal: res.normalMax,
+    bonus: res.bonusMax,
+    byRtti: per((c) => rtti[c].max),
+    share: per((c) => rtti[c].share ?? 0),
   };
 }
 
@@ -55,10 +56,7 @@ export function questionSummary(questions: readonly Question[]): string {
   const t = pointTotals(questions);
   const n = questions.length;
   const points = `${formatNumber(t.normal)} punten${t.bonus > 0 ? ` (+${formatNumber(t.bonus)} bonus)` : ''}`;
-  const cats = RTTI.map((c) => {
-    const pct = t.normal > 0 ? round0((100 * t.byRtti[c]) / t.normal) : 0;
-    return `${c}: ${formatNumber(t.byRtti[c])} (${pct}%)`;
-  });
+  const cats = RTTI.map((c) => `${c}: ${formatNumber(t.byRtti[c])} (${t.share[c]}%)`);
   return [`${n} ${n === 1 ? 'vraag' : 'vragen'}`, points, ...cats].join(' · ');
 }
 

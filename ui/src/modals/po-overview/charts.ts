@@ -9,9 +9,10 @@
 
 import { formatFixed } from '../../domain/format';
 import { gradeBarColor, gradeTextColor } from '../../domain/grade-colors';
-import { stats } from '../../domain/statistics';
+import { calcGrade } from '../../domain/grades';
+import { classQuestions, stats } from '../../domain/statistics';
 import { testKind } from '../../domain/test-type';
-import type { Observatie } from '../../domain/types';
+import type { Observatie, Question } from '../../domain/types';
 import { boxplotHtml } from '../../overview/boxplot';
 import { emptyHtml, examBadgeHtml, meanLineHtml, pctOf, studentCount } from '../../overview/common';
 import {
@@ -21,15 +22,7 @@ import {
   type HistStep,
 } from '../../overview/histogram';
 import { esc } from '../../utils/html';
-import {
-  catScores,
-  gradesOf,
-  levelCounts,
-  levelText,
-  obsSections,
-  type PoModel,
-  type PoRow,
-} from './model';
+import { gradesOf, levelCounts, levelText, obsSections, type PoModel, type PoRow } from './model';
 
 const NO_GRADES = 'Nog geen cijfers: beoordeel eerst een projectgroep.';
 
@@ -99,12 +92,32 @@ export function categorieenHtml(m: PoModel): string {
   const placed = m.placed;
   if (!placed.some((r) => Object.keys(r.grading.scores).length))
     return emptyHtml('Nog geen scores: beoordeel eerst een projectgroep.');
+  // Rule B, as the PO rapport (user 2026-11-22, step 38 answer E): over every graded student an
+  // empty normal or bonus category counts as 0; a diagnostic one over who has a score. The
+  // averages and percentages are the grade rules' (classQuestions).
+  const graded = placed.filter((r) => Object.keys(r.grading.scores).length);
+  const inGrade = new Set(m.categories.filter((c) => c.soort !== 'diagnostisch').map((c) => c.id));
+  const scoredIn = (r: PoRow, id: string) => typeof r.grading.scores[id] === 'number';
+  const classResults = classQuestions(
+    m.categories.map((c) => ({ id: c.id, max_points: c.max ?? 0 }) as unknown as Question),
+    graded.map((r) =>
+      Object.fromEntries(
+        m.categories.flatMap((c) =>
+          scoredIn(r, c.id)
+            ? [[c.id, r.grading.scores[c.id]!]]
+            : inGrade.has(c.id)
+              ? [[c.id, 0]]
+              : [],
+        ),
+      ),
+    ),
+  );
   const rows = m.categories
-    .map((c) => {
-      const scores = catScores(placed, c.id);
+    .map((c, i) => {
       const max = c.max ?? 0;
-      const mean = scores.length ? stats(scores)!.mean : null;
-      const p = mean !== null && max ? mean / max : null;
+      const has = inGrade.has(c.id) || graded.some((r) => scoredIn(r, c.id));
+      const mean = has ? classResults[i]!.classAvg : null;
+      const share = has && max ? classResults[i]!.classPct : null;
       const diag = c.soort === 'diagnostisch';
       const tag =
         c.soort === 'bonus'
@@ -112,7 +125,8 @@ export function categorieenHtml(m: PoModel): string {
           : diag
             ? '<span class="po-ov-pill">diagnostisch · telt niet mee</span>'
             : '';
-      const asGrade = p === null ? null : 1 + 9 * p;
+      // The colour of the mean as if it were the grade of this category (calcGrade, n = 1).
+      const asGrade = mean === null || !max ? null : calcGrade(mean, max, 1);
       const meanColor = diag ? 'var(--muted)' : gradeTextColor(asGrade);
       const barCls = diag
         ? ' po-ov-share__bar--diag'
@@ -138,8 +152,8 @@ export function categorieenHtml(m: PoModel): string {
       return (
         `<tr><td class="po-ov-cat"><div class="po-ov-cat__name">${esc(c.naam)}</div>${tag ? `<div>${tag}</div>` : ''}</td>` +
         `<td class="po-ov-num po-ov-cat__mean"><b data-color="${meanColor}">${mean === null ? '—' : formatFixed(mean)}</b> <span class="po-ov-muted">/ ${max}</span></td>` +
-        `<td><div class="po-ov-share"><div class="po-ov-share__track"><div class="po-ov-share__bar${barCls}" data-w="${p === null ? 0 : Math.round(p * 100)}%"${diag || c.soort === 'bonus' || asGrade === null ? '' : ` data-bg="${gradeBarColor(asGrade)}"`}></div></div>` +
-        `<span class="po-ov-share__pct">${p === null ? '—' : `${Math.round(p * 100)}%`}</span></div></td>` +
+        `<td><div class="po-ov-share"><div class="po-ov-share__track"><div class="po-ov-share__bar${barCls}" data-w="${share ?? 0}%"${diag || c.soort === 'bonus' || asGrade === null ? '' : ` data-bg="${gradeBarColor(asGrade)}"`}></div></div>` +
+        `<span class="po-ov-share__pct">${share === null ? '—' : `${share}%`}</span></div></td>` +
         `<td><div class="po-ov-segs">${segs}</div><div class="ov-legend po-ov-legend">${legend}</div></td></tr>`
       );
     })

@@ -1,0 +1,71 @@
+{
+  "id": "rubric-presentatie",
+  "naam": "Presentatie",
+  "subject": "nat",
+  "schoolsoort": [
+    "Vwo"
+  ],
+  "jaarlagen": [
+    "4",
+    "5",
+    "6"
+  ],
+  "obs_ids": [],
+  "categories": [
+    {
+      "id": "cat-inhoud",
+      "naam": "Inhoud",
+      "max": 6,
+      "soort": "normaal",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 2,
+          "titel": "Zwak",
+          "uitleg": "Onjuist of onvolledig."
+        },
+        {
+          "min": 2,
+          "max": 4,
+          "titel": "Redelijk",
+          "uitleg": "Grotendeels juist."
+        },
+        {
+          "min": 5,
+          "max": 6,
+          "titel": "Sterk",
+          "uitleg": "Juist en volledig."
+        }
+      ]
+    },
+    {
+      "id": "cat-vorm",
+      "naam": "Vorm",
+      "max": 4,
+      "soort": "normaal",
+      "obs_ids": [],
+      "niveaus": [
+        {
+          "min": 0,
+          "max": 1,
+          "titel": "",
+          "uitleg": "Rommelig, slecht te volgen."
+        },
+        {
+          "min": 2,
+          "max": 4,
+          "titel": "",
+          "uitleg": "Helder opgebouwd."
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "rev": 1,
+    "createdBy": "gebr-1756713600001",
+    "createdAt": "2025-09-01T08:00:00.000Z",
+    "updatedBy": "gebr-1756713600001",
+    "updatedAt": "2025-09-01T08:00:00.000Z"
+  }
+}

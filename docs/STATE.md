@@ -1,9 +1,76 @@
 # State
 
-Last updated: 2026-11-24 (step 37 merged, version 0.28.0) Branch: `main`
+Last updated: 2026-11-24 (step 38 done; waiting for CI and the merge OK) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
 Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
+
+**Fresh context, start here.** The user asked for 38.1-38.6 in session 1; session 2 does **38.7
+(measure) and 38.8 (gate, review, release 0.29)** of `PLAN-2.md` step 38. Version is still
+0.28.0 (raise to 0.29.0 at the release).
+
+What step 38 built (details in the commits and `docs/phase-2/step-38-numbers.md`):
+
+- **Crate** (`97a546d`, `1d85745`): `AverageFormat` / `shown_average` / `is_fail_shown`,
+  `mean_of_averages` / `stats_of_averages(…, fmt)`; user answers A, B, D as `pct`,
+  `shown_difference`, `score_points`. `tests/shown_averages.rs`: all six formats, 0 differences.
+  WASM: `shownAverage`, `isFailShown`, `pct`, `shownDifference`, `scorePoints`, optional format;
+  arguments parsed once (`24e10ad`).
+- **Core** `maatwerk_core::numbers` (`load`, `compute`, `format`, `vak_numbers`): per year and
+  vak the list screens' numbers under the school's format (`instellingen.json` `gemiddelden`);
+  SE for upper-school students, members of upper-school groups and every student of a year
+  with a PTA test. Guard: only the admin changes `gemiddelden` (`rights::check_json_write`).
+  CLI `maatwerk-cli numbers`. Tauri command `vak_numbers` (spawn_blocking, Gast no-write list).
+- **UI**: `services/vak-numbers.ts` (cache per data generation); Leerlingen, Groepen, Toetsen
+  cards, Groepsoverzicht, Profiel and `examStats` use it; shown r/SE with the format's
+  decimals, fail colour from the core, hover texts of decision 93. MockApi mirror
+  `bridge/mock/mock-numbers.ts`. Inventory rows #8-#20 through the crate (point totals, `pct`,
+  `scorePoints`, PO maxima, PO Categorieën rule B). Old JS card path removed. Beheer ›
+  Instellingen › Cijfergemiddelden (`9db0101`, board 64 approved by the user).
+- **38.6** (`24e10ad`, `bae4004`): WASM parse once, history map, `yieldSlice`, topbar fit in the
+  next frame, 7c m4/n2 (n5 already fixed), 29 m4/m5, 19 m6 closed; backlog updated.
+- **Parity:** `node tools/numbers-parity.mjs <tiny|school> [r se]` (PowerShell) compares Rust
+  with the MockApi mirror; before the switch also with the old screen path: 0 differences on
+  tiny and school at a1/a1, k0/a2, a0/k2, k1/k0.
+
+Checks at `bae4004`: cargo test/clippy green (grades, wasm, core, cli, app), Vitest 950, node
+128 + goldens unchanged, e2e chromium 426/426, visual 171/177.
+
+**Session 2 (2026-11-24):**
+
+- User approved the two visual diffs: local baselines of `modal-po-overzicht-categorieen` and
+  `admin-instellingen` updated, CI copies dropped (`143e0de`). User's manual test of step 32
+  tracked (`4c0bd3e`).
+- 38.7 done: `docs/perf.md` "Grade numbers in Rust" (0.28.0 exe vs this branch, 4x twice, 1x
+  once): Groepen stats 2,9 s -> 5 ms (cache hit, the cost moved to `leerlingen:grades`, 3,2 ->
+  0,9 s), Toetsen stats 1,2 -> 0,2-0,4 s, long tasks 5,5 -> 2,7 s at 4x. **User: disk cache
+  stays After 1.0.** M-PERF-1 on the real copy: the user runs it.
+- 38.8: before/after tables in `docs/phase-2/step-38-numbers.md` (parity 0 differences: tiny,
+  school, k0/a2, a0/k2, k1/k0). Review `docs/reviews/step-38.md`: 0 blockers, 2 majors (fixed
+  `e037d67`, `b92f58b`: committed numbers golden for Rust and the mirror), 5 minors (m1 and m2
+  in part fixed `ed56e9e`, `5f114b7`; rest backlog "From Step 38"), 7 nits (n6 fixed). Version
+  0.29.0 (`74e8128`, splash baseline: version digit only).
+- Gate at `74e8128` + typecheck fix: fmt, clippy, cargo test (27 suites), deny, SPDX, npm
+  licences, lint, typecheck, Vitest 957, node 128, e2e chromium 426/426, visual 177/177. WebKit
+  locally 422/426: three drag-and-drop tests fail on Windows WebKit on `main` too, one timing
+  flake (backlog "From Step 38").
+
+**Next action:** CI on the pushed branch writes the dropped CI baselines (`admin-instellingen`,
+`modal-po-overzicht-categorieen`, `modal-profiel-cijferverloop`, `splash`, 3 platforms): look
+at them and commit them from the artifacts (review 38 m3), CI green, then merge on the user's
+OK (tag `step-38`). The user runs M-PERF-1 on the real copy.
+
+Open choices to tell the user at the end of the step:
+
+- No `minAppVersion` raise for `gemiddelden` (as the AI switch): an older app shows afronden 1.
+- The trend arrow keeps decision 12 at afronden 1, whatever the r format.
+- Card bar order: volgnummer, then id by byte order (was `localeCompare`; ids are generated).
+- `maatwerk-cli stats` keeps its own record-based selection (no student list needed); every
+  number in it is a crate function, so it does not break the rule. Not moved onto `numbers`.
+- Question editor footer RTTI % is now of the RTTI points (crate `rapportTotals.share`); differs
+  only while a normal question has no RTTI category. PO maxima are the rubric rules' whole maxima.
 
 ## Step 37 (2026-11-22, on `step/37-po-completion`, from `step/35-rights` at `9168c0e`)
 

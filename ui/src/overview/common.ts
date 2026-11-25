@@ -6,10 +6,17 @@
 // style="", legacy/style-data.ts).
 
 import { attemptCode } from '../domain/exam-info';
-import { formatFixed, formatGrade } from '../domain/format';
-import { gradeBarColor, gradeTextColor, isFail } from '../domain/grade-colors';
+import { formatFixed, formatGrade, formatHint, formatShown } from '../domain/format';
+import {
+  GRADE_BAR,
+  gradeBarColor,
+  gradeTextColor,
+  isFail,
+  shownTextColor,
+} from '../domain/grade-colors';
+import type { Shown } from '../domain/numbers';
 import { testBadgeClass, testKind, type TestKind } from '../domain/test-type';
-import type { Stats } from '../domain/statistics';
+import { pct, type AverageFormat, type Stats } from '../domain/statistics';
 import type { Exam } from '../domain/types';
 import { esc } from '../utils/html';
 
@@ -37,6 +44,17 @@ export function ovPillHtml(g: number | null, diagnostic = false): string {
   return `<span class="ov-pill${fail}" data-border-color="${gradeBarColor(g)}" data-color="${gradeTextColor(g)}">${formatGrade(g)}</span>`;
 }
 
+/**
+ * The pill of a student average as shown (decisions 91-93): the core's value with the format's
+ * decimals, red from its fail flag, the format in the hover text.
+ */
+export function ovShownPillHtml(s: Shown | null, fmt: AverageFormat): string {
+  if (s === null) return '<span class="ov-pill ov-pill--none">—</span>';
+  const fail = s.fails ? ' ov-pill--fail' : '';
+  const border = s.fails ? GRADE_BAR.fail : gradeBarColor(s.shown);
+  return `<span class="ov-pill${fail}" title="${esc(formatHint(fmt))}" data-border-color="${border}" data-color="${shownTextColor(s)}">${formatShown(s.shown, fmt)}</span>`;
+}
+
 /** Position of a grade on a 1-10 axis, in percent (clamped). */
 export function axisPct(g: number): number {
   return Math.max(0, Math.min(100, ((g - 1) / 9) * 100));
@@ -58,7 +76,7 @@ export function studentCount(n: number): string {
 
 /** A whole percentage of `n` out of `of` (0 when `of` is 0). */
 export function pctOf(n: number, of: number): number {
-  return of > 0 ? Math.round((100 * n) / of) : 0;
+  return pct(n, of);
 }
 
 /** A tab or card whose data could not be read (review 29 m3). */

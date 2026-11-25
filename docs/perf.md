@@ -380,3 +380,58 @@ order and stops after a redraw (m1, n2); Groepen stops after a redraw (m2).
 The background fills' wall times move a lot between runs (they yield to everything else; run
 (a) was right after a build, probably a cold start); the long tasks do not: at 1x no task over
 ~90 ms, at 4x none over ~270 ms (0.24.0: 4,6 s and 7,4 s).
+
+## Grade numbers in Rust (step 38, 2026-11-24)
+
+Step 38 moved the list screens' numbers (Leerlingen, Groepen and Toetsen cards, Groepsoverzicht,
+Profiel) to one native call per year and vak (`maatwerk_core::numbers`, command `vak_numbers`)
+and took the small wins of backlog "Grade cache" (WASM parses once, history map, `yieldSlice`,
+topbar fit in the next frame). Measured as in 0.24.1: `school` fixture (600 students, migrated),
+teacher nat, release exe, Windows 11, 16 logical CPUs, `tools/perf/measure.mjs --runs 3
+--exams 2`. "Before" is the 0.28.0 release exe, "after" this branch at `143e0de`; each on its
+own copy of the same migrated data, back to back. At 4x both builds ran twice (a / b).
+
+`first / median` in ms; a background fill has one sample.
+
+| Span                | 4x before (a / b)   | 4x after (a / b)    | 1x before | 1x after |
+| ------------------- | ------------------- | ------------------- | --------- | -------- |
+| tab:leerlingen      | 168/77 · 171/77     | 152/70 · 158/66     | 32/15     | 29/14    |
+| leerlingen:grades   | 3238 · 3231         | 908 · 923           | 644       | 341      |
+| leerlingen:rest     | 3448 · 3481         | 562 · 572           | 64        | 58       |
+| tab:groepen         | 93/53 · 94/45       | 137/48 · 112/46     | 17/13     | 22/9     |
+| groepen:stats       | 2943 · 2953         | 6 · 4               | 324       | 1        |
+| tab:toetsen         | 175/72 · 185/70     | 247/73 · 198/79     | 42/15     | 45/14    |
+| toetsen:stats       | 1230 · 1158         | 180 · 379           | 112       | 43       |
+| modal:scores        | 84/75 · 87/71       | 89/76 · 86/72       | 17/14     | 17/14    |
+| long tasks (n, sum) | 50, 5505 · 52, 5535 | 31, 2634 · 34, 2790 | 0, 0      | 0, 0     |
+| longest task        | 226 · 238           | 223 · 179           | 0         | 0        |
+
+Findings:
+
+- The background fills are 3-700x shorter: Groepen's statistics are a lookup now (2,9 s -> 5 ms
+  at 4x), the Leerlingen grades 3,2 s -> 0,9 s, the Toetsen statistics 1,2 s -> 0,2-0,4 s. At 4x
+  the long tasks halve (5,5 s -> 2,7 s in total); the longest stays ~200 ms (not profiled).
+- The first visits stay within the 0.24.1 range; at 1x all are under 50 ms. The first Toetsen
+  visit at 4x reads 200-250 ms against 175-185 ms before: within the run-to-run spread seen in
+  0.24.1 (141-266 ms); Groepen 112-137 ms against 93-94 ms likewise. Neither cause is profiled yet.
+- The synthetic fixture gives every student scores in every exam of the vak (worst case); real
+  data has far fewer graded records per exam. Not measured: WebKit (macOS, Linux) and the
+  user's real copy (M-PERF-1, the user runs it).
+- A disk cache (backlog "Grade cache" part 2) is not needed for now (user, 2026-11-24): it stays
+  "After 1.0".
+
+**Why Groepen went to milliseconds and Leerlingen did not** (user's question). The three screens
+share one `vak_numbers` call per year and vak, cached per data generation
+(`services/vak-numbers.ts`). The script visits Leerlingen first, so Leerlingen pays for the call
+and Groepen, visited next, gets the cached result: `groepen:stats` now times only writing the
+group cards (in 0.28.0 it computed every group's statistics itself in WebAssembly). The cost
+moved, it did not vanish. `leerlingen:grades` (~0,9 s at 4x) holds:
+
+1. `Store.loadYear` (the exams that name the bars; `store:readDir` alone is 200-300 ms at 4x);
+2. the native call: `maatwerk-cli numbers` on the same data takes ~240 ms (process start and
+   file reads included; the CPU throttle does not apply to Rust), and its answer is ~690 KB of
+   JSON that the webview parses;
+3. 600 cards' HTML, built in ~8 ms slices that share the main thread with `leerlingen:rest`
+   (the other cards' DOM, built at the same time).
+
+A Groepen visit before Leerlingen would show the call's cost in `groepen:stats` instead.
