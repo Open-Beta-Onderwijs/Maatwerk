@@ -412,8 +412,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   against the next compile's time limit; pass a cancel flag.~~ Done (39b): skipped when reached.
 - **m6:** the editor iframe uses `window.confirm` (close with unsaved changes since 3a, "Herstel
   standaardversie" since 8b); move both to the app's own dialog (Step 10).
-- **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
-  een opgave" only before the first opgave.
+- ~~**n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
+  een opgave" only before the first opgave.~~ Done (39b): string punten parsed (else their own
+  check), "(zonder tekst)", and `maatwerk-lib 3` marks a vraag after an opgave as outside it.
 - ~~**n4:** the bundled `main.typ` still has the cursor-marker code~~ Done in `maatwerk-main 2`
   (0.3.1): no marker in `main.typ`, no `cursor` in `OpdrachtInputs` or `render_assignment_svg`.
   The command itself has no caller in the editor any more; remove it in phase 2.

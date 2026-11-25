@@ -258,6 +258,21 @@ mod tests {
     }
 
     #[test]
+    fn review_8b_n1_a_vraag_after_an_opgave_is_outside_it() {
+        let v = vragen(&document(
+            assets::LIB_TYP,
+            "#opgave[#vraag(punten: 1, antwoord: [A])[In]]\n\
+             #vraag(punten: 1, antwoord: [B])[Erna]",
+        ));
+        let labels: Vec<_> = v.items.iter().map(|v| v.label.as_str()).collect();
+        assert_eq!(labels, ["1", "0"]);
+        assert_eq!(
+            v.checks,
+            ["Een vraag buiten een opgave staat niet in een #opgave."]
+        );
+    }
+
+    #[test]
     fn an_old_lib_typ_gives_vragen_without_points() {
         // `maatwerk-lib 1`: the marker has no `punten` yet.
         let old = assets::LIB_TYP.replace(", punten: punten)", ")");

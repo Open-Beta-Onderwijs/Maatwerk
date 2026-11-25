@@ -127,6 +127,7 @@ Import them with exactly these versions. Any other package fails.
 - The vragen checks, exactly these Dutch messages:
   - `De opdracht heeft geen vragen.`
   - `Vraag 2a heeft geen punten.` / `Een vraag buiten een opgave heeft geen punten.`
+  - `Vraag 2a: de punten ("twee") zijn geen getal.` (write `punten: 2` or `punten: 1.5`)
   - `Vraag 2a heeft geen antwoord.`
   - `Een vraag buiten een opgave staat niet in een #opgave.`
   - `De punten zijn onbekend: lib.typ van deze opdracht is een oudere versie.` (only for an old

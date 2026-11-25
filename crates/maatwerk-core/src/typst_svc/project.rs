@@ -285,7 +285,7 @@ mod tests {
             .unwrap();
         let status = check_project_files(&storage, "opdracht_1").unwrap();
         assert_eq!(status[1].state, ProjectFileState::Updated);
-        assert_eq!(status[1].version, Some(2));
+        assert_eq!(status[1].version, Some(3));
         assert_eq!(
             storage.read_text(&rel("lib.typ")).unwrap().unwrap(),
             assets::LIB_TYP

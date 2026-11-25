@@ -54,6 +54,9 @@ impl ProjectFile {
             ProjectFile::Lib => &[
                 (1, "280515f2dabec73a64857797a52467b6361f661e"),
                 (2, "0d0e3803d2a16e68e797ce328a96e588298dafd0"),
+                // 3: vragen after an opgave are outside it (opgave 0 in the marker, review
+                // 8b n1), 0.30.0.
+                (3, "126387fda018faca15cb52b817490f160ce22179"),
             ],
             ProjectFile::Main => &[
                 (1, "48dbdd9d89bf18c5823434b3ebdee24eabf0c502"),
@@ -222,6 +225,7 @@ mod tests {
         let fixture = |name| -> &'static str {
             match name {
                 "lib-v1" => include_str!("../tests/fixtures/project-files/lib-v1.typ"),
+                "lib-v2" => include_str!("../tests/fixtures/project-files/lib-v2.typ"),
                 "main-v1" => include_str!("../tests/fixtures/project-files/main-v1.typ"),
                 "main-v2" => include_str!("../tests/fixtures/project-files/main-v2.typ"),
                 _ => unreachable!(),
@@ -229,7 +233,8 @@ mod tests {
         };
         for (file, version, text) in [
             (ProjectFile::Lib, 1, fixture("lib-v1")),
-            (ProjectFile::Lib, 2, LIB_TYP),
+            (ProjectFile::Lib, 2, fixture("lib-v2")),
+            (ProjectFile::Lib, 3, LIB_TYP),
             (ProjectFile::Main, 1, fixture("main-v1")),
             (ProjectFile::Main, 2, fixture("main-v2")),
             (ProjectFile::Main, 3, OPDRACHT_MAIN_TYP),
@@ -254,7 +259,7 @@ mod tests {
             spaces,
             format!("\u{feff}{}", LIB_TYP.replace('\n', "\r\n")),
         ] {
-            assert_eq!(lib.released_version(&text), Some(2));
+            assert_eq!(lib.released_version(&text), Some(3));
         }
         // Leading spaces and an empty line in between are a change.
         let indented = LIB_TYP.replacen("\n", "\n ", 1);
@@ -267,13 +272,13 @@ mod tests {
     fn a_changed_copy_is_not_a_released_version() {
         let lib = ProjectFile::Lib;
         let crlf = format!("\u{feff}{}", LIB_TYP.replace('\n', "\r\n"));
-        assert_eq!(lib.released_version(&crlf), Some(2));
+        assert_eq!(lib.released_version(&crlf), Some(3));
         let v1 = include_str!("../tests/fixtures/project-files/lib-v1.typ");
         assert_eq!(lib.released_version(v1), Some(1));
         let changed = LIB_TYP.replace("size: 10.5pt", "size: 11pt");
         assert_ne!(changed, LIB_TYP);
         assert_eq!(lib.released_version(&changed), None);
-        assert_eq!(lib.version_line(&changed), Some(2));
+        assert_eq!(lib.version_line(&changed), Some(3));
         assert_eq!(lib.version_line("#import \"x\""), None);
         assert_eq!(ProjectFile::Main.released_version(LIB_TYP), None);
     }
