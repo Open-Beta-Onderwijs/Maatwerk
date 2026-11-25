@@ -73,6 +73,10 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   to the old generate + toCurrent; manifest tiny 70, school 5130 files); `scenario.mjs` too;
   `to-current.mjs` and its test deleted (CI, `data:dev`, mock plugin, numbers tools). Grade
   reference tests, Vitest 959, node 47, cargo core/grades green. 7a m6 is moot.
+- `c719844` 5a m3: a failed rapport names the teacher text that breaks it (hint "de fout zit in
+  het leeradvies bij T1 voor <naam>", toets and PO rapport). `4978181` 5a n8: Typst's fonts
+  before system fonts. `e8d18d2` 6a: editor warnings outside the open file in the status pill
+  (the modals had them since F-04).
 - `2a39c3f`: **Typst 0.15.1** (X-01). Port: `typst-layout` direct dependency (`PagedDocument`),
   typst-kit features `scan-fonts`/`embedded-fonts` with our `FontStore` on top of typst-kit's,
   `FileId` from `RootedPath` (`world::project_id`, `package_of`), `today(Duration)`,
@@ -87,11 +91,8 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   told the user; re-check in 45a.
 - Package `compiler` minimums (cetz 0.13, zero 0.12) fine; emoji goldens pass (COLRv1 ok).
 
-**Next action (39b, session 2):** CI green on `2a39c3f` (incl. `real-pdf` e2e). Then the rest of
-39b in `PLAN-2.md`: 5a m3 (name the field of a failing eval'd text: the rapport error now points
-into `rapport.typ:558`, see `other_invalid_teacher_markup_still_fails_with_a_call_trace`), 5a n8
-(system fonts in the app), 6a (Typst warnings in the editor and the generate/rapport modals),
-5b n2, the `LiveEditor` items of 8a and 8b, `typst-ide` checked for the editor (0.15.1 pulls in
+**Next action (39b, session 2):** CI green on `2a39c3f` (incl. `real-pdf` e2e; local commits
+after it not pushed yet). Done this session: golden conversion, 5a m3, 5a n8, 6a. Left: 5b n2, the `LiveEditor` items of 8a and 8b, `typst-ide` checked for the editor (0.15.1 pulls in
 `typst-html`). Then gate, reviewer subagent (`docs/reviews/step-39.md`), version 0.30.0,
 release; merge on the user's OK.
 
