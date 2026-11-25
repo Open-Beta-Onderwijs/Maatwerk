@@ -110,8 +110,17 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   licences, lint, typecheck, Vitest 961, node 47, e2e chromium 431/431, visual 177/177. Pushed;
   CI pending.
 
-**Next action (39b, session 2):** reviewer subagent running (`docs/reviews/step-39.md`); then
-fix blockers/majors, version 0.30.0, release; merge on the user's OK.
+- **Review** `docs/reviews/step-39.md`: 0 blockers, 1 major, 4 minors, 7 nits. M1 (lib 3
+  changed printed letters/answer keys through the silent update) fixed in `a3b453b`: lib 3
+  prints as lib 2, `in_opgave` feeds only the editor check (test: identical SVG). Minors m1-m4
+  and n4-n6 fixed (`16d7bdc`); n1-n3 and "Jumps after an error" in backlog "From Step 39".
+- `53bd1ce`: version 0.30.0 (splash baselines: version digits only; CI copies dropped). Gate
+  after the fixes: core 397, Vitest 961, node 47, e2e 431/431, visual 177/177, deny, audit clean.
+
+**Next action:** CI green on `53bd1ce` (new CI splash baselines from its artifacts: look and
+commit). Then on the user's OK: merge into `main` (merge commit), tag `step-39`, version tag
+`v0.30.0` only when the user says so, GitHub release with Dutch notes (draft in the step 39
+report; name T34, backslash paths).
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
