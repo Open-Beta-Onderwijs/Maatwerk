@@ -32,6 +32,15 @@ export function startupErrorText(error: FolderError): StartupErrorText {
           'Gebruik de nieuwste versie van Maatwerk.',
       };
     }
+    case 'needs_migration':
+      // Only v1 gets here: a v2 folder goes to the migration screen.
+      return {
+        title,
+        advice:
+          'Deze gegevensmap heeft nog het formaat van de oude Maatwerk (versie 1). Deze versie ' +
+          'kan die map niet meer omzetten. Zet de map eerst om met Maatwerk 0.29 en open hem ' +
+          'daarna met deze versie.',
+      };
     default:
       return {
         title,

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Migration tests on the synthetic v1 fixture `tests/fixtures/migrate/v1` (no real data). The
-//! expected results are `tests/fixtures/migrate/v2` (v1 -> v2 only) and `v3` (the whole way, and
-//! from `v2`); `MAATWERK_UPDATE_GOLDEN=1` rewrites them.
+//! Migration tests on the synthetic v2 fixture `tests/fixtures/migrate/v2` (no real data; it is
+//! the output of the v1 -> v2 step that went at 1.0). The expected result is
+//! `tests/fixtures/migrate/v3`; `MAATWERK_UPDATE_GOLDEN=1` rewrites it.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -32,10 +32,10 @@ struct Rig {
 }
 
 fn rig() -> Rig {
-    rig_from("v1")
+    rig_from("v2")
 }
 
-/// A shared folder holding the fixture `name` (`v1`: `data/` only; `v2`: also `rapporten/`).
+/// A shared folder holding the fixture `name` (`data/` and `rapporten/`).
 fn rig_from(name: &str) -> Rig {
     let tmp = TempDir::new().unwrap();
     let shared = tmp.path().join("shared");
@@ -64,7 +64,7 @@ fn copy_tree(from: &Path, to: &Path) {
 }
 
 fn tree(dir: &Path) -> BTreeMap<String, Vec<u8>> {
-    plan::walk_all(dir)
+    planner::walk_all(dir)
         .unwrap()
         .into_iter()
         .map(|rel| {
@@ -104,36 +104,6 @@ fn check_against(r: &Rig, name: &str) {
     }
     assert_tree_eq(&r.data, &golden.join("data"));
     assert_tree_eq(&r.shared.join("rapporten"), &golden.join("rapporten"));
-}
-
-#[test]
-fn v1_fixture_migrates_to_the_expected_v2_tree() {
-    let r = rig();
-    let report = migrate_to(&r.data, Some(&r.backups), now(), 2).unwrap();
-    assert!(report.applied);
-    assert_eq!((report.from_version, report.to_version), (1, 2));
-    check_against(&r, "v2");
-    assert_eq!(folder_version(&r.data).unwrap(), 2);
-
-    let warnings = report.warnings.join("\n");
-    for expected in [
-        "gebruiker gebr-1756713600000 stond er dubbel in",
-        "leerling 1002 stond er dubbel in",
-        "tekstbestand opdracht_1756713600201.typ ontbrak",
-    ] {
-        assert!(warnings.contains(expected), "{expected:?} in\n{warnings}");
-    }
-}
-
-#[test]
-fn v1_fixture_migrates_through_v2_to_the_expected_v3_tree() {
-    let r = rig();
-    let report = migrate(&r.data, Some(&r.backups), now()).unwrap();
-    assert!(report.applied);
-    assert_eq!((report.from_version, report.to_version), (1, 3));
-    check_against_golden(&r);
-    assert_eq!(folder_version(&r.data).unwrap(), 3);
-    assert_eq!(report.notes.len(), 2, "{:?}", report.notes);
 }
 
 #[test]
@@ -287,61 +257,6 @@ fn every_json_file_maatwerk_owns_is_stamped_after_migration() {
 }
 
 #[test]
-fn v2_content_follows_the_spec() {
-    let r = rig();
-    migrate_to(&r.data, Some(&r.backups), now(), 2).unwrap();
-    let read = |rel: &str| -> Value {
-        serde_json::from_slice(&fs::read(r.data.join(rel)).unwrap()).unwrap()
-    };
-    // C8: string ids, duplicates merged (later fields win).
-    let students = read("2025-2026/students-2025-2026.json");
-    let list = students["students"].as_array().unwrap();
-    assert_eq!(list.len(), 2);
-    assert_eq!(list[0]["id"], "1001");
-    assert_eq!(list[1]["id"], "1002");
-    assert_eq!(list[1]["stamklas"], "3b");
-    let group = read("2025-2026/groups/3a-nat-2025-2026.json");
-    assert_eq!(group["student_ids"], serde_json::json!(["1001", "1002"]));
-    assert_eq!(group["_meta"]["rev"], 4, "existing _meta is kept");
-    // C9: null -> "N"; invalid input stays as typed.
-    let scores = read("2025-2026/scores/nat/1001.json");
-    assert_eq!(scores["student_id"], "1001");
-    assert_eq!(
-        scores["scores"]["nat-toets-1-2025-2026"],
-        serde_json::json!({ "q1": 2, "q2": "N", "q3": "abc" })
-    );
-    // C5: entity without _meta gets rev 1.
-    let obs = read("observaties/obs-1756713600101.json");
-    assert_eq!(obs["_meta"]["rev"], 1);
-    assert_eq!(obs["_meta"]["updatedAt"], "2026-10-30T14:05:00.000Z");
-    // C14: opdracht folder, no typFile, image paths rewritten.
-    let dir = r.data.join("opdrachten/opdracht_1756713600200");
-    let opdracht = read("opdrachten/opdracht_1756713600200/opdracht.json");
-    assert!(opdracht.get("typFile").is_none());
-    let typ = fs::read_to_string(dir.join("opdracht.typ")).unwrap();
-    assert!(typ.contains(r#"image("images/figuur.png""#), "{typ}");
-    assert!(dir.join("images/figuur.png").is_file());
-    assert_eq!(
-        fs::read_to_string(dir.join("lib.typ")).unwrap(),
-        crate::assets::LIB_TYP
-    );
-    // C11: wi_4 filled the missing wisa/wisc/wisd but not the existing wisb.
-    let wisb = read("templates/rtti/wisb_4.json");
-    assert_eq!(wisb["uitleg"]["R"], "R wisb4");
-    let wisa = read("templates/rtti/wisa_4.json");
-    assert_eq!(wisa["uitleg"]["R"], "R wi4");
-    assert!(!r.data.join("templates/rtti/wi_4.json").exists());
-    // C16, C1.
-    assert!(r.data.join("gebruikers/admin.json").is_file());
-    assert!(!r.data.join("gebruikers.json").exists());
-    assert_eq!(read("config.json")["schema_version"], 2);
-    // Strays stay.
-    assert!(r.data.join("notities.txt").is_file());
-    assert!(r.data.join("opdrachten/verweesd.typ").is_file());
-    assert!(r.data.join("opdrachten/images/weg/x.png").is_file());
-}
-
-#[test]
 fn a_dry_run_changes_nothing_and_lists_the_plan() {
     let r = rig();
     let before = tree(&r.data);
@@ -350,27 +265,13 @@ fn a_dry_run_changes_nothing_and_lists_the_plan() {
     assert!(report.backup.is_none());
     assert_eq!(tree(&r.data), before);
     assert!(!r.backups.exists());
-    let has = |action, path: &str| {
+    assert!(
         report
             .changes
             .iter()
-            .any(|c| c.action == action && c.path == path)
-    };
-    assert!(has(Action::Delete, "gebruikers.json"));
-    assert!(has(Action::Write, "gebruikers/admin.json"));
-    assert!(has(
-        Action::Delete,
-        "2025-2026/exams/nat-toets-1-2025-2026.json.lock"
-    ));
-    assert!(report.changes.iter().any(|c| c.action == Action::Move
-        && c.to.as_deref()
-            == Some("../rapporten/2025-2026/2025-09-02 0800 rapport nat 3a nat Toets 1.pdf")));
-    assert_eq!(report.changes.last().unwrap().path, "config.json");
-    assert!(
-        report.warnings.last().unwrap().contains("versie 3"),
-        "the v3 step is announced: {:?}",
-        report.warnings
+            .any(|c| c.action == Action::Delete && c.path == "users/admin.json")
     );
+    assert_eq!(report.changes.last().unwrap().path, "config.json");
 }
 
 #[test]
@@ -386,20 +287,6 @@ fn a_second_run_does_nothing() {
 }
 
 #[test]
-fn an_interrupted_run_continues_to_the_same_result() {
-    for stop_after in [1, 7, 20, 40] {
-        let r = rig();
-        let plan = plan::build(&r.data, now()).unwrap();
-        for op in plan.ops.iter().take(stop_after) {
-            op.apply(&r.data).unwrap();
-        }
-        assert_eq!(folder_version(&r.data).unwrap(), 1, "config.json goes last");
-        migrate(&r.data, Some(&r.backups), now()).unwrap();
-        check_against_golden(&r);
-    }
-}
-
-#[test]
 fn the_backup_holds_every_file_and_lives_outside_the_shared_folder() {
     let r = rig();
     let before = tree(&r.data);
@@ -407,7 +294,7 @@ fn the_backup_holds_every_file_and_lives_outside_the_shared_folder() {
     let zip_path = PathBuf::from(report.backup.unwrap());
     assert_eq!(
         zip_path.file_name().unwrap().to_str().unwrap(),
-        "maatwerk-backup-v1 2026-10-30 1405.zip"
+        "maatwerk-backup-v2 2026-10-30 1405.zip"
     );
     let mut zip = zip::ZipArchive::new(fs::File::open(&zip_path).unwrap()).unwrap();
     assert_eq!(zip.len(), before.len());
@@ -433,26 +320,6 @@ fn the_backup_holds_every_file_and_lives_outside_the_shared_folder() {
 }
 
 #[test]
-fn unmigrated_legacy_data_blocks_before_anything_changes() {
-    let cases: [(&str, &str); 4] = [
-        ("students.json", r#"[{"id":1}]"#),
-        ("observaties.json", r#"[{"id":"obs-1"}]"#),
-        ("2025-2026/exams.json", r#"[{"id":"e"}]"#),
-        ("2025-2026/scores/1001.json", r#"{"student_id":1001}"#),
-    ];
-    for (rel, content) in cases {
-        let r = rig();
-        fs::write(r.data.join(rel), content).unwrap();
-        let before = tree(&r.data);
-        let err = migrate(&r.data, Some(&r.backups), now()).unwrap_err();
-        assert_eq!(err.code(), "migration_blocked", "{rel}");
-        assert!(err.to_string().contains(rel), "{err}");
-        assert_eq!(tree(&r.data), before, "{rel}: nothing changed");
-        assert!(!r.backups.exists(), "{rel}: no backup either");
-    }
-}
-
-#[test]
 fn a_corrupt_file_blocks() {
     let r = rig();
     fs::write(r.data.join("school.json"), "{ half").unwrap();
@@ -474,53 +341,6 @@ fn a_newer_folder_is_refused_and_an_empty_one_just_gets_a_version() {
     let report = migrate(&data, Some(&tmp.path().join("b")), now()).unwrap();
     assert!(report.applied);
     assert_eq!(folder_version(&data).unwrap(), 3);
-}
-
-#[test]
-fn a_windows_made_folder_in_mixed_case_migrates() {
-    // Hand-typed `Images/<id>/` and a `.PNG` file: Windows found both, so must the migration.
-    let r = rig();
-    let old = r.data.join("opdrachten");
-    let typ = old.join("opdracht_1756713600200.typ");
-    let text = fs::read_to_string(&typ).unwrap().replace(
-        "images/opdracht_1756713600200/figuur.png",
-        "Images/opdracht_1756713600200/Figuur.PNG",
-    );
-    fs::write(&typ, text).unwrap();
-    let images = old.join("images/opdracht_1756713600200");
-    fs::rename(images.join("figuur.png"), images.join("tmp.png")).unwrap();
-    fs::rename(images.join("tmp.png"), images.join("Figuur.PNG")).unwrap();
-
-    migrate(&r.data, Some(&r.backups), now()).unwrap();
-    let dir = r.data.join("opdrachten/opdracht_1756713600200");
-    let migrated = fs::read_to_string(dir.join("opdracht.typ")).unwrap();
-    assert!(migrated.contains("\"images/Figuur.PNG\""), "{migrated}");
-    assert!(dir.join("images/Figuur.PNG").is_file());
-    let report = crate::validate::validate(&r.data).unwrap();
-    assert!(
-        !report.issues.iter().any(|i| i.message.contains("Figuur")),
-        "{:?}",
-        report.issues
-    );
-}
-
-#[test]
-fn helper_rules() {
-    assert!(plan::is_temp_name("x.json.4242.tmp"));
-    assert!(plan::is_temp_name("x.json.4242-3.tmp"));
-    assert!(!plan::is_temp_name("notes.tmp"));
-    assert!(!plan::is_temp_name("x.json"));
-    assert_eq!(
-        plan::v1_template_key("rtti_expl_adv_wisb_4.json"),
-        Some(("wisb", 4))
-    );
-    assert_eq!(plan::v1_template_key("other.json"), None);
-    assert_eq!(
-        plan::id_string(&serde_json::json!(12345)),
-        serde_json::json!("12345")
-    );
-    assert!(plan::is_file_id("toets-lk3j2-a1b2c3"));
-    assert!(!plan::is_file_id("../x"));
 }
 
 #[test]
@@ -692,4 +512,29 @@ fn security_m1_a_linked_images_folder_is_refused() {
         fs::read_dir(&outside).unwrap().next().is_none(),
         "nothing written outside"
     );
+}
+
+#[test]
+fn decision_88_a_v1_folder_is_refused_and_left_alone() {
+    let tmp = TempDir::new().unwrap();
+    let data = tmp.path().join("shared/data");
+    fs::create_dir_all(&data).unwrap();
+    // A v1 folder: no `config.json` (or no `schema_version`), `gebruikers.json` instead of
+    // `gebruikers/`.
+    fs::write(data.join("gebruikers.json"), r#"[{"id":"admin"}]"#).unwrap();
+    for config in [None, Some(r#"{"actief_jaar":"2025-2026"}"#)] {
+        if let Some(c) = config {
+            fs::write(data.join("config.json"), c).unwrap();
+        }
+        assert_eq!(folder_version(&data).unwrap(), 1);
+        let before = tree(&data);
+        let backups = tmp.path().join("b");
+        for dir in [None, Some(backups.as_path())] {
+            let err = migrate(&data, dir, now()).unwrap_err();
+            assert_eq!(err.code(), "migration_blocked");
+            assert!(err.to_string().contains("Maatwerk 0.29"), "{err}");
+        }
+        assert_eq!(tree(&data), before, "nothing changed");
+        assert!(!backups.exists(), "no backup either");
+    }
 }

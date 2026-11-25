@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// The one-time conversion of an older data folder (v1: ADR-0003 C1, Step 7a;
-// v2 -> v3: step 18), offered at start instead of the startup error screen when
+// The one-time conversion of a v2 data folder to v3 (step 18; the v1 -> v2 step
+// of ADR-0003 C1 went at 1.0, PLAN-2 decision 88), offered at start instead of the startup error screen when
 // the folder needs it. First a dry run shows what changes in the content (the
 // observaties each inhaal and herkansing gets, decision 13). The admin confirms
 // that nobody uses the old app any more; Maatwerk then zips the whole folder to

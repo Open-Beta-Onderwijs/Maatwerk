@@ -819,8 +819,9 @@ async function init() {
     renderChooseFolder(container, window.maatwerk);
     return;
   }
-  if (status.error?.code === 'needs_migration') {
-    // A v1 folder: offer the one-time conversion (ADR-0003 C1).
+  // A v2 folder: offer the one-time conversion (ADR-0003 C1). A v1 folder cannot be converted
+  // since 1.0 (PLAN-2 decision 88): the startup error says so.
+  if (status.error?.code === 'needs_migration' && status.error.details?.found !== '1') {
     renderMigration(container, status.dataDir, window.maatwerk);
     return;
   }

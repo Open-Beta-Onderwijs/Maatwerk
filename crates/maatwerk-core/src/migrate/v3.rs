@@ -15,7 +15,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde_json::{Map, Value};
 
-use super::plan::Planner;
+use super::planner::Planner;
 use crate::app_version;
 use crate::storage::IMAGES_DIR;
 
@@ -324,7 +324,7 @@ fn names<'a>(ids: impl Iterator<Item = &'a Value>, obs_names: &BTreeMap<String, 
 pub(crate) fn build(
     root: &std::path::Path,
     now: time::OffsetDateTime,
-) -> crate::error::Result<super::plan::Plan> {
+) -> crate::error::Result<super::planner::Plan> {
     let mut p = Planner::new(root, now)?;
     p.refuse_linked_dirs();
     let (moves, kept) = p.image_moves();
@@ -352,7 +352,7 @@ pub(crate) fn remove_empty_dirs(root: &std::path::Path) {
         // A link is never followed (security review m1).
         let dir = entry.file_type().is_ok_and(|t| t.is_dir());
         if dir && (name.eq_ignore_ascii_case(V2_IMAGES) || name.eq_ignore_ascii_case(V2_PRESENCE)) {
-            super::plan::remove_empty_tree(&entry.path());
+            super::planner::remove_empty_tree(&entry.path());
         }
     }
 }

@@ -99,7 +99,7 @@ pub(crate) fn write(root: &Path, dir: &Path, version: u64, now: OffsetDateTime) 
     let partial = target.with_extension("zip.partial");
     let io_err = |p: &Path, e: io::Error| Error::io(display_path(p), e);
 
-    let files = super::plan::walk_all(root).map_err(|e| io_err(root, e))?;
+    let files = super::planner::walk_all(root).map_err(|e| io_err(root, e))?;
     {
         let file = File::create(&partial).map_err(|e| io_err(&partial, e))?;
         let mut zip = ZipWriter::new(file);

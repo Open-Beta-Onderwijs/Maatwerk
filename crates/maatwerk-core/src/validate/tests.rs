@@ -69,8 +69,10 @@ fn the_migrated_fixture_has_no_errors_only_its_known_strays() {
 
 #[test]
 fn a_v1_folder_needs_migration() {
-    let v1 = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/migrate/v1/data");
-    let report = validate(&v1).unwrap();
+    let tmp = tempfile::TempDir::new().unwrap();
+    let v1 = tmp.path();
+    fs::write(v1.join("gebruikers.json"), "[]").unwrap();
+    let report = validate(v1).unwrap();
     assert_eq!(report.schema_version, 1);
     assert_eq!(report.errors(), 1);
     assert_eq!(report.issues[0].kind, IssueKind::Version);
