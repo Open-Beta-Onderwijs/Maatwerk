@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-25 (step 38 merged; `main` merged into step 39)
+Last updated: 2026-11-25 (step 39a in progress)
 Branch: `step/39-v1-removal-typst`
 Last tags: `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -25,8 +25,29 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   sorted, NTFS is) and the float sum depends on order. `json_files` and `list_dir` now sort by
   name. `main` merged here.
 
-**Next action:** the first CI run of this branch writes the `admin-instellingen` baselines on 3
-platforms: look at them and commit from the artifacts. Then the plan's step 39 when the user asks.
+- `9f6740e`: CI baselines of `admin-instellingen` (3 platforms) from run 45585125318, checked.
+
+### 39a progress (v1 removal, session 1)
+
+- `dc5f6b7` 39a.1: v1 -> v2 migration removed (core `migrate/plan.rs` -> `planner.rs`, the
+  shared planner of the v3 step). A v1 folder is refused (`MigrationBlocked`, `V1_REFUSED`:
+  "Zet de map eerst om met Maatwerk 0.29"); the startup screen shows that text for
+  `needs_migration` with `found: '1'` instead of the migration offer. An empty folder still just
+  gets a version. Fixture `tests/fixtures/migrate/v1` deleted; v2 is the migration input, the v3
+  golden unchanged. CI: "Validate the school fixture" (generate + `to-current.mjs` +
+  validate-data) replaces the v1 migrate step.
+- `b9fab11` 39a.2: `TypstProject::opdracht_v1`, `v1_opdracht_id` and `Mount::file` removed
+  (7a n1). Rust opdracht fixture in folder layout (export-opdrachten.mjs writes it from the
+  current-format tiny). 5b n5 closed (junction test, Windows). **Kept:** `render_assignment_svg`
+  (id-based since step 7; the step 34b preview and the AI preview use it), tell the user.
+- 5b n7 closes with the v1 migration: `_preview_*.typ` only existed in v1 folders, which the
+  0.29 migration cleans; nothing writes them.
+
+**Next action:** 39a.3: the reference harness (`tests/reference-harness`, `tools/reference-shims`,
+`golden:regen`/`golden:check`), `filesToV2` in `ui/tests/golden.ts` / `store-session.ts` (golden
+inputs are v1 folders: convert them once, committed), fixture generator output in the current
+format, 7a m6 (moot), backlog 2/2a items. Then 39a.4 docs (`parity.md`, `cutover-runbook.md`
+marked history, backlog strike-throughs, M-START-3).
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
