@@ -168,14 +168,22 @@ mod tests {
         // family never shadows the one the goldens were drawn with.
         let bare = FontStore::new(false);
         let system = FontStore::new(true);
-        for family in ["libertinus serif", "new computer modern", "dejavu sans mono"] {
+        for family in [
+            "libertinus serif",
+            "new computer modern",
+            "dejavu sans mono",
+        ] {
             for weight in [FontWeight::REGULAR, FontWeight::BOLD] {
                 let variant = FontVariant {
                     weight,
                     ..FontVariant::default()
                 };
                 let want = family_index(&bare, family, variant).expect(family);
-                assert_eq!(family_index(&system, family, variant), Some(want), "{family}");
+                assert_eq!(
+                    family_index(&system, family, variant),
+                    Some(want),
+                    "{family}"
+                );
                 assert_eq!(
                     system.font(want).unwrap().data(),
                     bare.font(want).unwrap().data(),

@@ -190,9 +190,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   `folder` for the CLI.
 - ~~**Review 5b n1:** a panic inside one compile is not caught; the other workers run all remaining
   jobs before it surfaces. Catch per job (`catch_unwind`) and report it as that job's error.~~ Done (Step 10): `BatchError::Panic`.
-- **Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
+- ~~**Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
   `docs/perf.md`); opdrachten with large photos could change that. Merge in job order as results
-  arrive if a real class batch gets heavy.
+  arrive if a real class batch gets heavy.~~ Done (39b): `PdfMerger` merges in job order as jobs
+  finish and drops each PDF (same bytes as `pdf_merge`, test).
 - ~~**Review 5b n3:** tofu warnings repeat once per job in a batch~~ Done (6a): the batch
   command deduplicates the warning texts across jobs.
 - ~~**Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
