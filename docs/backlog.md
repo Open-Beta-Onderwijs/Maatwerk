@@ -213,6 +213,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - **Review 5a nit n8 (done 2026-10-28):** the pixel tests and golden PNGs no longer use system
   fonts (`support::fonts`, `--ignore-system-fonts`). The app still uses them; an installed
   "Libertinus Serif" could still shadow Typst's own copy there. Nits n1-n6 and n9 were done in 5b.
+  The app part done in 39b: Typst's fonts come before the system fonts in `FontStore`.
 
 - **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
   through hayagriva/citationberg; the fix needs quick-xml 0.41. Ignore accepted by the user

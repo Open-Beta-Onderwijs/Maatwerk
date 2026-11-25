@@ -2,8 +2,10 @@
 
 //! Fonts for every compile: the embedded fonts first (the template fonts, as the reference's
 //! `--font-path include/fonts`, and Noto Color Emoji, which wins over a system emoji font such
-//! as Segoe UI Emoji: quirk T2), then system fonts, then Typst's own embedded fonts (Libertinus
-//! Serif, New Computer Modern, DejaVu Sans Mono). System fonts are searched once per process.
+//! as Segoe UI Emoji: quirk T2), then Typst's own embedded fonts (Libertinus Serif, New Computer
+//! Modern, DejaVu Sans Mono), then system fonts. A family in both wins by its first face, so an
+//! installed Libertinus Serif does not replace Typst's copy (review 5a n8): the app draws what
+//! the goldens (no system fonts) show. System fonts are searched once per process.
 
 use std::sync::{Arc, OnceLock};
 
@@ -46,16 +48,16 @@ impl FontStore {
             }
         }
         emoji.sort_unstable();
+        // Typst's own fonts stay as they are, as in the goldens.
+        for entry in typst_kit::fonts::embedded() {
+            kit.push(entry);
+            len += 1;
+        }
         if system_fonts {
             for (path, info) in typst_kit::fonts::system() {
                 kit.push((path, without_emoji(&info, &emoji)));
                 len += 1;
             }
-        }
-        // Typst's own fonts stay as they are, as in the goldens.
-        for entry in typst_kit::fonts::embedded() {
-            kit.push(entry);
-            len += 1;
         }
         FontStore { kit, len }
     }
@@ -156,6 +158,29 @@ mod tests {
                     "{emoji} ({weight:?})"
                 );
                 assert!(index < assets::FONTS.len(), "{emoji}: embedded copy");
+            }
+        }
+    }
+
+    #[test]
+    fn review_5a_n8_typst_fonts_come_before_system_fonts() {
+        // The same faces with and without system fonts: an installed copy of a Typst font
+        // family never shadows the one the goldens were drawn with.
+        let bare = FontStore::new(false);
+        let system = FontStore::new(true);
+        for family in ["libertinus serif", "new computer modern", "dejavu sans mono"] {
+            for weight in [FontWeight::REGULAR, FontWeight::BOLD] {
+                let variant = FontVariant {
+                    weight,
+                    ..FontVariant::default()
+                };
+                let want = family_index(&bare, family, variant).expect(family);
+                assert_eq!(family_index(&system, family, variant), Some(want), "{family}");
+                assert_eq!(
+                    system.font(want).unwrap().data(),
+                    bare.font(want).unwrap().data(),
+                    "{family}"
+                );
             }
         }
     }
