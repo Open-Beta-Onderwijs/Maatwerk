@@ -16,7 +16,7 @@ export type DiffLine =
 export const MAX_CELLS = 2_000_000;
 
 function lines(text: string): string[] {
-  const body = text.replace(/^﻿/, '').replace(/\r\n/g, '\n');
+  const body = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n');
   const out = body.split('\n');
   if (out.length > 1 && out[out.length - 1] === '') out.pop();
   return out;

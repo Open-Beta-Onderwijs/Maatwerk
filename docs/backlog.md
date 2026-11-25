@@ -419,7 +419,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   (0.3.1): no marker in `main.typ`, no `cursor` in `OpdrachtInputs` or `render_assignment_svg`.
   The command itself has no caller in the editor any more; remove it in phase 2.
 - **n6:** while two abandoned compiles still run, the editor waits silently; say so.
-- **n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.
+- ~~**n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.~~
+  Done (39b): shared start and end lines first, LCS on the middle, removed/added above 2M cells.
 - **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do
   nothing (by design, review 8a n7); consider mapping through the last good source.
 
