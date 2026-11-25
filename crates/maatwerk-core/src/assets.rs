@@ -54,9 +54,9 @@ impl ProjectFile {
             ProjectFile::Lib => &[
                 (1, "280515f2dabec73a64857797a52467b6361f661e"),
                 (2, "0d0e3803d2a16e68e797ce328a96e588298dafd0"),
-                // 3: vragen after an opgave are outside it (opgave 0 in the marker, review
-                // 8b n1), 0.30.0.
-                (3, "126387fda018faca15cb52b817490f160ce22179"),
+                // 3: `in_opgave` in the vraag marker, for the editor check (review 8b n1);
+                // printing as in 2. 0.30.0.
+                (3, "ce5fb64a2bb86b47c741cc30a0e16be3090f5fb5"),
             ],
             ProjectFile::Main => &[
                 (1, "48dbdd9d89bf18c5823434b3ebdee24eabf0c502"),

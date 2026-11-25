@@ -99,7 +99,10 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
         } else {
             format!("Vraag {}", v.label)
         };
-        if v.opgave == 0 {
+        // `in_opgave` (maatwerk-lib 3) also catches a vraag after an opgave, which keeps that
+        // opgave's number in the marker and on paper; older copies only know opgave 0.
+        let outside = v.opgave == 0 || matches!(dict.get("in_opgave"), Ok(Value::Bool(false)));
+        if outside {
             checks.push(format!("{name} staat niet in een #opgave."));
         }
         match dict.get("punten") {
@@ -137,13 +140,13 @@ fn number(value: &Value) -> Option<f64> {
     match value {
         Value::Int(n) => Some(*n as f64),
         Value::Float(f) => Some(*f),
-        Value::Str(s) => s
-            .as_str()
-            .trim()
-            .replace(',', ".")
-            .parse::<f64>()
-            .ok()
-            .filter(|n| n.is_finite()),
+        // Digits with one decimal comma or point only: not "1e3", "inf" or "-2".
+        Value::Str(s) => Some(s.as_str().trim())
+            .filter(|t| {
+                t.chars()
+                    .all(|c| c.is_ascii_digit() || c == ',' || c == '.')
+            })
+            .and_then(|t| t.replace(',', ".").parse::<f64>().ok()),
         _ => None,
     }
 }
@@ -264,18 +267,36 @@ mod tests {
             "#opgave[#vraag(punten: 1, antwoord: [A])[In]]\n\
              #vraag(punten: 1, antwoord: [B])[Erna]",
         ));
+        // Numbered as on paper (as lib 2: the review of step 39, M1), but flagged.
         let labels: Vec<_> = v.items.iter().map(|v| v.label.as_str()).collect();
-        assert_eq!(labels, ["1", "0"]);
-        assert_eq!(
-            v.checks,
-            ["Een vraag buiten een opgave staat niet in een #opgave."]
-        );
+        assert_eq!(labels, ["1a", "1b"]);
+        assert_eq!(v.checks, ["Vraag 1b staat niet in een #opgave."]);
+    }
+
+    #[test]
+    fn review_39_m1_lib_3_prints_what_lib_2_printed() {
+        let lib2 = include_str!("../../tests/fixtures/project-files/lib-v2.typ");
+        let body = "#vraag(antwoord: [V])[Voor]\n\
+                    #opgave[#vraag(antwoord: [A])[In]]\n\
+                    #vraag(antwoord: [B])[Erna]\n\
+                    #antwoorden_lijst()";
+        let svg = |lib: &str| -> Vec<String> {
+            document(lib, body)
+                .pages()
+                .iter()
+                .map(crate::typst_svc::compile::svg_page)
+                .collect()
+        };
+        assert_eq!(svg(assets::LIB_TYP), svg(lib2));
     }
 
     #[test]
     fn an_old_lib_typ_gives_vragen_without_points() {
         // `maatwerk-lib 1`: the marker has no `punten` yet.
-        let old = assets::LIB_TYP.replace(", punten: punten)", ")");
+        let old = assets::LIB_TYP.replace(
+            "      punten: punten,\n      in_opgave: _in_opgave.get(),\n",
+            "",
+        );
         assert_ne!(old, assets::LIB_TYP);
         let v = vragen(&document(
             &old,

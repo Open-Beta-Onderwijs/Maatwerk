@@ -155,8 +155,9 @@
 
 #let _vraag_ctr = counter("maatwerk-vraag")
 
-// Whether the text is inside an opgave: a vraag after an opgave is outside it, though the
-// opgave counter still has that opgave's number (maatwerk-lib 3).
+// Whether the text is inside an opgave (maatwerk-lib 3): a vraag after an opgave is outside
+// it, though the opgave counter still has that opgave's number. Only the editor's check reads
+// it; printing is as in lib 2.
 #let _in_opgave = state("maatwerk-in-opgave", false)
 
 // Numbered gray block like Voorbeeld/Formule, referable as "Opgave 1".
@@ -217,9 +218,15 @@
   context {
     let id = _vraag_id.get().first()
     // Maatwerk reads these markers for the editor's vragen list (punten since maatwerk-lib 2;
-    // opgave 0 outside an opgave, also after one, since maatwerk-lib 3).
-    let opgave = if _in_opgave.get() { _opgave_nr() } else { 0 }
-    let v = (opgave: opgave, nr: _vraag_ctr.get().first(), antwoord: antwoord, punten: punten)
+    // in_opgave since maatwerk-lib 3, for the editor's check only: the numbering and the
+    // answer key stay as in lib 2).
+    let v = (
+      opgave: _opgave_nr(),
+      nr: _vraag_ctr.get().first(),
+      antwoord: antwoord,
+      punten: punten,
+      in_opgave: _in_opgave.get(),
+    )
     [#metadata(v) <__maatwerk_vraag>]
     block(
       above: 0.65em,

@@ -77,8 +77,8 @@ sections 3 to 5; examples that compile cleanly are in
 [`assignment-examples/`](assignment-examples/) (a test checks them).
 
 **Vraag markers.** Every `#vraag` leaves `metadata((opgave, nr, antwoord, punten)) <__maatwerk_vraag>`
-(`punten` since `maatwerk-lib 2`; `opgave` is 0 for a vraag outside an opgave, since
-`maatwerk-lib 3` also after one). Maatwerk reads these from the compiled document for the
+(`punten` since `maatwerk-lib 2`; `in_opgave` since `maatwerk-lib 3`: a vraag after an opgave
+keeps that opgave's number on paper, the editor flags it as outside). Maatwerk reads these from the compiled document for the
 editor's vragen panel and the checks, and for `assignment check`. Labels follow the answer key:
 the opgave number, plus a letter (`a`, `b`, ...) when the opgave has more than one vraag.
 `punten` may be a number or a string with one (`"1,5"`); an answer without text (only an
