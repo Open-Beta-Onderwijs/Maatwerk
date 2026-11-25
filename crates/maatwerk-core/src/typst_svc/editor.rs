@@ -1368,6 +1368,67 @@ mod tests {
     const SLOW: &str = "#let n = 0\n#for i in range(50000000) { n += 1 }\n#n";
 
     #[test]
+    fn review_8a_m6_a_panic_in_a_compile_is_an_error_update_and_the_editor_goes_on() {
+        // A real compiler panic is hard to provoke; the session's clock runs inside the same
+        // `catch_unwind`, so a clock that panics once stands in for it.
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().to_owned();
+        let panics = Arc::new(AtomicBool::new(false));
+        let factory = {
+            let panics = panics.clone();
+            move || {
+                let panics = panics.clone();
+                Ok(session(&dir, &pages("A", "B", "C")).with_clock(move || {
+                    if panics.swap(false, Ordering::SeqCst) {
+                        panic!("compiler bug");
+                    }
+                    fixed_now()
+                }))
+            }
+        };
+        let (tx, rx) = mpsc::channel();
+        let editor = LiveEditor::start(factory, LiveOptions::default(), move |u| {
+            let _ = tx.send(u);
+        })
+        .unwrap();
+        assert!(rx.recv_timeout(WAIT).unwrap().ok);
+
+        panics.store(true, Ordering::SeqCst);
+        let broken = editor.update_ok(main_typ(), pages("A", "B", "C2"));
+        let failed = rx.recv_timeout(WAIT).unwrap();
+        assert_eq!((failed.generation, failed.ok), (broken, false));
+        assert_eq!(
+            failed.diagnostics[0].message,
+            "internal error in the Typst compiler"
+        );
+        assert_eq!(failed.preview_generation, Some(0), "the preview stays");
+
+        editor.update_ok(main_typ(), pages("A", "B", "C3"));
+        let next = rx.recv_timeout(WAIT).unwrap();
+        assert!(next.ok, "{:?}", next.diagnostics);
+        assert_eq!(indices(&next), vec![2]);
+        editor.close();
+    }
+
+    #[test]
+    fn review_8a_m6_close_during_a_compile_returns_at_once_and_sends_nothing() {
+        let (_tmp, editor, rx) = live("A", Duration::ZERO);
+        rx.recv_timeout(WAIT).unwrap();
+        editor.update_ok(main_typ(), SLOW.to_owned());
+        // The slow compile is running (the default time limit is far away).
+        std::thread::sleep(Duration::from_millis(200));
+        let started = Instant::now();
+        editor.close();
+        assert!(
+            started.elapsed() < Duration::from_secs(2),
+            "close waited for the compile: {:?}",
+            started.elapsed()
+        );
+        // The sink is gone with the coordinator: no update for the abandoned compile.
+        assert!(rx.recv_timeout(Duration::from_millis(300)).is_err());
+    }
+
+    #[test]
     fn the_watchdog_abandons_a_long_compile_and_continues_on_a_fresh_session() {
         let tmp = tempfile::tempdir().unwrap();
         let (tx, rx) = mpsc::channel();
