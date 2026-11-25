@@ -131,8 +131,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   (`fix/manual-test-6`, quirk U21).
 - ~~**M-OPD-6** selected text could not be dragged in the editor~~ Fixed (`dragDropEnabled`
   off + `no-file-drop.ts`, quirk U20); re-check by hand in the next exe.
-- **M-START-3** could not be run: a v1 folder has no `schema_version` (the checklist now says to
-  add it). Re-run after Step 7a writes `schema_version`.
+- ~~**M-START-3** could not be run: a v1 folder has no `schema_version` (the checklist now says to
+  add it). Re-run after Step 7a writes `schema_version`.~~ Closed (39a): the v1 path is gone; M-START-3 runs on a converted copy, M-MIG-6 covers a v1 folder.
 - **M-LEER-3, M-GRP-3** CSV import screens: show a 5-row example CSV of the expected format
   (PLAN Step 10).
 - **M-TOE-6** printed copies next to the data folder, not inside it (PLAN Step 7a, C18).
@@ -195,11 +195,11 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   command deduplicates the warning texts across jobs.
 - **Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
   normalisation also ignores trailing whitespace/final newline.
-- **Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
-  opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.
+- ~~**Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
+  opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.~~ Done (39a, `b9fab11`): only opdracht folders are mounted; a junction to another opdracht is denied (test).
 - **Review 5b n6:** the CLI panics on a non-UTF-8 argument and writes its output non-atomically.
-- **Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
-  Step 7 migration deletes them.
+- ~~**Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
+  Step 7 migration deletes them.~~ Closed (39a): `_preview_*.typ` only existed in v1 folders, which the 0.29 conversion cleans.
 
 ## From Step 5a
 
@@ -299,17 +299,17 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From the Step 2 review (`docs/reviews/step-02.md`)
 
-- **m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
-  diagnostics separator-neutrally (`\` vs `/`).
-- **m6 (Step 5/6):** store an explicit merged-page map for batch goldens (job, page, blank) and
-  PNGs for multi-job batches if pixel parity of the merge matters.
-- **m7 (Step 6):** record `assignment:progress` events in the batch goldens. (6a: the event is
-  wired; the goldens still only check "0, then one per job".)
+- ~~**m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
+  diagnostics separator-neutrally (`\` vs `/`).~~ Closed (39a): the harness that captured the goldens went at 1.0; 39b rewrites them from the port.
+- ~~**m6 (Step 5/6):** store an explicit merged-page map for batch goldens (job, page, blank) and
+  PNGs for multi-job batches if pixel parity of the merge matters.~~ Closed (39a): no reference capture any more; the batch tests check pages and text.
+- ~~**m7 (Step 6):** record `assignment:progress` events in the batch goldens. (6a: the event is
+  wired; the goldens still only check "0, then one per job".)~~ Closed (39a): no reference capture any more; the Rust batch tests check the progress events.
 
 ## From the Step 2a review (`docs/reviews/step-02a.md`)
 
-- **n4:** `attempts` golden: store the grade `resolveBestAttempts` compared
-  (`Store.calcResults(...).grade`) next to each history entry, so the case explains itself.
+- ~~**n4:** `attempts` golden: store the grade `resolveBestAttempts` compared
+  (`Store.calcResults(...).grade`) next to each history entry, so the case explains itself.~~ Closed (39a): the harness that wrote the goldens went at 1.0.
 
 ## From the Step 0 review (`docs/reviews/step-00.md`)
 
@@ -335,10 +335,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - **m2:** `stamp_issues`/`stampIssues` are not shown in the UI yet; use them for "Herstellen uit
   snapshot" in 7b or drop them.
-- **m6:** CI check that `tools/fixtures/to-v2.mjs` and `maatwerk-cli migrate` give the same tree
-  for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).
-- **n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
-  remove after the cutover.
+- ~~**m6:** CI check that `tools/fixtures/to-v2.mjs` and `maatwerk-cli migrate` give the same tree
+  for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).~~ Closed (39a): moot, the core v1 migration went at 1.0 (decision 88).
+- ~~**n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
+  remove after the cutover.~~ Done (39a, `b9fab11`).
 - **n3:** the data-files-v2 text on merging duplicate students vs. the Rust merge details.
 - **n4:** the conflict-copy check can label a misplaced file as a conflict copy.
 - **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones

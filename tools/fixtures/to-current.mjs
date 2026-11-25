@@ -3,10 +3,12 @@
 // then v3 (data-files-v3.md, step 18). The Store tests whose golden scenarios
 // hold v1 folders use the v2 step only (`filesToV2`); the UI's MockApi gets the
 // current format (`toCurrent`).
-// Fixtures only: the real migration is `maatwerk-core::migrate`
-// (`maatwerk-cli migrate`), which also stamps every file (C19), makes a backup
-// and handles legacy leftovers. This one does not stamp, and handles what
-// tools/fixtures/generate.mjs and the golden scenarios contain.
+// Fixtures only: the app no longer converts v1 folders (step 39a, PLAN-2
+// decision 88; its v2 -> v3 step is `maatwerk-core::migrate`). This stays
+// because the fixture generator and the captured reference goldens are v1 by
+// origin; converting the golden inputs once would change the inputs of the
+// grade tests. It does not stamp, and handles what tools/fixtures/generate.mjs
+// and the golden scenarios contain.
 //
 //   node tools/fixtures/to-current.mjs <dir>     converts a folder in place
 

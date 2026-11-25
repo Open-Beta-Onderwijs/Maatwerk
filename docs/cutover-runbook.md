@@ -1,5 +1,9 @@
 # Cutover runbook: from the old app to Maatwerk
 
+> **History (step 39a, PLAN-2 decision 88).** Since 1.0 Maatwerk no longer converts a v1 folder:
+> it says to convert it with Maatwerk 0.29 first. This runbook is for that 0.29 conversion; the
+> v2 -> v3 step (section 8) is still in the app.
+
 The one-time switch from the Electron app (v1 data folder) to Maatwerk (format v2,
 [`reference/data-files-v2.md`](reference/data-files-v2.md)). Planned after Step 8; the date is the
 user's call (PLAN section 9, decision 11). Old and new app never use the same folder at the same

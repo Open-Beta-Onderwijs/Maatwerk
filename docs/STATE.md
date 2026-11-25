@@ -43,11 +43,28 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 - 5b n7 closes with the v1 migration: `_preview_*.typ` only existed in v1 folders, which the
   0.29 migration cleans; nothing writes them.
 
-**Next action:** 39a.3: the reference harness (`tests/reference-harness`, `tools/reference-shims`,
-`golden:regen`/`golden:check`), `filesToV2` in `ui/tests/golden.ts` / `store-session.ts` (golden
-inputs are v1 folders: convert them once, committed), fixture generator output in the current
-format, 7a m6 (moot), backlog 2/2a items. Then 39a.4 docs (`parity.md`, `cutover-runbook.md`
-marked history, backlog strike-throughs, M-START-3).
+- `f476689` 39a.3: reference harness (`tests/reference-harness`), reference shims
+  (`tools/reference-shims`, storage spec tests), `golden:regen/check/typst` and acorn removed.
+  Kept in `tests/support/`: golden codec, environment, scenario builder. Goldens stay
+  (decision 9); `tests/golden/*.test.mjs` check structure only. Node tests 128 -> 48.
+- 39a.4 (docs): `parity.md`, `cutover-runbook.md` marked history; `testing.md`,
+  `manual-test.md` (new M-MIG-6: a v1 folder is refused) updated; backlog 2 m3/m4/m6/m7, 2a n4,
+  5b n5/n7, 7a m6/n1, M-START-3 struck. `npm run data:dev` now also runs `to-current.mjs` (the
+  app refuses v1).
+
+**Choices made without the user (tell at the end of step 39):**
+
+- `render_assignment_svg` stays (id-based, used by the step 34b preview and the AI preview);
+  the plan listed it under v1 removal.
+- `tools/fixtures/to-current.mjs` (was `to-v2.mjs`) stays as fixture tooling: the generator and
+  the captured reference goldens are v1 by origin, and converting the golden inputs once would
+  change the inputs of the grade tests (`null` -> `"N"`), which needs the user's OK. 7a m6 is moot.
+- A v1 folder gets the startup error screen with "Zet de map eerst om met Maatwerk 0.29" (no
+  migration offer); the CLI `migrate` refuses with the same text.
+
+**Next action:** 39a gate (fmt, clippy, cargo test, lint, typecheck, Vitest, node, e2e chromium),
+push, CI green, tag `step-39a`. Then **39b** (Typst upgrade, `PLAN-2.md` step 39): stop and ask at
+the visual golden diff, and for 5b n4 (hash normalisation).
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
