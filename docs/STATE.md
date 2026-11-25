@@ -1,8 +1,8 @@
 # State
 
-Last updated: 2026-11-25 (step 38: CI baselines committed, final CI running; merge OK given by
-the user if green) Branch: `step/39-v1-removal-typst` (from `step/38-grade-numbers` at `ff1446e`)
-Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-25 (step 38 merged; `main` merged into step 39)
+Branch: `step/39-v1-removal-typst`
+Last tags: `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
 
@@ -20,8 +20,13 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 - Checks: lint, typecheck, Vitest 958, node 128, e2e chromium 431/431, visual 177/177 (after the
   local `admin-instellingen` update), the new tests also on WebKit.
 
-**Next action:** step 38 merge (if CI is green, tag `step-38`), then `git merge main` here and
-push; then the plan's step 39.
+- Step 38 merged (`0459ac2`, tag `step-38`) after `e280675`: the macOS CI failed the numbers
+  golden by one ulp in a raw average; folder listings came in directory order (APFS/ext4 are not
+  sorted, NTFS is) and the float sum depends on order. `json_files` and `list_dir` now sort by
+  name. `main` merged here.
+
+**Next action:** the first CI run of this branch writes the `admin-instellingen` baselines on 3
+platforms: look at them and commit from the artifacts. Then the plan's step 39 when the user asks.
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
