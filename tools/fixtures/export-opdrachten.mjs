@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Copies the tiny fixture's opdracht sources and images (`opdrachten/*.typ`, `opdrachten/images/`)
-// to crates/maatwerk-core/tests/fixtures/opdrachten, the inputs of the Rust opdracht parity tests
-// (Step 5b), so `cargo test` needs no Node. `--check` compares instead of writing.
+// Copies the tiny fixture's opdracht sources and images in the current layout
+// (`opdrachten/<id>/opdracht.typ`, `opdrachten/<id>/images/`; not the bundled `main.typ` and
+// `lib.typ`) to crates/maatwerk-core/tests/fixtures/opdrachten, the inputs of the Rust opdracht
+// tests (Step 5b), so `cargo test` needs no Node. `--check` compares instead of writing.
 
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generate } from './generate.mjs';
+import { toCurrent } from './to-current.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const RUST_FIXTURES = path.join(
@@ -32,7 +34,7 @@ function inputs(opdrachtenDir) {
     }
   };
   walk(opdrachtenDir);
-  return out.filter((f) => f.endsWith('.typ') || f.startsWith('images/')).sort();
+  return out.filter((f) => /^[^/]+\/(opdracht\.typ|images\/.+)$/.test(f)).sort();
 }
 
 /** Returns the list of differences between the tiny fixture and `target` (empty when in sync). */
@@ -40,6 +42,7 @@ export function exportOpdrachten(target = RUST_FIXTURES, { check = false } = {})
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'maatwerk-fx-opdrachten-'));
   try {
     generate('tiny', tmp);
+    toCurrent(tmp);
     const src = path.join(tmp, 'opdrachten');
     const want = inputs(src);
     const have = fs.existsSync(target) ? inputs(target) : [];

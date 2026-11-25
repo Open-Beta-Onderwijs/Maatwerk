@@ -5,9 +5,9 @@
 #let render_uitleg() = [
   Uitleg met drie figuren.
 
-  #figure(image("images/opdracht_1756713600200/figuur.png", width: 60%), caption: [Een PNG.]) <fig-png>
-  #figure(image("images/opdracht_1756713600200/foto.jpg", width: 40%), caption: [Een JPG.])
-  #figure(image("images/opdracht_1756713600200/schema.svg", width: 50%), caption: [Een SVG.])
+  #figure(image("images/figuur.png", width: 60%), caption: [Een PNG.]) <fig-png>
+  #figure(image("images/foto.jpg", width: 40%), caption: [Een JPG.])
+  #figure(image("images/schema.svg", width: 50%), caption: [Een SVG.])
 ]
 
 #let render_opgaven() = [

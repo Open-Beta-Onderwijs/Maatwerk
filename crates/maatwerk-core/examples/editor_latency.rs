@@ -15,26 +15,41 @@
 use std::path::Path;
 use std::time::Instant;
 
+use maatwerk_core::assets;
 use maatwerk_core::paths::{DataDir, RelPath};
 use maatwerk_core::typst_svc::{
     EditorSession, FontStore, OpdrachtInputs, TypstProject, local_now, opdracht_world,
     render_assignment_svg_pages,
 };
 
+/// A fixture opdracht folder (`tests/fixtures/opdrachten/<id>/`, no `main.typ`/`lib.typ` on disk)
+/// with the bundled `main.typ` and `lib.typ`.
+fn fixture_project(dir: &DataDir, id: &str) -> TypstProject {
+    TypstProject::opdracht(dir, id)
+        .expect("fixture opdracht")
+        .with_file(
+            &RelPath::parse("main.typ").unwrap(),
+            assets::OPDRACHT_MAIN_TYP,
+        )
+        .with_file(&RelPath::parse("lib.typ").unwrap(), assets::LIB_TYP)
+}
+
 fn main() {
     let mut args = std::env::args().skip(1);
     let file = args
         .next()
-        .unwrap_or_else(|| "opdracht_1756713600203.typ".to_owned());
+        .unwrap_or_else(|| "opdracht_1756713600203".to_owned());
     let edits: usize = args.next().map_or(200, |a| a.parse().expect("a number"));
 
     let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
     let dir = DataDir::open(&fixtures).expect("fixture dir");
-    let source = std::fs::read_to_string(fixtures.join("opdrachten").join(&file)).expect("file");
+    let source =
+        std::fs::read_to_string(fixtures.join("opdrachten").join(&file).join("opdracht.typ"))
+            .expect("file");
     let at = source.find("Alinea 2.").expect("a second paragraph") + "Alinea 2.".len();
     let opdracht = RelPath::parse("opdracht.typ").unwrap();
     let inputs = OpdrachtInputs::preview("Opdracht");
-    let project = TypstProject::opdracht_v1(&dir, &file).expect("fixture opdracht");
+    let project = fixture_project(&dir, &file);
 
     let start = Instant::now();
     let fonts = FontStore::shared();

@@ -35,8 +35,7 @@ use crate::paths::RelPath;
 /// Virtual folder for files the service provides (templates, data). Hidden in diagnostics.
 pub(crate) const INTERNAL_DIR: &str = "__maatwerk";
 
-/// A virtual folder backed by a real one, e.g. `/data/fotos` -> `<data dir>/fotos`, or a single
-/// virtual file backed by a real file. Built by the per-kind constructors ([`TypstProject`],
+/// A virtual folder backed by a real one, e.g. `/data/fotos` -> `<data dir>/fotos`. Built by the per-kind constructors ([`TypstProject`],
 /// `rapport_world`), never by callers (review 5a n6).
 ///
 /// [`TypstProject`]: super::TypstProject
@@ -44,8 +43,6 @@ pub(crate) const INTERNAL_DIR: &str = "__maatwerk";
 pub(crate) struct Mount {
     prefix: Vec<String>,
     dir: PathBuf,
-    /// `Some(name)`: the mount is the one file `<dir>/<name>`, seen at `prefix`.
-    file: Option<String>,
     /// The canonical `dir` must lie inside this folder (the data dir), or the mount is empty
     /// (review 5a n2: `fotos` itself could be a junction).
     within: Option<PathBuf>,
@@ -57,16 +54,7 @@ impl Mount {
         Mount {
             prefix: split_virtual(prefix),
             dir: dir.into(),
-            file: None,
             within: None,
-        }
-    }
-
-    /// The single file `<dir>/<name>` at the virtual path `path`. `name` is a checked basename.
-    pub(crate) fn file(path: &str, dir: impl Into<PathBuf>, name: &str) -> Mount {
-        Mount {
-            file: Some(name.to_owned()),
-            ..Mount::dir(path, dir)
         }
     }
 
@@ -297,15 +285,14 @@ impl MaatwerkWorld {
         }
         for (mount, real) in &self.mounts {
             let n = mount.prefix.len();
-            let rest = match &mount.file {
-                Some(name) if parts == mount.prefix => vec![name.clone()],
-                None if parts.len() > n && parts[..n] == mount.prefix[..] => parts[n..].to_vec(),
-                _ => continue,
-            };
+            if parts.len() <= n || parts[..n] != mount.prefix[..] {
+                continue;
+            }
+            let rest = &parts[n..];
             let Some(root) = real else {
                 return Err(FileError::NotFound(shown()));
             };
-            return load_mounted(root, &rest, &shown())
+            return load_mounted(root, rest, &shown())
                 .map(|(data, real, print)| (data, Some((real, print))));
         }
         Err(FileError::NotFound(shown()))
@@ -502,7 +489,7 @@ impl typst_ide::IdeWorld for MaatwerkWorld {
             .cloned()
             .collect();
         for (mount, real) in &self.mounts {
-            if let (None, Some(root)) = (&mount.file, real) {
+            if let Some(root) = real {
                 let prefix = mount.prefix.join("/");
                 list_files(root, &prefix, 0, &mut keys);
             }
@@ -684,21 +671,6 @@ mod tests {
                 "{path}"
             );
         }
-    }
-
-    #[test]
-    fn a_file_mount_serves_exactly_one_file() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("opdracht_1.typ"), "een").unwrap();
-        std::fs::write(dir.path().join("opdracht_2.typ"), "twee").unwrap();
-        let w = world(vec![Mount::file(
-            "/opdracht.typ",
-            dir.path(),
-            "opdracht_1.typ",
-        )]);
-        assert_eq!(w.file(id("/opdracht.typ")).unwrap().as_slice(), b"een");
-        assert!(w.file(id("/opdracht_2.typ")).is_err());
-        assert!(w.file(id("/opdracht.typ/x")).is_err());
     }
 
     #[test]

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Opdracht parity with the Step 2b goldens (`docs/parity.md`, Typst rows, paths B, C and D for
-//! one job): a v1 opdracht as a virtual project, `main.typ` driven by `sys.inputs`, SVG pages
-//! and the sandbox of the opdracht World.
+//! one job): an opdracht folder `opdrachten/<id>/` (C14), `main.typ` driven by `sys.inputs`, SVG
+//! pages and the sandbox of the opdracht World. The goldens were captured on the reference's v1
+//! layout (`opdrachten/<id>.typ`, `images/<id>/`); the cases are mapped onto the folder here.
 
 mod support;
 
@@ -25,21 +26,36 @@ fn fixed_now() -> OffsetDateTime {
     OffsetDateTime::from_unix_timestamp(1_767_225_600).unwrap()
 }
 
-/// The tiny fixture's `opdrachten/` (tools/fixtures/export-opdrachten.mjs) plus the files the
-/// golden cases add (`basis.typ`, `kapot.typ`, tests/reference-harness/typst/cases.mjs).
+/// The tiny fixture's opdracht folders (tools/fixtures/export-opdrachten.mjs: `opdracht.typ` and
+/// `images/`) with the bundled `main.typ` and `lib.typ`, plus the folders the golden cases add
+/// (`basis`, `kapot`, tests/reference-harness/typst/cases.mjs).
 fn data_dir() -> (tempfile::TempDir, DataDir) {
     let tmp = tempfile::tempdir().unwrap();
     let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/opdrachten");
-    copy_dir(&src, &tmp.path().join("opdrachten"));
     let opdrachten = tmp.path().join("opdrachten");
-    std::fs::write(opdrachten.join("basis.typ"), assets::BASE_ASSIGNMENT_TYP).unwrap();
-    std::fs::write(
-        opdrachten.join("kapot.typ"),
-        "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [ Uitleg\n#let render_opgaven() = []\n",
-    )
-    .unwrap();
+    copy_dir(&src, &opdrachten);
+    for (id, text) in [
+        ("basis", assets::BASE_ASSIGNMENT_TYP),
+        (
+            "kapot",
+            "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [ Uitleg\n#let render_opgaven() = []\n",
+        ),
+    ] {
+        std::fs::create_dir_all(opdrachten.join(id)).unwrap();
+        std::fs::write(opdrachten.join(id).join("opdracht.typ"), text).unwrap();
+    }
+    for entry in std::fs::read_dir(&opdrachten).unwrap() {
+        let folder = entry.unwrap().path();
+        std::fs::write(folder.join("main.typ"), assets::OPDRACHT_MAIN_TYP).unwrap();
+        std::fs::write(folder.join("lib.typ"), assets::LIB_TYP).unwrap();
+    }
     let dir = DataDir::open(tmp.path()).unwrap();
     (tmp, dir)
+}
+
+/// The opdracht a golden names by its v1 file (`opdracht_<n>.typ` -> folder `opdracht_<n>`).
+fn project(dir: &DataDir, typ_file: &str) -> TypstProject {
+    TypstProject::opdracht(dir, typ_file.strip_suffix(".typ").unwrap()).unwrap()
 }
 
 fn copy_dir(from: &Path, to: &Path) {
@@ -55,9 +71,13 @@ fn copy_dir(from: &Path, to: &Path) {
     }
 }
 
-/// The reference's cursor marker, renamed (naming map).
-fn renamed_marker(source: &str) -> String {
-    source.replace("<__rtti_cursor>", "<__maatwerk_cursor>")
+/// An editor buffer of a golden: the reference's cursor marker renamed (naming map), and the
+/// image paths as in the opdracht folder (`images/<id>/x` -> `images/x`).
+fn buffer(source: &str, typ_file: &str) -> String {
+    let id = typ_file.strip_suffix(".typ").unwrap();
+    source
+        .replace("<__rtti_cursor>", "<__maatwerk_cursor>")
+        .replace(&format!("images/{id}/"), "images/")
 }
 
 /// What a golden call compiles: the project and its inputs. Batch goldens of one job only.
@@ -67,17 +87,15 @@ fn golden_job(case: &Value, dir: &DataDir) -> (TypstProject, OpdrachtInputs) {
     match case["call"]["channel"].as_str().unwrap() {
         // Path B: placeholder header, no cursor.
         "app:renderAssignmentPdf" => (
-            TypstProject::opdracht_v1(dir, str_arg(0)).unwrap(),
+            project(dir, str_arg(0)),
             OpdrachtInputs::preview(str_arg(1)),
         ),
         // Path C: the editor buffer instead of the file (the reference also drew a cursor link).
         "app:renderAssignmentSvg" => (
-            TypstProject::opdracht_v1(dir, str_arg(0))
-                .unwrap()
-                .with_file(
-                    &RelPath::parse("opdracht.typ").unwrap(),
-                    renamed_marker(str_arg(2)),
-                ),
+            project(dir, str_arg(0)).with_file(
+                &RelPath::parse("opdracht.typ").unwrap(),
+                buffer(str_arg(2), str_arg(0)),
+            ),
             OpdrachtInputs::preview(str_arg(1)),
         ),
         "app:renderAssignmentBatch" => {
@@ -96,40 +114,7 @@ fn batch_job(job: &Value, opts: &Value, dir: &DataDir) -> (TypstProject, Opdrach
         include_answers: opts["includeAnswers"].as_bool().unwrap_or(true),
         header: serde_json::from_value(job["header"].clone()).unwrap(),
     };
-    let project = TypstProject::opdracht_v1(dir, job["typFile"].as_str().unwrap()).unwrap();
-    (project, inputs)
-}
-
-/// The v1 opdracht `typ_file` as the migration lays it out (C14, `docs/reference/data-files-v2.md`):
-/// `opdrachten/<id>/` with `opdracht.typ` (image paths without `<id>/`), `images/`, and the
-/// bundled `main.typ` and `lib.typ`. Returns the folder project the app compiles.
-fn v2_project(dir: &DataDir, typ_file: &str) -> TypstProject {
-    let id = typ_file.strip_suffix(".typ").unwrap();
-    let opdrachten = dir.root().join("opdrachten");
-    let folder = opdrachten.join(id);
-    std::fs::create_dir_all(&folder).unwrap();
-    let text = std::fs::read_to_string(opdrachten.join(typ_file)).unwrap();
-    std::fs::write(
-        folder.join("opdracht.typ"),
-        text.replace(&format!("images/{id}/"), "images/"),
-    )
-    .unwrap();
-    std::fs::write(folder.join("main.typ"), assets::OPDRACHT_MAIN_TYP).unwrap();
-    std::fs::write(folder.join("lib.typ"), assets::LIB_TYP).unwrap();
-    let images = opdrachten.join("images").join(id);
-    if images.is_dir() {
-        copy_dir(&images, &folder.join("images"));
-    }
-    TypstProject::opdracht(dir, id).unwrap()
-}
-
-/// The `.typ` file a golden case compiles.
-fn golden_typ_file(case: &Value) -> String {
-    let args = decode(&case["call"]["args"]);
-    match case["call"]["channel"].as_str().unwrap() {
-        "app:renderAssignmentBatch" => args[0][0]["typFile"].as_str().unwrap().to_owned(),
-        _ => args[0].as_str().unwrap().to_owned(),
-    }
+    (project(dir, job["typFile"].as_str().unwrap()), inputs)
 }
 
 fn compile(
@@ -151,19 +136,6 @@ fn golden(id: &str) -> PagedDocument {
         compiled.warnings
     );
     assert_matches_golden(id, &case, &compiled.output);
-    // Review 7a M3: the same opdracht as a v2 folder (what the app compiles since Step 7a)
-    // gives the same document.
-    let typ_file = golden_typ_file(&case);
-    let mut v2 = v2_project(&dir, &typ_file);
-    if case["call"]["channel"] == "app:renderAssignmentSvg" {
-        // The editor buffer, with the image paths the migration rewrites.
-        let id = typ_file.strip_suffix(".typ").unwrap();
-        let buffer = renamed_marker(decode(&case["call"]["args"])[2].as_str().unwrap())
-            .replace(&format!("images/{id}/"), "images/");
-        v2 = v2.with_file(&RelPath::parse("opdracht.typ").unwrap(), buffer);
-    }
-    let compiled_v2 = compile(v2, &inputs).unwrap_or_else(|e| panic!("{id} v2: {}", e.to_text()));
-    assert_matches_golden(id, &case, &compiled_v2.output);
     compiled.output
 }
 
@@ -270,7 +242,8 @@ fn editor_session_patches_equal_the_one_shot_render() {
     let (_tmp, dir) = data_dir();
     let (project, inputs) = golden_job(&case, &dir);
     let opdracht = RelPath::parse("opdracht.typ").unwrap();
-    let source = renamed_marker(decode(&case["call"]["args"])[2].as_str().unwrap());
+    let args = decode(&case["call"]["args"]);
+    let source = buffer(args[2].as_str().unwrap(), args[0].as_str().unwrap());
     let one_shot = |text: &str| {
         render_assignment_svg_pages(
             fonts(),
@@ -367,7 +340,7 @@ fn svg_preview_error_names_the_opdracht_file_with_line_and_column() {
 #[test]
 fn a_syntax_error_in_an_opdracht_points_into_opdracht_typ() {
     let (_tmp, dir) = data_dir();
-    let project = TypstProject::opdracht_v1(&dir, "kapot.typ").unwrap();
+    let project = project(&dir, "kapot.typ");
     let err = compile(project, &OpdrachtInputs::default()).unwrap_err();
     let first = &err.diagnostics[0];
     assert_eq!(first.message, "unclosed delimiter");
@@ -382,7 +355,7 @@ fn a_syntax_error_in_an_opdracht_points_into_opdracht_typ() {
 #[test]
 fn main_typ_without_inputs_uses_the_placeholder_header_and_student_mode() {
     let (_tmp, dir) = data_dir();
-    let project = || TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
+    let project = || project(&dir, "opdracht_1756713600205.typ");
     let plain = compile_document(&project().world(fonts(), fixed_now()))
         .unwrap()
         .output;
@@ -399,7 +372,7 @@ fn main_typ_without_inputs_uses_the_placeholder_header_and_student_mode() {
 #[test]
 fn answers_mode_ignores_the_student_fields() {
     let (_tmp, dir) = data_dir();
-    let project = TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
+    let project = project(&dir, "opdracht_1756713600205.typ");
     let inputs = OpdrachtInputs {
         mode: Mode::Answers,
         header: OpdrachtHeader {
@@ -419,7 +392,7 @@ fn answers_mode_ignores_the_student_fields() {
 #[test]
 fn plain_mode_has_the_title_but_no_student_block() {
     let (_tmp, dir) = data_dir();
-    let project = || TypstProject::opdracht_v1(&dir, "opdracht_1756713600205.typ").unwrap();
+    let project = || project(&dir, "opdracht_1756713600205.typ");
     let header = OpdrachtHeader {
         title: "Losse opdracht".into(),
         student: "Iemand".into(),
@@ -465,16 +438,15 @@ fn compile_source(body: &str) -> Result<Compiled<PagedDocument>, CompileError> {
     let source = format!(
         "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [{body}]\n#let render_opgaven() = []\n"
     );
-    let project = TypstProject::opdracht_v1(&dir, "opdracht_1756713600200.typ")
-        .unwrap()
+    let project = project(&dir, "opdracht_1756713600200.typ")
         .with_file(&RelPath::parse("opdracht.typ").unwrap(), source);
     compile(project, &OpdrachtInputs::default())
 }
 
 #[test]
 fn the_opdracht_world_sees_its_own_images_and_nothing_else() {
-    // Own images (v1 path), as the golden opdracht does.
-    compile_source("#image(\"images/opdracht_1756713600200/figuur.png\")").unwrap();
+    // Own images, as the golden opdracht does.
+    compile_source("#image(\"images/figuur.png\")").unwrap();
     // The sandbox (ADR-0002 section 5): the reference could read anything under its app dir.
     for path in [
         "/data/geheim.json",
@@ -483,7 +455,8 @@ fn the_opdracht_world_sees_its_own_images_and_nothing_else() {
         "/geheim.json",
         "opdracht_1756713600201.typ",
         "/opdrachten/opdracht_1756713600201.typ",
-        "images/opdracht_1756713600201/figuur.png",
+        "../opdracht_1756713600201/opdracht.typ",
+        "/opdrachten/opdracht_1756713600201/opdracht.typ",
         "C:/Windows/win.ini",
     ] {
         let err = compile_source(&format!("#read(\"{path}\")")).unwrap_err();
@@ -501,48 +474,34 @@ fn the_opdracht_world_sees_its_own_images_and_nothing_else() {
 }
 
 #[test]
-fn the_v2_opdracht_folder_sees_its_own_files_and_nothing_else() {
+fn an_opdracht_id_must_be_a_plain_name() {
     let (_tmp, dir) = data_dir();
-    v2_project(&dir, "opdracht_1756713600200.typ");
-    v2_project(&dir, "opdracht_1756713600201.typ");
-    std::fs::write(dir.root().join("geheim.json"), "{}").unwrap();
-    let source = |s: &str| {
-        TypstProject::opdracht(&dir, "opdracht_1756713600200")
-            .unwrap()
-            .with_file(
-                &RelPath::parse("opdracht.typ").unwrap(),
-                format!(
-                    "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [{s}]\n#let render_opgaven() = []\n"
-                ),
-            )
-    };
-    compile(
-        source("#image(\"images/figuur.png\")"),
-        &OpdrachtInputs::default(),
-    )
-    .unwrap_or_else(|e| panic!("{}", e.to_text()));
-    for path in [
-        "../geheim.json",
-        "../../geheim.json",
-        "/geheim.json",
-        "../opdracht_1756713600201/opdracht.typ",
-        "/opdrachten/opdracht_1756713600201/opdracht.typ",
-        "C:/Windows/win.ini",
-    ] {
-        let err = compile(
-            source(&format!("#read(\"{path}\")")),
-            &OpdrachtInputs::default(),
-        )
-        .unwrap_err();
-        let message = &err.diagnostics[0].message;
-        assert!(
-            message.starts_with("file not found") || message.contains("access denied"),
-            "{path}: {message}"
-        );
-    }
     for bad in ["../x", "a/b", ""] {
         assert!(TypstProject::opdracht(&dir, bad).is_err(), "{bad}");
     }
+}
+
+/// Review 5b n5: a junction in one opdracht's `images/` to another opdracht's is not followed
+/// (the mount boundary is the opdracht folder, not the data folder).
+#[cfg(windows)]
+#[test]
+fn a_junction_to_another_opdracht_is_not_followed() {
+    let (_tmp, dir) = data_dir();
+    let opdrachten = dir.root().join("opdrachten");
+    let link = opdrachten.join("opdracht_1756713600201/images");
+    let status = std::process::Command::new("cmd")
+        .args(["/C", "mklink", "/J"])
+        .arg(&link)
+        .arg(opdrachten.join("opdracht_1756713600200/images"))
+        .output()
+        .unwrap();
+    assert!(status.status.success());
+    let source = "#import \"lib.typ\": *\n#let setup_extra() = []\n#let render_uitleg() = [#image(\"images/figuur.png\")]\n#let render_opgaven() = []\n";
+    let project = project(&dir, "opdracht_1756713600201.typ")
+        .with_file(&RelPath::parse("opdracht.typ").unwrap(), source);
+    let err = compile(project, &OpdrachtInputs::default()).unwrap_err();
+    let message = &err.diagnostics[0].message;
+    assert!(message.contains("access denied"), "{message}");
 }
 
 #[test]
@@ -750,7 +709,7 @@ fn batch_order_is_job_order_with_any_number_of_workers() {
         key: key.into(),
         label: file.into(),
         opdracht: file.into(),
-        project: TypstProject::opdracht_v1(&dir, file).unwrap(),
+        project: project(&dir, file),
         inputs: OpdrachtInputs {
             header: OpdrachtHeader {
                 student: student.into(),
