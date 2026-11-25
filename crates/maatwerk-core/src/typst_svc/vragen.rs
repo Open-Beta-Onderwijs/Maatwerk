@@ -77,11 +77,7 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
                 opgave,
                 label: format!("{opgave}{letter}"),
                 punten: dict.get("punten").ok().and_then(number),
-                antwoord: dict.get("antwoord").ok().and_then(|v| match v {
-                    Value::None => None,
-                    Value::Content(c) => Some(c.plain_text().trim().to_owned()),
-                    other => Some(other.clone().display().plain_text().trim().to_owned()),
-                }),
+                antwoord: dict.get("antwoord").ok().and_then(answer_text),
                 page: *page,
                 y: *y,
             }
@@ -97,7 +93,7 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
             "De punten zijn onbekend: lib.typ van deze opdracht is een oudere versie.".to_owned(),
         );
     }
-    for v in &items {
+    for (v, (dict, ..)) in items.iter().zip(&raw) {
         let name = if v.opgave == 0 {
             "Een vraag buiten een opgave".to_owned()
         } else {
@@ -106,8 +102,15 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
         if v.opgave == 0 {
             checks.push(format!("{name} staat niet in een #opgave."));
         }
-        if punten_known && v.punten.is_none() {
-            checks.push(format!("{name} heeft geen punten."));
+        match dict.get("punten") {
+            Ok(Value::Str(text)) if v.punten.is_none() => checks.push(format!(
+                "{name}: de punten (\"{}\") zijn geen getal.",
+                text.as_str()
+            )),
+            _ if punten_known && v.punten.is_none() => {
+                checks.push(format!("{name} heeft geen punten."));
+            }
+            _ => {}
         }
         if v.antwoord.as_deref().is_none_or(str::is_empty) {
             checks.push(format!("{name} heeft geen antwoord."));
@@ -128,12 +131,42 @@ fn int(dict: &Dict, key: &str) -> Option<u64> {
     }
 }
 
+/// Punten as a number: also a string such as `"2"` or `"1,5"`, which `lib.typ` shows as it is
+/// (review 8b n1: it counted as missing).
 fn number(value: &Value) -> Option<f64> {
     match value {
         Value::Int(n) => Some(*n as f64),
         Value::Float(f) => Some(*f),
+        Value::Str(s) => s
+            .as_str()
+            .trim()
+            .replace(',', ".")
+            .parse::<f64>()
+            .ok()
+            .filter(|n| n.is_finite()),
         _ => None,
     }
+}
+
+/// Shown for an answer that has content but no text, such as only an image (review 8b n1: it
+/// counted as empty).
+const NO_TEXT: &str = "(zonder tekst)";
+
+/// The answer as plain text; `None` when there is none, `""` when it is empty.
+fn answer_text(value: &Value) -> Option<String> {
+    let (text, empty) = match value {
+        Value::None => return None,
+        Value::Content(c) => (c.plain_text().trim().to_owned(), c.is_empty()),
+        other => (
+            other.clone().display().plain_text().trim().to_owned(),
+            false,
+        ),
+    };
+    Some(if text.is_empty() && !empty {
+        NO_TEXT.to_owned()
+    } else {
+        text
+    })
 }
 
 /// Typst's `numbering("a", n)`: a, b, ..., z, aa, ab, ...
@@ -237,6 +270,24 @@ mod tests {
         assert_eq!(
             v.checks,
             ["De punten zijn onbekend: lib.typ van deze opdracht is een oudere versie."]
+        );
+    }
+
+    #[test]
+    fn review_8b_n1_string_punten_and_answers_without_text() {
+        // No image file in this project: a coloured box stands in for an image-only answer.
+        let v = vragen(&document(
+            assets::LIB_TYP,
+            "#opgave[\n#vraag(punten: \"1,5\", antwoord: box(width: 1cm, height: 1cm, \
+             fill: red))[Een]\n#vraag(punten: \"twee\", antwoord: [A])[Twee]]",
+        ));
+        assert_eq!(v.items[0].punten, Some(1.5));
+        assert_eq!(v.items[0].antwoord.as_deref(), Some(NO_TEXT));
+        assert_eq!(v.items[1].punten, None);
+        assert_eq!(v.total_punten, 1.5);
+        assert_eq!(
+            v.checks,
+            ["Vraag 1b: de punten (\"twee\") zijn geen getal."]
         );
     }
 
