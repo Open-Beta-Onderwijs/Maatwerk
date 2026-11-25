@@ -17,7 +17,7 @@
 
 use std::collections::BTreeMap;
 use std::panic::{self, AssertUnwindSafe};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender, SyncSender};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread::JoinHandle;
@@ -557,18 +557,27 @@ impl LiveEditor {
 
     /// Runs `f` on the session, after the compile in progress; `None` when that does not happen
     /// within `wait` (a long compile, a closed editor) or `f` panics. Queries see the sources
-    /// of the last compile plus whatever `f` sets itself.
+    /// of the last compile plus whatever `f` sets itself. A query given up on is skipped when
+    /// the compile thread gets to it, so it does not delay the next compile (review 8b m5).
     pub fn query<R: Send + 'static>(
         &self,
         wait: Duration,
         f: impl FnOnce(&mut EditorSession) -> R + Send + 'static,
     ) -> Option<R> {
         let (tx, rx) = mpsc::sync_channel(1);
+        let given_up = Arc::new(AtomicBool::new(false));
+        let skip = given_up.clone();
         let job = Job::Query(Box::new(move |session| {
-            let _ = tx.send(f(session));
+            if !skip.load(Ordering::SeqCst) {
+                let _ = tx.send(f(session));
+            }
         }));
         self.shared.sender().send(job).ok()?;
-        rx.recv_timeout(wait).ok()
+        let out = rx.recv_timeout(wait).ok();
+        if out.is_none() {
+            given_up.store(true, Ordering::SeqCst);
+        }
+        out
     }
 
     fn bump(&self, change: impl FnOnce(&mut State)) -> u64 {
@@ -1315,6 +1324,32 @@ mod tests {
         editor.update_ok(main_typ(), pages_text("A", "B"));
         assert!(rx.recv_timeout(WAIT).unwrap().ok);
         editor.close();
+    }
+
+    #[test]
+    fn review_8b_m5_a_query_given_up_on_does_not_run() {
+        let (_tmp, editor, rx) = live("A", Duration::ZERO);
+        rx.recv_timeout(WAIT).unwrap();
+        let editor = Arc::new(editor);
+        // A slow query holds the compile thread; the next one gives up before its turn.
+        let slow = {
+            let editor = editor.clone();
+            std::thread::spawn(move || {
+                editor.query(WAIT, |_| std::thread::sleep(Duration::from_millis(300)))
+            })
+        };
+        std::thread::sleep(Duration::from_millis(50));
+        let ran = Arc::new(AtomicBool::new(false));
+        let flag = ran.clone();
+        let quick = editor.query(Duration::from_millis(10), move |_| {
+            flag.store(true, Ordering::SeqCst)
+        });
+        assert_eq!(quick, None);
+        assert_eq!(slow.join().unwrap(), Some(()));
+        // Queries run in order: this one comes after the skipped one.
+        assert_eq!(editor.query(WAIT, |_| 1), Some(1));
+        assert!(!ran.load(Ordering::SeqCst), "skipped");
+        Arc::into_inner(editor).unwrap().close();
     }
 
     fn pages_text(a: &str, b: &str) -> String {

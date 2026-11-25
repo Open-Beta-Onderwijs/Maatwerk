@@ -408,8 +408,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 8b (review `docs/reviews/step-08b.md`)
 
-- **m5:** help queries whose caller gave up (2 s) still run later on the compile thread and count
-  against the next compile's time limit; pass a cancel flag.
+- ~~**m5:** help queries whose caller gave up (2 s) still run later on the compile thread and count
+  against the next compile's time limit; pass a cancel flag.~~ Done (39b): skipped when reached.
 - **m6:** the editor iframe uses `window.confirm` (close with unsaved changes since 3a, "Herstel
   standaardversie" since 8b); move both to the app's own dialog (Step 10).
 - **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
