@@ -214,16 +214,21 @@ impl MaatwerkWorld {
     /// and files that were missing are read again on their next use. Unchanged files keep their
     /// bytes and sources, so Typst's caches stay valid for them.
     pub(crate) fn reset(&mut self) {
-        let mut moved = false;
+        // The old folders of mounts that now resolve elsewhere (or not at all): only their
+        // files are dropped, the other mounts keep theirs (review 8a n5). A mount that did not
+        // resolve before had only missing files, which are dropped anyway.
+        let mut moved: Vec<PathBuf> = Vec::new();
         for (mount, real) in &mut self.mounts {
             let resolved = mount.resolve();
-            moved |= resolved != *real;
+            if resolved != *real {
+                moved.extend(real.take());
+            }
             *real = resolved;
         }
         self.slots_mut().retain(|_, slot| match &slot.origin {
             Origin::Fixed => true,
             Origin::Missing => false,
-            Origin::Disk(..) if moved => false,
+            Origin::Disk(path, _) if moved.iter().any(|old| path.starts_with(old)) => false,
             Origin::Disk(path, print) => Fingerprint::of(path) == Some(*print),
         });
     }
@@ -627,6 +632,28 @@ mod tests {
                 "ambiguous"
             );
         }
+    }
+
+    #[test]
+    fn review_8a_n5_a_moved_mount_drops_only_its_own_files() {
+        let dir = tempfile::tempdir().unwrap();
+        for sub in ["a", "b"] {
+            std::fs::create_dir_all(dir.path().join(sub)).unwrap();
+            std::fs::write(dir.path().join(sub).join("x.svg"), sub).unwrap();
+        }
+        let mut w = world(vec![
+            Mount::dir("/a", dir.path().join("a")),
+            Mount::dir("/b", dir.path().join("b")),
+        ]);
+        w.file(id("/a/x.svg")).unwrap();
+        w.file(id("/b/x.svg")).unwrap();
+        let before = w.cached_files();
+        // `b` goes away (renamed): its file goes, `a`'s stays.
+        std::fs::rename(dir.path().join("b"), dir.path().join("b-oud")).unwrap();
+        w.reset();
+        assert_eq!(w.cached_files(), before - 1);
+        assert_eq!(w.file(id("/a/x.svg")).unwrap().as_slice(), b"a");
+        assert!(w.file(id("/b/x.svg")).is_err());
     }
 
     #[test]

@@ -404,7 +404,7 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   never got (set `document` only after the render succeeded).~~ Done (39b).
 - **n3:** `close()` called from the sink would join its own thread. The app's sink only emits an
   event (never blocks, never closes); keep it that way (documented on `LiveEditor`).
-- **n5:** one moved mount drops the disk files of every mount (performance only).
+- ~~**n5:** one moved mount drops the disk files of every mount (performance only).~~ Done (39b).
 - ~~**n6:** check staleness between pages of the SVG render too.~~ Done (39b).
 
 ## From Step 8b (review `docs/reviews/step-08b.md`)
