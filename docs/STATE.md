@@ -69,30 +69,27 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 ### 39b progress (Typst upgrade, started in session 1)
 
 - `55d0da2`: 5b n4 done (user: also ignore trailing whitespace / final newline).
-- Typst 0.14.2 -> **0.15.1** port on branch **`wip/39b-typst-0.15`** (`7966602`, not merged into
-  the step branch: two goldens fail until the user's visual check). Changes: `typst-layout` as a
-  direct dependency (`PagedDocument`), typst-kit features `scan-fonts`/`embedded-fonts` and our
-  `FontStore` on top of typst-kit's, `FileId` from `RootedPath` (`world::project_id`,
-  `package_of`), `today(Duration)`, `DiagSpan`/`Spanned` hints and `WorldExt::range` in
-  diagnostics, `pages()`/`introspector()`, `SvgOptions`, `PagedPosition` for click jumps,
-  `RenderOptions` and tiny-skia 0.12 in tests. Typst now refuses `..` above the root itself
-  ("would escape the project root"); trace frames say "while calling `x`"; the hint about the
-  "project sandbox" is filtered like the CLI hints; SVG numbers have 9 decimals (viewBox test
-  compares numerically). `deny` ok, notices regenerated.
-- **Goldens:** all Typst goldens pass on 0.15.1 within tolerance except `opdracht-lib-features`
-  (page 3: the paragraph "Over de paginagrens" breaks later, more words on the page) and
-  `svg-preview-many-pages` (101 pixels on page 1 at 30 ppi, not visible). The classifier refused
-  blessing before the user's check (decision 9): **ask the user**, then bless with
-  `MAATWERK_BLESS=<why> MAATWERK_BLESS_IDS=<ids>` (all ids, decision 9 / plan) and commit.
+- `2a39c3f`: **Typst 0.15.1** (X-01). Port: `typst-layout` direct dependency (`PagedDocument`),
+  typst-kit features `scan-fonts`/`embedded-fonts` with our `FontStore` on top of typst-kit's,
+  `FileId` from `RootedPath` (`world::project_id`, `package_of`), `today(Duration)`,
+  `DiagSpan`/spanned hints with `WorldExt::range`, `pages()`/`introspector()`, `SvgOptions`,
+  `PagedPosition` click jumps, `RenderOptions` + tiny-skia 0.12 in tests. Typst refuses `..`
+  above the root itself ("would escape the project root"); trace frames say "while calling `x`";
+  the "project sandbox" hint is filtered. **All Typst goldens regenerated** after the user's
+  visual check (2026-11-25): visible only the later page break in `opdracht-lib-features` p3;
+  17 m2 closed. Tests 664 green, golden structure checks green.
 - **quick-xml:** the two `deny.toml` ignores cannot go: citationberg 0.7.0 (newest, via hayagriva
   0.10.1 from typst-library 0.15.1) still needs quick-xml ^0.38. Conflicts with decision 84:
-  tell the user; re-check in 45a.
+  told the user; re-check in 45a.
 - Package `compiler` minimums (cetz 0.13, zero 0.12) fine; emoji goldens pass (COLRv1 ok).
 
-**Next action:** user's OK on the golden diff -> merge `wip/39b-typst-0.15` (fast-forward its
-commit onto the step branch), bless, commit. Then the rest of 39b: 5a m3, 5a n8, 6a (warnings in
-the editor and modals), 5b n2, `LiveEditor` items of 8a/8b, `typst-ide` check; 17 m2 closes with
-the bless. Gate, review, release 0.30.
+**Next action (39b, session 2):** CI green on `2a39c3f` (incl. `real-pdf` e2e). Then the rest of
+39b in `PLAN-2.md`: 5a m3 (name the field of a failing eval'd text: the rapport error now points
+into `rapport.typ:558`, see `other_invalid_teacher_markup_still_fails_with_a_call_trace`), 5a n8
+(system fonts in the app), 6a (Typst warnings in the editor and the generate/rapport modals),
+5b n2, the `LiveEditor` items of 8a and 8b, `typst-ide` checked for the editor (0.15.1 pulls in
+`typst-html`). Then gate, reviewer subagent (`docs/reviews/step-39.md`), version 0.30.0,
+release; merge on the user's OK.
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
