@@ -64,7 +64,9 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
 
 **Next action:** 39a gate (fmt, clippy, cargo test, lint, typecheck, Vitest, node, e2e chromium),
 push, CI green, tag `step-39a`. Then **39b** (Typst upgrade, `PLAN-2.md` step 39): stop and ask at
-the visual golden diff, and for 5b n4 (hash normalisation).
+the visual golden diff. **5b n4 answered (user, 2026-11-25): also ignore** trailing spaces/tabs
+at line ends and trailing empty lines / the final newline; recompute the release hashes of
+`main.typ`/`lib.typ` from the old texts in git (a test per version).
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
