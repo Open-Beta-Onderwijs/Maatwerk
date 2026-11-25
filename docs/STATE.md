@@ -1,9 +1,27 @@
 # State
 
-Last updated: 2026-11-24 (step 38 done; waiting for CI and the merge OK) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
+Last updated: 2026-11-25 (step 38: CI baselines committed, final CI running; merge OK given by
+the user if green) Branch: `step/39-v1-removal-typst` (from `step/38-grade-numbers` at `ff1446e`)
 Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
+
+Branched from `step/38-grade-numbers` before its merge (user's request); after step 38 merges,
+merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrade) not started.
+
+- `22101a1`: the group/exam/PO overview tables' sticky head and foot flush with the dialog
+  body's edges (rows showed in its 20/24 px padding); the other sticky parts were checked and
+  already clean. The page behind an open dialog no longer scrolls (`html.dlg-open`).
+- `40f9515`: Cijfergemiddelden example 6,666... (differs afronden/afkappen at 2 decimals). CI
+  baselines of `admin-instellingen` dropped on 3 platforms: the first step 39 CI run writes
+  them; look and commit from the artifacts.
+- Checks: lint, typecheck, Vitest 958, node 128, e2e chromium 431/431, visual 177/177 (after the
+  local `admin-instellingen` update), the new tests also on WebKit.
+
+**Next action:** step 38 merge (if CI is green, tag `step-38`), then `git merge main` here and
+push; then the plan's step 39.
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 
