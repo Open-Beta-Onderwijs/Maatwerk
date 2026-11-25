@@ -379,8 +379,8 @@ impl Storage {
             .map(|b| String::from_utf8_lossy(&b).into_owned()))
     }
 
-    /// Every `*.json` directly in `dir` that parses and is not `null`, in directory order
-    /// (`fs:readAllJson`). Unparsable files, folders and links are skipped; a missing folder
+    /// Every `*.json` directly in `dir` that parses and is not `null`, sorted by file name
+    /// (`fs:readAllJson`; NTFS order, the same on every platform: the order feeds float sums). Unparsable files, folders and links are skipped; a missing folder
     /// gives an empty list.
     pub fn read_all_json(&self, dir: &RelPath) -> Result<Vec<Value>> {
         Ok(self
@@ -435,11 +435,14 @@ impl Storage {
                 }
             }
         }
+        // Not directory order: APFS and ext4 differ from NTFS, and the order feeds float sums
+        // (a year average over the exams), so macOS got another last digit (step 38 CI).
+        out.sort_by(|a, b| a.0.cmp(&b.0));
         Ok(out)
     }
 
     /// Names of the entries directly in `dir` that are files (`dirs: false`) or folders
-    /// (`dirs: true`), in directory order. Links and non-UTF-8 names are skipped; a missing
+    /// (`dirs: true`), sorted by name (the same on every platform). Links and non-UTF-8 names are skipped; a missing
     /// folder gives an empty list.
     pub fn list_dir(&self, dir: &RelPath, dirs: bool) -> Result<Vec<String>> {
         let path = self.dir.resolve(dir)?;
@@ -458,6 +461,7 @@ impl Storage {
                 out.push(name);
             }
         }
+        out.sort();
         Ok(out)
     }
 
