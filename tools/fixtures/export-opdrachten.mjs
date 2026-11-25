@@ -9,7 +9,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generate } from './generate.mjs';
-import { toCurrent } from './to-current.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const RUST_FIXTURES = path.join(
@@ -42,7 +41,6 @@ export function exportOpdrachten(target = RUST_FIXTURES, { check = false } = {})
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'maatwerk-fx-opdrachten-'));
   try {
     generate('tiny', tmp);
-    toCurrent(tmp);
     const src = path.join(tmp, 'opdrachten');
     const want = inputs(src);
     const have = fs.existsSync(target) ? inputs(target) : [];

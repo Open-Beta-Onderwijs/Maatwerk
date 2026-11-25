@@ -37,12 +37,15 @@ went at 1.0 with the other v1 paths (PLAN-2 decision 88, step 39a): `tests/golde
 check their structure, the Vitest and Rust tests compare the port with them. A golden changes
 only when a step changes that output on purpose (decision 9): the Typst goldens are rewritten from
 the port with `MAATWERK_BLESS=<why> MAATWERK_BLESS_IDS=<ids> cargo test` after the user's visual
-check, with the reason in the commit message.
+check, with the reason in the commit message. The logic goldens' `data` cases (and the score
+files of `score-writes`) were captured as v1 folders and converted once to the current format
+in step 39b (user's OK: string student ids, `"N"` for `null`, the students wrapper, one file
+per user, opdracht folders, the v3 exam fields); the tests read them as they are.
 
 ## Layout
 
-- `tools/fixtures/`: seeded generator. `tiny` = 1 class (44 files); `school` = 4 subjects, 6
-  jaarlagen x 4 classes, 600 students, 2 school years (5092 files, ~22 MB, never committed).
+- `tools/fixtures/`: seeded generator, current format. `tiny` = 1 class (70 files); `school` = 4 subjects, 6
+  jaarlagen x 4 classes, 600 students, 2 school years (5130 files, ~22 MB, never committed).
   `manifest.json` pins a SHA-256 over the generated tree. Edge cases: bonus/diag questions, `N`,
   invalid and missing scores, resit chain (herkansing + inhaal with another structure), cluster
   groups (students in two groups), empty exam, one-student exam, diacritics, apostrophes,
@@ -52,8 +55,7 @@ check, with the reason in the commit message.
   long opdrachten with odd and even page counts.
 - `tests/support/`: the golden codec (`golden.mjs`), the fixed clock, time zone and collation
   the goldens were captured with (`environment.mjs`), and small hand-built data folders in the
-  reference's v1 layout for the Store tests (`scenario.mjs`; `ui/tests/store-session.ts` converts
-  them with `tools/fixtures/to-current.mjs`). The reference harness that wrote the goldens and
+  current format for the Store tests (`scenario.mjs`). The reference harness that wrote the goldens and
   the verbatim reference shims went at 1.0 (step 39a).
 - `tests/golden/logic/*.json`: logic goldens.
 

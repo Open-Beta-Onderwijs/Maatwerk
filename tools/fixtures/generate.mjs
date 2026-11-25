@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Deterministic generator of synthetic `data/` folders in the reference (v1)
-// format (docs/reference/data-files.md). No real student data: every name is
+// Deterministic generator of synthetic `data/` folders in the current format
+// (docs/reference/data-files-v3.md). No real student data: every name is
 // assembled from the lists below with a seeded PRNG.
 //
 //   node tools/fixtures/generate.mjs <tiny|school> <outDir>
@@ -11,8 +11,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PO_OBSERVATIES, RUBRICS } from './rubrics.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
+const TEMPLATES = path.join(HERE, '../../crates/maatwerk-core/assets/templates');
 const YEAR = '2025-2026';
 const PREV_YEAR = '2024-2025';
 const SUBJECTS = ['nat', 'bio', 'schk', 'wi'];
@@ -138,18 +140,19 @@ const groupId = (name, year) => `${slug(name)}-${year}`;
 function writeJson(root, rel, data) {
   const abs = path.join(root, rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, JSON.stringify(data, null, 2));
+  fs.writeFileSync(abs, JSON.stringify(data, null, 2) + '\n');
 }
 function writeText(root, rel, text) {
   const abs = path.join(root, rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   fs.writeFileSync(abs, text);
 }
-function copyAsset(root, asset, rel) {
+function copyFile(root, from, rel) {
   const abs = path.join(root, rel);
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.copyFileSync(path.join(HERE, 'assets', asset), abs);
+  fs.copyFileSync(from, abs);
 }
+const copyAsset = (root, asset, rel) => copyFile(root, path.join(HERE, 'assets', asset), rel);
 
 const PROFILES = {
   tiny: {
@@ -200,7 +203,7 @@ function makeUsers() {
       schoolsoort: ['Havo', 'Vwo'],
       vakken: ['nat', 'schk'],
       kleur: '#2e86de',
-      foto: 'fotos/gebr-1756713600001.png',
+      foto: 'afbeeldingen/gebr-1756713600001.png',
       isAdmin: false,
       actief: true,
     },
@@ -250,7 +253,7 @@ function makeStudents(p, r) {
                 achternaam: r.pick(ACHTERNAMEN),
               };
         students.push({
-          id: nr++,
+          id: String(nr++),
           ...name,
           stamklas,
           geslacht: r.pick(['M', 'V', 'X']),
@@ -322,6 +325,7 @@ function makeObservaties(p) {
         subjects,
         jaarlagen: i === 0 ? [] : p.jaarlagen.slice(0, 3),
         _meta: meta(T0, 'gebr-1756713600001', 2),
+        toetstypes: ['toets'],
       });
       n++;
     }
@@ -343,7 +347,7 @@ function opdrachtTyp(kind, id) {
       return (
         head +
         uitleg(
-          `  Uitleg met drie figuren.\n\n  #figure(image("images/${id}/figuur.png", width: 60%), caption: [Een PNG.]) <fig-png>\n  #figure(image("images/${id}/foto.jpg", width: 40%), caption: [Een JPG.])\n  #figure(image("images/${id}/schema.svg", width: 50%), caption: [Een SVG.])`,
+          `  Uitleg met drie figuren.\n\n  #figure(image("images/figuur.png", width: 60%), caption: [Een PNG.]) <fig-png>\n  #figure(image("images/foto.jpg", width: 40%), caption: [Een JPG.])\n  #figure(image("images/schema.svg", width: 50%), caption: [Een SVG.])`,
         ) +
         `#let render_opgaven() = [\n  #opgave(titel: "Figuren")[\n    Zie @fig-png.\n\n    #vraag(punten: 2, antwoord: [Een rechte lijn.])[Wat zie je in de figuur?]\n    #vraag(punten: 1.5, antwoord: [$v = s / t$])[Geef de formule.]\n  ]\n]\n`
       );
@@ -415,14 +419,16 @@ function makeOpdrachten(p, observaties, root) {
         vakken: [subject === 'wi' ? 'wisb' : subject],
         jaarlagen: i === 1 ? [] : p.jaarlagen.slice(0, 3),
         observaties: obs.slice(0, 1 + (i % 2)).map((o) => o.id),
-        typFile: `${id}.typ`,
         _meta: meta(T0, 'gebr-1756713600001'),
       });
-      writeText(root, `opdrachten/${id}.typ`, opdrachtTyp(kind, id));
+      const dir = `opdrachten/${id}`;
+      writeText(root, `${dir}/opdracht.typ`, opdrachtTyp(kind, id));
+      copyFile(root, path.join(TEMPLATES, 'opdracht-main.typ'), `${dir}/main.typ`);
+      copyFile(root, path.join(TEMPLATES, 'lib.typ'), `${dir}/lib.typ`);
       if (kind === 'images') {
-        copyAsset(root, 'figuur.png', `opdrachten/images/${id}/figuur.png`);
-        copyAsset(root, 'foto.jpg', `opdrachten/images/${id}/foto.jpg`);
-        writeText(root, `opdrachten/images/${id}/schema.svg`, SVG);
+        copyAsset(root, 'figuur.png', `${dir}/images/figuur.png`);
+        copyAsset(root, 'foto.jpg', `${dir}/images/foto.jpg`);
+        writeText(root, `${dir}/images/schema.svg`, SVG);
       }
       n++;
     }
@@ -466,7 +472,7 @@ function makeQuestions(r, count, { bonus = false, diag = false } = {}) {
 
 function scoreFor(r, q) {
   const x = r.next();
-  if (x < 0.04) return null; // N
+  if (x < 0.04) return 'N';
   if (x < 0.05) return r.pick(['abc', String(q.max_points + 2), '1,5,0']); // invalid input kept as typed
   if (x < 0.08) return undefined; // not entered
   return Math.round(r.next() * q.max_points * 2) / 2;
@@ -577,7 +583,18 @@ function makeExams(p, r, observaties, opdrachten, year) {
       _meta: meta(T0 + 30 * 86_400_000, 'gebr-1756713600001'),
     });
   }
-  return exams.map((e) => JSON.parse(JSON.stringify(e)));
+  // Every exam a test, none diagnostic; resits keep the original's observaties, locked (the
+  // same ones here).
+  return exams.map((e) =>
+    JSON.parse(
+      JSON.stringify({
+        ...e,
+        kind: 'toets',
+        diagnostic: false,
+        ...(e.parent_id ? { obs_from_parent: true } : {}),
+      }),
+    ),
+  );
 }
 
 function makeScores(p, r, students, groups, exams, observaties) {
@@ -627,24 +644,28 @@ export function generate(name, root) {
   const r = prng(p.seed);
   fs.mkdirSync(root, { recursive: true });
 
-  writeJson(root, 'config.json', { activeYear: YEAR });
-  writeJson(root, 'gebruikers.json', makeUsers());
+  writeJson(root, 'config.json', { activeYear: YEAR, schema_version: 3 });
+  for (const user of makeUsers()) writeJson(root, `gebruikers/${user.id}.json`, user);
   writeJson(root, 'school.json', {
     naam: 'Synthetische School',
     ondertitel: 'Testomgeving & co',
     motto: 'Leren #door $doen',
     schoolsoort: ['Havo', 'Vwo'],
-    logo: 'fotos/school-logo.png',
-    watermerk: 'fotos/school-watermerk.svg',
+    logo: 'afbeeldingen/school-logo.png',
+    watermerk: 'afbeeldingen/school-watermerk.svg',
+    minAppVersion: '0.12.0',
   });
-  copyAsset(root, 'figuur.png', 'fotos/school-logo.png');
-  copyAsset(root, 'figuur.png', 'fotos/gebr-1756713600001.png');
-  writeText(root, 'fotos/school-watermerk.svg', SVG);
+  copyAsset(root, 'figuur.png', 'afbeeldingen/school-logo.png');
+  copyAsset(root, 'figuur.png', 'afbeeldingen/gebr-1756713600001.png');
+  writeText(root, 'afbeeldingen/school-watermerk.svg', SVG);
 
   const observaties = makeObservaties(p);
   for (const o of observaties) writeJson(root, `observaties/${o.id}.json`, o);
+  // Natuurkunde rubrics and PO observaties (step 21); the PO ones are not offered on tests.
+  for (const o of PO_OBSERVATIES) writeJson(root, `observaties/${o.id}.json`, o);
+  for (const r of RUBRICS) writeJson(root, `rubrics/${r.id}.json`, r);
   const opdrachten = makeOpdrachten(p, observaties, root);
-  for (const o of opdrachten) writeJson(root, `opdrachten/${o.id}.json`, o);
+  for (const o of opdrachten) writeJson(root, `opdrachten/${o.id}/opdracht.json`, o);
 
   const years = p.prevYear ? [PREV_YEAR, YEAR] : [YEAR];
   for (const year of years) {
@@ -654,7 +675,7 @@ export function generate(name, root) {
       for (const s of students) s.jaarlaag = String(Math.max(1, Number(s.jaarlaag) - 1));
     const groups = makeGroups(p, students).map((g) => ({ ...g, id: g.id.replace(YEAR, year) }));
     const exams = makeExams(p, r, observaties, opdrachten, year);
-    writeJson(root, `${year}/students-${year}.json`, students);
+    writeJson(root, `${year}/students-${year}.json`, { students });
     for (const g of groups) writeJson(root, `${year}/groups/${g.id}.json`, g);
     for (const e of exams) writeJson(root, `${year}/exams/${e.id}.json`, e);
     for (const subj of SUBJECTS)
@@ -663,10 +684,10 @@ export function generate(name, root) {
       writeJson(root, `${year}/scores/${key}.json`, record);
     }
   }
-  writeJson(
+  writeText(
     root,
-    `templates/RTTI explanations and advices/rtti_expl_adv_${p.subjects[0]}_3.json`,
-    rttiTemplate(),
+    `templates/rtti/${p.subjects[0]}_3.json`,
+    JSON.stringify(rttiTemplate(), null, 2),
   );
   return root;
 }

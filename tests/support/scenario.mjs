@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Small hand-built data folders for golden scenarios (v1 layout,
-// docs/reference/data-files.md). Use this when a case needs exact numbers;
+// Small hand-built data folders for test scenarios (current format,
+// docs/reference/data-files-v3.md). Use this when a case needs exact numbers;
 // use tools/fixtures for volume.
 
 import fs from 'node:fs';
@@ -11,12 +11,12 @@ export const YEAR = '2025-2026';
 const write = (root, rel, data) => {
   const abs = path.join(root, ...rel.split('/'));
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, JSON.stringify(data, null, 2));
+  fs.writeFileSync(abs, JSON.stringify(data, null, 2) + '\n');
 };
 
 export function student(id, extra = {}) {
   return {
-    id,
+    id: String(id),
     voornaam: `Leerling${id}`,
     tussenvoegsel: '',
     achternaam: `Achternaam${id}`,
@@ -52,6 +52,8 @@ export function exam(id, questions, extra = {}) {
     obs_ids: [],
     subject: 'nat',
     volgnummer: 301,
+    kind: 'toets',
+    diagnostic: false,
     ...extra,
   };
 }
@@ -78,16 +80,17 @@ export const TEN_BY_TEN = Array.from({ length: 10 }, (_, i) => [10, ['R', 'T1', 
  */
 export function buildData(root, spec) {
   fs.mkdirSync(root, { recursive: true });
-  write(root, 'config.json', spec.config ?? { activeYear: YEAR });
-  for (const o of spec.observaties ?? []) write(root, `observaties/${o.id}.json`, o);
-  for (const o of spec.opdrachten ?? []) write(root, `opdrachten/${o.id}.json`, o);
+  write(root, 'config.json', { ...(spec.config ?? { activeYear: YEAR }), schema_version: 3 });
+  for (const o of spec.observaties ?? [])
+    write(root, `observaties/${o.id}.json`, { toetstypes: ['toets'], ...o });
+  for (const o of spec.opdrachten ?? []) write(root, `opdrachten/${o.id}/opdracht.json`, o);
   for (const [year, y] of Object.entries(spec.years ?? {})) {
-    write(root, `${year}/students-${year}.json`, y.students ?? []);
+    write(root, `${year}/students-${year}.json`, { students: y.students ?? [] });
     for (const e of y.exams ?? []) write(root, `${year}/exams/${e.id}.json`, e);
     for (const g of y.groups ?? []) write(root, `${year}/groups/${g.id}.json`, g);
     for (const [subject, recs] of Object.entries(y.scores ?? {})) {
       for (const [sid, rec] of Object.entries(recs)) {
-        write(root, `${year}/scores/${subject}/${sid}.json`, { student_id: Number(sid), ...rec });
+        write(root, `${year}/scores/${subject}/${sid}.json`, { student_id: String(sid), ...rec });
       }
     }
   }

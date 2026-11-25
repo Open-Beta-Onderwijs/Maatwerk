@@ -17,6 +17,28 @@ test('the logic goldens are there', () => {
   assert.ok(names.length >= 11, names.join(', '));
 });
 
+// The `data` cases hold the reference's v1 folders converted once to the current format (step
+// 39b, user's OK): what the app reads, no converter in the tests.
+test('the golden data folders are in the current format', () => {
+  for (const name of names) {
+    const data = readGolden(name).cases.find((c) => c.id === 'data');
+    if (!data) continue;
+    for (const [rel, text] of Object.entries(data.input.files)) {
+      if (!rel.endsWith('.json')) continue;
+      const v = JSON.parse(text);
+      if (rel === 'config.json') assert.equal(v.schema_version, 3, `${name}: ${rel}`);
+      if (/\/students-[^/]+\.json$/.test(rel)) assert.ok(Array.isArray(v.students), rel);
+      if (/\/scores\//.test(rel)) {
+        assert.equal(typeof v.student_id, 'string', `${name}: ${rel}`);
+        for (const qs of Object.values(v.scores ?? {}))
+          assert.ok(!Object.values(qs).includes(null), `${name}: ${rel} has null, not "N"`);
+      }
+      assert.ok(!rel.startsWith('templates/RTTI'), `${name}: ${rel} is v1`);
+      assert.ok(!/^opdrachten\/[^/]+\.json$/.test(rel), `${name}: ${rel} is v1`);
+    }
+  }
+});
+
 for (const name of names) {
   test(`golden ${name}: well-formed`, () => {
     const g = readGolden(name);
