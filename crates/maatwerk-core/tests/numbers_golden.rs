@@ -36,6 +36,32 @@ fn format(code: &str) -> Value {
     json!({ "methode": methode, "decimalen": code[1..].parse::<u8>().unwrap() })
 }
 
+/// The JSON pointers where `actual` differs from `expected`, with both values: a failure on one
+/// CI platform must say what differs, not only that something does.
+fn diff(path: &str, expected: &Value, actual: &Value, out: &mut Vec<String>) {
+    match (expected, actual) {
+        (Value::Object(e), Value::Object(a)) => {
+            let mut keys: Vec<&String> = e.keys().chain(a.keys()).collect();
+            keys.sort();
+            keys.dedup();
+            for k in keys {
+                let (ev, av) = (
+                    e.get(k).unwrap_or(&Value::Null),
+                    a.get(k).unwrap_or(&Value::Null),
+                );
+                diff(&format!("{path}/{k}"), ev, av, out);
+            }
+        }
+        (Value::Array(e), Value::Array(a)) if e.len() == a.len() => {
+            for (i, (ev, av)) in e.iter().zip(a).enumerate() {
+                diff(&format!("{path}/{i}"), ev, av, out);
+            }
+        }
+        _ if expected != actual => out.push(format!("  {path}: expected {expected}, got {actual}")),
+        _ => {}
+    }
+}
+
 #[test]
 fn numbers_match_the_golden_at_every_format() {
     let mut checked = 0;
@@ -63,7 +89,20 @@ fn numbers_match_the_golden_at_every_format() {
             let expected: Value =
                 serde_json::from_str(&fs::read_to_string(&file).unwrap()).unwrap();
             let actual = serde_json::to_value(vak_numbers(&storage, year, vak).unwrap()).unwrap();
-            assert!(actual == expected, "{name} {stem} differs from the golden");
+            if actual != expected {
+                let mut diffs = vec![];
+                diff("", &expected, &actual, &mut diffs);
+                panic!(
+                    "{name} {stem} differs from the golden ({} places):\n{}",
+                    diffs.len(),
+                    diffs
+                        .iter()
+                        .take(40)
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                );
+            }
             checked += 1;
         }
     }
