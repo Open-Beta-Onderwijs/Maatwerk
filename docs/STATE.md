@@ -47,12 +47,26 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
   for the user's OK**. Screens shown to the user.
 - 40.4 started: `provider.rs` split (presets/args/settings/tests). Still to split: `panel.ts`,
   `src-tauri/src/ai.rs`, `workspace.rs`, `events.rs` (and `editor-ai.css`, `composer.ts`).
-- Open for the user: `vibe --setup` (login) for the Vibe manual check and its tool steps in
-  the transcript; v0.29.0 tag run 45784769264 failed only on the macOS artifact upload
-  (ENOTFOUND, GitHub network): `gh run rerun 45784769264 --failed` on the user's OK.
+- `046b92e`: `editor` baselines (C -> CC) updated with the user's OK; CI copies dropped (the
+  next CI run writes them: check and commit from its artifacts).
+- `e12e564`: Vibe `effect` entries are transcript steps; real check (ai_real_cli) of Claude
+  Code 2.1.328 and Mistral Vibe 3.0.4 (user's free account) passed: proposal, resumed second
+  turn, clean checks. Vibe in `VERIFIED`. ADR-0009 "Real-CLI check (step 40)", manual tests
+  M-AI-6/7/10.
+- m11 (`ffdaa16`, `3d43ef0` events/workspace, app `ai/send.rs` + `ai/proposal.rs`, `e862c04`
+  `editor/ai/applier.ts`): pure moves. `panel.ts` 816 lines, `editor-ai.css`, `composer.ts`
+  left (backlog).
+- `27b5623` m12: workspace privacy test, `workspace::syllabus_file` + test, MockAi
+  `untilStopped` (Stop e2e without a race).
+- v0.29.0 tag run: macOS failed only on the artifact upload (ENOTFOUND); the user reran it.
+- **Gate (local) green** after `27b5623`: fmt, clippy, cargo test (690), deny, SPDX, lint,
+  typecheck, Vitest 963, node 47, licences, e2e chromium 433/433, visual 177/177, WebKit AI
+  20/20.
+- Review: fresh-context reviewer running -> `docs/reviews/step-40.md`.
 
-**Next action:** continue m11 splits, then m12 tests (privacy test of a whole workspace, e2e
-Stop race), Vibe check once logged in, ADR-0009 rows, gate, review, 0.31.
+**Next action:** triage the review (fix blockers/majors), version 0.31.0 (splash baselines as
+in step 39), push, CI, report to the user. Step 39 merge into `main` still waits for the
+user's OK (step 40 then merges `main`).
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 
