@@ -144,10 +144,6 @@ export class MockAi implements AiApi {
     return settings;
   }
 
-  async loginCheck(): Promise<boolean | null> {
-    return true;
-  }
-
   private convKey(gebruiker: string, opdrachtId: string, provider: string): string {
     return `${gebruiker}/${opdrachtId}/${provider}`;
   }

@@ -265,8 +265,6 @@ export interface SyllabusList {
 export interface AiApi {
   detect(gebruiker: string, refresh: boolean): Promise<AiDetection>;
   saveSettings(gebruiker: string, settings: AiSettings): Promise<AiSettings>;
-  /** True/false for CLIs that can tell without a prompt; null otherwise. */
-  loginCheck(gebruiker: string, provider: ProviderKey): Promise<boolean | null>;
   /** Runs one turn; events arrive through `onEvent` until the promise settles. */
   send(
     gebruiker: string,

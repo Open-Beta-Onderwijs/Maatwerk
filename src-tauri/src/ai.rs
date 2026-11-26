@@ -16,7 +16,6 @@ use maatwerk_core::ai::detect::{self, SearchPath};
 use maatwerk_core::ai::diff::{self, Proposal};
 use maatwerk_core::ai::history::Conversation;
 use maatwerk_core::ai::provider::{AiSettings, ProviderKey, preset, presets};
-use maatwerk_core::ai::run::quick_output;
 use maatwerk_core::ai::school::school_allows_in;
 use maatwerk_core::ai::turn::{self, Turn};
 use maatwerk_core::ai::workspace::{
@@ -38,6 +37,8 @@ use crate::state::Shared;
 #[derive(Default)]
 pub struct AiState {
     search: Mutex<Option<SearchPath>>,
+    /// `--version` per program (review 32 m10), cleared with the search path.
+    versions: Mutex<detect::Versions>,
     running: Mutex<HashMap<String, (ProviderKey, Arc<AtomicBool>)>>,
 }
 
@@ -127,7 +128,13 @@ pub async fn ai_detect(
         let school = c.storage().map_or(true, school_allows_in);
         let settings = AiSettings::load(&layout.settings_file());
         let search = search_path(&ai, refresh);
-        let found = detect::detect(&settings, &search);
+        let found = {
+            let mut versions = lock(&ai.versions);
+            if refresh {
+                versions.clear();
+            }
+            detect::detect_cached(&settings, &search, &mut versions)
+        };
         let resolved = settings.resolved();
         let providers: Vec<Value> = found
             .iter()
@@ -167,42 +174,6 @@ pub async fn ai_save_settings(app: AppHandle, gebruiker: String, settings: Value
     off_thread(move || {
         settings.save(&layout.settings_file())?;
         to_value(&settings)
-    })
-    .await
-}
-
-/// Whether the CLI is logged in, for CLIs that can tell without a prompt (Claude Code, Codex);
-/// `null` when unknown.
-#[tauri::command]
-#[specta::specta]
-pub async fn ai_login_check(
-    app: AppHandle,
-    ai: State<'_, Arc<AiState>>,
-    gebruiker: String,
-    provider: String,
-) -> Res<Option<bool>> {
-    let layout = layout(&app, &gebruiker)?;
-    let key = key(&provider)?;
-    let ai = Arc::clone(ai.inner());
-    off_thread(move || {
-        let settings = AiSettings::load(&layout.settings_file());
-        let r = settings.resolve(&key)?;
-        let Some(probe) = r.builtin.and_then(|b| preset(b).login_probe) else {
-            return Ok(None);
-        };
-        let search = search_path(&ai, false);
-        let Some(program) = search.find(&r.command) else {
-            return Ok(None);
-        };
-        let mut cmd = std::process::Command::new(program);
-        cmd.args(probe).env("PATH", search.env_value());
-        let out = quick_output(cmd, std::time::Duration::from_secs(15));
-        Ok(out.map(|o| {
-            let text = String::from_utf8_lossy(&o.stdout).to_lowercase();
-            o.status.success()
-                && !text.contains("\"loggedin\": false")
-                && !text.contains("\"loggedin\":false")
-        }))
     })
     .await
 }
@@ -305,6 +276,10 @@ pub async fn ai_send(
         let settings = AiSettings::load(&layout.settings_file());
         if !settings.enabled {
             return Err(bad("De AI-assistent staat uit in je AI-instellingen."));
+        }
+        // Decision 70 for every entry point, not only the panel (review 32 n6).
+        if !settings.notice_seen {
+            return Err(bad("Lees eerst de uitleg over de AI-assistent."));
         }
         let provider = settings.resolve(&key)?;
         let ctx = request.context;

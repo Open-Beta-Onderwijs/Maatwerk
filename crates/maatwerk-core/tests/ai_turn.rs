@@ -192,9 +192,11 @@ fn a_reported_session_is_resumed() {
         .into(),
         ..AiSettings::default()
     };
-    let claude = settings
+    let mut claude = settings
         .resolve(&ProviderKey::parse("claude").unwrap())
         .unwrap();
+    // The fake has no `auth status` (the_login_check_comes_first).
+    claude.login_probe = None;
     let r = run(f.turn(claude.clone(), Duration::from_secs(60)));
     assert_eq!(r.outcome, Outcome::NoChanges);
     assert_eq!(r.answer.as_deref(), Some("Eerste"));
@@ -259,4 +261,35 @@ fn stop_before_the_cli_starts_keeps_nothing() {
     assert_eq!(fs::read_to_string(work.join("opdracht.typ")).unwrap(), BASE);
     let h = f.history("custom-fake");
     assert_eq!(h.messages.len(), 2, "the stop is in the history");
+}
+
+/// Review 32 m8: before the first run that worked, the CLI's login status command; "not logged
+/// in" ends the turn with that card, without running the CLI.
+#[test]
+fn the_login_check_comes_first() {
+    let f = fixture();
+    let args = f.script(
+        "s.json",
+        json!([{"write": "opdracht.typ", "content": edited()}, {"out": "klaar"}]),
+    );
+    let probe = f.script("login.json", json!([{"out": "{\"loggedIn\": false}"}]));
+    let mut provider = f.custom(&args, "");
+    provider.login_probe = Some(maatwerk_core::ai::provider::split_args(&probe).unwrap());
+    let mut events = 0;
+    let r = run_turn(
+        f.turn(provider.clone(), Duration::from_secs(60)),
+        &Arc::new(AtomicBool::new(false)),
+        |_| events += 1,
+    )
+    .unwrap();
+    assert_eq!(r.outcome, Outcome::NotLoggedIn);
+    assert_eq!(events, 0, "the CLI did not run");
+    let h = f.history("custom-fake");
+    assert!(h.messages[1].run.as_ref().unwrap().auth_failed);
+
+    // Logged in: the turn runs.
+    let probe = f.script("login.json", json!([{"out": "{\"loggedIn\": true}"}]));
+    provider.login_probe = Some(maatwerk_core::ai::provider::split_args(&probe).unwrap());
+    let r = run(f.turn(provider, Duration::from_secs(60)));
+    assert_eq!(r.outcome, Outcome::Proposal, "{:?}", r.answer);
 }

@@ -96,4 +96,24 @@ describe('editor AI requests', () => {
     expect(events.map((e) => e.kind)).toContain('step');
     expect(await client.preview('abc')).toEqual({ pages: ['<svg>3</svg>'] });
   });
+
+  // Review 32 m9: the workspace gets this window's opdrachtgegevens, whatever the iframe sends.
+  it('replaces the metadata the iframe sends with its own, and drops it when off', async () => {
+    const { ai, ctx } = context();
+    const forged = {
+      ...request,
+      context: { ...request.context, metadata: { titel: 'Naam Leerling' } },
+    };
+    await handleAiRequest('send', ['run-1', 'claude', forged], ctx);
+    expect(ai.calls.filter((c) => c.method === 'send')).toHaveLength(1);
+    const first = ai.calls.find((c) => c.method === 'send')!.args[3] as AiSendRequest;
+    expect(first.context.metadata).toEqual(aiEditorInfo(ctx).metadata);
+    await handleAiRequest(
+      'send',
+      ['run-2', 'claude', { ...request, context: { ...request.context, metadata: null } }],
+      ctx,
+    );
+    const second = ai.calls.filter((c) => c.method === 'send')[1]!.args[3] as AiSendRequest;
+    expect(second.context.metadata).toBeNull();
+  });
 });

@@ -5,7 +5,6 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, PoisonError};
 
 use maatwerk_core::auth::Auth;
@@ -316,16 +315,17 @@ impl Core {
 }
 
 /// Files chosen in the image dialog, by token: the absolute path never reaches the UI
-/// (`pickedImages`, `main.js:243-245`). Tokens live until imported or the app quits.
+/// (`pickedImages`, `main.js:243-245`). Tokens live until imported or the app quits; they are
+/// random, so no earlier pick can be named by guessing (review 32 n1). AI attachment tokens
+/// stay for "Opnieuw proberen", which sends the same request again.
 #[derive(Default)]
 pub struct Picked {
-    seq: AtomicU64,
     paths: Mutex<HashMap<String, PathBuf>>,
 }
 
 impl Picked {
     pub fn add(&self, path: PathBuf) -> String {
-        let token = (self.seq.fetch_add(1, Ordering::SeqCst) + 1).to_string();
+        let token = uuid::Uuid::new_v4().simple().to_string();
         lock(&self.paths).insert(token.clone(), path);
         token
     }

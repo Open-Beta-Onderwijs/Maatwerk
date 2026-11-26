@@ -22,8 +22,8 @@ use super::diff::{self, Proposal};
 use super::events::{AiEvent, Collected, StepKind};
 use super::guard::{Guard, Interrupt};
 use super::history::{Conversation, Message, RunEndKind, RunSummary, Transcript};
-use super::provider::{Placeholders, REQUEST_FILE, Resolved, SessionMode};
-use super::run::{self, RunEnd, RunReport, RunSpec};
+use super::provider::{Placeholders, REQUEST_FILE, Resolved, SessionMode, logged_in};
+use super::run::{self, RunEnd, RunReport, RunSpec, quick_output};
 use super::workspace::{self, Layout, TurnInput};
 use crate::assignment::{self, Assignment, CheckReport, RenderOptions};
 use crate::error::{Error, Result};
@@ -32,6 +32,8 @@ use crate::typst_svc::{FontStore, Severity, local_now};
 /// Fix rounds Maatwerk adds at most (ADR-0009 constraint 3).
 pub const MAX_FIX_ROUNDS: u32 = 3;
 const CHECK_LIMIT: Duration = Duration::from_secs(30);
+/// How long the login status command may take.
+const LOGIN_LIMIT: Duration = Duration::from_secs(15);
 const POLL: Duration = Duration::from_millis(100);
 
 /// One turn's parameters.
@@ -106,6 +108,35 @@ fn interrupted(i: Interrupt, started: Instant) -> RunReport {
     }
 }
 
+/// The login status command of `provider` (review 32 m8): `Some(report)` of a not-logged-in
+/// run when it says the CLI is not logged in; `None` when it is, has no such command, or the
+/// command gave no answer (the run then tells).
+fn login_refusal(
+    provider: &Resolved,
+    program: &std::path::Path,
+    search: &SearchPath,
+    started: Instant,
+) -> Option<RunReport> {
+    let probe = provider.login_probe.as_ref()?;
+    let mut cmd = std::process::Command::new(program);
+    cmd.args(probe).env("PATH", search.env_value());
+    let out = quick_output(cmd, LOGIN_LIMIT)?;
+    if logged_in(out.status.success(), &String::from_utf8_lossy(&out.stdout)) {
+        return None;
+    }
+    Some(RunReport {
+        end: RunEnd::Exited {
+            code: out.status.code(),
+        },
+        collected: Collected {
+            auth_failed: true,
+            error: Some(format!("{} is niet ingelogd.", provider.name)),
+            ..Collected::default()
+        },
+        elapsed_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+    })
+}
+
 fn errors_text(r: &CheckReport) -> String {
     r.diagnostics
         .iter()
@@ -159,6 +190,18 @@ pub fn run_turn(
             elapsed_ms: 0,
         });
     };
+    // Until the first run that worked, the CLI's own login status first (review 32 m8): the
+    // not-logged-in card at once instead of after a failed run.
+    let worked_before = conv.messages.iter().any(|m| {
+        m.run
+            .as_ref()
+            .is_some_and(|r| r.end == RunEndKind::Finished)
+    });
+    let mut refused = if worked_before {
+        None
+    } else {
+        login_refusal(&provider, &program, &search, started)
+    };
     let can_resume = !provider.args_next.trim().is_empty();
     let resumes = can_resume && conv.session.is_some();
     if !can_resume {
@@ -180,6 +223,10 @@ pub fn run_turn(
     loop {
         if let Some(i) = guard.interrupted() {
             report = interrupted(i, started);
+            break;
+        }
+        if let Some(r) = refused.take() {
+            report = r;
             break;
         }
         let remaining = time_limit.saturating_sub(started.elapsed());

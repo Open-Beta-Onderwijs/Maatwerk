@@ -26,8 +26,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use super::provider::{Builtin, CHECK_COMMAND, REQUEST_FILE, Resolved};
 use super::guard::Guard;
+use super::provider::{Builtin, CHECK_COMMAND, REQUEST_FILE, Resolved};
 use crate::assignment::{self, Assignment, RenderOptions};
 use crate::error::{Error, Result};
 use crate::opdracht_images::{IMAGE_EXTS, clean_image_name, extension_of, stem_of};
@@ -327,6 +327,8 @@ pub fn prepare(
     })
 }
 
+/// Decision 53 counts 10 per chat, which the composer enforces; this guard counts per message
+/// (review 32 n7).
 fn check_attachments(attachments: &[Attachment]) -> Result<()> {
     if attachments.len() > MAX_ATTACHMENTS {
         return Err(invalid(format!(

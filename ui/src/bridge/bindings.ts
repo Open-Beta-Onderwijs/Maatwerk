@@ -249,11 +249,6 @@ export const commands = {
 	/**  Saves the teacher's AI settings (validated); returns them as stored. */
 	aiSaveSettings: (gebruiker: string, settings: Value) => typedError<Value, CommandError>(__TAURI_INVOKE("ai_save_settings", { gebruiker, settings })),
 	/**
-	 *  Whether the CLI is logged in, for CLIs that can tell without a prompt (Claude Code, Codex);
-	 *  `null` when unknown.
-	 */
-	aiLoginCheck: (gebruiker: string, provider: string) => typedError<boolean | null, CommandError>(__TAURI_INVOKE("ai_login_check", { gebruiker, provider })),
-	/**
 	 *  Sends a message to `provider` about the opdracht and waits for the turn's result
 	 *  (`turn::TurnResult`); events stream through `on_event` (`AiEvent`). One run per opdracht.
 	 */

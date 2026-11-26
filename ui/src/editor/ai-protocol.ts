@@ -13,7 +13,6 @@ import type { AiEvent, ProviderKey, Starter } from '../bridge/ai-api';
 export const AI_METHODS = [
   'info',
   'detect',
-  'loginCheck',
   'send',
   'stop',
   'conversations',

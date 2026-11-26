@@ -575,6 +575,21 @@ pub struct Resolved {
     pub session: SessionMode,
     pub image_flag: Option<String>,
     pub runs_check: bool,
+    /// Arguments of the CLI's own login status command, run before its first turn (review 32
+    /// m8); `None` when it has none.
+    pub login_probe: Option<Vec<String>>,
+}
+
+/// Whether the login status command says the CLI is logged in: Claude Code prints JSON with
+/// `loggedIn`, Codex answers with its exit code.
+pub fn logged_in(succeeded: bool, stdout: &str) -> bool {
+    match serde_json::from_str::<serde_json::Value>(stdout.trim()) {
+        Ok(v) => match v.get("loggedIn").and_then(serde_json::Value::as_bool) {
+            Some(b) => succeeded && b,
+            None => succeeded,
+        },
+        Err(_) => succeeded,
+    }
 }
 
 impl AiSettings {
@@ -653,6 +668,9 @@ impl AiSettings {
                     session: p.session,
                     image_flag: p.image_flag.map(str::to_owned),
                     runs_check: p.runs_check,
+                    login_probe: p
+                        .login_probe
+                        .map(|a| a.iter().map(|s| (*s).to_owned()).collect()),
                 }
             })
             .collect();
@@ -667,6 +685,7 @@ impl AiSettings {
             session: SessionMode::Maatwerk,
             image_flag: None,
             runs_check: false,
+            login_probe: None,
         }));
         out
     }
@@ -841,5 +860,18 @@ mod tests {
         s.validate().unwrap();
         s.custom.push(s.custom[0].clone());
         assert!(s.validate().is_err());
+    }
+
+    #[test]
+    fn login_status_from_json_or_exit_code() {
+        assert!(logged_in(
+            true,
+            r#"{ "loggedIn": true, "authMethod": "claude.ai" }"#
+        ));
+        assert!(!logged_in(true, r#"{"loggedIn":false}"#));
+        assert!(!logged_in(false, r#"{"loggedIn":true}"#));
+        assert!(logged_in(true, "Logged in using ChatGPT"));
+        assert!(!logged_in(false, "Not logged in"));
+        assert!(logged_in(true, "[1, 2]"));
     }
 }

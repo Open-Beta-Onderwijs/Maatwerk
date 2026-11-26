@@ -29,7 +29,6 @@ export type Ask = (
 export interface EditorAi {
   info(): Promise<AiEditorInfo>;
   detect(refresh?: boolean): Promise<AiDetection>;
-  loginCheck(provider: ProviderKey): Promise<boolean | null>;
   send(
     provider: ProviderKey,
     request: AiSendRequest,
@@ -85,7 +84,6 @@ export function createEditorAi(
   return {
     info: () => call('info'),
     detect: (refresh = false) => call('detect', refresh),
-    loginCheck: (p) => call('loginCheck', p),
     async send(p, request, onEvent) {
       const runId = `run-${Date.now()}-${++runSeq}`;
       runs.set(runId, onEvent);

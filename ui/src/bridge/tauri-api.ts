@@ -117,7 +117,6 @@ function createAiApi(c: Commands): Ai.AiApi {
   return {
     detect: (gebruiker, refresh) => asJson(c.aiDetect(gebruiker, refresh)),
     saveSettings: (gebruiker, settings) => asJson(c.aiSaveSettings(gebruiker, json(settings))),
-    loginCheck: (gebruiker, provider) => orThrow(c.aiLoginCheck(gebruiker, provider)),
     send(gebruiker, opdrachtId, provider, request, onEvent) {
       const channel = new Channel<Value>();
       channel.onmessage = (event) => onEvent(event as unknown as Ai.AiEvent);
