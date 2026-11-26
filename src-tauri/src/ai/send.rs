@@ -110,17 +110,7 @@ pub async fn ai_send(
         let provider = settings.resolve(&key)?;
         let ctx = request.context;
         let syllabus = match ctx.syllabus {
-            Some(name) => {
-                // A plain PDF name in the folder: no separators, no drive (`C:x.pdf` would make
-                // `join` leave the folder on Windows; review 32 m1).
-                if name.contains(['/', '\\', ':'])
-                    || name.starts_with('.')
-                    || !name.to_ascii_lowercase().ends_with(".pdf")
-                {
-                    return Err(bad("Ongeldige syllabus."));
-                }
-                Some(syllabus_dir.join(name))
-            }
+            Some(name) => Some(workspace::syllabus_file(&syllabus_dir, &name)?),
             None => None,
         };
         let mut others = Vec::new();

@@ -292,3 +292,114 @@ fn layout_paths_and_forget() {
     assert!(!work.exists() && !history.exists());
     l.forget("opd-1", &key).unwrap();
 }
+
+/// Review 32 m12 (ADR-0009 constraint 1): a workspace built inside a data folder that holds
+/// students, exams and scores contains only the opdracht, the chosen context and Maatwerk's own
+/// files, and no student data anywhere, with every chip but the images on.
+#[test]
+fn a_workspace_holds_no_school_data() {
+    const NAME: &str = "Fleur Privacytest";
+    let data = tempfile::tempdir().unwrap();
+    let root = data.path();
+    for (rel, text) in [
+        (
+            "leerlingen/2026-2027/leer-1.json",
+            format!(r#"{{"naam":"{NAME}"}}"#),
+        ),
+        (
+            "toetsen/2026-2027/nat/toets-1.json",
+            r#"{"naam":"Toets geheim"}"#.into(),
+        ),
+        (
+            "scores/2026-2027/nat/leer-1.json",
+            format!(r#"{{"leerling":"{NAME}","score":7}}"#),
+        ),
+        (
+            "opdrachten/opd-2/opdracht.typ",
+            "// andere opdracht\n".into(),
+        ),
+    ] {
+        let path = root.join(rel);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, text).unwrap();
+    }
+    let opdracht = root.join("opdrachten/opd-1");
+    fs::create_dir_all(&opdracht).unwrap();
+    opdracht_folder(&opdracht);
+    let mut i = input(&opdracht);
+    i.context = ContextChoice {
+        guide: true,
+        metadata: Some(serde_json::json!({ "titel": "Dichtheid", "vakken": ["Natuurkunde"] })),
+        diagnostics: true,
+        pdf: true,
+        syllabus: None,
+        others: vec![OtherOpdracht {
+            id: "opd-2".into(),
+            title: "Andere".into(),
+            text: "// andere opdracht\n".into(),
+        }],
+        images: false,
+    };
+    let ws = tempfile::tempdir().unwrap();
+    for key in ["claude", "vibe", "gemini"] {
+        let (work, run) = (ws.path().join(key), ws.path().join(format!("{key}.run")));
+        prep(&work, &run, &provider(key), false, &i).unwrap();
+        let mut files = Vec::new();
+        let mut stack = vec![work.clone()];
+        while let Some(dir) = stack.pop() {
+            for e in fs::read_dir(&dir).unwrap().flatten() {
+                let path = e.path();
+                if path.is_dir() {
+                    stack.push(path);
+                } else {
+                    files.push(path);
+                }
+            }
+        }
+        for f in &files {
+            let rel = f
+                .strip_prefix(&work)
+                .unwrap()
+                .to_string_lossy()
+                .replace('\\', "/");
+            let allowed = ["opdracht.typ", "main.typ", "lib.typ"].contains(&rel.as_str())
+                || rel.starts_with("images/")
+                || rel.starts_with(".maatwerk/")
+                || rel.starts_with(".vibe/")
+                || rel.starts_with(".gemini/");
+            assert!(allowed, "{key}: unexpected file {rel}");
+            let bytes = fs::read(f).unwrap();
+            let text = String::from_utf8_lossy(&bytes);
+            assert!(!text.contains(NAME), "{key}: student name in {rel}");
+            assert!(!text.contains("Toets geheim"), "{key}: exam in {rel}");
+            assert!(
+                !rel.contains("leerling") && !rel.contains("scores"),
+                "{key}: {rel}"
+            );
+        }
+        // The real images stay out without the Afbeeldingen chip.
+        let png = fs::read(work.join("images/rood.png")).unwrap();
+        assert_ne!(png, fs::read(opdracht.join("images/rood.png")).unwrap());
+    }
+}
+
+/// Review 32 m1, m12: only a plain PDF name inside the syllabus folder.
+#[test]
+fn syllabus_names() {
+    let dir = Path::new("/syllabus");
+    assert_eq!(
+        syllabus_file(dir, "Natuurkunde havo 2027.PDF").unwrap(),
+        dir.join("Natuurkunde havo 2027.PDF")
+    );
+    for bad in [
+        "../geheim.pdf",
+        "sub/x.pdf",
+        "sub\\x.pdf",
+        "C:x.pdf",
+        ".verborgen.pdf",
+        "syllabus.docx",
+        "",
+    ] {
+        assert!(syllabus_file(dir, bad).is_err(), "{bad}");
+    }
+}

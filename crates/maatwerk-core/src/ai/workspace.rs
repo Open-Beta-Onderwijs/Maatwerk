@@ -535,6 +535,19 @@ fn write_attachments(
     Ok(images)
 }
 
+/// The syllabus `name` in `dir` (decision 52): a plain PDF name only. No separators and no
+/// drive (`C:x.pdf` would make `join` leave the folder on Windows), no hidden file (review 32
+/// m1).
+pub fn syllabus_file(dir: &Path, name: &str) -> Result<PathBuf> {
+    if name.contains(['/', '\\', ':'])
+        || name.starts_with('.')
+        || !name.to_ascii_lowercase().ends_with(".pdf")
+    {
+        return Err(invalid("Ongeldige syllabus."));
+    }
+    Ok(dir.join(name))
+}
+
 /// Reads the baseline a turn wrote ([`prepare`]), e.g. after the app restarted.
 pub fn read_baseline(run_dir: &Path) -> Result<Baseline> {
     let path = run_dir.join("baseline.json");

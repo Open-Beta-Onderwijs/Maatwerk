@@ -146,8 +146,9 @@ test('Voorstel bekijken: hunks with checkboxes, preview, Toepassen (n)', async (
 test('Stop keeps nothing; a time-out shows its card', async ({ page }) => {
   const frame = await openClaude(page);
   const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  // The run waits for Stop, however slow the runner (review 32 m12).
   await withMock(page, (m) => {
-    m.ai.stepDelayMs = 800;
+    m.ai.untilStopped = true;
   });
   await panel.getByRole('textbox', { name: 'Bericht' }).fill('Langzaam');
   await panel.getByRole('button', { name: 'Versturen' }).click();
@@ -158,7 +159,6 @@ test('Stop keeps nothing; a time-out shows its card', async ({ page }) => {
   await shot(page, '07-stopped');
 
   await withMock(page, (m) => {
-    m.ai.stepDelayMs = 0;
     m.ai.nextTurn = { outcome: 'timedOut', append: '' };
   });
   await panel.getByRole('textbox', { name: 'Bericht' }).fill('Nog eens');

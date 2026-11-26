@@ -19,7 +19,7 @@ use maatwerk_core::ai::provider::{AiSettings, ProviderKey, is_beta, preset, pres
 use maatwerk_core::ai::school::school_allows_in;
 use maatwerk_core::ai::turn::{self, Turn};
 use maatwerk_core::ai::workspace::{
-    Attachment, ContextChoice, Layout, OtherOpdracht, Starter, TurnInput,
+    self, Attachment, ContextChoice, Layout, OtherOpdracht, Starter, TurnInput,
 };
 use maatwerk_core::opdracht_images::{self, extension_of};
 use maatwerk_core::storage::decode_base64_lenient;

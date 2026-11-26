@@ -73,6 +73,8 @@ export class MockAi implements AiApi {
   nextPick: PickedAttachment[] = [];
   /** Delay between streamed events (ms). */
   stepDelayMs = 0;
+  /** The next run waits for Stop after its events (consumed; review 32 m12: no race). */
+  untilStopped = false;
   /** Delay of `apply` (ms), to type during the round trip (review 32 m3). */
   applyDelayMs = 0;
   /** Images every proposal holds (review 32 m4, m5). */
@@ -198,6 +200,10 @@ export class MockAi implements AiApi {
         if (this.stepDelayMs) await new Promise((r) => setTimeout(r, this.stepDelayMs));
         if (run.stop) break;
         onEvent(e);
+      }
+      if (this.untilStopped) {
+        this.untilStopped = false;
+        while (!run.stop) await new Promise((r) => setTimeout(r, 20));
       }
       const append = script.append ?? MOCK_AI_LINES;
       const outcome: TurnResult['outcome'] = run.stop
