@@ -164,15 +164,41 @@ fn settings_validation() {
 
 #[test]
 fn login_status_from_json_or_exit_code() {
-    assert!(logged_in(
-        true,
-        r#"{ "loggedIn": true, "authMethod": "claude.ai" }"#
-    ));
-    assert!(!logged_in(true, r#"{"loggedIn":false}"#));
-    assert!(!logged_in(false, r#"{"loggedIn":true}"#));
-    assert!(logged_in(true, "Logged in using ChatGPT"));
-    assert!(!logged_in(false, "Not logged in"));
-    assert!(logged_in(true, "[1, 2]"));
+    let json = r#"{ "loggedIn": true, "authMethod": "claude.ai" }"#;
+    assert_eq!(login_state(true, json, ""), Some(true));
+    assert_eq!(login_state(true, r#"{"loggedIn":false}"#, ""), Some(false));
+    assert_eq!(login_state(true, "Logged in using ChatGPT", ""), Some(true));
+    assert_eq!(login_state(false, "Not logged in", ""), Some(false));
+    assert_eq!(login_state(false, "", "Error: not logged in"), Some(false));
+    // Review 40 M1: a failure that does not say "not logged in" is unknown: the CLI runs.
+    assert_eq!(login_state(false, "", "unknown command 'auth'"), None);
+    assert_eq!(login_state(false, r#"{"loggedIn":true}"#, ""), Some(true));
+}
+
+/// Review 40 M1: an overridden command may be another program: no preset login probe.
+#[test]
+fn no_login_probe_for_an_overridden_command() {
+    let key = ProviderKey::parse("claude").unwrap();
+    assert!(
+        AiSettings::default()
+            .resolve(&key)
+            .unwrap()
+            .login_probe
+            .is_some()
+    );
+    let s = AiSettings {
+        overrides: [(
+            Builtin::Claude,
+            ProviderOverride {
+                command: Some("my-claude".into()),
+                args: None,
+                args_next: None,
+            },
+        )]
+        .into(),
+        ..AiSettings::default()
+    };
+    assert!(s.resolve(&key).unwrap().login_probe.is_none());
 }
 
 /// Decision 89: only the CLIs whose real check passed are out of bèta (ADR-0009, step 40).

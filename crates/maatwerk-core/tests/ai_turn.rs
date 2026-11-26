@@ -293,3 +293,22 @@ fn the_login_check_comes_first() {
     let r = run(f.turn(provider, Duration::from_secs(60)));
     assert_eq!(r.outcome, Outcome::Proposal, "{:?}", r.answer);
 }
+
+/// Review 40 M1: a login check that fails without saying "not logged in" does not lock the CLI
+/// out; the CLI runs.
+#[test]
+fn an_unclear_login_check_lets_the_cli_run() {
+    let f = fixture();
+    let args = f.script(
+        "s.json",
+        json!([{"write": "opdracht.typ", "content": edited()}, {"out": "klaar"}]),
+    );
+    let probe = f.script(
+        "login.json",
+        json!([{"err": "unknown command auth"}, {"exit": 2}]),
+    );
+    let mut provider = f.custom(&args, "");
+    provider.login_probe = Some(maatwerk_core::ai::provider::split_args(&probe).unwrap());
+    let r = run(f.turn(provider, Duration::from_secs(60)));
+    assert_eq!(r.outcome, Outcome::Proposal, "{:?}", r.answer);
+}

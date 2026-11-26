@@ -95,16 +95,21 @@ pub struct Resolved {
     pub login_probe: Option<Vec<String>>,
 }
 
-/// Whether the login status command says the CLI is logged in: Claude Code prints JSON with
-/// `loggedIn`, Codex answers with its exit code.
-pub fn logged_in(succeeded: bool, stdout: &str) -> bool {
-    match serde_json::from_str::<serde_json::Value>(stdout.trim()) {
-        Ok(v) => match v.get("loggedIn").and_then(serde_json::Value::as_bool) {
-            Some(b) => succeeded && b,
-            None => succeeded,
-        },
-        Err(_) => succeeded,
+/// What the login status command says: Claude Code prints JSON with `loggedIn`, Codex exits
+/// non-zero with "Not logged in". `None` when it does not say (another error, another program):
+/// then the CLI runs and its own output tells (review 40 M1: a wrong "no" would lock it out).
+pub fn login_state(succeeded: bool, stdout: &str, stderr: &str) -> Option<bool> {
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(stdout.trim())
+        && let Some(b) = v.get("loggedIn").and_then(serde_json::Value::as_bool)
+    {
+        return Some(b);
     }
+    if succeeded {
+        return Some(true);
+    }
+    let auth =
+        crate::ai::events::looks_like_auth(stdout) || crate::ai::events::looks_like_auth(stderr);
+    auth.then_some(false)
 }
 
 impl AiSettings {
@@ -172,6 +177,7 @@ impl AiSettings {
             .iter()
             .map(|p| {
                 let o = self.overrides.get(&p.builtin).cloned().unwrap_or_default();
+                let overridden = o.command.is_some();
                 Resolved {
                     key: ProviderKey::builtin(p.builtin),
                     builtin: Some(p.builtin),
@@ -183,8 +189,10 @@ impl AiSettings {
                     session: p.session,
                     image_flag: p.image_flag.map(str::to_owned),
                     runs_check: p.runs_check,
+                    // Only for the preset's own program (review 40 M1).
                     login_probe: p
                         .login_probe
+                        .filter(|_| !overridden)
                         .map(|a| a.iter().map(|s| (*s).to_owned()).collect()),
                 }
             })

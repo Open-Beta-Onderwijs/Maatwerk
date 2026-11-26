@@ -187,7 +187,8 @@ fn the_whole_tree_is_killed() {
         spec(
             dir.path(),
             json!([{"child": 60000}, {"sleepMs": 60000}]),
-            Duration::from_millis(800),
+            // Time for the fake to start its child on a busy machine (review 40: flaky at 0,8 s).
+            Duration::from_secs(3),
             StreamFormat::Text,
         ),
         sink,

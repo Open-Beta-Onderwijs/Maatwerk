@@ -157,11 +157,16 @@ struct Proc {
 impl Proc {
     #[cfg(windows)]
     fn spawn(cmd: Command) -> std::io::Result<Proc> {
-        use process_wrap::std::{CommandWrap, CreationFlags, JobObject};
+        use process_wrap::std::{CommandWrap, CreationFlags, JobObject, KillOnDrop};
         // The job object starts the CLI suspended and assigns it before it runs, so no
-        // grandchild escapes the job.
+        // grandchild escapes the job. Kill on close: when Maatwerk ends or crashes during a
+        // run, Windows ends the tree too (review 40 m8).
         let mut wrap = CommandWrap::from(cmd);
-        wrap.wrap(CreationFlags(CREATE_NO_WINDOW)).wrap(JobObject);
+        // KillOnDrop before JobObject: the job's child stays outermost, so `inner_mut` below
+        // reaches the CLI itself (through KillOnDrop's pass-through).
+        wrap.wrap(CreationFlags(CREATE_NO_WINDOW))
+            .wrap(KillOnDrop)
+            .wrap(JobObject);
         Ok(Proc {
             child: wrap.spawn()?,
         })

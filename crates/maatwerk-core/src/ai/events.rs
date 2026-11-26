@@ -363,7 +363,7 @@ fn short_names(paths: &[&str]) -> String {
 }
 
 /// A message that says the CLI is not logged in (only asked when the run failed).
-fn looks_like_auth(text: &str) -> bool {
+pub(crate) fn looks_like_auth(text: &str) -> bool {
     let t = text.to_lowercase();
     [
         "not logged in",

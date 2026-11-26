@@ -46,7 +46,7 @@ uuid = { version = "1.29.0", features = ["v4"] }
 # AI CLIs run in a job object, so the whole tree ends with the run, also after the CLI itself
 # exited early (review 32 m6). Unix uses a process group instead (std).
 [target.'cfg(windows)'.dependencies]
-process-wrap = { version = "11.0.0", default-features = false, features = ["std", "job-object", "creation-flags"] }
+process-wrap = { version = "11.0.0", default-features = false, features = ["std", "job-object", "creation-flags", "kill-on-drop"] }
 
 [lints]
 workspace = true

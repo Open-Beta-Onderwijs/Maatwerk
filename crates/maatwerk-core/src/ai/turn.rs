@@ -22,7 +22,7 @@ use super::diff::{self, Proposal};
 use super::events::{AiEvent, Collected, StepKind};
 use super::guard::{Guard, Interrupt};
 use super::history::{Conversation, Message, RunEndKind, RunSummary, Transcript};
-use super::provider::{Placeholders, REQUEST_FILE, Resolved, SessionMode, logged_in};
+use super::provider::{Placeholders, REQUEST_FILE, Resolved, SessionMode, login_state};
 use super::run::{self, RunEnd, RunReport, RunSpec, quick_output};
 use super::workspace::{self, Layout, TurnInput};
 use crate::assignment::{self, Assignment, CheckReport, RenderOptions};
@@ -121,7 +121,12 @@ fn login_refusal(
     let mut cmd = std::process::Command::new(program);
     cmd.args(probe).env("PATH", search.env_value());
     let out = quick_output(cmd, LOGIN_LIMIT)?;
-    if logged_in(out.status.success(), &String::from_utf8_lossy(&out.stdout)) {
+    let said = login_state(
+        out.status.success(),
+        &String::from_utf8_lossy(&out.stdout),
+        &String::from_utf8_lossy(&out.stderr),
+    );
+    if said != Some(false) {
         return None;
     }
     Some(RunReport {
@@ -214,7 +219,17 @@ pub fn run_turn(
     }
     let workdir = layout.workdir(&opdracht, &provider.key)?;
     let run_dir = layout.run_dir(&opdracht, &provider.key)?;
-    let prepared = workspace::prepare(&workdir, &run_dir, &provider, resumes, &input, &guard)?;
+    // Refused by the login check: nothing to prepare (review 40 m5).
+    let prepared = if refused.is_some() {
+        workspace::Prepared {
+            workdir: workdir.clone(),
+            run_dir: run_dir.clone(),
+            baseline: workspace::Baseline::default(),
+            image_args: Vec::new(),
+        }
+    } else {
+        workspace::prepare(&workdir, &run_dir, &provider, resumes, &input, &guard)?
+    };
     // Shared between the runner's callback (moved to its thread) and this function.
     let transcript = Arc::new(std::sync::Mutex::new(Transcript::default()));
     let mut fix_rounds = 0;
@@ -335,8 +350,13 @@ pub fn run_turn(
             (None, None, Outcome::NoChanges)
         } else {
             let check = check_workspace(&workdir, &guard);
-            match guard.interrupted().filter(|_| check.is_none()) {
-                // Stopped or timed out during the last check: nothing is kept (decision 67).
+            // Stopped during the last check: nothing is kept (decision 67). The time limit
+            // passing there keeps the finished proposal, without its check (review 40 m6).
+            let stopped = guard.interrupted() == Some(Interrupt::Stopped);
+            match stopped
+                .then_some(Interrupt::Stopped)
+                .filter(|_| check.is_none())
+            {
                 Some(i) => {
                     report = interrupted(i, started);
                     let outcome = match i {
