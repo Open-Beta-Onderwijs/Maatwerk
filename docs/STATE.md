@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-26 (step 40 done, CI pending)
+Last updated: 2026-11-26 (step 40 done, main merged in, CI pending)
 Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
 merges; merge `main` in after it does)
 Last tags: `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
@@ -74,6 +74,10 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
   their baselines committed from the artifacts (`CC`, version 0.31.0 checked). Run
   45807358650: Linux, Windows, licences green; macOS got no runner (GitHub busy), cancelled;
   the user reruns it in the morning (2026-11-27).
+
+- 2026-11-26: `main` merged into `step/40-ai-followups` (no file changes). v0.29.0 tag run
+  45784769264 green; its 10 files attached to the published release `v0.29.0` after checking
+  checksums (exe SHA-256 `24551d83…88cc`, now in the notes instead of the TODO).
 
 - 2026-11-26: **step 39 merged into `main`** (`df87d83`, merge commit, tree identical to
   `57fa6d0`, CI green there) and tagged `step-39` (user's OK). `v0.30.0` not tagged.
