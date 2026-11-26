@@ -10,7 +10,6 @@ import type {
   AiProvider,
   AiSendRequest,
   AiSettings,
-  ApplyResult,
   Conversation,
   ProposalView,
   ProviderKey,
@@ -51,6 +50,7 @@ import {
   type Chips,
   type LiveRun,
 } from './model';
+import { Applier } from './applier';
 import { openReview } from './review';
 
 /** What the panel needs from the editor. */
@@ -74,20 +74,6 @@ export interface PanelHost {
   layoutChanged(): void;
 }
 
-interface Applied {
-  before: Record<string, string>;
-  after: Record<string, string>;
-  /** Stored in the opdracht (by a save). */
-  images: string[];
-  /** Chosen, waiting for the next save of the text (review 32 m4). */
-  pending: string[];
-  hunks: number;
-  conflicts: number;
-}
-
-/** Rounds of Toepassen while the teacher keeps typing (review 32 m3). */
-const APPLY_TRIES = 3;
-
 interface LiveState {
   provider: ProviderKey;
   run: LiveRun;
@@ -109,8 +95,7 @@ export class AiPanel {
   private live: LiveState | null = null;
   private lastTurn = new Map<ProviderKey, TurnResult>();
   private lastRequest = new Map<ProviderKey, AiSendRequest>();
-  private applied = new Map<ProviderKey, Applied>();
-  private cardState = new Map<ProviderKey, DiffCardState>();
+  private readonly proposals: Applier;
   private readonly messagesEl: HTMLElement;
   private readonly headerEl: HTMLElement;
   private readonly dropEl: HTMLElement;
@@ -126,6 +111,12 @@ export class AiPanel {
     private readonly rail: HTMLElement,
     private readonly panel: HTMLElement,
   ) {
+    this.proposals = new Applier(ai, host, {
+      markApplied: (key, applied) => this.markApplied(key, applied),
+      changed: (key) => {
+        if (this.selected === key) this.render();
+      },
+    });
     this.headerEl = h('header', { class: 'ai-head' });
     this.messagesEl = h('div', { class: 'ai-messages', 'aria-live': 'polite' });
     this.dropEl = h('div', { class: 'ai-drop', hidden: true });
@@ -444,8 +435,7 @@ export class AiPanel {
     this.open.delete(key);
     this.lastTurn.delete(key);
     this.lastRequest.delete(key);
-    this.applied.delete(key);
-    this.cardState.delete(key);
+    this.proposals.forget(key);
     if (this.selected === key) {
       this.conv = { provider: key, messages: [] };
       this.composer.reset();
@@ -679,8 +669,7 @@ export class AiPanel {
     if (!p || this.live) return;
     this.lastRequest.set(key, request);
     this.lastTurn.delete(key);
-    this.cardState.delete(key);
-    this.applied.delete(key);
+    this.proposals.forget(key);
     const run = newRun(Date.now());
     const card = new StatusCard(p.name, p.command, this.limitMs(), () => void this.stop());
     card.update(run, Date.now());
@@ -744,7 +733,8 @@ export class AiPanel {
     }
     const check = this.lastTurn.get(key)?.check ?? null;
     const state: DiffCardState =
-      this.cardState.get(key) ?? (applied ? { kind: 'appliedEarlier' } : { kind: 'ready' });
+      this.proposals.cardState.get(key) ??
+      (applied ? { kind: 'appliedEarlier' } : { kind: 'ready' });
     const isApplied = state.kind === 'applied' || state.kind === 'appliedEarlier';
     host.replaceChildren(
       diffCard(view, check, state, {
@@ -756,117 +746,19 @@ export class AiPanel {
             view,
             check,
             buffers: this.host.buffers(),
-            apply: isApplied ? null : (hunks, images) => this.apply(key, hunks, images),
+            apply: isApplied ? null : (hunks, images) => this.proposals.apply(key, hunks, images),
           }),
-        apply: () => void this.applyAll(key),
-        undo: () => void this.undo(key),
+        apply: () => void this.proposals.applyAll(key),
+        undo: () => void this.proposals.undo(key),
       }),
     );
   }
 
-  /** Toepassen on the card: every hunk that still fits, and the new images. */
-  private async applyAll(key: ProviderKey): Promise<void> {
-    const view = await this.ai.proposal(key, this.host.buffers());
-    const hunks: Record<string, number[]> = {};
-    for (const f of view.proposal.files) {
-      const statuses = view.statuses[f.path] ?? [];
-      hunks[f.path] = f.hunks.filter((_, i) => statuses[i]?.kind === 'clean').map((x) => x.id);
-    }
-    // An image on a placeholder's name only by choice in Voorstel bekijken (review 32 m5).
-    await this.apply(
-      key,
-      hunks,
-      view.proposal.images.filter((i) => !i.placeholder).map((i) => i.path),
-    );
-  }
-
-  /**
-   * Applies the chosen hunks as one undo step per file (decision 68). The images wait for the
-   * save of the text, which follows at once ([`saveWithImages`], review 32 m4). When the
-   * teacher typed during the round trip, the hunks are rebased onto the new text again instead
-   * of reverting it (review 32 m3).
-   */
-  async apply(key: ProviderKey, hunks: Record<string, number[]>, images: string[]): Promise<void> {
-    try {
-      const before = this.host.buffers();
-      let done: ApplyResult | null = null;
-      let base = before;
-      for (let i = 0; i < APPLY_TRIES && !done; i++) {
-        if (i > 0) base = this.host.buffers();
-        const result = await this.ai.apply(key, base, hunks, images);
-        const now = this.host.buffers();
-        if (Object.keys(result.files).every((f) => now[f] === base[f])) done = result;
-      }
-      if (!done) throw new Error('Je typte tijdens het toepassen. Probeer het nog een keer.');
-      const after: Record<string, string> = {};
-      let applied = 0;
-      let conflicts = 0;
-      for (const [file, a] of Object.entries(done.files)) {
-        applied += a.applied.length;
-        conflicts += a.conflicts.length;
-        if (a.text === base[file]) continue;
-        if (!(await this.host.applyText(file, a.text, base[file])))
-          throw new Error('Je typte tijdens het toepassen. Probeer het nog een keer.');
-        after[file] = a.text;
-      }
-      const chosen = done.images.map((i) => i.path);
-      this.applied.set(key, {
-        before,
-        after,
-        images: [],
-        pending: chosen,
-        hunks: applied,
-        conflicts,
-      });
-      this.markApplied(key, applied > 0 || chosen.length > 0);
-      this.cardState.set(key, {
-        kind: 'applied',
-        hunks: applied,
-        images: chosen.length,
-        conflicts,
-      });
-      // The text and its images reach the opdracht together; a failed save keeps them pending.
-      if (chosen.length) await this.host.save();
-    } catch (err) {
-      this.cardState.set(key, { kind: 'error', message: (err as Error).message });
-    }
-    if (this.selected === key) this.render();
-  }
-
-  /**
-   * The editor's save of `opdracht.typ`: the pending images of an applied proposal go into
-   * the opdracht just before the text that uses them; when the text is not saved, they are
-   * taken out again and stay pending (review 32 m4).
-   */
-  async saveWithImages<T extends { ok?: boolean } | null | undefined>(
+  /** The editor's save of `opdracht.typ` (see [`Applier.saveWithImages`], review 32 m4). */
+  saveWithImages<T extends { ok?: boolean } | null | undefined>(
     write: () => Promise<T>,
   ): Promise<T> {
-    const entry = [...this.applied.entries()].find(([, a]) => a.pending.length);
-    if (!entry) return write();
-    const [key, a] = entry;
-    let stored: string[];
-    try {
-      stored = (await this.ai.commitImages(key, a.pending)).map((i) => i.path);
-    } catch (err) {
-      throw new Error(`afbeeldingen niet opgeslagen: ${(err as Error).message}`, {
-        cause: err,
-      });
-    }
-    let result: T;
-    try {
-      result = await write();
-    } catch (err) {
-      await this.ai.undoImages(key, stored).catch(() => {});
-      throw err;
-    }
-    if (!result?.ok) {
-      await this.ai.undoImages(key, stored).catch(() => {});
-      return result;
-    }
-    a.images = [...new Set([...a.images, ...stored])];
-    a.pending = [];
-    this.host.refreshPreview();
-    return result;
+    return this.proposals.saveWithImages(write);
   }
 
   /** The in-memory history follows `ai_apply` / `ai_undo_images` (the card and status lines). */
@@ -874,47 +766,6 @@ export class AiPanel {
     if (this.selected !== key || !this.conv) return;
     const last = [...this.conv.messages].reverse().find((m) => !m.fromTeacher && m.run?.proposal);
     if (last?.run) last.run.applied = applied;
-  }
-
-  /** Ongedaan maken: the texts from before Toepassen and the images removed or restored. */
-  private async undo(key: ProviderKey): Promise<void> {
-    const a = this.applied.get(key);
-    const state = this.cardState.get(key);
-    if (!a || state?.kind !== 'applied') return;
-    const now = this.host.buffers();
-    const changed = Object.keys(a.after).filter((f) => now[f] !== a.after[f]);
-    if (changed.length) {
-      // Still applied: the card keeps its state and says why it cannot undo.
-      this.cardState.set(key, {
-        ...state,
-        message:
-          'Je hebt de opdracht na het toepassen nog aangepast. Gebruik Ctrl+Z in de editor om terug te gaan.',
-      });
-      this.render();
-      return;
-    }
-    for (const file of Object.keys(a.after)) await this.host.applyText(file, a.before[file] ?? '');
-    // Pending images were never stored: dropping them is enough (review 32 m4). Also without
-    // images: the history says "not applied" again (user, 2026-11-20). A failed image undo is
-    // said, not swallowed (review 32 M4).
-    a.pending = [];
-    let imageError: string | null = null;
-    await this.ai.undoImages(key, a.images).catch((err: unknown) => {
-      imageError = err instanceof Error ? err.message : String(err);
-    });
-    if (a.images.length) this.host.refreshPreview();
-    this.markApplied(key, false);
-    this.applied.delete(key);
-    this.cardState.set(
-      key,
-      imageError
-        ? {
-            kind: 'error',
-            message: `De tekst is teruggezet, de afbeeldingen niet: ${imageError}`,
-          }
-        : { kind: 'ready' },
-    );
-    this.render();
   }
 
   // ── Drop (board 60) ───────────────────────────────────────────────────────
