@@ -356,111 +356,6 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-fn copy_images(input: &TurnInput, workdir: &Path, baseline: &mut Baseline) -> Result<()> {
-    let from = input.opdracht_dir.join(IMAGES_DIR);
-    let Ok(entries) = fs::read_dir(&from) else {
-        return Ok(());
-    };
-    let to = workdir.join(IMAGES_DIR);
-    fs::create_dir_all(&to).map_err(io(&to))?;
-    for entry in entries.flatten() {
-        let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
-            continue;
-        };
-        if !entry.file_type().is_ok_and(|t| t.is_file())
-            || !IMAGE_EXTS.contains(&extension_of(&name).as_str())
-        {
-            continue;
-        }
-        let source = entry.path();
-        let bytes = if input.context.images {
-            fs::read(&source).map_err(io(&source))?
-        } else {
-            baseline.placeholders.push(format!("{IMAGES_DIR}/{name}"));
-            placeholder(&source, &extension_of(&name))
-        };
-        let target = to.join(&name);
-        fs::write(&target, &bytes).map_err(io(&target))?;
-        baseline
-            .images
-            .insert(format!("{IMAGES_DIR}/{name}"), sha256_hex(&bytes));
-    }
-    Ok(())
-}
-
-/// A grey image with the size and type of `source` (privacy: images could show students).
-pub fn placeholder(source: &Path, ext: &str) -> Vec<u8> {
-    if ext == "svg" {
-        let text = fs::read_to_string(source).unwrap_or_default();
-        return svg_placeholder(&text).into_bytes();
-    }
-    let (w, h) = image::image_dimensions(source).unwrap_or((1, 1));
-    // Large photos: the same ratio, at most 2000 px wide or high (memory, not layout: Typst
-    // sizes images by the space the opdracht gives them).
-    let scale = (2000.0 / f64::from(w.max(h))).min(1.0);
-    let (w, h) = (
-        ((f64::from(w) * scale).round() as u32).max(1),
-        ((f64::from(h) * scale).round() as u32).max(1),
-    );
-    let img = image::DynamicImage::ImageRgb8(image::RgbImage::from_pixel(
-        w,
-        h,
-        image::Rgb([204, 204, 204]),
-    ));
-    let format = match ext {
-        "jpg" | "jpeg" => image::ImageFormat::Jpeg,
-        "gif" => image::ImageFormat::Gif,
-        "webp" => image::ImageFormat::WebP,
-        _ => image::ImageFormat::Png,
-    };
-    let img = if format == image::ImageFormat::WebP {
-        image::DynamicImage::ImageRgba8(img.to_rgba8())
-    } else {
-        img
-    };
-    let mut out = Vec::new();
-    if img.write_to(&mut Cursor::new(&mut out), format).is_err() {
-        out.clear();
-        let _ = img.write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png);
-    }
-    out
-}
-
-/// A grey SVG with the root element's `width`, `height` and `viewBox`.
-fn svg_placeholder(source: &str) -> String {
-    let tag = source
-        .find("<svg")
-        .and_then(|start| {
-            source[start..]
-                .find('>')
-                .map(|end| &source[start..start + end])
-        })
-        .unwrap_or("");
-    let attr = |name: &str| -> Option<String> {
-        let at = tag.find(&format!(" {name}="))? + name.len() + 2;
-        let quote = tag[at..].chars().next()?;
-        let rest = &tag[at + 1..];
-        let end = rest.find(quote)?;
-        let value = &rest[..end];
-        value
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || " .-%".contains(c))
-            .then(|| format!(" {name}=\"{value}\""))
-    };
-    let attrs: String = ["width", "height", "viewBox"]
-        .iter()
-        .filter_map(|a| attr(a))
-        .collect();
-    let attrs = if attrs.is_empty() {
-        " width=\"100\" height=\"100\"".to_owned()
-    } else {
-        attrs
-    };
-    format!(
-        "<svg xmlns=\"http://www.w3.org/2000/svg\"{attrs}><rect x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\" fill=\"#cccccc\"/></svg>\n"
-    )
-}
-
 /// One line of the request's context list: path and description.
 type Listed = (String, &'static str);
 
@@ -640,161 +535,21 @@ fn write_attachments(
     Ok(images)
 }
 
-/// `.maatwerk/check` (sh) and `.maatwerk/check.cmd`: run Maatwerk's check on the workspace.
-fn write_check_scripts(workdir: &Path, meta: &Path, program: &Path) -> Result<()> {
-    let flag = super::check::CHECK_FLAG;
-    // Git Bash (Claude Code's shell on Windows) takes `C:/...`; backslashes would be escapes.
-    let sh_quote = |p: &Path| {
-        let text = p.to_string_lossy();
-        let text = if cfg!(windows) {
-            text.replace('\\', "/")
-        } else {
-            text.into_owned()
-        };
-        format!("'{}'", text.replace('\'', "'\\''"))
-    };
-    let sh = format!(
-        "#!/bin/sh\n# Maatwerk's check of this opdracht: prints JSON, \"ok\": true when it compiles.\nexec {} {flag} {}\n",
-        sh_quote(program),
-        sh_quote(workdir)
-    );
-    let cmd_quote = |p: &Path| format!("\"{}\"", p.to_string_lossy().replace('%', "%%"));
-    let cmd = format!(
-        // UTF-8 code page first: the file is UTF-8 and the paths may not be ASCII (review 32 m2).
-        "@echo off\r\nchcp 65001 >nul\r\nrem Maatwerk's check of this opdracht: prints JSON, \"ok\": true when it compiles.\r\n{} {flag} {}\r\nexit /b %ERRORLEVEL%\r\n",
-        cmd_quote(program),
-        cmd_quote(workdir)
-    );
-    let check = workdir.join(CHECK_COMMAND);
-    fs::create_dir_all(meta).map_err(io(meta))?;
-    fs::write(&check, sh).map_err(io(&check))?;
-    let check_cmd = workdir.join(format!("{CHECK_COMMAND}.cmd"));
-    fs::write(&check_cmd, cmd).map_err(io(&check_cmd))?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&check, fs::Permissions::from_mode(0o755)).map_err(io(&check))?;
-    }
-    Ok(())
-}
-
-/// Vibe's project config (read with `--trust`) and Gemini's policy file (ADR-0009 tables).
-fn write_provider_files(provider: &Resolved, workdir: &Path, run_dir: &Path) -> Result<()> {
-    match provider.builtin {
-        Some(Builtin::Vibe) => {
-            let dir = workdir.join(".vibe");
-            fs::create_dir_all(&dir).map_err(io(&dir))?;
-            // No shell at all: its file tools can edit `.maatwerk/`, so a check script it may
-            // run would be a way to any command (review 32 M1); Maatwerk checks after the turn.
-            let shell = |tool: &str| format!("[tools.{tool}]\npermission = \"never\"\n\n");
-            let config = format!(
-                "# Written by Maatwerk before every message; changes here are lost.\noutside_workdir = \"deny\"\n\n[tools.web_search]\npermission = \"always\"\n\n[tools.web_fetch]\npermission = \"always\"\n\n{}{}{}",
-                shell("bash"),
-                shell("powershell"),
-                shell("git_bash")
-            );
-            let path = dir.join("config.toml");
-            fs::write(&path, config).map_err(io(&path))
-        }
-        Some(Builtin::Gemini) => {
-            let policy = "# Written by Maatwerk (ADR-0009): web search only; Maatwerk runs the check.\n\
-                 [[rule]]\ntoolName = [\"google_web_search\", \"web_fetch\"]\ndecision = \"allow\"\npriority = 900\n\n\
-                 [[rule]]\ntoolName = \"run_shell_command\"\ndecision = \"deny\"\npriority = 800\n";
-            let path = run_dir.join("gemini-policy.toml");
-            fs::write(&path, policy).map_err(io(&path))
-        }
-        _ => Ok(()),
-    }
-}
-
-fn starter_text(s: Starter) -> &'static str {
-    match s {
-        Starter::FixErrors => {
-            "Fix the errors and warnings of the check so the opdracht compiles cleanly, changing as little as possible."
-        }
-        Starter::CompleteAnswers => {
-            "Add the missing answers (antwoord) and points (punten) to the questions (vragen), as the check lists them."
-        }
-        Starter::Rewrite => {
-            "Rewrite the opdracht for another level, as the teacher describes below; keep its structure where you can."
-        }
-        Starter::NewOpgave => "Add a new exercise (opgave) as the teacher describes below.",
-    }
-}
-
-fn request_text(
-    provider: &Resolved,
-    resumes: bool,
-    input: &TurnInput,
-    listed: &[Listed],
-    baseline: &Baseline,
-) -> String {
-    let mut r = String::from(
-        "# Request from Maatwerk\n\n\
-         You help a Dutch secondary-school teacher with an *opdracht* (a remedial assignment written in Typst) in the app Maatwerk. \
-         The files in this folder are the teacher's current version; earlier proposals of yours may or may not have been applied.\n\n\
-         ## Rules\n\n\
-         - Edit only `opdracht.typ`, and add or change files in `images/` if a figure is needed. Do not change `main.typ` or `lib.typ`: changes there are discarded.\n\
-         - Work only inside this folder. Never put student names, grades or other personal data in the opdracht.\n",
-    );
-    if provider.builtin == Some(Builtin::Claude) {
-        // Its permission rules allow exactly `Bash(.maatwerk/check *)`; on Windows it otherwise
-        // tries PowerShell on `check.cmd` first and is denied (real-CLI check, step 32c).
-        r.push_str(
-            "- After editing, run the check with the Bash tool, exactly `.maatwerk/check` (also on Windows). It prints JSON: `\"ok\": true` means it compiles; fix the errors it lists. Run no other commands.\n",
-        );
-    } else if provider.runs_check {
-        r.push_str(
-            "- After editing, run the check `.maatwerk/check` (on Windows `.maatwerk\\check.cmd`). It prints JSON: `\"ok\": true` means it compiles; fix the errors it lists. Run no other commands.\n",
-        );
-    } else {
-        r.push_str(
-            "- Do not run commands. Maatwerk checks the result itself after you finish and tells you about remaining errors.\n",
-        );
-    }
-    r.push_str(
-        "- You may search the web.\n\
-         - Reply to the teacher in Dutch, briefly: what you changed and what they should check. Write the opdracht's content in the language the opdracht already uses (Dutch unless it is clearly in another language).\n\
-         - Do not ask questions back; make reasonable choices and mention them in your reply.\n",
-    );
-    if !baseline.placeholders.is_empty() {
-        r.push_str(
-            "- The images in `images/` are grey placeholders of the right size: the teacher did not share them. Do not replace them unless asked.\n",
-        );
-    }
-    if !listed.is_empty() {
-        r.push_str("\n## Context\n\n");
-        for (path, what) in listed {
-            r.push_str(&format!("- `{path}`: {what}\n"));
-        }
-    }
-    if let Some(s) = input.starter {
-        r.push_str(&format!("\n## Task\n\n{}\n", starter_text(s)));
-    }
-    if !resumes && !input.past.is_empty() {
-        r.push_str("\n## Conversation so far\n\n");
-        for m in &input.past {
-            let who = if m.from_teacher { "Teacher" } else { "You" };
-            r.push_str(&format!("**{who}:** {}\n\n", m.text.trim()));
-        }
-    }
-    r.push_str("\n## The teacher's message\n\n");
-    let message = input.message.trim();
-    r.push_str(if message.is_empty() {
-        "(no text: do the task above)"
-    } else {
-        message
-    });
-    r.push('\n');
-    r
-}
-
 /// Reads the baseline a turn wrote ([`prepare`]), e.g. after the app restarted.
 pub fn read_baseline(run_dir: &Path) -> Result<Baseline> {
     let path = run_dir.join("baseline.json");
     let bytes = fs::read(&path).map_err(io(&path))?;
     serde_json::from_slice(&bytes).map_err(|e| invalid(e.to_string()))
 }
+
+mod images;
+mod provider_files;
+mod request;
+
+use images::copy_images;
+pub use images::placeholder;
+use provider_files::{write_check_scripts, write_provider_files};
+use request::request_text;
 
 #[cfg(test)]
 mod tests;
