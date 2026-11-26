@@ -70,7 +70,14 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
 - **Gate after the fixes** green: fmt, clippy, cargo test (693), deny, SPDX, lint, typecheck,
   Vitest 963, node 47, licences, e2e chromium 434/434, visual 177/177. Pushed; CI pending.
 
-**Next action:** CI on `step/40-ai-followups`: commit the CI baselines of `editor` and `splash`
+- CI run 45804318054: only the dropped `editor`/`splash` baselines failed (Linux, Windows);
+  their baselines committed from the artifacts (`CC`, version 0.31.0 checked). Run
+  45807358650: Linux, Windows, licences green; macOS got no runner (GitHub busy), cancelled;
+  the user reruns it in the morning (2026-11-27).
+
+**Next action (morning):** rerun the macOS job of run 45807358650; it fails only on the missing
+`visual-ci-webkit-darwin` `editor`/`splash` baselines: check them in its `visual-macos`
+artifact and commit. Was: CI on `step/40-ai-followups`: commit the CI baselines of `editor` and `splash`
 (3 platforms each) from its artifacts after checking them (CC; version 0.31.0). Then report.
 Merges wait for the user: step 39 into `main` first, then `main` into this branch, then step
 40 (tag `step-40`; `v0.31.0` only when the user says so).
