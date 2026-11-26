@@ -32,6 +32,16 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
   Voorstel bekijken. One proposal per clean stem (others "(dubbele naam)"). Workspace path no
   longer shown. History "applied" only when something was taken. Tests: core diff/apply, e2e
   (m3 test fails on the old panel).
+- 40.2a `0183905` (m6, m7, n4): Windows job object via **process-wrap 11** (Apache-2.0 OR MIT,
+  Windows-only dependency; licences, notices updated), killed after the run and 3 s after the
+  CLI exited with a grandchild holding the pipes; Unix: SIGKILL to the group then. Test: the
+  grandchild is gone (failed before). `ai::guard::Guard`: context compiles and Maatwerk's
+  checks give up on Stop/deadline; turn ends Stopped/TimedOut, keeps nothing.
+- 40.2b `2c8a137` (m8-m10, n1, n5-n7): login status before the first run that worked (in the
+  turn, so every entry point); `ai_login_check` removed. Main window's own metadata in send.
+  `--version` cached per path. Random picker tokens (AI tokens kept for Opnieuw proberen).
+  `ai_send` refuses before the notice (backend only; MockAi does not mirror it).
+- Step 39 CI (run on `57fa6d0`): green on every job (2026-11-26). Merge waits for the user.
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 
