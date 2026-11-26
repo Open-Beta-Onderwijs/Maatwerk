@@ -117,6 +117,8 @@ export class MockAi implements AiApi {
         path: found ? `/mock/bin/${p.command}` : null,
         version: found ? `${p.command} 1.0 (mock)` : null,
         found,
+        // maatwerk_core::ai::provider::VERIFIED
+        beta: p.builtin !== 'claude',
         defaults: { command: p.command, args: p.args, argsNext: p.argsNext },
         install: p.install,
       };

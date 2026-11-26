@@ -34,6 +34,8 @@ export interface AiProvider extends CommandPreset {
   path: string | null;
   version: string | null;
   found: boolean;
+  /** Not checked against the real program yet: a "bèta" tag (decision 89). */
+  beta?: boolean;
   /** The preset ("Standaard herstellen"); null for an own CLI. */
   defaults: CommandPreset | null;
   install: InstallHelp | null;

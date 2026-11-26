@@ -246,6 +246,15 @@ fn concat_static(a: &str, b: &str) -> &'static str {
     Box::leak(format!("{a}{b}").into_boxed_str())
 }
 
+/// The CLIs whose manual check against the real program passed (ADR-0009, "Manual check"
+/// rows). The others carry a "bèta" tag in the rail and AI-instellingen (decision 89).
+pub const VERIFIED: &[Builtin] = &[Builtin::Claude];
+
+/// True for a CLI of the launch set that has not passed its manual check (decision 89).
+pub fn is_beta(builtin: Builtin) -> bool {
+    !VERIFIED.contains(&builtin)
+}
+
 pub fn preset(builtin: Builtin) -> Preset {
     presets()
         .iter()

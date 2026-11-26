@@ -37,6 +37,11 @@
   border-radius: 7px;
   font-size: 11px;
 }
+/* Three letters (GPT) fit the tile. */
+.ais-logo[data-letters='3'] {
+  font-size: 9.5px;
+  letter-spacing: -0.2px;
+}
 
 /* Install help (decision 72). */
 .ais-install {

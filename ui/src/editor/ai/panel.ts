@@ -33,7 +33,7 @@ import {
 } from './cards';
 import type { EditorAi } from './client';
 import { Composer, type PendingAttachment } from './composer';
-import { append, h, icon, monogram } from './dom';
+import { append, h, icon, monogramEl } from './dom';
 import { installList } from './install';
 import { markdown } from './markdown';
 import {
@@ -239,23 +239,19 @@ export class AiPanel {
       );
     }
     for (const p of this.providers) {
-      const m = monogram(p.key, p.name);
       const selected = this.selected === p.key;
       const running = this.live?.provider === p.key;
       const state = running ? ' · bezig' : this.open.has(p.key) ? ' · gesprek open' : '';
-      const btn = h(
-        'button',
-        {
-          type: 'button',
-          class: `ai-rail-btn${selected ? ' is-selected' : ''}`,
-          title: `${p.name}${state}`,
-          'aria-label': `${p.name}${state}`,
-          'aria-pressed': String(selected),
-          onclick: () => void this.select(p.key),
-        },
-        m.text,
-      );
-      btn.style.setProperty('--provider', m.colour);
+      const btn = h('button', {
+        type: 'button',
+        class: `ai-rail-btn${selected ? ' is-selected' : ''}`,
+        title: `${p.name}${p.beta ? ' (bèta: nog niet getest)' : ''}${state}`,
+        'aria-label': `${p.name}${p.beta ? ' (bèta)' : ''}${state}`,
+        'aria-pressed': String(selected),
+        onclick: () => void this.select(p.key),
+      });
+      monogramEl(btn, p.key, p.name);
+      if (p.beta) btn.append(h('span', { class: 'ai-rail-beta', 'aria-hidden': 'true' }, 'bèta'));
       if (!selected && (running || this.open.has(p.key)))
         btn.append(h('span', { class: `ai-rail-dot${running ? ' is-running' : ''}` }));
       buttons.push(btn);
@@ -405,9 +401,7 @@ export class AiPanel {
   // ── Panel ─────────────────────────────────────────────────────────────────
 
   private renderHeader(p: AiProvider): void {
-    const m = monogram(p.key, p.name);
-    const avatar = h('span', { class: 'ai-avatar' }, m.text);
-    avatar.style.setProperty('--provider', m.colour);
+    const avatar = monogramEl(h('span', { class: 'ai-avatar' }), p.key, p.name);
     this.headerEl.replaceChildren();
     append(
       this.headerEl,

@@ -15,7 +15,7 @@ use maatwerk_core::ai::apply;
 use maatwerk_core::ai::detect::{self, SearchPath};
 use maatwerk_core::ai::diff::{self, Proposal};
 use maatwerk_core::ai::history::Conversation;
-use maatwerk_core::ai::provider::{AiSettings, ProviderKey, preset, presets};
+use maatwerk_core::ai::provider::{AiSettings, ProviderKey, is_beta, preset, presets};
 use maatwerk_core::ai::school::school_allows_in;
 use maatwerk_core::ai::turn::{self, Turn};
 use maatwerk_core::ai::workspace::{
@@ -155,6 +155,7 @@ pub async fn ai_detect(
                     "path": d.path,
                     "version": d.version,
                     "found": d.path.is_some(),
+                    "beta": r.builtin.is_some_and(is_beta),
                     "defaults": defaults,
                     "install": install,
                 })

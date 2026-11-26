@@ -7,7 +7,7 @@
 
 import type { AiProvider, CheckReport, ProposalView } from '../../bridge/ai-api';
 import type { EditorAi } from './client';
-import { h, icon, monogram } from './dom';
+import { h, icon, monogramEl } from './dom';
 import {
   applyHunks,
   hunkLocation,
@@ -59,9 +59,11 @@ export async function openReview(o: ReviewOptions): Promise<void> {
   let tab: 'proposal' | 'current' = readOnly ? 'current' : 'proposal';
   let previewSeq = 0;
 
-  const m = monogram(o.provider.key, o.provider.name);
-  const avatar = h('span', { class: 'ai-avatar is-large' }, m.text);
-  avatar.style.setProperty('--provider', m.colour);
+  const avatar = monogramEl(
+    h('span', { class: 'ai-avatar is-large' }),
+    o.provider.key,
+    o.provider.name,
+  );
   const countEl = h('span', { class: 'ai-review-count' });
   const applyBtn = h('button', { type: 'button', class: 'ai-btn ai-btn-primary ai-btn-lg' });
   const closeBtn = h(
