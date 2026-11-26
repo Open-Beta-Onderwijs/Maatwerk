@@ -19,6 +19,7 @@ import type {
   Builtin,
   Conversation,
   HunkStatus,
+  ImageProposal,
   Proposal,
   ProposalView,
   PickedAttachment,
@@ -72,6 +73,10 @@ export class MockAi implements AiApi {
   nextPick: PickedAttachment[] = [];
   /** Delay between streamed events (ms). */
   stepDelayMs = 0;
+  /** Delay of `apply` (ms), to type during the round trip (review 32 m3). */
+  applyDelayMs = 0;
+  /** Images every proposal holds (review 32 m4, m5). */
+  proposalImages: ImageProposal[] = [];
   readonly calls: { method: string; args: unknown[] }[] = [];
   private settings = new Map<string, AiSettings>();
   private conversationsBy = new Map<string, Conversation>();
@@ -287,7 +292,8 @@ export class MockAi implements AiApi {
   ): Promise<ProposalView> {
     const { base, append } = this.saved(gebruiker, opdrachtId, provider);
     const status = appendStatus(base, current['opdracht.typ'] ?? base);
-    return { proposal: mockProposal(base, append), statuses: { 'opdracht.typ': [status] } };
+    const proposal = { ...mockProposal(base, append), images: this.proposalImages };
+    return { proposal, statuses: { 'opdracht.typ': [status] } };
   }
 
   async apply(
@@ -296,8 +302,10 @@ export class MockAi implements AiApi {
     provider: ProviderKey,
     current: Record<string, string>,
     hunks: Record<string, number[]>,
+    images: string[] = [],
   ): Promise<ApplyResult> {
-    this.record('apply', [gebruiker, opdrachtId, provider, current, hunks]);
+    this.record('apply', [gebruiker, opdrachtId, provider, current, hunks, images]);
+    if (this.applyDelayMs) await new Promise((r) => setTimeout(r, this.applyDelayMs));
     const { base, append } = this.saved(gebruiker, opdrachtId, provider);
     const text = current['opdracht.typ'] ?? base;
     const chosen = hunks['opdracht.typ']?.includes(0) ?? false;
@@ -305,7 +313,8 @@ export class MockAi implements AiApi {
     const ok = chosen && status.kind === 'clean';
     const conv = this.conv(gebruiker, opdrachtId, provider);
     const last = [...conv.messages].reverse().find((m) => m.run?.proposal);
-    if (last?.run && ok) last.run.applied = true;
+    const picked = this.proposalImages.filter((i) => images.includes(i.path));
+    if (last?.run && (ok || picked.length)) last.run.applied = true;
     return {
       files: {
         'opdracht.typ': {
@@ -314,13 +323,31 @@ export class MockAi implements AiApi {
           conflicts: chosen && !ok ? [0] : [],
         },
       },
-      images: [],
+      images: picked.map((i) => ({ path: i.path, new: i.new })),
     };
   }
 
-  /** Ongedaan maken: the proposal is not applied any more (no images in the mock). */
-  async undoImages(gebruiker: string, opdrachtId: string, provider: ProviderKey): Promise<void> {
-    this.record('undoImages', [gebruiker, opdrachtId, provider]);
+  /** The chosen images "stored" (nothing is written in the mock). */
+  async commitImages(
+    gebruiker: string,
+    opdrachtId: string,
+    provider: ProviderKey,
+    images: string[],
+  ): Promise<{ path: string; new: boolean }[]> {
+    this.record('commitImages', [gebruiker, opdrachtId, provider, images]);
+    return this.proposalImages
+      .filter((i) => images.includes(i.path))
+      .map((i) => ({ path: i.path, new: i.new }));
+  }
+
+  /** Ongedaan maken: the proposal is not applied any more (nothing is written in the mock). */
+  async undoImages(
+    gebruiker: string,
+    opdrachtId: string,
+    provider: ProviderKey,
+    images: string[] = [],
+  ): Promise<void> {
+    this.record('undoImages', [gebruiker, opdrachtId, provider, images]);
     const conv = this.conv(gebruiker, opdrachtId, provider);
     const last = [...conv.messages].reverse().find((m) => m.run?.proposal);
     if (last?.run) last.run.applied = false;

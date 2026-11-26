@@ -152,6 +152,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             ai::ai_new_conversation,
             ai::ai_proposal,
             ai::ai_apply,
+            ai::ai_commit_images,
             ai::ai_undo_images,
             ai::ai_proposal_image,
             ai::ai_context,
@@ -449,6 +450,7 @@ mod tests {
             "restore_from_snapshot",
             "restore_project_file",
             "ai_apply",
+            "ai_commit_images",
             "ai_undo_images",
             "print_pdf",
             // The user file (PIN commands), project file updates, folders (none for a gast).

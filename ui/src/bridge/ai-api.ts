@@ -142,6 +142,8 @@ export interface ImageProposal {
   path: string;
   new: boolean;
   source: string;
+  /** Takes the name of an image the AI only saw as a placeholder (review 32 m5). */
+  placeholder?: boolean;
 }
 
 export interface Proposal {
@@ -285,7 +287,10 @@ export interface AiApi {
     provider: ProviderKey,
     current: Record<string, string>,
   ): Promise<ProposalView>;
-  /** "Toepassen": the new texts (for one undo step in the editor) and the stored images. */
+  /**
+   * "Toepassen": the new texts (for one undo step in the editor) and the chosen images,
+   * checked but not stored: the editor stores them with its next save (`commitImages`).
+   */
   apply(
     gebruiker: string,
     opdrachtId: string,
@@ -294,6 +299,13 @@ export interface AiApi {
     hunks: Record<string, number[]>,
     images: string[],
   ): Promise<ApplyResult>;
+  /** The chosen images into the opdracht, just before the editor saves the text (review 32 m4). */
+  commitImages(
+    gebruiker: string,
+    opdrachtId: string,
+    provider: ProviderKey,
+    images: string[],
+  ): Promise<{ path: string; new: boolean }[]>;
   /** Ongedaan maken: the applied images back (none: only the history) and "not applied" again. */
   undoImages(
     gebruiker: string,

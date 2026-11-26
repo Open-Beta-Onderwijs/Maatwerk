@@ -21,6 +21,7 @@ export const AI_METHODS = [
   'newConversation',
   'proposal',
   'apply',
+  'commitImages',
   'undoImages',
   'proposalImage',
   'context',

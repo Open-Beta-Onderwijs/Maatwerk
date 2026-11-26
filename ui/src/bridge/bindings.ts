@@ -275,11 +275,19 @@ export const commands = {
 	 */
 	aiProposal: (gebruiker: string, opdrachtId: string, provider: string, current: { [key in string]: string }) => typedError<Value, CommandError>(__TAURI_INVOKE("ai_proposal", { gebruiker, opdrachtId, provider, current })),
 	/**
-	 *  "Toepassen" (decisions 56, 68): the chosen hunks onto the current text (returned for the
-	 *  editor, which records one undo step) and the chosen images into the opdracht's images; the
-	 *  images they replace are kept for [`ai_undo_images`].
+	 *  "Toepassen" (decisions 56, 68): the chosen hunks onto the current text, returned for the
+	 *  editor, which records one undo step. Nothing is written into the opdracht: the chosen
+	 *  images (checked against the proposal) come back for the editor to store with its next save,
+	 *  [`ai_commit_images`] (review 32 m4). The call has no effect on disk but the history, so the
+	 *  editor may ask again when the teacher typed during the round trip (review 32 m3).
 	 */
 	aiApply: (gebruiker: string, opdrachtId: string, provider: string, current: { [key in string]: string }, hunks: { [key in string]: number[] }, images: string[]) => typedError<Value, CommandError>(__TAURI_INVOKE("ai_apply", { gebruiker, opdrachtId, provider, current, hunks, images })),
+	/**
+	 *  The images of an applied proposal into the opdracht's `images/`, called by the editor just
+	 *  before it saves the text that uses them (review 32 m4); the images they replace are kept for
+	 *  [`ai_undo_images`].
+	 */
+	aiCommitImages: (gebruiker: string, opdrachtId: string, provider: string, images: string[]) => typedError<Value, CommandError>(__TAURI_INVOKE("ai_commit_images", { gebruiker, opdrachtId, provider, images })),
 	/**
 	 *  "Ongedaan maken": removes the images [`ai_apply`] added and puts back the ones it replaced
 	 *  (none: only the history), and marks the proposal as not applied again. (The text goes back

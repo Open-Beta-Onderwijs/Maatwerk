@@ -50,6 +50,10 @@ pub struct ImageProposal {
     pub new: bool,
     /// The file in the workspace.
     pub source: PathBuf,
+    /// True: it takes the name of an image the AI only saw as a grey placeholder, so it would
+    /// replace a real image unseen (review 32 m5). Not in Toepassen's default choice.
+    #[serde(default)]
+    pub placeholder: bool,
 }
 
 /// Everything a run proposes.
@@ -252,6 +256,7 @@ pub fn collect(workdir: &Path, baseline: &Baseline) -> Result<Proposal> {
     }
     let dir = workdir.join(IMAGES_DIR);
     let mut present: BTreeMap<String, ()> = BTreeMap::new();
+    let mut stems = std::collections::BTreeSet::new();
     if let Ok(entries) = fs::read_dir(&dir) {
         let mut names: Vec<String> = entries
             .flatten()
@@ -276,10 +281,22 @@ pub fn collect(workdir: &Path, baseline: &Baseline) -> Result<Proposal> {
                     if clean.is_empty() {
                         continue;
                     }
+                    let path = format!("{IMAGES_DIR}/{clean}.{ext}");
+                    // Stored images replace every other one of the same name in any case or
+                    // extension: two such proposals would be one image (review 32 n3).
+                    let lower = clean.to_lowercase();
+                    if !stems.insert(lower.clone()) {
+                        p.skipped.push(format!("{path} (dubbele naam)"));
+                        continue;
+                    }
+                    let placeholder = baseline.placeholders.iter().any(|ph| {
+                        stem_of(ph.trim_start_matches("images/")).to_lowercase() == lower
+                    });
                     p.images.push(ImageProposal {
-                        path: format!("{IMAGES_DIR}/{clean}.{ext}"),
+                        path,
                         new: old.is_none(),
                         source,
+                        placeholder,
                     });
                 }
             }

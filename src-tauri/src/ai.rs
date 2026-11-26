@@ -509,15 +509,16 @@ pub async fn ai_proposal(
     .await
 }
 
-/// "Toepassen" (decisions 56, 68): the chosen hunks onto the current text (returned for the
-/// editor, which records one undo step) and the chosen images into the opdracht's images; the
-/// images they replace are kept for [`ai_undo_images`].
+/// "Toepassen" (decisions 56, 68): the chosen hunks onto the current text, returned for the
+/// editor, which records one undo step. Nothing is written into the opdracht: the chosen
+/// images (checked against the proposal) come back for the editor to store with its next save,
+/// [`ai_commit_images`] (review 32 m4). The call has no effect on disk but the history, so the
+/// editor may ask again when the teacher typed during the round trip (review 32 m3).
 #[tauri::command]
 #[specta::specta]
 #[allow(clippy::too_many_arguments)]
 pub async fn ai_apply(
     app: AppHandle,
-    state: State<'_, Shared>,
     gebruiker: String,
     opdracht_id: String,
     provider: String,
@@ -527,28 +528,65 @@ pub async fn ai_apply(
 ) -> Res<Value> {
     let layout = layout(&app, &gebruiker)?;
     let key = key(&provider)?;
-    blocking(state, move |c| {
+    off_thread(move || {
         let p = proposal_of(&layout, &opdracht_id, &key)?;
         let mut files = BTreeMap::new();
+        let mut any = false;
         for f in &p.files {
             let Some(chosen) = hunks.get(&f.path) else {
                 continue;
             };
             let chosen: Vec<usize> = chosen.iter().map(|&h| h as usize).collect();
             let cur = current.get(&f.path).map_or(f.base.as_str(), String::as_str);
-            files.insert(f.path.clone(), to_value(&diff::apply(f, cur, &chosen))?);
+            let applied = diff::apply(f, cur, &chosen);
+            any |= !applied.applied.is_empty();
+            files.insert(f.path.clone(), to_value(&applied)?);
         }
-        let storage = c.storage()?;
-        let undo = layout.run_dir(&opdracht_id, &key)?.join("undo");
-        let saved: Vec<Value> = apply::apply_images(storage, &opdracht_id, &p, &images, &undo)?
-            .into_iter()
-            .map(|a| json!({ "path": a.path, "new": a.new }))
+        let chosen = apply::chosen_images(&p, &images)?;
+        // Review 32 n8: only a proposal of which something was taken counts as applied.
+        if any || !chosen.is_empty() {
+            let history = layout.history_file(&opdracht_id, &key)?;
+            let mut conv = Conversation::load(&history, &key);
+            conv.set_applied(true);
+            conv.save(&history)?;
+        }
+        let images: Vec<Value> = chosen
+            .iter()
+            .map(|i| json!({ "path": i.path, "new": i.new }))
             .collect();
+        Ok(json!({ "files": files, "images": images }))
+    })
+    .await
+}
+
+/// The images of an applied proposal into the opdracht's `images/`, called by the editor just
+/// before it saves the text that uses them (review 32 m4); the images they replace are kept for
+/// [`ai_undo_images`].
+#[tauri::command]
+#[specta::specta]
+pub async fn ai_commit_images(
+    app: AppHandle,
+    state: State<'_, Shared>,
+    gebruiker: String,
+    opdracht_id: String,
+    provider: String,
+    images: Vec<String>,
+) -> Res<Value> {
+    let layout = layout(&app, &gebruiker)?;
+    let key = key(&provider)?;
+    blocking(state, move |c| {
+        let p = proposal_of(&layout, &opdracht_id, &key)?;
+        let undo = layout.run_dir(&opdracht_id, &key)?.join("undo");
+        let saved: Vec<Value> =
+            apply::apply_images(c.storage()?, &opdracht_id, &p, &images, &undo)?
+                .into_iter()
+                .map(|a| json!({ "path": a.path, "new": a.new }))
+                .collect();
         let history = layout.history_file(&opdracht_id, &key)?;
         let mut conv = Conversation::load(&history, &key);
         conv.set_applied(true);
         conv.save(&history)?;
-        Ok(json!({ "files": files, "images": saved }))
+        Ok(Value::Array(saved))
     })
     .await
 }

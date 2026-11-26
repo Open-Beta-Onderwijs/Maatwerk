@@ -122,6 +122,10 @@
   background: var(--ok-soft);
   color: var(--ok);
 }
+.ai-pill.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
 
 /* ── Editor bar while a run works on a copy (decision 63) ────────────────── */
 #ai-copy-bar {

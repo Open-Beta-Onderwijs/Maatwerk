@@ -861,11 +861,11 @@ function saveNow(file = current) {
       return false;
     }
     try {
-      const writeResult = await postToParent('maatwerk-write-text', {
-        file,
-        content,
-        expectedHash: entry.baseHash,
-      });
+      const write = () =>
+        postToParent('maatwerk-write-text', { file, content, expectedHash: entry.baseHash });
+      // The images of an applied AI proposal are stored with the text (review 32 m4).
+      const writeResult =
+        file === MAIN_FILE && aiPanel ? await aiPanel.saveWithImages(write) : await write();
       if (writeResult?.reason === 'conflict') {
         showConflict(true, file);
         setStatus('Niet opgeslagen', null, true);
@@ -1057,12 +1057,16 @@ function aiBuffers() {
   return out;
 }
 
-/** Replaces the text of `file` with `text` as one undoable change, touching only what differs. */
-async function aiApplyText(file, text) {
+/**
+ * Replaces the text of `file` with `text` as one undoable change, touching only what differs;
+ * false (nothing changed) when the text is no longer `base` (review 32 m3).
+ */
+async function aiApplyText(file, text, base) {
   await switchTo(file);
   if (!view || current !== file) throw new Error(`${file} kan niet worden geopend`);
   const old = view.state.doc.toString();
-  if (old === text) return;
+  if (base !== undefined && old !== base) return false;
+  if (old === text) return true;
   let from = 0;
   while (from < old.length && from < text.length && old[from] === text[from]) from += 1;
   let endOld = old.length;
@@ -1076,6 +1080,21 @@ async function aiApplyText(file, text) {
     scrollIntoView: true,
     userEvent: 'input.ai',
   });
+  return true;
+}
+
+/** The AI panel, once made: the save of `opdracht.typ` stores its pending images. */
+let aiPanel = null;
+
+/** Saves `opdracht.typ` now, also without a text change (pending AI images only). */
+function aiSave() {
+  const pending = saveTimer !== null;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  if (!view || dataDir === null || !opdrachtId) return Promise.resolve(false);
+  // The autosave this replaces was of the tab shown.
+  if (pending && current !== MAIN_FILE) saveNow(current);
+  return saveNow(MAIN_FILE);
 }
 
 const aiCopyBar = document.getElementById('ai-copy-bar');
@@ -1102,6 +1121,7 @@ async function initAi() {
     {
       buffers: aiBuffers,
       applyText: aiApplyText,
+      save: aiSave,
       errorCount: () =>
         lastUpdate ? lastUpdate.diagnostics.filter((d) => d.severity === 'error').length : 0,
       setBusy: aiSetBusy,
@@ -1118,6 +1138,7 @@ async function initAi() {
     document.getElementById('ai-rail'),
     document.getElementById('ai-panel'),
   );
+  aiPanel = panel;
   try {
     await panel.init();
   } catch (err) {

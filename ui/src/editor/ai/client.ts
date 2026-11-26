@@ -46,6 +46,7 @@ export interface EditorAi {
     hunks: Record<string, number[]>,
     images: string[],
   ): Promise<ApplyResult>;
+  commitImages(provider: ProviderKey, images: string[]): Promise<{ path: string; new: boolean }[]>;
   undoImages(provider: ProviderKey, images: string[]): Promise<void>;
   proposalImage(provider: ProviderKey, path: string): Promise<string>;
   context(): Promise<Json | null>;
@@ -100,6 +101,7 @@ export function createEditorAi(
     newConversation: (p) => call('newConversation', p),
     proposal: (p, current) => call('proposal', p, current),
     apply: (p, current, hunks, images) => call('apply', p, current, hunks, images),
+    commitImages: (p, images) => call('commitImages', p, images),
     undoImages: (p, images) => call('undoImages', p, images),
     proposalImage: (p, path) => call('proposalImage', p, path),
     context: () => call('context'),

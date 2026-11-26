@@ -137,6 +137,8 @@ export async function handleAiRequest(
         record(a[2], 'hunks') as never,
         strings(a[3], 'images'),
       );
+    case 'commitImages':
+      return ai.commitImages(g, id, provider(a[0]), strings(a[1], 'images'));
     case 'undoImages':
       return ai.undoImages(g, id, provider(a[0]), strings(a[1], 'images'));
     case 'proposalImage':

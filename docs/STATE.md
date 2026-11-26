@@ -1,10 +1,37 @@
 # State
 
-Last updated: 2026-11-25 (step 39a in progress)
-Branch: `step/39-v1-removal-typst`
+Last updated: 2026-11-26 (step 40 in progress)
+Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
+merges; merge `main` in after it does)
 Last tags: `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
+
+Started while the step 39 CI runs (user). Baseline: cargo test green.
+
+**User's answers (2026-11-26):**
+
+- No vendor logos: letter buttons. Monograms **CC** (Claude Code), **GPT** (Codex/ChatGPT),
+  **V** (Vibe), **G** (Gemini), **AG** (Antigravity), **CP** (Copilot); colours stay as board
+  59; three letters get a smaller font.
+- Manual check this step: **Claude Code and Mistral Vibe** only (the user logs in to Vibe).
+  The other four keep the "bèta" tag (decision 89).
+- 32 m4: images **wait until the save** of the text (not a footer note).
+- 32 m8: **login check before the first run** of a conversation where the CLI has one.
+
+**Progress:**
+
+- 40.1 (m3, m4, m5, n2, n3, n8): `ai_apply` is text-only (checks the images, writes only the
+  history, so the panel retries when the teacher typed meanwhile; `applyText` takes the base
+  text). New `ai_commit_images`: the panel's `saveWithImages` stores pending images just before
+  `opdracht.typ` is written and takes them out again when the write fails; Toepassen saves at
+  once. Undo before the save only drops them. Image proposals carry `placeholder` (stem of a
+  placeholder, any case/extension): not in Toepassen's default, unchecked and labelled in
+  Voorstel bekijken. One proposal per clean stem (others "(dubbele naam)"). Workspace path no
+  longer shown. History "applied" only when something was taken. Tests: core diff/apply, e2e
+  (m3 test fails on the old panel).
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 
