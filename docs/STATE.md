@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-26 (step 40 in progress)
+Last updated: 2026-11-26 (step 40 done, CI pending)
 Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
 merges; merge `main` in after it does)
 Last tags: `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
@@ -62,11 +62,18 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
 - **Gate (local) green** after `27b5623`: fmt, clippy, cargo test (690), deny, SPDX, lint,
   typecheck, Vitest 963, node 47, licences, e2e chromium 433/433, visual 177/177, WebKit AI
   20/20.
-- Review: fresh-context reviewer running -> `docs/reviews/step-40.md`.
+- **Review** `docs/reviews/step-40.md`: 0 blockers, 2 majors, 9 minors, 8 nits. M1 (a wrong
+  "not logged in" locked the CLI out) and M2 (pending images could be stored without their
+  text after "Hun versie laden") fixed, with m1-m6, m8, n2, n3, n8 (n7 already pinned). Open in
+  backlog "From Step 40": m7, m9 rest, n1, n4, n5, n6.
+- Version **0.31.0** (splash CI baselines dropped; local updated).
+- **Gate after the fixes** green: fmt, clippy, cargo test (693), deny, SPDX, lint, typecheck,
+  Vitest 963, node 47, licences, e2e chromium 434/434, visual 177/177. Pushed; CI pending.
 
-**Next action:** triage the review (fix blockers/majors), version 0.31.0 (splash baselines as
-in step 39), push, CI, report to the user. Step 39 merge into `main` still waits for the
-user's OK (step 40 then merges `main`).
+**Next action:** CI on `step/40-ai-followups`: commit the CI baselines of `editor` and `splash`
+(3 platforms each) from its artifacts after checking them (CC; version 0.31.0). Then report.
+Merges wait for the user: step 39 into `main` first, then `main` into this branch, then step
+40 (tag `step-40`; `v0.31.0` only when the user says so).
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 
