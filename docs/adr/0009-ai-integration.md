@@ -270,7 +270,7 @@ Sources: [headless](https://geminicli.com/docs/cli/headless/),
 | Topic           | Finding                                                                                                                                                                                                                                                                                                                                                                                                         |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Non-interactive | `vibe -p "<prompt>"`, `--prompt-file <path>` or stdin; `--workdir <dir>`; `--time-limit <secs>` stops the run cleanly (exit 3, resumable). Exit codes 0 done, 1 could not start, 2 model API or runtime failed, 3 stopped unfinished                                                                                                                                                                            |
-| Streaming       | `--output streaming` (NDJSON, one message per line; fields undocumented, _verify_); `json` gives all messages at the end                                                                                                                                                                                                                                                                                        |
+| Streaming       | `--output streaming` (NDJSON, one entry per line; verified 2026-11-26, 3.0.4): `type` `message` (`role` user/assistant, `content[].text`), `reasoning`, and `effect` per tool call (`detail.toolName` such as `file_system.read_file`/`file_system.edit`, `detail.input`, `state.status`, `state.outputText`, `state.display.success`); every entry carries `sessionId`. `json` gives all messages at the end                                                                                                                                                                                                                                                                                        |
 | Resume          | `--resume <SESSION_ID>`; the id is in `export.json`, written by `--output-dir <dir>` (with version, usage, cost, stop reason)                                                                                                                                                                                                                                                                                   |
 | Permissions     | In `-p`, every tool call that needs approval is denied unless `--auto-approve`. Default agent `accept-edits` (edits approved, shell asks). Per-tool `permission = always/ask/never` with `allowlist`/`denylist`, and a global `outside_workdir = "deny"`, in `.vibe/config.toml`, read from the working dir only with `--trust` (one run, not saved). Shell tools: `bash`, `powershell`, `git_bash`. No sandbox |
 | Web search      | Built-in `web_search` and `web_fetch` (permission `ask` by default, so they are set to `always`)                                                                                                                                                                                                                                                                                                                |
@@ -379,8 +379,20 @@ editable (answer 8), so a wrong guess is a settings change, not a release.
   `.maatwerk\check.cmd`, which `--allowedTools` denies (adding a `PowerShell(...check.cmd)` rule
   did not match either); the request now tells Claude Code to run `.maatwerk/check` with Bash,
   and the check runs on the first try.
-- **Mistral Vibe 3.0.4** (not logged in): the not-logged-in text above. A logged-in run (stream
-  fields, resume, images) is still the user's manual check M-AI-6.
+- **Mistral Vibe 3.0.4** (not logged in): the not-logged-in text above.
+
+### Real-CLI check (step 40, 2026-11-26)
+
+Same test, after the step 40 fixes (job object, guard, login check), Windows 11:
+
+- **Claude Code 2.1.328** (logged in, Pro): the login status (`auth status --json`) passed
+  before the first turn; two turns, the second resumed; one hunk each, its own check passed
+  (`.maatwerk/check` via Bash), 33 s and 21 s. Still verified.
+- **Mistral Vibe 3.0.4** (logged in, free account): two turns, the second resumed with the
+  session id; one hunk each, Maatwerk's check passed with 0 fix rounds, answers in Dutch, 45 s
+  and 20 s. The streaming fields (row above) are now parsed: reads and edits show as steps in
+  the transcript. **Verified** (`provider::VERIFIED`, no "bèta" tag). Image input in `-p` stays
+  _verify_ (the test sends no image).
 - Codex, Gemini CLI, Antigravity and Copilot CLI are not installed here: their _verify_ rows stay
   open for a machine that has them.
 

@@ -441,10 +441,15 @@ version of M-AI-2/3 is `crates/maatwerk-core/tests/ai_real_cli.rs` (opt-in, see 
       copy; a hunk on the changed lines is a conflict and is skipped.
 - [ ] **M-AI-5** Stop during a run: "Gestopt", nothing changes; a time limit of 1 minute in
       AI-instellingen gives the time-out card with the AI-instellingen button.
-- [ ] **M-AI-6** Mistral Vibe: as M-AI-2; note the streamed event fields, the text when not
-      logged in (`vibe --setup` undone) and whether an attached image reaches the model
-      (ADR-0009 _verify_ rows).
-- [ ] **M-AI-7** Not logged in (Claude Code: `claude auth logout`): the "Niet ingelogd" card.
+- [ ] **M-AI-6** Mistral Vibe: as M-AI-2 (stream fields and resume verified in step 40 with
+      `ai_real_cli`); the transcript shows its read and edit steps; whether an attached image
+      reaches the model (ADR-0009 _verify_ row).
+- [ ] **M-AI-7** Not logged in (Claude Code: `claude auth logout`): the "Niet ingelogd" card
+      appears at once, without a run (the login check before the first run, step 40).
+- [ ] **M-AI-10** Toepassen with an image: the image appears in the opdracht only with the save
+      (at once); Ongedaan maken before that drops it. A proposal on a placeholder image's name is
+      unticked in Voorstel bekijken ("niet gezien"). Rail: letters CC, GPT, G, AG, V, CP; "bèta"
+      on all but Claude Code and Vibe.
 - [ ] **M-AI-8** AI-instellingen: change Claude Code's arguments ("aangepast"), Standaard
       herstellen; add an Eigen CLI that runs a script printing text: its answer shows, the
       check runs on Maatwerk's side; Opnieuw zoeken after installing a CLI adds it to the rail.

@@ -174,3 +174,18 @@ fn login_status_from_json_or_exit_code() {
     assert!(!logged_in(false, "Not logged in"));
     assert!(logged_in(true, "[1, 2]"));
 }
+
+/// Decision 89: only the CLIs whose real check passed are out of bèta (ADR-0009, step 40).
+#[test]
+fn beta_until_the_manual_check() {
+    assert!(!is_beta(Builtin::Claude));
+    assert!(!is_beta(Builtin::Vibe));
+    for b in [
+        Builtin::Codex,
+        Builtin::Gemini,
+        Builtin::Antigravity,
+        Builtin::Copilot,
+    ] {
+        assert!(is_beta(b), "{b:?}");
+    }
+}

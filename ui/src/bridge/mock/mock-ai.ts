@@ -118,7 +118,7 @@ export class MockAi implements AiApi {
         version: found ? `${p.command} 1.0 (mock)` : null,
         found,
         // maatwerk_core::ai::provider::VERIFIED
-        beta: p.builtin !== 'claude',
+        beta: p.builtin !== 'claude' && p.builtin !== 'vibe',
         defaults: { command: p.command, args: p.args, argsNext: p.argsNext },
         install: p.install,
       };

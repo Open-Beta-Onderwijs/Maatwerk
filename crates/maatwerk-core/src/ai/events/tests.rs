@@ -196,3 +196,36 @@ fn unknown_lines_are_output_and_auth_only_on_failure() {
     p.line("tip: sign in to sync", true);
     assert!(!p.finish(Some(0)).auth_failed);
 }
+
+/// Vibe 3.0.4 `--output streaming` as it came from a real run (step 40; ids shortened, the
+/// file contents and absolute paths left out): tool calls are `effect` entries.
+#[test]
+fn vibe_3_effects_are_steps() {
+    let (events, p) = feed(
+        StreamFormat::VibeStreaming,
+        &[
+            r#"{"id":"user-turn-1","sessionId":"3b7e3609","type":"message","role":"user","content":[{"type":"text","text":"Lees opdracht.typ"}]}"#,
+            r#"{"id":"reasoning-1","sessionId":"3b7e3609","type":"reasoning","text":"Read opdracht.typ (Dutch)."}"#,
+            r#"{"id":"assistant-1","sessionId":"3b7e3609","type":"message","role":"assistant","content":[{"type":"text","text":"Ik ga opdracht.typ lezen."}]}"#,
+            r#"{"id":"effect-1","sessionId":"3b7e3609","type":"effect","title":"file_system.read_file","detail":{"toolName":"file_system.read_file","kind":"file_read","input":{"filePath":"opdracht.typ","offset":null,"limit":2000}},"state":{"status":"completed","outputText":"","display":{"success":true,"verb":"Read","message":"7 lines from opdracht.typ"}}}"#,
+            r#"{"id":"effect-2","sessionId":"3b7e3609","type":"effect","title":"file_system.edit","detail":{"toolName":"file_system.edit","kind":"file_edit","input":{"filePath":"opdracht.typ","oldString":"punten: 1","newString":"punten: 2"}},"state":{"status":"completed","outputText":"","display":{"success":true,"verb":"Edited","message":"opdracht.typ"}}}"#,
+            r#"{"id":"effect-3","sessionId":"3b7e3609","type":"effect","title":"bash","detail":{"toolName":"bash","input":{"command":"rm -rf x"}},"state":{"status":"failed","outputText":"","display":{"success":false,"message":"Niet toegestaan"}}}"#,
+            r#"{"id":"assistant-2","sessionId":"3b7e3609","type":"message","role":"assistant","content":[{"type":"text","text":"Gedaan: 2 punten."}]}"#,
+        ],
+    );
+    assert_eq!(
+        titles(&events),
+        [
+            "Lezen: opdracht.typ",
+            "Bestand bewerken: opdracht.typ",
+            "Commando: rm -rf x"
+        ]
+    );
+    assert!(events.contains(&AiEvent::StepOutput {
+        text: "Niet toegestaan".into(),
+        error: true
+    }));
+    let c = p.finish(Some(0));
+    assert_eq!(c.session.as_deref(), Some("3b7e3609"));
+    assert_eq!(c.answer.as_deref(), Some("Gedaan: 2 punten."));
+}

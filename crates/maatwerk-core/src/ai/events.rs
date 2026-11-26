@@ -130,9 +130,10 @@ impl Parser {
             StreamFormat::ClaudeStreamJson => self.claude(&value, &mut out),
             StreamFormat::CodexJson => self.codex(&value, &mut out),
             StreamFormat::GeminiStreamJson => self.gemini(&value, &mut out),
-            StreamFormat::AntigravityStreamJson
-            | StreamFormat::VibeStreaming
-            | StreamFormat::CopilotJson => self.generic(&value, &mut out),
+            StreamFormat::VibeStreaming => self.vibe(&value, &mut out),
+            StreamFormat::AntigravityStreamJson | StreamFormat::CopilotJson => {
+                self.generic(&value, &mut out)
+            }
             StreamFormat::Text => {}
         }
         if out.is_empty()
@@ -393,6 +394,62 @@ impl Parser {
 
     /// Antigravity, Vibe and Copilot: formats without (complete) field docs. Known shapes
     /// first, then likely keys (ADR-0009, the _verify_ rows).
+    /// Vibe 3 `--output streaming` (checked against Vibe 3.0.4, step 40): chat entries with
+    /// `type` `message` (role user/assistant), `reasoning`, and `effect` for a tool call:
+    /// `detail.toolName` (`file_system.read_file`, `file_system.edit`, ...), `detail.input`, and
+    /// `state.status`, `state.outputText`, `state.display.success`. Everything else as
+    /// [`Parser::generic`].
+    fn vibe(&mut self, v: &Value, out: &mut Vec<AiEvent>) {
+        if str_at(v, "type") != Some("effect") {
+            if str_at(v, "type") == Some("reasoning") {
+                if let Some(id) = find_session(v) {
+                    self.set_session(id, out);
+                }
+                return;
+            }
+            return self.generic(v, out);
+        }
+        if let Some(id) = find_session(v) {
+            self.set_session(id, out);
+        }
+        let detail = v.get("detail");
+        let name = detail
+            .and_then(|d| str_at(d, "toolName"))
+            .or_else(|| str_at(v, "title"))
+            .unwrap_or("tool")
+            .to_owned();
+        self.current.clear();
+        self.step(&name, detail.and_then(|d| d.get("input")), out);
+        let state = v.get("state");
+        let failed = state.is_some_and(|st| {
+            st.get("display")
+                .and_then(|d| d.get("success"))
+                .and_then(Value::as_bool)
+                == Some(false)
+                || str_at(st, "status").is_some_and(|x| x != "completed")
+        });
+        let text = state
+            .and_then(|st| str_at(st, "outputText"))
+            .filter(|t| !t.trim().is_empty())
+            .map(str::to_owned)
+            .or_else(|| {
+                failed
+                    .then(|| {
+                        state
+                            .and_then(|st| st.get("display"))
+                            .and_then(|d| str_at(d, "message"))
+                    })
+                    .flatten()
+                    .map(str::to_owned)
+            });
+        if let Some(text) = text {
+            out.push(AiEvent::StepOutput {
+                text: clip(&text),
+                error: failed,
+            });
+        }
+    }
+
     fn generic(&mut self, v: &Value, out: &mut Vec<AiEvent>) {
         if let Some(id) = find_session(v) {
             self.set_session(id, out);
