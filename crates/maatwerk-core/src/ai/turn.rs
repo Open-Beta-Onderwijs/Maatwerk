@@ -375,6 +375,8 @@ pub fn run_turn(
     } else {
         (None, None, outcome)
     };
+    // An interrupted last check replaced the report: its (empty) output counts (review 40 n2).
+    let collected = report.collected.clone();
     let answer = match (&report.end, &collected.answer, &collected.error) {
         (RunEnd::StartFailed { message }, _, _) => Some(message.clone()),
         (_, _, Some(e)) if outcome != Outcome::NoChanges && outcome != Outcome::Proposal => {

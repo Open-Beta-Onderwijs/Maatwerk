@@ -58,31 +58,19 @@ pub async fn ai_apply(
     let key = key(&provider)?;
     off_thread(move || {
         let p = proposal_of(&layout, &opdracht_id, &key)?;
-        let mut files = BTreeMap::new();
-        let mut any = false;
-        for f in &p.files {
-            let Some(chosen) = hunks.get(&f.path) else {
-                continue;
-            };
-            let chosen: Vec<usize> = chosen.iter().map(|&h| h as usize).collect();
-            let cur = current.get(&f.path).map_or(f.base.as_str(), String::as_str);
-            let applied = diff::apply(f, cur, &chosen);
-            any |= !applied.applied.is_empty();
-            files.insert(f.path.clone(), to_value(&applied)?);
-        }
-        let chosen = apply::chosen_images(&p, &images)?;
-        // Review 32 n8: only a proposal of which something was taken counts as applied.
-        if any || !chosen.is_empty() {
+        let done = apply::apply_proposal(&p, &current, &hunks, &images)?;
+        if done.takes_something() {
             let history = layout.history_file(&opdracht_id, &key)?;
             let mut conv = Conversation::load(&history, &key);
             conv.set_applied(true);
             conv.save(&history)?;
         }
-        let images: Vec<Value> = chosen
+        let images: Vec<Value> = done
+            .images
             .iter()
             .map(|i| json!({ "path": i.path, "new": i.new }))
             .collect();
-        Ok(json!({ "files": files, "images": images }))
+        Ok(json!({ "files": to_value(&done.files)?, "images": images }))
     })
     .await
 }

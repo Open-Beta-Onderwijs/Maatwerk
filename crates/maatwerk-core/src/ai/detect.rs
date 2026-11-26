@@ -252,9 +252,11 @@ pub fn detect_cached(
             })
             .collect();
         let out: Vec<Detected> = handles.into_iter().filter_map(|h| h.join().ok()).collect();
+        // A version that did not come (a slow cold start) is asked again next time (review
+        // 40 n3).
         for d in &out {
-            if let Some(p) = &d.path {
-                versions.insert(p.clone(), d.version.clone());
+            if let (Some(p), Some(v)) = (&d.path, &d.version) {
+                versions.insert(p.clone(), Some(v.clone()));
             }
         }
         out
