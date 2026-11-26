@@ -214,7 +214,7 @@ fn the_whole_tree_is_killed() {
 fn a_grandchild_holding_the_pipes_does_not_hang_the_run() {
     let dir = tempfile::tempdir().unwrap();
     let t = Instant::now();
-    let (_, sink) = collect();
+    let (events, sink) = collect();
     let report = run::start(
         spec(
             dir.path(),
@@ -227,6 +227,22 @@ fn a_grandchild_holding_the_pipes_does_not_hang_the_run() {
     .wait();
     assert_eq!(report.end, RunEnd::Exited { code: Some(0) });
     assert!(t.elapsed() < Duration::from_secs(20), "{:?}", t.elapsed());
+    // Review 32 m6: the grandchild does not outlive the run (it could still write into the
+    // workspace after the diff).
+    let child: u32 = events
+        .lock()
+        .unwrap()
+        .iter()
+        .find_map(|e| match e {
+            AiEvent::Output { line, .. } => line.strip_prefix("child ").map(|p| p.parse().unwrap()),
+            _ => None,
+        })
+        .expect("the fake printed its child");
+    let until = Instant::now() + Duration::from_secs(10);
+    while alive(child) && Instant::now() < until {
+        std::thread::sleep(Duration::from_millis(100));
+    }
+    assert!(!alive(child), "child {child} survived the run");
 }
 
 #[test]

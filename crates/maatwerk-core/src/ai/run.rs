@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Running a CLI: a child process in the workspace with streamed, normalised events, a time
-//! limit and Stop (decision 55), killing the whole process tree (ADR-0009 finding 5). No window
-//! appears on Windows; stdin is closed, so a CLI that would ask a question gets end of input.
+//! limit and Stop (decision 55), killing the whole process tree (ADR-0009 finding 5): on
+//! Windows the CLI runs in a job object, on Unix in its own process group. What the CLI leaves
+//! running after it exited is ended too (review 32 m6), so nothing writes into the workspace
+//! after the run. No window appears on Windows; stdin is closed, so a CLI that would ask a
+//! question gets end of input.
 //!
 //! Everything runs on plain threads; the app calls [`start`] from a blocking task and gets the
 //! events through the callback.
@@ -10,7 +13,7 @@
 use std::ffi::OsString;
 use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
-use std::process::{Child, Command, ExitStatus, Output, Stdio};
+use std::process::{ChildStderr, ChildStdout, Command, ExitStatus, Output, Stdio};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, RecvTimeoutError};
@@ -89,11 +92,6 @@ impl RunHandle {
         self.stop.store(true, Ordering::SeqCst);
     }
 
-    /// A handle that [`RunHandle::stop`] sets, for code that does not own the handle.
-    pub fn stop_flag(&self) -> Arc<AtomicBool> {
-        self.stop.clone()
-    }
-
     pub fn is_finished(&self) -> bool {
         self.thread.is_finished()
     }
@@ -131,7 +129,6 @@ fn command(spec: &RunSpec) -> Command {
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    hide_and_group(&mut cmd);
     cmd
 }
 
@@ -149,11 +146,117 @@ fn hide_and_group(cmd: &mut Command) {
     }
 }
 
+/// The running CLI and everything it starts.
+struct Proc {
+    #[cfg(windows)]
+    child: Box<dyn process_wrap::std::ChildWrapper>,
+    #[cfg(not(windows))]
+    child: std::process::Child,
+}
+
+impl Proc {
+    #[cfg(windows)]
+    fn spawn(cmd: Command) -> std::io::Result<Proc> {
+        use process_wrap::std::{CommandWrap, CreationFlags, JobObject};
+        // The job object starts the CLI suspended and assigns it before it runs, so no
+        // grandchild escapes the job.
+        let mut wrap = CommandWrap::from(cmd);
+        wrap.wrap(CreationFlags(CREATE_NO_WINDOW)).wrap(JobObject);
+        Ok(Proc {
+            child: wrap.spawn()?,
+        })
+    }
+
+    #[cfg(not(windows))]
+    fn spawn(mut cmd: Command) -> std::io::Result<Proc> {
+        hide_and_group(&mut cmd);
+        Ok(Proc {
+            child: cmd.spawn()?,
+        })
+    }
+
+    #[cfg(windows)]
+    fn pipes(&mut self) -> (Option<ChildStdout>, Option<ChildStderr>) {
+        (self.child.stdout().take(), self.child.stderr().take())
+    }
+
+    #[cfg(not(windows))]
+    fn pipes(&mut self) -> (Option<ChildStdout>, Option<ChildStderr>) {
+        (self.child.stdout.take(), self.child.stderr.take())
+    }
+
+    /// The exit status of the CLI itself (not of the processes it started).
+    fn leader_status(&mut self) -> Option<ExitStatus> {
+        #[cfg(windows)]
+        let status = self.child.inner_mut().try_wait();
+        #[cfg(not(windows))]
+        let status = self.child.try_wait();
+        status.ok().flatten()
+    }
+
+    /// Stop or time-out: the whole tree. On Unix SIGTERM to the group first (Claude Code and
+    /// Vibe keep the session), SIGKILL after [`GRACE`]; on Windows the job is terminated.
+    fn kill_tree(&mut self) {
+        #[cfg(windows)]
+        {
+            let _ = self.child.start_kill();
+        }
+        #[cfg(unix)]
+        {
+            signal_group(self.child.id(), "-TERM");
+            let until = Instant::now() + GRACE;
+            while Instant::now() < until {
+                if self.leader_status().is_some() {
+                    break;
+                }
+                thread::sleep(TICK);
+            }
+            self.kill_rest();
+            let _ = self.child.kill();
+        }
+        #[cfg(not(any(windows, unix)))]
+        {
+            let _ = self.child.kill();
+        }
+    }
+
+    /// After the CLI exited: whatever it left running (review 32 m6).
+    fn kill_rest(&mut self) {
+        #[cfg(windows)]
+        {
+            let _ = self.child.start_kill();
+        }
+        #[cfg(unix)]
+        signal_group(self.child.id(), "-KILL");
+    }
+
+    fn wait(&mut self) -> Option<ExitStatus> {
+        if let Some(s) = self.leader_status() {
+            return Some(s);
+        }
+        #[cfg(windows)]
+        let status = self.child.inner_mut().wait();
+        #[cfg(not(windows))]
+        let status = self.child.wait();
+        status.ok()
+    }
+}
+
+/// `kill <sig> -- -<pgid>`: the CLI's process group, also after the CLI itself exited.
+#[cfg(unix)]
+fn signal_group(pid: u32, sig: &str) {
+    let _ = Command::new("kill")
+        .args([sig, "--", &format!("-{pid}")])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
+
 fn run(spec: RunSpec, stop: &AtomicBool, mut on_event: impl FnMut(AiEvent)) -> RunReport {
     let started = Instant::now();
     let elapsed =
         |started: Instant| u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-    let mut child = match command(&spec).spawn() {
+    let mut child = match Proc::spawn(command(&spec)) {
         Ok(c) => c,
         Err(e) => {
             return RunReport {
@@ -166,9 +269,10 @@ fn run(spec: RunSpec, stop: &AtomicBool, mut on_event: impl FnMut(AiEvent)) -> R
         }
     };
     let (tx, rx) = mpsc::channel();
+    let (stdout, stderr) = child.pipes();
     let readers = [
-        child.stdout.take().map(|s| reader(s, tx.clone(), false)),
-        child.stderr.take().map(|s| reader(s, tx.clone(), true)),
+        stdout.map(|s| reader(s, tx.clone(), false)),
+        stderr.map(|s| reader(s, tx.clone(), true)),
     ];
     drop(tx);
     let mut open = readers.iter().flatten().count();
@@ -176,6 +280,8 @@ fn run(spec: RunSpec, stop: &AtomicBool, mut on_event: impl FnMut(AiEvent)) -> R
     let deadline = started + spec.time_limit;
     let mut ended: Option<RunEnd> = None;
     let mut killed_at: Option<Instant> = None;
+    // The CLI exited while something it started still holds the pipes.
+    let mut orphaned_at: Option<Instant> = None;
     let mut status: Option<ExitStatus> = None;
     loop {
         match rx.recv_timeout(TICK) {
@@ -186,7 +292,7 @@ fn run(spec: RunSpec, stop: &AtomicBool, mut on_event: impl FnMut(AiEvent)) -> R
             Err(RecvTimeoutError::Disconnected) => open = 0,
         }
         if status.is_none() {
-            status = child.try_wait().ok().flatten();
+            status = child.leader_status();
         }
         if ended.is_none() && status.is_none() {
             if stop.load(Ordering::SeqCst) {
@@ -195,7 +301,7 @@ fn run(spec: RunSpec, stop: &AtomicBool, mut on_event: impl FnMut(AiEvent)) -> R
                 ended = Some(RunEnd::TimedOut);
             }
             if ended.is_some() {
-                kill_tree(&mut child);
+                child.kill_tree();
                 killed_at = Some(Instant::now());
             }
         }
@@ -206,14 +312,21 @@ fn run(spec: RunSpec, stop: &AtomicBool, mut on_event: impl FnMut(AiEvent)) -> R
         if killed_at.is_some_and(|t| t.elapsed() > GRACE * 2) {
             break;
         }
-        if status.is_some() && open > 0 && ended.is_none() {
-            // Exited, but a detached grandchild holds the pipes: give it the grace period.
-            if killed_at.is_none() {
+        if status.is_some() && open > 0 && killed_at.is_none() {
+            // Exited, but a grandchild holds the pipes: it gets the grace period to finish its
+            // output, then it is killed (review 32 m6).
+            let since = *orphaned_at.get_or_insert_with(Instant::now);
+            if since.elapsed() > GRACE {
+                child.kill_rest();
                 killed_at = Some(Instant::now());
             }
         }
     }
-    let status = status.or_else(|| child.wait().ok());
+    let status = status.or_else(|| child.wait());
+    // Nothing the CLI started outlives the run. (On Unix only a group that held the pipes is
+    // signalled, above: once reaped, its id may be reused.)
+    #[cfg(windows)]
+    child.kill_rest();
     let code = status.and_then(|s| s.code());
     let end = ended.unwrap_or(RunEnd::Exited { code });
     let exit_code = match end {
@@ -262,47 +375,6 @@ fn reader(
         }
         let _ = tx.send(Line::Closed);
     })
-}
-
-/// Ends the child and everything it started: `taskkill /T /F` on Windows; on Unix SIGTERM to
-/// the process group, SIGKILL after [`GRACE`].
-fn kill_tree(child: &mut Child) {
-    let pid = child.id().to_string();
-    #[cfg(windows)]
-    {
-        let mut cmd = Command::new("taskkill");
-        cmd.args(["/PID", &pid, "/T", "/F"]);
-        hide_and_group(&mut cmd);
-        if quick_output(cmd, GRACE).is_none() {
-            let _ = child.kill();
-        }
-    }
-    #[cfg(unix)]
-    {
-        let group = format!("-{pid}");
-        let signal = |sig: &str| {
-            let _ = Command::new("kill")
-                .args([sig, "--", &group])
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .status();
-        };
-        signal("-TERM");
-        let until = Instant::now() + GRACE;
-        while Instant::now() < until {
-            if child.try_wait().ok().flatten().is_some() {
-                return;
-            }
-            thread::sleep(TICK);
-        }
-        signal("-KILL");
-        let _ = child.kill();
-    }
-    #[cfg(not(any(windows, unix)))]
-    {
-        let _ = pid;
-        let _ = child.kill();
-    }
 }
 
 /// Runs a short command (a version or login probe) with stdin closed and no window; `None` if

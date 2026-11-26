@@ -2,6 +2,25 @@
 
 use super::*;
 use crate::ai::provider::{AiSettings, ProviderKey};
+use std::sync::atomic::AtomicBool;
+use std::time::Instant;
+
+static NO_STOP: AtomicBool = AtomicBool::new(false);
+
+/// [`prepare`] without Stop and with an hour to go.
+fn prep(
+    workdir: &Path,
+    run_dir: &Path,
+    provider: &Resolved,
+    resumes: bool,
+    input: &TurnInput,
+) -> Result<Prepared> {
+    let guard = Guard {
+        stop: &NO_STOP,
+        deadline: Instant::now() + Duration::from_secs(3600),
+    };
+    prepare(workdir, run_dir, provider, resumes, input, &guard)
+}
 
 /// An opdracht folder with the template files, a 40x20 PNG and an SVG.
 pub(crate) fn opdracht_folder(dir: &Path) {
@@ -53,7 +72,7 @@ fn copies_buffers_and_placeholder_images() {
     opdracht_folder(src.path());
     let ws = tempfile::tempdir().unwrap();
     let (work, run) = (ws.path().join("w"), ws.path().join("w.run"));
-    let p = prepare(&work, &run, &provider("claude"), false, &input(src.path())).unwrap();
+    let p = prep(&work, &run, &provider("claude"), false, &input(src.path())).unwrap();
     assert_eq!(
         fs::read_to_string(work.join("opdracht.typ")).unwrap(),
         buffer()
@@ -92,7 +111,7 @@ fn copies_buffers_and_placeholder_images() {
     assert!(request.contains("run the check with the Bash tool, exactly `.maatwerk/check`"));
     let other = tempfile::tempdir().unwrap();
     let (w2, r2) = (other.path().join("w"), other.path().join("r"));
-    prepare(&w2, &r2, &provider("codex"), false, &input(src.path())).unwrap();
+    prep(&w2, &r2, &provider("codex"), false, &input(src.path())).unwrap();
     let codex = fs::read_to_string(w2.join(REQUEST_FILE)).unwrap();
     assert!(codex.contains("run the check `.maatwerk/check` (on Windows `.maatwerk\\check.cmd`)"));
     assert!(work.join(".maatwerk/check").is_file());
@@ -107,7 +126,7 @@ fn real_images_when_switched_on() {
     let ws = tempfile::tempdir().unwrap();
     let mut i = input(src.path());
     i.context.images = true;
-    let p = prepare(
+    let p = prep(
         &ws.path().join("w"),
         &ws.path().join("r"),
         &provider("codex"),
@@ -169,7 +188,7 @@ fn context_chips_attachments_and_request() {
         },
     ];
     let work = ws.path().join("w");
-    let p = prepare(
+    let p = prep(
         &work,
         &ws.path().join("r"),
         &provider("antigravity"),
@@ -224,11 +243,11 @@ fn limits_and_rebuild() {
             bytes: None,
         })
         .collect();
-    assert!(prepare(&work, &run, &provider("claude"), false, &i).is_err());
+    assert!(prep(&work, &run, &provider("claude"), false, &i).is_err());
     i.attachments.clear();
-    prepare(&work, &run, &provider("claude"), false, &i).unwrap();
+    prep(&work, &run, &provider("claude"), false, &i).unwrap();
     fs::write(work.join("stray.txt"), "left by the AI").unwrap();
-    prepare(&work, &run, &provider("claude"), true, &i).unwrap();
+    prep(&work, &run, &provider("claude"), true, &i).unwrap();
     assert!(!work.join("stray.txt").exists(), "rebuilt per turn");
 }
 
@@ -239,7 +258,7 @@ fn provider_files() {
     let ws = tempfile::tempdir().unwrap();
     let i = input(src.path());
     let (work, run) = (ws.path().join("v"), ws.path().join("v.run"));
-    prepare(&work, &run, &provider("vibe"), false, &i).unwrap();
+    prep(&work, &run, &provider("vibe"), false, &i).unwrap();
     let vibe = fs::read_to_string(work.join(".vibe/config.toml")).unwrap();
     assert!(vibe.contains("outside_workdir = \"deny\""));
     // No shell and no check script (review 32 M1): Maatwerk runs the check.
@@ -249,7 +268,7 @@ fn provider_files() {
     let request = fs::read_to_string(work.join(REQUEST_FILE)).unwrap();
     assert!(request.contains("Do not run commands"));
     let (work, run) = (ws.path().join("g"), ws.path().join("g.run"));
-    prepare(&work, &run, &provider("gemini"), false, &i).unwrap();
+    prep(&work, &run, &provider("gemini"), false, &i).unwrap();
     let policy = fs::read_to_string(run.join("gemini-policy.toml")).unwrap();
     assert!(!policy.contains("commandPrefix"));
     assert!(policy.contains("toolName = \"run_shell_command\"\ndecision = \"deny\""));

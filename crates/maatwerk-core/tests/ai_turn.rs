@@ -237,3 +237,26 @@ fn a_missing_cli() {
     let r = run(f.turn(provider, Duration::from_secs(5)));
     assert_eq!(r.outcome, Outcome::NotFound);
 }
+
+/// Review 32 m7: Stop during the preparation ends the turn there; the CLI never starts.
+#[test]
+fn stop_before_the_cli_starts_keeps_nothing() {
+    let f = fixture();
+    let args = f.script(
+        "s.json",
+        json!([{"write": "opdracht.typ", "content": edited()}, {"out": "klaar"}]),
+    );
+    let mut turn = f.turn(f.custom(&args, ""), Duration::from_secs(60));
+    turn.input.context.diagnostics = true;
+    let stop = Arc::new(AtomicBool::new(true));
+    let mut events = 0;
+    let r = run_turn(turn, &stop, |_| events += 1).unwrap();
+    assert_eq!(r.outcome, Outcome::Stopped);
+    assert!(r.proposal.is_none());
+    assert_eq!(events, 0, "the CLI did not run");
+    let key = ProviderKey::parse("custom-fake").unwrap();
+    let work = f.layout.workdir("opd-1", &key).unwrap();
+    assert_eq!(fs::read_to_string(work.join("opdracht.typ")).unwrap(), BASE);
+    let h = f.history("custom-fake");
+    assert_eq!(h.messages.len(), 2, "the stop is in the history");
+}

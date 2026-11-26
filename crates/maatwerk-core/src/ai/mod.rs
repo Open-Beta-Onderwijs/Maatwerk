@@ -20,6 +20,7 @@ pub mod check;
 pub mod detect;
 pub mod diff;
 pub mod events;
+pub mod guard;
 pub mod history;
 pub mod provider;
 pub mod run;

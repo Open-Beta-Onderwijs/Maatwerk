@@ -27,7 +27,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::provider::{Builtin, CHECK_COMMAND, REQUEST_FILE, Resolved};
-use crate::assignment::{self, Assignment, RenderOptions, with_time_limit};
+use super::guard::Guard;
+use crate::assignment::{self, Assignment, RenderOptions};
 use crate::error::{Error, Result};
 use crate::opdracht_images::{IMAGE_EXTS, clean_image_name, extension_of, stem_of};
 use crate::typst_svc::{FontStore, local_now};
@@ -276,6 +277,7 @@ pub fn prepare(
     provider: &Resolved,
     resumes: bool,
     input: &TurnInput,
+    guard: &Guard,
 ) -> Result<Prepared> {
     check_attachments(&input.attachments)?;
     if input.context.others.len() > 3 {
@@ -302,7 +304,7 @@ pub fn prepare(
     copy_images(input, workdir, &mut baseline)?;
     let meta = workdir.join(".maatwerk");
     let mut listed = Vec::new();
-    write_context(input, workdir, &meta, &mut listed)?;
+    write_context(input, workdir, &meta, &mut listed, guard)?;
     let image_args = write_attachments(&input.attachments, &meta, &mut listed)?;
     // Only for CLIs that run the check themselves and cannot edit `.maatwerk/` (review 32 M1).
     if provider.runs_check {
@@ -465,6 +467,7 @@ fn write_context(
     workdir: &Path,
     meta: &Path,
     listed: &mut Vec<Listed>,
+    guard: &Guard,
 ) -> Result<()> {
     let ctx = meta.join("context");
     fs::create_dir_all(&ctx).map_err(io(&ctx))?;
@@ -507,7 +510,8 @@ fn write_context(
     if c.diagnostics
         && let Some(a) = assignment.clone()
     {
-        let report = with_time_limit(CONTEXT_COMPILE_LIMIT, move || {
+        // Stop and the time limit end the wait (review 32 m7); the turn then keeps nothing.
+        let report = guard.wait(CONTEXT_COMPILE_LIMIT, move || {
             assignment::check(
                 &a,
                 RenderOptions::default(),
@@ -527,7 +531,7 @@ fn write_context(
     if c.pdf
         && let Some(a) = assignment
     {
-        let pdf = with_time_limit(CONTEXT_COMPILE_LIMIT, move || {
+        let pdf = guard.wait(CONTEXT_COMPILE_LIMIT, move || {
             assignment::render_pdf(
                 &a,
                 RenderOptions::default(),

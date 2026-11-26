@@ -37,6 +37,7 @@ date, and ships it next to the exe; "Over Maatwerk" in the app shows it.
 | wry (WebView2 pre-check)                         | Apache-2.0 OR MIT     |
 | similar (AI proposal diff)                       | Apache-2.0            |
 | uuid (AI session ids)                            | Apache-2.0 OR MIT     |
+| process-wrap (AI CLI job object, Windows)        | Apache-2.0 OR MIT     |
 
 Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0), typst-render
 (Apache-2.0), tiny-skia (BSD-3-Clause).

@@ -6824,6 +6824,7 @@ Used by:
   pin-project-lite 0.2.17
   portable-atomic 1.15.0
   proc-macro2 1.0.107
+  process-wrap 11.0.0
   quote 1.0.47
   semver 1.0.28
   serde-untagged 0.1.9

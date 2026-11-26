@@ -6,7 +6,8 @@
 //! [`MAX_FIX_ROUNDS`]), collect the proposal and update the history.
 //!
 //! A stopped, timed-out or failed run keeps nothing (decision 67): no proposal, the opdracht
-//! unchanged. The time limit covers the whole turn, fix rounds included.
+//! unchanged. The time limit covers the whole turn, fix rounds included, and Stop and the time
+//! limit also end the preparation and Maatwerk's own checks (review 32 m7, [`Guard`]).
 
 use std::fs;
 use std::path::PathBuf;
@@ -18,12 +19,13 @@ use serde::Serialize;
 
 use super::detect::SearchPath;
 use super::diff::{self, Proposal};
-use super::events::{AiEvent, StepKind};
+use super::events::{AiEvent, Collected, StepKind};
+use super::guard::{Guard, Interrupt};
 use super::history::{Conversation, Message, RunEndKind, RunSummary, Transcript};
 use super::provider::{Placeholders, REQUEST_FILE, Resolved, SessionMode};
 use super::run::{self, RunEnd, RunReport, RunSpec};
 use super::workspace::{self, Layout, TurnInput};
-use crate::assignment::{self, Assignment, CheckReport, RenderOptions, with_time_limit};
+use crate::assignment::{self, Assignment, CheckReport, RenderOptions};
 use crate::error::{Error, Result};
 use crate::typst_svc::{FontStore, Severity, local_now};
 
@@ -78,10 +80,11 @@ fn now_iso() -> String {
     crate::storage::iso_utc(std::time::SystemTime::now())
 }
 
-/// The check of the workspace, `None` if it is no opdracht folder or took too long.
-pub fn check_workspace(dir: &std::path::Path) -> Option<CheckReport> {
+/// The check of the workspace, `None` if it is no opdracht folder, took too long, or Stop or
+/// the deadline came first.
+pub fn check_workspace(dir: &std::path::Path, guard: &Guard) -> Option<CheckReport> {
     let a = Assignment::open(dir).ok()?;
-    with_time_limit(CHECK_LIMIT, move || {
+    guard.wait(CHECK_LIMIT, move || {
         assignment::check(
             &a,
             RenderOptions::default(),
@@ -89,6 +92,18 @@ pub fn check_workspace(dir: &std::path::Path) -> Option<CheckReport> {
             local_now(),
         )
     })
+}
+
+/// The report of a turn that Stop or the time limit ended outside the CLI run.
+fn interrupted(i: Interrupt, started: Instant) -> RunReport {
+    RunReport {
+        end: match i {
+            Interrupt::Stopped => RunEnd::Stopped,
+            Interrupt::TimedOut => RunEnd::TimedOut,
+        },
+        collected: Collected::default(),
+        elapsed_ms: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+    }
 }
 
 fn errors_text(r: &CheckReport) -> String {
@@ -118,6 +133,10 @@ pub fn run_turn(
         time_limit,
         mut input,
     } = turn;
+    let guard = Guard {
+        stop,
+        deadline: started + time_limit,
+    };
     let history_path = layout.history_file(&opdracht, &provider.key)?;
     let mut conv = Conversation::load(&history_path, &provider.key);
     conv.messages.push(Message {
@@ -152,13 +171,17 @@ pub fn run_turn(
     }
     let workdir = layout.workdir(&opdracht, &provider.key)?;
     let run_dir = layout.run_dir(&opdracht, &provider.key)?;
-    let prepared = workspace::prepare(&workdir, &run_dir, &provider, resumes, &input)?;
+    let prepared = workspace::prepare(&workdir, &run_dir, &provider, resumes, &input, &guard)?;
     // Shared between the runner's callback (moved to its thread) and this function.
     let transcript = Arc::new(std::sync::Mutex::new(Transcript::default()));
     let mut fix_rounds = 0;
     let mut use_next = resumes;
     let mut report: RunReport;
     loop {
+        if let Some(i) = guard.interrupted() {
+            report = interrupted(i, started);
+            break;
+        }
         let remaining = time_limit.saturating_sub(started.elapsed());
         let placeholders = Placeholders {
             workdir: workdir.clone(),
@@ -228,7 +251,10 @@ pub fn run_turn(
             .unwrap_or_else(|p| p.into_inner())
             .push(&check_event);
         on_event(check_event);
-        let Some(check) = check_workspace(&workdir) else {
+        let Some(check) = check_workspace(&workdir, &guard) else {
+            if let Some(i) = guard.interrupted() {
+                report = interrupted(i, started);
+            }
             break;
         };
         if check.ok
@@ -261,10 +287,23 @@ pub fn run_turn(
         if p.is_empty() {
             (None, None, Outcome::NoChanges)
         } else {
-            let check = check_workspace(&workdir);
-            let json = serde_json::to_vec(&p).unwrap_or_default();
-            let _ = fs::write(run_dir.join("proposal.json"), json);
-            (Some(p), check, Outcome::Proposal)
+            let check = check_workspace(&workdir, &guard);
+            match guard.interrupted().filter(|_| check.is_none()) {
+                // Stopped or timed out during the last check: nothing is kept (decision 67).
+                Some(i) => {
+                    report = interrupted(i, started);
+                    let outcome = match i {
+                        Interrupt::Stopped => Outcome::Stopped,
+                        Interrupt::TimedOut => Outcome::TimedOut,
+                    };
+                    (None, None, outcome)
+                }
+                None => {
+                    let json = serde_json::to_vec(&p).unwrap_or_default();
+                    let _ = fs::write(run_dir.join("proposal.json"), json);
+                    (Some(p), check, Outcome::Proposal)
+                }
+            }
         }
     } else {
         (None, None, outcome)
