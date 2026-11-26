@@ -121,8 +121,13 @@ merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrad
   macOS cancelled, the user reruns it 2026-11-26 morning). Linux and Windows splash baselines
   committed from its artifacts (checked: version text 0.30.0, layout unchanged).
 
-**Next action:** macOS CI (user, 2026-11-26 morning) writes `visual-ci-webkit-darwin/splash.png`:
-look and commit from its artifact, then CI green on all jobs. Then on the user's OK: merge into `main` (merge commit), tag `step-39`, version tag
+- 2026-11-26: macOS job of run 45611932264 rerun; again only `splash` failed (430 e2e, 58 visual
+  passed). macOS splash baseline committed from its artifact (checked: version text 0.30.0,
+  layout unchanged). Draft GitHub release `v0.29.0` (Dutch notes, 0.16.0..0.29.0, last version
+  with v1 migration) on `0459ac2`, no assets yet: the tag `v0.29.0` (CI build) waits for the
+  user's OK.
+
+**Next action:** CI green on all jobs with the three splash baselines. Then on the user's OK: merge into `main` (merge commit), tag `step-39`, version tag
 `v0.30.0` only when the user says so, GitHub release with Dutch notes (draft in the step 39
 report; name T34, backslash paths).
 
