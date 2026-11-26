@@ -77,6 +77,8 @@ export class MockAi implements AiApi {
   untilStopped = false;
   /** Delay of `apply` (ms), to type during the round trip (review 32 m3). */
   applyDelayMs = 0;
+  /** `commitImages` fails (review 40 m4). */
+  failCommit = false;
   /** Images every proposal holds (review 32 m4, m5). */
   proposalImages: ImageProposal[] = [];
   readonly calls: { method: string; args: unknown[] }[] = [];
@@ -339,6 +341,7 @@ export class MockAi implements AiApi {
     images: string[],
   ): Promise<{ path: string; new: boolean }[]> {
     this.record('commitImages', [gebruiker, opdrachtId, provider, images]);
+    if (this.failCommit) throw new Error('schijf vol (mock)');
     return this.proposalImages
       .filter((i) => images.includes(i.path))
       .map((i) => ({ path: i.path, new: i.new }));

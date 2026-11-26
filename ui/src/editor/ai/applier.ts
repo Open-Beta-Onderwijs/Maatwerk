@@ -71,13 +71,14 @@ export class Applier {
    * of reverting it (review 32 m3).
    */
   async apply(key: ProviderKey, hunks: Record<string, number[]>, images: string[]): Promise<void> {
+    let asked = false;
     try {
-      const before = this.host.buffers();
       let done: ApplyResult | null = null;
-      let base = before;
+      let base = this.host.buffers();
       for (let i = 0; i < APPLY_TRIES && !done; i++) {
         if (i > 0) base = this.host.buffers();
         const result = await this.ai.apply(key, base, hunks, images);
+        asked = true;
         const now = this.host.buffers();
         if (Object.keys(result.files).every((f) => now[f] === base[f])) done = result;
       }
@@ -95,7 +96,8 @@ export class Applier {
       }
       const chosen = done.images.map((i) => i.path);
       this.applied.set(key, {
-        before,
+        // Ongedaan maken goes back to the text the hunks went onto (review 40 m1).
+        before: base,
         after,
         images: [],
         pending: chosen,
@@ -112,45 +114,71 @@ export class Applier {
       // The text and its images reach the opdracht together; a failed save keeps them pending.
       if (chosen.length) await this.host.save();
     } catch (err) {
+      // `ai_apply` marked the history as applied; nothing was (review 40 m2).
+      if (asked && !this.applied.has(key)) await this.ai.undoImages(key, []).catch(() => {});
       this.cardState.set(key, { kind: 'error', message: (err as Error).message });
     }
     this.hooks.changed(key);
   }
 
   /**
-   * The editor's save of `opdracht.typ`: the pending images of an applied proposal go into
-   * the opdracht just before the text that uses them; when the text is not saved, they are
-   * taken out again and stay pending (review 32 m4).
+   * The editor's save of `opdracht.typ` with `content`: the pending images of applied
+   * proposals go into the opdracht just before the text; when the text is not saved, they are
+   * taken out again and stay pending (review 32 m4). Only images the saved text names are
+   * stored, so an image never lands without the text that uses it (review 40 M2); every
+   * provider's (m3). An image that cannot be stored stays pending and does not stop the text
+   * (m4).
    */
   async saveWithImages<T extends { ok?: boolean } | null | undefined>(
+    content: string,
     write: () => Promise<T>,
   ): Promise<T> {
-    const entry = [...this.applied.entries()].find(([, a]) => a.pending.length);
-    if (!entry) return write();
-    const [key, a] = entry;
-    let stored: string[];
-    try {
-      stored = (await this.ai.commitImages(key, a.pending)).map((i) => i.path);
-    } catch (err) {
-      throw new Error(`afbeeldingen niet opgeslagen: ${(err as Error).message}`, {
-        cause: err,
-      });
+    const text = content.toLowerCase();
+    const commits: { key: ProviderKey; a: Applied; used: string[]; stored: string[] }[] = [];
+    for (const [key, a] of this.applied) {
+      const used = a.pending.filter((p) => text.includes(imageStem(p)));
+      if (!used.length) continue;
+      try {
+        const stored = (await this.ai.commitImages(key, used)).map((i) => i.path);
+        commits.push({ key, a, used, stored });
+      } catch (err) {
+        const state = this.cardState.get(key);
+        if (state?.kind === 'applied') {
+          this.cardState.set(key, {
+            ...state,
+            message: `De afbeeldingen zijn nog niet opgeslagen: ${(err as Error).message}`,
+          });
+          this.hooks.changed(key);
+        }
+      }
     }
+    const rollBack = () =>
+      Promise.all(commits.map((c) => this.ai.undoImages(c.key, c.stored).catch(() => {})));
     let result: T;
     try {
       result = await write();
     } catch (err) {
-      await this.ai.undoImages(key, stored).catch(() => {});
+      await rollBack();
       throw err;
     }
     if (!result?.ok) {
-      await this.ai.undoImages(key, stored).catch(() => {});
+      await rollBack();
       return result;
     }
-    a.images = [...new Set([...a.images, ...stored])];
-    a.pending = [];
-    this.host.refreshPreview();
+    for (const c of commits) {
+      c.a.images = [...new Set([...c.a.images, ...c.stored])];
+      c.a.pending = c.a.pending.filter((p) => !c.used.includes(p));
+    }
+    if (commits.length) this.host.refreshPreview();
     return result;
+  }
+
+  /**
+   * The editor text was replaced by a colleague's version ("Hun versie laden"): the AI's images
+   * that were not stored yet belong to text that is gone (review 40 M2).
+   */
+  dropPending(): void {
+    for (const a of this.applied.values()) a.pending = [];
   }
 
   /** Ongedaan maken: the texts from before Toepassen and the images removed or restored. */
@@ -193,4 +221,12 @@ export class Applier {
     );
     this.hooks.changed(key);
   }
+}
+
+/** `images/Grafiek-1.png` -> `grafiek-1`: how the text names the image (any extension). */
+function imageStem(path: string): string {
+  return path
+    .slice(path.lastIndexOf('/') + 1)
+    .replace(/\.[^.]*$/, '')
+    .toLowerCase();
 }

@@ -756,9 +756,15 @@ export class AiPanel {
 
   /** The editor's save of `opdracht.typ` (see [`Applier.saveWithImages`], review 32 m4). */
   saveWithImages<T extends { ok?: boolean } | null | undefined>(
+    content: string,
     write: () => Promise<T>,
   ): Promise<T> {
-    return this.proposals.saveWithImages(write);
+    return this.proposals.saveWithImages(content, write);
+  }
+
+  /** "Hun versie laden" replaced the text: pending AI images go (review 40 M2). */
+  dropPendingImages(): void {
+    this.proposals.dropPending();
   }
 
   /** The in-memory history follows `ai_apply` / `ai_undo_images` (the card and status lines). */

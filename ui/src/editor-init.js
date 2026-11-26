@@ -865,7 +865,9 @@ function saveNow(file = current) {
         postToParent('maatwerk-write-text', { file, content, expectedHash: entry.baseHash });
       // The images of an applied AI proposal are stored with the text (review 32 m4).
       const writeResult =
-        file === MAIN_FILE && aiPanel ? await aiPanel.saveWithImages(write) : await write();
+        file === MAIN_FILE && aiPanel
+          ? await aiPanel.saveWithImages(content, write)
+          : await write();
       if (writeResult?.reason === 'conflict') {
         showConflict(true, file);
         setStatus('Niet opgeslagen', null, true);
@@ -901,6 +903,8 @@ async function loadTheirs() {
   const file = conflictFile ?? current;
   await switchTo(file);
   const read = await postToParent('maatwerk-read-text-versioned', { file });
+  // The AI's images not stored yet belong to the text being replaced (review 40 M2).
+  if (file === MAIN_FILE) aiPanel?.dropPendingImages();
   replaceDoc(read?.text ?? '');
   files.get(file).baseHash = read?.hash ?? '';
   lastSaveFailed = false;
