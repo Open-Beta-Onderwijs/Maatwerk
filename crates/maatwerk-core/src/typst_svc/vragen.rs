@@ -8,9 +8,9 @@
 
 use serde::Serialize;
 use typst::foundations::{Dict, Label, Selector, Value};
-use typst::introspection::MetadataElem;
-use typst::layout::PagedDocument;
+use typst::introspection::{Introspector, MetadataElem};
 use typst::utils::PicoStr;
+use typst_layout::PagedDocument;
 
 /// The marker label (`lib.typ`, renamed from `__rtti_vraag`).
 const VRAAG_LABEL: &str = "__maatwerk_vraag";
@@ -44,7 +44,11 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
     let label = Label::new(PicoStr::intern(VRAAG_LABEL)).expect("a non-empty label");
     let mut raw = Vec::new();
     let mut punten_known = true;
-    for content in document.introspector.query(&Selector::Label(label)).iter() {
+    for content in document
+        .introspector()
+        .query(&Selector::Label(label))
+        .iter()
+    {
         let Some(meta) = content.to_packed::<MetadataElem>() else {
             continue;
         };
@@ -53,7 +57,7 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
         };
         let (page, y) = content
             .location()
-            .map(|loc| document.introspector.position(loc))
+            .and_then(|loc| document.introspector().position(loc))
             .map_or((0, 0.0), |pos| (pos.page.get() - 1, pos.point.y.to_pt()));
         punten_known &= dict.contains("punten");
         raw.push((dict.clone(), page, y));
@@ -73,11 +77,7 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
                 opgave,
                 label: format!("{opgave}{letter}"),
                 punten: dict.get("punten").ok().and_then(number),
-                antwoord: dict.get("antwoord").ok().and_then(|v| match v {
-                    Value::None => None,
-                    Value::Content(c) => Some(c.plain_text().trim().to_owned()),
-                    other => Some(other.clone().display().plain_text().trim().to_owned()),
-                }),
+                antwoord: dict.get("antwoord").ok().and_then(answer_text),
                 page: *page,
                 y: *y,
             }
@@ -93,17 +93,27 @@ pub fn vragen(document: &PagedDocument) -> Vragen {
             "De punten zijn onbekend: lib.typ van deze opdracht is een oudere versie.".to_owned(),
         );
     }
-    for v in &items {
+    for (v, (dict, ..)) in items.iter().zip(&raw) {
         let name = if v.opgave == 0 {
             "Een vraag buiten een opgave".to_owned()
         } else {
             format!("Vraag {}", v.label)
         };
-        if v.opgave == 0 {
+        // `in_opgave` (maatwerk-lib 3) also catches a vraag after an opgave, which keeps that
+        // opgave's number in the marker and on paper; older copies only know opgave 0.
+        let outside = v.opgave == 0 || matches!(dict.get("in_opgave"), Ok(Value::Bool(false)));
+        if outside {
             checks.push(format!("{name} staat niet in een #opgave."));
         }
-        if punten_known && v.punten.is_none() {
-            checks.push(format!("{name} heeft geen punten."));
+        match dict.get("punten") {
+            Ok(Value::Str(text)) if v.punten.is_none() => checks.push(format!(
+                "{name}: de punten (\"{}\") zijn geen getal.",
+                text.as_str()
+            )),
+            _ if punten_known && v.punten.is_none() => {
+                checks.push(format!("{name} heeft geen punten."));
+            }
+            _ => {}
         }
         if v.antwoord.as_deref().is_none_or(str::is_empty) {
             checks.push(format!("{name} heeft geen antwoord."));
@@ -124,12 +134,42 @@ fn int(dict: &Dict, key: &str) -> Option<u64> {
     }
 }
 
+/// Punten as a number: also a string such as `"2"` or `"1,5"`, which `lib.typ` shows as it is
+/// (review 8b n1: it counted as missing).
 fn number(value: &Value) -> Option<f64> {
     match value {
         Value::Int(n) => Some(*n as f64),
         Value::Float(f) => Some(*f),
+        // Digits with one decimal comma or point only: not "1e3", "inf" or "-2".
+        Value::Str(s) => Some(s.as_str().trim())
+            .filter(|t| {
+                t.chars()
+                    .all(|c| c.is_ascii_digit() || c == ',' || c == '.')
+            })
+            .and_then(|t| t.replace(',', ".").parse::<f64>().ok()),
         _ => None,
     }
+}
+
+/// Shown for an answer that has content but no text, such as only an image (review 8b n1: it
+/// counted as empty).
+const NO_TEXT: &str = "(zonder tekst)";
+
+/// The answer as plain text; `None` when there is none, `""` when it is empty.
+fn answer_text(value: &Value) -> Option<String> {
+    let (text, empty) = match value {
+        Value::None => return None,
+        Value::Content(c) => (c.plain_text().trim().to_owned(), c.is_empty()),
+        other => (
+            other.clone().display().plain_text().trim().to_owned(),
+            false,
+        ),
+    };
+    Some(if text.is_empty() && !empty {
+        NO_TEXT.to_owned()
+    } else {
+        text
+    })
 }
 
 /// Typst's `numbering("a", n)`: a, b, ..., z, aa, ab, ...
@@ -221,9 +261,42 @@ mod tests {
     }
 
     #[test]
+    fn review_8b_n1_a_vraag_after_an_opgave_is_outside_it() {
+        let v = vragen(&document(
+            assets::LIB_TYP,
+            "#opgave[#vraag(punten: 1, antwoord: [A])[In]]\n\
+             #vraag(punten: 1, antwoord: [B])[Erna]",
+        ));
+        // Numbered as on paper (as lib 2: the review of step 39, M1), but flagged.
+        let labels: Vec<_> = v.items.iter().map(|v| v.label.as_str()).collect();
+        assert_eq!(labels, ["1a", "1b"]);
+        assert_eq!(v.checks, ["Vraag 1b staat niet in een #opgave."]);
+    }
+
+    #[test]
+    fn review_39_m1_lib_3_prints_what_lib_2_printed() {
+        let lib2 = include_str!("../../tests/fixtures/project-files/lib-v2.typ");
+        let body = "#vraag(antwoord: [V])[Voor]\n\
+                    #opgave[#vraag(antwoord: [A])[In]]\n\
+                    #vraag(antwoord: [B])[Erna]\n\
+                    #antwoorden_lijst()";
+        let svg = |lib: &str| -> Vec<String> {
+            document(lib, body)
+                .pages()
+                .iter()
+                .map(crate::typst_svc::compile::svg_page)
+                .collect()
+        };
+        assert_eq!(svg(assets::LIB_TYP), svg(lib2));
+    }
+
+    #[test]
     fn an_old_lib_typ_gives_vragen_without_points() {
         // `maatwerk-lib 1`: the marker has no `punten` yet.
-        let old = assets::LIB_TYP.replace(", punten: punten)", ")");
+        let old = assets::LIB_TYP.replace(
+            "      punten: punten,\n      in_opgave: _in_opgave.get(),\n",
+            "",
+        );
         assert_ne!(old, assets::LIB_TYP);
         let v = vragen(&document(
             &old,
@@ -233,6 +306,24 @@ mod tests {
         assert_eq!(
             v.checks,
             ["De punten zijn onbekend: lib.typ van deze opdracht is een oudere versie."]
+        );
+    }
+
+    #[test]
+    fn review_8b_n1_string_punten_and_answers_without_text() {
+        // No image file in this project: a coloured box stands in for an image-only answer.
+        let v = vragen(&document(
+            assets::LIB_TYP,
+            "#opgave[\n#vraag(punten: \"1,5\", antwoord: box(width: 1cm, height: 1cm, \
+             fill: red))[Een]\n#vraag(punten: \"twee\", antwoord: [A])[Twee]]",
+        ));
+        assert_eq!(v.items[0].punten, Some(1.5));
+        assert_eq!(v.items[0].antwoord.as_deref(), Some(NO_TEXT));
+        assert_eq!(v.items[1].punten, None);
+        assert_eq!(v.total_punten, 1.5);
+        assert_eq!(
+            v.checks,
+            ["Vraag 1b: de punten (\"twee\") zijn geen getal."]
         );
     }
 

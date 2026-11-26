@@ -47,13 +47,35 @@
   "png": [
     {
       "file": "p1.png",
-      "sha256": "1dd6f608546824205e8a04e8ad8542088aaf9304f12efb8dd700eb88ab52c647",
-      "bytes": 9673
+      "sha256": "6897462832f8c2a3548506726d98e35bbe97ec25fe482debfea6ab66fe69607c",
+      "bytes": 5101
     },
     {
       "file": "p2.png",
-      "sha256": "0a7353365fc3cc2f67c8df9a2a071b3c40e711aea83773b3285ad985cf7a331e",
-      "bytes": 5770
+      "sha256": "fa28bcd5585e0a3e3dae4392cfa11022587d80a317e50312ce9f74d587e95ecd",
+      "bytes": 2926
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  },
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Voorbeeld\nLeerling Voornaam Achternaam\nN.a.v.\n Voorbeeldtoets Toetsweek X\nKlas Z vak W\n \n❌\n Een voorbeeldobservatie met een behoorlijk lange naam, \nzodat deze twee regels beslaat in het voorbeeld\nPlaats hier de uitleg…"
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave \n1\n (Oefening)\na\nEerste vraag.\n2p\nb\nTweede \nvraag.\n1p\nAntwoorden\n1a\n Antwoord a.\n1b\n Antwoord b."
+      }
+    ]
+  }
 }

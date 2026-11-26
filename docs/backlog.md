@@ -2,6 +2,17 @@
 
 Minor review findings and deferred work (PLAN.md 2.3). Newest first.
 
+## From Step 39 (review `docs/reviews/step-39.md`)
+
+- **n1:** the batch's poisoned-lock recovery around the merge cursor cannot help (a panic in
+  `PdfMerger::push` ends the scope anyway); simplify or document.
+- **n2:** `PdfMerger::push` changes its state (index, last key, a blank page) before it can fail;
+  harmless today (the batch stops merging on an error), but not a clean API.
+- **n3:** the "eerdere compilatie loopt nog" count is the one of the last update; it can stay
+  shown after the abandoned compile ended, until the next update.
+- **8b "Jumps after an error":** considered in 39b, not done (needs the last good source kept and
+  its offsets mapped onto the edited text).
+
 ## From Step 38 (review `docs/reviews/step-38.md`)
 
 - **m2 rest (step 41, robustness):** Rust and the MockApi mirror differ on input the fixtures
@@ -131,8 +142,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   (`fix/manual-test-6`, quirk U21).
 - ~~**M-OPD-6** selected text could not be dragged in the editor~~ Fixed (`dragDropEnabled`
   off + `no-file-drop.ts`, quirk U20); re-check by hand in the next exe.
-- **M-START-3** could not be run: a v1 folder has no `schema_version` (the checklist now says to
-  add it). Re-run after Step 7a writes `schema_version`.
+- ~~**M-START-3** could not be run: a v1 folder has no `schema_version` (the checklist now says to
+  add it). Re-run after Step 7a writes `schema_version`.~~ Closed (39a): the v1 path is gone; M-START-3 runs on a converted copy, M-MIG-6 covers a v1 folder.
 - **M-LEER-3, M-GRP-3** CSV import screens: show a 5-row example CSV of the expected format
   (PLAN Step 10).
 - **M-TOE-6** printed copies next to the data folder, not inside it (PLAN Step 7a, C18).
@@ -162,9 +173,11 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 6a
 
-- **Typst warnings are only logged:** the render commands return compile warnings (tofu etc.,
+- ~~**Typst warnings are only logged:** the render commands return compile warnings (tofu etc.,
   deduplicated); `TauriApi` writes them to the console. Show them in the editor preview and the
-  generate/rapport modals (6b or Step 8).
+  generate/rapport modals (6b or Step 8).~~ Done: the modals since F-04 (`render-warnings.ts`);
+  the editor marks warnings in the open file, and since 39b the others (no place, or in
+  `lib.typ`/`main.typ`) show in the status pill ("Opgeslagen · 1 waarschuwing", details).
 - **`rapporten/` retention:** printed copies are never cleaned up (ADR-0002 section 9). Decide on
   a policy with the user.
 - **Command-level tests:** the Tauri commands are thin and their core functions are tested, but
@@ -188,29 +201,33 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   `folder` for the CLI.
 - ~~**Review 5b n1:** a panic inside one compile is not caught; the other workers run all remaining
   jobs before it surfaces. Catch per job (`catch_unwind`) and report it as that job's error.~~ Done (Step 10): `BatchError::Panic`.
-- **Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
+- ~~**Review 5b n2:** the batch holds every job's PDF until the merge (fine at ~35 KiB per job,
   `docs/perf.md`); opdrachten with large photos could change that. Merge in job order as results
-  arrive if a real class batch gets heavy.
+  arrive if a real class batch gets heavy.~~ Done (39b): `PdfMerger` merges in job order as jobs
+  finish and drops each PDF (same bytes as `pdf_merge`, test).
 - ~~**Review 5b n3:** tofu warnings repeat once per job in a batch~~ Done (6a): the batch
   command deduplicates the warning texts across jobs.
-- **Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
-  normalisation also ignores trailing whitespace/final newline.
-- **Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
-  opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.
+- ~~**Review 5b n4:** decide before the first release whether the lib.typ/main.typ hash
+  normalisation also ignores trailing whitespace/final newline.~~ Done (39b, user 2026-11-25: yes): release hashes recomputed, a test per released text.
+- ~~**Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
+  opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.~~ Done (39a, `b9fab11`): only opdracht folders are mounted; a junction to another opdracht is denied (test).
 - **Review 5b n6:** the CLI panics on a non-UTF-8 argument and writes its output non-atomically.
-- **Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
-  Step 7 migration deletes them.
+- ~~**Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
+  Step 7 migration deletes them.~~ Closed (39a): `_preview_*.typ` only existed in v1 folders, which the 0.29 conversion cleans.
 
 ## From Step 5a
 
-- **Review 5a m3:** an error in eval'd teacher text (leeradvies, uitleg) points at the `eval`
-  call in `rapport.typ`; pre-parse each field and name it (student, category) in the diagnostic.
+- ~~**Review 5a m3:** an error in eval'd teacher text (leeradvies, uitleg) points at the `eval`
+  call in `rapport.typ`; pre-parse each field and name it (student, category) in the diagnostic.~~
+  Done (39b): after a failed rapport each distinct text is compiled on its own; the first error
+  gets the hint "de fout zit in het leeradvies bij T1 voor <naam>" (toets and PO rapport).
 - **Review 5a m4 (watcher, Step 4b code):** a colleague's write with the same size inside one
   mtime tick of the previous state is not seen as a change by the stat check. Compare a content
   hash when size and mtime are equal but an event arrived.
 - **Review 5a nit n8 (done 2026-10-28):** the pixel tests and golden PNGs no longer use system
   fonts (`support::fonts`, `--ignore-system-fonts`). The app still uses them; an installed
   "Libertinus Serif" could still shadow Typst's own copy there. Nits n1-n6 and n9 were done in 5b.
+  The app part done in 39b: Typst's fonts come before the system fonts in `FontStore`.
 
 - **quick-xml advisories ignored (RUSTSEC-2026-0194/0195, `deny.toml`):** pulled in by typst 0.14.2
   through hayagriva/citationberg; the fix needs quick-xml 0.41. Ignore accepted by the user
@@ -299,17 +316,17 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From the Step 2 review (`docs/reviews/step-02.md`)
 
-- **m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
-  diagnostics separator-neutrally (`\` vs `/`).
-- **m6 (Step 5/6):** store an explicit merged-page map for batch goldens (job, page, blank) and
-  PNGs for multi-job batches if pixel parity of the merge matters.
-- **m7 (Step 6):** record `assignment:progress` events in the batch goldens. (6a: the event is
-  wired; the goldens still only check "0, then one per job".)
+- ~~**m3/m4 (Step 5):** Typst error goldens: normalise canonical and 8.3 temp paths too, and compare
+  diagnostics separator-neutrally (`\` vs `/`).~~ Closed (39a): the harness that captured the goldens went at 1.0; 39b rewrites them from the port.
+- ~~**m6 (Step 5/6):** store an explicit merged-page map for batch goldens (job, page, blank) and
+  PNGs for multi-job batches if pixel parity of the merge matters.~~ Closed (39a): no reference capture any more; the batch tests check pages and text.
+- ~~**m7 (Step 6):** record `assignment:progress` events in the batch goldens. (6a: the event is
+  wired; the goldens still only check "0, then one per job".)~~ Closed (39a): no reference capture any more; the Rust batch tests check the progress events.
 
 ## From the Step 2a review (`docs/reviews/step-02a.md`)
 
-- **n4:** `attempts` golden: store the grade `resolveBestAttempts` compared
-  (`Store.calcResults(...).grade`) next to each history entry, so the case explains itself.
+- ~~**n4:** `attempts` golden: store the grade `resolveBestAttempts` compared
+  (`Store.calcResults(...).grade`) next to each history entry, so the case explains itself.~~ Closed (39a): the harness that wrote the goldens went at 1.0.
 
 ## From the Step 0 review (`docs/reviews/step-00.md`)
 
@@ -335,10 +352,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - **m2:** `stamp_issues`/`stampIssues` are not shown in the UI yet; use them for "Herstellen uit
   snapshot" in 7b or drop them.
-- **m6:** CI check that `tools/fixtures/to-v2.mjs` and `maatwerk-cli migrate` give the same tree
-  for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).
-- **n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
-  remove after the cutover.
+- ~~**m6:** CI check that `tools/fixtures/to-v2.mjs` and `maatwerk-cli migrate` give the same tree
+  for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).~~ Closed (39a): moot, the core v1 migration went at 1.0 (decision 88).
+- ~~**n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
+  remove after the cutover.~~ Done (39a, `b9fab11`).
 - **n3:** the data-files-v2 text on merging duplicate students vs. the Rust merge details.
 - **n4:** the conflict-copy check can label a misplaced file as a conflict copy.
 - **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones
@@ -388,31 +405,37 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 8a (review `docs/reviews/step-08a.md`)
 
-- **m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
-  editor's cache out. Option: evict by the editor's own compile count only, or evict less
+- ~~**m2 comemo shared by batch and editor:** `evict(10)` is process-wide; a batch ages the
+  editor's cache out.~~ Done (39b): batch workers defer eviction and the batch evicts every 4
+  jobs and at the end (a 30-job batch ages the editor's entries 8 steps, not 30; the cache holds
+  about 40 jobs' entries, review 39 m1). Option: evict by the editor's own compile count only, or evict less
   often while a session is open. Step 8b measured 1-2 ms per edit without a batch (`docs/perf.md`);
   a batch costs the editor one full compile afterwards. Revisit with a large opdracht.
-- **m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.
-- **n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
-  never got (set `document` only after the render succeeded).
+- ~~**m6 rest:** tests for a compiler panic (hard to provoke) and `close()` during a compile.~~
+  Done (39b): a clock that panics once stands in for the compiler.
+- ~~**n2:** after a panic in the SVG render, `failed()` reports a `preview_generation` the client
+  never got (set `document` only after the render succeeded).~~ Done (39b).
 - **n3:** `close()` called from the sink would join its own thread. The app's sink only emits an
   event (never blocks, never closes); keep it that way (documented on `LiveEditor`).
-- **n5:** one moved mount drops the disk files of every mount (performance only).
-- **n6:** check staleness between pages of the SVG render too.
+- ~~**n5:** one moved mount drops the disk files of every mount (performance only).~~ Done (39b).
+- ~~**n6:** check staleness between pages of the SVG render too.~~ Done (39b).
 
 ## From Step 8b (review `docs/reviews/step-08b.md`)
 
-- **m5:** help queries whose caller gave up (2 s) still run later on the compile thread and count
-  against the next compile's time limit; pass a cancel flag.
+- ~~**m5:** help queries whose caller gave up (2 s) still run later on the compile thread and count
+  against the next compile's time limit; pass a cancel flag.~~ Done (39b): skipped when reached.
 - **m6:** the editor iframe uses `window.confirm` (close with unsaved changes since 3a, "Herstel
   standaardversie" since 8b); move both to the app's own dialog (Step 10).
-- **n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
-  een opgave" only before the first opgave.
+- ~~**n1:** vragen checks: string punten count as missing, an image-only answer as empty, "buiten
+  een opgave" only before the first opgave.~~ Done (39b): string punten parsed (else their own
+  check), "(zonder tekst)", and `maatwerk-lib 3` marks a vraag after an opgave as outside it.
 - ~~**n4:** the bundled `main.typ` still has the cursor-marker code~~ Done in `maatwerk-main 2`
   (0.3.1): no marker in `main.typ`, no `cursor` in `OpdrachtInputs` or `render_assignment_svg`.
   The command itself has no caller in the editor any more; remove it in phase 2.
-- **n6:** while two abandoned compiles still run, the editor waits silently; say so.
-- **n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.
+- ~~**n6:** while two abandoned compiles still run, the editor waits silently; say so.~~ Done
+  (39b): updates carry `abandoned`; the pill says "Compileren… (1 eerdere compilatie loopt nog)".
+- ~~**n8:** the line diff is quadratic in memory; cap it or use a linear diff for very large copies.~~
+  Done (39b): shared start and end lines first, LCS on the middle, removed/added above 2M cells.
 - **Jumps after an error:** while the last compile failed, preview clicks and the cursor sync do
   nothing (by design, review 8a n7); consider mapping through the last good source.
 
@@ -422,9 +445,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 9 (review `docs/reviews/step-09.md`)
 
-- **m3 No time limit in headless `assignment check`/`render`.** A runaway loop in an opdracht
+- ~~**m3 No time limit in headless `assignment check`/`render`.** A runaway loop in an opdracht
   hangs the CLI until Ctrl+C. Reuse the editor's watchdog (`LiveEditor`) or run the compile on a
-  thread with a deadline before the in-app assistant uses it (ADR-0009 constraint 4, option D).
+  thread with a deadline before the in-app assistant uses it (ADR-0009 constraint 4, option D).~~
+  Done in step 32 (`assignment::with_time_limit`, CLI `--timeout`, AI check); struck in 39b.
 - **m7 `ui/e2e/editor.spec.ts:66-75` depends on wall-clock timing** (the 500 ms error delay of
   commit 294161a). Use Playwright's `page.clock` or a test hook for `ERROR_DELAY_MS`.
 - **n6 `export_lib`:** an unreadable existing file counts as no clash, writes are not atomic, a
@@ -530,8 +554,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 17 (review `docs/reviews/step-17.md`)
 
-- **Review 17 m2:** a blessed Typst golden keeps the reference's `call`/`result` but its `pdf`
-  text and PNGs are the port's; split into `reference.pdf` / `port.pdf` so both stay readable.
+- ~~**Review 17 m2:** a blessed Typst golden keeps the reference's `call`/`result` but its `pdf`
+  text and PNGs are the port's; split into `reference.pdf` / `port.pdf` so both stay readable.~~
+  Closed (39b): every Typst golden is now the port's output on Typst 0.15.1 (`port.blessed`); the
+  reference's renders are history (decision 9).
 
 ## From Step 18 (reviews `docs/reviews/step-18.md`, `step-17-18-security.md`)
 

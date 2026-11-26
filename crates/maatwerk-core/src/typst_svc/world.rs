@@ -14,16 +14,16 @@
 //! [`MaatwerkWorld::reset`] re-checks the files read from disk before the next compile.
 
 use std::collections::HashMap;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::SystemTime;
 
 use time::{OffsetDateTime, UtcOffset};
 use typst::diag::{FileError, FileResult, PackageError};
 use typst::ecow::EcoString;
-use typst::foundations::{Bytes, Datetime, Dict};
+use typst::foundations::{Bytes, Datetime, Dict, Duration};
 use typst::syntax::package::PackageSpec;
-use typst::syntax::{FileId, Source, VirtualPath};
+use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
 use typst::{Library, LibraryExt, World};
@@ -35,8 +35,7 @@ use crate::paths::RelPath;
 /// Virtual folder for files the service provides (templates, data). Hidden in diagnostics.
 pub(crate) const INTERNAL_DIR: &str = "__maatwerk";
 
-/// A virtual folder backed by a real one, e.g. `/data/fotos` -> `<data dir>/fotos`, or a single
-/// virtual file backed by a real file. Built by the per-kind constructors ([`TypstProject`],
+/// A virtual folder backed by a real one, e.g. `/data/fotos` -> `<data dir>/fotos`. Built by the per-kind constructors ([`TypstProject`],
 /// `rapport_world`), never by callers (review 5a n6).
 ///
 /// [`TypstProject`]: super::TypstProject
@@ -44,8 +43,6 @@ pub(crate) const INTERNAL_DIR: &str = "__maatwerk";
 pub(crate) struct Mount {
     prefix: Vec<String>,
     dir: PathBuf,
-    /// `Some(name)`: the mount is the one file `<dir>/<name>`, seen at `prefix`.
-    file: Option<String>,
     /// The canonical `dir` must lie inside this folder (the data dir), or the mount is empty
     /// (review 5a n2: `fotos` itself could be a junction).
     within: Option<PathBuf>,
@@ -57,16 +54,7 @@ impl Mount {
         Mount {
             prefix: split_virtual(prefix),
             dir: dir.into(),
-            file: None,
             within: None,
-        }
-    }
-
-    /// The single file `<dir>/<name>` at the virtual path `path`. `name` is a checked basename.
-    pub(crate) fn file(path: &str, dir: impl Into<PathBuf>, name: &str) -> Mount {
-        Mount {
-            file: Some(name.to_owned()),
-            ..Mount::dir(path, dir)
         }
     }
 
@@ -162,7 +150,7 @@ impl MaatwerkWorld {
         MaatwerkWorld {
             library: LazyHash::new(builder.build()),
             fonts,
-            main: FileId::new(None, VirtualPath::new(&spec.main)),
+            main: project_id(&spec.main),
             files,
             overlay: HashMap::new(),
             mounts,
@@ -188,7 +176,7 @@ impl MaatwerkWorld {
         if self.overlay.get(&key) == Some(&data) {
             return false;
         }
-        let id = FileId::new(None, VirtualPath::new(format!("/{key}")));
+        let id = project_id(&format!("/{key}"));
         if let Some(slot) = self.slots_mut().get_mut(&id) {
             slot.source = match (slot.source.take(), decode_utf8(&data)) {
                 (Some(Ok(mut source)), Ok(text)) => {
@@ -216,7 +204,7 @@ impl MaatwerkWorld {
         if self.overlay.remove(&key).is_none() {
             return false;
         }
-        let id = FileId::new(None, VirtualPath::new(format!("/{key}")));
+        let id = project_id(&format!("/{key}"));
         self.slots_mut().remove(&id);
         true
     }
@@ -226,16 +214,21 @@ impl MaatwerkWorld {
     /// and files that were missing are read again on their next use. Unchanged files keep their
     /// bytes and sources, so Typst's caches stay valid for them.
     pub(crate) fn reset(&mut self) {
-        let mut moved = false;
+        // The old folders of mounts that now resolve elsewhere (or not at all): only their
+        // files are dropped, the other mounts keep theirs (review 8a n5). A mount that did not
+        // resolve before had only missing files, which are dropped anyway.
+        let mut moved: Vec<PathBuf> = Vec::new();
         for (mount, real) in &mut self.mounts {
             let resolved = mount.resolve();
-            moved |= resolved != *real;
+            if resolved != *real {
+                moved.extend(real.take());
+            }
             *real = resolved;
         }
         self.slots_mut().retain(|_, slot| match &slot.origin {
             Origin::Fixed => true,
             Origin::Missing => false,
-            Origin::Disk(..) if moved => false,
+            Origin::Disk(path, _) if moved.iter().any(|old| path.starts_with(old)) => false,
             Origin::Disk(path, print) => Fingerprint::of(path) == Some(*print),
         });
     }
@@ -260,7 +253,7 @@ impl MaatwerkWorld {
     /// own files relative to the root, internal files by their name only.
     pub fn display_path(&self, id: FileId) -> String {
         let parts = vpath_parts(id.vpath()).unwrap_or_default().join("/");
-        match id.package() {
+        match package_of(id) {
             Some(spec) => format!("{spec}/{parts}"),
             None => parts
                 .strip_prefix(&format!("{INTERNAL_DIR}/"))
@@ -273,7 +266,7 @@ impl MaatwerkWorld {
         let (origin, bytes) = match self.read(id) {
             Ok((data, Some((path, print)))) => (Origin::Disk(path, print), Ok(data)),
             Ok((data, None)) => (Origin::Fixed, Ok(data)),
-            Err(e) if id.package().is_some() => (Origin::Fixed, Err(e)),
+            Err(e) if package_of(id).is_some() => (Origin::Fixed, Err(e)),
             Err(e) => (Origin::Missing, Err(e)),
         };
         FileSlot {
@@ -288,7 +281,7 @@ impl MaatwerkWorld {
         let parts = vpath_parts(id.vpath()).ok_or(FileError::AccessDenied)?;
         // The virtual path with `/`, never a machine path (T14).
         let shown = || PathBuf::from(format!("/{}", parts.join("/")));
-        if let Some(spec) = id.package() {
+        if let Some(spec) = package_of(id) {
             return load_package(spec, &parts, shown()).map(|data| (data, None));
         }
         let key = parts.join("/");
@@ -297,15 +290,14 @@ impl MaatwerkWorld {
         }
         for (mount, real) in &self.mounts {
             let n = mount.prefix.len();
-            let rest = match &mount.file {
-                Some(name) if parts == mount.prefix => vec![name.clone()],
-                None if parts.len() > n && parts[..n] == mount.prefix[..] => parts[n..].to_vec(),
-                _ => continue,
-            };
+            if parts.len() <= n || parts[..n] != mount.prefix[..] {
+                continue;
+            }
+            let rest = &parts[n..];
             let Some(root) = real else {
                 return Err(FileError::NotFound(shown()));
             };
-            return load_mounted(root, &rest, &shown())
+            return load_mounted(root, rest, &shown())
                 .map(|(data, real, print)| (data, Some((real, print))));
         }
         Err(FileError::NotFound(shown()))
@@ -391,19 +383,32 @@ fn load_package(spec: &PackageSpec, parts: &[String], shown: PathBuf) -> FileRes
     Err(FileError::NotFound(shown))
 }
 
-/// Normal components of a virtual path. `VirtualPath` resolves `.` and inner `..`; a `..` left
-/// above the root or a drive prefix (`C:`) makes the path invalid instead of being dropped
-/// silently (review 5a n1).
+/// Normal components of a virtual path. `VirtualPath` normalises `.` and `..` and refuses a `..`
+/// above the root itself (Typst 0.15); a drive prefix (`C:`) still makes the path invalid
+/// instead of being taken as a folder name (review 5a n1).
 fn vpath_parts(vpath: &VirtualPath) -> Option<Vec<String>> {
-    vpath
-        .as_rooted_path()
-        .components()
-        .filter_map(|c| match c {
-            Component::Normal(s) => Some(s.to_str().map(str::to_owned)),
-            Component::RootDir | Component::CurDir => None,
-            Component::ParentDir | Component::Prefix(_) => Some(None),
-        })
-        .collect()
+    let parts: Vec<String> = vpath
+        .get_without_slash()
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .collect();
+    (!parts.iter().any(|p| p.contains(':'))).then_some(parts)
+}
+
+/// The id of an app-made rooted virtual path in the project (`/main.typ`, `/data/fotos/x`).
+/// Panics on a path that is not valid, which only a bug can make.
+pub(crate) fn project_id(path: &str) -> FileId {
+    let vpath = VirtualPath::new(path).unwrap_or_else(|e| panic!("{path}: {e}"));
+    RootedPath::new(VirtualRoot::Project, vpath).intern()
+}
+
+/// The package `id` lies in, if any.
+pub(crate) fn package_of(id: FileId) -> Option<&'static PackageSpec> {
+    match id.get().root() {
+        VirtualRoot::Project => None,
+        VirtualRoot::Package(spec) => Some(spec),
+    }
 }
 
 /// The key of an in-memory file: the normal components of its virtual path joined by `/`.
@@ -462,12 +467,13 @@ impl World for MaatwerkWorld {
         self.fonts.font(index)
     }
 
-    fn today(&self, offset: Option<i64>) -> Option<Datetime> {
+    fn today(&self, offset: Option<Duration>) -> Option<Datetime> {
         let now = match offset {
             None => self.now,
-            Some(hours) => {
-                let hours = i8::try_from(hours).ok()?;
-                self.now.to_offset(UtcOffset::from_hms(hours, 0, 0).ok()?)
+            Some(offset) => {
+                let seconds = i32::try_from(time::Duration::from(offset).whole_seconds()).ok()?;
+                self.now
+                    .to_offset(UtcOffset::from_whole_seconds(seconds).ok()?)
             }
         };
         Datetime::from_ymd(now.year(), now.month().into(), now.day())
@@ -502,7 +508,7 @@ impl typst_ide::IdeWorld for MaatwerkWorld {
             .cloned()
             .collect();
         for (mount, real) in &self.mounts {
-            if let (None, Some(root)) = (&mount.file, real) {
+            if let Some(root) = real {
                 let prefix = mount.prefix.join("/");
                 list_files(root, &prefix, 0, &mut keys);
             }
@@ -511,7 +517,7 @@ impl typst_ide::IdeWorld for MaatwerkWorld {
         keys.dedup();
         keys.into_iter()
             .filter(|k| k.split('/').next() != Some(INTERNAL_DIR))
-            .map(|k| FileId::new(None, VirtualPath::new(format!("/{k}"))))
+            .map(|k| project_id(&format!("/{k}")))
             .collect()
     }
 }
@@ -570,7 +576,15 @@ mod tests {
     }
 
     fn id(path: &str) -> FileId {
-        FileId::new(None, VirtualPath::new(path))
+        project_id(path)
+    }
+
+    fn package_id(spec: &PackageSpec, path: &str) -> FileId {
+        RootedPath::new(
+            VirtualRoot::Package(spec.clone()),
+            VirtualPath::new(path).unwrap(),
+        )
+        .intern()
     }
 
     #[test]
@@ -618,6 +632,28 @@ mod tests {
                 "ambiguous"
             );
         }
+    }
+
+    #[test]
+    fn review_8a_n5_a_moved_mount_drops_only_its_own_files() {
+        let dir = tempfile::tempdir().unwrap();
+        for sub in ["a", "b"] {
+            std::fs::create_dir_all(dir.path().join(sub)).unwrap();
+            std::fs::write(dir.path().join(sub).join("x.svg"), sub).unwrap();
+        }
+        let mut w = world(vec![
+            Mount::dir("/a", dir.path().join("a")),
+            Mount::dir("/b", dir.path().join("b")),
+        ]);
+        w.file(id("/a/x.svg")).unwrap();
+        w.file(id("/b/x.svg")).unwrap();
+        let before = w.cached_files();
+        // `b` goes away (renamed): its file goes, `a`'s stays.
+        std::fs::rename(dir.path().join("b"), dir.path().join("b-oud")).unwrap();
+        w.reset();
+        assert_eq!(w.cached_files(), before - 1);
+        assert_eq!(w.file(id("/a/x.svg")).unwrap().as_slice(), b"a");
+        assert!(w.file(id("/b/x.svg")).is_err());
     }
 
     #[test]
@@ -677,28 +713,15 @@ mod tests {
 
     #[test]
     fn review_n1_dot_dot_above_the_root_and_drive_prefixes_are_denied() {
-        let w = world(vec![]);
+        // Typst 0.15 refuses a `..` above the root when it makes the path.
         for path in ["/../../Windows/win.ini", "/data/../../x.typ"] {
-            assert!(
-                matches!(w.file(id(path)), Err(FileError::AccessDenied)),
-                "{path}"
-            );
+            assert!(VirtualPath::new(path).is_err(), "{path}");
         }
-    }
-
-    #[test]
-    fn a_file_mount_serves_exactly_one_file() {
-        let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join("opdracht_1.typ"), "een").unwrap();
-        std::fs::write(dir.path().join("opdracht_2.typ"), "twee").unwrap();
-        let w = world(vec![Mount::file(
-            "/opdracht.typ",
-            dir.path(),
-            "opdracht_1.typ",
-        )]);
-        assert_eq!(w.file(id("/opdracht.typ")).unwrap().as_slice(), b"een");
-        assert!(w.file(id("/opdracht_2.typ")).is_err());
-        assert!(w.file(id("/opdracht.typ/x")).is_err());
+        let w = world(vec![]);
+        assert!(matches!(
+            w.file(id("/C:/Windows/win.ini")),
+            Err(FileError::AccessDenied)
+        ));
     }
 
     #[test]
@@ -722,13 +745,13 @@ mod tests {
     fn packages_come_only_from_the_embedded_set() {
         let w = world(vec![]);
         let spec: PackageSpec = "@preview/zero:0.7.1".parse().unwrap();
-        let zero = FileId::new(Some(spec.clone()), VirtualPath::new("/src/zero.typ"));
+        let zero = package_id(&spec, "/src/zero.typ");
         assert!(w.source(zero).is_ok());
         assert_eq!(w.display_path(zero), "@preview/zero:0.7.1/src/zero.typ");
-        let missing = FileId::new(Some(spec), VirtualPath::new("/nope.typ"));
+        let missing = package_id(&spec, "/nope.typ");
         assert!(matches!(w.file(missing), Err(FileError::NotFound(_))));
         let other: PackageSpec = "@preview/zero:0.7.0".parse().unwrap();
-        let other = FileId::new(Some(other), VirtualPath::new("/typst.toml"));
+        let other = package_id(&other, "/typst.toml");
         assert!(matches!(
             w.file(other),
             Err(FileError::Package(PackageError::NotFound(_)))
@@ -743,7 +766,7 @@ mod tests {
             (today.year(), today.month(), today.day()),
             (Some(1970), Some(1), Some(1))
         );
-        let behind = w.today(Some(-1)).unwrap();
+        let behind = w.today(Some(time::Duration::hours(-1).into())).unwrap();
         assert_eq!(behind.day(), Some(31));
     }
 }

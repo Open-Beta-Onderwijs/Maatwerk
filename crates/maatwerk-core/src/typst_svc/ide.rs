@@ -8,9 +8,12 @@
 //! the editor's current text, so it never answers for text the user no longer sees. Jumps use the
 //! document only while it was compiled from the sources as they are now (review 8a n7).
 
+use std::num::NonZeroUsize;
+
 use serde::Serialize;
+use typst::introspection::PagedPosition;
 use typst::layout::{Abs, Point};
-use typst::syntax::{FileId, Side, Source, VirtualPath};
+use typst::syntax::{FileId, Side, Source};
 use typst::{World, WorldExt};
 use typst_ide::{Definition, Jump, Tooltip};
 
@@ -204,9 +207,11 @@ impl EditorSession {
     /// The source position behind a click at `point` (pt) on preview page `page` (0-based).
     pub fn jump_from_click(&self, page: usize, x: f64, y: f64) -> Option<JumpAnswer<ClickTarget>> {
         let (document, generation) = self.current_document()?;
-        let frame = &document.pages.get(page)?.frame;
-        let click = Point::new(Abs::pt(x), Abs::pt(y));
-        let target = match typst_ide::jump_from_click(self.world(), document, frame, click)? {
+        let position = PagedPosition {
+            page: NonZeroUsize::new(page.checked_add(1)?)?,
+            point: Point::new(Abs::pt(x), Abs::pt(y)),
+        };
+        let target = match typst_ide::jump_from_click(self.world(), document, &position)? {
             Jump::File(id, byte) => {
                 let file = project_path(id)?;
                 let offset = self.world().source(id).ok()?.lines().byte_to_utf16(byte)?;
@@ -270,16 +275,16 @@ impl EditorSession {
 }
 
 fn file_id(path: &RelPath) -> FileId {
-    FileId::new(None, VirtualPath::new(format!("/{}", path.as_str())))
+    super::world::project_id(&format!("/{}", path.as_str()))
 }
 
 /// `id` as a path relative to the project root, if it is a project file (not in a package and
 /// not one of the app's internal files).
 fn project_path(id: FileId) -> Option<String> {
-    if id.package().is_some() {
+    if super::world::package_of(id).is_some() {
         return None;
     }
-    let path = id.vpath().as_rootless_path().to_str()?.replace('\\', "/");
+    let path = id.vpath().get_without_slash().to_owned();
     if path.split('/').next() == Some(INTERNAL_DIR) {
         return None;
     }

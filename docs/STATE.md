@@ -1,9 +1,135 @@
 # State
 
-Last updated: 2026-11-24 (step 38 done; waiting for CI and the merge OK) Branch: `step/38-grade-numbers` (from `main` at `66c6909`)
-Last tags: `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-25 (step 39a in progress)
+Branch: `step/39-v1-removal-typst`
+Last tags: `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
+
+Branched from `step/38-grade-numbers` before its merge (user's request); after step 38 merges,
+merge `main` into this branch. The plan's step 39 work (v1 removal, Typst upgrade) not started.
+
+- `22101a1`: the group/exam/PO overview tables' sticky head and foot flush with the dialog
+  body's edges (rows showed in its 20/24 px padding); the other sticky parts were checked and
+  already clean. The page behind an open dialog no longer scrolls (`html.dlg-open`).
+- `40f9515`: Cijfergemiddelden example 6,666... (differs afronden/afkappen at 2 decimals). CI
+  baselines of `admin-instellingen` dropped on 3 platforms: the first step 39 CI run writes
+  them; look and commit from the artifacts.
+- Checks: lint, typecheck, Vitest 958, node 128, e2e chromium 431/431, visual 177/177 (after the
+  local `admin-instellingen` update), the new tests also on WebKit.
+
+- Step 38 merged (`0459ac2`, tag `step-38`) after `e280675`: the macOS CI failed the numbers
+  golden by one ulp in a raw average; folder listings came in directory order (APFS/ext4 are not
+  sorted, NTFS is) and the float sum depends on order. `json_files` and `list_dir` now sort by
+  name. `main` merged here.
+
+- `9f6740e`: CI baselines of `admin-instellingen` (3 platforms) from run 45585125318, checked.
+
+### 39a progress (v1 removal, session 1)
+
+- `dc5f6b7` 39a.1: v1 -> v2 migration removed (core `migrate/plan.rs` -> `planner.rs`, the
+  shared planner of the v3 step). A v1 folder is refused (`MigrationBlocked`, `V1_REFUSED`:
+  "Zet de map eerst om met Maatwerk 0.29"); the startup screen shows that text for
+  `needs_migration` with `found: '1'` instead of the migration offer. An empty folder still just
+  gets a version. Fixture `tests/fixtures/migrate/v1` deleted; v2 is the migration input, the v3
+  golden unchanged. CI: "Validate the school fixture" (generate + `to-current.mjs` +
+  validate-data) replaces the v1 migrate step.
+- `b9fab11` 39a.2: `TypstProject::opdracht_v1`, `v1_opdracht_id` and `Mount::file` removed
+  (7a n1). Rust opdracht fixture in folder layout (export-opdrachten.mjs writes it from the
+  current-format tiny). 5b n5 closed (junction test, Windows). **Kept:** `render_assignment_svg`
+  (id-based since step 7; the step 34b preview and the AI preview use it), tell the user.
+- 5b n7 closes with the v1 migration: `_preview_*.typ` only existed in v1 folders, which the
+  0.29 migration cleans; nothing writes them.
+
+- `f476689` 39a.3: reference harness (`tests/reference-harness`), reference shims
+  (`tools/reference-shims`, storage spec tests), `golden:regen/check/typst` and acorn removed.
+  Kept in `tests/support/`: golden codec, environment, scenario builder. Goldens stay
+  (decision 9); `tests/golden/*.test.mjs` check structure only. Node tests 128 -> 48.
+- 39a.4 (docs): `parity.md`, `cutover-runbook.md` marked history; `testing.md`,
+  `manual-test.md` (new M-MIG-6: a v1 folder is refused) updated; backlog 2 m3/m4/m6/m7, 2a n4,
+  5b n5/n7, 7a m6/n1, M-START-3 struck. `npm run data:dev` now also runs `to-current.mjs` (the
+  app refuses v1).
+
+**Choices made without the user (tell at the end of step 39):**
+
+- 8b "Jumps after an error" (a "consider" item): not done. Mapping clicks through the last good
+  source needs that source kept and its offsets mapped onto the edited text; jumps work again
+  after the next good compile, as designed in 8a n7.
+- 8b n1 needed `maatwerk-lib 3` (a state in `opgave()`): unmodified copies update silently on
+  open, as for lib 2; a vraag after an opgave now has opgave 0 in the answer key too.
+- `render_assignment_svg` stays (id-based, used by the step 34b preview and the AI preview);
+  the plan listed it under v1 removal.
+- (Withdrawn: `to-current.mjs` was kept at first; the user then OK'd the one-time golden
+  conversion, see `7512337` below.)
+- A v1 folder gets the startup error screen with "Zet de map eerst om met Maatwerk 0.29" (no
+  migration offer); the CLI `migrate` refuses with the same text.
+
+- 39a gate (local) green at `30cc471`: fmt, clippy, cargo test (662), deny, SPDX, licences, lint,
+  typecheck, Vitest 959, node 48, e2e chromium 431/431. CI: Windows green; Linux failed on its
+  own copy of the v1 migrate step, fixed in `97e30bb` (CI rerun pending).
+
+### 39b progress (Typst upgrade, started in session 1)
+
+- `55d0da2`: 5b n4 done (user: also ignore trailing whitespace / final newline).
+- `7512337` (user's OK, 2026-11-25): logic goldens' `data` cases and score-writes files converted
+  once to the current format; `generate.mjs` writes the current format directly (byte-identical
+  to the old generate + toCurrent; manifest tiny 70, school 5130 files); `scenario.mjs` too;
+  `to-current.mjs` and its test deleted (CI, `data:dev`, mock plugin, numbers tools). Grade
+  reference tests, Vitest 959, node 47, cargo core/grades green. 7a m6 is moot.
+- `c719844` 5a m3: a failed rapport names the teacher text that breaks it (hint "de fout zit in
+  het leeradvies bij T1 voor <naam>", toets and PO rapport). `4978181` 5a n8: Typst's fonts
+  before system fonts. `e8d18d2` 6a: editor warnings outside the open file in the status pill
+  (the modals had them since F-04).
+- `fe62a6b` 5b n2: batch PDFs merged in job order as jobs finish (`PdfMerger`, same bytes).
+  `9271647` 8a n2/n6: the editor preview changes only after its pages rendered; stale check
+  between pages. `1867c7d` 8b m5: given-up help queries are skipped. `a16bad5` + `790526c` 8b
+  n1: string punten, "(zonder tekst)", **`maatwerk-lib 3`** (a vraag after an opgave is outside
+  it; release row 3, lib 2 fixture; Typst goldens unchanged). `838282d`/`1dd3b86` 8b n8: line
+  diff trims shared lines, capped table.
+- `2a39c3f`: **Typst 0.15.1** (X-01). Port: `typst-layout` direct dependency (`PagedDocument`),
+  typst-kit features `scan-fonts`/`embedded-fonts` with our `FontStore` on top of typst-kit's,
+  `FileId` from `RootedPath` (`world::project_id`, `package_of`), `today(Duration)`,
+  `DiagSpan`/spanned hints with `WorldExt::range`, `pages()`/`introspector()`, `SvgOptions`,
+  `PagedPosition` click jumps, `RenderOptions` + tiny-skia 0.12 in tests. Typst refuses `..`
+  above the root itself ("would escape the project root"); trace frames say "while calling `x`";
+  the "project sandbox" hint is filtered. **All Typst goldens regenerated** after the user's
+  visual check (2026-11-25): visible only the later page break in `opdracht-lib-features` p3;
+  17 m2 closed. Tests 664 green, golden structure checks green.
+- **quick-xml:** the two `deny.toml` ignores cannot go: citationberg 0.7.0 (newest, via hayagriva
+  0.10.1 from typst-library 0.15.1) still needs quick-xml ^0.38. Conflicts with decision 84:
+  told the user; re-check in 45a.
+- Package `compiler` minimums (cetz 0.13, zero 0.12) fine; emoji goldens pass (COLRv1 ok).
+
+- `ff50783` 8b n6 (`abandoned` in editor updates, pill text), `f2a0a74` 8a m2 (batch evicts
+  every 8 jobs), `fa44298` 8a n5, `486f1af` 8a m6 tests, 9 m3 struck (done in step 32).
+  `typst-ide` checked: already 0.15.1, same API; `typst-html` comes with `typst` itself.
+  `b039aa4`: fixture manifest for lib 3.
+- **39b gate (local) green at `b039aa4`:** fmt, clippy, cargo test (core 396), deny, SPDX,
+  licences, lint, typecheck, Vitest 961, node 47, e2e chromium 431/431, visual 177/177. Pushed;
+  CI pending.
+
+- **Review** `docs/reviews/step-39.md`: 0 blockers, 1 major, 4 minors, 7 nits. M1 (lib 3
+  changed printed letters/answer keys through the silent update) fixed in `a3b453b`: lib 3
+  prints as lib 2, `in_opgave` feeds only the editor check (test: identical SVG). Minors m1-m4
+  and n4-n6 fixed (`16d7bdc`); n1-n3 and "Jumps after an error" in backlog "From Step 39".
+- `53bd1ce`: version 0.30.0 (splash baselines: version digits only; CI copies dropped). Gate
+  after the fixes: core 397, Vitest 961, node 47, e2e 431/431, visual 177/177, deny, audit clean.
+
+- CI run 45611932264 on `53bd1ce`: only the dropped `splash` baselines failed (Linux, Windows;
+  macOS cancelled, the user reruns it 2026-11-26 morning). Linux and Windows splash baselines
+  committed from its artifacts (checked: version text 0.30.0, layout unchanged).
+
+- 2026-11-26: macOS job of run 45611932264 rerun; again only `splash` failed (430 e2e, 58 visual
+  passed). macOS splash baseline committed from its artifact (checked: version text 0.30.0,
+  layout unchanged). Draft GitHub release `v0.29.0` (Dutch notes, 0.16.0..0.29.0, last version
+  with v1 migration) on `0459ac2`, no assets yet: the tag `v0.29.0` (CI build) waits for the
+  user's OK.
+
+**Next action:** CI green on all jobs with the three splash baselines. Then on the user's OK: merge into `main` (merge commit), tag `step-39`, version tag
+`v0.30.0` only when the user says so, GitHub release with Dutch notes (draft in the step 39
+report; name T34, backslash paths).
 
 ## Step 38 (2026-11-24, on `step/38-grade-numbers`, session 1 of 2): 38.1-38.6 done
 

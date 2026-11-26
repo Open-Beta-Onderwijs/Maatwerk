@@ -80,10 +80,8 @@ describe('CAS for the formerly blind writes (S38, C6)', () => {
   it('C16: users are one file each; a stale edit of the same user conflicts', async () => {
     const { Store, api } = await session({
       'config.json': JSON.stringify({ activeYear: YEAR }),
-      'gebruikers.json': JSON.stringify([
-        { id: 'admin', voornaam: 'A', isAdmin: true },
-        { id: 'gebr-1', voornaam: 'Jan' },
-      ]),
+      'gebruikers/admin.json': JSON.stringify({ id: 'admin', voornaam: 'A', isAdmin: true }),
+      'gebruikers/gebr-1.json': JSON.stringify({ id: 'gebr-1', voornaam: 'Jan' }),
     });
     const users = await Store.loadUsers!();
     expect(users.map((u: { id: string }) => u.id)).toEqual(['admin', 'gebr-1']);

@@ -2,21 +2,22 @@
 
 //! A batch of opdracht jobs (path D, `typst-contract.md` 4.3): every (student, opdracht) is its
 //! own compile, because opdracht files share function names and labels. Jobs run on a few worker
-//! threads that share the font store and the embedded packages; the PDFs are merged in job order.
+//! threads that share the font store and the embedded packages; the PDFs are merged in job order
+//! as they arrive, so the batch does not hold every job's PDF until the end (backlog 5b n2).
 
 use std::collections::HashSet;
 use std::panic::AssertUnwindSafe;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, TryLockError};
 
 use time::OffsetDateTime;
 
-use super::compile::{CompileError, Compiled};
+use super::compile::{CompileError, Compiled, deferring_eviction, evict};
 use super::diagnostics::Diagnostic;
 use super::fonts::FontStore;
 use super::opdracht::{OpdrachtInputs, render_assignment_pdf};
 use super::project::TypstProject;
-use crate::pdf_merge::{MergeError, MergePart, Merged, pdf_merge};
+use crate::pdf_merge::{MergeError, Merged, PdfMerger};
 
 /// One compile of the batch.
 #[derive(Debug, Clone)]
@@ -163,8 +164,12 @@ fn run_batch(
     let opdrachten: Vec<String> = jobs.iter().map(|j| j.opdracht.clone()).collect();
     let queue: Vec<Mutex<Option<BatchJob>>> =
         jobs.into_iter().map(|j| Mutex::new(Some(j))).collect();
-    let results: Vec<Mutex<Option<Result<JobResult, String>>>> =
-        (0..total).map(|_| Mutex::new(None)).collect();
+    let results: Vec<Mutex<Slot>> = (0..total).map(|_| Mutex::new(Slot::Pending)).collect();
+    let merge = Mutex::new(Merge {
+        merger: Some(PdfMerger::new(options.duplex)),
+        next: 0,
+        error: None,
+    });
     let next = AtomicUsize::new(0);
     // Counted and reported under one lock, so `done` never goes backwards (review 5b m4).
     let done = Mutex::new(0usize);
@@ -179,51 +184,72 @@ fn run_batch(
     std::thread::scope(|scope| {
         for _ in 0..workers {
             scope.spawn(|| {
-                loop {
-                    let index = next.fetch_add(1, Ordering::SeqCst);
-                    let Some(slot) = queue.get(index) else {
-                        break;
-                    };
-                    let job = lock(slot).take().expect("each job is taken once");
-                    if !lock(&failed).contains(&opdrachten[index]) {
-                        let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
-                            .map_err(|payload| panic_message(payload.as_ref()));
-                        if !matches!(result, Ok(Ok(_))) {
-                            lock(&failed).insert(opdrachten[index].clone());
+                deferring_eviction(|| {
+                    loop {
+                        let index = next.fetch_add(1, Ordering::SeqCst);
+                        let Some(slot) = queue.get(index) else {
+                            break;
+                        };
+                        let job = lock(slot).take().expect("each job is taken once");
+                        if lock(&failed).contains(&opdrachten[index]) {
+                            *lock(&results[index]) = Slot::Skipped;
+                        } else {
+                            let result = std::panic::catch_unwind(AssertUnwindSafe(|| render(job)))
+                                .map_err(|payload| panic_message(payload.as_ref()));
+                            if !matches!(result, Ok(Ok(_))) {
+                                lock(&failed).insert(opdrachten[index].clone());
+                            }
+                            *lock(&results[index]) = Slot::Done(result);
                         }
-                        *lock(&results[index]) = Some(result);
+                        // Another worker merging carries on with this result; never wait for it.
+                        match merge.try_lock() {
+                            Ok(mut m) => m.advance(&results, &keys),
+                            Err(TryLockError::Poisoned(e)) => {
+                                e.into_inner().advance(&results, &keys)
+                            }
+                            Err(TryLockError::WouldBlock) => {}
+                        }
+                        // A skipped job counts as done, so the progress reaches the total (T23).
+                        let finished = {
+                            let mut finished = lock(&done);
+                            *finished += 1;
+                            progress(BatchProgress {
+                                done: *finished,
+                                total,
+                            });
+                            *finished
+                        };
+                        // Outside the lock: other workers report progress meanwhile.
+                        if finished.is_multiple_of(EVICT_EVERY) {
+                            evict();
+                        }
                     }
-                    // A skipped job counts as done, so the progress reaches the total (T23).
-                    let mut finished = lock(&done);
-                    *finished += 1;
-                    progress(BatchProgress {
-                        done: *finished,
-                        total,
-                    });
-                }
+                })
             });
         }
     });
+    evict();
+    // What arrived while another worker was merging.
+    let mut merge = merge.into_inner().unwrap_or_else(|e| e.into_inner());
+    merge.advance(&results, &keys);
 
-    let mut pdfs = Vec::with_capacity(total);
     let mut warnings = Vec::new();
     let mut failures: Vec<JobFailure> = Vec::new();
     let mut reported: HashSet<&str> = HashSet::new();
     for (index, slot) in results.into_iter().enumerate() {
         let kind = match slot.into_inner().unwrap_or_else(|e| e.into_inner()) {
-            Some(Ok(Ok(compiled))) => {
+            Slot::Done(Ok(Ok(compiled))) => {
                 warnings.extend(compiled.warnings.into_iter().map(|diagnostic| JobWarning {
                     index,
                     label: labels[index].clone(),
                     diagnostic,
                 }));
-                pdfs.push(compiled.output);
                 continue;
             }
-            Some(Ok(Err(error))) => JobFailureKind::Compile(error),
-            Some(Err(message)) => JobFailureKind::Panic(message),
+            Slot::Done(Ok(Err(error))) => JobFailureKind::Compile(error),
+            Slot::Done(Err(message)) => JobFailureKind::Panic(message),
             // Skipped: another job of this opdracht failed.
-            None => continue,
+            Slot::Skipped | Slot::Pending => continue,
         };
         // Jobs of one opdracht that were running at the same time may all fail; the opdracht is
         // reported once, with its first job.
@@ -238,14 +264,58 @@ fn run_batch(
     if !failures.is_empty() {
         return Err(BatchError::Failed(failures));
     }
-    debug_assert_eq!(pdfs.len(), total, "no failure means every job compiled");
-    let parts: Vec<MergePart<'_>> = keys
-        .iter()
-        .zip(&pdfs)
-        .map(|(key, pdf)| MergePart { key, pdf })
-        .collect();
-    let merged = pdf_merge(&parts, options.duplex)?;
+    if let Some(error) = merge.error {
+        return Err(error.into());
+    }
+    debug_assert_eq!(merge.next, total, "no failure means every job was merged");
+    let merged = merge.merger.expect("merged without an error").finish()?;
     Ok(BatchOutput { merged, warnings })
+}
+
+/// Jobs per cache eviction (review 8a m2). `evict` keeps what was used in its last 10 calls, so
+/// the cache holds the entries of about 10 x 4 = 40 jobs (4x as many as evicting per job), and a
+/// 30-job class batch ages an open editor's entries 8 steps, not 30: they survive it.
+const EVICT_EVERY: usize = 4;
+
+/// A job's state: waiting or running, skipped (its opdracht failed), or done.
+enum Slot {
+    Pending,
+    Skipped,
+    Done(Result<JobResult, String>),
+}
+
+/// The merge so far: every job before `next` is merged.
+struct Merge {
+    /// `None` once the merge stopped (a failed job or a merge error).
+    merger: Option<PdfMerger>,
+    next: usize,
+    error: Option<MergeError>,
+}
+
+impl Merge {
+    /// Merges the finished jobs from `next` on, in job order, and drops their PDFs. Stops at
+    /// the first job that is not done or did not compile: the batch then fails and needs no PDF.
+    fn advance(&mut self, results: &[Mutex<Slot>], keys: &[String]) {
+        while let Some(merger) = self.merger.as_mut() {
+            let Some(slot) = results.get(self.next) else {
+                return;
+            };
+            let mut slot = lock(slot);
+            match &mut *slot {
+                Slot::Pending => return,
+                Slot::Done(Ok(Ok(compiled))) => {
+                    let pdf = std::mem::take(&mut compiled.output);
+                    drop(slot);
+                    if let Err(error) = merger.push(&keys[self.next], &pdf) {
+                        self.error = Some(error);
+                        self.merger = None;
+                    }
+                    self.next += 1;
+                }
+                Slot::Skipped | Slot::Done(_) => self.merger = None,
+            }
+        }
+    }
 }
 
 /// The PDF of one job, or why it failed.
@@ -323,6 +393,65 @@ mod tests {
         let started = lock(&started).clone();
         let last = *lock(&last);
         (result, started, last)
+    }
+
+    /// Backlog 5b n2: merging as jobs finish (out of order, several workers) gives the bytes
+    /// `pdf_merge` gives for the same PDFs, duplex padding included.
+    #[test]
+    fn n2_merging_as_jobs_finish_gives_the_same_pdf() {
+        use crate::pdf_merge::{MergePart, pdf_merge, tests::pdf};
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = DataDir::open(tmp.path()).unwrap();
+        // (key, pages): neighbouring jobs of one student, and odd page counts for the padding.
+        let spec = [
+            ("s1", 1),
+            ("s1", 2),
+            ("s2", 1),
+            ("s3", 2),
+            ("s3", 1),
+            ("s4", 3),
+            ("s5", 1),
+        ];
+        let pdfs: Vec<Vec<u8>> = spec
+            .iter()
+            .enumerate()
+            .map(|(i, (_, n))| {
+                let texts: Vec<String> = (0..*n).map(|p| format!("job {i} page {p}")).collect();
+                let texts: Vec<&str> = texts.iter().map(String::as_str).collect();
+                pdf(&texts, (595, 842))
+            })
+            .collect();
+        let mut jobs = jobs(&dir, &["a"; 7]);
+        for (i, (job, (key, _))) in jobs.iter_mut().zip(spec).enumerate() {
+            job.key = key.to_owned();
+            job.label = i.to_string();
+        }
+        let output = run_batch(
+            jobs,
+            BatchOptions {
+                duplex: true,
+                workers: Some(4),
+            },
+            &|_| {},
+            &|job: BatchJob| {
+                // Later jobs finish first.
+                let i: usize = job.label.parse().unwrap();
+                std::thread::sleep(std::time::Duration::from_millis(5 * (7 - i as u64)));
+                Ok(Compiled {
+                    output: pdfs[i].clone(),
+                    warnings: Vec::new(),
+                })
+            },
+        )
+        .unwrap();
+        let parts: Vec<MergePart<'_>> = spec
+            .iter()
+            .zip(&pdfs)
+            .map(|((key, _), pdf)| MergePart { key, pdf })
+            .collect();
+        let want = pdf_merge(&parts, true).unwrap();
+        assert_eq!(output.merged.pages, want.pages);
+        assert_eq!(output.merged.pdf, want.pdf);
     }
 
     /// Review 5b n1: a panic in one job is that job's error.

@@ -139,15 +139,20 @@ test('Instellingen: Cijfergemiddelden per average, live examples, saved (step 38
   const rDec = page.getByRole('group', { name: 'Decimalen Jaargemiddelde (r)' });
   const examples = page.locator('.inst-gem__list').first();
   await expect(r.getByRole('button', { name: 'Afronden' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(examples.locator('b')).toHaveText(['5,5', '5,5', '5,9', '7,0']);
+  await expect(examples.locator('b')).toHaveText(['5,5', '5,5', '5,9', '6,7', '7,0']);
+  // 2 decimals: 6,666... tells afronden from afkappen (step 39).
+  await rDec.getByRole('button', { name: '2' }).click();
+  await expect(examples.locator('b').nth(3)).toHaveText('6,67');
   await r.getByRole('button', { name: 'Afkappen' }).click();
+  await expect(examples.locator('b').nth(3)).toHaveText('6,66');
   await rDec.getByRole('button', { name: '0' }).click();
-  await expect(examples.locator('b')).toHaveText(['5', '5', '5', '6']);
+  await expect(examples.locator('b')).toHaveText(['5', '5', '5', '6', '6']);
   // The SE column keeps its own format.
   await expect(page.locator('.inst-gem__list').nth(1).locator('b')).toHaveText([
     '5,5',
     '5,5',
     '5,9',
+    '6,7',
     '7,0',
   ]);
   await page.locator('#inst-save').click();

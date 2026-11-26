@@ -10,11 +10,15 @@ import { shownTextColor } from '../domain/grade-colors';
 import { readFormats, type Formats } from '../domain/numbers';
 import { isFailShown, shownAverage, type AverageFormat } from '../domain/statistics';
 
-/** The examples of decision 93: a label and the exact average it stands for. */
+/**
+ * The examples of decision 93, plus 6,666... (e.g. 6,0 and 7,0 twice): the only one that differs
+ * between afronden and afkappen at 2 decimals (step 39, user). A label and the exact average.
+ */
 export const EXAMPLES: readonly { label: string; value: number }[] = [
   { label: '5,45', value: 5.45 },
   { label: '5,3 en 5,7', value: 5.5 },
   { label: '5,9', value: 5.9 },
+  { label: '6,666…', value: 20 / 3 },
   { label: '6,95', value: 6.95 },
 ];
 

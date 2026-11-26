@@ -14,6 +14,15 @@ describe('startup error screen (review 4b m5)', () => {
     expect(text.advice).toContain('nieuwere versie van Maatwerk (schemaversie 3)');
   });
 
+  it('says a v1 folder must be converted with an older Maatwerk first (decision 88)', () => {
+    const text = startupErrorText({
+      code: 'needs_migration',
+      message: 'x',
+      details: { found: '1' },
+    });
+    expect(text.advice).toContain('Zet de map eerst om met Maatwerk 0.29');
+  });
+
   it('gives OneDrive advice for an I/O error and anything unknown', () => {
     for (const code of ['io', 'corrupt_json', 'unknown']) {
       const text = startupErrorText({ code, message: 'x', details: {} });

@@ -255,7 +255,7 @@ describe('scoregrid golden', () => {
         cells: string[][];
         overrides: GridData['overrides'];
       }>(goldenCase(golden, id));
-      // Built as the harness did (tests/reference-harness/suites/scoregrid.mjs).
+      // Built as the reference harness did.
       const N = exam.questions.length;
       const width = N + 10 + (O > 0 ? O + 1 : 0);
       const grid = cells.map((c, i) => {

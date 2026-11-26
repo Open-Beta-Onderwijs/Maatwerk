@@ -2,7 +2,7 @@
 
 // The Rubrics tab, the rubric editor and the observatie toetstype (step 21; design spec 4.12,
 // 4.13; F-22, F-23; PLAN-2 decisions 20, 21, 23, 25). The mock fixture has three natuurkunde
-// rubrics and four PO observaties (tools/fixtures/to-current.mjs).
+// rubrics and four PO observaties (tools/fixtures/rubrics.mjs).
 
 import { expect, test, type Page } from '@playwright/test';
 import { login, readMockJson, seedFiles, watchErrors, withMock, YEAR } from './helpers';

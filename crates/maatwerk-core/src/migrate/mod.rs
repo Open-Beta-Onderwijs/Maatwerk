@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Data format v1 -> v2 (ADR-0003, `docs/reference/data-files-v2.md`) and v2 -> v3 (step 18,
-//! `docs/reference/data-files-v3.md`).
+//! Data format v2 -> v3 (step 18, `docs/reference/data-files-v3.md`). The v1 -> v2 step
+//! (ADR-0003, `docs/reference/data-files-v2.md`) went at 1.0 (PLAN-2 decision 88): a v1 folder
+//! is refused with [`V1_REFUSED`] and must be converted with Maatwerk 0.29 first.
 //!
 //! The migration first builds a plan from what is on disk, then (unless it is a dry run) zips the
 //! whole folder to a backup outside it, carries out the plan and writes the new `schema_version`
 //! to `config.json` **last**. Every step turns whatever it finds (the old format, or half-migrated
 //! after a crash) into the new one, so running it again continues where it stopped; on a current
-//! folder it does nothing. A v1 folder goes through v2 to v3 after one backup.
+//! folder it does nothing.
 //!
 //! The folder must not be in use: old and new app never run on it at the same time (cutover
 //! runbook), so the migration writes without CAS.
 
 mod backup;
-mod plan;
+mod planner;
 mod report;
 mod v3;
 
@@ -26,7 +27,7 @@ use serde_json::Value;
 use time::OffsetDateTime;
 
 pub use backup::{BACKUP_PREFIX, check_backup_dir};
-pub(crate) use plan::walk_all;
+pub(crate) use planner::walk_all;
 pub use report::{report_text, save_report};
 pub use v3::V3_MIN_APP_VERSION;
 pub(crate) use v3::{V2_IMAGES, V2_PRESENCE};
@@ -98,23 +99,18 @@ pub fn folder_version(root: &Path) -> Result<u64> {
     }
 }
 
-/// Plans the migration of the data folder `root` and, with `backup_dir`, carries it out after
-/// writing a backup zip there. `now` stamps `_meta.updatedAt` of files that had no `_meta` and
-/// names the backup.
+/// The Dutch refusal for a v1 folder: the v1 -> v2 step went at 1.0 (PLAN-2 decision 88).
+pub const V1_REFUSED: &str = "Deze gegevensmap heeft nog het formaat van de oude Maatwerk \
+     (versie 1). Deze versie kan die map niet meer omzetten. Zet de map eerst om met Maatwerk \
+     0.29 en open hem daarna met deze versie.";
+
+/// Plans the migration of the data folder `root` (v2 -> v3) and, with `backup_dir`, carries it
+/// out after writing a backup zip there. `now` stamps the files it writes and names the backup.
+/// A v1 folder is refused ([`V1_REFUSED`]), nothing changes.
 pub fn migrate(
     root: &Path,
     backup_dir: Option<&Path>,
     now: OffsetDateTime,
-) -> Result<MigrationReport> {
-    migrate_to(root, backup_dir, now, CURRENT_VERSION)
-}
-
-/// [`migrate`] up to `target` (2 or 3); tests pin the v1 -> v2 result on its own.
-pub(crate) fn migrate_to(
-    root: &Path,
-    backup_dir: Option<&Path>,
-    now: OffsetDateTime,
-    target: u64,
 ) -> Result<MigrationReport> {
     let from_version = folder_version(root)?;
     if from_version > CURRENT_VERSION {
@@ -122,52 +118,36 @@ pub(crate) fn migrate_to(
             found: from_version.to_string(),
         });
     }
+    // An empty folder is not v1: it just gets a version.
+    let empty = || walk_all(root).is_ok_and(|files| files.is_empty());
+    if from_version < 2 && !empty() {
+        return Err(Error::MigrationBlocked {
+            message: V1_REFUSED.into(),
+        });
+    }
     let mut report = MigrationReport {
         from_version,
-        to_version: target.max(from_version),
+        to_version: CURRENT_VERSION,
         ..MigrationReport::default()
     };
-    if from_version >= target {
+    if from_version >= CURRENT_VERSION {
         return Ok(report);
     }
-    let first = if from_version < 2 {
-        plan::build(root, now)?
-    } else {
-        v3::build(root, now)?
-    };
-    report.add(root, &first);
-    let to_v3_later = from_version < 2 && target >= 3;
+    let plan = v3::build(root, now)?;
+    report.add(root, &plan);
     let Some(backup_dir) = backup_dir else {
-        if to_v3_later {
-            // The v3 step plans on the v2 result, which does not exist yet.
-            report.warnings.push(
-                "Daarna wordt de map omgezet naar versie 3 (fotos/ wordt afbeeldingen/, \
-                 toetsvelden, observaties bij herkansingen); die stap staat nog niet in deze lijst."
-                    .into(),
-            );
-        }
         return Ok(report);
     };
     let zip = backup::write(root, backup_dir, from_version, now)?;
     report.backup = Some(crate::paths::display_path(&zip));
-    apply(root, &first)?;
-    if from_version < 2 {
-        plan::remove_empty_dirs(root);
-    }
-    if to_v3_later {
-        let second = v3::build(root, now)?;
-        report.add(root, &second);
-        apply(root, &second)?;
-    }
-    if target >= 3 {
-        v3::remove_empty_dirs(root);
-    }
+    apply(root, &plan)?;
+    v3::remove_empty_dirs(root);
     report.applied = true;
     Ok(report)
 }
 
 impl MigrationReport {
-    fn add(&mut self, root: &Path, plan: &plan::Plan) {
+    fn add(&mut self, root: &Path, plan: &planner::Plan) {
         self.warnings.extend(plan.warnings.iter().cloned());
         self.notes.extend(plan.notes.iter().cloned());
         self.changes
@@ -175,7 +155,7 @@ impl MigrationReport {
     }
 }
 
-fn apply(root: &Path, plan: &plan::Plan) -> Result<()> {
+fn apply(root: &Path, plan: &planner::Plan) -> Result<()> {
     for op in &plan.ops {
         op.apply(root)?;
     }

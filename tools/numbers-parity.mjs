@@ -16,7 +16,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generate } from './fixtures/generate.mjs';
-import { toCurrent } from './fixtures/to-current.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [name, rArg = 'a1', seArg = rArg] = process.argv.slice(2);
@@ -33,7 +32,6 @@ fs.rmSync(work, { recursive: true, force: true });
 const data = path.join(work, 'data');
 fs.mkdirSync(data, { recursive: true });
 generate(name, data);
-toCurrent(data);
 const settings = path.join(data, 'instellingen.json');
 const inst = fs.existsSync(settings) ? JSON.parse(fs.readFileSync(settings, 'utf8')) : {};
 inst.gemiddelden = { r: fmt(rArg), se: fmt(seArg) };

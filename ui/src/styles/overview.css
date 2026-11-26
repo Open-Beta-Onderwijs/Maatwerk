@@ -652,8 +652,9 @@ html[data-theme='dark'] .ov-tip__mute {
   font-variant-numeric: tabular-nums;
 }
 .ov-table thead {
+  /* Flush with the top of the dialog body, not its padding: rows scrolled up stay hidden. */
   position: sticky;
-  top: 0;
+  top: calc(-1 * var(--dlg-body-pt, 0px));
   z-index: 2;
 }
 .ov-table thead th {
@@ -723,7 +724,7 @@ html[data-theme='dark'] .ov-tip__mute {
 }
 .ov-table tfoot {
   position: sticky;
-  bottom: 0;
+  bottom: calc(-1 * var(--dlg-body-pb, 0px));
   z-index: 1;
 }
 .ov-name {

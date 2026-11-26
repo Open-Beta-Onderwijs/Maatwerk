@@ -17,12 +17,12 @@ describe('activeYear', () => {
   it('falls back to the current school year when config.json has none', async () => {
     vi.useFakeTimers({ now: new Date('2026-11-03T12:00:00'), toFake: ['Date'] });
     const { Store } = await openStore({
-      files: { 'config.json': JSON.stringify({ schema_version: 2 }) },
+      files: { 'config.json': JSON.stringify({ schema_version: 3 }) },
       subject: null,
     });
     expect(Store.getConfigSync!().activeYear).toBe('2026-2027');
     expect((await Store.getConfig!()).activeYear).toBe('2026-2027');
-    expect(Store.getConfigSync!().schema_version).toBe(2);
+    expect(Store.getConfigSync!().schema_version).toBe(3);
   });
 
   it('falls back when there is no config.json, as in the reference', async () => {
@@ -33,7 +33,7 @@ describe('activeYear', () => {
 
   it('keeps an activeYear that is set', async () => {
     const { Store } = await openStore({
-      files: { 'config.json': JSON.stringify({ schema_version: 2, activeYear: '2024-2025' }) },
+      files: { 'config.json': JSON.stringify({ schema_version: 3, activeYear: '2024-2025' }) },
       subject: null,
     });
     expect(Store.getConfigSync!().activeYear).toBe('2024-2025');

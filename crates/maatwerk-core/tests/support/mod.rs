@@ -11,7 +11,8 @@ use std::sync::{Arc, OnceLock};
 use maatwerk_core::typst_svc::FontStore;
 use serde_json::Value;
 use tiny_skia::Pixmap;
-use typst::layout::{Frame, FrameItem, PagedDocument};
+use typst::layout::{Frame, FrameItem};
+use typst_layout::PagedDocument;
 
 /// The fonts of the goldens: embedded only, no system fonts, as the harness renders them with
 /// `--ignore-system-fonts` (emoji from the bundled Noto Color Emoji). One store per test binary.
@@ -33,7 +34,7 @@ pub fn load_case(id: &str) -> Value {
     serde_json::from_str(&text).unwrap()
 }
 
-/// Undoes the golden encoding (`tests/reference-harness/golden.mjs` `decode`) the way the data
+/// Undoes the golden encoding (`tests/support/golden.mjs` `decode`) the way the data
 /// reaches Rust: through `normaliseForTypst` (ui/src/domain/rapport.ts) and JSON, which gives
 /// the `toTypst` values: `{"$undefined": true}` becomes `null` (key kept) and a non-finite
 /// `{"$number": "NaN"}` becomes `0`.
@@ -102,14 +103,18 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
         bless(id, case, doc, &why);
         return;
     }
-    assert_eq!(doc.pages.len(), golden_page_count(case), "{id}: page count");
+    assert_eq!(
+        doc.pages().len(),
+        golden_page_count(case),
+        "{id}: page count"
+    );
     let ppi = case["reference"]["ppi"].as_f64().unwrap() as f32;
     let out_dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
         .join("golden")
         .join(id);
     std::fs::create_dir_all(&out_dir).unwrap();
 
-    for (i, page) in doc.pages.iter().enumerate() {
+    for (i, page) in doc.pages().iter().enumerate() {
         let n = i + 1;
         if let Some(golden) = case["pdf"]["pages"].get(i) {
             let size = page.frame.size();
@@ -131,7 +136,7 @@ pub fn assert_matches_golden(id: &str, case: &Value, doc: &PagedDocument) {
         let Some(png) = case["png"].get(i) else {
             continue;
         };
-        let actual = typst_render::render(page, ppi / 72.0);
+        let actual = render(page, ppi / 72.0);
         let file = png["file"].as_str().unwrap();
         let expected = Pixmap::load_png(golden_dir(id).join(file)).unwrap();
         assert_eq!(
@@ -166,13 +171,13 @@ fn bless(id: &str, case: &Value, doc: &PagedDocument, why: &str) {
     use sha2::{Digest, Sha256};
     let ppi = case["reference"]["ppi"].as_f64().unwrap() as f32;
     let dir = golden_dir(id);
-    let width = if doc.pages.len() > 9 { 2 } else { 1 };
+    let width = if doc.pages().len() > 9 { 2 } else { 1 };
     for old in case["png"].as_array().into_iter().flatten() {
         let _ = std::fs::remove_file(dir.join(old["file"].as_str().unwrap()));
     }
     let mut pages = Vec::new();
     let mut pngs = Vec::new();
-    for (i, page) in doc.pages.iter().enumerate() {
+    for (i, page) in doc.pages().iter().enumerate() {
         let mut items = Vec::new();
         frame_lines(&page.frame, &mut items);
         let text = items.join("\n");
@@ -183,7 +188,7 @@ fn bless(id: &str, case: &Value, doc: &PagedDocument, why: &str) {
             "text": text,
         }));
         let file = format!("p{:0width$}.png", i + 1);
-        let bytes = typst_render::render(page, ppi / 72.0).encode_png().unwrap();
+        let bytes = render(page, ppi / 72.0).encode_png().unwrap();
         std::fs::write(dir.join(&file), &bytes).unwrap();
         let sha: String = Sha256::digest(&bytes)
             .iter()
@@ -193,7 +198,7 @@ fn bless(id: &str, case: &Value, doc: &PagedDocument, why: &str) {
     }
     let mut case = case.clone();
     case["port"] = serde_json::json!({ "blessed": why });
-    case["pdf"] = serde_json::json!({ "pageCount": doc.pages.len(), "pages": pages });
+    case["pdf"] = serde_json::json!({ "pageCount": doc.pages().len(), "pages": pages });
     case["png"] = Value::Array(pngs);
     let mut json = serde_json::to_string_pretty(&case).unwrap();
     json.push('\n');
@@ -237,4 +242,13 @@ pub fn squash(s: &str) -> String {
     s.chars()
         .filter(|c| !c.is_whitespace() && *c != '\u{ad}')
         .collect()
+}
+
+/// A page as pixels at `scale` pixels per pt (Typst 0.15 `RenderOptions`).
+pub fn render(page: &typst_layout::Page, scale: f32) -> Pixmap {
+    let opts = typst_render::RenderOptions {
+        pixel_per_pt: typst::utils::Scalar::new(f64::from(scale)),
+        render_bleed: false,
+    };
+    typst_render::render(page, &opts)
 }

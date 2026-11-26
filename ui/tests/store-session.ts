@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Runs the ported Store (src/store.js) on a MockApi, like the reference harness
-// runs the reference Store on a real folder (tests/reference-harness/session.mjs).
+// ran the reference Store on a real folder (the harness, removed at 1.0).
 // Used to check the Store against the goldens whose `data` case holds the
 // scenario's data folder.
 
 import { vi } from 'vitest';
 import { MockApi, type MockSeed } from '../src/bridge/mock/mock-api';
-// The golden scenarios hold v1 folders (captured from the reference app); the
-// Store reads and writes format v2 (Step 7a).
-import { filesToV2 } from '../../tools/fixtures/to-current.mjs';
 
 /** The Store's public surface as the tests use it (it is untyped legacy JS). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +17,7 @@ export interface StoreSession {
   api: MockApi;
 }
 
-/** files: relPath -> file content (v1), as stored in a golden `data` case. */
+/** files: relPath -> file content (current format), as stored in a golden `data` case. */
 export async function openStore({
   files,
   subject = 'nat',
@@ -30,9 +27,8 @@ export async function openStore({
   subject?: string | null;
   user?: string;
 }): Promise<StoreSession> {
-  const v2 = filesToV2(files) as Map<string, string>;
   const seed: MockSeed = {
-    files: Object.fromEntries([...v2].map(([rel, text]) => [rel, { text: String(text) }])),
+    files: Object.fromEntries(Object.entries(files).map(([rel, text]) => [rel, { text }])),
     dirs: [],
   };
   const api = new MockApi(seed);

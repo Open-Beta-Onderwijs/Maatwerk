@@ -48,15 +48,18 @@
           595.28,
           841.89
         ],
-        "text": "Opdracht nat 3 (grid)\nAntwoordsleutel\n1 Het antwoord.\n2a 1234,5"
+        "text": "Opdracht nat 3 (grid)\nAntwoordsleutel\n1\n Het antwoord.\n2a\n \n1\n2\n3\n4\n,5"
       }
     ]
   },
   "png": [
     {
       "file": "p1.png",
-      "sha256": "01b95a74a01de53b883d67cb00e08a71d6d01c66c6fdb79407449d802fef9bdb",
-      "bytes": 6073
+      "sha256": "32110f1a5201e127655979943d94159e43679aabc66ef7239f243d93803c71c0",
+      "bytes": 3193
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  }
 }

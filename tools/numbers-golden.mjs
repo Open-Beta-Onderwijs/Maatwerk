@@ -14,7 +14,6 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { generate } from './fixtures/generate.mjs';
-import { toCurrent } from './fixtures/to-current.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const GOLDEN = path.join(ROOT, 'crates', 'maatwerk-core', 'tests', 'fixtures', 'numbers');
@@ -29,7 +28,6 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'numbers-golden-'));
 const full = path.join(tmp, 'data');
 fs.mkdirSync(full, { recursive: true });
 generate('tiny', full);
-toCurrent(full);
 
 // Keep what the numbers read: settings, the school years and the rubrics.
 fs.rmSync(GOLDEN, { recursive: true, force: true });

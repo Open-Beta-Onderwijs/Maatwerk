@@ -65,6 +65,17 @@ test('the preview shows only the changed pages and keeps them on errors', async 
   await expect(frame.locator('.svg-page')).toHaveCount(1);
   await expect(frame.locator('.cm-lintRange-error')).toHaveCount(0);
   await expect(frame.locator('#btn-render-error')).toHaveCount(0);
+
+  // Backlog 6a: a warning outside the open file (a box for a glyph, in lib.typ) shows in the
+  // status pill instead of only in the console.
+  await setText(page, frame, 'Een teken \u{E000} zonder font');
+  await expect(frame.locator('#btn-render-error')).toHaveText(/opgeslagen · 1 waarschuwing$/i);
+  await frame.locator('#btn-render-error').click();
+  await expect(frame.locator('#error-popover')).toContainText(
+    'waarschuwing: lib.typ:1:1: no font can display',
+  );
+  await setText(page, frame, 'Hersteld');
+  await expect(frame.locator('#btn-render-error')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

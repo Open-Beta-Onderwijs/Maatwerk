@@ -346,6 +346,7 @@ export class Dialog {
 
   /** Shown in the DOM, on top of the stack. Called by openDialog. */
   mount(): void {
+    if (!stack.length) lockPageScroll(true);
     stack.push(this);
     this.backdrop.style.zIndex = String(1000 + stack.length * 10);
     document.body.append(this.backdrop);
@@ -424,6 +425,7 @@ export class Dialog {
     if (this.closed) return;
     this.closed = true;
     stack = stack.filter((d) => d !== this);
+    if (!stack.length) lockPageScroll(false);
     for (const fn of this.cleanups.splice(0)) {
       try {
         fn();
@@ -442,6 +444,23 @@ export class Dialog {
     const cb = this.onCloseCb;
     this.onCloseCb = null;
     cb?.();
+  }
+}
+
+/**
+ * While a dialog is open the page behind it does not scroll, also not by the wheel over the
+ * backdrop (step 39, user): only the dialog's own body scrolls. The scrollbar's width stays as
+ * padding on the body, so the page behind does not shift sideways.
+ */
+function lockPageScroll(on: boolean): void {
+  const root = document.documentElement;
+  if (on) {
+    const bar = Math.max(0, window.innerWidth - root.clientWidth);
+    root.style.setProperty('--dlg-scrollbar-w', `${bar}px`);
+    root.classList.add('dlg-open');
+  } else {
+    root.classList.remove('dlg-open');
+    root.style.removeProperty('--dlg-scrollbar-w');
   }
 }
 

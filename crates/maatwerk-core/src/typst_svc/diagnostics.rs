@@ -5,11 +5,12 @@
 //! T14). [`to_text`] renders them in the shape of the Typst CLI for screens that show plain text.
 
 use serde::Serialize;
-use typst::World;
 use typst::diag::{Severity as TypstSeverity, SourceDiagnostic};
-use typst::layout::{Frame, FrameItem, PagedDocument};
-use typst::syntax::Span;
+use typst::layout::{Frame, FrameItem};
+use typst::syntax::DiagSpan;
 use typst::text::TextItem;
+use typst::{World, WorldExt};
+use typst_layout::PagedDocument;
 
 use super::world::MaatwerkWorld;
 
@@ -77,14 +78,14 @@ pub(crate) fn convert(world: &MaatwerkWorld, diags: &[SourceDiagnostic]) -> Vec<
             hints: d
                 .hints
                 .iter()
-                .map(ToString::to_string)
+                .map(|h| h.v.to_string())
                 .filter(|h| !is_cli_hint(h))
                 .collect(),
             location: locate(world, d.span),
             trace: d
                 .trace
                 .iter()
-                // Typst's own wording, as the CLI: "error occurred in this call of function `x`".
+                // Typst's own wording, as the CLI: "while calling `x`" (Typst 0.15).
                 .map(|t| TraceFrame {
                     message: t.v.to_string(),
                     location: locate(world, t.span),
@@ -100,7 +101,7 @@ pub(crate) fn convert(world: &MaatwerkWorld, diags: &[SourceDiagnostic]) -> Vec<
 pub(crate) fn tofu_warnings(world: &MaatwerkWorld, doc: &PagedDocument) -> Vec<Diagnostic> {
     let mut seen: Vec<String> = Vec::new();
     let mut out = Vec::new();
-    for page in &doc.pages {
+    for page in doc.pages() {
         each_text(&page.frame, &mut |item| {
             for glyph in item.glyphs.iter().filter(|g| g.id == 0) {
                 let Some(text) = item.text.get(glyph.range()) else {
@@ -147,13 +148,16 @@ fn each_text(frame: &Frame, f: &mut impl FnMut(&TextItem)) {
 /// Typst's hints about the CLI's `--root` (on access denied) mean nothing in the app
 /// (review 5a n3).
 fn is_cli_hint(hint: &str) -> bool {
-    hint.contains("--root") || hint.contains("outside of project root")
+    hint.contains("--root")
+        || hint.contains("outside of project root")
+        || hint.contains("outside of the project sandbox")
 }
 
-fn locate(world: &MaatwerkWorld, span: Span) -> Option<Location> {
+fn locate(world: &MaatwerkWorld, span: impl Into<DiagSpan>) -> Option<Location> {
+    let span = span.into();
     let id = span.id()?;
     let source = world.source(id).ok()?;
-    let range = source.range(span)?;
+    let range = world.range(span)?;
     let lines = source.lines();
     let line = lines.byte_to_line(range.start)?;
     let line_range = lines.line_to_range(line)?;

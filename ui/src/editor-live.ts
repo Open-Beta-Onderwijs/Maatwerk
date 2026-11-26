@@ -73,6 +73,17 @@ export function showDiagnostics(view: EditorView, diagnostics: EditorDiagnostic[
   );
 }
 
+/**
+ * Warnings that `cmDiagnostics` does not mark in `file`: without a place, or in another file
+ * (a box for a missing glyph in lib.typ). Backlog 6a: they were only logged.
+ */
+export function unmarkedWarnings(
+  diagnostics: EditorDiagnostic[],
+  file: string,
+): EditorDiagnostic[] {
+  return diagnostics.filter((d) => d.severity === 'warning' && d.location?.file !== file);
+}
+
 /** The status-bar text of a failed compile: `file:line:col: message` per error. */
 export function diagnosticsText(diagnostics: EditorDiagnostic[]): string {
   return diagnostics

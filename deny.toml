@@ -49,10 +49,11 @@ unknown-git = "deny"
 unmaintained = "workspace"
 yanked = "deny"
 ignore = [
-  # quick-xml 0.38 comes in through typst 0.14.2 -> hayagriva -> citationberg (CSL styles for
-  # bibliographies). The fix needs quick-xml >= 0.41, which the pinned typst 0.14 line cannot take.
-  # Impact: slow parsing / memory use on a hostile CSL/XML file that a teacher's own opdracht
-  # names; no remote input. Re-check when leaving typst 0.14 (Step 5, docs/backlog.md).
-  { id = "RUSTSEC-2026-0194", reason = "typst 0.14.2 pins quick-xml 0.38; local DoS only" },
-  { id = "RUSTSEC-2026-0195", reason = "typst 0.14.2 pins quick-xml 0.38; local DoS only" },
+  # quick-xml 0.38 comes in through typst 0.15.1 -> hayagriva 0.10.1 -> citationberg 0.7.0 (CSL
+  # styles for bibliographies). The fix needs quick-xml >= 0.41; citationberg 0.7.0, the newest
+  # (2026-11-25), still asks for ^0.38 (step 39b). Impact: slow parsing / memory use on a hostile
+  # CSL/XML file that a teacher's own opdracht names; no remote input. Decision 84 wants these
+  # gone at 1.0: re-check in step 45a.
+  { id = "RUSTSEC-2026-0194", reason = "citationberg 0.7.0 pins quick-xml 0.38; local DoS only" },
+  { id = "RUSTSEC-2026-0195", reason = "citationberg 0.7.0 pins quick-xml 0.38; local DoS only" },
 ]

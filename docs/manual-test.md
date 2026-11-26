@@ -17,8 +17,9 @@ The log is in `%LOCALAPPDATA%\nl.openbetaonderwijs.maatwerk\logs\maatwerk.<date>
    `D:\maatwerk-test\` (it uses `data\` next to the exe), or set `MAATWERK_DATA_DIR`:
    `$env:MAATWERK_DATA_DIR = 'D:\maatwerk-test\data'; .\maatwerk.exe` (PowerShell).
 3. Keep the old app closed while testing on the same copy (old and new never share a folder).
-4. From Step 7a the app works on format v2: on a copy of the old app's folder it first shows the
-   conversion screen (M-MIG-1). Convert the copy, then test the rest on it.
+4. Since 1.0 (step 39a) the app does not convert the old app's (v1) folder any more: convert a
+   copy with Maatwerk 0.29 first (M-MIG-1 there), then test the rest on it. A v2 folder still gets
+   the conversion screen.
 
 ## Start (M-START)
 
@@ -360,6 +361,9 @@ through OneDrive or a network share.
 
 ## Data format v2 (M-MIG)
 
+M-MIG-1..3 are for Maatwerk 0.29 (the v1 conversion went at 1.0, step 39a); in 1.0 a v1 folder
+shows "Zet de map eerst om met Maatwerk 0.29" (M-MIG-6).
+
 - [ ] **M-MIG-1** Start the exe on a copy of the old app's folder: "Deze gegevensmap moet eenmalig
       worden omgezet". "Omzetten" stays grey until the box is ticked. After converting: the
       report "Verslag van het omzetten" with the backup path
@@ -376,6 +380,10 @@ through OneDrive or a network share.
       removes the line. At the next admin login a notice says so before you look.
 - [ ] **M-MIG-5** Put a copy of a group file next to it as `<naam> (1).json`: the check lists it as
       "OneDrive-conflictkopie".
+- [ ] **M-MIG-6** (1.0) Start the exe on a copy of the old app's folder: "Maatwerk kan de
+      gegevensmap niet openen" with "nog het formaat van de oude Maatwerk (versie 1) … Zet de map
+      eerst om met Maatwerk 0.29"; nothing in the folder changed.
+      `maatwerk-cli migrate <copy>\data --dry-run` refuses with the same text.
 
 ## macOS (M-MAC, step 16a)
 

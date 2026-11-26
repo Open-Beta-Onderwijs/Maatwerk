@@ -39,7 +39,8 @@ folder of <file.typ> is the project root; nothing outside it is readable. In an 
 validate-data: checks a data folder (format v3) and lists errors and warnings; exit code 1 when
 there are errors. Files Maatwerk does not use (leftovers) are warnings; nothing is removed.
 
-migrate: converts a v1 or v2 data folder to v3 (docs/reference/data-files-v3.md). --dry-run
+migrate: converts a v2 data folder to v3 (docs/reference/data-files-v3.md); a v1 folder is
+refused (convert it with Maatwerk 0.29 first). --dry-run
 lists what would change, with the observaties each inhaal and herkansing gets. --apply first zips the whole folder into --backup-dir, which must be outside the
 data folder, the shared folder and OneDrive, then migrates and validates. Nobody may have
 Maatwerk open on the folder meanwhile (docs/cutover-runbook.md).

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// maatwerk-lib 2
+// maatwerk-lib 3
 // lib.typ — shared helpers for opdracht templates.
 // Embedded in Maatwerk; each opdracht folder gets its own copy (ADR-0002 5a). Maatwerk updates
 // an unmodified copy when a new version ships and never overwrites a copy you changed.
@@ -155,10 +155,18 @@
 
 #let _vraag_ctr = counter("maatwerk-vraag")
 
+// Whether the text is inside an opgave (maatwerk-lib 3): a vraag after an opgave is outside
+// it, though the opgave counter still has that opgave's number. Only the editor's check reads
+// it; printing is as in lib 2.
+#let _in_opgave = state("maatwerk-in-opgave", false)
+
 // Numbered gray block like Voorbeeld/Formule, referable as "Opgave 1".
 // The vraag counter restarts inside the body, so opgave() returns a bare figure
 // that can carry a label (#opgave[…] <naam>, referenced as @naam).
-#let opgave(titel: none, body) = _content_block("Opgave", "opgave", titel, [#_vraag_ctr.update(0)#body])
+#let opgave(titel: none, body) = _content_block(
+  "Opgave", "opgave", titel,
+  [#_vraag_ctr.update(0)#_in_opgave.update(true)#body#_in_opgave.update(false)],
+)
 
 // Space below a vraag: the normal paragraph spacing (Typst's default; inside the
 // opgave block paragraphs follow at line distance).
@@ -209,8 +217,16 @@
   _vraag_id.step()
   context {
     let id = _vraag_id.get().first()
-    // Maatwerk reads these markers for the editor's vragen list (punten since maatwerk-lib 2).
-    let v = (opgave: _opgave_nr(), nr: _vraag_ctr.get().first(), antwoord: antwoord, punten: punten)
+    // Maatwerk reads these markers for the editor's vragen list (punten since maatwerk-lib 2;
+    // in_opgave since maatwerk-lib 3, for the editor's check only: the numbering and the
+    // answer key stay as in lib 2).
+    let v = (
+      opgave: _opgave_nr(),
+      nr: _vraag_ctr.get().first(),
+      antwoord: antwoord,
+      punten: punten,
+      in_opgave: _in_opgave.get(),
+    )
     [#metadata(v) <__maatwerk_vraag>]
     block(
       above: 0.65em,

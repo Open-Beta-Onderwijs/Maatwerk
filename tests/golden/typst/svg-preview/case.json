@@ -47,13 +47,35 @@
   "png": [
     {
       "file": "p1.png",
-      "sha256": "d1a55e7716abffe3870f2a67478057313298386b2130690c212d49daa7bae414",
-      "bytes": 11551
+      "sha256": "417215fcba45fbf5f6179879d8f8b31c3945a698be55e92f97ef0df6412ece18",
+      "bytes": 6776
     },
     {
       "file": "p2.png",
-      "sha256": "5aa48feecefa3139ddfbb2a72ba2e3942f6a0494d0251b1398859d23a0356c28",
-      "bytes": 11557
+      "sha256": "9699790cc5cae00d4a8bf31449ac69a4da0cc4f6b8497b8ab3f755ab72c009b4",
+      "bytes": 6082
     }
-  ]
+  ],
+  "port": {
+    "blessed": "Typst 0.15.1 (step 39b), checked by the user 2026-11-25"
+  },
+  "pdf": {
+    "pageCount": 2,
+    "pages": [
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Voorbeeld\nLeerling Voornaam Achternaam\nN.a.v.\n Voorbeeldtoets Toetsweek X\nKlas Z vak W\n \n❌\n Een voorbeeldobservatie met een behoorlijk lange naam, \nzodat deze twee regels beslaat in het voorbeeld\nFormule \n1\n (Snelheid)\n𝑣\n=\n𝑠\n𝑡\nBelangrijk!\nLet op de eenheden: \n3\n,5\n \nm\n \ns\n−\n1\n."
+      },
+      {
+        "size": [
+          595.28,
+          841.89
+        ],
+        "text": "Opgave \n1\n (Opgave met een figuur)\nTekst naast de figuur.\nDe vraag in een grid.\n1p\nFiguur\nOpgave \n2\n (Vraag in een figuur)\nVoorbeeld \n1\n (In een figuur)\na\nSchrijf als getal.\n2p\nb\nVraag zonder punten en zonder antwoord.\nAntwoorden\n1\n Het antwoord.\n2a\n \n1\n2\n3\n4\n,5"
+      }
+    ]
+  }
 }

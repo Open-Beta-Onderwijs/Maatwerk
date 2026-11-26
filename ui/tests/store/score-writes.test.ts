@@ -8,14 +8,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import {
-  YEAR,
-  buildData,
-  exam,
-  readTree,
-  student,
-} from '../../../tests/reference-harness/scenario.mjs';
-import { goldenCase, loadGolden, run, v2File } from '../golden';
+import { YEAR, buildData, exam, readTree, student } from '../../../tests/support/scenario.mjs';
+import { goldenCase, loadGolden, run } from '../golden';
 import { openStore } from '../store-session';
 
 const golden = loadGolden('score-writes');
@@ -111,11 +105,7 @@ describe('score-writes golden (Store)', () => {
     for (const [step, op, id] of steps) {
       out.push({ step, result: await run(op), file: text(id) });
     }
-    // The golden holds the files the reference wrote (v1); compared in v2 form.
-    const expected = (goldenCase(golden, 'sequence').output as typeof out).map((o, i) => ({
-      ...o,
-      file: v2File(`${YEAR}/scores/nat/${steps[i]![2]}.json`, o.file as string | null),
-    }));
-    expect(out).toEqual(expected);
+    // The files the reference wrote, in the current format (converted once, step 39b).
+    expect(out).toEqual(goldenCase(golden, 'sequence').output);
   });
 });

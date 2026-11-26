@@ -1,11 +1,11 @@
 # Storage and sync spec (reference app)
 
-Executable spec of how the reference app reads, writes, locks and watches the shared `data/`
-folder. Each row is one test in `tools/reference-shims/storage.test.mjs`, which runs in CI against
-verbatim copies of the reference code in `tools/reference-shims/` (`sync.cjs`: all of
-`sync.js`; `main-storage.cjs`: `main.js:31-48, 54-121, 179-205`; `store-cas.cjs`:
-`renderer/store.js:60-123`). `tests/reference-harness/shims.test.mjs` checks the copies against
-`_reference/` when it is present.
+Spec of how the reference app reads, writes, locks and watches the shared `data/` folder.
+**History since step 39a:** each row was a test in `tools/reference-shims/storage.test.mjs`, run
+in CI against verbatim copies of the reference code (`sync.js`, `main.js:31-48, 54-121,
+179-205`, `renderer/store.js:60-123`); the shims and the reference harness went with the v1
+paths (PLAN-2 decision 88). The port's own storage tests (`maatwerk-core` `storage`, `watcher`)
+cover the behaviour now.
 
 Where PLAN.md Step 4a still mentions `.lock` files with a 10 s TTL, ADR-0002 (decision C3, no `.lock`
 files) overrides it. Rows S37-S38 are the baseline for C3/C6: they show what CAS does **not** cover

@@ -25,7 +25,7 @@ data/opdrachten/<opdrachtId>/
   `@preview/unify:0.8.0`. Any other package is a compile error.
 - **`main.typ` and `lib.typ`** start as the bundled versions (`maatwerk-core/assets/templates/`,
   `opdracht-main.typ` and `lib.typ`). Each has a version line (`// maatwerk-main 3`,
-  `// maatwerk-lib 2`). An unmodified old copy is updated silently when the editor opens the
+  `// maatwerk-lib 3`). An unmodified old copy is updated silently when the editor opens the
   opdracht, and `main.typ` also before a plain print (section 2); a changed copy is never
   overwritten (the editor offers "Bekijk verschillen" and "Herstel standaardversie").
 - **`opdracht.typ`** starts as `base_assignment.typ`. It is the teacher's file; Maatwerk never
@@ -77,9 +77,12 @@ sections 3 to 5; examples that compile cleanly are in
 [`assignment-examples/`](assignment-examples/) (a test checks them).
 
 **Vraag markers.** Every `#vraag` leaves `metadata((opgave, nr, antwoord, punten)) <__maatwerk_vraag>`
-(`punten` since `maatwerk-lib 2`). Maatwerk reads these from the compiled document for the
+(`punten` since `maatwerk-lib 2`; `in_opgave` since `maatwerk-lib 3`: a vraag after an opgave
+keeps that opgave's number on paper, the editor flags it as outside). Maatwerk reads these from the compiled document for the
 editor's vragen panel and the checks, and for `assignment check`. Labels follow the answer key:
 the opgave number, plus a letter (`a`, `b`, ...) when the opgave has more than one vraag.
+`punten` may be a number or a string with one (`"1,5"`); an answer without text (only an
+image) shows as "(zonder tekst)".
 
 ## 4. Headless tools (`maatwerk-cli assignment`)
 

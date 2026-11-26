@@ -6,22 +6,18 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
 
 ## Commands
 
-| Command                                                 | Needs `_reference/`                       | What it does                                                                                                                                                                                                    |
-| ------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                                              | no                                        | UI unit tests, tool tests, fixture determinism, storage spec, golden structure checks                                                                                                                           |
-| `npm run golden:regen [-- <suite> ...]`                 | yes, at `0e30a70`                         | Re-runs the reference code and rewrites `tests/golden/logic/*.json`                                                                                                                                             |
-| `npm run golden:check`                                  | yes                                       | Re-runs the reference and fails on any byte difference                                                                                                                                                          |
-| `npm run golden:typst [-- --check] [-- <case> ...]`     | yes, plus the Typst package cache (below) | Renders the Typst goldens with the reference CLI 0.14.2 (or checks them byte for byte)                                                                                                                          |
-| `node tests/reference-harness/make-shims.mjs`           | yes                                       | Rewrites `tools/reference-shims/*.cjs` from the reference                                                                                                                                                       |
-| `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                        | Writes a synthetic data folder                                                                                                                                                                                  |
-| `node tools/numbers-golden.mjs`                         | no (cargo; PowerShell on Windows)         | Rewrites the list-screen numbers golden (`crates/maatwerk-core/tests/fixtures/numbers`, `tiny` at a1/a1 and k0/a2) that `numbers_golden.rs` (Rust) and `ui/tests/numbers-golden.test.ts` (MockApi mirror) check |
-| `npm run test:e2e`                                      | no                                        | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)                                                                                                                             |
-| `npm run test:e2e:webkit`                               | no                                        | The same suite in Playwright's WebKit (CI on macOS; also runs on Windows after `npx playwright install webkit` in `ui/`)                                                                                        |
-| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                        | Local screenshot comparison of 39 views, three looks; baseline is machine-specific, not committed                                                                                                               |
-| `npm run test:visual:ci -w ui -- --project visual-ci-…` | no                                        | CI, every job: the light look of every view against the committed baselines of that CI platform (`ui/e2e/visual-baselines/`)                                                                                    |
-| `npm run dev:mock`                                      | no                                        | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)                                                                                                                             |
-| `npm run bindings`                                      | no                                        | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005); run it from PowerShell (Git Bash's `link` shadows MSVC's)                                                             |
-| `npm run data:dev` then `npm run dev`                   | no                                        | Synthetic `school` data (format v1) in `data/` (refuses a non-empty folder), then the real app on it: it first offers the v2 conversion (M-MIG-1)                                                               |
+| Command                                                 | Needs `_reference/`               | What it does                                                                                                                                                                                                    |
+| ------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                                              | no                                | UI unit tests, tool tests, fixture determinism, golden structure checks                                                                                                                                         |
+| `node tools/fixtures/generate.mjs <tiny\|school> <dir>` | no                                | Writes a synthetic data folder                                                                                                                                                                                  |
+| `node tools/numbers-golden.mjs`                         | no (cargo; PowerShell on Windows) | Rewrites the list-screen numbers golden (`crates/maatwerk-core/tests/fixtures/numbers`, `tiny` at a1/a1 and k0/a2) that `numbers_golden.rs` (Rust) and `ui/tests/numbers-golden.test.ts` (MockApi mirror) check |
+| `npm run test:e2e`                                      | no                                | Builds the mock UI and runs Playwright: smoke, UI quirk fixes, CSP walkthrough (CI)                                                                                                                             |
+| `npm run test:e2e:webkit`                               | no                                | The same suite in Playwright's WebKit (CI on macOS; also runs on Windows after `npx playwright install webkit` in `ui/`)                                                                                        |
+| `npm run test:visual -w ui [-- --update-snapshots]`     | no                                | Local screenshot comparison of 39 views, three looks; baseline is machine-specific, not committed                                                                                                               |
+| `npm run test:visual:ci -w ui -- --project visual-ci-…` | no                                | CI, every job: the light look of every view against the committed baselines of that CI platform (`ui/e2e/visual-baselines/`)                                                                                    |
+| `npm run dev:mock`                                      | no                                | The UI in a browser on the in-memory `MockApi` (`MAATWERK_FIXTURE=school` for more)                                                                                                                             |
+| `npm run bindings`                                      | no                                | Regenerates `ui/src/bridge/bindings.ts` (`cargo test` fails while it is stale, ADR-0005); run it from PowerShell (Git Bash's `link` shadows MSVC's)                                                             |
+| `npm run data:dev` then `npm run dev`                   | no                                | Synthetic `school` data in the current format in `data/` (refuses a non-empty folder), then the real app on it                                                                                                  |
 
 ### UI tests (Step 3a)
 
@@ -36,14 +32,21 @@ golden format, harness assumptions, size budget and the **coverage matrix** (ref
   `visual` project. `e2e/views.ts` lists the views; `e2e/helpers.ts` has `seedFiles` (replace
   fixture files before boot) and `withMock` (`MockApi.fail()` injects errors).
 
-With `_reference/` present, `npm test` also re-runs every golden suite and the shim drift check.
-CI has no `_reference/` (it is gitignored and has no licence), so CI checks structure only; the
-goldens and shims change only through the commands above, with the reason in the commit message.
+The goldens were captured from the reference app (`_reference/` at `0e30a70`) by a harness that
+went at 1.0 with the other v1 paths (PLAN-2 decision 88, step 39a): `tests/golden/*.test.mjs`
+check their structure, the Vitest and Rust tests compare the port with them. A golden changes
+only when a step changes that output on purpose (decision 9): the Typst goldens are rewritten from
+the port with `MAATWERK_BLESS=<why> MAATWERK_BLESS_IDS=<ids> cargo test` after the user's visual
+check, with the reason in the commit message. The logic goldens' `data` cases (and the score
+files of `score-writes`) were captured as v1 folders and converted once to the current format
+in step 39b (user's OK: string student ids, `"N"` for `null`, the students wrapper, one file
+per user, opdracht folders, the v3 exam fields); the tests read them as they are. The opdracht
+folders there have no `main.typ`/`lib.typ` (the domain tests do not compile them).
 
 ## Layout
 
-- `tools/fixtures/`: seeded generator. `tiny` = 1 class (44 files); `school` = 4 subjects, 6
-  jaarlagen x 4 classes, 600 students, 2 school years (5092 files, ~22 MB, never committed).
+- `tools/fixtures/`: seeded generator, current format. `tiny` = 1 class (70 files); `school` = 4 subjects, 6
+  jaarlagen x 4 classes, 600 students, 2 school years (5130 files, ~22 MB, never committed).
   `manifest.json` pins a SHA-256 over the generated tree. Edge cases: bonus/diag questions, `N`,
   invalid and missing scores, resit chain (herkansing + inhaal with another structure), cluster
   groups (students in two groups), empty exam, one-student exam, diacritics, apostrophes,
@@ -51,13 +54,11 @@ goldens and shims change only through the commands above, with the reason in the
   (including ZWJ and flag sequences), grade overrides, saved couplings with deleted opdrachten,
   grade cards, opdrachten with PNG/JPG/SVG images, zero vragen, vragen in grids and figures, and
   long opdrachten with odd and even page counts.
-- `tests/reference-harness/`: runs the reference in Node. `main-process.mjs` loads the real
-  `main.js` and `preload.js` with a fake `electron`; `store.mjs` loads `renderer/store.js`;
-  `extract.mjs` pulls single functions (or a checked line range) out of UI modules and runs them
-  with explicit free variables; `suites/*.mjs` produce the goldens.
+- `tests/support/`: the golden codec (`golden.mjs`), the fixed clock, time zone and collation
+  the goldens were captured with (`environment.mjs`), and small hand-built data folders in the
+  current format for the Store tests (`scenario.mjs`). The reference harness that wrote the goldens and
+  the verbatim reference shims went at 1.0 (step 39a).
 - `tests/golden/logic/*.json`: logic goldens.
-- `tools/reference-shims/`: verbatim reference storage code and the storage spec
-  (`docs/specs/storage-spec.md`).
 
 ## Golden format
 
@@ -208,8 +209,9 @@ helpers (ids: `fullName`, `jaarlaagFromStamklas`, `sortStudents`, `group-name-pa
 
 ### Storage and sync
 
-`docs/specs/storage-spec.md` rows S01-S40 -> `tools/reference-shims/storage.test.mjs` (one test
-per row, same id; rows are grouped by topic, not by number).
+`docs/specs/storage-spec.md` rows S01-S40 were pinned on the reference by
+`tools/reference-shims/storage.test.mjs` until 1.0 (removed with the harness, step 39a); the Rust
+storage tests (`crates/maatwerk-core/src/storage/tests.rs`, ids `s01`...) cover the rows.
 
 ### Typst (`docs/reference/typst-contract.md` section 10)
 
@@ -218,11 +220,9 @@ and stores `case.json` (call arguments, handler result with paths normalised to 
 wrapper sources the handler wrote, PDF page count, page sizes and text per page via pdf.js, SVG page
 facts) plus one 30 ppi PNG per page, rendered by the reference CLI from the recorded wrapper with
 the reference arguments plus `--format png`. Batches with several jobs store text and page
-structure only. `tests/golden/typst.test.mjs` checks in CI that the PNG hashes match and that every
-recorded wrapper follows from the call arguments through the verbatim builders in
-`tools/reference-shims/typst-wrappers.cjs`.
+structure only. `tests/golden/typst.test.mjs` checks that the PNG hashes match.
 
-Regen needs the Typst packages `@preview/cetz:0.3.4`, `@preview/unify:0.8.0` and `oxifmt` in the
+History (the harness went at 1.0, step 39a): regen needed the Typst packages `@preview/cetz:0.3.4`, `@preview/unify:0.8.0` and `oxifmt` in the
 local package cache (`%LOCALAPPDATA%\typst\packages`), because the reference does not vendor them
 (quirk T1); the script stops if they are missing, so Typst never downloads them silently. The
 temporary app folder gets a copy of the reference's `include/fonts` plus Maatwerk's bundled Noto

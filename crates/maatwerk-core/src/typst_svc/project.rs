@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! `TypstProject` (ADR-0002 5a): what an opdracht compile can see. Either one opdracht folder on
-//! disk (v2 layout, and `maatwerk-cli typst compile`), or a v1 opdracht from the shared
-//! `opdrachten/` folder presented as the same virtual project. Nothing else is readable.
+//! `TypstProject` (ADR-0002 5a): what an opdracht compile can see: one opdracht folder on disk
+//! (`opdrachten/<id>/`, or any folder for `maatwerk-cli typst compile`), with files served from
+//! memory on top (the editor buffer). Nothing else is readable.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use time::OffsetDateTime;
@@ -38,41 +38,7 @@ impl TypstProject {
         }
     }
 
-    /// A v1 opdracht, `opdrachten/<typ_file>` with its images in `opdrachten/images/<id>/`, as a
-    /// virtual project (ADR-0002 5a, "order of work"):
-    ///
-    /// ```text
-    /// /main.typ                  bundled (the old generated wrapper)
-    /// /lib.typ                   bundled (the old app overwrote the data copy at every start)
-    /// /opdracht.typ              opdrachten/<typ_file>
-    /// /images/<id>/...           opdrachten/images/<id>/...
-    /// ```
-    ///
-    /// The source keeps its `images/<id>/x.png` paths, so v1 files compile unchanged. Other
-    /// opdrachten, student data and the rest of the data folder are not visible.
-    pub fn opdracht_v1(data_dir: &DataDir, typ_file: &str) -> Result<TypstProject> {
-        let id = v1_opdracht_id(typ_file)?;
-        let opdrachten = data_dir.root().join("opdrachten");
-        Ok(TypstProject {
-            main: "/main.typ".to_owned(),
-            files: vec![
-                (
-                    "/main.typ".to_owned(),
-                    Bytes::from_string(assets::OPDRACHT_MAIN_TYP),
-                ),
-                ("/lib.typ".to_owned(), Bytes::from_string(assets::LIB_TYP)),
-            ],
-            mounts: vec![
-                Mount::file("/opdracht.typ", &opdrachten, typ_file).within(data_dir.root()),
-                Mount::dir(&format!("/images/{id}"), opdrachten.join("images").join(id))
-                    .within(data_dir.root()),
-            ],
-            inputs: None,
-        })
-    }
-
-    /// Serves `path` from memory instead of from disk, e.g. the editor buffer as `opdracht.typ`
-    /// (the old app wrote it to `opdrachten/_preview_<file>` first).
+    /// Serves `path` from memory instead of from disk, e.g. the editor buffer as `opdracht.typ`.
     pub fn with_file(mut self, path: &RelPath, data: impl Into<Vec<u8>>) -> TypstProject {
         let path = format!("/{}", path.as_str());
         self.files.retain(|(p, _)| *p != path);
@@ -133,24 +99,6 @@ pub fn create_opdracht_folder(storage: &Storage, id: &str) -> Result<()> {
         }
     }
     Ok(())
-}
-
-/// `opdracht_<n>.typ` -> `opdracht_<n>`. The reference accepted any bare basename
-/// (`main.js:738-740`, `:820-826`); the image folder is named after the file stem.
-pub fn v1_opdracht_id(typ_file: &str) -> Result<&str> {
-    let invalid = |reason| Error::InvalidPath {
-        path: typ_file.to_owned(),
-        reason,
-    };
-    let rel = RelPath::parse(typ_file)?;
-    if rel.as_str().contains('/') {
-        return Err(invalid("expected a file name without folders"));
-    }
-    match Path::new(typ_file).extension().and_then(|e| e.to_str()) {
-        Some(ext) if ext.eq_ignore_ascii_case("typ") => {}
-        _ => return Err(invalid("expected a .typ file")),
-    }
-    Ok(&typ_file[..typ_file.len() - 4])
 }
 
 /// What the editor knows about an opdracht's own copy of a bundled file (ADR-0002 5a).
@@ -284,24 +232,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn v1_ids_are_bare_typ_basenames() {
-        assert_eq!(
-            v1_opdracht_id("opdracht_1756713600200.typ").unwrap(),
-            "opdracht_1756713600200"
-        );
-        for bad in [
-            "../x.typ",
-            "images/x.typ",
-            "x.json",
-            "C:/x.typ",
-            "",
-            ".typ/..",
-        ] {
-            assert!(v1_opdracht_id(bad).is_err(), "{bad}");
-        }
-    }
-
-    #[test]
     fn create_fills_a_new_folder_keeps_existing_files_and_checks_the_id() {
         let tmp = tempfile::tempdir().unwrap();
         let storage =
@@ -355,7 +285,7 @@ mod tests {
             .unwrap();
         let status = check_project_files(&storage, "opdracht_1").unwrap();
         assert_eq!(status[1].state, ProjectFileState::Updated);
-        assert_eq!(status[1].version, Some(2));
+        assert_eq!(status[1].version, Some(3));
         assert_eq!(
             storage.read_text(&rel("lib.typ")).unwrap().unwrap(),
             assets::LIB_TYP

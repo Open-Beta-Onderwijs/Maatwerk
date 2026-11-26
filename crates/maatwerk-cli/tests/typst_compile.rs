@@ -80,7 +80,9 @@ fn the_project_is_the_folder_of_the_file() {
     assert_eq!(out.status.code(), Some(1));
     let text = stderr(&out);
     assert!(
-        text.contains("access denied") || text.contains("not found"),
+        text.contains("access denied")
+            || text.contains("not found")
+            || text.contains("would escape the project root"),
         "{text}"
     );
 }

@@ -23,7 +23,7 @@ function must<T>(v: T | undefined): T {
   return v;
 }
 
-/** A rubric of the mock fixture (tools/fixtures/to-current.mjs). */
+/** A rubric of the mock fixture (tools/fixtures/rubrics.mjs). */
 function fixtureRubric(id = 'rubric-onderzoek'): Rubric {
   const file = must(seed.files[`rubrics/${id}.json`]);
   if (!('text' in file)) throw new Error('not text');

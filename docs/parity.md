@@ -1,5 +1,9 @@
 # Parity table
 
+> **History (step 39a, PLAN-2 decision 88).** The v1 (Electron) paths, the reference harness and
+> the parity checks went at 1.0. This table records how the port reached parity; it is not kept
+> up to date any more.
+
 One row per reference IPC handler and per UI-visible behaviour: where it lives in the port and
 which test pins it (PLAN.md 2.2). Started in Step 3a; Steps 4-6 filled in the Rust commands.
 Complete as of Step 6b: every handler has a command (or is dropped with a reason), and what no

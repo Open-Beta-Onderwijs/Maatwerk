@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Data format commands (Step 7a): the v1 -> v2 migration offered on the startup screen, the
+//! Data format commands (Step 7a): the migration (v2 -> v3) offered on the startup screen, the
 //! admin's data check (`validate-data`) and the integrity stamps (ADR-0003 C1, C19). Not
 //! reference methods.
 
@@ -116,7 +116,7 @@ pub async fn migrate_data_folder(
     let dry_run = dry_run.unwrap_or(false);
     let backups = (!dry_run).then(|| backup_dir(&app)).transpose()?;
     blocking(state, move |c| {
-        // Only a folder that could not be opened because it is v1 (review 7a m5).
+        // Only a folder that could not be opened because it is older (review 7a m5).
         match c.storage() {
             Err(e) if e.code == crate::error::ErrorCode::NeedsMigration => {}
             _ => {

@@ -17,7 +17,7 @@
 
 use std::collections::BTreeMap;
 use std::panic::{self, AssertUnwindSafe};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender, SyncSender};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread::JoinHandle;
@@ -27,8 +27,8 @@ use serde::Serialize;
 use serde_json::Value;
 use time::OffsetDateTime;
 use typst::foundations::Bytes;
-use typst::layout::PagedDocument;
 use typst::utils::hash128;
+use typst_layout::PagedDocument;
 
 use super::compile::{Compiled, compile_document, local_now};
 use super::diagnostics::Diagnostic;
@@ -145,6 +145,10 @@ pub struct EditorUpdate {
     pub compile_ms: u64,
     /// Time spent rendering the changed pages to SVG.
     pub render_ms: u64,
+    /// Compiles given up on after the time limit that still run when this update is sent; the
+    /// next compile waits while there are `MAX_ABANDONED` (review 8b n6: the client says so).
+    /// Set by [`LiveEditor`]; 0 from [`EditorSession`].
+    pub abandoned: usize,
 }
 
 /// An opdracht (or any Typst project) open in the editor. Blocking and CPU-heavy: callers on an
@@ -284,21 +288,34 @@ impl EditorSession {
         if stale() {
             return None;
         }
-        let (ok, diagnostics) = match result {
+        let start = Instant::now();
+        let (ok, diagnostics, pages) = match result {
             Ok(Compiled { output, warnings }) => {
+                // The new document becomes the preview only once its pages are rendered: after
+                // a panic or a stale stop in the render, the preview is still the old one
+                // (review 8a n2).
+                let (pages, shown) = changed_pages(&output, &self.shown, stale)?;
+                self.shown = shown;
                 self.vragen = Some(vragen(&output));
                 self.document = Some(output);
                 self.preview_generation = Some(generation);
                 self.current = true;
-                (true, warnings)
+                (true, warnings, pages)
             }
             Err(e) => {
                 self.current = false;
-                (false, e.diagnostics)
+                // The last good pages the client lacks (after `resend_all`).
+                let pages = match &self.document {
+                    Some(document) => {
+                        let (pages, shown) = changed_pages(document, &self.shown, stale)?;
+                        self.shown = shown;
+                        pages
+                    }
+                    None => Vec::new(),
+                };
+                (false, e.diagnostics, pages)
             }
         };
-        let start = Instant::now();
-        let pages = self.changed_pages();
         Some(EditorUpdate {
             generation,
             ok,
@@ -309,6 +326,7 @@ impl EditorSession {
             vragen: if ok { self.vragen.clone() } else { None },
             compile_ms,
             render_ms: millis(start.elapsed()),
+            abandoned: 0,
         })
     }
 
@@ -321,29 +339,33 @@ impl EditorSession {
             self.shown.len(),
         )
     }
+}
 
-    /// The pages of the last good document that the client does not have; afterwards the
-    /// client has them all.
-    fn changed_pages(&mut self) -> Vec<PageUpdate> {
-        let Some(document) = &self.document else {
-            return Vec::new();
-        };
-        let mut out = Vec::new();
-        let mut shown = Vec::with_capacity(document.pages.len());
-        for (index, page) in document.pages.iter().enumerate() {
-            let hash = hash128(page);
-            if self.shown.get(index) != Some(&hash) {
-                out.push(PageUpdate {
-                    index,
-                    hash: format!("{hash:032x}"),
-                    svg: typst_svg::svg(page),
-                });
+/// The pages of `document` that the client (`shown`: hashes of its pages) does not have, and
+/// the hashes it has afterwards. `None` when the compile went stale between two pages: a newer
+/// edit is waiting and this render is wasted (review 8a n6).
+fn changed_pages(
+    document: &PagedDocument,
+    shown: &[u128],
+    stale: &dyn Fn() -> bool,
+) -> Option<(Vec<PageUpdate>, Vec<u128>)> {
+    let mut out = Vec::new();
+    let mut hashes = Vec::with_capacity(document.pages().len());
+    for (index, page) in document.pages().iter().enumerate() {
+        let hash = hash128(page);
+        if shown.get(index) != Some(&hash) {
+            if !out.is_empty() && stale() {
+                return None;
             }
-            shown.push(hash);
+            out.push(PageUpdate {
+                index,
+                hash: format!("{hash:032x}"),
+                svg: super::compile::svg_page(page),
+            });
         }
-        self.shown = shown;
-        out
+        hashes.push(hash);
     }
+    Some((out, hashes))
 }
 
 fn failed_update(
@@ -362,6 +384,7 @@ fn failed_update(
         vragen: None,
         compile_ms: 0,
         render_ms: 0,
+        abandoned: 0,
     }
 }
 
@@ -540,18 +563,27 @@ impl LiveEditor {
 
     /// Runs `f` on the session, after the compile in progress; `None` when that does not happen
     /// within `wait` (a long compile, a closed editor) or `f` panics. Queries see the sources
-    /// of the last compile plus whatever `f` sets itself.
+    /// of the last compile plus whatever `f` sets itself. A query given up on is skipped when
+    /// the compile thread gets to it, so it does not delay the next compile (review 8b m5).
     pub fn query<R: Send + 'static>(
         &self,
         wait: Duration,
         f: impl FnOnce(&mut EditorSession) -> R + Send + 'static,
     ) -> Option<R> {
         let (tx, rx) = mpsc::sync_channel(1);
+        let given_up = Arc::new(AtomicBool::new(false));
+        let skip = given_up.clone();
         let job = Job::Query(Box::new(move |session| {
-            let _ = tx.send(f(session));
+            if !skip.load(Ordering::SeqCst) {
+                let _ = tx.send(f(session));
+            }
         }));
         self.shared.sender().send(job).ok()?;
-        rx.recv_timeout(wait).ok()
+        let out = rx.recv_timeout(wait).ok();
+        if out.is_none() {
+            given_up.store(true, Ordering::SeqCst);
+        }
+        out
     }
 
     fn bump(&self, change: impl FnOnce(&mut State)) -> u64 {
@@ -768,7 +800,8 @@ fn coordinate(
             return;
         }
         drop(state);
-        if let Some(update) = update {
+        if let Some(mut update) = update {
+            update.abandoned = shared.abandoned();
             preview.apply(&update);
             // A panicking sink must not end the thread: later updates would never be compiled
             // (review 8a m1).
@@ -964,6 +997,27 @@ mod tests {
         s.set_file(&main_typ(), pages("A2", "B", "C2")).unwrap();
         let update = compile(&mut s, 2);
         assert_eq!(indices(&update), vec![0, 2], "compared with generation 0");
+    }
+
+    #[test]
+    fn review_8a_n2_n6_a_render_that_goes_stale_keeps_the_old_preview() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut s = session(tmp.path(), &pages("A", "B", "C"));
+        compile(&mut s, 0);
+        s.set_file(&main_typ(), pages("A2", "B2", "C2")).unwrap();
+        // Fresh after the layout, stale after the first rendered page (n6).
+        let checks = std::cell::Cell::new(0);
+        let stale = || {
+            checks.set(checks.get() + 1);
+            checks.get() > 1
+        };
+        assert_eq!(s.compile(1, &stale), None);
+        assert_eq!(checks.get(), 2, "checked before the second page");
+        // Generation 0 is still the preview (n2): a failed compile reports it, and the next
+        // good one sends every page the client lacks.
+        assert_eq!(s.failed(2, "x").preview_generation, Some(0));
+        let update = compile(&mut s, 3);
+        assert_eq!(indices(&update), vec![0, 1, 2]);
     }
 
     #[test]
@@ -1270,13 +1324,44 @@ mod tests {
     fn queries_run_on_the_session_after_the_compile() {
         let (_tmp, editor, rx) = live(&pages("A", "B", "C"), Duration::ZERO);
         rx.recv_timeout(WAIT).unwrap();
-        let pages = editor.query(WAIT, |s| s.document().map(|d| d.pages.len()));
+        let pages = editor.query(WAIT, |s| s.document().map(|d| d.pages().len()));
         assert_eq!(pages, Some(Some(3)));
         // A panicking query gives `None` and leaves the editor working.
         assert_eq!(editor.query(WAIT, |_| -> u8 { panic!("boom") }), None);
         editor.update_ok(main_typ(), pages_text("A", "B"));
         assert!(rx.recv_timeout(WAIT).unwrap().ok);
         editor.close();
+    }
+
+    #[test]
+    fn review_8b_m5_a_query_given_up_on_does_not_run() {
+        let (_tmp, editor, rx) = live("A", Duration::ZERO);
+        rx.recv_timeout(WAIT).unwrap();
+        let editor = Arc::new(editor);
+        // A slow query holds the compile thread; the next one gives up before its turn.
+        let (started_tx, started) = mpsc::channel();
+        let slow = {
+            let editor = editor.clone();
+            std::thread::spawn(move || {
+                editor.query(WAIT, move |_| {
+                    started_tx.send(()).unwrap();
+                    std::thread::sleep(Duration::from_millis(300));
+                })
+            })
+        };
+        // Not a fixed sleep: on a busy runner the slow query may start late (review 39 m3).
+        started.recv_timeout(WAIT).unwrap();
+        let ran = Arc::new(AtomicBool::new(false));
+        let flag = ran.clone();
+        let quick = editor.query(Duration::from_millis(10), move |_| {
+            flag.store(true, Ordering::SeqCst)
+        });
+        assert_eq!(quick, None);
+        assert_eq!(slow.join().unwrap(), Some(()));
+        // Queries run in order: this one comes after the skipped one.
+        assert_eq!(editor.query(WAIT, |_| 1), Some(1));
+        assert!(!ran.load(Ordering::SeqCst), "skipped");
+        Arc::into_inner(editor).unwrap().close();
     }
 
     fn pages_text(a: &str, b: &str) -> String {
@@ -1286,6 +1371,67 @@ mod tests {
     /// A document that takes far longer than the short test time limit: Typst bounds `while`
     /// loops, not `for` loops (ADR-0002 section 12).
     const SLOW: &str = "#let n = 0\n#for i in range(50000000) { n += 1 }\n#n";
+
+    #[test]
+    fn review_8a_m6_a_panic_in_a_compile_is_an_error_update_and_the_editor_goes_on() {
+        // A real compiler panic is hard to provoke; the session's clock runs inside the same
+        // `catch_unwind`, so a clock that panics once stands in for it.
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().to_owned();
+        let panics = Arc::new(AtomicBool::new(false));
+        let factory = {
+            let panics = panics.clone();
+            move || {
+                let panics = panics.clone();
+                Ok(session(&dir, &pages("A", "B", "C")).with_clock(move || {
+                    if panics.swap(false, Ordering::SeqCst) {
+                        panic!("compiler bug");
+                    }
+                    fixed_now()
+                }))
+            }
+        };
+        let (tx, rx) = mpsc::channel();
+        let editor = LiveEditor::start(factory, LiveOptions::default(), move |u| {
+            let _ = tx.send(u);
+        })
+        .unwrap();
+        assert!(rx.recv_timeout(WAIT).unwrap().ok);
+
+        panics.store(true, Ordering::SeqCst);
+        let broken = editor.update_ok(main_typ(), pages("A", "B", "C2"));
+        let failed = rx.recv_timeout(WAIT).unwrap();
+        assert_eq!((failed.generation, failed.ok), (broken, false));
+        assert_eq!(
+            failed.diagnostics[0].message,
+            "internal error in the Typst compiler"
+        );
+        assert_eq!(failed.preview_generation, Some(0), "the preview stays");
+
+        editor.update_ok(main_typ(), pages("A", "B", "C3"));
+        let next = rx.recv_timeout(WAIT).unwrap();
+        assert!(next.ok, "{:?}", next.diagnostics);
+        assert_eq!(indices(&next), vec![2]);
+        editor.close();
+    }
+
+    #[test]
+    fn review_8a_m6_close_during_a_compile_returns_at_once_and_sends_nothing() {
+        let (_tmp, editor, rx) = live("A", Duration::ZERO);
+        rx.recv_timeout(WAIT).unwrap();
+        editor.update_ok(main_typ(), SLOW.to_owned());
+        // The slow compile is running (the default time limit is far away).
+        std::thread::sleep(Duration::from_millis(200));
+        let started = Instant::now();
+        editor.close();
+        assert!(
+            started.elapsed() < Duration::from_secs(2),
+            "close waited for the compile: {:?}",
+            started.elapsed()
+        );
+        // The sink is gone with the coordinator: no update for the abandoned compile.
+        assert!(rx.recv_timeout(Duration::from_millis(300)).is_err());
+    }
 
     #[test]
     fn the_watchdog_abandons_a_long_compile_and_continues_on_a_fresh_session() {
@@ -1326,6 +1472,8 @@ mod tests {
             timed_out.diagnostics[0].message,
             timeout_message(options.timeout)
         );
+        // Review 8b n6: the given-up compile still runs, and the client is told.
+        assert_eq!(timed_out.abandoned, 1);
 
         // The fresh session has the buffer (the next edit) and sends every page again.
         let fixed = editor.update_ok(main_typ(), pages_text("A", "B"));

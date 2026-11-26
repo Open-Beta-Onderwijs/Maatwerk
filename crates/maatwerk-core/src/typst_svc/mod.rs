@@ -39,7 +39,7 @@ pub use opdracht::{
 };
 pub use project::{
     ProjectFileState, ProjectFileStatus, TypstProject, bundled_project_file, check_project_files,
-    create_opdracht_folder, restore_project_file, v1_opdracht_id,
+    create_opdracht_folder, restore_project_file,
 };
 pub use rapport::{
     PoRapportData, RapportData, po_rapport_world, rapport_world, render_po_rapport_pdf,

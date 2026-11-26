@@ -43,29 +43,66 @@ const INHERITABLE: [&[u8]; 4] = [b"MediaBox", b"CropBox", b"Resources", b"Rotate
 
 /// Merges `parts` in order. An empty list gives a valid PDF without pages.
 pub fn pdf_merge(parts: &[MergePart<'_>], duplex: bool) -> Result<Merged, MergeError> {
-    let mut out = Document::with_version("1.7");
-    let pages_id = out.new_object_id();
-    let mut kids: Vec<Object> = Vec::new();
-    let mut last_media_box: Option<Object> = None;
+    let mut merger = PdfMerger::new(duplex);
+    for part in parts {
+        merger.push(part.key, part.pdf)?;
+    }
+    merger.finish()
+}
 
-    for (index, part) in parts.iter().enumerate() {
-        let new_key = index > 0 && parts[index - 1].key != part.key;
-        if duplex && new_key && kids.len() % 2 == 1 {
+/// [`pdf_merge`] one document at a time, so a caller can drop each PDF once it is merged
+/// (backlog 5b n2: a batch no longer holds every job's PDF until the end). Pushing the same
+/// parts gives the same bytes as `pdf_merge`.
+pub struct PdfMerger {
+    out: Document,
+    pages_id: ObjectId,
+    kids: Vec<Object>,
+    last_media_box: Option<Object>,
+    last_key: Option<String>,
+    duplex: bool,
+    /// Index of the next part (for errors).
+    index: usize,
+}
+
+impl PdfMerger {
+    pub fn new(duplex: bool) -> PdfMerger {
+        let mut out = Document::with_version("1.7");
+        let pages_id = out.new_object_id();
+        PdfMerger {
+            out,
+            pages_id,
+            kids: Vec::new(),
+            last_media_box: None,
+            last_key: None,
+            duplex,
+            index: 0,
+        }
+    }
+
+    /// Appends the pages of `pdf`, which belongs to `key`.
+    pub fn push(&mut self, key: &str, pdf: &[u8]) -> Result<(), MergeError> {
+        let index = self.index;
+        self.index += 1;
+        let new_key = self.last_key.as_deref().is_some_and(|last| last != key);
+        if self.last_key.as_deref() != Some(key) {
+            self.last_key = Some(key.to_owned());
+        }
+        if self.duplex && new_key && self.kids.len() % 2 == 1 {
             // The reference's `merged.addPage([lastPage.width, lastPage.height])`.
             let mut blank = dictionary! {
                 "Type" => "Page",
-                "Parent" => pages_id,
+                "Parent" => self.pages_id,
                 "Resources" => Dictionary::new(),
             };
-            if let Some(media_box) = &last_media_box {
+            if let Some(media_box) = &self.last_media_box {
                 blank.set("MediaBox", media_box.clone());
             }
-            kids.push(out.add_object(blank).into());
+            self.kids.push(self.out.add_object(blank).into());
         }
 
         let mut doc =
-            Document::load_mem(part.pdf).map_err(|source| MergeError::Read { index, source })?;
-        doc.renumber_objects_with(out.max_id + 1);
+            Document::load_mem(pdf).map_err(|source| MergeError::Read { index, source })?;
+        doc.renumber_objects_with(self.out.max_id + 1);
         let pages: Vec<ObjectId> = doc.get_pages().into_values().collect();
         if pages.is_empty() {
             return Err(MergeError::NoPages { index });
@@ -82,42 +119,52 @@ pub fn pdf_merge(parts: &[MergePart<'_>], duplex: bool) -> Result<Merged, MergeE
                     page.set(key, value);
                 }
             }
-            page.set("Parent", pages_id);
+            page.set("Parent", self.pages_id);
             // The structure tree is dropped with the catalog.
             page.remove(b"StructParents");
-            last_media_box = page.get(b"MediaBox").ok().cloned();
+            self.last_media_box = page.get(b"MediaBox").ok().cloned();
             doc.objects.insert(page_id, Object::Dictionary(page));
-            kids.push(page_id.into());
+            self.kids.push(page_id.into());
         }
-        out.max_id = doc.max_id;
-        out.objects.extend(doc.objects);
+        self.out.max_id = doc.max_id;
+        self.out.objects.extend(doc.objects);
+        Ok(())
     }
 
-    let count = kids.len();
-    out.objects.insert(
-        pages_id,
-        Object::Dictionary(dictionary! {
-            "Type" => "Pages",
-            "Kids" => kids,
-            "Count" => count as i64,
-        }),
-    );
-    let catalog = out.add_object(dictionary! {
-        "Type" => "Catalog",
-        "Pages" => pages_id,
-    });
-    out.trailer.set("Root", catalog);
-    let info = out.add_object(dictionary! {
-        "Producer" => Object::string_literal(format!("Maatwerk {}", crate::VERSION)),
-    });
-    out.trailer.set("Info", info);
-    // Drops the old catalogs, page trees, structure trees and metadata.
-    out.prune_objects();
-    out.renumber_objects();
+    /// The merged PDF.
+    pub fn finish(self) -> Result<Merged, MergeError> {
+        let PdfMerger {
+            mut out,
+            pages_id,
+            kids,
+            ..
+        } = self;
+        let count = kids.len();
+        out.objects.insert(
+            pages_id,
+            Object::Dictionary(dictionary! {
+                "Type" => "Pages",
+                "Kids" => kids,
+                "Count" => count as i64,
+            }),
+        );
+        let catalog = out.add_object(dictionary! {
+            "Type" => "Catalog",
+            "Pages" => pages_id,
+        });
+        out.trailer.set("Root", catalog);
+        let info = out.add_object(dictionary! {
+            "Producer" => Object::string_literal(format!("Maatwerk {}", crate::VERSION)),
+        });
+        out.trailer.set("Info", info);
+        // Drops the old catalogs, page trees, structure trees and metadata.
+        out.prune_objects();
+        out.renumber_objects();
 
-    let mut pdf = Vec::new();
-    out.save_to(&mut pdf).map_err(MergeError::Write)?;
-    Ok(Merged { pdf, pages: count })
+        let mut pdf = Vec::new();
+        out.save_to(&mut pdf).map_err(MergeError::Write)?;
+        Ok(Merged { pdf, pages: count })
+    }
 }
 
 /// The value of an inheritable attribute from the nearest ancestor that has it.
@@ -135,7 +182,7 @@ fn inherited(doc: &Document, page: &Dictionary, key: &[u8]) -> Option<Object> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use lopdf::content::{Content, Operation};
     use lopdf::{Stream, dictionary};
 
@@ -143,7 +190,7 @@ mod tests {
 
     /// A PDF with one page per text, sized `w` x `h`, with the MediaBox on the page tree only
     /// (inherited), as some producers write it.
-    fn pdf(texts: &[&str], (w, h): (i64, i64)) -> Vec<u8> {
+    pub(crate) fn pdf(texts: &[&str], (w, h): (i64, i64)) -> Vec<u8> {
         let mut doc = Document::with_version("1.7");
         let pages_id = doc.new_object_id();
         let font = doc.add_object(dictionary! {

@@ -50,8 +50,10 @@ import {
   initStatus,
   setCompiling,
   setDirty,
+  setAbandoned,
   setAiBusy,
   setRenderError,
+  setRenderWarnings,
   setStatus,
 } from './editor/status';
 import { createEditorAi } from './editor/ai/client';
@@ -68,6 +70,7 @@ import {
   renderVragen,
   showDiagnostics,
   showPoint,
+  unmarkedWarnings,
   vragenSummary,
 } from './editor-live';
 
@@ -699,6 +702,8 @@ const liveHost = {
 function applyDiagnostics() {
   if (!view || !lastUpdate) return;
   showDiagnostics(view, lastUpdate.diagnostics, current);
+  const rest = lastUpdate.ok ? unmarkedWarnings(lastUpdate.diagnostics, current) : [];
+  setRenderWarnings(rest.length ? { count: rest.length, details: diagnosticsText(rest) } : null);
 }
 
 window.addEventListener('message', (evt) => {
@@ -716,6 +721,7 @@ function applyUpdate(u) {
     setStatus('');
   }
   lastResult = Math.max(lastResult, u.generation);
+  setAbandoned(u.abandoned ?? 0);
   updateCompiling();
   if (u.pages.length || u.pageCount !== svgViewer.querySelectorAll('.svg-page').length) {
     patchPages(svgViewer, u);

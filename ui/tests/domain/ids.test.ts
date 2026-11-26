@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { describe, expect, it } from 'vitest';
-import { freezeClock, DEFAULT_NOW } from '../../../tests/reference-harness/environment.mjs';
+import { freezeClock, DEFAULT_NOW } from '../../../tests/support/environment.mjs';
 import {
   currentSchoolYear,
   fullName,

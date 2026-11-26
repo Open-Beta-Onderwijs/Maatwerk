@@ -14,7 +14,8 @@ use maatwerk_core::typst_svc::{
 use serde_json::Value;
 use support::{WATERMARK_SVG, assert_matches_golden, decode, fonts, frame_text, load_case};
 use time::OffsetDateTime;
-use typst::layout::{FrameItem, PagedDocument};
+use typst::layout::FrameItem;
+use typst_layout::PagedDocument;
 
 const CASE: &str = "rapport-po";
 
@@ -56,7 +57,7 @@ fn doc(data: &PoRapportData) -> PagedDocument {
 
 fn page_text(doc: &PagedDocument, page: usize) -> String {
     let mut text = String::new();
-    frame_text(&doc.pages[page].frame, &mut text);
+    frame_text(&doc.pages()[page].frame, &mut text);
     text
 }
 
@@ -72,7 +73,7 @@ fn footer_numbers(doc: &PagedDocument) -> Vec<String> {
             }
         }
     }
-    doc.pages
+    doc.pages()
         .iter()
         .map(|p| {
             let mut all = Vec::new();
@@ -121,7 +122,7 @@ fn the_overview_page_has_the_sentence_projectgroep_scores_lines_and_comment() {
 #[test]
 fn a_projectgroep_of_one_has_no_group_line_and_empty_sections_are_left_out() {
     let d = doc(&case_data());
-    let first = (0..d.pages.len())
+    let first = (0..d.pages().len())
         .find(|&p| page_text(&d, p).contains("Fleur de Wit (900104)"))
         .expect("Fleur's first page");
     let p = page_text(&d, first);
@@ -220,7 +221,7 @@ fn body_items(doc: &PagedDocument, page: usize) -> Vec<(String, f64)> {
         }
     }
     let mut all = Vec::new();
-    items(&doc.pages[page].frame, 0.0, &mut all);
+    items(&doc.pages()[page].frame, 0.0, &mut all);
     let lowest = all.iter().map(|i| i.1).fold(f64::MIN, f64::max);
     all.into_iter().filter(|i| i.1 < lowest).collect()
 }
@@ -237,12 +238,12 @@ fn a_category_taller_than_a_page_breaks_instead_of_running_into_the_footer() {
     let d = doc(&data);
     // A4 is 841.89 pt high with 2 cm (56.69 pt) margins: no body text below 785 pt.
     let bottom = 841.89 - 56.69;
-    for p in 0..d.pages.len() {
+    for p in 0..d.pages().len() {
         for (text, y) in body_items(&d, p) {
             assert!(y <= bottom + 1.0, "page {}: {text:?} at {y} pt", p + 1);
         }
     }
-    assert!((0..d.pages.len()).any(|p| page_text(&d, p).contains("EINDE")));
+    assert!((0..d.pages().len()).any(|p| page_text(&d, p).contains("EINDE")));
 }
 
 #[test]
@@ -278,10 +279,25 @@ fn preview() {
         .join("po-preview")
         .join(run.to_string());
     std::fs::create_dir_all(&out).unwrap();
-    for (i, page) in d.pages.iter().enumerate() {
-        typst_render::render(page, 110.0 / 72.0)
+    for (i, page) in d.pages().iter().enumerate() {
+        support::render(page, 110.0 / 72.0)
             .save_png(out.join(format!("p{}.png", i + 1)))
             .unwrap();
     }
-    eprintln!("{} pages in {}", d.pages.len(), out.display());
+    eprintln!("{} pages in {}", d.pages().len(), out.display());
+}
+
+#[test]
+fn review_5a_m3_a_failing_observatie_leeradvies_is_named() {
+    let (_tmp, dir) = data_dir();
+    let mut data = case_data();
+    let name = data.students[0]["name"].as_str().unwrap().to_owned();
+    data.students[0]["observaties"] = serde_json::json!([{
+        "icon": "📚", "naam": "Bronnen ontbreken", "uitleg": "", "leeradvies": "#oeps()"
+    }]);
+    let err = render_po_rapport_pdf(fonts(), &data, &dir, fixed_now()).unwrap_err();
+    assert_eq!(
+        err.diagnostics[0].hints[0],
+        format!("de fout zit in het leeradvies bij de observatie Bronnen ontbreken voor {name}")
+    );
 }

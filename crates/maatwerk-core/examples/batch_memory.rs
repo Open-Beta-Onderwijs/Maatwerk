@@ -12,11 +12,24 @@
 use std::path::Path;
 use std::time::Instant;
 
-use maatwerk_core::paths::DataDir;
+use maatwerk_core::assets;
+use maatwerk_core::paths::{DataDir, RelPath};
 use maatwerk_core::typst_svc::{
     BatchJob, BatchOptions, FontStore, OpdrachtHeader, OpdrachtInputs, TypstProject, local_now,
     render_assignment_batch,
 };
+
+/// A fixture opdracht folder (`tests/fixtures/opdrachten/<id>/`, no `main.typ`/`lib.typ` on disk)
+/// with the bundled `main.typ` and `lib.typ`.
+fn fixture_project(dir: &DataDir, id: &str) -> TypstProject {
+    TypstProject::opdracht(dir, id)
+        .expect("fixture opdracht")
+        .with_file(
+            &RelPath::parse("main.typ").unwrap(),
+            assets::OPDRACHT_MAIN_TYP,
+        )
+        .with_file(&RelPath::parse("lib.typ").unwrap(), assets::LIB_TYP)
+}
 
 fn main() {
     let args: Vec<usize> = std::env::args()
@@ -32,12 +45,12 @@ fn main() {
 
     let mut jobs = Vec::new();
     for s in 0..students {
-        for file in ["opdracht_1756713600200.typ", "opdracht_1756713600203.typ"] {
+        for file in ["opdracht_1756713600200", "opdracht_1756713600203"] {
             jobs.push(BatchJob {
                 key: s.to_string(),
                 label: file.to_owned(),
                 opdracht: file.to_owned(),
-                project: TypstProject::opdracht_v1(&dir, file).expect("fixture opdracht"),
+                project: fixture_project(&dir, file),
                 inputs: OpdrachtInputs {
                     header: OpdrachtHeader {
                         student: format!("Leerling {s}"),

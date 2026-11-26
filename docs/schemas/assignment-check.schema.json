@@ -169,7 +169,7 @@
         },
         "punten": {
           "type": ["number", "null"],
-          "description": "null when not given, not a finite number, or when the folder's lib.typ is older than maatwerk-lib 2."
+          "description": "null when not given, not a finite number (a string such as \"1,5\" counts), or when the folder's lib.typ is older than maatwerk-lib 2."
         },
         "antwoord": {
           "type": ["string", "null"],
