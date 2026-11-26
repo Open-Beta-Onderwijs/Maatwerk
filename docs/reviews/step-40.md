@@ -120,7 +120,7 @@ test: apply with an image, conflict, "Hun versie laden", type: no `commitImages`
 ## Minors
 
 **m1. Ongedaan maken after a retried Toepassen reverts the typing m3 kept.**
-`applier.ts:75, 98, 173`. `before` is the buffer from before the *first* round trip. When the
+`applier.ts:75, 98, 173`. `before` is the buffer from before the _first_ round trip. When the
 loop retries because the teacher typed, the hunks land on `base` (the later buffer), but
 `Applied.before` stays the first snapshot. Undo then puts back `a.before[file]`, which drops
 the typing of the first round trip. That is exactly what m3 protects against, now on the undo
@@ -259,3 +259,22 @@ reach the shared folder without the text that uses them, through the conflict / 
 laden" path (M2). The minors are mostly edges of the same Applier flow (undo after a retry,
 two providers, a new run, a failed commit) and the m6/m7 edges (Unix orphans, the last check at
 the deadline, the job on app exit).
+
+## Resolution (main session, 2026-11-26)
+
+- **M1 fixed** (`provider::login_state`): the login check refuses only on an explicit "not
+  logged in" (`loggedIn: false`, or a failed exit whose output reads as a login problem);
+  anything else is unknown and the CLI runs. No preset probe for an overridden command. Tests
+  in `provider/tests.rs` and `ai_turn.rs`.
+- **M2 fixed**: the save stores only pending images the saved text names (by stem); "Hun
+  versie laden" drops pending images. e2e: an unnamed image is not stored.
+- **m1** (undo goes back to the text the hunks went onto), **m2** (a give-up resets the
+  history; the proposal holds only `opdracht.typ`, so no half-applied multi-file case),
+  **m3** (every provider's pending images), **m4** (a failed image store keeps them pending and
+  saves the text; e2e), **m5** (a refused turn skips the preparation; Stop during the 15 s
+  login probe is not checked), **m6** (the time limit during the last check keeps the
+  proposal), **m8** (KillOnDrop inside the job wrapper) fixed. `the_whole_tree_is_killed` was
+  flaky at a 0,8 s limit: 3 s.
+- **n2, n3, n8** fixed; **n7**: `beta_until_the_manual_check` pins `VERIFIED`.
+- **Backlog** (`docs/backlog.md` "From Step 40"): m7, the rest of m9 (two providers in e2e, a
+  detached grandchild, the run folder in the privacy test), n1, n4, n5, n6.

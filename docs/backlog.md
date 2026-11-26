@@ -655,6 +655,16 @@ See `docs/reviews/step-32.md` for the evidence of each item.
 - ~~**Logos**~~ no vendor logos (user, 2026-11-26): letter buttons CC, GPT, G, AG, V, CP.
 - ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
 
+## From Step 40
+
+See `docs/reviews/step-40.md`. Open: m7 (Unix: processes the CLI leaves without holding the
+pipes survive a normal exit; Windows ends them with the job), m9 rest (e2e with two providers'
+pending images, a detached grandchild test, the run folder in the privacy test), n1 (a
+rolled-back save flips the history's "applied" until the next save), n4 (`Guard::wait` and
+`with_time_limit` are two helpers; given-up work runs to its limit), n5 (the job end may cut
+off a CLI's background self-updater; consider `DISABLE_AUTOUPDATER=1` for Claude Code), n6
+(`workspace.rs` 568 lines: move `write_context` into `workspace/`).
+
 ## From Step 34
 
 Review `docs/reviews/step-34.md`: m2 (every re-render of the Opdrachten list rebuilds the preview
