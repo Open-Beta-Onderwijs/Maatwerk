@@ -42,6 +42,17 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
   `--version` cached per path. Random picker tokens (AI tokens kept for Opnieuw proberen).
   `ai_send` refuses before the notice (backend only; MockAi does not mirror it).
 - Step 39 CI (run on `57fa6d0`): green on every job (2026-11-26). Merge waits for the user.
+- 40.3a `22f3b9f`: letter buttons and "bèta" (`provider::VERIFIED` = Claude Code; Vibe joins
+  after its manual check). Visual `editor` baselines (3 themes, C -> CC) **not updated: wait
+  for the user's OK**. Screens shown to the user.
+- 40.4 started: `provider.rs` split (presets/args/settings/tests). Still to split: `panel.ts`,
+  `src-tauri/src/ai.rs`, `workspace.rs`, `events.rs` (and `editor-ai.css`, `composer.ts`).
+- Open for the user: `vibe --setup` (login) for the Vibe manual check and its tool steps in
+  the transcript; v0.29.0 tag run 45784769264 failed only on the macOS artifact upload
+  (ENOTFOUND, GitHub network): `gh run rerun 45784769264 --failed` on the user's OK.
+
+**Next action:** continue m11 splits, then m12 tests (privacy test of a whole workspace, e2e
+Stop race), Vibe check once logged in, ADR-0009 rows, gate, review, 0.31.
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 
