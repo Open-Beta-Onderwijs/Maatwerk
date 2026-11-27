@@ -62,6 +62,23 @@ test('U6: the RTTI uitleg modal keeps teacher text as typed', async ({ page }) =
   await expect(page.locator('textarea[data-uitleg="R"]')).toHaveValue(NASTY);
 });
 
+test('4a m4: an unreadable RTTI template is replaced only after asking', async ({ page }) => {
+  const file = 'templates/rtti/nat_3.json';
+  await login(page);
+  await withMock(page, (m, f) => m.externalWriteText(f, '{ "uitleg": '), file);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await page.locator('#btn-toetsen-rtti-uitleg').click();
+  await page.locator('.dlg-tabs [role="tab"]', { hasText: /^3$/ }).click();
+  await page.locator('textarea[data-uitleg="R"]').fill('Nieuwe uitleg');
+  await page.locator('#btn-rtti-uitleg-save').click();
+  const ask = page.getByRole('alertdialog', { name: 'Onleesbaar bestand' });
+  await expect(ask).toContainText('tabblad 3');
+  await ask.getByRole('button', { name: 'Overschrijven' }).click();
+  await expect(page.locator('.toast').last()).toContainText('opgeslagen');
+  const saved = await readMockJson<{ uitleg: Record<string, string> }>(page, file);
+  expect(saved.uitleg.R).toBe('Nieuwe uitleg');
+});
+
 test('U3: a failed score save is reported', async ({ page }) => {
   await login(page);
   await openScoreGrid(page);

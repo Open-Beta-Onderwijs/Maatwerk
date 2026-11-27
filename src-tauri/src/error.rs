@@ -44,7 +44,7 @@ pub struct ErrorDetails {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
     /// `unsupported_schema`, `needs_migration`: the `schema_version` found; `read_only`: the
-    /// `minAppVersion` from `school.json`.
+    /// `minAppVersion` from `school.json`; `corrupt_json`: the hash of the unreadable bytes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub found: Option<String>,
 }
@@ -104,7 +104,14 @@ impl From<Error> for CommandError {
         let (code, details) = match &e {
             Error::InvalidPath { path: p, .. } => (ErrorCode::InvalidPath, path(p)),
             Error::NotFound { path: p } => (ErrorCode::NotFound, path(p)),
-            Error::CorruptJson { path: p, .. } => (ErrorCode::CorruptJson, path(p)),
+            // `found`: the hash of the unreadable bytes, for an overwrite the teacher confirms.
+            Error::CorruptJson { path: p, hash, .. } => (
+                ErrorCode::CorruptJson,
+                ErrorDetails {
+                    found: Some(hash.clone()),
+                    ..path(p)
+                },
+            ),
             Error::Conflict {
                 path: p,
                 updated_by,
@@ -174,6 +181,7 @@ mod tests {
             Error::CorruptJson {
                 path: "a".into(),
                 message: "m".into(),
+                hash: "h".into(),
             },
             Error::Conflict {
                 path: "a".into(),

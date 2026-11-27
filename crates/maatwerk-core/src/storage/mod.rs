@@ -734,6 +734,7 @@ fn parse_json(rel: &RelPath, bytes: &[u8]) -> Result<Value> {
     serde_json::from_str(&text).map_err(|e| Error::CorruptJson {
         path: rel.to_string(),
         message: e.to_string(),
+        hash: hash_hex(bytes),
     })
 }
 

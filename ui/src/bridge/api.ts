@@ -147,10 +147,15 @@ export interface MaatwerkApi {
   // ── JSON storage ──────────────────────────────────────────────────────────
   /** Parsed JSON, or null when missing or unparsable. */
   readJson(relPath: string): Promise<Json | null>;
-  /** `{ data, hash }`; `{ data: null, hash: null }` when missing; `{ error }` when unreadable. */
+  /**
+   * `{ data, hash }`; `{ data: null, hash: null }` when missing; `{ error, unreadableHash }` when
+   * unreadable: writing with `expectedHash: unreadableHash` replaces exactly that file (4a m4).
+   */
   readJsonVersioned(
     relPath: string,
-  ): Promise<{ data: Json; hash: string | null } | { error: string }>;
+  ): Promise<
+    { data: Json; hash: string | null } | { error: string; unreadableHash?: string | null }
+  >;
   writeJson(
     relPath: string,
     data: Json,

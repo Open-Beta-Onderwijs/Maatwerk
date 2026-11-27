@@ -229,7 +229,12 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
 
     async readJsonVersioned(relPath) {
       const r = await c.readJsonVersioned(relPath);
-      if (r.status === 'error') return { error: message(r.error) };
+      if (r.status === 'error') {
+        // corrupt_json: `found` is the hash of the unreadable bytes (review 4a m4).
+        const unreadableHash =
+          r.error.code === 'corrupt_json' ? (r.error.details.found ?? null) : null;
+        return { error: message(r.error), unreadableHash };
+      }
       return r.data ?? { data: null, hash: null };
     },
 

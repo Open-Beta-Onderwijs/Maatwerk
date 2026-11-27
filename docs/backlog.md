@@ -266,8 +266,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**`update()` does not retry a read that fails with `io` (review 4a m6):**~~ Done in step 41:
   every read retries a sharing error with the rename backoff (`atomic::read_retrying`, tested
   with an injected read). Was: on Windows a read can hit a file that is being replaced.
-- **RTTI modal and an unreadable template file (review 4a m4):** the tab shows defaults and every
-  save conflicts; offer "overwrite the unreadable file" explicitly.
+- ~~**RTTI modal and an unreadable template file (review 4a m4):**~~ Done in step 41: saving asks
+  "Overschrijven"; the write is checked against the hash of the unreadable bytes (`corrupt_json`
+  `details.found`), so only that file is replaced (e2e "4a m4"). Was: every save conflicted.
 - ~~**`Locked.path` names the local lock file, not the data file (n4).**~~ Done in step 41.
 - ~~**`update_locks` map never shrinks (n6):**~~ Done in step 41: an idle file's entry is
   removed after its update.
@@ -370,7 +371,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**n4:**~~ Done in step 41: a conflict copy must hold the original's id; another id is a
   placement error (test first).
 - **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones
-  each file; measure in 7c.
+  each file. Step 41: moved to 45b (manual tests on a real copy): only measurable there, and
+  checking fewer years could hide errors.
 - ~~**n6:**~~ Done in step 41: the toggle saves a copy; a failure leaves the cache and screen
   as they were (e2e first).
 - ~~**n8:**~~ Done in step 41: `encode` keeps the file's other top-level keys (Vitest).

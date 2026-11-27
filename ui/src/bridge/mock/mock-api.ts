@@ -379,14 +379,16 @@ export class MockApi implements MaatwerkApi {
 
   async readJsonVersioned(
     relPath: string,
-  ): Promise<{ data: Json; hash: string | null } | { error: string }> {
+  ): Promise<
+    { data: Json; hash: string | null } | { error: string; unreadableHash?: string | null }
+  > {
     this.record('readJsonVersioned', [relPath]);
     const bytes = this.files.get(relPath);
     if (!bytes) return { data: null, hash: null };
     try {
       return { data: JSON.parse(decoder.decode(bytes)), hash: await sha1(bytes) };
     } catch (e) {
-      return { error: (e as Error).message };
+      return { error: (e as Error).message, unreadableHash: await sha1(bytes) };
     }
   }
 

@@ -569,7 +569,7 @@ export type ErrorDetails = {
 	updatedBy?: string | null,
 	/**
 	 *  `unsupported_schema`, `needs_migration`: the `schema_version` found; `read_only`: the
-	 *  `minAppVersion` from `school.json`.
+	 *  `minAppVersion` from `school.json`; `corrupt_json`: the hash of the unreadable bytes.
 	 */
 	found?: string | null,
 };

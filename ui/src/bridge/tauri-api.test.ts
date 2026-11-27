@@ -79,6 +79,17 @@ describe('TauriApi', () => {
     const corrupt = fakeBackend(() => err('corrupt_json', 'corrupt JSON in a.json'));
     expect(await corrupt.api.readJsonVersioned('a.json')).toEqual({
       error: 'corrupt JSON in a.json',
+      unreadableHash: null,
+    });
+    // Review 4a m4: the hash of the unreadable bytes, for an overwrite the teacher confirms.
+    const hashed = fakeBackend(() => ({
+      code: 'corrupt_json',
+      message: 'corrupt JSON in a.json',
+      details: { found: 'f00d' },
+    }));
+    expect(await hashed.api.readJsonVersioned('a.json')).toEqual({
+      error: 'corrupt JSON in a.json',
+      unreadableHash: 'f00d',
     });
   });
 

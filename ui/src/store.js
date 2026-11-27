@@ -182,7 +182,12 @@ const Store = (() => {
   // throws an error with code 'conflict'.
   async function loadVersioned(relPath) {
     const read = await window.maatwerk.readJsonVersioned(relPath);
-    if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
+    if (read?.error) {
+      const err = new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
+      // Saving with this hash replaces exactly the unreadable file (review 4a m4).
+      err.unreadableHash = read.unreadableHash ?? null;
+      throw err;
+    }
     return { data: read.data, hash: read.hash };
   }
 

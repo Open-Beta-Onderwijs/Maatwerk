@@ -90,6 +90,7 @@ pub fn folder_version(root: &Path) -> Result<u64> {
     let config: Value = serde_json::from_slice(&bytes).map_err(|e| Error::CorruptJson {
         path: "config.json".into(),
         message: e.to_string(),
+        hash: crate::storage::hash_hex(&bytes),
     })?;
     match config.get("schema_version") {
         None | Some(Value::Null) => Ok(1),
