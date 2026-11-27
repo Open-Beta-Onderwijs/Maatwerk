@@ -233,10 +233,10 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 35   | Rights a: own groups only, Sectiesecretaris                      | M            | 0.26    | done                       |
 | 36   | Rights b: Gastaccount, Kopieer naar…                             | M            | 0.27    | done                       |
 | 37   | PO completion: verzameloverzicht, PO backlog                     | M            | 0.28    | done                       |
-| 38   | Grade numbers in Rust, Cijfergemiddelden                         | L            | 0.29    | gate                       |
-| 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | todo                       |
-| 40   | AI assistant follow-ups                                          | M            | 0.31    | todo                       |
-| 41   | Data and storage robustness, `rapporten/` cleanup                | M            | 0.32    | todo                       |
+| 38   | Grade numbers in Rust, Cijfergemiddelden                         | L            | 0.29    | done                       |
+| 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | done                       |
+| 40   | AI assistant follow-ups                                          | M            | 0.31    | done                       |
+| 41   | Data and storage robustness, `rapporten/` cleanup, edit locks    | L            | 0.32    | in progress                |
 | 41b  | Encrypted storage (ADR-0012)                                     | L (41b-a, b) | 0.33    | todo                       |
 | 42   | Tests and CI hygiene                                             | M            | 0.34    | todo                       |
 | 43   | Remaining backlog                                                | M            | 0.35    | todo                       |
@@ -787,7 +787,7 @@ Items: backlog 32 m3-m12, "Real CLIs", "Logos"; ADR-0009 _verify_ rows. Decision
    m12 tests; the nits. Manual check of each CLI the user has; ADR-0009 rows updated.
 5. Gate, review, release 0.31.
 
-### Step 41: Data and storage robustness, `rapporten/` cleanup (M)
+### Step 41: Data and storage robustness, `rapporten/` cleanup, edit locks (L)
 
 Items: X-06; backlog 3b n4, 4a m4, m6, n4, n6, n7, n9-n12, 4b n4, 5a m4, 5b n6, 6a m4, n7, 6b n9,
 n10, 7a n3-n6, n8, 7b "Herstellen uit snapshot", 7c "Read vs. colleague change", 9 n6, 10 m3, m6,
@@ -806,7 +806,8 @@ Bugs: failing test first.
 5. **Edit locks in UI and core** (user, 2026-11-27): analysis in `docs/reference/edit-locks.md`.
    Build what its section 5 (user's decisions) says: PO scope locked after scores, rubric and
    observatie scope values in use locked, observatie delete blocked by opdrachten, confirms for
-   question max/soort and group membership, the UI-only locks in core too, one "has data" rule.
+   question max/soort and group membership, the UI-only locks in core too, one "has data" rule,
+   `save_exam_family` for herkansing families, Gegevenscontrole checks for violations via sync.
 6. Gate, review, release 0.32.
 
 ### Step 41b: Encrypted storage (L: 41b-a, 41b-b)
