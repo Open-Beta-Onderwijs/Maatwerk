@@ -55,6 +55,7 @@ import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { normaliseRubric } from './domain/rubric';
 import { hasData } from './domain/has-data';
+import { highestEntered } from './domain/question-locks';
 import { rubricOf, setRubricLookup } from './domain/po';
 import {
   READ_ONLY_CODE,
@@ -1101,6 +1102,16 @@ const Store = (() => {
     }
   }
 
+  /**
+   * The highest score entered per question of the exam (edit-locks.md decision 11: the test
+   * editor refuses a max below it). One folder read, as the list screens.
+   */
+  async function highestEnteredScores(examId, year, subject = _activeSubject) {
+    await preloadScores(year, subject);
+    const records = getStudentsSync(year).map((s) => cache[ypScore(year, subject, s.id)]);
+    return highestEntered(records, String(examId));
+  }
+
   /** Whether the student's score file holds anything for this exam (scores, grade, observaties, PO data). */
   async function studentHasExamData(studentId, examId, year, subject = _activeSubject) {
     return hasData(await getStudentScores(studentId, year, subject), examId);
@@ -1666,6 +1677,7 @@ const Store = (() => {
     deleteObservation,
     setObservation,
     examHasScores,
+    highestEnteredScores,
     studentsWithDataAnyYear,
     obsIsUsedInAnyExam,
     obsIsUsedInAnyRubric,

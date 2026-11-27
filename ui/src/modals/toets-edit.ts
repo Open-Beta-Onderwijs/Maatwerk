@@ -22,6 +22,7 @@ import { attemptCode, questionSummary, resitObsIds } from '../domain/exam-info';
 import { formatNTerm } from '../domain/format';
 import { nextQuestionId } from '../domain/ids';
 import { isPo } from '../domain/po';
+import { CHANGE_AFTER_SCORES, maxRefusal } from '../domain/question-locks';
 import { obsHasToetstype } from '../domain/rubric';
 import {
   cascadeStructure,
@@ -84,11 +85,15 @@ export async function openExamModal(
   const attemptsHaveScores =
     hasScores ||
     (await Promise.all(resits.map((r) => Store.examHasScores(r.id, year)))).some(Boolean);
+  const highest: Record<string, number> = hasScores
+    ? await Store.highestEnteredScores(exam.id, year)
+    : {};
   showExamEditor(exam, {
     year,
     afterSave,
     isEdit: true,
     hasScores,
+    highest,
     attemptsHaveScores,
     // Edited through the summary card, for every attempt at once.
     lockTopFields: !!exam.parent_id || resits.length > 0,
@@ -101,6 +106,8 @@ export interface ExamEditorOptions {
   /** An existing exam; otherwise the last step of creating one. */
   isEdit?: boolean;
   hasScores?: boolean;
+  /** The highest score entered per question id: a lower max is refused (decision 11). */
+  highest?: Readonly<Record<string, number>>;
   /** This exam or one of its attempts has scores. */
   attemptsHaveScores?: boolean;
   lockTopFields?: boolean;
@@ -113,7 +120,13 @@ function badgeHtml(e: Exam): string {
 }
 
 /** Options of a question's row buttons: the row is one line (spec 4.11). */
-function questionRow(q: NumberedQuestion, i: number, mode: string, hasScores: boolean): string {
+function questionRow(
+  q: NumberedQuestion,
+  i: number,
+  mode: string,
+  hasScores: boolean,
+  highest: Readonly<Record<string, number>>,
+): string {
   const sec = secIndexOf(q, mode);
   const seq = mode === 'seq';
   const secBtns = sectionLabels(mode)
@@ -123,11 +136,12 @@ function questionRow(q: NumberedQuestion, i: number, mode: string, hasScores: bo
       return `<button type="button" class="sec-btn${selected ? ' selected' : ''}${locked ? ' locked' : ''}${seq ? ' sec-btn-inactive' : ''}" data-qi="${i}" data-sec="${si + 1}"${seq ? ' disabled' : ''}>${seq ? '' : escHtml(label)}</button>`;
     })
     .join('');
-  const ptsBtns = Array.from(
-    { length: 11 },
-    (_, n) =>
-      `<button type="button" class="tog-btn pts-btn${q.max_points === n ? ' selected' : ''}" data-qi="${i}" data-pts="${n}">${n}</button>`,
-  ).join('');
+  const ptsBtns = Array.from({ length: 11 }, (_, n) => {
+    // Below a score already entered: refused (decision 11), unless it is the saved max.
+    const why = q.max_points === n ? null : maxRefusal(highest, q.id, n);
+    const off = why ? ` disabled title="${escHtml(why)}"` : '';
+    return `<button type="button" class="tog-btn pts-btn${q.max_points === n ? ' selected' : ''}${why ? ' tog-btn-disabled' : ''}" data-qi="${i}" data-pts="${n}"${off}>${n}</button>`;
+  }).join('');
   const kind = q.kind ?? 'normal';
   const kindOpt = (value: QuestionKind, label: string) =>
     `<option value="${value}"${kind === value ? ' selected' : ''}>${label}</option>`;
@@ -161,6 +175,7 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
     afterSave = null,
     isEdit = false,
     hasScores = false,
+    highest = {},
     attemptsHaveScores = hasScores,
     lockTopFields = false,
     newAttemptOf,
@@ -309,7 +324,9 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
 
       function renderQRows() {
         cascadeStructure(questions, boundaries, mode);
-        tbody.innerHTML = questions.map((q, i) => questionRow(q, i, mode, hasScores)).join('');
+        tbody.innerHTML = questions
+          .map((q, i) => questionRow(q, i, mode, hasScores, highest))
+          .join('');
         refreshSummary();
       }
 
@@ -319,7 +336,16 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
           ?.querySelectorAll(cls)
           .forEach((b) => b.classList.toggle('selected', b === btn));
 
-      tbody.addEventListener('click', (e) => {
+      // Decision 11: a max or soort change of a question that may have scores asks once.
+      const openedSet = new Set(openedIds.map((q) => q.id));
+      let changeOk = false;
+      const mayChange = async (q: NumberedQuestion): Promise<boolean> => {
+        if (!hasScores || !openedSet.has(q.id) || changeOk) return true;
+        changeOk = await confirmDialog(CHANGE_AFTER_SCORES, { okLabel: 'Doorgaan' });
+        return changeOk;
+      };
+
+      tbody.addEventListener('click', async (e) => {
         const target = e.target as HTMLElement;
         const btn = target.closest<HTMLElement>('.sec-btn, .pts-btn, .rtti-btn, .qi-del');
         if (!btn || (btn as HTMLButtonElement).disabled) return;
@@ -331,6 +357,7 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
           boundaries[i] = Number(btn.dataset.sec);
           renderQRows();
         } else if (btn.matches('.pts-btn')) {
+          if (q.max_points === Number(btn.dataset.pts) || !(await mayChange(q))) return;
           q.max_points = Number(btn.dataset.pts);
           select(btn, '.pts-btn');
           refreshSummary();
@@ -346,10 +373,14 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
         }
       });
 
-      tbody.addEventListener('change', (e) => {
+      tbody.addEventListener('change', async (e) => {
         const target = e.target as HTMLSelectElement;
         const q = questions[Number(target.dataset.qi)];
         if (target.matches('.kind-sel') && q) {
+          if (!(await mayChange(q))) {
+            target.value = q.kind ?? 'normal';
+            return;
+          }
           q.kind = target.value as QuestionKind;
           refreshSummary();
         }

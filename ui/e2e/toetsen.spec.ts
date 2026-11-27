@@ -4,6 +4,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import {
+  examMenuItem,
   login,
   openStackOf,
   readMockJson,
@@ -699,4 +700,63 @@ test.describe('B-05: the summary overview shows observaties of attempts', () => 
     // The student's row is in its group's table and in the list of all students.
     await expect(page.locator(`#tab-resultaten td[title="${obs}"]`).first()).toBeAttached();
   });
+});
+
+test('after scores a max or soort change asks once; a max below an entered score is refused (decision 11)', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  const examId = `nat-lege-toets-${YEAR}`; // q1..q3 without scores
+  type Q = { id: string; max_points: number; kind?: string };
+  await page.goto('/');
+  const before = await readMockJson<{ questions: Q[] }>(page, `${YEAR}/exams/${examId}.json`);
+  const [m0, m1, m2] = before.questions.map((q) => q.max_points) as [number, number, number];
+  expect(m0).toBeGreaterThan(0);
+  expect(m1).toBeGreaterThan(0);
+  const file = await withMock(
+    page,
+    async (m, y) => (await m.readJsonDir(`${y}/scores/nat`))[0]!,
+    YEAR,
+  );
+  const rec = file.data as { scores?: Record<string, unknown> };
+  await seedFiles(page, {
+    [`${YEAR}/scores/nat/${file.name}`]: {
+      ...rec,
+      scores: { ...rec.scores, [examId]: { q1: 1, q2: m1 } },
+    },
+  });
+  await login(page);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await examMenuItem(page, examId, 'Toets bewerken');
+  const pts = (qi: number, n: number) => page.locator(`.pts-btn[data-qi="${qi}"][data-pts="${n}"]`);
+  await expect(pts(1, m1 - 1)).toBeDisabled();
+  await expect(pts(1, m1 - 1)).toHaveAttribute('title', new RegExp(`score van ${m1} ingevoerd`));
+  await expect(pts(0, 0)).toBeDisabled();
+  await expect(pts(0, 1)).toBeEnabled();
+
+  const next = m0 === 10 ? 9 : m0 + 1;
+  await pts(0, next).click();
+  const ask = page.locator('.dlg', { hasText: 'veranderen de cijfers' });
+  await expect(ask).toBeVisible();
+  await ask.getByRole('button', { name: 'Annuleren' }).click();
+  await expect(ask).toHaveCount(0);
+  await expect(pts(0, m0)).toHaveClass(/selected/);
+  await expect(pts(0, next)).not.toHaveClass(/selected/);
+  await pts(0, next).click();
+  await ask.getByRole('button', { name: 'Doorgaan' }).click();
+  await expect(pts(0, next)).toHaveClass(/selected/);
+  // Asked once per editor: the soort change goes straight through.
+  await page.locator('.kind-sel[data-qi="2"]').selectOption('bonus');
+  await expect(ask).toHaveCount(0);
+  await page.locator('#f-esave').click();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
+  await expect(async () => {
+    const exam = await readMockJson<{ questions: Q[] }>(page, `${YEAR}/exams/${examId}.json`);
+    expect(exam.questions.map((q) => [q.max_points, q.kind ?? 'normal'])).toEqual([
+      [next, before.questions[0]!.kind ?? 'normal'],
+      [m1, before.questions[1]!.kind ?? 'normal'],
+      [m2, 'bonus'],
+    ]);
+  }).toPass();
+  expect(errors).toEqual([]);
 });
