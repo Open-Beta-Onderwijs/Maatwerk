@@ -236,7 +236,7 @@ closed, `_reference/` is history, one area per step, data safety, a release per 
 | 38   | Grade numbers in Rust, Cijfergemiddelden                         | L            | 0.29    | done                       |
 | 39   | v1 removal and Typst upgrade                                     | L (39a, 39b) | 0.30    | done                       |
 | 40   | AI assistant follow-ups                                          | M            | 0.31    | done                       |
-| 41   | Data and storage robustness, `rapporten/` cleanup, edit locks    | L            | 0.32    | in progress                |
+| 41   | Data and storage robustness, `rapporten/` cleanup, edit locks    | L            | 0.32    | review done, awaiting user |
 | 41b  | Encrypted storage (ADR-0012)                                     | L (41b-a, b) | 0.33    | todo                       |
 | 42   | Tests and CI hygiene                                             | M            | 0.34    | todo                       |
 | 43   | Remaining backlog                                                | M            | 0.35    | todo                       |

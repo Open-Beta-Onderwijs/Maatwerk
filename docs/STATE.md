@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-27 (step 41: sub-tasks 1-4 done, 5 parts 1-7 core)
+Last updated: 2026-11-27 (step 41: all sub-tasks done, review fixed, 0.32.0; waiting for the user)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -85,9 +85,24 @@ Baseline: cargo test green.
   the D34 fix), visual 171/177: `modal-toets-edit` (max buttons below an entered score faded)
   and `modal-observatie-edit` (Havo, Vwo, Natuurkunde locked by the rubric) in 3 themes,
   intended, **baselines not updated: wait for the user's OK**.
-- Review: reviewer subagent on `step-40..HEAD` -> `docs/reviews/step-41.md`.
+- **Review** `docs/reviews/step-41.md`: 0 blockers, 3 majors, 7 minors, 11 nits. `1a2c33b`
+  fixed M1 (locked top fields rebuilt from defaults: older exams without `weging_se` could not
+  save any attempt), M2 (half-failed family save: Store re-reads the family), M3 (refused
+  deletes shown as done), m3 (scored test keeps its vak), m4, m5 (non-ASCII panic), n1-n3, n6,
+  part of m2; each major with an e2e test that fails without the fix. Open in backlog "From
+  Step 41". Also fixed: the B24 validate message had runs of spaces (old heredoc edit).
+- `1074cd5` version **0.32.0** (local splash updated, version digits only; CI copies dropped).
+- Gate after the fixes: fmt, clippy, cargo test 735, lint, typecheck, Vitest 1007 + node 47,
+  e2e chromium 446/447 (`po-grading` "footer follows the grading save" failed once under load,
+  3/3 alone; not touched this step). Visual: the 6 `modal-toets-edit` / `modal-observatie-edit`
+  diffs still wait for the user's OK. Release notes draft (Dutch) in the step report.
 
-**Next action:** sub-task 6 (gate, review, release 0.32). Old list, all done: part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
+**Next action:** the user: OK the 6 visual diffs (then update local baselines, drop their CI
+copies, commit the CI ones from the next run's artifacts); CI green; merge on the user's OK
+(tag `step-41`). Tell the user: the emptying group write rule (D34), the offer rules in
+Gegevenscontrole, empty jaarlagen = all, the wiskunde vak fix.
+
+Old next-action list (all done): part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
 max/soort confirm, max below an entered score refused; group membership confirm), part 9
 (Gegevenscontrole checks), mock guards for students/groups/exams/observaties; then sub-task 6
 (gate, review, release 0.32). Ask the user about 9 n6 (SPDX in toml/yml) at the report.
