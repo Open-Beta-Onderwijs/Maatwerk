@@ -106,6 +106,8 @@ pub fn students_with_data(storage: &Storage, year: &str) -> Result<BTreeSet<Stri
 thread_local! {
     /// Set while [`unlocked`] runs on this thread.
     static UNLOCKED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+    /// Set while [`save_exam_family`] writes the members it checked together.
+    static FAMILY: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 /// Runs `f` with the edit locks lifted on this thread: "Herstellen uit snapshot" is a repair
@@ -131,7 +133,8 @@ fn refuse(rel: &RelPath, message: String) -> Error {
 /// What kind of file a path is, for the guards.
 enum Kind<'a> {
     Students { year: &'a str },
-    Group { year: &'a str },
+    Group,
+    Exam { year: &'a str, id: &'a str },
     Other,
 }
 
@@ -141,9 +144,11 @@ fn kind(rel: &str) -> Kind<'_> {
         [year, file] if is_year_name(year) && *file == format!("students-{year}.json") => {
             Kind::Students { year }
         }
-        [year, "groups", file] if is_year_name(year) && file.ends_with(".json") => {
-            Kind::Group { year }
-        }
+        [year, "groups", file] if is_year_name(year) && file.ends_with(".json") => Kind::Group,
+        [year, "exams", file] if is_year_name(year) => match file.strip_suffix(".json") {
+            Some(id) if !id.is_empty() => Kind::Exam { year, id },
+            _ => Kind::Other,
+        },
         _ => Kind::Other,
     }
 }
@@ -155,7 +160,8 @@ pub(crate) fn guard_write(storage: &Storage, rel: &RelPath, new: &Value) -> Resu
     }
     match kind(rel.as_str()) {
         Kind::Students { year } => guard_students(storage, rel, year, new),
-        Kind::Group { .. } => guard_group(storage, rel, Some(new)),
+        Kind::Group => guard_group(storage, rel, Some(new)),
+        Kind::Exam { year, id } => guard_exam(storage, rel, year, id, new),
         Kind::Other => Ok(()),
     }
 }
@@ -166,7 +172,8 @@ pub(crate) fn guard_delete(storage: &Storage, rel: &RelPath) -> Result<()> {
         return Ok(());
     }
     match kind(rel.as_str()) {
-        Kind::Group { .. } => guard_group(storage, rel, None),
+        Kind::Group => guard_group(storage, rel, None),
+        Kind::Exam { year, id } => guard_exam_delete(storage, rel, year, id),
         Kind::Students { .. } => Err(refuse(
             rel,
             "Het leerlingenbestand van een schooljaar wordt niet verwijderd.".into(),
@@ -313,6 +320,329 @@ fn guard_group(storage: &Storage, rel: &RelPath, new: Option<&Value>) -> Result<
             changed.join(", ")
         ),
     ))
+}
+
+// ── Exams and herkansing families ─────────────────────────────────────────────────────────
+
+/// The fields every member of a herkansing family shares (decision 5): changed for all at once
+/// (the verzamelkaart) or not at all. The Dutch name is for the message.
+const FAMILY_FIELDS: [(&str, &str); 11] = [
+    ("type", "PTA"),
+    ("diagnostic", "diagnostisch"),
+    ("weging", "weging"),
+    ("weging_se", "weging SE"),
+    ("periode", "periode"),
+    ("jaarlaag", "jaarlaag"),
+    ("schoolsoort", "schoolsoort"),
+    ("subject", "vak"),
+    ("subcategory", "subcategorie"),
+    ("kind", "soort toets"),
+    ("rubric_id", "rubric"),
+];
+
+/// The PO fields that stay once its family has data (decision 8).
+const PO_SCOPE_FIELDS: [(&str, &str); 4] = [
+    ("jaarlaag", "jaarlaag"),
+    ("schoolsoort", "schoolsoort"),
+    ("subcategory", "subcategorie"),
+    ("rubric_id", "rubric"),
+];
+
+fn text_of<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
+    v.get(key).and_then(Value::as_str).filter(|s| !s.is_empty())
+}
+
+fn parent_of(exam: &Value) -> Option<&str> {
+    text_of(exam, "parent_id")
+}
+
+fn ids_of(v: &Value, key: &str) -> BTreeSet<String> {
+    v.get(key)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(id_text)
+        .collect()
+}
+
+fn question_ids(exam: &Value) -> BTreeSet<String> {
+    exam.get("questions")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|q| q.get("id").and_then(id_text))
+        .collect()
+}
+
+fn exam_path(year: &str, id: &str) -> Result<RelPath> {
+    RelPath::parse(&format!("{year}/exams/{id}.json"))
+}
+
+fn read_exam(storage: &Storage, year: &str, id: &str) -> Result<Option<Value>> {
+    let rel = exam_path(year, id)?;
+    storage
+        .read_json(&rel)
+        .map_err(|e| unreadable(rel.as_str(), &e))
+}
+
+/// The ids of the exams of `year` whose `parent_id` is `root` (its herkansingen and inhaal).
+fn attempts_of(storage: &Storage, year: &str, root: &str) -> Result<Vec<String>> {
+    let dir = RelPath::parse(&format!("{year}/exams"))?;
+    let mut out = Vec::new();
+    for name in storage
+        .list_dir(&dir, false)
+        .map_err(|e| unreadable(dir.as_str(), &e))?
+    {
+        let Some(id) = name.strip_suffix(".json") else {
+            continue;
+        };
+        if let Some(exam) = read_exam(storage, year, id)?
+            && parent_of(&exam) == Some(root)
+        {
+            out.push(id.to_owned());
+        }
+    }
+    Ok(out)
+}
+
+fn vak_of<'a>(old: Option<&'a Value>, new: &'a Value) -> &'a str {
+    text_of(new, "subject")
+        .or_else(|| old.and_then(|o| text_of(o, "subject")))
+        .unwrap_or("")
+}
+
+/// Whether any member of the family of `root` has data.
+fn family_has_data(storage: &Storage, year: &str, vak: &str, root: &str) -> Result<bool> {
+    if exam_has_data(storage, year, vak, root)? {
+        return Ok(true);
+    }
+    for id in attempts_of(storage, year, root)? {
+        if exam_has_data(storage, year, vak, &id)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
+fn labels_changed(fields: &[(&str, &str)], old: &Value, new: &Value) -> Vec<String> {
+    fields
+        .iter()
+        .filter(|(key, _)| !same(old.get(*key), new.get(*key)))
+        .map(|(_, label)| (*label).to_owned())
+        .collect()
+}
+
+/// 2.3, 2.4 and the family rule for one exam write.
+fn guard_exam(storage: &Storage, rel: &RelPath, year: &str, id: &str, new: &Value) -> Result<()> {
+    let old = storage
+        .read_json(rel)
+        .map_err(|e| unreadable(rel.as_str(), &e))?;
+    let vak = vak_of(old.as_ref(), new);
+    if let Some(old) = &old {
+        // 2.3: a question of an exam with data stays.
+        let kept = question_ids(new);
+        let removed = question_ids(old).into_iter().any(|q| !kept.contains(&q));
+        if removed && exam_has_data(storage, year, vak, id)? {
+            return Err(refuse(
+                rel,
+                "Er zijn scores ingevoerd voor deze toets: een bestaande vraag kan niet meer \
+                 worden verwijderd."
+                    .into(),
+            ));
+        }
+        // Decision 8: a PO's scope and rubric stay once its family has data.
+        if text_of(new, "kind") == Some("po") || text_of(old, "kind") == Some("po") {
+            let changed = labels_changed(&PO_SCOPE_FIELDS, old, new);
+            let root = parent_of(new).or(parent_of(old)).unwrap_or(id);
+            if !changed.is_empty() && family_has_data(storage, year, vak, root)? {
+                return Err(refuse(
+                    rel,
+                    format!(
+                        "Er zijn al scores voor deze PO: {} ligt vast.",
+                        changed.join(", ")
+                    ),
+                ));
+            }
+        }
+    }
+    if FAMILY.with(std::cell::Cell::get) {
+        return Ok(());
+    }
+    guard_family_member(storage, rel, year, id, old.as_ref(), new)
+}
+
+/// Decision 5 for a write of one member on its own.
+fn guard_family_member(
+    storage: &Storage,
+    rel: &RelPath,
+    year: &str,
+    id: &str,
+    old: Option<&Value>,
+    new: &Value,
+) -> Result<()> {
+    if let Some(root_id) = parent_of(new) {
+        // An attempt: what it changes must agree with its original.
+        let Some(root) = read_exam(storage, year, root_id)? else {
+            return Ok(()); // an orphan: Gegevenscontrole reports it
+        };
+        let changed: Vec<String> = FAMILY_FIELDS
+            .iter()
+            .filter(|(key, _)| {
+                let was = old.and_then(|o| o.get(*key));
+                (old.is_none() || !same(was, new.get(*key))) && !same(new.get(*key), root.get(*key))
+            })
+            .map(|(_, label)| (*label).to_owned())
+            .collect();
+        if !changed.is_empty() {
+            return Err(refuse(
+                rel,
+                format!(
+                    "{} hoort bij de verzamelkaart: pas het daar aan, voor alle pogingen tegelijk.",
+                    changed.join(", ")
+                ),
+            ));
+        }
+        let (root_obs, new_obs) = (ids_of(&root, "obs_ids"), ids_of(new, "obs_ids"));
+        let had = old.map(|o| ids_of(o, "obs_ids")).unwrap_or_default();
+        let dropped = root_obs.iter().any(|o| !new_obs.contains(o));
+        let gained = new_obs
+            .iter()
+            .any(|o| !root_obs.contains(o) && !had.contains(o));
+        if (old.is_none() || had != new_obs) && (dropped || gained) {
+            return Err(refuse(
+                rel,
+                "De observaties van een herkansing of inhaaltoets zijn die van het origineel: pas \
+                 ze aan bij het origineel."
+                    .into(),
+            ));
+        }
+        return Ok(());
+    }
+    // An original: family fields and observaties go through save_exam_family once it has
+    // attempts.
+    let Some(old) = old else { return Ok(()) };
+    let mut changed = labels_changed(&FAMILY_FIELDS, old, new);
+    if ids_of(old, "obs_ids") != ids_of(new, "obs_ids") {
+        changed.push("observaties".into());
+    }
+    if changed.is_empty() || attempts_of(storage, year, id)?.is_empty() {
+        return Ok(());
+    }
+    Err(refuse(
+        rel,
+        format!(
+            "Deze toets heeft herkansingen: {} pas je aan via de verzamelkaart, voor alle \
+             pogingen tegelijk.",
+            changed.join(", ")
+        ),
+    ))
+}
+
+/// 2.3, 10 m6: an exam with data or with attempts is not deleted.
+fn guard_exam_delete(storage: &Storage, rel: &RelPath, year: &str, id: &str) -> Result<()> {
+    let Some(old) = storage
+        .read_json(rel)
+        .map_err(|e| unreadable(rel.as_str(), &e))?
+    else {
+        return Ok(());
+    };
+    if !attempts_of(storage, year, id)?.is_empty() {
+        return Err(refuse(
+            rel,
+            "Er zijn herkansingen gekoppeld aan deze toets. Verwijder die eerst.".into(),
+        ));
+    }
+    if exam_has_data(storage, year, vak_of(Some(&old), &old), id)? {
+        return Err(refuse(
+            rel,
+            "Er zijn scores ingevoerd voor deze toets, de toets kan dus niet worden verwijderd."
+                .into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Saves a whole herkansing family at once (decision 5): the original and every attempt, as
+/// the verzamelkaart and the test editor change them. Checks that the members agree on the
+/// family fields and that every attempt keeps the original's observaties, then saves the
+/// attempts and the original last (a failure halfway leaves the original as it was, so saving
+/// again repeats it), each with its own `_meta.rev` check (`Storage::save_entity`). The other
+/// locks still apply to each member.
+pub fn save_exam_family(
+    storage: &Storage,
+    year: &str,
+    exams: &[Value],
+    user_id: Option<&str>,
+    now: std::time::SystemTime,
+) -> Result<Vec<Value>> {
+    let bad = |message: String| Error::InvalidArgument { message };
+    if !is_year_name(year) {
+        return Err(bad(format!("Geen schooljaar: {year:?}")));
+    }
+    let roots: Vec<&Value> = exams.iter().filter(|e| parent_of(e).is_none()).collect();
+    let [root] = roots.as_slice() else {
+        return Err(bad("Een toetsfamilie heeft precies één origineel.".into()));
+    };
+    let root_id = text_of(root, "id").ok_or_else(|| bad("Toets zonder id.".into()))?;
+    let root_rel = exam_path(year, root_id)?;
+    let mut given = BTreeSet::new();
+    for e in exams {
+        let id = text_of(e, "id").ok_or_else(|| bad("Toets zonder id.".into()))?;
+        if e != *root && parent_of(e) != Some(root_id) {
+            return Err(bad(format!("{id} hoort niet bij {root_id}.")));
+        }
+        given.insert(id.to_owned());
+    }
+    // Every attempt on disk must be in it, or it would no longer agree.
+    if let Some(missing) = attempts_of(storage, year, root_id)?
+        .into_iter()
+        .find(|id| !given.contains(id))
+    {
+        return Err(refuse(
+            &root_rel,
+            format!("Niet opgeslagen: poging {missing} ontbreekt. Open de verzamelkaart opnieuw."),
+        ));
+    }
+    let root_obs = ids_of(root, "obs_ids");
+    for e in exams.iter().filter(|e| parent_of(e).is_some()) {
+        let changed = labels_changed(&FAMILY_FIELDS, root, e);
+        if !changed.is_empty() {
+            return Err(refuse(
+                &root_rel,
+                format!(
+                    "Niet opgeslagen: de pogingen verschillen in {}.",
+                    changed.join(", ")
+                ),
+            ));
+        }
+        if root_obs.iter().any(|o| !ids_of(e, "obs_ids").contains(o)) {
+            return Err(refuse(
+                &root_rel,
+                "Niet opgeslagen: een poging mist een observatie van het origineel.".into(),
+            ));
+        }
+    }
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            FAMILY.with(|c| c.set(self.0));
+        }
+    }
+    let _reset = Reset(FAMILY.with(|c| c.replace(true)));
+    let mut saved = Vec::new();
+    for e in exams
+        .iter()
+        .filter(|e| parent_of(e).is_some())
+        .chain(std::iter::once(*root))
+    {
+        let id = text_of(e, "id").unwrap_or_default();
+        let base_rev = e
+            .get("_meta")
+            .and_then(|m| m.get("rev"))
+            .and_then(Value::as_i64);
+        saved.push(storage.save_entity(&exam_path(year, id)?, e, base_rev, false, user_id, now)?);
+    }
+    Ok(saved)
 }
 
 #[cfg(test)]

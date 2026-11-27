@@ -164,3 +164,181 @@ fn a_restore_skips_the_edit_locks() {
     put(&s, GROUP, group("3a", "3", &["101"]));
     unlocked(|| s.write_json(&rel(GROUP), &group("3b", "3", &["101"]), Expect::Any)).unwrap();
 }
+
+// ── Exams and families (2.3, 2.4, decision 5) ──────────────────────────────────────────────
+
+const Y: &str = "2025-2026";
+
+fn exam(id: &str, parent: Option<&str>) -> serde_json::Value {
+    json!({ "id": id, "title": id, "subject": "nat", "kind": "test", "jaarlaag": "3",
+            "schoolsoort": ["havo"], "type": "regular", "diagnostic": false, "weging": 1,
+            "weging_se": 1, "periode": "1", "parent_id": parent, "obs_ids": ["o1"],
+            "questions": [{ "id": "q1" }, { "id": "q2" }] })
+}
+
+fn exam_rel(id: &str) -> RelPath {
+    rel(&format!("{Y}/exams/{id}.json"))
+}
+
+fn put_score(s: &Storage, student: &str, exam: &str) {
+    put(
+        s,
+        &format!("{Y}/scores/nat/{student}.json"),
+        json!({ "scores": { exam: { "q1": 1 } } }),
+    );
+}
+
+/// 2.3, 10 m6: an exam with data or with herkansingen is not deleted; a question with data stays.
+#[test]
+fn an_exam_with_data_or_attempts_is_not_deleted_and_keeps_its_questions() {
+    let (_t, s) = setup();
+    put(&s, exam_rel("e1").as_str(), exam("e1", None));
+    put(&s, exam_rel("e2").as_str(), exam("e2", None));
+    put(&s, exam_rel("e2h").as_str(), exam("e2h", Some("e2")));
+    put_score(&s, "101", "e1");
+    let msg = locked(s.delete(&exam_rel("e1")));
+    assert!(msg.contains("scores"), "{msg}");
+    let msg = locked(s.delete(&exam_rel("e2")));
+    assert!(msg.contains("herkansing"), "{msg}");
+    let mut fewer = exam("e1", None);
+    fewer["questions"] = json!([{ "id": "q1" }]);
+    let msg = locked(s.write_json(&exam_rel("e1"), &fewer, Expect::Any));
+    assert!(msg.contains("vraag"), "{msg}");
+    // Adding a question, changing a title: fine.
+    let mut more = exam("e1", None);
+    more["questions"] = json!([{ "id": "q1" }, { "id": "q2" }, { "id": "q3" }]);
+    more["title"] = json!("Toets 1");
+    s.write_json(&exam_rel("e1"), &more, Expect::Any).unwrap();
+    // Without data the questions are free, and so is deleting.
+    let mut none = exam("e3", None);
+    put(&s, exam_rel("e3").as_str(), none.clone());
+    none["questions"] = json!([]);
+    s.write_json(&exam_rel("e3"), &none, Expect::Any).unwrap();
+    s.delete(&exam_rel("e3")).unwrap();
+}
+
+fn po(id: &str, parent: Option<&str>) -> serde_json::Value {
+    let mut e = exam(id, parent);
+    e["kind"] = json!("po");
+    e["rubric_id"] = json!("r1");
+    e["questions"] = json!([]);
+    e
+}
+
+/// Decision 8: a PO's jaarlaag, schoolsoort, subcategorie and rubric stay once its family has data.
+#[test]
+fn a_po_with_data_keeps_its_scope_and_rubric() {
+    let (_t, s) = setup();
+    put(&s, exam_rel("p1").as_str(), po("p1", None));
+    put(&s, exam_rel("p1h").as_str(), po("p1h", Some("p1")));
+    // Data on the herkansing locks the original too.
+    put_score(&s, "101", "p1h");
+    for (field, value) in [
+        ("jaarlaag", json!("4")),
+        ("schoolsoort", json!(["vwo"])),
+        ("subcategory", json!("wisb")),
+        ("rubric_id", json!("r2")),
+    ] {
+        let (mut changed, mut changed_h) = (po("p1", None), po("p1h", Some("p1")));
+        changed[field] = value.clone();
+        changed_h[field] = value;
+        let msg = family_save(&s, vec![changed_h, changed]);
+        assert!(msg.contains("scores"), "{field}: {msg}");
+    }
+    // Weging is not locked by data.
+    let mut weging = po("p1", None);
+    weging["weging"] = json!(2);
+    let mut weging_h = po("p1h", Some("p1"));
+    weging_h["weging"] = json!(2);
+    save_exam_family(
+        &s,
+        Y,
+        &[weging_h, weging],
+        None,
+        std::time::SystemTime::now(),
+    )
+    .unwrap();
+}
+
+fn family_save(s: &Storage, exams: Vec<serde_json::Value>) -> String {
+    locked(save_exam_family(
+        s,
+        Y,
+        &exams,
+        None,
+        std::time::SystemTime::now(),
+    ))
+}
+
+/// Decision 5: family fields change for the whole family at once, through save_exam_family.
+#[test]
+fn family_fields_change_only_for_the_whole_family() {
+    let (_t, s) = setup();
+    put(&s, exam_rel("e1").as_str(), exam("e1", None));
+    put(&s, exam_rel("e1h").as_str(), exam("e1h", Some("e1")));
+    // A direct write of one member that changes a family field is refused.
+    let mut orig = exam("e1", None);
+    orig["weging"] = json!(2);
+    let msg = locked(s.write_json(&exam_rel("e1"), &orig, Expect::Any));
+    assert!(msg.contains("verzamelkaart"), "{msg}");
+    let mut att = exam("e1h", Some("e1"));
+    att["periode"] = json!("2");
+    locked(s.write_json(&exam_rel("e1h"), &att, Expect::Any));
+    // The family save needs every member, agreeing.
+    let msg = family_save(&s, vec![orig.clone()]);
+    assert!(msg.contains("e1h"), "{msg}");
+    let msg = family_save(&s, vec![exam("e1h", Some("e1")), orig.clone()]);
+    assert!(msg.contains("weging"), "{msg}");
+    let mut att2 = exam("e1h", Some("e1"));
+    att2["weging"] = json!(2);
+    let saved = save_exam_family(
+        &s,
+        Y,
+        &[att2, orig],
+        Some("t1"),
+        std::time::SystemTime::now(),
+    )
+    .unwrap();
+    assert_eq!(saved.len(), 2);
+    for id in ["e1", "e1h"] {
+        let disk = s.read_json(&exam_rel(id)).unwrap().unwrap();
+        assert_eq!(disk["weging"], json!(2), "{id}");
+        assert_eq!(disk["_meta"]["updatedBy"], json!("t1"));
+    }
+    // Other fields of one member stay free: a title, the n-term, questions.
+    let mut title = s.read_json(&exam_rel("e1h")).unwrap().unwrap();
+    title["title"] = json!("Herkansing");
+    s.write_json(&exam_rel("e1h"), &title, Expect::Any).unwrap();
+}
+
+/// Decision 5 (F-12): an attempt keeps every observatie of its original, never gains its own;
+/// the original's observaties change through the family save.
+#[test]
+fn attempts_follow_the_originals_observaties() {
+    let (_t, s) = setup();
+    put(&s, exam_rel("e1").as_str(), exam("e1", None));
+    let mut old_own = exam("e1h", Some("e1"));
+    old_own["obs_ids"] = json!(["o1", "eigen"]); // from before format v3: may stay
+    unlocked(|| s.write_json(&exam_rel("e1h"), &old_own, Expect::Any)).unwrap();
+    let mut gains = old_own.clone();
+    gains["obs_ids"] = json!(["o1", "eigen", "o9"]);
+    locked(s.write_json(&exam_rel("e1h"), &gains, Expect::Any));
+    let mut drops = old_own.clone();
+    drops["obs_ids"] = json!(["eigen"]);
+    locked(s.write_json(&exam_rel("e1h"), &drops, Expect::Any));
+    let mut orig = exam("e1", None);
+    orig["obs_ids"] = json!(["o1", "o2"]);
+    locked(s.write_json(&exam_rel("e1"), &orig, Expect::Any));
+    let mut follows = old_own.clone();
+    follows["obs_ids"] = json!(["o1", "eigen", "o2"]);
+    save_exam_family(&s, Y, &[follows, orig], None, std::time::SystemTime::now()).unwrap();
+    // A new attempt is a copy of its original.
+    let mut new_att = exam("e1h2", Some("e1"));
+    new_att["obs_ids"] = json!(["o1", "o2"]);
+    s.write_json(&exam_rel("e1h2"), &new_att, Expect::Missing)
+        .unwrap();
+    let mut wrong = exam("e1h3", Some("e1"));
+    wrong["weging"] = json!(5);
+    wrong["obs_ids"] = json!(["o1", "o2"]);
+    locked(s.write_json(&exam_rel("e1h3"), &wrong, Expect::Missing));
+}
