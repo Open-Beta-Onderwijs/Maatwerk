@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-27 (step 41: sub-tasks 1-4 done, 5 parts 1-5)
+Last updated: 2026-11-27 (step 41: sub-tasks 1-4 done, 5 parts 1-7 core)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -58,9 +58,16 @@ Baseline: cargo test green.
   editor), refusals shown as "Niet opgeslagen: <reden>" (app.js handler). New error code
   `edit_locked`. Mock: family save done; mock guards for students/groups/exams still TODO.
 
-**Next action:** sub-task 5 parts 6-9: rubric scope (6), observaties (7), UI items (8: PO form
-locks, question max confirm, group membership confirm), Gegevenscontrole checks (9), mock
-guards; then 6 (gate). Ask the user about 9 n6 (SPDX in toml/yml) at the report.
+- Part 6 done (`4cc0c84`): rubric keeps the jaarlaag/schoolsoort its PO's have (core +
+  editor chips, `RubricUse` has `jaarlaag`, `schoolsoort`). Part 7 core done (observatie
+  delete/scope guards, `locks.rs` `guard_obs*`); full cargo test green.
+
+**Next action:** part 7 UI (observatie form: disable jaarlagen/schoolsoort/vak chips a linked
+test or rubric uses, via `obs-opd-fields.ts` `disabled`; `obsDeleteBlock` also blocks on
+opdrachten), part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
+max/soort confirm, max below an entered score refused; group membership confirm), part 9
+(Gegevenscontrole checks), mock guards for students/groups/exams/observaties; then sub-task 6
+(gate, review, release 0.32). Ask the user about 9 n6 (SPDX in toml/yml) at the report.
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 
