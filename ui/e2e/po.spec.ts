@@ -400,6 +400,12 @@ test.describe('a PO on the Toetsen screen', () => {
     await expect(e.locator('.dlg-title')).toHaveText('PO bewerken');
     await expect(e.locator('#po-rubric-host')).toHaveClass(/csel--disabled|csel/);
     await expect(e.locator('#po-rubric-host .csel-trigger')).toBeDisabled();
+    // Jaarlaag and schoolsoort too (edit-locks.md decision 8); the name stays free.
+    for (const b of await e.locator('.jl-btn, .ss-btn').all()) await expect(b).toBeDisabled();
+    await expect(e.locator('.ss-btn').first().locator('..').locator('..')).toHaveAttribute(
+      'title',
+      /jaarlaag, schoolsoort en subcategorie liggen vast/,
+    );
     await e.locator('#po-naam').fill('PO Valbeweging');
     await e.locator('#po-save').click();
     await expect(card.locator('.tcard-title')).toHaveText('PO Valbeweging');

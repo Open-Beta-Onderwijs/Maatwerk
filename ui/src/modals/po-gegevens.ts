@@ -46,6 +46,9 @@ export function poSteps(active: 'gegevens' | 'groepen') {
 }
 
 const RUBRIC_LOCKED = 'Er zijn al scores voor deze PO: de rubric ligt vast.';
+/** Decision 8 (edit-locks.md): the core refuses the same change with this reason. */
+const SCOPE_LOCKED =
+  'Er zijn al scores voor deze PO: jaarlaag, schoolsoort en subcategorie liggen vast.';
 const NO_RUBRIC =
   'Er is nog geen passende rubric. Maak er een op het tabblad Rubrics, voor dit vak, deze schoolsoort en deze jaarlaag.';
 
@@ -55,6 +58,8 @@ interface Locks {
   family: boolean;
   /** Why the rubric cannot change; null when it can. */
   rubric: string | null;
+  /** Why jaarlaag, schoolsoort and subcategorie cannot change (scores, decision 8); or null. */
+  scope: string | null;
 }
 
 /** A new PO before it is saved: what step 1 and step 2 fill in. */
@@ -72,10 +77,11 @@ const SUBCATEGORIES = [
   ['wisd', 'D'],
 ] as const;
 
-function subcategoryField(d: PoDraft, locked: boolean): string {
+function subcategoryField(d: PoDraft, why: string | null): string {
   const upper = Number(d.jaarlaag) >= 4;
+  const locked = why !== null;
   return `
-      <div class="u-flex-none u-mb-0 form-group"${locked ? ` title="${esc(LOCKED_TITLE)}"` : ''}>
+      <div class="u-flex-none u-mb-0 form-group"${locked ? ` title="${esc(why)}"` : ''}>
         <label>Subcategorie</label>
         <div class="btn-toggle-group">
           ${SUBCATEGORIES.map(([v, l]) => {
@@ -91,6 +97,9 @@ function formHtml(d: PoDraft, year: string, locks: Locks): string {
   const schoolSS: string[] = Store.getSchoolSync().schoolsoort ?? [];
   const lockAll = locks.family;
   const lockTitle = lockAll ? ` title="${esc(LOCKED_TITLE)}"` : '';
+  // The family lock covers the scope too; otherwise scores lock it (decision 8).
+  const scopeWhy = lockAll ? LOCKED_TITLE : locks.scope;
+  const scopeTitle = scopeWhy ? ` title="${esc(scopeWhy)}"` : '';
   return `
     <div class="form-row exam-new-row">
       <div class="u-flex-fill u-min-w-0 u-mb-0 form-group"${lockTitle}>
@@ -101,23 +110,23 @@ function formHtml(d: PoDraft, year: string, locks: Locks): string {
       ${field('Schooljaar', `<div class="form-value">${esc(year)}</div>`, { grow: 'none', className: 'u-mb-0 exam-new-year' })}
     </div>
     <div class="form-row exam-new-row">
-      <div class="u-flex-none u-mb-0 form-group"${lockTitle}>
+      <div class="u-flex-none u-mb-0 form-group"${scopeTitle}>
         <label>Schoolsoort</label>
         <div class="exam-chips">
           ${SCHOOLSOORTEN.map((ss) => {
-            const dis = lockAll || (schoolSS.length > 0 && !schoolSS.includes(ss));
+            const dis = !!scopeWhy || (schoolSS.length > 0 && !schoolSS.includes(ss));
             const on = (d.schoolsoort ?? []).includes(ss);
             return `<button type="button" class="tog-btn ss-btn exam-chip${on ? ' selected' : ''}${dis ? ' tog-btn-disabled' : ''}" data-ss="${esc(ss)}" aria-pressed="${on}"${dis ? ' disabled' : ''}>${esc(ss)}</button>`;
           }).join('')}
         </div>
       </div>
-      ${d.subject === 'wi' ? subcategoryField(d, lockAll) : ''}
+      ${d.subject === 'wi' ? subcategoryField(d, scopeWhy) : ''}
     </div>
     <div class="exam-new-grid">
       <div class="exam-new-jp">
-        <div class="u-mb-0 form-group">
+        <div class="u-mb-0 form-group"${scopeTitle}>
           <label>Jaarlaag</label>
-          ${segmented('jl-btn', 'jl', [1, 2, 3, 4, 5, 6], d.jaarlaag ?? null, lockAll)}
+          ${segmented('jl-btn', 'jl', [1, 2, 3, 4, 5, 6], d.jaarlaag ?? null, !!scopeWhy)}
         </div>
         <div class="u-mb-0 form-group">
           <label>Periode</label>
@@ -229,10 +238,11 @@ function wireForm(el: HTMLElement, base: PoDraft, locks: Locks): FormControls {
       refresh();
     }),
   );
+  const scopeLocked = locks.family || !!locks.scope;
   const subBtns = el.querySelectorAll<HTMLButtonElement>('.sub-btn');
   const setSubEnabled = (upper: boolean) =>
     subBtns.forEach((b) => {
-      const dis = locks.family || !upper;
+      const dis = scopeLocked || !upper;
       b.disabled = dis;
       b.classList.toggle('tog-btn-disabled', dis);
       if (!upper) {
@@ -240,7 +250,7 @@ function wireForm(el: HTMLElement, base: PoDraft, locks: Locks): FormControls {
         b.setAttribute('aria-pressed', 'false');
       }
     });
-  if (!locks.family)
+  if (!scopeLocked)
     subBtns.forEach((btn) =>
       btn.addEventListener('click', () => {
         subBtns.forEach((b) => {
@@ -282,7 +292,7 @@ function wireForm(el: HTMLElement, base: PoDraft, locks: Locks): FormControls {
       }
       // Wiskunde: onderbouw up to jaarlaag 3, A/B/C/D required from 4 (as Nieuwe toets).
       let subcategory = base.subcategory;
-      if (subject === 'wi' && !locks.family) {
+      if (subject === 'wi' && !scopeLocked) {
         subcategory =
           Number(scope.jaarlaag) <= 3
             ? 'onderbouw'
@@ -335,7 +345,7 @@ function blankPo(): PoDraft {
 
 /** "+ PO toevoegen", step 1. `draft` comes back from step 2's "← Gegevens". */
 export function openNewPoModal(year: string, draft: PoDraft = blankPo()): void {
-  const locks: Locks = { family: false, rubric: null };
+  const locks: Locks = { family: false, rubric: null, scope: null };
   openModal({
     title: 'Nieuwe praktische opdracht',
     size: 'form',
@@ -373,7 +383,11 @@ export async function openPoEditModal(examId: string, year: string): Promise<voi
   const scored = (await Promise.all(family_ids.map((id) => Store.examHasScores(id, year)))).some(
     Boolean,
   );
-  const locks: Locks = { family, rubric: scored ? RUBRIC_LOCKED : null };
+  const locks: Locks = {
+    family,
+    rubric: scored ? RUBRIC_LOCKED : null,
+    scope: scored ? SCOPE_LOCKED : null,
+  };
 
   openModal({
     title: 'PO bewerken',

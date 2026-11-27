@@ -62,9 +62,13 @@ Baseline: cargo test green.
   editor chips, `RubricUse` has `jaarlaag`, `schoolsoort`). Part 7 core done (observatie
   delete/scope guards, `locks.rs` `guard_obs*`); full cargo test green.
 
-**Next action:** part 7 UI (observatie form: disable jaarlagen/schoolsoort/vak chips a linked
-test or rubric uses, via `obs-opd-fields.ts` `disabled`; `obsDeleteBlock` also blocks on
-opdrachten), part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
+- 2026-11-27 session 2: `fe0e651` 9 n6 (user took the recommendation: SPDX in own TOML/YAML,
+  `check-spdx.sh` covers them; no per-file copyright lines, the README line stays).
+  `277245a` part 7 UI: observatie chips a linked test/rubric uses are locked
+  (`domain/obs-locks.ts`, `Store.obsLinkScopes`), delete blocked on opdrachten; core fix: a `wi`
+  test fits any wiskunde variant (`fits_vak`, was never locked). e2e obs-opd +2.
+
+**Next action:** part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
 max/soort confirm, max below an entered score refused; group membership confirm), part 9
 (Gegevenscontrole checks), mock guards for students/groups/exams/observaties; then sub-task 6
 (gate, review, release 0.32). Ask the user about 9 n6 (SPDX in toml/yml) at the report.
