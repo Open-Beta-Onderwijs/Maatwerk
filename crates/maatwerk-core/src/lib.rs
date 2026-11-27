@@ -21,6 +21,7 @@ pub mod outputs;
 pub mod paths;
 pub mod pdf_merge;
 pub mod presence;
+pub mod rapporten;
 pub mod rights;
 pub mod rubrics;
 pub mod snapshots;

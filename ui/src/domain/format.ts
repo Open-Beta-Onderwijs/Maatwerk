@@ -49,6 +49,14 @@ export function formatNumber(x: number | string): string {
   return comma(String(x));
 }
 
+/** "412 kB", "31,4 MB", "2,1 GB" (decimal comma). */
+export function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
+  if (bytes < 1024 ** 3) return `${formatNumber(Math.round((bytes / 1024 ** 2) * 10) / 10)} MB`;
+  return `${formatNumber(Math.round((bytes / 1024 ** 3) * 10) / 10)} GB`;
+}
+
 /** Whole numbers without decimals, others with one (`2`, `1,5`). */
 export function formatCompact(n: number): string {
   return Number.isInteger(n) ? String(n) : formatFixed(n, 1);

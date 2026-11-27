@@ -292,6 +292,20 @@
   font-size: 12px;
   color: var(--muted);
 }
+.inst-rapporten__total {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.inst-rapporten__clean {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+}
+.inst-rapporten__clean .form-group {
+  flex: 1;
+}
 @media (max-width: 1000px) {
   .instellingen {
     grid-template-columns: 1fr;

@@ -1,11 +1,28 @@
 # State
 
-Last updated: 2026-11-27 (step 40 merged and tagged; step 41 edit locks analysed)
-Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
-merges; merge `main` in after it does)
-Last tags: `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-27 (step 41 started: sub-task 1 `rapporten/` done)
+Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
+Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 41 (2026-11-27, on `step/41-data-robustness`): data robustness, `rapporten/`, edit locks
+
+Plan: `PLAN-2.md` step 41 (now L, items 1-6). Edit locks: `docs/reference/edit-locks.md`, the
+user's decisions in its section 5 (incl. `save_exam_family` and Gegevenscontrole checks).
+Baseline: cargo test green.
+
+- Sub-task 1 (X-06, decision 85) done: `maatwerk_core::rapporten` (`usage`, `cleanup`: only
+  `*.pdf` directly in `rapporten/<schooljaar>/`, links not followed, emptied year folders
+  removed; refused for a gast and a read-only folder), commands `rapporten_usage` /
+  `rapporten_cleanup` (admin only; sizes in whole kB as u32), card "Afgedrukte rapporten" in
+  Beheer › Instellingen (custom select "Ouder dan schooljaar", least preselected, confirm with
+  count and size). `formatSize` moved to `domain/format.ts`. Tests: core 5 (+1 unix), Vitest
+  3, e2e beheer 8/8. **Visual `admin-instellingen` (3 themes) changed (new card, empty state):
+  baseline update waits for the user's OK** (screens shown 2026-11-27).
+
+**Next action:** sub-task 2 (storage and watcher items), after the user's OK on the visual
+baseline (or in parallel). Then 3, 4, 5 (edit locks), 6 (gate).
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 

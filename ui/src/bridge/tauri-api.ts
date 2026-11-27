@@ -416,6 +416,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       orThrow(c.copyOpdrachtToSectie(fromId, vak, teacherId, pin)),
     saveTextAs: (defaultName, content) => orThrow(c.saveTextAs(defaultName, content)),
     listSnapshots: () => orThrow(c.listSnapshots()),
+    rapportenUsage: () => orThrow(c.rapportenUsage()),
+    rapportenCleanup: (before) => orThrow(c.rapportenCleanup(before)),
     snapshotForFile: (relPath) => orThrow(c.snapshotForFile(relPath)),
     async restoreFromSnapshot(relPath, snapshot) {
       await orThrow(c.restoreFromSnapshot(relPath, snapshot));

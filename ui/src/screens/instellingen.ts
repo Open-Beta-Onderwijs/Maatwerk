@@ -11,8 +11,12 @@
 import type { MaatwerkApi } from '../bridge/api';
 import { switchControl } from '../components/switch';
 import { gemiddeldenCard } from './instellingen-gemiddelden';
+import { rapportenCard } from './instellingen-rapporten';
 
-type Api = Pick<MaatwerkApi, 'listSnapshots' | 'openDataFolder'>;
+type Api = Pick<
+  MaatwerkApi,
+  'listSnapshots' | 'openDataFolder' | 'rapportenUsage' | 'rapportenCleanup'
+>;
 
 export interface SnapshotSettings {
   intervalHours: number;
@@ -318,7 +322,10 @@ export async function renderInstellingen(
   } else {
     listCard.append(el('p', 'hint', 'Nog geen snapshots.'));
   }
-  box.append(left, listCard);
+  // Below the snapshots: the printed copies and "Opruimen" (step 41, decision 85).
+  const right = el('div', 'instellingen-col');
+  right.append(listCard, rapportenCard(api, toast));
+  box.append(left, right);
   container.append(header, box);
 
   save.addEventListener('click', async () => {

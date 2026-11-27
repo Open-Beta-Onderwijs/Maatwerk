@@ -286,6 +286,72 @@ pub async fn save_text_as(
     .map_err(|e| CommandError::internal(format!("dialog task failed: {e}")))?
 }
 
+/// The printed copies of one school year in `rapporten/` (X-06). Sizes in whole kB, rounded up
+/// (u32: specta types f64 as `number | null`, u64 as bigint).
+#[derive(Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RapportenYear {
+    pub schooljaar: String,
+    pub files: u32,
+    pub kb: u32,
+}
+
+/// What "Opruimen" deleted, and the copies it could not delete.
+#[derive(Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RapportenCleanup {
+    pub files: u32,
+    pub kb: u32,
+    pub failed: Vec<String>,
+}
+
+fn saturate(n: u64) -> u32 {
+    u32::try_from(n).unwrap_or(u32::MAX)
+}
+
+/// Bytes as whole kB, rounded up (a 1-byte copy is 1 kB, none is 0).
+fn kb(bytes: u64) -> u32 {
+    saturate(bytes.div_ceil(1024))
+}
+
+/// Beheer › Instellingen: the printed copies per school year, oldest first. Admin only.
+#[tauri::command]
+#[specta::specta]
+pub async fn rapporten_usage(state: State<'_, Shared>) -> Res<Vec<RapportenYear>> {
+    blocking(state, move |c| {
+        let storage = c.storage()?;
+        c.auth.require_admin(storage)?;
+        Ok(maatwerk_core::rapporten::usage(storage)?
+            .years
+            .into_iter()
+            .map(|y| RapportenYear {
+                schooljaar: y.schooljaar,
+                files: saturate(y.files),
+                kb: kb(y.bytes),
+            })
+            .collect())
+    })
+    .await
+}
+
+/// "Opruimen" (decision 85): deletes the printed copies of the school years before `before`.
+/// Admin only; refused for a gast and a read-only folder (`maatwerk_core::rapporten::cleanup`).
+#[tauri::command]
+#[specta::specta]
+pub async fn rapporten_cleanup(state: State<'_, Shared>, before: String) -> Res<RapportenCleanup> {
+    blocking(state, move |c| {
+        let storage = c.storage()?;
+        c.auth.require_admin(storage)?;
+        let done = maatwerk_core::rapporten::cleanup(storage, &before)?;
+        Ok(RapportenCleanup {
+            files: saturate(done.files),
+            kb: kb(done.bytes),
+            failed: done.failed,
+        })
+    })
+    .await
+}
+
 /// Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`).
 #[tauri::command]
 #[specta::specta]

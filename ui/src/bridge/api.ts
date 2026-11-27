@@ -113,8 +113,24 @@ export interface OpdrachtImage {
 export type Unsubscribe = () => void;
 
 /** The migration offered on the startup screen (C1). */
-export type { MigrationResult, DataCheck, DataIssue, StampIssue, RubricUse } from './bindings';
-import type { MigrationResult, DataCheck, StampIssue, PinCheck, RubricUse } from './bindings';
+export type {
+  MigrationResult,
+  DataCheck,
+  DataIssue,
+  StampIssue,
+  RubricUse,
+  RapportenYear,
+  RapportenCleanup,
+} from './bindings';
+import type {
+  MigrationResult,
+  DataCheck,
+  StampIssue,
+  PinCheck,
+  RubricUse,
+  RapportenYear,
+  RapportenCleanup,
+} from './bindings';
 /** Result of the PIN methods (Step 7b). */
 export type { PinCheck, PinOutcome } from './bindings';
 
@@ -342,6 +358,10 @@ export interface MaatwerkApi {
   snapshotForFile(relPath: string): Promise<string | null>;
   /** Admin only: "Herstellen uit snapshot". */
   restoreFromSnapshot(relPath: string, snapshot: string): Promise<void>;
+  /** Admin only: the printed copies in `rapporten/` per school year, oldest first (X-06). */
+  rapportenUsage(): Promise<RapportenYear[]>;
+  /** Admin only: "Opruimen", deletes the copies of the school years before `before`. */
+  rapportenCleanup(before: string): Promise<RapportenCleanup>;
 
   // ── Live editor (Step 8b, ADR-0002 section 12) ────────────────────────────
   // One session per open opdracht; compile results arrive through

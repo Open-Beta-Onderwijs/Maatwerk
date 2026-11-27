@@ -20,6 +20,8 @@ import type {
   PinCheck,
   StampIssue,
   RubricUse,
+  RapportenYear,
+  RapportenCleanup,
   FsResult,
   ImageResult,
   Json,
@@ -1411,6 +1413,56 @@ export class MockApi implements MaatwerkApi {
     this.dataCheck.issues = this.dataCheck.issues.filter(
       (i) => !(i.kind === 'stamp' && i.path === relPath),
     );
+  }
+
+  /** Tests: a printed copy of `size` bytes (`rapporten/<jaar>/<naam>.pdf`). */
+  seedPrintedCopy(relPath: string, size: number): void {
+    this.putFile(relPath, new Uint8Array(size));
+  }
+
+  /** Tests: whether the file exists. */
+  hasFile(relPath: string): boolean {
+    return this.files.has(relPath);
+  }
+
+  /** The printed copies as `maatwerk_core::rapporten` sees them: `rapporten/<jaar>/*.pdf`. */
+  private printedCopies(): { year: string; path: string; size: number }[] {
+    const out: { year: string; path: string; size: number }[] = [];
+    for (const [path, bytes] of this.files) {
+      const m = /^rapporten\/(\d{4}-\d{4})\/[^/]+\.pdf$/i.exec(path);
+      if (m) out.push({ year: m[1]!, path, size: bytes.length });
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  async rapportenUsage(): Promise<RapportenYear[]> {
+    this.record('rapportenUsage', []);
+    this.requireAdmin();
+    const years = new Map<string, { schooljaar: string; files: number; bytes: number }>();
+    for (const c of this.printedCopies()) {
+      const y = years.get(c.year) ?? { schooljaar: c.year, files: 0, bytes: 0 };
+      y.files += 1;
+      y.bytes += c.size;
+      years.set(c.year, y);
+    }
+    return [...years.values()]
+      .sort((a, b) => a.schooljaar.localeCompare(b.schooljaar))
+      .map((y) => ({ schooljaar: y.schooljaar, files: y.files, kb: Math.ceil(y.bytes / 1024) }));
+  }
+
+  async rapportenCleanup(before: string): Promise<RapportenCleanup> {
+    this.record('rapportenCleanup', [before]);
+    this.requireAdmin();
+    this.refuseIfReadOnly();
+    if (!/^\d{4}-\d{4}$/.test(before)) throw new Error(`Geen schooljaar: "${before}"`);
+    const done = { files: 0, bytes: 0, failed: [] as string[] };
+    for (const c of this.printedCopies()) {
+      if (c.year >= before) continue;
+      this.files.delete(c.path);
+      done.files += 1;
+      done.bytes += c.size;
+    }
+    return { files: done.files, kb: Math.ceil(done.bytes / 1024), failed: done.failed };
   }
 
   // ── Live editor ───────────────────────────────────────────────────────────

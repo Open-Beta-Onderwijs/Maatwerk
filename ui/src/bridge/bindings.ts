@@ -156,6 +156,13 @@ export const commands = {
 	saveTextAs: (defaultName: string, content: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("save_text_as", { defaultName, content })),
 	/**  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`). */
 	listSnapshots: () => typedError<string[], CommandError>(__TAURI_INVOKE("list_snapshots")),
+	/**  Beheer › Instellingen: the printed copies per school year, oldest first. Admin only. */
+	rapportenUsage: () => typedError<RapportenYear[], CommandError>(__TAURI_INVOKE("rapporten_usage")),
+	/**
+	 *  "Opruimen" (decision 85): deletes the printed copies of the school years before `before`.
+	 *  Admin only; refused for a gast and a read-only folder (`maatwerk_core::rapporten::cleanup`).
+	 */
+	rapportenCleanup: (before: string) => typedError<RapportenCleanup, CommandError>(__TAURI_INVOKE("rapporten_cleanup", { before })),
 	/**  The newest snapshot with an intact copy of the JSON file; `null` if none has one. */
 	snapshotForFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("snapshot_for_file", { relPath })),
 	/**  "Herstellen uit snapshot": writes that snapshot's copy of the JSON file back. Admin only. */
@@ -661,6 +668,23 @@ export type ProjectFileInfo = {
 	bundledVersion: number,
 	/**  For `restore_project_file` (`null` when missing). */
 	hash: string | null,
+};
+
+/**  What "Opruimen" deleted, and the copies it could not delete. */
+export type RapportenCleanup = {
+	files: number,
+	kb: number,
+	failed: string[],
+};
+
+/**
+ *  The printed copies of one school year in `rapporten/` (X-06). Sizes in whole kB, rounded up
+ *  (u32: specta types f64 as `number | null`, u64 as bigint).
+ */
+export type RapportenYear = {
+	schooljaar: string,
+	files: number,
+	kb: number,
 };
 
 /**  A merged batch in the output folder. */
