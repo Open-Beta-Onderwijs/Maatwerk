@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-27 (step 41: sub-tasks 1-4 done)
+Last updated: 2026-11-27 (step 41: sub-tasks 1-4 done, 5 parts 1-5)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -47,9 +47,20 @@ Baseline: cargo test green.
   against the bytes' hash, `corrupt_json` `details.found`). 7a n5 moved to 45b. **9 n6 (SPDX
   headers in toml/yml, copyright line): ask the user.**
 
-**Next action:** commit the Linux `admin-instellingen` CI baseline from run 45992954516's
-`visual-linux` artifact (check it). Then sub-task 5 (edit locks, `docs/reference/edit-locks.md`
-section 5), then 6 (gate).
+- CI 45992954516: macOS, Windows green; Linux only the missing baseline, committed from its
+  artifact. All three `admin-instellingen` CI baselines now in.
+- Sub-task 5 (edit locks, plan in `edit-locks.md` section 6), parts 1-5 done: `95e192d`
+  `locks::has_data` ("N" counts) + commands `exam_has_data`, `students_with_data` (UI uses them;
+  TS copy `domain/has-data.ts` for cached records); `0752ca0` guard hook in `Storage` (under the
+  commit lock), students and groups, `locks::unlocked` for "Herstellen uit snapshot";
+  `08ebaab` exams (delete, questions with data; 10 m6), PO scope after data (decision 8), family
+  rule + `locks::save_exam_family`; `7383bb0` UI uses `save_exam_family` (verzamelkaart, test
+  editor), refusals shown as "Niet opgeslagen: <reden>" (app.js handler). New error code
+  `edit_locked`. Mock: family save done; mock guards for students/groups/exams still TODO.
+
+**Next action:** sub-task 5 parts 6-9: rubric scope (6), observaties (7), UI items (8: PO form
+locks, question max confirm, group membership confirm), Gegevenscontrole checks (9), mock
+guards; then 6 (gate). Ask the user about 9 n6 (SPDX in toml/yml) at the report.
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 
@@ -137,8 +148,7 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
   `save_exam_family` command (else family locks stay UI-only) and Gegevenscontrole checks for
   lock violations from another PC (edit-locks.md, answer pending).
 
-**Next action:** step 41 (`PLAN-2.md`), after the user's go. Ask the two open edit-lock
-questions above first.
+Step 40 done (merged and tagged 2026-11-27).
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 
