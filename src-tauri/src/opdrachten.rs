@@ -163,17 +163,9 @@ pub async fn import_opdracht_image(
                 message: "Kies de afbeelding opnieuw.".into(),
             });
         };
-        let file_name = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or_default();
-        let ext = opdracht_images::extension_of(file_name);
-        let bytes = std::fs::read(&path).map_err(|e| maatwerk_core::Error::Io {
-            path: file_name.to_owned(),
-            source: e,
-        })?;
+        // Read in the core, with the size cap (review 6b n10).
         let stored =
-            opdracht_images::store(c.storage()?, &opdracht_id, &name, &ext, &bytes, overwrite)?;
+            opdracht_images::import_file(c.storage()?, &opdracht_id, &path, &name, overwrite)?;
         if matches!(stored, Stored::Saved { .. }) {
             c.picked().remove(&token);
         }

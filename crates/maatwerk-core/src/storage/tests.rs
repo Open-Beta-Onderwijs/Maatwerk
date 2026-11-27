@@ -765,6 +765,26 @@ fn text_files_round_trip_with_cas() {
     );
 }
 
+/// Review 18 m4: the watermark (and any photo) is read whole at every start; one over
+/// `MAX_PHOTO_BYTES` is not read at all.
+#[test]
+fn photos_over_the_cap_are_not_read() {
+    let (_t, s) = setup();
+    let path = s
+        .data_dir()
+        .resolve(&rel("afbeeldingen/groot.svg"))
+        .unwrap();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let f = fs::File::create(&path).unwrap();
+    f.set_len(MAX_PHOTO_BYTES + 1).unwrap();
+    drop(f);
+    assert_eq!(
+        s.read_photo_data_url(&rel("afbeeldingen/groot.svg"))
+            .unwrap(),
+        None
+    );
+}
+
 #[test]
 fn photos_as_data_urls() {
     let (_t, s) = setup();

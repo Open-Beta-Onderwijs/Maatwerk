@@ -51,6 +51,10 @@ const V1_MARKERS: [&str; 4] = [
     "opdrachten",
 ];
 
+/// The largest photo, logo or watermark [`Storage::read_photo_data_url`] reads (review 18 m4;
+/// the rapport takes a watermark up to the same 5 MB).
+pub const MAX_PHOTO_BYTES: u64 = 5 * 1024 * 1024;
+
 /// SHA-1 hex of the bytes (`hashContent`, S07). The CAS token; it is never stored.
 pub fn hash_hex(bytes: &[u8]) -> String {
     Sha1::digest(bytes)
@@ -476,6 +480,12 @@ impl Storage {
 
     /// `data:<mime>;base64,...`, `None` if missing or unreadable (`fs:readPhotoAsDataUrl`).
     pub fn read_photo_data_url(&self, rel: &RelPath) -> Result<Option<String>> {
+        // Review 18 m4: not read whole when it is over the cap (the watermark loads at start).
+        let too_big = fs::metadata(self.dir.resolve(rel)?).is_ok_and(|m| m.len() > MAX_PHOTO_BYTES);
+        if too_big {
+            tracing::warn!("{rel}: larger than {MAX_PHOTO_BYTES} bytes, not shown");
+            return Ok(None);
+        }
         let Ok(Some(bytes)) = self.read_bytes(rel) else {
             return Ok(None);
         };

@@ -157,12 +157,12 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**Review 6 m6:** `Core::open` (schema check, seeding, image-folder walk, output cleanup) runs in
   Tauri's setup on the main thread; a slow OneDrive folder delays the window. Open the core on a
   blocking thread and let the UI wait on `data_folder_status`.~~ Done (Step 10): `CoreSlot`.
-- **Review 6 n10:** `import_opdracht_image` reads the picked file in the shell with `std::fs::read`
-  and no size cap. Move the read into `opdracht_images` with a limit (with 6a m4).
+- ~~**Review 6 n10:**~~ Done in step 41: `opdracht_images::import_file` reads the picked file,
+  refused above 25 MB before reading. Was: read in the shell with no size cap.
 - **Review 6 m3 (rest):** the real-PDF test runs under the mock CSP (`blob:`), not through the
   `maatwerk-out` scheme, and does not fail on pdf.js warnings (manual `M-TOE-5` covers the scheme).
-- **Review 6 n9 (rest):** the watermark upload reuses the logo message, which lists PNG/JPG
-  although only SVG is offered there (unreachable today: the watermark input checks SVG first).
+- ~~**Review 6 n9 (rest):**~~ Done in step 41: the message names each field's types (SVG for the
+  watermark); uploads over 5 MB are refused.
 
 - **Compat layer stays (PLAN Step 6b):** `TauriApi` is the only backend in the app bundle (CI
   checks the bundle has no MockApi), but no legacy screen uses the typed results yet, so the
@@ -178,18 +178,17 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   generate/rapport modals (6b or Step 8).~~ Done: the modals since F-04 (`render-warnings.ts`);
   the editor marks warnings in the open file, and since 39b the others (no place, or in
   `lib.typ`/`main.typ`) show in the status pill ("Opgeslagen · 1 waarschuwing", details).
-- **`rapporten/` retention:** printed copies are never cleaned up (ADR-0002 section 9). Decide on
-  a policy with the user.
+- ~~**`rapporten/` retention:**~~ Done in step 41 (X-06, decision 85): size and "Opruimen" in
+  Beheer › Instellingen.
 - **Command-level tests:** the Tauri commands are thin and their core functions are tested, but
   no test invokes a command through Tauri (`tauri::test` mock runtime). Add a few for the
   render/print/image commands, or cover them in the 6b manual checklist.
 - ~~**Startup error screen (4b m5)**~~ Done (6b): `data_folder_status` + `restart_app`,
   `ui/src/screens/startup-error.ts`, quirks.spec "4b m5".
-- **Review 6a m4:** `list_opdracht_images` decodes and resizes every image on each call (slow for
-  phone photos, no decode limits). Cache thumbnails by file hash/mtime and set
-  `image::Limits`.
-- **Review 6a n7:** a picked file whose name is not valid Unicode gets "Bestandstype . wordt niet
-  ondersteund." instead of a clear message.
+- ~~**Review 6a m4:**~~ Done in step 41: thumbnails cached by content hash, decoded with
+  `image::Limits` (16 384 px, 512 MB). Was: every image decoded on each call, no limits.
+- ~~**Review 6a n7:**~~ Done in step 41: "De bestandsnaam bevat tekens die Maatwerk niet kan
+  lezen…". Was: "Bestandstype . wordt niet ondersteund."
 - ~~**`save_photo` takes image types only (review 6a M1)**~~ Done (6b): the logo input accepts
   the six image types and other types get a Dutch toast (quirks.spec "6a M1").
 
@@ -575,8 +574,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 18 (reviews `docs/reviews/step-18.md`, `step-17-18-security.md`)
 
-- **Security m4:** `applyWatermerk` (UI) reads the watermark whole at every start; a size cap
-  as in the rapport (5 MB). The migration reads each moved image whole (copy then delete).
+- ~~**Security m4:**~~ Done in step 41: `read_photo_data_url` does not read a file over 5 MB
+  (watermark, logo, photos). Was: `applyWatermerk` read the watermark whole at every start. The
+  v2-to-v3 migration still reads each moved image whole once (a one-off, kept).
 - **Security n1:** `maatwerk-cli migrate` prints exam and observatie names raw; strip control
   characters. **n4:** validation messages embed whole JSON objects (`opdrachtenVraag`).
   **n5:** `prune_stale` reads every presence file whole at each start.
