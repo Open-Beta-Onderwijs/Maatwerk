@@ -325,11 +325,13 @@ pub fn run() {
         if let tauri::RunEvent::Ready = event {
             start_error::mark_started();
         }
+        let slot = handle.try_state::<state::Shared>();
+        if let (tauri::RunEvent::Exit, Some(slot)) = (&event, &slot) {
+            // Also before the core is open: it then starts nothing (review 10 n1).
+            slot.set_closing();
+        }
         // Not open yet: nothing to mark offline or stop.
-        let Some(core) = handle
-            .try_state::<state::Shared>()
-            .and_then(|slot| slot.get())
-        else {
+        let Some(core) = slot.and_then(|slot| slot.get()) else {
             return;
         };
         match event {

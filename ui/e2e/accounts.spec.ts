@@ -286,3 +286,36 @@ test('a file changed outside Maatwerk is restored from a snapshot', async ({ pag
   const restored = await readMockJson<{ voornaam: string }>(page, file);
   expect(restored.voornaam).toBe('Terug');
 });
+
+test('a restored group shows at once, without a new login (backlog 7b)', async ({ page }) => {
+  const file = `${YEAR}/groups/3a-nat-${YEAR}.json`;
+  await page.goto('/');
+  const original = await readMockJson<Record<string, unknown>>(page, file);
+  await withMock(
+    page,
+    (m, a) => {
+      m.dataCheck = {
+        filesChecked: 10,
+        issues: [{ severity: 'warning', kind: 'stamp', path: a.file, message: 'Gewijzigd' }],
+      };
+      m.snapshots = [
+        {
+          name: '2026-10-30 0800.zip',
+          files: { [a.file]: { ...a.original, name: '3a teruggezet' } },
+        },
+      ];
+    },
+    { file, original },
+  );
+  await pickUser(page, 'admin');
+  await enterPin(page);
+  // The groups are cached first: the restore must update that cache, not only the file.
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  await expect(page.locator('.g-card', { hasText: '3a nat' })).toBeVisible();
+  await page.locator('.nav-btn[data-screen="gegevens"]').click();
+  await page.getByRole('button', { name: 'Herstellen uit snapshot' }).click();
+  await page.locator('.dlg--confirm [data-action="ok"]').click();
+  await expect(page.locator('.toast').last()).toContainText('Hersteld uit de snapshot');
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  await expect(page.locator('.g-card', { hasText: '3a teruggezet' })).toBeVisible();
+});

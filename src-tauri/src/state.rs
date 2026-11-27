@@ -5,7 +5,9 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, PoisonError};
+use std::time::Duration;
 
 use maatwerk_core::auth::Auth;
 use maatwerk_core::data_location::{self, Inputs, LocalConfig, Location, Source};
@@ -37,6 +39,31 @@ pub struct Core {
     /// `Err` when the cache folder cannot be created; only the render commands need it.
     outputs: Result<OutputStore, CommandError>,
     picked: Picked,
+    /// Set at quit: background work waiting on it gives up (the snapshot claim, 10 m3).
+    stopping: Stop,
+}
+
+/// A quit signal that background threads can wait on.
+#[derive(Default)]
+pub struct Stop {
+    stopped: Mutex<bool>,
+    changed: Condvar,
+}
+
+impl Stop {
+    pub fn stop(&self) {
+        *lock(&self.stopped) = true;
+        self.changed.notify_all();
+    }
+
+    /// Waits up to `d`; `false` when the app is quitting (at once if it already is).
+    pub fn wait(&self, d: Duration) -> bool {
+        let (stopped, _) = self
+            .changed
+            .wait_timeout_while(lock(&self.stopped), d, |stopped| !*stopped)
+            .unwrap_or_else(PoisonError::into_inner);
+        !*stopped
+    }
 }
 
 /// What the UI checks first at start (review 4b m5): an unusable folder gets its own screen.
@@ -87,6 +114,9 @@ pub type Shared = Arc<CoreSlot>;
 pub struct CoreSlot {
     core: Mutex<Option<Arc<Core>>>,
     opened: Condvar,
+    /// The app is quitting (review 10 n1): a core that opens after that starts no background
+    /// work.
+    closing: AtomicBool,
 }
 
 impl CoreSlot {
@@ -107,11 +137,20 @@ impl CoreSlot {
                 let started = std::time::Instant::now();
                 let core = std::panic::catch_unwind(std::panic::AssertUnwindSafe(open))
                     .unwrap_or_else(|_| {
-                        failed(CommandError::internal("opening the data folder panicked"))
+                        let error = CommandError::internal("opening the data folder panicked");
+                        // Review 10 n1: a panic here too must still fill the slot.
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            failed(error.clone())
+                        }))
+                        .unwrap_or_else(|_| Core::broken(error))
                     });
                 tracing::info!("data folder opened in {} ms", started.elapsed().as_millis());
                 let core = slot.set(core);
-                then(&core);
+                if slot.is_closing() {
+                    core.shutdown();
+                } else {
+                    then(&core);
+                }
             })
             .expect("cannot start the thread that opens the data folder");
     }
@@ -135,6 +174,15 @@ impl CoreSlot {
     /// The core if it is open already.
     pub fn get(&self) -> Option<Arc<Core>> {
         lock(&self.core).clone()
+    }
+
+    /// At quit, also when the core is not open yet (review 10 n1).
+    pub fn set_closing(&self) {
+        self.closing.store(true, Ordering::SeqCst);
+    }
+
+    pub fn is_closing(&self) -> bool {
+        self.closing.load(Ordering::SeqCst)
     }
 }
 
@@ -181,6 +229,18 @@ impl Core {
         Core::with(data_dir, storage, session_file, outputs, watcher)
     }
 
+    /// A core with nothing but the error, built without any I/O: the last resort when even
+    /// [`Core::failed`] panics (review 10 n1), so no command waits forever.
+    pub fn broken(error: CommandError) -> Core {
+        Core::with(
+            PathBuf::new(),
+            Err(error.clone()),
+            PathBuf::new(),
+            Err(error),
+            None,
+        )
+    }
+
     /// A core whose data folder could not be opened at all (a panic while opening).
     pub fn failed(
         data_dir: PathBuf,
@@ -211,6 +271,7 @@ impl Core {
             watcher: Mutex::new(watcher),
             outputs,
             picked: Picked::default(),
+            stopping: Stop::default(),
         }
     }
 
@@ -294,6 +355,7 @@ impl Core {
                     storage,
                     maatwerk_core::typst_svc::local_now(),
                     &who,
+                    &|d| core.stopping.wait(d),
                 ) {
                     Ok(outcome) => tracing::info!("snapshot: {outcome:?}"),
                     Err(e) => tracing::warn!("snapshot failed: {e}"),
@@ -304,8 +366,10 @@ impl Core {
         }
     }
 
-    /// On quit: marks the teacher offline and stops the watcher.
+    /// On quit: stops background work (a snapshot still settling releases its claim, 10 m3),
+    /// marks the teacher offline and stops the watcher.
     pub fn shutdown(&self) {
+        self.stopping.stop();
         self.mark_offline();
         let watcher = lock(&self.watcher).take();
         if let Some(watcher) = watcher {
@@ -487,6 +551,61 @@ mod tests {
         let status = waiter.join().unwrap();
         assert_eq!(status.error.unwrap().code, ErrorCode::Internal);
         assert_eq!(status.data_dir, display_path(&data));
+    }
+
+    /// Review 10 n1: a panic in `Core::failed` too still fills the slot (with the error).
+    #[test]
+    fn n1_a_panic_in_the_failed_core_still_fills_the_slot() {
+        let slot = Arc::new(CoreSlot::default());
+        slot.open_in_background(
+            || panic!("opening panics"),
+            |_| panic!("and so does the fallback"),
+            |_| {},
+        );
+        let status = slot.wait().data_folder_status();
+        assert_eq!(status.error.unwrap().code, ErrorCode::Internal);
+    }
+
+    /// Review 10 n1: a quit before the folder opened: no background work starts after it.
+    #[test]
+    fn n1_a_core_opened_after_quit_starts_nothing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let slot = Arc::new(CoreSlot::default());
+        slot.set_closing();
+        let (tx, rx) = std::sync::mpsc::channel();
+        let data = tmp.path().join("data");
+        let dir = tmp.path().to_path_buf();
+        slot.open_in_background(
+            move || open(data, &dir),
+            Core::broken,
+            move |_| tx.send(()).unwrap(),
+        );
+        let core = slot.wait();
+        assert!(
+            rx.recv_timeout(Duration::from_millis(200)).is_err(),
+            "`then` ran"
+        );
+        assert!(
+            !core.stopping.wait(Duration::from_secs(5)),
+            "stopped at once"
+        );
+    }
+
+    /// Review 10 m3: the settle wait ends at quit.
+    #[test]
+    fn m3_stop_ends_a_wait() {
+        let stop = Arc::new(Stop::default());
+        let waiter = {
+            let stop = Arc::clone(&stop);
+            std::thread::spawn(move || stop.wait(Duration::from_secs(30)))
+        };
+        std::thread::sleep(Duration::from_millis(30));
+        stop.stop();
+        assert!(!waiter.join().unwrap(), "false: quitting");
+        assert!(
+            Stop::default().wait(Duration::from_millis(1)),
+            "true: timed out, go on"
+        );
     }
 
     /// Review 4b m5: the UI shows the reason and the folder instead of an empty app.

@@ -22,6 +22,7 @@ import type {
   RubricUse,
   RapportenYear,
   RapportenCleanup,
+  SnapshotEntry,
   FsResult,
   ImageResult,
   Json,
@@ -51,6 +52,8 @@ import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
 import { requiredVersion } from '../../services/read-only';
 import { checkRubric, lockedChanges, type Rubric } from '../../domain/rubric';
+import { snapshotSettings } from '../../domain/snapshot-settings';
+import { snapshotKinds } from './mock-snapshots';
 import {
   bestuurOf,
   forbiddenMessage,
@@ -1393,9 +1396,12 @@ export class MockApi implements MaatwerkApi {
     return `C:\\Users\\docent\\Documents\\${defaultName}`;
   }
 
-  async listSnapshots(): Promise<string[]> {
+  async listSnapshots(): Promise<SnapshotEntry[]> {
     this.record('listSnapshots', []);
-    return this.snapshots.map((s) => s.name);
+    const names = this.snapshots.map((s) => s.name);
+    const settings = snapshotSettings(JSON.parse(this.readText('instellingen.json') ?? 'null'));
+    const kinds = snapshotKinds(names, settings);
+    return names.map((name) => ({ name, kind: kinds.get(name) ?? null }));
   }
 
   async snapshotForFile(relPath: string): Promise<string | null> {

@@ -384,8 +384,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   `isSectiebestuurActive` reads `school.json` each time). Was: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
   admin takes effect at the next login.
 - n5: the Rust login session survives a webview reload (dev only; release builds have no reload).
-- After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only at
-  the next login.
+- ~~After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only
+  at the next login.~~ Done in step 41: the restored file goes through `Sync.refresh`, the path
+  of a colleague's change (e2e "a restored group shows at once").
 
 ## From Step 7c (perceived speed)
 
@@ -479,15 +480,16 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - **Perf at 4x (review 10 M1):** investigated: `step-07c` and `step-10` exes are equally slow
   on battery (`docs/perf.md`); likely the power state, not a regression. Confirm on mains power.
-- **m3 (rest):** an app closed during the 45 s snapshot settle leaves its claim for 30 min
-  (`CLAIM_STALE`), so that day's snapshot may be skipped. Remove our claim on `shutdown` when no
-  zip has started.
+- ~~**m3 (rest):**~~ Done in step 41: quitting during the settle wait releases the claim
+  (`Outcome::Stopped`); once the zip has started the claim stays and goes stale. Was: an app
+  closed during the 45 s snapshot settle left its claim for 30 min.
 - **m6:** exam delete is a blind delete after a stale scores check (reference behaviour): CAS on
   `delete_file` and re-check scores after the confirm. Step 41: part of the edit locks
   (sub-task 5): the core refuses deleting an exam with data, under the commit lock.
-- **n1:** `CoreSlot`: a `closing` flag so the snapshot thread does not start after `Exit`; a
-  panic inside `Core::failed` would leave the slot empty.
-- **n2:** an error before `legacy/globals` loads makes the handler import `app.js` early.
+- ~~**n1:**~~ Done in step 41: `CoreSlot::set_closing` at `Exit` (a core opened later starts
+  nothing); a panic in `Core::failed` too fills the slot with `Core::broken`.
+- ~~**n2:**~~ Done in step 41: the error message waits for the startup's own import of
+  `app.js`. Was: an error before `legacy/globals` loads made the handler import `app.js` early.
 - **n7:** the sandbox test passes on any failure; assert the diagnostic is "not found/denied".
 - Other nits in `docs/reviews/step-10.md`.
 
@@ -643,7 +645,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - **Review 26-28 m2:** ~~Gebruiker bewerken writes the photo before the user record (rev check); a
   refused save leaves the new photo in place.~~ Fixed in step 35 (the old photo is put back, a new
   one removed; no e2e: the crop needs a real file). Removing a photo (both dialogs) leaves the file.
-- **Review 26-28 m6:** the snapshot kinds in Instellingen repeat `maatwerk-core::snapshots::keep`
+- ~~**Review 26-28 m6:**~~ Done in step 41: `list_snapshots` returns each kind from
+  `maatwerk_core::snapshots::kinds`; the TS copy of the rule lives only in the mock. Was: the snapshot kinds in Instellingen repeat `maatwerk-core::snapshots::keep`
   in TypeScript; let `listSnapshots` return the kind instead.
 - **Review 26-28 m7:** board 12 "Vergelijken" (OneDrive conflict copy) and "Toets openen" (a broken
   reference) need features behind them; those findings get "Map openen" for now. The rapport

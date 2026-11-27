@@ -186,8 +186,10 @@ export function renderScreen(name) {
         document.getElementById('screen-gegevens'),
         window.maatwerk,
         confirmDialog,
-        (path) => {
-          // Own writes are not echoed by the watcher (review 7b M2).
+        async (path) => {
+          // Own writes are not echoed by the watcher (review 7b M2): refreshed as a colleague's
+          // change would be, so year data (groups, exams, scores) is current at once (7b).
+          await Sync.refresh(path);
           Store.forgetFile(path);
           toast('Hersteld uit de snapshot.', 'success');
         },

@@ -352,14 +352,37 @@ pub async fn rapporten_cleanup(state: State<'_, Shared>, before: String) -> Res<
     .await
 }
 
-/// Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`).
+/// A snapshot and why it is kept (`dagelijks`, `wekelijks`, `maandelijks`; `null`: only as
+/// the newest).
+#[derive(Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SnapshotEntry {
+    pub name: String,
+    pub kind: Option<String>,
+}
+
+/// Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`), with the kind
+/// `maatwerk_core::snapshots::kinds` gives under the current settings (review 26-28 m6).
 #[tauri::command]
 #[specta::specta]
-pub async fn list_snapshots(state: State<'_, Shared>) -> Res<Vec<String>> {
+pub async fn list_snapshots(state: State<'_, Shared>) -> Res<Vec<SnapshotEntry>> {
     blocking(state, move |c| {
-        Ok(snapshots::list(c.storage()?)?
+        let storage = c.storage()?;
+        let all = snapshots::list(storage)?;
+        let kinds = snapshots::kinds(&all, snapshots::Settings::read(storage));
+        Ok(all
             .into_iter()
-            .map(|s| s.name)
+            .map(|s| SnapshotEntry {
+                kind: kinds.get(&s.name).map(|k| {
+                    match k {
+                        snapshots::Kind::Dagelijks => "dagelijks",
+                        snapshots::Kind::Wekelijks => "wekelijks",
+                        snapshots::Kind::Maandelijks => "maandelijks",
+                    }
+                    .to_owned()
+                }),
+                name: s.name,
+            })
             .collect())
     })
     .await

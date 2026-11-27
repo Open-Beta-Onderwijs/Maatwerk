@@ -121,6 +121,7 @@ export type {
   RubricUse,
   RapportenYear,
   RapportenCleanup,
+  SnapshotEntry,
 } from './bindings';
 import type {
   MigrationResult,
@@ -130,6 +131,7 @@ import type {
   RubricUse,
   RapportenYear,
   RapportenCleanup,
+  SnapshotEntry,
 } from './bindings';
 /** Result of the PIN methods (Step 7b). */
 export type { PinCheck, PinOutcome } from './bindings';
@@ -352,8 +354,8 @@ export interface MaatwerkApi {
   ): Promise<CopiedTo>;
   /** "Opslaan als" dialog for a text file; the path, or null when cancelled. */
   saveTextAs(defaultName: string, content: string): Promise<string | null>;
-  /** `snapshots/*.zip`, newest first. */
-  listSnapshots(): Promise<string[]>;
+  /** `snapshots/*.zip`, newest first, with the kind that keeps each (review 26-28 m6). */
+  listSnapshots(): Promise<SnapshotEntry[]>;
   /** The newest snapshot with an intact copy of the JSON file, or null. */
   snapshotForFile(relPath: string): Promise<string | null>;
   /** Admin only: "Herstellen uit snapshot". */

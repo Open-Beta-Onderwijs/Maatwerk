@@ -224,7 +224,7 @@ export async function renderGegevens(
   container: HTMLElement,
   api: Api,
   confirm: Confirm,
-  onRestored: (path: string) => void = () => {},
+  onRestored: (path: string) => void | Promise<void> = () => {},
 ): Promise<void> {
   const box = el('div', 'gegevens');
   const intro = el(
@@ -296,7 +296,7 @@ export async function renderGegevens(
       );
       if (!ok) return;
       await api.restoreFromSnapshot(path, snapshot);
-      onRestored(path);
+      await onRestored(path);
     } catch (e) {
       const conflict = (e as { code?: string }).code === 'conflict';
       result.prepend(

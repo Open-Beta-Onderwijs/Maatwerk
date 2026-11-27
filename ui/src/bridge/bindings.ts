@@ -156,8 +156,11 @@ export const commands = {
 	 *  the path, `null` when cancelled.
 	 */
 	saveTextAs: (defaultName: string, content: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("save_text_as", { defaultName, content })),
-	/**  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`). */
-	listSnapshots: () => typedError<string[], CommandError>(__TAURI_INVOKE("list_snapshots")),
+	/**
+	 *  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`), with the kind
+	 *  `maatwerk_core::snapshots::kinds` gives under the current settings (review 26-28 m6).
+	 */
+	listSnapshots: () => typedError<SnapshotEntry[], CommandError>(__TAURI_INVOKE("list_snapshots")),
 	/**  Beheer › Instellingen: the printed copies per school year, oldest first. Admin only. */
 	rapportenUsage: () => typedError<RapportenYear[], CommandError>(__TAURI_INVOKE("rapporten_usage")),
 	/**
@@ -719,6 +722,15 @@ export type RubricUse = {
 	year: string,
 	examId: string,
 	naam: string,
+};
+
+/**
+ *  A snapshot and why it is kept (`dagelijks`, `wekelijks`, `maandelijks`; `null`: only as
+ *  the newest).
+ */
+export type SnapshotEntry = {
+	name: string,
+	kind: string | null,
 };
 
 /**  A JSON file read with a missing or wrong stamp since start (C19). */

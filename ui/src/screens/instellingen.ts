@@ -8,50 +8,24 @@
 // `snapshots/<datum tijd>.zip` in the background; restoring the whole folder is
 // a manual step (docs/cutover-runbook.md).
 
-import type { MaatwerkApi } from '../bridge/api';
+import type { MaatwerkApi, SnapshotEntry } from '../bridge/api';
 import { switchControl } from '../components/switch';
 import { gemiddeldenCard } from './instellingen-gemiddelden';
 import { rapportenCard } from './instellingen-rapporten';
+import {
+  SNAPSHOT_DEFAULTS,
+  SNAPSHOT_LIMITS,
+  snapshotSettings,
+  type SnapshotSettings,
+} from '../domain/snapshot-settings';
 
 type Api = Pick<
   MaatwerkApi,
   'listSnapshots' | 'openDataFolder' | 'rapportenUsage' | 'rapportenCleanup'
 >;
 
-export interface SnapshotSettings {
-  intervalHours: number;
-  daily: number;
-  weekly: number;
-  monthly: number;
-}
-
-/** maatwerk-core::snapshots::Settings::default. */
-export const SNAPSHOT_DEFAULTS: SnapshotSettings = {
-  intervalHours: 24,
-  daily: 7,
-  weekly: 4,
-  monthly: 12,
-};
-
-/** Allowed ranges, as maatwerk-core::snapshots::Settings::from_json checks them. */
-const LIMITS: Record<keyof SnapshotSettings, [number, number]> = {
-  intervalHours: [1, 24 * 31],
-  daily: [0, 366],
-  weekly: [0, 520],
-  monthly: [0, 1200],
-};
-
-/** The settings in `instellingen.json`, with the defaults for what is missing or out of range. */
-export function snapshotSettings(instellingen: unknown): SnapshotSettings {
-  const s = (instellingen as { snapshots?: Record<string, unknown> } | null)?.snapshots ?? {};
-  const out = { ...SNAPSHOT_DEFAULTS };
-  for (const key of Object.keys(LIMITS) as (keyof SnapshotSettings)[]) {
-    const v = s[key];
-    const [min, max] = LIMITS[key];
-    if (typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max) out[key] = v;
-  }
-  return out;
-}
+export { SNAPSHOT_DEFAULTS, snapshotSettings, type SnapshotSettings };
+const LIMITS = SNAPSHOT_LIMITS;
 
 /** EditorSettings: `editor.compileTimeoutSeconds`, whole seconds. */
 export const COMPILE_TIMEOUT_DEFAULT = 30;
@@ -90,67 +64,6 @@ export function settingProblem(
 export function snapshotLabel(name: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/.exec(name);
   return m ? `${m[3]}-${m[2]}-${m[1]} ${m[4]}:${m[5]}` : name;
-}
-
-/** The kind of a kept snapshot (spec 4.9), as maatwerk-core::snapshots::keep chooses them. */
-export type SnapshotKind = 'dagelijks' | 'wekelijks' | 'maandelijks';
-
-function snapshotTime(name: string): Date | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/.exec(name);
-  return m ? new Date(+m[1]!, +m[2]! - 1, +m[3]!, +m[4]!, +m[5]!) : null;
-}
-
-/** ISO 8601 week as "year-week" (weeks start on Monday; week 1 holds 4 January). */
-export function isoWeek(d: Date): string {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const yearStart = Date.UTC(t.getUTCFullYear(), 0, 1);
-  const week = Math.ceil(((t.getTime() - yearStart) / 86_400_000 + 1) / 7);
-  return `${t.getUTCFullYear()}-${week}`;
-}
-
-/**
- * Per snapshot name: dagelijks, wekelijks or maandelijks, the first of these
- * that keeps it (the newest of each of the last `daily` days, `weekly` ISO
- * weeks and `monthly` months); null for one kept only as the newest.
- */
-export function snapshotKinds(
-  names: string[],
-  settings: SnapshotSettings,
-): Map<string, SnapshotKind | null> {
-  const dated = names
-    .map((name) => ({ name, t: snapshotTime(name) }))
-    .filter((s): s is { name: string; t: Date } => s.t !== null)
-    .sort((a, b) => b.t.getTime() - a.t.getTime());
-  const newestPer = (count: number, key: (t: Date) => string) => {
-    const seen = new Set<string>();
-    const keep = new Set<string>();
-    for (const s of dated) {
-      if (seen.size >= count) break;
-      const k = key(s.t);
-      if (!seen.has(k)) {
-        seen.add(k);
-        keep.add(s.name);
-      }
-    }
-    return keep;
-  };
-  const daily = newestPer(settings.daily, (t) => t.toDateString());
-  const weekly = newestPer(settings.weekly, isoWeek);
-  const monthly = newestPer(settings.monthly, (t) => `${t.getFullYear()}-${t.getMonth()}`);
-  return new Map(
-    names.map((n) => [
-      n,
-      daily.has(n)
-        ? 'dagelijks'
-        : weekly.has(n)
-          ? 'wekelijks'
-          : monthly.has(n)
-            ? 'maandelijks'
-            : null,
-    ]),
-  );
 }
 
 interface Store {
@@ -214,7 +127,7 @@ export async function renderInstellingen(
 ): Promise<void> {
   const [instellingen, snapshots] = await Promise.all([
     store.loadInstellingen(),
-    api.listSnapshots().catch(() => [] as string[]),
+    api.listSnapshots().catch(() => [] as SnapshotEntry[]),
   ]);
   const current = snapshotSettings(instellingen);
   const timeout = compileTimeoutSeconds(instellingen);
@@ -309,12 +222,11 @@ export async function renderInstellingen(
   listHead.append(el('h3', 'inst-card__title', 'Aanwezige snapshots'), openBtn);
   listCard.append(listHead);
   if (snapshots.length) {
-    const kinds = snapshotKinds(snapshots, current);
+    // The kind comes from maatwerk-core::snapshots::kinds (review 26-28 m6).
     const list = el('ul', 'snapshot-list');
-    for (const name of snapshots) {
+    for (const { name, kind } of snapshots) {
       const li = el('li');
       li.append(el('span', 'snapshot-date', snapshotLabel(name)));
-      const kind = kinds.get(name);
       if (kind) li.append(el('span', 'snapshot-kind', kind));
       list.append(li);
     }
