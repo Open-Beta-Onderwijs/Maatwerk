@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-27 (step 41: sub-tasks 1-3 done)
+Last updated: 2026-11-27 (step 41: sub-tasks 1-4 done)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -38,8 +38,18 @@ Baseline: cargo test green.
   Linux failed installing apt packages (infrastructure). macOS and Windows baselines taken from
   its artifacts; Linux from the next run.
 
-**Next action:** sub-task 4 (input limits and messages: 6b n10, 6a m4, 18 m4, 18 n1/n4/n5, 6a n7,
-6b n9, 5b n6, 9 n6, 7a n3-n6/n8, 4a m4). Then 5 (edit locks), 6 (gate).
+- `76eff64`: CI `admin-instellingen` baselines for macOS and Windows (run 45990525762).
+- Sub-task 4 done: `d94aacb` images (6b n10 import cap 25 MB in core, 6a m4 decode limits +
+  thumbnail cache, 6a n7 message, 6b n9 per-field types, 18 m4 photo read cap 5 MB);
+  `c2b2e9c` CLI/messages (18 n1 `plain`, 5b n6 `args_os` + `.partial`, 18 n4 `brief`, 18 n5
+  prune reads only old files); `6706964` 7a (n8 students keys, n6 toggle copy, n4 conflict copy
+  needs the original's id, n3 closed); `aef610a` 4a m4 (unreadable RTTI template: "Overschrijven"
+  against the bytes' hash, `corrupt_json` `details.found`). 7a n5 moved to 45b. **9 n6 (SPDX
+  headers in toml/yml, copyright line): ask the user.**
+
+**Next action:** commit the Linux `admin-instellingen` CI baseline from run 45992954516's
+`visual-linux` artifact (check it). Then sub-task 5 (edit locks, `docs/reference/edit-locks.md`
+section 5), then 6 (gate).
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 
