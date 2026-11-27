@@ -211,3 +211,44 @@ Inaccurate "has data" checks:
 | 14         | One "has data" rule: `scores`, `overrides`, `observations`, `po`.                                                                                                                                                                                 |
 | 5 (family) | Herkansing family locks in core through a new command `save_exam_family`: it checks the whole family, then writes every file. A direct write that makes an attempt's top fields or observaties deviate from its original is refused.              |
 | Other PCs  | Gegevenscontrole (`validate.rs`) reports lock violations that arrive through sync (PO outside its rubric's scope, scores for a removed question, an observatie used outside its scope, a link to a deleted observatie). Report only, no auto-fix. |
+
+## 6. Implementation plan (step 41 sub-task 5)
+
+Order of commits (each with its tests first, mock following the core):
+
+1. **`maatwerk_core::locks::has_data`** (decision 14): a score record has data for an exam when
+   `scores[exam]` has any entry (`"N"` counts: the teacher entered it), `overrides[exam]` is not
+   null, `observations[exam]` is not empty or `po[exam]` is a non-empty object. Helpers:
+   `exam_has_data(storage, year, vak, exam)` (one folder read), `students_with_data(storage,
+year)`. Commands `exam_has_data`, `students_with_data`; the UI's `examHasScores`,
+   `studentHasAnyScores` and `studentHasExamData` use them (the Leerlingen screen keeps checking
+   every year, as now).
+2. **Guard hook**: `locks::guard_write` / `guard_delete` run in `Storage::write_json` /
+   `delete` under the commit lock, next to the rubric guard. They read the old file once and
+   scan other files only when a locked field changed; fail closed like `rubrics::uses_of`.
+   Refusals: a new `Error::EditLocked { path, message }` (code `edit_locked`), Dutch message.
+3. **Students and groups** (2.1, 2.2): removing a student from `students-<year>.json` while they
+   have data in that year or are in a group of that year; a group's name, jaarlaag, schoolsoort or
+   vak changed while it has students; deleting a group with students.
+4. **Exams** (2.3, 2.4, 10 m6): deleting an exam with data or with herkansingen; removing a
+   question id while the exam has data; a PO's jaarlaag, schoolsoort, subcategorie or `rubric_id`
+   changed while its family has data.
+5. **Families** (decision 5): family fields are `type`, `diagnostic`, `weging`, `weging_se`,
+   `periode`, `jaarlaag`, `schoolsoort`, `subject`, `subcategory`, `kind`, `rubric_id`; an
+   attempt keeps every observatie of its original and may keep its own older ones, never gain
+   new ones (`resitObsIds`). A direct write that changes a family field of a family member, or an
+   original's `obs_ids` while it has attempts, is refused; `save_exam_family(year, exams)` checks
+   that the whole family agrees, then writes the attempts and the original last (as today) with
+   the family check lifted for that call only. The verzamelkaart, the test editor (observaties)
+   and the PO form use it.
+6. **Rubrics** (2.5, decision 9): `uses_of` returns each PO's scope; a jaarlaag or schoolsoort
+   that a linked PO has may not be removed from the rubric. The UI disables those chips.
+7. **Observaties** (2.6, decisions 12, 13): delete refused while a test (any year), a rubric or
+   an opdracht links it (the message names them); toetstype Toets/PO kept while used; a
+   jaarlaag, schoolsoort or vak a linked test or rubric uses may not be removed. UI chips follow.
+8. **UI**: PO form locks jaarlaag/schoolsoort/subcategorie after scores (decision 8); question
+   max/soort change after scores asks first, a max below an entered score is refused (11);
+   removing a student with scores from a group asks first (2.2).
+9. **Gegevenscontrole** (other PCs): PO outside its rubric's scope; scores for a question the
+   exam no longer has; an observatie on a test outside the observatie's jaarlagen/schoolsoort; a
+   link to an observatie that does not exist (opdrachten too).
