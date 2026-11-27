@@ -449,8 +449,20 @@ fn guard_exam(storage: &Storage, rel: &RelPath, year: &str, id: &str, new: &Valu
     let old = storage
         .read_json(rel)
         .map_err(|e| unreadable(rel.as_str(), &e))?;
-    let vak = vak_of(old.as_ref(), new);
+    // The scores lie in the saved vak's folder: a write that moves the exam must not look in the
+    // new one (review 41 m3).
+    let vak = old
+        .as_ref()
+        .and_then(|o| text_of(o, "subject"))
+        .unwrap_or_else(|| vak_of(None, new));
     if let Some(old) = &old {
+        // 2.3: a test with data keeps its vak (its scores stay under scores/<vak>/).
+        if !same(old.get("subject"), new.get("subject")) && exam_has_data(storage, year, vak, id)? {
+            return Err(refuse(
+                rel,
+                "Er zijn scores ingevoerd voor deze toets: het vak ligt vast.".into(),
+            ));
+        }
         // 2.3: a question of an exam with data stays.
         let kept = question_ids(new);
         let removed = question_ids(old).into_iter().any(|q| !kept.contains(&q));
@@ -600,6 +612,10 @@ pub fn save_exam_family(
     let mut given = BTreeSet::new();
     for e in exams {
         let id = text_of(e, "id").ok_or_else(|| bad("Toets zonder id.".into()))?;
+        // The id becomes a file name: a nested path would miss the guards (review 41 n6).
+        if id.contains(['/', '\\']) || id.starts_with('.') {
+            return Err(bad(format!("Ongeldig toets-id: {id:?}")));
+        }
         if e != *root && parent_of(e) != Some(root_id) {
             return Err(bad(format!("{id} hoort niet bij {root_id}.")));
         }
@@ -612,7 +628,7 @@ pub fn save_exam_family(
     {
         return Err(refuse(
             &root_rel,
-            format!("Niet opgeslagen: poging {missing} ontbreekt. Open de verzamelkaart opnieuw."),
+            format!("Poging {missing} ontbreekt. Open de verzamelkaart opnieuw."),
         ));
     }
     let root_obs = ids_of(root, "obs_ids");
@@ -621,16 +637,30 @@ pub fn save_exam_family(
         if !changed.is_empty() {
             return Err(refuse(
                 &root_rel,
-                format!(
-                    "Niet opgeslagen: de pogingen verschillen in {}.",
-                    changed.join(", ")
-                ),
+                format!("De pogingen verschillen in {}.", changed.join(", ")),
             ));
         }
         if root_obs.iter().any(|o| !ids_of(e, "obs_ids").contains(o)) {
             return Err(refuse(
                 &root_rel,
-                "Niet opgeslagen: een poging mist een observatie van het origineel.".into(),
+                "Een poging mist een observatie van het origineel.".into(),
+            ));
+        }
+        // An attempt keeps its own older observaties, never gains new ones (decision 5,
+        // review 41 m4): what neither the original nor its file on disk has is refused.
+        let id = text_of(e, "id").unwrap_or_default();
+        let had = read_exam(storage, year, id)?
+            .map(|old| ids_of(&old, "obs_ids"))
+            .unwrap_or_default();
+        if ids_of(e, "obs_ids")
+            .iter()
+            .any(|o| !root_obs.contains(o) && !had.contains(o))
+        {
+            return Err(refuse(
+                &root_rel,
+                "De observaties van een herkansing of inhaaltoets zijn die van het origineel: pas \
+                 ze aan bij het origineel."
+                    .into(),
             ));
         }
     }

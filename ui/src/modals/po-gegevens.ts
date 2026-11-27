@@ -46,7 +46,7 @@ export function poSteps(active: 'gegevens' | 'groepen') {
 }
 
 const RUBRIC_LOCKED = 'Er zijn al scores voor deze PO: de rubric ligt vast.';
-/** Decision 8 (edit-locks.md): the core refuses the same change with this reason. */
+/** Decision 8 (edit-locks.md): the core refuses the same change (its text names the field). */
 const SCOPE_LOCKED =
   'Er zijn al scores voor deze PO: jaarlaag, schoolsoort en subcategorie liggen vast.';
 const NO_RUBRIC =

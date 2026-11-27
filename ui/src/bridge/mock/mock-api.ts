@@ -466,6 +466,7 @@ export class MockApi implements MaatwerkApi {
     return {
       json: parse,
       dir: (d) => this.jsonFilesIn(d),
+      folders: (d) => this.list(d).filter((n) => this.dirs.has(`${d}/${n}`)),
       years: () => this.list('').filter((n) => /^\d{4}-\d{4}$/.test(n)),
       opdrachten: () =>
         this.list('opdrachten')

@@ -700,7 +700,7 @@ const Store = (() => {
   async function deleteGroup(id, year) {
     const group = getGroupsSync(year).find((g) => g.id === id);
     if (!group) return;
-    await window.maatwerk.deleteFile(ypGroup(year, id));
+    checkDeleted(ypGroup(year, id), await window.maatwerk.deleteFile(ypGroup(year, id)));
     changed();
     // The admin's list is the `__all__` cache; the reference only filtered the
     // subject cache, so the deleted group stayed on screen (quirk U21).
@@ -775,6 +775,9 @@ const Store = (() => {
     try {
       saved = await window.maatwerk.saveExamFamily(year, merged);
     } catch (e) {
+      // The core saves the attempts first: after a failure halfway they are on disk with a new
+      // revision, so the cache takes the family from disk again (review 41 M2).
+      await refreshExams(year, merged);
       if (e?.code === 'conflict') throw conflictError(null);
       if (isReadOnlyError(e)) {
         noteReadOnly();
@@ -787,6 +790,35 @@ const Store = (() => {
       putCachedExam(`${year}/exams/${exam.subject ?? _activeSubject}`, exam);
     changed();
     return saved;
+  }
+
+  /** Re-reads these exams from disk into the cache; one that is gone leaves the cache. */
+  async function refreshExams(year, exams) {
+    for (const exam of exams) {
+      const rel = ypExam(year, exam.id);
+      const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
+      try {
+        const fresh = decode(rel, await window.maatwerk.readJson(rel));
+        if (fresh) putCachedExam(key, fresh);
+        else cache[key] = (cache[key] ?? []).filter((e) => e.id !== exam.id);
+      } catch (e) {
+        console.warn('[store] refreshExams', rel, e);
+      }
+    }
+    changed();
+  }
+
+  /**
+   * A delete the core refused (an edit lock, read-only, a guest) throws, so the caller shows no
+   * "verwijderd" and the item stays (review 41 M3). The app shows "Niet opgeslagen: <reden>".
+   */
+  function checkDeleted(relPath, result) {
+    if (!result || result.ok !== false) return;
+    if (result.reason === READ_ONLY_CODE) {
+      noteReadOnly();
+      throw readOnlyError();
+    }
+    throw saveFailed(relPath, result.reason);
   }
 
   function putCachedExam(key, exam) {
@@ -813,7 +845,7 @@ const Store = (() => {
     const exam = getExamsSync(year).find((e) => e.id === id);
     if (!exam) return;
     if (examHasResits(id, year)) throw new Error('has_resits');
-    await window.maatwerk.deleteFile(ypExam(year, id));
+    checkDeleted(ypExam(year, id), await window.maatwerk.deleteFile(ypExam(year, id)));
     changed();
     const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
     cache[key] = (cache[key] ?? []).filter((e) => e.id !== id);
@@ -975,7 +1007,7 @@ const Store = (() => {
   }
 
   async function deleteObservation(id, subject = _activeSubject) {
-    await window.maatwerk.deleteFile(ypObs(id));
+    checkDeleted(ypObs(id), await window.maatwerk.deleteFile(ypObs(id)));
     changed();
     invalidateObsCache();
     await loadObservaties(subject);

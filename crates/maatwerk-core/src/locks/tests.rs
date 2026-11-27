@@ -222,6 +222,53 @@ fn an_exam_with_data_or_attempts_is_not_deleted_and_keeps_its_questions() {
     s.delete(&exam_rel("e3")).unwrap();
 }
 
+/// Review 41 m3: a scored test keeps its vak, and the guards read the saved vak's scores.
+#[test]
+fn a_scored_exam_keeps_its_vak() {
+    let (_t, s) = setup();
+    put(&s, exam_rel("e1").as_str(), exam("e1", None));
+    put_score(&s, "101", "e1");
+    let mut moved = exam("e1", None);
+    moved["subject"] = json!("bio");
+    let msg = locked(s.write_json(&exam_rel("e1"), &moved, Expect::Any));
+    assert!(msg.contains("vak"), "{msg}");
+    // Moving and dropping a question at once is still a question with data.
+    moved["questions"] = json!([{ "id": "q1" }]);
+    locked(s.write_json(&exam_rel("e1"), &moved, Expect::Any));
+    // Without scores the vak is free.
+    put(&s, exam_rel("e2").as_str(), exam("e2", None));
+    let mut free = exam("e2", None);
+    free["subject"] = json!("bio");
+    s.write_json(&exam_rel("e2"), &free, Expect::Any).unwrap();
+}
+
+/// Review 41 m4, n6: a family save never lets an attempt gain observaties, and its ids are
+/// plain file names.
+#[test]
+fn a_family_save_refuses_gained_observaties_and_nested_ids() {
+    let (_t, s) = setup();
+    put(&s, exam_rel("e1").as_str(), exam("e1", None));
+    put(&s, exam_rel("e1h").as_str(), exam("e1h", Some("e1")));
+    let now = std::time::SystemTime::now();
+    let mut gained = exam("e1h", Some("e1"));
+    gained["obs_ids"] = json!(["o1", "nieuw"]);
+    locked(save_exam_family(
+        &s,
+        Y,
+        &[gained, exam("e1", None)],
+        None,
+        now,
+    ));
+    // What the attempt already had may stay (seeded past the guards, as older data).
+    let mut own = exam("e1h", Some("e1"));
+    own["obs_ids"] = json!(["o1", "eigen"]);
+    unlocked(|| s.write_json(&exam_rel("e1h"), &own, Expect::Any)).unwrap();
+    save_exam_family(&s, Y, &[own, exam("e1", None)], None, now).unwrap();
+    let mut nested = exam("e1", None);
+    nested["id"] = json!("x/e1");
+    assert!(save_exam_family(&s, Y, &[nested], None, now).is_err());
+}
+
 fn po(id: &str, parent: Option<&str>) -> serde_json::Value {
     let mut e = exam(id, parent);
     e["kind"] = json!("po");

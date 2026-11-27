@@ -13,6 +13,13 @@ function files(map: Record<string, unknown>): LockFiles {
       Object.entries(map)
         .filter(([rel]) => rel.startsWith(`${d}/`) && !rel.slice(d.length + 1).includes('/'))
         .map(([rel, data]) => ({ name: rel.slice(d.length + 1), data })),
+    folders: (d) => [
+      ...new Set(
+        Object.keys(map)
+          .filter((rel) => rel.startsWith(`${d}/`) && rel.slice(d.length + 1).includes('/'))
+          .map((rel) => rel.slice(d.length + 1).split('/')[0]!),
+      ),
+    ],
     years: () => [Y],
     opdrachten: () =>
       Object.entries(map)
@@ -35,6 +42,7 @@ describe('lockGuard: students and groups (2.1, 2.2)', () => {
     expect(lockGuard(f, studentsRel, { students: [{ id: '2' }] })).toMatch(/Leerling 1 .*scores/);
     expect(lockGuard(f, studentsRel, { students: [{ id: '1' }] })).toMatch(/Leerling 2 .*groep/);
     expect(lockGuard(f, studentsRel, two)).toBeNull();
+    expect(lockGuard(f, studentsRel, null)).toMatch(/leerlingenbestand/);
   });
 
   it('a group with students keeps name, jaarlaag, schoolsoort, vak and is not deleted', () => {

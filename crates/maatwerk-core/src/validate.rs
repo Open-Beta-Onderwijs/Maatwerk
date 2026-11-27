@@ -1153,7 +1153,9 @@ fn check_question_ids(rel: &str, exam: &Value, out: &mut Found) {
             IssueKind::Shape,
             rel,
             format!(
-                "Vraag-id {id} komt {} keer voor (vraag {} in de lijst): de scores van deze                  vragen vallen samen, dus de cijfers van deze toets kunnen niet kloppen. Niet zelf                  aanpassen; meld het bij de ontwikkelaar.",
+                "Vraag-id {id} komt {} keer voor (vraag {} in de lijst): de scores van deze \
+                 vragen vallen samen, dus de cijfers van deze toets kunnen niet kloppen. Niet zelf \
+                 aanpassen; meld het bij de ontwikkelaar.",
                 rows.len(),
                 rows.join(", ")
             ),

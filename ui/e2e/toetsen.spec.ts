@@ -760,3 +760,54 @@ test('after scores a max or soort change asks once; a max below an entered score
   }).toPass();
   expect(errors).toEqual([]);
 });
+
+test('review 41 M1: a family save keeps the locked top fields as the exams have them', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const { original, resit } = await testWithResit(page);
+  // An older exam without weging_se: the editor used to write the default, which the core's
+  // family rule refuses (the attempts lack it).
+  const strip = (e: Exam) => {
+    const rest: Exam & { weging_se?: number } = { ...e };
+    delete rest.weging_se;
+    return rest;
+  };
+  await seedFiles(page, {
+    [examFile(original.id)]: strip(original),
+    [examFile(resit.id)]: strip(resit),
+  });
+  await login(page);
+  await toetsen(page);
+  await menu(page, original.id, 'attempt', 'Toets bewerken');
+  await page.locator('#f-etitle2').fill(`${original.title} (bewerkt)`);
+  await page.locator('#f-esave').click();
+  await expect(page.locator('.dlg-backdrop')).toBeHidden();
+  await expect(async () => {
+    const saved = (await readExam(page, original.id)) as Exam & { weging_se?: number };
+    expect(saved.title).toBe(`${original.title} (bewerkt)`);
+    expect(saved.weging_se).toBeUndefined();
+    expect(saved.type).toBe(original.type);
+  }).toPass();
+});
+
+test('review 41 M2: after a family save that failed halfway, saving again works', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const { original } = await testWithResit(page);
+  await login(page);
+  await toetsen(page);
+  await menu(page, original.id, 'attempt', 'Toets bewerken');
+  await page.locator('#f-etitle2').fill(`${original.title} (bewerkt)`);
+  // The attempts are written first; the original then fails.
+  await withMock(page, (m, id) => m.fail('writeJson', `/exams/${id}.json`), original.id);
+  await page.locator('#f-esave').click();
+  await expect(page.locator('.toast-persistent')).toBeVisible();
+  await withMock(page, (m) => m.clearFaults());
+  await page.locator('#f-esave').click();
+  await expect(page.locator('.dlg--exam-edit')).toHaveCount(0);
+  await expect(async () => {
+    expect((await readExam(page, original.id)).title).toBe(`${original.title} (bewerkt)`);
+  }).toPass();
+});

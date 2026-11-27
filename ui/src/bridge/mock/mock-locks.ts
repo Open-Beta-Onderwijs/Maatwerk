@@ -3,8 +3,9 @@
 // The mock's copy of the core's edit locks (`maatwerk_core::locks`, step 41, edit-locks.md
 // section 6): students, groups, exams (questions, PO scope, delete) and observaties (delete,
 // scope). Same rules and Dutch texts; the core is the source and its tests are the spec. Not
-// mirrored: the herkansing family rule for single writes (the UI saves families through
-// `saveExamFamily`) and the fail-closed paths of unreadable files.
+// mirrored (backlog "From Step 41"): the herkansing family rule (single writes and
+// `saveExamFamily`), the observatie toetstype rule, the empty-scope case of review 41 m1, and the
+// fail-closed paths of unreadable files.
 
 import { hasData } from '../../domain/has-data';
 import { obsLockedValues, type ObsLinkScopes } from '../../domain/obs-locks';
@@ -20,6 +21,8 @@ export interface LockFiles {
   json(rel: string): unknown;
   /** The parsed JSON files directly in `dir`. */
   dir(dir: string): { name: string; data: unknown }[];
+  /** The folders directly in `dir`. */
+  folders(dir: string): string[];
   /** The school years with a folder. */
   years(): string[];
   /** Every opdracht record. */
@@ -39,7 +42,7 @@ const same = (a: unknown, b: unknown): boolean =>
 
 function studentsWithData(files: LockFiles, year: string): Set<string> {
   const out = new Set<string>();
-  for (const vak of ['nat', 'bio', 'schk', 'wi']) {
+  for (const vak of files.folders(`${year}/scores`)) {
     for (const { name, data } of files.dir(`${year}/scores/${vak}`)) {
       const rec = obj(data);
       const exams = ['scores', 'overrides', 'observations', 'po'].flatMap((k) =>
@@ -226,7 +229,10 @@ function guardObs(files: LockFiles, rel: string, id: string, next: unknown): str
  */
 export function lockGuard(files: LockFiles, rel: string, next: unknown): string | null {
   const students = /^(\d{4}-\d{4})\/students-\1\.json$/.exec(rel);
-  if (students) return next === null ? null : guardStudents(files, rel, students[1]!, next);
+  if (students)
+    return next === null
+      ? 'Het leerlingenbestand van een schooljaar wordt niet verwijderd.'
+      : guardStudents(files, rel, students[1]!, next);
   if (/^\d{4}-\d{4}\/groups\/[^/]+\.json$/.test(rel)) return guardGroup(files, rel, next);
   const exam = /^(\d{4}-\d{4})\/exams\/([^/]+)\.json$/.exec(rel);
   if (exam) return guardExam(files, rel, exam[1]!, exam[2]!, next);

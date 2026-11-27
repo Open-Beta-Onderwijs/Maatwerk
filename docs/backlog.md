@@ -676,6 +676,20 @@ See `docs/reviews/step-32.md` for the evidence of each item.
 - ~~**Logos**~~ no vendor logos (user, 2026-11-26): letter buttons CC, GPT, G, AG, V, CP.
 - ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
 
+## From Step 41
+
+See `docs/reviews/step-41.md`. Fixed in step 41: M1-M3, m3, m4, m5, n1-n3, n6, part of m2
+(students-file delete, vak folders, header). Open: m1 (an observatie saved with no jaarlagen or
+schoolsoort, "all", locks no chip; the core refuses a narrowing that leaves out a linked value,
+shown as "Niet opgeslagen"; pre-select or lock the used values), m2 rest (the mock has no
+family rule, no observatie toetstype rule), m6 (`listed_thumbnails_are_cached_by_content` uses
+a process-global decode counter: flaky under parallel tests), m7 (the watcher's same-size rule
+reads the wall clock, its m4 test is time-dependent), n4 (`presence.rs:122` comment past 100
+columns), n5 (`changedAt` in `store.js` never shrinks), n7 (refusals name a student id, not a
+name), n8 (quit during open: shutdown can run twice), n9 (`saveExamFamily` loses `updatedBy` on
+a conflict), n10 (`highestEnteredScores` reads listed students only), n11 (guards read the old
+file twice; a legacy single-`subject` observatie always triggers the link scan).
+
 ## From Step 40
 
 See `docs/reviews/step-40.md`. Open: m7 (Unix: processes the CLI leaves without holding the

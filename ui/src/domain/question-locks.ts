@@ -4,6 +4,8 @@
 // and a max below a score already entered for that question is refused. Raw entered points only,
 // no grade numbers.
 
+import { formatNumber } from './format';
+
 type Rec = { scores?: Record<string, Record<string, unknown> | undefined> } | null | undefined;
 
 /** The highest score entered per question of `exam` over the records ("N" and blanks skip). */
@@ -26,7 +28,7 @@ export function maxRefusal(
 ): string | null {
   const top = highest[id];
   if (top === undefined || pts >= top) return null;
-  return `Er is al een score van ${String(top).replace('.', ',')} ingevoerd voor deze vraag: het maximum kan niet lager.`;
+  return `Er is al een score van ${formatNumber(top)} ingevoerd voor deze vraag: het maximum kan niet lager.`;
 }
 
 /** The question asked once per editor before a max or soort change after scores. */

@@ -309,6 +309,37 @@ test('6a M1: an unsupported logo type is refused with a message', async ({ page 
   expect(calls).not.toContain('savePhoto');
 });
 
+test('review 41 M3: a delete the core refuses is reported, not shown as done', async ({ page }) => {
+  await page.goto('/');
+  const group = await readMockJson<Record<string, unknown>>(
+    page,
+    `${YEAR}/groups/3a-nat-${YEAR}.json`,
+  );
+  const id = `leeg-nat-${YEAR}`;
+  const rel = `${YEAR}/groups/${id}.json`;
+  await seedFiles(page, { [rel]: { ...group, id, name: 'Lege groep', student_ids: [] } });
+  await login(page, 'nat', 'admin');
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  const del = page.locator(`[data-action="del-group"][data-id="${id}"]`);
+  await expect(del).toBeVisible();
+  // A colleague's student lands in the group; this window has not seen it yet.
+  await withMock(
+    page,
+    (m, a) => {
+      const files = (m as unknown as { files: Map<string, Uint8Array> }).files;
+      const old = JSON.parse(new TextDecoder().decode(files.get(a.rel)!)) as object;
+      const next = { ...old, student_ids: [a.student] };
+      files.set(a.rel, new TextEncoder().encode(JSON.stringify(next)));
+    },
+    { rel, student: String((group.student_ids as string[])[0]) },
+  );
+  await del.click();
+  await page.getByRole('button', { name: 'Verwijderen', exact: true }).click();
+  await expect(page.getByText(/Niet opgeslagen: Deze groep heeft 1 leerling/)).toBeVisible();
+  await expect(page.locator('.toast', { hasText: 'Groep verwijderd' })).toHaveCount(0);
+  expect(await readMockJson(page, rel)).not.toBeNull();
+});
+
 test('M-GRP-1: a deleted group disappears from the admin list', async ({ page }) => {
   await page.goto('/');
   const group = await readMockJson<Record<string, unknown>>(

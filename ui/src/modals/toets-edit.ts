@@ -443,13 +443,11 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
           toast('Vul alle velden in en zorg voor minstens één vraag.', 'error');
           return;
         }
-        // Locked top fields come from the exam itself, not from the form.
+        // Locked top fields stay exactly as the exam has them (`...exam` below): rebuilt from
+        // defaults they could differ from the original's (no `weging_se` in older exams) and the
+        // core's family rule refuses that (review 41 M1).
         const top = lockTopFields
-          ? {
-              ...kindFields(isDiag, isPta, weging),
-              weging_se: wegingSe,
-              periode: exam.periode ?? null,
-            }
+          ? {}
           : {
               ...kindFields(isTicked(diagBtn), isTicked(ptaBtn), spinnerValue(wegingEl)),
               weging_se: spinnerValue(wegingSeEl),

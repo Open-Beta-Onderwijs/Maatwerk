@@ -52,7 +52,11 @@ pub struct Cleanup {
 /// A printed copy: a regular file (not a link) named `*.pdf`.
 fn is_copy(path: &Path, name: &str) -> Option<u64> {
     let meta = fs::symlink_metadata(path).ok()?;
-    let pdf = name.len() > 4 && name[name.len() - 4..].eq_ignore_ascii_case(".pdf");
+    // By extension, not by byte slicing: a non-ASCII name panicked (review 41 m5).
+    let pdf = Path::new(name)
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("pdf"))
+        && Path::new(name).file_stem().is_some_and(|s| !s.is_empty());
     (meta.file_type().is_file() && pdf).then_some(meta.len())
 }
 
@@ -172,6 +176,20 @@ mod tests {
         let (_tmp, storage) = setup();
         assert_eq!(usage(&storage).unwrap(), Usage::default());
         assert_eq!(cleanup(&storage, "2025-2026").unwrap(), Cleanup::default());
+    }
+
+    /// Review 41 m5: a name whose fourth-last byte is inside a character did panic.
+    #[test]
+    fn non_ascii_names_are_counted_or_skipped_without_a_panic() {
+        let (tmp, storage) = setup();
+        put(&tmp, "rapporten/2025-2026/a\u{20ac}\u{20ac}", b"1");
+        put(
+            &tmp,
+            "rapporten/2025-2026/Bj\u{f6}rn \u{e9}\u{e9}n.PDF",
+            b"12",
+        );
+        let u = usage(&storage).unwrap();
+        assert_eq!((u.years[0].files, u.years[0].bytes), (1, 2));
     }
 
     #[test]
