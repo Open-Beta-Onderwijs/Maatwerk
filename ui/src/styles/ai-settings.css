@@ -103,6 +103,23 @@
   display: flex;
   flex-direction: column;
 }
+.ais-card__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+/* Not checked against the real CLI yet (decision 89). */
+.ais-beta {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 16px;
+}
 .ais-card__name .ais-mono {
   font-size: 11.5px;
   overflow: hidden;

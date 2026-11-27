@@ -7,7 +7,7 @@
 
 import type { AiProvider, CheckReport, ProposalView } from '../../bridge/ai-api';
 import type { EditorAi } from './client';
-import { h, icon, monogram } from './dom';
+import { h, icon, monogramEl } from './dom';
 import {
   applyHunks,
   hunkLocation,
@@ -45,7 +45,9 @@ export async function openReview(o: ReviewOptions): Promise<void> {
     f.hunks.forEach((hk, i) => {
       if (!conflict(f.path, i)) chosen.add(key(f.path, hk.id));
     });
-  const images = new Set(proposal.images.map((i) => i.path));
+  // An image that takes the name of a placeholder would replace a real image the AI never saw:
+  // not chosen by default (review 32 m5).
+  const images = new Set(proposal.images.filter((i) => !i.placeholder).map((i) => i.path));
   const total =
     proposal.files.reduce((n, f) => n + f.hunks.filter((_, i) => !conflict(f.path, i)).length, 0) +
     proposal.images.length;
@@ -57,9 +59,11 @@ export async function openReview(o: ReviewOptions): Promise<void> {
   let tab: 'proposal' | 'current' = readOnly ? 'current' : 'proposal';
   let previewSeq = 0;
 
-  const m = monogram(o.provider.key, o.provider.name);
-  const avatar = h('span', { class: 'ai-avatar is-large' }, m.text);
-  avatar.style.setProperty('--provider', m.colour);
+  const avatar = monogramEl(
+    h('span', { class: 'ai-avatar is-large' }),
+    o.provider.key,
+    o.provider.name,
+  );
   const countEl = h('span', { class: 'ai-review-count' });
   const applyBtn = h('button', { type: 'button', class: 'ai-btn ai-btn-primary ai-btn-lg' });
   const closeBtn = h(
@@ -201,6 +205,7 @@ export async function openReview(o: ReviewOptions): Promise<void> {
             { class: `ai-pill ${img.new ? 'is-new' : ''}` },
             img.new ? 'nieuw' : 'gewijzigd',
           ),
+          img.placeholder ? h('span', { class: 'ai-pill is-warn' }, 'niet gezien') : null,
         ),
       );
     }
@@ -324,7 +329,11 @@ export async function openReview(o: ReviewOptions): Promise<void> {
             h(
               'span',
               { class: 'ai-muted' },
-              `${img.new ? 'nieuw bestand' : 'vervangt het bestand'} · ${img.source}`,
+              img.placeholder
+                ? 'vervangt een afbeelding die de AI niet heeft gezien'
+                : img.new
+                  ? 'nieuw bestand'
+                  : 'vervangt het bestand',
             ),
           ),
           h(

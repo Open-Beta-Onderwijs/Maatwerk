@@ -146,8 +146,9 @@ test('Voorstel bekijken: hunks with checkboxes, preview, Toepassen (n)', async (
 test('Stop keeps nothing; a time-out shows its card', async ({ page }) => {
   const frame = await openClaude(page);
   const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  // The run waits for Stop, however slow the runner (review 32 m12).
   await withMock(page, (m) => {
-    m.ai.stepDelayMs = 800;
+    m.ai.untilStopped = true;
   });
   await panel.getByRole('textbox', { name: 'Bericht' }).fill('Langzaam');
   await panel.getByRole('button', { name: 'Versturen' }).click();
@@ -158,7 +159,6 @@ test('Stop keeps nothing; a time-out shows its card', async ({ page }) => {
   await shot(page, '07-stopped');
 
   await withMock(page, (m) => {
-    m.ai.stepDelayMs = 0;
     m.ai.nextTurn = { outcome: 'timedOut', append: '' };
   });
   await panel.getByRole('textbox', { name: 'Bericht' }).fill('Nog eens');
@@ -374,5 +374,111 @@ test('diff card: applied keeps Bekijken (read-only); older proposals get a statu
   await expect(card().getByRole('button', { name: 'Toepassen' })).toBeVisible();
   await reopen();
   await expect(card().getByRole('button', { name: 'Toepassen' })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+// Review 32 m3: typing during the apply round trip is kept; the hunk lands on the new text.
+test('Toepassen keeps what the teacher typed while it applied', async ({ page }) => {
+  const errors = watchErrors(page);
+  const frame = await openClaude(page);
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  await panel.getByRole('textbox', { name: 'Bericht' }).fill('Voeg een regel toe');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  const card = panel.locator('.ai-diff-card');
+  await expect(card.getByRole('button', { name: 'Toepassen' })).toBeVisible();
+  await withMock(page, (m) => {
+    m.ai.applyDelayMs = 600;
+  });
+  await card.getByRole('button', { name: 'Toepassen' }).click();
+  // During the round trip: type at the start of the text.
+  await frame.locator('.cm-content').click();
+  await page.keyboard.press('Control+Home');
+  await page.keyboard.type('// getypt tijdens toepassen\n');
+  await expect(card).toContainText('Toegepast: 1 wijziging');
+  await expect(frame.locator('.cm-content')).toContainText('getypt tijdens toepassen');
+  await expect(frame.locator('.cm-content')).toContainText('Voorgesteld door de AI (mock)');
+  const applies = await withMock(
+    page,
+    (m) => m.ai.calls.filter((c) => c.method === 'apply').length,
+  );
+  expect(applies).toBeGreaterThan(1);
+  expect(errors).toEqual([]);
+});
+
+// Review 32 m4, m5: Toepassen stores the images with the save of the text, not before; an image
+// on a placeholder's name is not in the default choice.
+test('images are stored with the save; a placeholder image only by choice', async ({ page }) => {
+  const errors = watchErrors(page);
+  const frame = await openClaude(page);
+  await withMock(page, (m) => {
+    m.ai.proposalImages = [
+      { path: 'images/grafiek.png', new: true, source: 'x', placeholder: false },
+      { path: 'images/foto.png', new: false, source: 'y', placeholder: true },
+    ];
+    // The proposed text names the new image (review 40 M2: only named images are stored).
+    m.ai.nextTurn = { append: '\n// figuur: images/grafiek.png\n' };
+  });
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  await panel.getByRole('textbox', { name: 'Bericht' }).fill('Maak een grafiek');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  const card = panel.locator('.ai-diff-card');
+  await card.getByRole('button', { name: 'Toepassen' }).click();
+  await expect(card).toContainText('Toegepast');
+  const calls = () =>
+    withMock(page, (m) =>
+      m.ai.calls
+        .filter((c) => c.method === 'apply' || c.method === 'commitImages')
+        .map((c) => [c.method, c.args.at(-1)]),
+    );
+  await expect.poll(calls).toEqual([
+    ['apply', ['images/grafiek.png']],
+    ['commitImages', ['images/grafiek.png']],
+  ]);
+
+  // Undo, then Voorstel bekijken: the placeholder image is off, labelled.
+  await card.getByRole('button', { name: 'Ongedaan maken' }).click();
+  await card.getByRole('button', { name: 'Bekijken' }).click();
+  const dialog = frame.getByRole('dialog', { name: 'Voorstel van Claude Code' });
+  await expect(dialog).toContainText('vervangt een afbeelding die de AI niet heeft gezien');
+  await expect(
+    dialog.getByRole('checkbox', { name: 'Afbeelding images/foto.png toevoegen' }),
+  ).not.toBeChecked();
+  await expect(
+    dialog.getByRole('checkbox', { name: 'Afbeelding images/grafiek.png toevoegen' }),
+  ).toBeChecked();
+  expect(errors).toEqual([]);
+});
+
+// Review 40 M2, m4: an image the saved text does not name is not stored; an image that cannot
+// be stored does not stop the text from being saved.
+test('only images the text names are stored; a failed store keeps the text', async ({ page }) => {
+  const errors = watchErrors(page);
+  const frame = await openClaude(page);
+  await withMock(page, (m) => {
+    m.ai.proposalImages = [{ path: 'images/los.png', new: true, source: 'x', placeholder: false }];
+  });
+  const panel = frame.getByRole('region', { name: 'AI-assistent' });
+  const card = panel.locator('.ai-diff-card');
+  await panel.getByRole('textbox', { name: 'Bericht' }).fill('Iets');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  await card.getByRole('button', { name: 'Toepassen' }).click();
+  await expect(card).toContainText('Toegepast');
+  await expect(frame.locator('#editor-status')).toContainText('Opgeslagen');
+  const commits = () =>
+    withMock(page, (m) => m.ai.calls.filter((c) => c.method === 'commitImages').length);
+  expect(await commits()).toBe(0);
+
+  // Named, but the store fails: the text is saved anyway, the card says so.
+  await card.getByRole('button', { name: 'Ongedaan maken' }).click();
+  await withMock(page, (m) => {
+    m.ai.proposalImages = [{ path: 'images/los.png', new: true, source: 'x', placeholder: false }];
+    m.ai.failCommit = true;
+    m.ai.nextTurn = { append: '\n// figuur: images/los.png\n' };
+  });
+  await panel.getByRole('textbox', { name: 'Bericht' }).fill('Nog eens');
+  await panel.getByRole('button', { name: 'Versturen' }).click();
+  await card.getByRole('button', { name: 'Toepassen' }).click();
+  await expect(card).toContainText('De afbeeldingen zijn nog niet opgeslagen');
+  await expect(frame.locator('#editor-status')).toContainText('Opgeslagen');
   expect(errors).toEqual([]);
 });

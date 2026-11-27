@@ -1,10 +1,100 @@
 # State
 
-Last updated: 2026-11-25 (step 39a in progress)
-Branch: `step/39-v1-removal-typst`
-Last tags: `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-27 (step 40 merged and tagged; step 41 edit locks analysed)
+Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
+merges; merge `main` in after it does)
+Last tags: `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
+
+Started while the step 39 CI runs (user). Baseline: cargo test green.
+
+**User's answers (2026-11-26):**
+
+- No vendor logos: letter buttons. Monograms **CC** (Claude Code), **GPT** (Codex/ChatGPT),
+  **V** (Vibe), **G** (Gemini), **AG** (Antigravity), **CP** (Copilot); colours stay as board
+  59; three letters get a smaller font.
+- Manual check this step: **Claude Code and Mistral Vibe** only (the user logs in to Vibe).
+  The other four keep the "bèta" tag (decision 89).
+- 32 m4: images **wait until the save** of the text (not a footer note).
+- 32 m8: **login check before the first run** of a conversation where the CLI has one.
+
+**Progress:**
+
+- 40.1 (m3, m4, m5, n2, n3, n8): `ai_apply` is text-only (checks the images, writes only the
+  history, so the panel retries when the teacher typed meanwhile; `applyText` takes the base
+  text). New `ai_commit_images`: the panel's `saveWithImages` stores pending images just before
+  `opdracht.typ` is written and takes them out again when the write fails; Toepassen saves at
+  once. Undo before the save only drops them. Image proposals carry `placeholder` (stem of a
+  placeholder, any case/extension): not in Toepassen's default, unchecked and labelled in
+  Voorstel bekijken. One proposal per clean stem (others "(dubbele naam)"). Workspace path no
+  longer shown. History "applied" only when something was taken. Tests: core diff/apply, e2e
+  (m3 test fails on the old panel).
+- 40.2a `0183905` (m6, m7, n4): Windows job object via **process-wrap 11** (Apache-2.0 OR MIT,
+  Windows-only dependency; licences, notices updated), killed after the run and 3 s after the
+  CLI exited with a grandchild holding the pipes; Unix: SIGKILL to the group then. Test: the
+  grandchild is gone (failed before). `ai::guard::Guard`: context compiles and Maatwerk's
+  checks give up on Stop/deadline; turn ends Stopped/TimedOut, keeps nothing.
+- 40.2b `2c8a137` (m8-m10, n1, n5-n7): login status before the first run that worked (in the
+  turn, so every entry point); `ai_login_check` removed. Main window's own metadata in send.
+  `--version` cached per path. Random picker tokens (AI tokens kept for Opnieuw proberen).
+  `ai_send` refuses before the notice (backend only; MockAi does not mirror it).
+- Step 39 CI (run on `57fa6d0`): green on every job (2026-11-26). Merge waits for the user.
+- 40.3a `22f3b9f`: letter buttons and "bèta" (`provider::VERIFIED` = Claude Code; Vibe joins
+  after its manual check). Visual `editor` baselines (3 themes, C -> CC) **not updated: wait
+  for the user's OK**. Screens shown to the user.
+- 40.4 started: `provider.rs` split (presets/args/settings/tests). Still to split: `panel.ts`,
+  `src-tauri/src/ai.rs`, `workspace.rs`, `events.rs` (and `editor-ai.css`, `composer.ts`).
+- `046b92e`: `editor` baselines (C -> CC) updated with the user's OK; CI copies dropped (the
+  next CI run writes them: check and commit from its artifacts).
+- `e12e564`: Vibe `effect` entries are transcript steps; real check (ai_real_cli) of Claude
+  Code 2.1.328 and Mistral Vibe 3.0.4 (user's free account) passed: proposal, resumed second
+  turn, clean checks. Vibe in `VERIFIED`. ADR-0009 "Real-CLI check (step 40)", manual tests
+  M-AI-6/7/10.
+- m11 (`ffdaa16`, `3d43ef0` events/workspace, app `ai/send.rs` + `ai/proposal.rs`, `e862c04`
+  `editor/ai/applier.ts`): pure moves. `panel.ts` 816 lines, `editor-ai.css`, `composer.ts`
+  left (backlog).
+- `27b5623` m12: workspace privacy test, `workspace::syllabus_file` + test, MockAi
+  `untilStopped` (Stop e2e without a race).
+- v0.29.0 tag run: macOS failed only on the artifact upload (ENOTFOUND); the user reran it.
+- **Gate (local) green** after `27b5623`: fmt, clippy, cargo test (690), deny, SPDX, lint,
+  typecheck, Vitest 963, node 47, licences, e2e chromium 433/433, visual 177/177, WebKit AI
+  20/20.
+- **Review** `docs/reviews/step-40.md`: 0 blockers, 2 majors, 9 minors, 8 nits. M1 (a wrong
+  "not logged in" locked the CLI out) and M2 (pending images could be stored without their
+  text after "Hun versie laden") fixed, with m1-m6, m8, n2, n3, n8 (n7 already pinned). Open in
+  backlog "From Step 40": m7, m9 rest, n1, n4, n5, n6.
+- Version **0.31.0** (splash CI baselines dropped; local updated).
+- **Gate after the fixes** green: fmt, clippy, cargo test (693), deny, SPDX, lint, typecheck,
+  Vitest 963, node 47, licences, e2e chromium 434/434, visual 177/177. Pushed; CI pending.
+
+- CI run 45804318054: only the dropped `editor`/`splash` baselines failed (Linux, Windows);
+  their baselines committed from the artifacts (`CC`, version 0.31.0 checked). Run
+  45807358650: Linux, Windows, licences green; macOS got no runner (GitHub busy), cancelled;
+  the user reruns it in the morning (2026-11-27).
+
+- 2026-11-26: `main` merged into `step/40-ai-followups` (no file changes). v0.29.0 tag run
+  45784769264 green; its 10 files attached to the published release `v0.29.0` after checking
+  checksums (exe SHA-256 `24551d83…88cc`, now in the notes instead of the TODO).
+
+- 2026-11-26: **step 39 merged into `main`** (`df87d83`, merge commit, tree identical to
+  `57fa6d0`, CI green there) and tagged `step-39` (user's OK). `v0.30.0` not tagged.
+
+- 2026-11-27: run 45819157915 (after the `main` merge): Linux, Windows, licences green; macOS
+  failed only on the missing `visual-ci-webkit-darwin` `editor`/`splash` baselines (2 e2e
+  WebKit `Target crashed` flakes passed on retry). `58e1196`: both committed from its
+  `visual-macos` artifact (checked: CC badge, versie 0.31.0). CI run 45973949416 green on all
+  platforms. **Step 40 merged into `main`** (user's OK) and tagged `step-40`; `v0.31.0` not
+  tagged.
+- 2026-11-27: edit-lock analysis for step 41 in `docs/reference/edit-locks.md` (user's request),
+  user's decisions in its section 5; added as step 41 item 5 in `PLAN-2.md`. Open: a core
+  `save_exam_family` command (else family locks stay UI-only) and Gegevenscontrole checks for
+  lock violations from another PC (edit-locks.md, answer pending).
+
+**Next action:** step 41 (`PLAN-2.md`), after the user's go. Ask the two open edit-lock
+questions above first.
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 

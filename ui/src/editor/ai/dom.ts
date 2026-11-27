@@ -94,14 +94,17 @@ export function icon(name: IconName, size = 16, stroke = 2): SVGSVGElement {
   return svg;
 }
 
-/** Monogram and colour per provider until the real logos (decision 62, board 59). */
+/**
+ * Letters and colour per provider (decision 62, board 59). No vendor logos: letter buttons
+ * (user, 2026-11-26).
+ */
 const MONOGRAMS: Record<string, [string, string]> = {
-  claude: ['C', '#c2540f'],
-  codex: ['G', '#1f7045'],
-  gemini: ['Ge', '#2560bf'],
-  antigravity: ['A', '#0f7f86'],
-  vibe: ['M', '#c93636'],
-  copilot: ['Co', '#7a33b0'],
+  claude: ['CC', '#c2540f'],
+  codex: ['GPT', '#1f7045'],
+  gemini: ['G', '#2560bf'],
+  antigravity: ['AG', '#0f7f86'],
+  vibe: ['V', '#c93636'],
+  copilot: ['CP', '#7a33b0'],
 };
 
 export function monogram(key: string, name: string): { text: string; colour: string } {
@@ -109,6 +112,15 @@ export function monogram(key: string, name: string): { text: string; colour: str
   if (m) return { text: m[0], colour: m[1] };
   const text = name.replace(/[^\p{L}\p{N}]/gu, '').slice(0, 2) || '?';
   return { text: text[0]!.toUpperCase() + text.slice(1).toLowerCase(), colour: '#5d6675' };
+}
+
+/** `el` shows the monogram of `key`: its letters, its colour, a smaller font for three. */
+export function monogramEl<T extends HTMLElement>(el: T, key: string, name: string): T {
+  const m = monogram(key, name);
+  el.textContent = m.text;
+  el.style.setProperty('--provider', m.colour);
+  el.dataset.letters = String([...m.text].length);
+  return el;
 }
 
 /** Copies text to the clipboard; false when the browser refuses. */

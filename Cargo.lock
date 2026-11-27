@@ -3239,7 +3239,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-app"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "maatwerk-core",
  "rfd",
@@ -3257,12 +3257,13 @@ dependencies = [
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
+ "uuid",
  "wry",
 ]
 
 [[package]]
 name = "maatwerk-cli"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "maatwerk-core",
  "serde",
@@ -3273,7 +3274,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-core"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "argon2",
  "base64 0.23.1",
@@ -3282,6 +3283,7 @@ dependencies = [
  "maatwerk-grades",
  "notify",
  "password-hash",
+ "process-wrap",
  "proptest",
  "ryu",
  "serde",
@@ -3308,7 +3310,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-grades"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -3316,7 +3318,7 @@ dependencies = [
 
 [[package]]
 name = "maatwerk-grades-wasm"
-version = "0.30.0"
+version = "0.31.0"
 dependencies = [
  "maatwerk-grades",
  "serde",
@@ -3490,6 +3492,18 @@ name = "nix"
 version = "0.31.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
+dependencies = [
+ "bitflags 2.13.2",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
+]
+
+[[package]]
+name = "nix"
+version = "0.32.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77730ed34f01f4990cb2ea67fec715ecebc6fab9a6396cf83c5529b13f581bdc"
 dependencies = [
  "bitflags 2.13.2",
  "cfg-if",
@@ -4287,6 +4301,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "process-wrap"
+version = "11.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3655b18489c90df24f2c401ac65f908b17210e59cf676127f79890f67f3e30e"
+dependencies = [
+ "indexmap 2.14.2",
+ "nix 0.32.0",
+ "windows",
 ]
 
 [[package]]
@@ -8001,7 +8026,7 @@ dependencies = [
  "getrandom 0.4.3",
  "indexmap 2.14.2",
  "memchr",
- "nix",
+ "nix 0.31.3",
  "typed-path",
  "windows-sys 0.61.2",
  "zopfli",

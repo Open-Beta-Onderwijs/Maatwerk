@@ -5,7 +5,7 @@
 // styles/ai-install.css (tokens only, so both documents can load it).
 
 import type { AiProvider, InstallHelp } from '../../bridge/ai-api';
-import { copyText, h, monogram } from './dom';
+import { copyText, h, monogramEl } from './dom';
 
 /** Who makes each CLI. */
 export const MAKER: Record<string, string> = {
@@ -24,10 +24,8 @@ export function installCommand(help: InstallHelp, windows = /Windows/i.test(navi
 
 /** The provider's tile: its monogram in its colour (logos: decision 62). */
 export function logoTile(key: string, name: string, size: 'sm' | 'md' = 'md'): HTMLElement {
-  const m = monogram(key, name);
-  const tile = h('span', { class: `ais-logo ais-logo--${size}`, 'aria-hidden': 'true' }, m.text);
-  tile.style.setProperty('--provider', m.colour);
-  return tile;
+  const tile = h('span', { class: `ais-logo ais-logo--${size}`, 'aria-hidden': 'true' });
+  return monogramEl(tile, key, name);
 }
 
 /** "Kopiëren" that says "Gekopieerd" for a moment. */

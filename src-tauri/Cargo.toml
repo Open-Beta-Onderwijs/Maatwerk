@@ -36,6 +36,7 @@ tracing-appender = "0.2.5"
 # WebView2 pre-check before Tauri starts (`start_error.rs`); the version tauri-runtime-wry uses.
 wry = { version = "0.57.1", default-features = false }
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "std", "ansi", "tracing-log"] }
+uuid = { version = "1.29.0", features = ["v4"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

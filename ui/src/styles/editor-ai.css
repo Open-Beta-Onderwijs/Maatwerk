@@ -122,6 +122,10 @@
   background: var(--ok-soft);
   color: var(--ok);
 }
+.ai-pill.is-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
 
 /* ── Editor bar while a run works on a copy (decision 63) ────────────────── */
 #ai-copy-bar {
@@ -166,6 +170,26 @@
   font-weight: 750;
   cursor: pointer;
   transition: transform 0.12s;
+}
+.ai-rail-btn[data-letters='3'] {
+  font-size: 11px;
+  letter-spacing: -0.2px;
+}
+/* Not checked against the real CLI yet (decision 89). */
+.ai-rail-beta {
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1px solid var(--foot);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 11px;
+  letter-spacing: 0;
 }
 .ai-rail-btn:hover {
   transform: translateX(-2px);
@@ -260,6 +284,10 @@
   color: #fff;
   font-size: 12px;
   font-weight: 750;
+}
+.ai-avatar[data-letters='3'] {
+  font-size: 9.5px;
+  letter-spacing: -0.2px;
 }
 .ai-avatar.is-large {
   width: 30px;

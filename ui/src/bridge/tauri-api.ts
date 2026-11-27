@@ -117,7 +117,6 @@ function createAiApi(c: Commands): Ai.AiApi {
   return {
     detect: (gebruiker, refresh) => asJson(c.aiDetect(gebruiker, refresh)),
     saveSettings: (gebruiker, settings) => asJson(c.aiSaveSettings(gebruiker, json(settings))),
-    loginCheck: (gebruiker, provider) => orThrow(c.aiLoginCheck(gebruiker, provider)),
     send(gebruiker, opdrachtId, provider, request, onEvent) {
       const channel = new Channel<Value>();
       channel.onmessage = (event) => onEvent(event as unknown as Ai.AiEvent);
@@ -134,6 +133,8 @@ function createAiApi(c: Commands): Ai.AiApi {
       asJson(c.aiProposal(gebruiker, opdrachtId, provider, current)),
     apply: (gebruiker, opdrachtId, provider, current, hunks, images) =>
       asJson(c.aiApply(gebruiker, opdrachtId, provider, current, hunks, images)),
+    commitImages: (gebruiker, opdrachtId, provider, images) =>
+      asJson(c.aiCommitImages(gebruiker, opdrachtId, provider, images)),
     async undoImages(gebruiker, opdrachtId, provider, images) {
       await orThrow(c.aiUndoImages(gebruiker, opdrachtId, provider, images));
     },

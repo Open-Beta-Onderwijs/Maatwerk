@@ -144,3 +144,59 @@ fn collect_restricts_to_opdracht_and_images() {
     assert!(p.files.is_empty());
     assert!(p.skipped.contains(&"opdracht.typ (leeg)".to_owned()));
 }
+
+/// Review 32 m5: an image whose base was a grey placeholder replaces a real image the AI never
+/// saw; it is marked, also when the AI changed the extension.
+#[test]
+fn collect_marks_images_that_replace_a_placeholder() {
+    let dir = tempfile::tempdir().unwrap();
+    let w = dir.path();
+    let mut baseline = Baseline::default();
+    fs::create_dir_all(w.join("images")).unwrap();
+    for (name, bytes, placeholder) in [
+        ("foto.png", &b"grey"[..], true),
+        ("kaart.png", &b"grey2"[..], true),
+        ("schets.svg", &b"real"[..], false),
+    ] {
+        fs::write(w.join("images").join(name), bytes).unwrap();
+        let key = format!("images/{name}");
+        baseline.images.insert(key.clone(), sha256_hex(bytes));
+        if placeholder {
+            baseline.placeholders.push(key);
+        }
+    }
+    fs::write(w.join("images/kaart.png"), b"ai").unwrap();
+    fs::write(w.join("images/Foto.jpg"), b"ai2").unwrap();
+    fs::write(w.join("images/schets.svg"), b"ai3").unwrap();
+    fs::write(w.join("images/nieuw.png"), b"ai4").unwrap();
+    let p = collect(w, &baseline).unwrap();
+    let images: Vec<(&str, bool)> = p
+        .images
+        .iter()
+        .map(|i| (i.path.as_str(), i.placeholder))
+        .collect();
+    assert_eq!(
+        images,
+        [
+            ("images/Foto.jpg", true),
+            ("images/kaart.png", true),
+            ("images/nieuw.png", false),
+            ("images/schets.svg", false),
+        ]
+    );
+}
+
+/// Review 32 n3: two AI images whose clean names differ only in case (or extension) would be
+/// stored as one image: the first (by name) is proposed, the other is listed as skipped.
+#[test]
+fn collect_proposes_one_image_per_clean_path() {
+    let dir = tempfile::tempdir().unwrap();
+    let w = dir.path();
+    fs::create_dir_all(w.join("images")).unwrap();
+    fs::write(w.join("images/Fig 1.png"), b"a").unwrap();
+    fs::write(w.join("images/fig-1.svg"), b"b").unwrap();
+    let p = collect(w, &Baseline::default()).unwrap();
+    let paths: Vec<&str> = p.images.iter().map(|i| i.path.as_str()).collect();
+    assert_eq!(paths, ["images/Fig-1.png"]);
+    assert_eq!(p.skipped, ["images/fig-1.svg (dubbele naam)"]);
+}

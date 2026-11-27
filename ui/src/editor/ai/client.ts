@@ -29,7 +29,6 @@ export type Ask = (
 export interface EditorAi {
   info(): Promise<AiEditorInfo>;
   detect(refresh?: boolean): Promise<AiDetection>;
-  loginCheck(provider: ProviderKey): Promise<boolean | null>;
   send(
     provider: ProviderKey,
     request: AiSendRequest,
@@ -46,6 +45,7 @@ export interface EditorAi {
     hunks: Record<string, number[]>,
     images: string[],
   ): Promise<ApplyResult>;
+  commitImages(provider: ProviderKey, images: string[]): Promise<{ path: string; new: boolean }[]>;
   undoImages(provider: ProviderKey, images: string[]): Promise<void>;
   proposalImage(provider: ProviderKey, path: string): Promise<string>;
   context(): Promise<Json | null>;
@@ -84,7 +84,6 @@ export function createEditorAi(
   return {
     info: () => call('info'),
     detect: (refresh = false) => call('detect', refresh),
-    loginCheck: (p) => call('loginCheck', p),
     async send(p, request, onEvent) {
       const runId = `run-${Date.now()}-${++runSeq}`;
       runs.set(runId, onEvent);
@@ -100,6 +99,7 @@ export function createEditorAi(
     newConversation: (p) => call('newConversation', p),
     proposal: (p, current) => call('proposal', p, current),
     apply: (p, current, hunks, images) => call('apply', p, current, hunks, images),
+    commitImages: (p, images) => call('commitImages', p, images),
     undoImages: (p, images) => call('undoImages', p, images),
     proposalImage: (p, path) => call('proposalImage', p, path),
     context: () => call('context'),

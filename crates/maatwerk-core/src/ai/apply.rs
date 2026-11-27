@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! Toepassen and Ongedaan maken for a proposal's images (decisions 53, 68; review 32 M4). The
-//! text goes back to the editor, which records it as one undo step; the images are written into
-//! the opdracht's `images/` here, and every image they replace is kept in an undo folder of the
-//! run (local app data) so Ongedaan maken can put it back.
+//! text goes back to the editor, which records it as one undo step; Toepassen only checks the
+//! chosen images ([`chosen_images`]). The editor stores them with its next save of the text
+//! (review 32 m4): they are written into the opdracht's `images/` here, and every image they
+//! replace is kept in an undo folder of the run (local app data) so Ongedaan maken can put it
+//! back.
 //!
 //! The first backup of a name wins: applying the same proposal twice, then undoing, restores
 //! the teacher's original, not the AI's first copy. An undo removes the backups it used.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -15,7 +18,7 @@ use crate::error::{Error, Result};
 use crate::opdracht_images::{self, Stored, extension_of, stem_of};
 use crate::storage::Storage;
 
-use super::diff::Proposal;
+use super::diff::{self, ImageProposal, Proposal};
 
 /// An image written by [`apply_images`]: `images/<file>`, and whether it was new.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -43,6 +46,62 @@ fn backups_of(undo: &Path, stem: &str) -> Vec<PathBuf> {
             p.file_name()
                 .and_then(|n| n.to_str())
                 .is_some_and(|n| stem_of(n).eq_ignore_ascii_case(stem))
+        })
+        .collect()
+}
+
+/// Toepassen's texts and images, nothing written (decision 68).
+#[derive(Debug)]
+pub struct ProposalApplied<'a> {
+    /// File -> the chosen hunks on its current text.
+    pub files: BTreeMap<String, diff::Applied>,
+    pub images: Vec<&'a ImageProposal>,
+}
+
+impl ProposalApplied<'_> {
+    /// Only a proposal of which something was taken counts as applied (review 32 n8).
+    pub fn takes_something(&self) -> bool {
+        !self.images.is_empty() || self.files.values().any(|a| !a.applied.is_empty())
+    }
+}
+
+/// The chosen `hunks` (per file) onto `current` (the editor's buffers; a missing file is its
+/// base) and the chosen `images`, checked.
+pub fn apply_proposal<'a>(
+    proposal: &'a Proposal,
+    current: &BTreeMap<String, String>,
+    hunks: &BTreeMap<String, Vec<u32>>,
+    images: &[String],
+) -> Result<ProposalApplied<'a>> {
+    let mut files = BTreeMap::new();
+    for f in &proposal.files {
+        let Some(chosen) = hunks.get(&f.path) else {
+            continue;
+        };
+        let chosen: Vec<usize> = chosen.iter().map(|&h| h as usize).collect();
+        let cur = current.get(&f.path).map_or(f.base.as_str(), String::as_str);
+        files.insert(f.path.clone(), diff::apply(f, cur, &chosen));
+    }
+    Ok(ProposalApplied {
+        files,
+        images: chosen_images(proposal, images)?,
+    })
+}
+
+/// The chosen images of `proposal` (paths as in [`Proposal::images`]), checked, without
+/// writing anything; an unknown path is refused.
+pub fn chosen_images<'a>(
+    proposal: &'a Proposal,
+    images: &[String],
+) -> Result<Vec<&'a ImageProposal>> {
+    images
+        .iter()
+        .map(|path| {
+            proposal
+                .images
+                .iter()
+                .find(|i| &i.path == path)
+                .ok_or_else(|| invalid(format!("{path} hoort niet bij het voorstel.")))
         })
         .collect()
 }
@@ -130,7 +189,6 @@ pub fn undo_images(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ai::diff::ImageProposal;
     use crate::paths::RelPath;
 
     fn storage() -> (tempfile::TempDir, Storage) {
@@ -162,6 +220,7 @@ mod tests {
                 path: "images/kring.svg".into(),
                 new: false,
                 source,
+                placeholder: false,
             }],
             skipped: Vec::new(),
         }
@@ -202,11 +261,47 @@ mod tests {
         assert!(read(&s, "kring.svg").is_none());
     }
 
+    /// Review 32 n8 (review 40 n8: in core): only a proposal of which something was taken
+    /// counts as applied; a hunk that no longer fits is a conflict.
+    #[test]
+    fn apply_proposal_counts_what_was_taken() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut p = proposal(tmp.path(), "red");
+        p.files.push(diff::FileProposal {
+            path: "opdracht.typ".into(),
+            base: "a\nb\n".into(),
+            proposed: "a\nB\n".into(),
+            hunks: diff::hunks("a\nb\n", "a\nB\n"),
+        });
+        let none = BTreeMap::new();
+        let all = BTreeMap::from([("opdracht.typ".to_owned(), vec![0u32])]);
+        let current = BTreeMap::from([("opdracht.typ".to_owned(), "a\nb\n".to_owned())]);
+        assert!(
+            !apply_proposal(&p, &current, &none, &[])
+                .unwrap()
+                .takes_something()
+        );
+        let done = apply_proposal(&p, &current, &all, &[]).unwrap();
+        assert!(done.takes_something());
+        assert_eq!(done.files["opdracht.typ"].text, "a\nB\n");
+        let typed = BTreeMap::from([("opdracht.typ".to_owned(), "a\nX\n".to_owned())]);
+        let conflict = apply_proposal(&p, &typed, &all, &[]).unwrap();
+        assert!(!conflict.takes_something());
+        assert_eq!(conflict.files["opdracht.typ"].conflicts, [0]);
+        let img = apply_proposal(&p, &current, &none, &["images/kring.svg".into()]).unwrap();
+        assert!(img.takes_something());
+    }
+
     #[test]
     fn refuses_images_outside_the_proposal_and_bad_names() {
         let (tmp, s) = storage();
         let undo = tmp.path().join("run/undo");
         let p = proposal(tmp.path(), "red");
+        assert!(chosen_images(&p, &["images/other.svg".into()]).is_err());
+        let chosen = chosen_images(&p, &["images/kring.svg".into()]).unwrap();
+        assert_eq!(chosen[0].path, "images/kring.svg");
+        // Checking writes nothing (review 32 m4).
+        assert!(read(&s, "kring.svg").is_none());
         assert!(apply_images(&s, "opd-1", &p, &["images/other.svg".into()], &undo).is_err());
         assert!(undo_images(&s, "opd-1", &["images/../x.svg".into()], &undo).is_err());
         assert!(undo_images(&s, "../x", &["images/x.svg".into()], &undo).is_err());

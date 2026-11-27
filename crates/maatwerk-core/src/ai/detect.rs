@@ -8,7 +8,7 @@
 //! path is given to the CLI when it runs ([`SearchPath::env_value`]): npm-installed CLIs start
 //! with `#!/usr/bin/env node` and need Node on it.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -31,9 +31,11 @@ impl SearchPath {
     pub fn new(dirs: impl IntoIterator<Item = PathBuf>) -> SearchPath {
         let mut seen = HashSet::new();
         SearchPath {
+            // A relative entry (`.`) would be searched in the app's own working folder
+            // (review 32 n5).
             dirs: dirs
                 .into_iter()
-                .filter(|d| !d.as_os_str().is_empty() && seen.insert(d.clone()))
+                .filter(|d| d.is_absolute() && seen.insert(d.clone()))
                 .collect(),
         }
     }
@@ -205,8 +207,21 @@ pub struct Detected {
     pub version: Option<String>,
 }
 
+/// The `--version` answers per program, so a detection only starts the programs it has not
+/// asked yet (review 32 m10). Cleared by "Opnieuw zoeken"; a changed command is another path.
+pub type Versions = HashMap<PathBuf, Option<String>>;
+
 /// Every provider of `settings`, found or not, with versions (asked in parallel).
 pub fn detect(settings: &AiSettings, search: &SearchPath) -> Vec<Detected> {
+    detect_cached(settings, search, &mut Versions::new())
+}
+
+/// [`detect`], with the versions in `versions` reused and the new ones added.
+pub fn detect_cached(
+    settings: &AiSettings,
+    search: &SearchPath,
+    versions: &mut Versions,
+) -> Vec<Detected> {
     let found: Vec<(super::provider::Resolved, Option<PathBuf>)> = settings
         .resolved()
         .into_iter()
@@ -220,8 +235,12 @@ pub fn detect(settings: &AiSettings, search: &SearchPath) -> Vec<Detected> {
             .into_iter()
             .map(|(r, path)| {
                 let env_path = search.env_value();
+                let known = path.as_ref().and_then(|p| versions.get(p).cloned());
                 scope.spawn(move || {
-                    let version = path.as_deref().and_then(|p| version_of(p, &env_path));
+                    let version = match known {
+                        Some(v) => v,
+                        None => path.as_deref().and_then(|p| version_of(p, &env_path)),
+                    };
                     Detected {
                         key: r.key,
                         name: r.name,
@@ -232,7 +251,15 @@ pub fn detect(settings: &AiSettings, search: &SearchPath) -> Vec<Detected> {
                 })
             })
             .collect();
-        handles.into_iter().filter_map(|h| h.join().ok()).collect()
+        let out: Vec<Detected> = handles.into_iter().filter_map(|h| h.join().ok()).collect();
+        // A version that did not come (a slow cold start) is asked again next time (review
+        // 40 n3).
+        for d in &out {
+            if let (Some(p), Some(v)) = (&d.path, &d.version) {
+                versions.insert(p.clone(), Some(v.clone()));
+            }
+        }
+        out
     })
 }
 
@@ -292,8 +319,14 @@ mod tests {
             let p = program(dir.path(), "vibe");
             fs::write(&p, "#!/bin/sh\necho 'vibe 3.0.4'\n").unwrap();
         }
-        let search = SearchPath::new([dir.path().to_path_buf()]);
-        let found = detect(&AiSettings::default(), &search);
+        let search = SearchPath::new([dir.path().to_path_buf(), PathBuf::from(".")]);
+        assert_eq!(
+            search.dirs.len(),
+            1,
+            "relative entries are skipped (review 32 n5)"
+        );
+        let mut versions = Versions::new();
+        let found = detect_cached(&AiSettings::default(), &search, &mut versions);
         assert_eq!(found.len(), 6);
         let vibe = found.iter().find(|d| d.key.as_str() == "vibe").unwrap();
         assert!(vibe.path.is_some());
@@ -304,5 +337,11 @@ mod tests {
                 .filter(|d| d.key.as_str() != "vibe")
                 .all(|d| d.path.is_none())
         );
+        // Review 32 m10: the next detection reuses the answer (the program is not started).
+        let path = vibe.path.clone().unwrap();
+        versions.insert(path.clone(), Some("vibe (cached)".into()));
+        let again = detect_cached(&AiSettings::default(), &search, &mut versions);
+        let vibe = again.iter().find(|d| d.key.as_str() == "vibe").unwrap();
+        assert_eq!(vibe.version.as_deref(), Some("vibe (cached)"));
     }
 }

@@ -646,21 +646,24 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 See `docs/reviews/step-32.md` for the evidence of each item.
 
-- **Review 32 m3:** Toepassen can revert what the teacher typed during the apply round trip.
-- **Review 32 m4:** images are written to the shared folder at Toepassen, before the text is
-  saved.
-- **Review 32 m5:** an AI edit of a placeholder image overwrites the teacher's real image.
-- **Review 32 m6:** a CLI that exits early leaves its grandchildren running (kill the tree on
-  exit too).
-- **Review 32 m7:** Stop and the time limit are not checked during workspace preparation or
-  Maatwerk's own checks.
-- **Review 32 m8-m12:** login check unused, metadata from the iframe unchecked, `--version` on
-  every detection, files over ~500 lines (`panel.ts`, `ai.rs`, `provider.rs`, `workspace.rs`,
-  `events.rs`), test gaps; the nits.
+- ~~**Review 32 m3-m12** and the nits~~ done in step 40 (2026-11-26; `docs/STATE.md` step 40).
+  Left: `panel.ts` is 816 lines after the Applier moved out (the panel's state machine);
+  `editor-ai.css` (1645) and `composer.ts` (655) not split.
 - **Real CLIs:** Codex, Gemini CLI, Antigravity and Copilot CLI are untested against the real
-  programs (ADR-0009 _verify_ rows); Vibe's transcript shows only text events (no tool steps).
-- **Logos:** vendor logos only with permission (`THIRD_PARTY_LICENSES.md`).
+  programs (ADR-0009 _verify_ rows); they carry the "bèta" tag (decision 89). Claude Code and
+  Mistral Vibe passed in step 40. Vibe image input in `-p` unverified.
+- ~~**Logos**~~ no vendor logos (user, 2026-11-26): letter buttons CC, GPT, G, AG, V, CP.
 - ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
+
+## From Step 40
+
+See `docs/reviews/step-40.md`. Open: m7 (Unix: processes the CLI leaves without holding the
+pipes survive a normal exit; Windows ends them with the job), m9 rest (e2e with two providers'
+pending images, a detached grandchild test, the run folder in the privacy test), n1 (a
+rolled-back save flips the history's "applied" until the next save), n4 (`Guard::wait` and
+`with_time_limit` are two helpers; given-up work runs to its limit), n5 (the job end may cut
+off a CLI's background self-updater; consider `DISABLE_AUTOUPDATER=1` for Claude Code), n6
+(`workspace.rs` 568 lines: move `write_context` into `workspace/`).
 
 ## From Step 34
 

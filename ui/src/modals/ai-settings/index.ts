@@ -225,7 +225,7 @@ export async function openAiSettings(opts: AiSettingsOptions): Promise<boolean> 
           ),
         )
       : null;
-    return card(row.builtin, p.name, p.path ?? '', tag, open, fields);
+    return card(row.builtin, p.name, p.path ?? '', tag, open, fields, p.beta === true);
   }
 
   function customCard(c: CustomCli, found: AiProvider | undefined): HTMLElement {
@@ -286,6 +286,7 @@ export async function openAiSettings(opts: AiSettingsOptions): Promise<boolean> 
     tag: HTMLElement,
     open: boolean,
     fields: HTMLElement | null,
+    beta = false,
   ): HTMLElement {
     const toggle = h(
       'button',
@@ -304,7 +305,18 @@ export async function openAiSettings(opts: AiSettingsOptions): Promise<boolean> 
       h(
         'span',
         { class: 'ais-card__name' },
-        h('strong', {}, name),
+        h(
+          'span',
+          { class: 'ais-card__title' },
+          h('strong', {}, name),
+          beta
+            ? h(
+                'span',
+                { class: 'ais-beta', title: 'Nog niet getest met het echte programma' },
+                'bèta',
+              )
+            : null,
+        ),
         h('span', { class: 'ais-mono ais-muted' }, path),
       ),
       tag,

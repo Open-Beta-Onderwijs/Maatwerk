@@ -32,7 +32,7 @@ import {
 } from './cards';
 import type { EditorAi } from './client';
 import { Composer, type PendingAttachment } from './composer';
-import { append, h, icon, monogram } from './dom';
+import { append, h, icon, monogramEl } from './dom';
 import { installList } from './install';
 import { markdown } from './markdown';
 import {
@@ -50,14 +50,20 @@ import {
   type Chips,
   type LiveRun,
 } from './model';
+import { Applier } from './applier';
 import { openReview } from './review';
 
 /** What the panel needs from the editor. */
 export interface PanelHost {
   /** Editor text by file name (`opdracht.typ`, and `main.typ`/`lib.typ` when loaded). */
   buffers(): Record<string, string>;
-  /** Replaces the text of `file` as one undoable change (switching to its tab). */
-  applyText(file: string, text: string): Promise<void>;
+  /**
+   * Replaces the text of `file` as one undoable change (switching to its tab); false, and
+   * nothing changed, when the text is no longer `base` (the teacher typed meanwhile).
+   */
+  applyText(file: string, text: string, base?: string): Promise<boolean>;
+  /** Saves now (and waits for a save in flight); false when it failed. */
+  save(): Promise<boolean>;
   /** Compile errors in the current text (Fouten oplossen). */
   errorCount(): number;
   /** "<naam> werkt op een kopie" bar and the header pill; null when the run ends. */
@@ -66,14 +72,6 @@ export interface PanelHost {
   refreshPreview(): void;
   /** The panel opened or closed (the preview refits). */
   layoutChanged(): void;
-}
-
-interface Applied {
-  before: Record<string, string>;
-  after: Record<string, string>;
-  images: string[];
-  hunks: number;
-  conflicts: number;
 }
 
 interface LiveState {
@@ -97,8 +95,7 @@ export class AiPanel {
   private live: LiveState | null = null;
   private lastTurn = new Map<ProviderKey, TurnResult>();
   private lastRequest = new Map<ProviderKey, AiSendRequest>();
-  private applied = new Map<ProviderKey, Applied>();
-  private cardState = new Map<ProviderKey, DiffCardState>();
+  private readonly proposals: Applier;
   private readonly messagesEl: HTMLElement;
   private readonly headerEl: HTMLElement;
   private readonly dropEl: HTMLElement;
@@ -114,6 +111,12 @@ export class AiPanel {
     private readonly rail: HTMLElement,
     private readonly panel: HTMLElement,
   ) {
+    this.proposals = new Applier(ai, host, {
+      markApplied: (key, applied) => this.markApplied(key, applied),
+      changed: (key) => {
+        if (this.selected === key) this.render();
+      },
+    });
     this.headerEl = h('header', { class: 'ai-head' });
     this.messagesEl = h('div', { class: 'ai-messages', 'aria-live': 'polite' });
     this.dropEl = h('div', { class: 'ai-drop', hidden: true });
@@ -227,23 +230,19 @@ export class AiPanel {
       );
     }
     for (const p of this.providers) {
-      const m = monogram(p.key, p.name);
       const selected = this.selected === p.key;
       const running = this.live?.provider === p.key;
       const state = running ? ' · bezig' : this.open.has(p.key) ? ' · gesprek open' : '';
-      const btn = h(
-        'button',
-        {
-          type: 'button',
-          class: `ai-rail-btn${selected ? ' is-selected' : ''}`,
-          title: `${p.name}${state}`,
-          'aria-label': `${p.name}${state}`,
-          'aria-pressed': String(selected),
-          onclick: () => void this.select(p.key),
-        },
-        m.text,
-      );
-      btn.style.setProperty('--provider', m.colour);
+      const btn = h('button', {
+        type: 'button',
+        class: `ai-rail-btn${selected ? ' is-selected' : ''}`,
+        title: `${p.name}${p.beta ? ' (bèta: nog niet getest)' : ''}${state}`,
+        'aria-label': `${p.name}${p.beta ? ' (bèta)' : ''}${state}`,
+        'aria-pressed': String(selected),
+        onclick: () => void this.select(p.key),
+      });
+      monogramEl(btn, p.key, p.name);
+      if (p.beta) btn.append(h('span', { class: 'ai-rail-beta', 'aria-hidden': 'true' }, 'bèta'));
       if (!selected && (running || this.open.has(p.key)))
         btn.append(h('span', { class: `ai-rail-dot${running ? ' is-running' : ''}` }));
       buttons.push(btn);
@@ -393,9 +392,7 @@ export class AiPanel {
   // ── Panel ─────────────────────────────────────────────────────────────────
 
   private renderHeader(p: AiProvider): void {
-    const m = monogram(p.key, p.name);
-    const avatar = h('span', { class: 'ai-avatar' }, m.text);
-    avatar.style.setProperty('--provider', m.colour);
+    const avatar = monogramEl(h('span', { class: 'ai-avatar' }), p.key, p.name);
     this.headerEl.replaceChildren();
     append(
       this.headerEl,
@@ -438,8 +435,7 @@ export class AiPanel {
     this.open.delete(key);
     this.lastTurn.delete(key);
     this.lastRequest.delete(key);
-    this.applied.delete(key);
-    this.cardState.delete(key);
+    this.proposals.forget(key);
     if (this.selected === key) {
       this.conv = { provider: key, messages: [] };
       this.composer.reset();
@@ -673,8 +669,7 @@ export class AiPanel {
     if (!p || this.live) return;
     this.lastRequest.set(key, request);
     this.lastTurn.delete(key);
-    this.cardState.delete(key);
-    this.applied.delete(key);
+    this.proposals.forget(key);
     const run = newRun(Date.now());
     const card = new StatusCard(p.name, p.command, this.limitMs(), () => void this.stop());
     card.update(run, Date.now());
@@ -738,7 +733,8 @@ export class AiPanel {
     }
     const check = this.lastTurn.get(key)?.check ?? null;
     const state: DiffCardState =
-      this.cardState.get(key) ?? (applied ? { kind: 'appliedEarlier' } : { kind: 'ready' });
+      this.proposals.cardState.get(key) ??
+      (applied ? { kind: 'appliedEarlier' } : { kind: 'ready' });
     const isApplied = state.kind === 'applied' || state.kind === 'appliedEarlier';
     host.replaceChildren(
       diffCard(view, check, state, {
@@ -750,59 +746,25 @@ export class AiPanel {
             view,
             check,
             buffers: this.host.buffers(),
-            apply: isApplied ? null : (hunks, images) => this.apply(key, hunks, images),
+            apply: isApplied ? null : (hunks, images) => this.proposals.apply(key, hunks, images),
           }),
-        apply: () => void this.applyAll(key),
-        undo: () => void this.undo(key),
+        apply: () => void this.proposals.applyAll(key),
+        undo: () => void this.proposals.undo(key),
       }),
     );
   }
 
-  /** Toepassen on the card: every hunk that still fits, and the new images. */
-  private async applyAll(key: ProviderKey): Promise<void> {
-    const view = await this.ai.proposal(key, this.host.buffers());
-    const hunks: Record<string, number[]> = {};
-    for (const f of view.proposal.files) {
-      const statuses = view.statuses[f.path] ?? [];
-      hunks[f.path] = f.hunks.filter((_, i) => statuses[i]?.kind === 'clean').map((x) => x.id);
-    }
-    await this.apply(
-      key,
-      hunks,
-      view.proposal.images.map((i) => i.path),
-    );
+  /** The editor's save of `opdracht.typ` (see [`Applier.saveWithImages`], review 32 m4). */
+  saveWithImages<T extends { ok?: boolean } | null | undefined>(
+    content: string,
+    write: () => Promise<T>,
+  ): Promise<T> {
+    return this.proposals.saveWithImages(content, write);
   }
 
-  /** Applies the chosen hunks and images as one undo step per file (decision 68). */
-  async apply(key: ProviderKey, hunks: Record<string, number[]>, images: string[]): Promise<void> {
-    const before = this.host.buffers();
-    try {
-      const result = await this.ai.apply(key, before, hunks, images);
-      const after: Record<string, string> = {};
-      let applied = 0;
-      let conflicts = 0;
-      for (const [file, a] of Object.entries(result.files)) {
-        applied += a.applied.length;
-        conflicts += a.conflicts.length;
-        if (a.text !== before[file]) {
-          await this.host.applyText(file, a.text);
-          after[file] = a.text;
-        }
-      }
-      const stored = result.images.map((i) => i.path);
-      if (stored.length) this.host.refreshPreview();
-      this.applied.set(key, { before, after, images: stored, hunks: applied, conflicts });
-      this.markApplied(key, true);
-      this.cardState.set(key, {
-        kind: 'applied',
-        hunks: applied,
-        images: stored.length,
-        conflicts,
-      });
-    } catch (err) {
-      this.cardState.set(key, { kind: 'error', message: (err as Error).message });
-    }
-    if (this.selected === key) this.render();
+  /** "Hun versie laden" replaced the text: pending AI images go (review 40 M2). */
+  dropPendingImages(): void {
+    this.proposals.dropPending();
   }
 
   /** The in-memory history follows `ai_apply` / `ai_undo_images` (the card and status lines). */
@@ -810,45 +772,6 @@ export class AiPanel {
     if (this.selected !== key || !this.conv) return;
     const last = [...this.conv.messages].reverse().find((m) => !m.fromTeacher && m.run?.proposal);
     if (last?.run) last.run.applied = applied;
-  }
-
-  /** Ongedaan maken: the texts from before Toepassen and the images removed or restored. */
-  private async undo(key: ProviderKey): Promise<void> {
-    const a = this.applied.get(key);
-    const state = this.cardState.get(key);
-    if (!a || state?.kind !== 'applied') return;
-    const now = this.host.buffers();
-    const changed = Object.keys(a.after).filter((f) => now[f] !== a.after[f]);
-    if (changed.length) {
-      // Still applied: the card keeps its state and says why it cannot undo.
-      this.cardState.set(key, {
-        ...state,
-        message:
-          'Je hebt de opdracht na het toepassen nog aangepast. Gebruik Ctrl+Z in de editor om terug te gaan.',
-      });
-      this.render();
-      return;
-    }
-    for (const file of Object.keys(a.after)) await this.host.applyText(file, a.before[file] ?? '');
-    // Also without images: the history says "not applied" again (user, 2026-11-20). A failed
-    // image undo is said, not swallowed (review 32 M4).
-    let imageError: string | null = null;
-    await this.ai.undoImages(key, a.images).catch((err: unknown) => {
-      imageError = err instanceof Error ? err.message : String(err);
-    });
-    if (a.images.length) this.host.refreshPreview();
-    this.markApplied(key, false);
-    this.applied.delete(key);
-    this.cardState.set(
-      key,
-      imageError
-        ? {
-            kind: 'error',
-            message: `De tekst is teruggezet, de afbeeldingen niet: ${imageError}`,
-          }
-        : { kind: 'ready' },
-    );
-    this.render();
   }
 
   // ── Drop (board 60) ───────────────────────────────────────────────────────

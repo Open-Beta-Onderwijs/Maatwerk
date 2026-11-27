@@ -34,6 +34,8 @@ export interface AiProvider extends CommandPreset {
   path: string | null;
   version: string | null;
   found: boolean;
+  /** Not checked against the real program yet: a "bèta" tag (decision 89). */
+  beta?: boolean;
   /** The preset ("Standaard herstellen"); null for an own CLI. */
   defaults: CommandPreset | null;
   install: InstallHelp | null;
@@ -142,6 +144,8 @@ export interface ImageProposal {
   path: string;
   new: boolean;
   source: string;
+  /** Takes the name of an image the AI only saw as a placeholder (review 32 m5). */
+  placeholder?: boolean;
 }
 
 export interface Proposal {
@@ -263,8 +267,6 @@ export interface SyllabusList {
 export interface AiApi {
   detect(gebruiker: string, refresh: boolean): Promise<AiDetection>;
   saveSettings(gebruiker: string, settings: AiSettings): Promise<AiSettings>;
-  /** True/false for CLIs that can tell without a prompt; null otherwise. */
-  loginCheck(gebruiker: string, provider: ProviderKey): Promise<boolean | null>;
   /** Runs one turn; events arrive through `onEvent` until the promise settles. */
   send(
     gebruiker: string,
@@ -285,7 +287,10 @@ export interface AiApi {
     provider: ProviderKey,
     current: Record<string, string>,
   ): Promise<ProposalView>;
-  /** "Toepassen": the new texts (for one undo step in the editor) and the stored images. */
+  /**
+   * "Toepassen": the new texts (for one undo step in the editor) and the chosen images,
+   * checked but not stored: the editor stores them with its next save (`commitImages`).
+   */
   apply(
     gebruiker: string,
     opdrachtId: string,
@@ -294,6 +299,13 @@ export interface AiApi {
     hunks: Record<string, number[]>,
     images: string[],
   ): Promise<ApplyResult>;
+  /** The chosen images into the opdracht, just before the editor saves the text (review 32 m4). */
+  commitImages(
+    gebruiker: string,
+    opdrachtId: string,
+    provider: ProviderKey,
+    images: string[],
+  ): Promise<{ path: string; new: boolean }[]>;
   /** Ongedaan maken: the applied images back (none: only the history) and "not applied" again. */
   undoImages(
     gebruiker: string,

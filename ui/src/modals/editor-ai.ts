@@ -91,6 +91,22 @@ export function aiEditorInfo(
   };
 }
 
+/**
+ * The Opdrachtgegevens chip's data as this window builds it, not as the iframe sends it back
+ * (review 32 m9): what goes into the workspace does not depend on the iframe. Off (no
+ * metadata in the request): none.
+ */
+function withOwnMetadata(
+  request: Record<string, unknown>,
+  ctx: Omit<AiRequestContext, 'ai' | 'preview' | 'emit' | 'takeStart'>,
+): Record<string, unknown> {
+  const context = request.context;
+  if (!context || typeof context !== 'object' || Array.isArray(context)) return request;
+  const c = context as Record<string, unknown>;
+  const on = c.metadata !== null && c.metadata !== undefined;
+  return { ...request, context: { ...c, metadata: on ? aiEditorInfo(ctx).metadata : null } };
+}
+
 /** Runs one `maatwerk-ai` request; rejects with "not allowed: ..." for anything unexpected. */
 export async function handleAiRequest(
   method: unknown,
@@ -111,11 +127,9 @@ export async function handleAiRequest(
   switch (method) {
     case 'detect':
       return ai.detect(g, a[0] === true);
-    case 'loginCheck':
-      return ai.loginCheck(g, provider(a[0]));
     case 'send': {
       const runId = str(a[0], 'run id');
-      const request = record(a[2], 'request');
+      const request = withOwnMetadata(record(a[2], 'request'), ctx);
       return ai.send(g, id, provider(a[1]), request as never, (event) => ctx.emit(runId, event));
     }
     case 'stop':
@@ -137,6 +151,8 @@ export async function handleAiRequest(
         record(a[2], 'hunks') as never,
         strings(a[3], 'images'),
       );
+    case 'commitImages':
+      return ai.commitImages(g, id, provider(a[0]), strings(a[1], 'images'));
     case 'undoImages':
       return ai.undoImages(g, id, provider(a[0]), strings(a[1], 'images'));
     case 'proposalImage':

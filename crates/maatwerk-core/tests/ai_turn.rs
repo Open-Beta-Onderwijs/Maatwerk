@@ -192,9 +192,11 @@ fn a_reported_session_is_resumed() {
         .into(),
         ..AiSettings::default()
     };
-    let claude = settings
+    let mut claude = settings
         .resolve(&ProviderKey::parse("claude").unwrap())
         .unwrap();
+    // The fake has no `auth status` (the_login_check_comes_first).
+    claude.login_probe = None;
     let r = run(f.turn(claude.clone(), Duration::from_secs(60)));
     assert_eq!(r.outcome, Outcome::NoChanges);
     assert_eq!(r.answer.as_deref(), Some("Eerste"));
@@ -236,4 +238,77 @@ fn a_missing_cli() {
     provider.command = "no-such-ai-cli".into();
     let r = run(f.turn(provider, Duration::from_secs(5)));
     assert_eq!(r.outcome, Outcome::NotFound);
+}
+
+/// Review 32 m7: Stop during the preparation ends the turn there; the CLI never starts.
+#[test]
+fn stop_before_the_cli_starts_keeps_nothing() {
+    let f = fixture();
+    let args = f.script(
+        "s.json",
+        json!([{"write": "opdracht.typ", "content": edited()}, {"out": "klaar"}]),
+    );
+    let mut turn = f.turn(f.custom(&args, ""), Duration::from_secs(60));
+    turn.input.context.diagnostics = true;
+    let stop = Arc::new(AtomicBool::new(true));
+    let mut events = 0;
+    let r = run_turn(turn, &stop, |_| events += 1).unwrap();
+    assert_eq!(r.outcome, Outcome::Stopped);
+    assert!(r.proposal.is_none());
+    assert_eq!(events, 0, "the CLI did not run");
+    let key = ProviderKey::parse("custom-fake").unwrap();
+    let work = f.layout.workdir("opd-1", &key).unwrap();
+    assert_eq!(fs::read_to_string(work.join("opdracht.typ")).unwrap(), BASE);
+    let h = f.history("custom-fake");
+    assert_eq!(h.messages.len(), 2, "the stop is in the history");
+}
+
+/// Review 32 m8: before the first run that worked, the CLI's login status command; "not logged
+/// in" ends the turn with that card, without running the CLI.
+#[test]
+fn the_login_check_comes_first() {
+    let f = fixture();
+    let args = f.script(
+        "s.json",
+        json!([{"write": "opdracht.typ", "content": edited()}, {"out": "klaar"}]),
+    );
+    let probe = f.script("login.json", json!([{"out": "{\"loggedIn\": false}"}]));
+    let mut provider = f.custom(&args, "");
+    provider.login_probe = Some(maatwerk_core::ai::provider::split_args(&probe).unwrap());
+    let mut events = 0;
+    let r = run_turn(
+        f.turn(provider.clone(), Duration::from_secs(60)),
+        &Arc::new(AtomicBool::new(false)),
+        |_| events += 1,
+    )
+    .unwrap();
+    assert_eq!(r.outcome, Outcome::NotLoggedIn);
+    assert_eq!(events, 0, "the CLI did not run");
+    let h = f.history("custom-fake");
+    assert!(h.messages[1].run.as_ref().unwrap().auth_failed);
+
+    // Logged in: the turn runs.
+    let probe = f.script("login.json", json!([{"out": "{\"loggedIn\": true}"}]));
+    provider.login_probe = Some(maatwerk_core::ai::provider::split_args(&probe).unwrap());
+    let r = run(f.turn(provider, Duration::from_secs(60)));
+    assert_eq!(r.outcome, Outcome::Proposal, "{:?}", r.answer);
+}
+
+/// Review 40 M1: a login check that fails without saying "not logged in" does not lock the CLI
+/// out; the CLI runs.
+#[test]
+fn an_unclear_login_check_lets_the_cli_run() {
+    let f = fixture();
+    let args = f.script(
+        "s.json",
+        json!([{"write": "opdracht.typ", "content": edited()}, {"out": "klaar"}]),
+    );
+    let probe = f.script(
+        "login.json",
+        json!([{"err": "unknown command auth"}, {"exit": 2}]),
+    );
+    let mut provider = f.custom(&args, "");
+    provider.login_probe = Some(maatwerk_core::ai::provider::split_args(&probe).unwrap());
+    let r = run(f.turn(provider, Duration::from_secs(60)));
+    assert_eq!(r.outcome, Outcome::Proposal, "{:?}", r.answer);
 }
