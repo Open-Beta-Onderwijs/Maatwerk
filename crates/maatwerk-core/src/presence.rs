@@ -119,7 +119,7 @@ fn presence_path(user_id: &str) -> Result<RelPath> {
 const STALE_AFTER: std::time::Duration = std::time::Duration::from_secs(30 * 24 * 3600);
 
 /// D20: removes the presence files whose `heartbeatAt` is more than 30 days before `now`, or that
-/// have none. Every app does this at start; a file another app removed first is fine. Returns how
+/// have none. Only files not changed in those 30 days are read (review 18 n5). Every app does this at start; a file another app removed first is fine. Returns how
 /// many it removed.
 pub fn prune_stale(storage: &Storage, now: SystemTime) -> usize {
     if storage.read_only().is_some() {
@@ -137,6 +137,18 @@ pub fn prune_stale(storage: &Storage, now: SystemTime) -> usize {
         else {
             continue;
         };
+        // Review 18 n5: every heartbeat writes the file, so one changed after the cutoff is
+        // not stale; only older files are read.
+        let recent = storage
+            .data_dir()
+            .resolve(&rel)
+            .ok()
+            .and_then(|path| std::fs::metadata(path).ok())
+            .and_then(|m| m.modified().ok())
+            .is_some_and(|mtime| mtime > now - STALE_AFTER);
+        if recent {
+            continue;
+        }
         // `iso_utc` strings of the same shape compare like the times they stand for.
         let stale = match storage.read_json(&rel) {
             Ok(Some(v)) => v
@@ -297,15 +309,43 @@ mod tests {
         let (_d, _l, s) = storage();
         let now = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_793_369_100);
         let day = std::time::Duration::from_secs(24 * 3600);
-        let put = |user: &str, v: Value| {
-            s.write_json(&presence_path(user).unwrap(), &v, Expect::Any)
+        // Written at `at`, as a heartbeat writes it (the mtime matters: review 18 n5).
+        let put = |user: &str, v: Value, at: SystemTime| {
+            let rel = presence_path(user).unwrap();
+            s.write_json(&rel, &v, Expect::Any).unwrap();
+            let path = s.data_dir().resolve(&rel).unwrap();
+            std::fs::File::options()
+                .write(true)
+                .open(path)
+                .unwrap()
+                .set_modified(at)
                 .unwrap();
         };
-        put("vers", json!({ "heartbeatAt": iso_utc(now - day) }));
-        put("grens", json!({ "heartbeatAt": iso_utc(now - 29 * day) }));
-        put("oud", json!({ "heartbeatAt": iso_utc(now - 31 * day) }));
-        put("leeg", json!({ "userId": "leeg" }));
+        put(
+            "vers",
+            json!({ "heartbeatAt": iso_utc(now - day) }),
+            now - day,
+        );
+        put(
+            "grens",
+            json!({ "heartbeatAt": iso_utc(now - 29 * day) }),
+            now - 29 * day,
+        );
+        put(
+            "oud",
+            json!({ "heartbeatAt": iso_utc(now - 31 * day) }),
+            now - 31 * day,
+        );
+        put("leeg", json!({ "userId": "leeg" }), now - 40 * day);
+        // Review 18 n5: a file changed within the 30 days is not read at all (every heartbeat
+        // writes it), even with an old `heartbeatAt` inside.
+        put(
+            "recent",
+            json!({ "heartbeatAt": iso_utc(now - 31 * day) }),
+            now - day,
+        );
         assert_eq!(prune_stale(&s, now), 2);
+        assert!(read(&s, "recent").is_some());
         assert!(read(&s, "vers").is_some());
         assert!(read(&s, "grens").is_some());
         assert_eq!(read(&s, "oud"), None);

@@ -700,6 +700,23 @@ fn check_po_exam(rel: &str, exam: &Value, students: &BTreeSet<String>, out: &mut
     }
 }
 
+/// A value as a message names it (review 18 n4: whole objects made long, unreadable messages):
+/// an object by its `id`, anything else as JSON cut off after [`BRIEF_CHARS`] characters.
+fn brief(value: &Value) -> String {
+    if let Some(id) = value.get("id").and_then(Value::as_str) {
+        return format!("(id {id})");
+    }
+    let text = value.to_string();
+    if text.chars().count() <= BRIEF_CHARS {
+        text
+    } else {
+        let cut: String = text.chars().take(BRIEF_CHARS).collect();
+        format!("{cut}…")
+    }
+}
+
+const BRIEF_CHARS: usize = 60;
+
 /// Observatie `toetstypes` (step 21): absent means `toets`; present it lists `toets`, `po` or
 /// both, never none.
 fn check_toetstypes(rel: &str, obs: &Value, out: &mut Found) {
@@ -713,7 +730,10 @@ fn check_toetstypes(rel: &str, obs: &Value, out: &mut Found) {
         out.warn(
             IssueKind::Shape,
             rel,
-            format!("Toetstype {v} onbekend: verwacht \"toets\", \"po\" of beide"),
+            format!(
+                "Toetstype {} onbekend: verwacht \"toets\", \"po\" of beide",
+                brief(v)
+            ),
         );
     }
 }
@@ -860,7 +880,7 @@ fn check_exam_v3(rel: &str, exam: &Value, out: &mut Found) {
             out.error(
                 IssueKind::Shape,
                 rel,
-                format!("opdrachtenVraag: onvolledige koppeling {card}"),
+                format!("opdrachtenVraag: onvolledige koppeling {}", brief(card)),
             );
         }
         match vraag {
@@ -869,7 +889,7 @@ fn check_exam_v3(rel: &str, exam: &Value, out: &mut Found) {
             None => out.error(
                 IssueKind::Shape,
                 rel,
-                format!("opdrachtenVraag: koppeling zonder vraag {card}"),
+                format!("opdrachtenVraag: koppeling zonder vraag {}", brief(card)),
             ),
         }
     }
@@ -894,7 +914,7 @@ fn check_grade_inputs(rel: &str, exam: &Value, out: &mut Found) {
                 None => out.warn(
                     IssueKind::Shape,
                     rel,
-                    format!("{key} {value} is geen getal: telt als 1"),
+                    format!("{key} {} is geen getal: telt als 1", brief(value)),
                 ),
             },
         }

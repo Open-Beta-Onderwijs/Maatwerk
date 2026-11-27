@@ -210,7 +210,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   normalisation also ignores trailing whitespace/final newline.~~ Done (39b, user 2026-11-25: yes): release hashes recomputed, a test per released text.
 - ~~**Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
   opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.~~ Done (39a, `b9fab11`): only opdracht folders are mounted; a junction to another opdracht is denied (test).
-- **Review 5b n6:** the CLI panics on a non-UTF-8 argument and writes its output non-atomically.
+- ~~**Review 5b n6:**~~ Done in step 41: arguments via `args_os` (a non-UTF-8 one is a usage
+  error), PDFs written to `.partial` and renamed.
 - ~~**Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
   Step 7 migration deletes them.~~ Closed (39a): `_preview_*.typ` only existed in v1 folders, which the 0.29 conversion cleans.
 
@@ -577,9 +578,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**Security m4:**~~ Done in step 41: `read_photo_data_url` does not read a file over 5 MB
   (watermark, logo, photos). Was: `applyWatermerk` read the watermark whole at every start. The
   v2-to-v3 migration still reads each moved image whole once (a one-off, kept).
-- **Security n1:** `maatwerk-cli migrate` prints exam and observatie names raw; strip control
-  characters. **n4:** validation messages embed whole JSON objects (`opdrachtenVraag`).
-  **n5:** `prune_stale` reads every presence file whole at each start.
+- ~~**Security n1:**~~ Done in step 41: the CLI's text output escapes control characters
+  (`plain`). ~~**n4:**~~ Done: messages name a value briefly (an object by its id, else cut at
+  60 characters). ~~**n5:**~~ Done: `prune_stale` reads only files not changed in 30 days.
 
 ## From Step 19
 

@@ -13,6 +13,8 @@ use maatwerk_core::storage::Storage;
 use maatwerk_core::typst_svc::local_now;
 use maatwerk_core::validate::{self, Severity, ValidationReport};
 
+use crate::plain;
+
 #[derive(Debug, PartialEq)]
 pub struct ValidateArgs {
     data: PathBuf,
@@ -236,21 +238,21 @@ fn print_migration(report: &MigrationReport, verbose: bool) {
     if verbose {
         for c in &report.changes {
             match &c.to {
-                Some(to) => println!("  {:?} {} -> {to}", c.action, c.path),
-                None => println!("  {:?} {}", c.action, c.path),
+                Some(to) => println!("  {:?} {} -> {}", c.action, plain(&c.path), plain(to)),
+                None => println!("  {:?} {}", c.action, plain(&c.path)),
             }
         }
     }
     if !report.notes.is_empty() {
         println!("Observaties bij inhaal- en herkansingstoetsen (vóór en na):");
         for n in &report.notes {
-            println!("  - {n}");
+            println!("  - {}", plain(n));
         }
     }
     if !report.warnings.is_empty() {
         println!("Let op:");
         for w in &report.warnings {
-            println!("  - {w}");
+            println!("  - {}", plain(w));
         }
     }
 }
@@ -267,7 +269,11 @@ fn print_validation(report: &ValidationReport) {
             Severity::Error => "FOUT",
             Severity::Warning => "let op",
         };
-        println!("  [{tag}] {}: {}", issue.path, issue.message);
+        println!(
+            "  [{tag}] {}: {}",
+            plain(&issue.path),
+            plain(&issue.message)
+        );
     }
 }
 

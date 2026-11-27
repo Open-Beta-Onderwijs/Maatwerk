@@ -792,3 +792,15 @@ fn po_leftovers_and_odd_references_are_warned_about() {
             .any(|i| i.message.contains("geen projectgroep"))
     );
 }
+
+/// Review 18 n4: a message names a value briefly, not as the whole JSON object.
+#[test]
+fn messages_name_values_briefly() {
+    assert_eq!(
+        super::brief(&serde_json::json!({"id": "k1", "vraag": null, "x": [1, 2, 3]})),
+        "(id k1)"
+    );
+    assert_eq!(super::brief(&serde_json::json!("x")), "\"x\"");
+    let long = super::brief(&serde_json::json!({ "tekst": "a".repeat(200) }));
+    assert!(long.ends_with('…') && long.chars().count() == 61, "{long}");
+}
