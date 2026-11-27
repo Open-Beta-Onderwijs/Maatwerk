@@ -98,11 +98,25 @@ const Store = (() => {
   // the sectievoorzitter or sectiesecretaris badge (the same rights, decision 80).
   let _activeRole = null;
 
+  // External changes per path while a read is in flight (backlog 7c): a change reported before
+  // a read returns is skipped by applyExternalChange when nothing is cached yet, so the read's
+  // older content would stay until the next login. Each change bumps a counter; a read that
+  // started before the path's last change reads again (one file) or caches nothing (a folder).
+  let externalTick = 0;
+  const changedAt = new Map(); // relPath -> externalTick of its last external change
+  const changedSince = (relPath, tick) => (changedAt.get(relPath) ?? -1) > tick;
+
   async function load(relPath) {
     if (cache[relPath] !== undefined) return cache[relPath];
-    const data = decode(relPath, await window.maatwerk.readJson(relPath));
-    cache[relPath] = data;
-    return data;
+    for (let attempt = 0; ; attempt++) {
+      const started = externalTick;
+      const data = decode(relPath, await window.maatwerk.readJson(relPath));
+      // A newer version may have been cached meanwhile (an own write, a refresh): keep it.
+      if (cache[relPath] !== undefined) return cache[relPath];
+      if (changedSince(relPath, started) && attempt < 3) continue;
+      cache[relPath] = data;
+      return data;
+    }
   }
 
   function invalidate(relPath) {
@@ -1003,21 +1017,28 @@ const Store = (() => {
     if (ids.every((id) => cache[ypScore(year, subject, id)] !== undefined)) return;
     let read = scoreDirReads.get(dir);
     if (!read) {
+      const started = externalTick;
       read = timed('store:readDir', () => window.maatwerk.readJsonDir(dir)).then((files) =>
         timed('store:decodeDir', () => {
           for (const { name, data } of files) {
             const rel = `${dir}/${name}`;
-            if (cache[rel] === undefined) cache[rel] = decode(rel, data);
+            // Changed by a colleague during the read: not cached, the next load reads it (7c).
+            if (cache[rel] === undefined && !changedSince(rel, started)) {
+              cache[rel] = decode(rel, data);
+            }
           }
         }),
       );
+      read.started = started;
       scoreDirReads.set(dir, read);
       void read.finally(() => scoreDirReads.delete(dir)).catch(() => {});
     }
+    const started = read.started;
     await read;
     for (const id of ids) {
       const rel = ypScore(year, subject, id);
-      if (cache[rel] === undefined) cache[rel] = null;
+      // "No file" only when nobody added it meanwhile (7c).
+      if (cache[rel] === undefined && !changedSince(rel, started)) cache[rel] = null;
     }
   }
 
@@ -1352,6 +1373,7 @@ const Store = (() => {
   }
 
   async function applyExternalChange({ relPath, kind, meta }) {
+    changedAt.set(relPath, ++externalTick);
     let type = 'other';
     let match = null;
     for (const [t, re] of EXTERNAL_PATTERNS) {

@@ -33,6 +33,7 @@ import {
   asOneStep,
   cellKey,
   changedInBackground,
+  clearUnsaved,
   isUnsaved,
   pendingSaves,
   pushHistory,
@@ -105,6 +106,7 @@ export function createGroupGrid(
       if (isEditing(col)) return;
       if (pendingSaves.has(cellKey(students[row], col))) return;
       gridData[row]![col] = value;
+      clearUnsaved(students[row], col);
       flashUntil.set(`${row}:${col}`, Date.now() + REMOTE_FLASH_MS);
       changed = true;
     };
@@ -120,6 +122,7 @@ export function createGroupGrid(
       !isEditing(gradeCol)
     ) {
       overrides[row] = override;
+      clearUnsaved(students[row], gradeCol);
       flashUntil.set(`${row}:${gradeCol}`, Date.now() + REMOTE_FLASH_MS);
       changed = true;
     }

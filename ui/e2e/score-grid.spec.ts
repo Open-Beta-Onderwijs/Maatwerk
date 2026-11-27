@@ -625,6 +625,26 @@ test.describe('undo, saving, colleagues', () => {
     await expect(cell(page, 0, E.q1)).toHaveText('3');
   });
 
+  test('3b n4 a colleague value replacing an unsaved cell clears its mark', async ({ page }) => {
+    await openGrid(page, EXAMS.empty);
+    const id = await studentIdOf(page, 0);
+    await withMock(page, (m) => m.fail('writeJson', '/scores/'));
+    await typeInto(page, 0, E.q1, '2');
+    await expect.poll(() => isMarkedUnsaved(page, 0, E.q1)).toBe(true);
+    await withMock(page, (m) => m.clearFaults());
+    await withMock(
+      page,
+      (m, { f, exam }) =>
+        m.externalWrite(f, {
+          student_id: Number(f.match(/(\d+)\.json$/)![1]),
+          scores: { [exam]: { q1: 3 } },
+        }),
+      { f: `${YEAR}/scores/nat/${id}.json`, exam: EXAMS.empty },
+    );
+    await expect(cell(page, 0, E.q1)).toHaveText('3');
+    await expect.poll(() => isMarkedUnsaved(page, 0, E.q1)).toBe(false);
+  });
+
   test('G57 a colleague N-term change is applied in place', async ({ page }) => {
     await openGrid(page, EXAMS.empty);
     await withMock(

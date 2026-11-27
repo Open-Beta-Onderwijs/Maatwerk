@@ -296,9 +296,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - **Licence ban covers production deps only (review 3b m8):** `tools/check-npm-licenses.mjs` walks
   `--omit=dev`; Vite would bundle a dev dependency if UI code imported it. Add a check on the
   built bundle (or an ESLint import rule) when the dependency list grows.
-- **Colleague change on an unsaved cell (review 3b n4):** a background update can replace a cell
-  whose save failed; the cell keeps its "not saved" mark. Clear the mark when a colleague's value
-  replaces it.
+- ~~**Colleague change on an unsaved cell (review 3b n4):**~~ Done in step 41: the mark goes when
+  a colleague's value replaces the cell (e2e "3b n4"). Was: the cell kept its "not saved" mark.
 - ~~**Queued saves stamp the user at run time:**~~ Closed in step 35: score files carry no
   `updatedBy`; the core now checks every score write against the session, so the backend logout
   waits for the queued saves and a new PIN check waits for that logout. Was: `updateStudentScores` stamps `_meta.updatedBy` when
@@ -390,7 +389,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 7c (perceived speed)
 
-- **Read vs. colleague change, file not cached yet** (older than 7c, also with single reads):
+- ~~**Read vs. colleague change, file not cached yet**~~ Done in step 41: the store counts
+  external changes per path; a single read that saw one reads again, a folder read does not
+  cache that file (`ui/src/store.test.ts`). Was (older than 7c, also with single reads):
   a score file read in flight when the watcher reports a colleague's change to that file is not
   refreshed (the event is skipped because nothing is cached yet), so the read's older content
   stays until the next login. Window: one read. Option: count external changes per path while
@@ -482,7 +483,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   (`CLAIM_STALE`), so that day's snapshot may be skipped. Remove our claim on `shutdown` when no
   zip has started.
 - **m6:** exam delete is a blind delete after a stale scores check (reference behaviour): CAS on
-  `delete_file` and re-check scores after the confirm.
+  `delete_file` and re-check scores after the confirm. Step 41: part of the edit locks
+  (sub-task 5): the core refuses deleting an exam with data, under the commit lock.
 - **n1:** `CoreSlot`: a `closing` flag so the snapshot thread does not start after `Exit`; a
   panic inside `Core::failed` would leave the slot empty.
 - **n2:** an error before `legacy/globals` loads makes the handler import `app.js` early.
