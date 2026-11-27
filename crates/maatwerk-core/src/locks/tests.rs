@@ -342,3 +342,106 @@ fn attempts_follow_the_originals_observaties() {
     wrong["obs_ids"] = json!(["o1", "o2"]);
     locked(s.write_json(&exam_rel("e1h3"), &wrong, Expect::Missing));
 }
+
+// ── Observaties (2.6, decisions 12, 13) ───────────────────────────────────────────────────
+
+const OBS: &str = "observaties/o1.json";
+
+fn obs(
+    jaarlagen: &[&str],
+    schoolsoort: &[&str],
+    subjects: &[&str],
+    tt: &[&str],
+) -> serde_json::Value {
+    json!({ "id": "o1", "naam": "Rekenfout", "jaarlagen": jaarlagen, "schoolsoort": schoolsoort,
+            "subjects": subjects, "toetstypes": tt })
+}
+
+/// Decision 13 and 2.6: an observatie a test, a rubric or an opdracht links is not deleted.
+#[test]
+fn a_linked_observatie_is_not_deleted() {
+    let (_t, s) = setup();
+    put(&s, OBS, obs(&["3"], &[], &["nat"], &["toets", "po"]));
+    s.delete(&rel(OBS)).unwrap();
+    for (file, link) in [
+        (
+            format!("{Y}/exams/e1.json"),
+            json!({ "id": "e1", "title": "Toets 1", "subject": "nat",
+            "jaarlaag": "3", "schoolsoort": ["havo"], "obs_ids": ["o1"] }),
+        ),
+        (
+            "rubrics/r1.json".to_owned(),
+            json!({ "id": "r1", "naam": "Verslag",
+            "categories": [{ "id": "c", "obs_ids": ["o1"] }] }),
+        ),
+        (
+            "opdrachten/op1/opdracht.json".to_owned(),
+            json!({ "id": "op1", "naam": "Breuken",
+            "observaties": ["o1"] }),
+        ),
+    ] {
+        put(&s, OBS, obs(&["3"], &[], &["nat"], &["toets", "po"]));
+        // Written raw: a fixture, not a rubric the guard would check.
+        let path = s.data_dir().resolve(&rel(&file)).unwrap();
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, serde_json::to_vec(&link).unwrap()).unwrap();
+        let msg = locked(s.delete(&rel(OBS)));
+        let named = ["Toets 1", "Verslag", "Breuken"]
+            .iter()
+            .any(|n| msg.contains(n));
+        assert!(named, "{msg}");
+        std::fs::remove_file(&path).unwrap();
+    }
+}
+
+/// Decision 12: a jaarlaag, schoolsoort or vak a linked test or rubric uses stays; toetstype
+/// Toets stays while a test uses it, PO while a rubric does.
+#[test]
+fn a_linked_observatie_keeps_what_its_tests_and_rubrics_use() {
+    let (_t, s) = setup();
+    put(
+        &s,
+        OBS,
+        obs(
+            &["3", "4"],
+            &["havo", "vwo"],
+            &["nat", "bio"],
+            &["toets", "po"],
+        ),
+    );
+    put(
+        &s,
+        &format!("{Y}/exams/e1.json"),
+        json!({ "id": "e1", "title": "Toets 1",
+        "subject": "nat", "jaarlaag": "3", "schoolsoort": ["havo"], "obs_ids": ["o1"] }),
+    );
+    let write = |v: serde_json::Value| s.write_json(&rel(OBS), &v, Expect::Any);
+    locked(write(obs(
+        &["4"],
+        &["havo", "vwo"],
+        &["nat", "bio"],
+        &["toets", "po"],
+    )));
+    locked(write(obs(
+        &["3", "4"],
+        &["vwo"],
+        &["nat", "bio"],
+        &["toets", "po"],
+    )));
+    locked(write(obs(
+        &["3", "4"],
+        &["havo", "vwo"],
+        &["bio"],
+        &["toets", "po"],
+    )));
+    locked(write(obs(
+        &["3", "4"],
+        &["havo", "vwo"],
+        &["nat", "bio"],
+        &["po"],
+    )));
+    // What no link uses is free; so is widening (empty schoolsoort means all).
+    write(obs(&["3", "5"], &[], &["nat"], &["toets"])).unwrap();
+    // From "all schoolsoorten" to a list without the test's one is a narrowing too.
+    locked(write(obs(&["3", "5"], &["vwo"], &["nat"], &["toets"])));
+}

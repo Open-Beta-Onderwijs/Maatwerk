@@ -135,6 +135,7 @@ enum Kind<'a> {
     Students { year: &'a str },
     Group,
     Exam { year: &'a str, id: &'a str },
+    Observatie { id: &'a str },
     Other,
 }
 
@@ -147,6 +148,10 @@ fn kind(rel: &str) -> Kind<'_> {
         [year, "groups", file] if is_year_name(year) && file.ends_with(".json") => Kind::Group,
         [year, "exams", file] if is_year_name(year) => match file.strip_suffix(".json") {
             Some(id) if !id.is_empty() => Kind::Exam { year, id },
+            _ => Kind::Other,
+        },
+        ["observaties", file] => match file.strip_suffix(".json") {
+            Some(id) if !id.is_empty() => Kind::Observatie { id },
             _ => Kind::Other,
         },
         _ => Kind::Other,
@@ -162,6 +167,7 @@ pub(crate) fn guard_write(storage: &Storage, rel: &RelPath, new: &Value) -> Resu
         Kind::Students { year } => guard_students(storage, rel, year, new),
         Kind::Group => guard_group(storage, rel, Some(new)),
         Kind::Exam { year, id } => guard_exam(storage, rel, year, id, new),
+        Kind::Observatie { id } => guard_obs(storage, rel, id, new),
         Kind::Other => Ok(()),
     }
 }
@@ -174,6 +180,7 @@ pub(crate) fn guard_delete(storage: &Storage, rel: &RelPath) -> Result<()> {
     match kind(rel.as_str()) {
         Kind::Group => guard_group(storage, rel, None),
         Kind::Exam { year, id } => guard_exam_delete(storage, rel, year, id),
+        Kind::Observatie { id } => guard_obs_delete(storage, rel, id),
         Kind::Students { .. } => Err(refuse(
             rel,
             "Het leerlingenbestand van een schooljaar wordt niet verwijderd.".into(),
@@ -643,6 +650,213 @@ pub fn save_exam_family(
         saved.push(storage.save_entity(&exam_path(year, id)?, e, base_rev, false, user_id, now)?);
     }
     Ok(saved)
+}
+
+// ── Observaties ───────────────────────────────────────────────────────────────────────────
+
+/// What links an observatie: tests (any year), rubrics and opdrachten.
+#[derive(Default)]
+struct ObsLinks {
+    /// `(title, jaarlaag, schoolsoorten, vak)` of each linked test.
+    tests: Vec<(String, String, Vec<String>, String)>,
+    /// `(naam, jaarlagen, schoolsoorten, vak)` of each linked rubric.
+    rubrics: Vec<(String, Vec<String>, Vec<String>, String)>,
+    opdrachten: Vec<String>,
+}
+
+fn texts(v: &Value, key: &str) -> Vec<String> {
+    v.get(key)
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(id_text)
+        .collect()
+}
+
+fn links_of(storage: &Storage, id: &str) -> Result<ObsLinks> {
+    let mut out = ObsLinks::default();
+    let label = |v: &Value, key: &str| text_of(v, key).unwrap_or("?").to_owned();
+    for year in storage
+        .try_list_years()
+        .map_err(|e| unreadable("de gedeelde map", &e))?
+    {
+        let dir = RelPath::parse(&format!("{year}/exams"))?;
+        for name in storage
+            .list_dir(&dir, false)
+            .map_err(|e| unreadable(dir.as_str(), &e))?
+        {
+            let Some(exam_id) = name.strip_suffix(".json") else {
+                continue;
+            };
+            let Some(exam) = read_exam(storage, &year, exam_id)? else {
+                continue;
+            };
+            if ids_of(&exam, "obs_ids").contains(id) {
+                out.tests.push((
+                    format!("{} ({year})", label(&exam, "title")),
+                    exam.get("jaarlaag").and_then(id_text).unwrap_or_default(),
+                    texts(&exam, "schoolsoort"),
+                    label(&exam, "subject"),
+                ));
+            }
+        }
+    }
+    let dir = RelPath::parse(crate::rubrics::RUBRICS_DIR)?;
+    for name in storage
+        .list_dir(&dir, false)
+        .map_err(|e| unreadable(dir.as_str(), &e))?
+    {
+        if !name.ends_with(".json") {
+            continue;
+        }
+        let file = dir.join(&name)?;
+        let Some(rubric) = storage
+            .read_json(&file)
+            .map_err(|e| unreadable(file.as_str(), &e))?
+        else {
+            continue;
+        };
+        let in_categories = rubric
+            .get("categories")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .any(|c| ids_of(c, "obs_ids").contains(id));
+        if ids_of(&rubric, "obs_ids").contains(id) || in_categories {
+            out.rubrics.push((
+                label(&rubric, "naam"),
+                texts(&rubric, "jaarlagen"),
+                texts(&rubric, "schoolsoort"),
+                label(&rubric, "subject"),
+            ));
+        }
+    }
+    for opdracht in crate::opdracht_images::read_all(storage)? {
+        if ids_of(&opdracht, "observaties").contains(id) {
+            out.opdrachten.push(label(&opdracht, "naam"));
+        }
+    }
+    Ok(out)
+}
+
+/// Decision 13, 2.6: a linked observatie is not deleted; the message names what links it.
+fn guard_obs_delete(storage: &Storage, rel: &RelPath, id: &str) -> Result<()> {
+    let links = links_of(storage, id)?;
+    let mut names: Vec<String> = Vec::new();
+    names.extend(links.tests.iter().map(|t| format!("toets {}", t.0)));
+    names.extend(links.rubrics.iter().map(|r| format!("rubric {}", r.0)));
+    names.extend(links.opdrachten.iter().map(|o| format!("opdracht {o}")));
+    if names.is_empty() {
+        return Ok(());
+    }
+    Err(refuse(
+        rel,
+        format!(
+            "Deze observatie is gekoppeld en kan dus niet worden verwijderd: {}.",
+            names.join(", ")
+        ),
+    ))
+}
+
+/// The vakken of an observatie: `subjects`, or the older single `subject`.
+fn obs_vakken(obs: &Value) -> Vec<String> {
+    let list = texts(obs, "subjects");
+    if list.is_empty() {
+        text_of(obs, "subject")
+            .map(str::to_owned)
+            .into_iter()
+            .collect()
+    } else {
+        list
+    }
+}
+
+/// Toetstypes, absent meaning `toets` (decision 23).
+fn toetstypes(obs: &Value) -> Vec<String> {
+    match obs.get(crate::rubrics::TOETSTYPES_FIELD) {
+        Some(Value::Array(_)) => texts(obs, crate::rubrics::TOETSTYPES_FIELD),
+        _ => vec!["toets".to_owned()],
+    }
+}
+
+/// Whether `value` is allowed by `list`, where an empty list allows everything.
+fn allows(list: &[String], value: &str) -> bool {
+    list.is_empty() || list.iter().any(|v| v == value)
+}
+
+/// What a linked test or rubric uses that `obs` does not allow.
+fn misfits(links: &ObsLinks, obs: &Value) -> Vec<String> {
+    let (jl, ss, vak, tt) = (
+        texts(obs, "jaarlagen"),
+        texts(obs, "schoolsoort"),
+        obs_vakken(obs),
+        toetstypes(obs),
+    );
+    let mut out = Vec::new();
+    for (naam, jaarlaag, schoolsoort, subject) in &links.tests {
+        if !jl.contains(jaarlaag) {
+            out.push(format!("jaarlaag {jaarlaag} (toets {naam})"));
+        }
+        for s in schoolsoort.iter().filter(|s| !allows(&ss, s)) {
+            out.push(format!("{s} (toets {naam})"));
+        }
+        if !vak.contains(subject) {
+            out.push(format!("vak {subject} (toets {naam})"));
+        }
+    }
+    if !links.tests.is_empty() && !tt.iter().any(|t| t == "toets") {
+        out.push("toetstype Toets".into());
+    }
+    for (naam, jaarlagen, schoolsoort, subject) in &links.rubrics {
+        for j in jaarlagen.iter().filter(|j| !jl.contains(j)) {
+            out.push(format!("jaarlaag {j} (rubric {naam})"));
+        }
+        for s in schoolsoort.iter().filter(|s| !allows(&ss, s)) {
+            out.push(format!("{s} (rubric {naam})"));
+        }
+        if !vak.contains(subject) {
+            out.push(format!("vak {subject} (rubric {naam})"));
+        }
+    }
+    if !links.rubrics.is_empty() && !tt.iter().any(|t| t == "po") {
+        out.push("toetstype PO".into());
+    }
+    out
+}
+
+/// Decision 12 and the toetstype rule (2.6): what a linked test or rubric uses stays. Only what
+/// this write takes away counts: a link that already did not fit is Gegevenscontrole's.
+fn guard_obs(storage: &Storage, rel: &RelPath, id: &str, new: &Value) -> Result<()> {
+    let Some(old) = storage
+        .read_json(rel)
+        .map_err(|e| unreadable(rel.as_str(), &e))?
+    else {
+        return Ok(());
+    };
+    let fields = ["jaarlagen", "schoolsoort", "subjects", "subject"];
+    let narrowed =
+        fields.iter().any(|f| old.get(*f) != new.get(*f)) || toetstypes(&old) != toetstypes(new);
+    if !narrowed {
+        return Ok(());
+    }
+    let links = links_of(storage, id)?;
+    let before = misfits(&links, &old);
+    let mut taken: Vec<String> = misfits(&links, new)
+        .into_iter()
+        .filter(|m| !before.contains(m))
+        .collect();
+    taken.sort();
+    taken.dedup();
+    if taken.is_empty() {
+        return Ok(());
+    }
+    Err(refuse(
+        rel,
+        format!(
+            "Deze observatie is gekoppeld, dus dit blijft erin: {}.",
+            taken.join("; ")
+        ),
+    ))
 }
 
 #[cfg(test)]
