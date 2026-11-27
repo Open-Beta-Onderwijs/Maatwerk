@@ -399,6 +399,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     validateDataFolder: () => orThrow(c.validateDataFolder()),
     rubricUsage: () => orThrow(c.rubricUsage()),
     examHasData: (year, vak, examId) => orThrow(c.examHasData(year, vak, examId)),
+    saveExamFamily: (year, exams) =>
+      orThrow(c.saveExamFamily(year, exams as Value[])) as Promise<Json[]>,
     studentsWithData: (year) => orThrow(c.studentsWithData(year)),
     // The command returns JSON; its shape is `VakNumbers` (maatwerk_core::numbers).
     vakNumbers: async (year, vak) =>

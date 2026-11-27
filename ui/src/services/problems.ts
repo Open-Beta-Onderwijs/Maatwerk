@@ -50,7 +50,14 @@ export function reportUnexpected(
 ): boolean {
   // Save conflicts and read-only refusals have their own message (app.js).
   const code = (reason as { code?: unknown } | null)?.code;
-  if (code === 'conflict' || code === 'read_only') return false;
+  // Refusals with a Dutch reason are shown by app.js (step 41).
+  if (
+    code === 'conflict' ||
+    code === 'read_only' ||
+    code === 'edit_locked' ||
+    code === 'save_failed'
+  )
+    return false;
   const text = errorText(reason);
   if (IGNORED.some((re) => re.test(text))) return false;
   api.logUiError(`${kind}: ${redact(text)}`).catch(() => {});

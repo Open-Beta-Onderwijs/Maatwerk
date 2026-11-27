@@ -315,6 +315,11 @@ export interface MaatwerkApi {
   rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>>;
   /** Whether any student has data for the exam (maatwerk-core::locks::has_data, step 41). */
   examHasData(year: string, vak: string, examId: string): Promise<boolean>;
+  /**
+   * Saves a herkansing family at once (decision 5): every member with its `_meta.rev`; the
+   * core checks they agree and saves the attempts, then the original. Returns the saved exams.
+   */
+  saveExamFamily(year: string, exams: Json[]): Promise<Json[]>;
   /** The students with data in the school year, in any vak (step 41). */
   studentsWithData(year: string): Promise<string[]>;
   /**

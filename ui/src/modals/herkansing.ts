@@ -227,15 +227,20 @@ export async function openSummaryEditModal(parentId: string, year: string): Prom
           weging_se: spinnerValue(wegingSeEl),
         };
 
-        await Store.upsertExam({ ...parent, ...shared, title: naam }, year);
-
-        // Each resit: its title from the new name and its own description.
-        for (const resit of resits) {
-          await Store.upsertExam(
-            { ...resit, ...shared, title: `${naam} — ${resit.description ?? ''}` },
-            year,
-          );
-        }
+        // The whole family at once (decision 5): the core checks the members agree. Each
+        // resit: its title from the new name and its own description.
+        // A refusal is reported by app.js; the dialog stays open.
+        await Store.saveExamFamily(
+          [
+            ...resits.map((resit) => ({
+              ...resit,
+              ...shared,
+              title: `${naam} — ${resit.description ?? ''}`,
+            })),
+            { ...parent, ...shared, title: naam },
+          ],
+          year,
+        );
 
         closeModal();
         toast('Verzamelkaart opgeslagen.', 'success');

@@ -56,7 +56,13 @@ import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { normaliseRubric } from './domain/rubric';
 import { hasData } from './domain/has-data';
 import { rubricOf, setRubricLookup } from './domain/po';
-import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
+import {
+  READ_ONLY_CODE,
+  isReadOnly,
+  isReadOnlyError,
+  noteReadOnly,
+  readOnlyError,
+} from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
 import { timed } from './utils/perf';
@@ -748,6 +754,37 @@ const Store = (() => {
     }
     const saved = await saveEntity(ypExam(year, merged.id), merged, merged._meta?.rev);
     putCachedExam(key, saved);
+    return saved;
+  }
+
+  /**
+   * Saves a herkansing family at once (step 41, decision 5): `exams` are the original and every
+   * attempt, edited; each is merged over the cached version as `upsertExam` does. The core saves
+   * the attempts, then the original, and refuses a family that does not agree.
+   */
+  async function saveExamFamily(exams, year) {
+    const merged = exams.map((exam) => {
+      const subj = exam.subject ?? _activeSubject;
+      const { academic_year: _ay, ...clean } = exam;
+      const updated = withExamDefaults({ ...clean, subject: subj });
+      const cached = (cache[`${year}/exams/${subj}`] ?? []).find((e) => e.id === updated.id);
+      return cached ? { ...cached, ...updated } : updated;
+    });
+    let saved;
+    try {
+      saved = await window.maatwerk.saveExamFamily(year, merged);
+    } catch (e) {
+      if (e?.code === 'conflict') throw conflictError(null);
+      if (isReadOnlyError(e)) {
+        noteReadOnly();
+        throw readOnlyError();
+      }
+      if (e?.code === 'edit_locked') throw e;
+      throw saveFailed(e?.details?.path ?? `${year}/exams`, e?.message ?? String(e));
+    }
+    for (const exam of saved)
+      putCachedExam(`${year}/exams/${exam.subject ?? _activeSubject}`, exam);
+    changed();
     return saved;
   }
 
@@ -1579,6 +1616,7 @@ const Store = (() => {
     getJaarlagen,
     getExams,
     upsertExam,
+    saveExamFamily,
     setExamNTerm,
     deleteExam,
     getStudentScores,

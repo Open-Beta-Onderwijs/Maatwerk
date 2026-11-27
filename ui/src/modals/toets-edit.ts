@@ -435,27 +435,25 @@ export function showExamEditor(exam: Exam, opts: ExamEditorOptions): void {
               ...obsBefore.filter((id) => !offered.has(id)),
             ];
         const resits: Exam[] = hasAttempts ? Store.getResitsSync(exam.id, toetsYear) : [];
-        // The attempts first: the original still holds the old list if this fails halfway, so
-        // saving again from this editor reaches them too (resitObsIds can be repeated). After a
-        // refusal an observatie it gained can stay on an attempt: add and remove it on the
-        // original to clear it (review 20 m2).
-        for (const r of resits) {
-          const next = resitObsIds(r.obs_ids ?? [], obsBefore, obs_ids);
-          if (JSON.stringify(next) !== JSON.stringify(r.obs_ids ?? [])) {
-            await Store.upsertExam({ ...r, obs_ids: next, obs_from_parent: true }, toetsYear);
-          }
+        const original = { ...exam, title, n_term: nterm, structureMode: mode, obs_ids, ...top };
+        if (resits.length) {
+          // With attempts the family is saved at once (decision 5): the core checks every
+          // attempt keeps the original's observaties, then saves the attempts and the original
+          // last (resitObsIds can be repeated after a failure halfway).
+          await Store.saveExamFamily(
+            [
+              ...resits.map((r) => ({
+                ...r,
+                obs_ids: resitObsIds(r.obs_ids ?? [], obsBefore, obs_ids),
+                obs_from_parent: true,
+              })),
+              original,
+            ],
+            toetsYear,
+          );
+        } else {
+          await Store.upsertExam(original, toetsYear);
         }
-        await Store.upsertExam(
-          {
-            ...exam,
-            title,
-            n_term: nterm,
-            structureMode: mode,
-            obs_ids,
-            ...top,
-          },
-          toetsYear,
-        );
         // Last: it cannot be undone, and a refused save above must not have cost any indication
         // (review 20 M2). Only what the exam had: ticked on and off again changes nothing (m1).
         for (const obsId of deselectedObs) {

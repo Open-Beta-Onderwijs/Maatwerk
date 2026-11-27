@@ -222,6 +222,29 @@ pub async fn exam_has_data(
     .await
 }
 
+/// Saves a herkansing family at once (step 41, decision 5): the original and every attempt,
+/// each with its own `_meta.rev` as the version the edit started from. Returns the saved exams
+/// (attempts first, the original last). See `maatwerk_core::locks::save_exam_family`.
+#[tauri::command]
+#[specta::specta]
+pub async fn save_exam_family(
+    state: State<'_, Shared>,
+    year: String,
+    exams: Vec<serde_json::Value>,
+) -> Res<Vec<serde_json::Value>> {
+    blocking(state, move |c| {
+        let user = c.auth.current().map(|s| s.user_id);
+        Ok(maatwerk_core::locks::save_exam_family(
+            c.storage()?,
+            &year,
+            &exams,
+            user.as_deref(),
+            std::time::SystemTime::now(),
+        )?)
+    })
+    .await
+}
+
 /// The students with data in the school year, in any vak (step 41: who cannot be deleted).
 #[tauri::command]
 #[specta::specta]

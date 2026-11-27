@@ -121,6 +121,12 @@ export const commands = {
 	/**  The students with data in the school year, in any vak (step 41: who cannot be deleted). */
 	studentsWithData: (year: string) => typedError<string[], CommandError>(__TAURI_INVOKE("students_with_data", { year })),
 	/**
+	 *  Saves a herkansing family at once (step 41, decision 5): the original and every attempt,
+	 *  each with its own `_meta.rev` as the version the edit started from. Returns the saved exams
+	 *  (attempts first, the original last). See `maatwerk_core::locks::save_exam_family`.
+	 */
+	saveExamFamily: (year: string, exams: Value[]) => typedError<Value[], CommandError>(__TAURI_INVOKE("save_exam_family", { year, exams })),
+	/**
 	 *  Everything the list screens show for one school year and vak (step 38,
 	 *  `maatwerk_core::numbers`): cards, Verzamelkaarten, group statistics, shown r/SE under the
 	 *  school's Cijfergemiddelden. Typed in the UI as `VakNumbers` (`ui/src/domain/numbers.ts`).

@@ -660,6 +660,18 @@ window.addEventListener('unhandledrejection', async (e) => {
   );
 });
 
+// A save the core refused for a reason the teacher can act on (an edit lock, step 41; the rubric
+// lock; a score file of another teacher's student): its Dutch text, not "unexpected error".
+window.addEventListener('unhandledrejection', (e) => {
+  const code = e.reason?.code;
+  const reason =
+    code === 'edit_locked' ? e.reason?.message : code === 'save_failed' ? e.reason?.reason : null;
+  if (typeof reason !== 'string' || !reason || reason === 'conflict' || reason === 'read_only')
+    return;
+  e.preventDefault();
+  persistentError(`Niet opgeslagen: ${reason}`);
+});
+
 // A save refused because school.json asks for a newer app (PLAN-2 decision 5).
 window.addEventListener('unhandledrejection', (e) => {
   if (!isReadOnlyError(e.reason)) return;

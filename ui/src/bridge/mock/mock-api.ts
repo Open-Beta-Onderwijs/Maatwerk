@@ -961,6 +961,32 @@ export class MockApi implements MaatwerkApi {
     return this.rubricUses();
   }
 
+  /** As `locks::save_exam_family`, without the family checks (the core tests them). */
+  async saveExamFamily(year: string, exams: Json[]): Promise<Json[]> {
+    this.record('saveExamFamily', [year, exams]);
+    this.refuseIfReadOnly();
+    const ordered = [
+      ...exams.filter((e) => (e as { parent_id?: string | null }).parent_id),
+      ...exams.filter((e) => !(e as { parent_id?: string | null }).parent_id),
+    ] as { id: string; _meta?: { rev?: number } }[];
+    const out: Json[] = [];
+    for (const exam of ordered) {
+      const rel = `${year}/exams/${exam.id}.json`;
+      // The core writes each file: an injected write failure applies here too.
+      const fault = this.faultFor('writeJson', [rel]);
+      if (fault) throw { code: 'io', message: fault, details: { path: rel } };
+      const text = this.readText(rel);
+      const onDisk = text === null ? null : (JSON.parse(text) as { _meta?: { rev?: number } });
+      if (onDisk && (onDisk._meta?.rev ?? 0) !== (exam._meta?.rev ?? 0)) {
+        throw { code: 'conflict', message: 'conflict', details: { path: rel } };
+      }
+      const saved = stampMeta({ ...exam }, onDisk as { _meta?: never }, this.authSession);
+      this.putFile(rel, encoder.encode(JSON.stringify(saved, null, 2) + '\n'));
+      out.push(saved as unknown as Json);
+    }
+    return out;
+  }
+
   async examHasData(year: string, vak: string, examId: string): Promise<boolean> {
     this.record('examHasData', [year, vak, examId]);
     return this.jsonFilesIn(`${year}/scores/${vak}`).some(({ data }) =>

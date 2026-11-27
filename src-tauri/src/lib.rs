@@ -104,6 +104,7 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             data::rubric_usage,
             data::exam_has_data,
             data::students_with_data,
+            data::save_exam_family,
             data::vak_numbers,
             data::stamp_issues,
             data::accept_stamp,
@@ -460,6 +461,7 @@ mod tests {
             "ai_commit_images",
             "ai_undo_images",
             "print_pdf",
+            "save_exam_family",
             "rapporten_cleanup",
             // The user file (PIN commands), project file updates, folders (none for a gast).
             "set_first_pin",
