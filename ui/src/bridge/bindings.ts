@@ -737,6 +737,9 @@ export type RubricUse = {
 	year: string,
 	examId: string,
 	naam: string,
+	/**  The PO's jaarlaag and schoolsoorten, which stay in the rubric (step 41). */
+	jaarlaag: string,
+	schoolsoort: string[],
 };
 
 /**

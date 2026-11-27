@@ -84,11 +84,22 @@ function cleaned(r: Rubric): Rubric {
   };
 }
 
-function toggles(cls: string, data: string, values: string[], on: string[], allowed?: string[]) {
+/**
+ * Toggle chips. `inUse`: values a linked PO has (decision 9, step 41): selected, they stay; the
+ * core refuses dropping them too.
+ */
+function toggles(
+  cls: string,
+  data: string,
+  values: string[],
+  on: string[],
+  inUse: ReadonlySet<string> = new Set(),
+) {
   return values
     .map((v) => {
-      const dis = allowed && allowed.length > 0 && !allowed.includes(v);
-      return `<button type="button" class="tog-btn ${cls}${on.includes(v) ? ' selected' : ''}${dis ? ' tog-btn-disabled' : ''}" data-${data}="${esc(v)}" aria-pressed="${on.includes(v)}"${dis ? ' disabled' : ''}>${esc(v)}</button>`;
+      const dis = on.includes(v) && inUse.has(v);
+      const title = dis ? ` title="${esc('Een PO gebruikt deze rubric met deze waarde')}"` : '';
+      return `<button type="button" class="tog-btn ${cls}${on.includes(v) ? ' selected' : ''}${dis ? ' tog-btn-disabled' : ''}" data-${data}="${esc(v)}" aria-pressed="${on.includes(v)}"${dis ? ' disabled' : ''}${title}>${esc(v)}</button>`;
     })
     .join('');
 }
@@ -99,6 +110,9 @@ export function openRubricEditor(existing: Rubric | null, opts: RubricEditorOpti
   const draft = normaliseRubric(existing ? structuredClone(existing) : newRubric(subject));
   const original = isNew ? null : structuredClone(draft);
   const uses = isNew ? 0 : opts.usage.length;
+  // Decision 9: what a linked PO has stays (adding, and dropping other values, is free).
+  const usedJl = new Set(isNew ? [] : opts.usage.map((u) => u.jaarlaag));
+  const usedSs = new Set(isNew ? [] : opts.usage.flatMap((u) => u.schoolsoort));
   const locked = uses > 0;
   const poObs: Obs[] = (Store.getObservatiesSync() as Obs[])
     .filter((o) => obsHasToetstype(o, 'po'))
@@ -127,7 +141,7 @@ export function openRubricEditor(existing: Rubric | null, opts: RubricEditorOpti
         </div>
         <div class="form-group">
           <label>Schoolsoort</label>
-          <div class="exam-chips" id="rubric-ss">${toggles('ss-btn exam-chip', 'ss', ssOptions, draft.schoolsoort)}</div>
+          <div class="exam-chips" id="rubric-ss">${toggles('ss-btn exam-chip', 'ss', ssOptions, draft.schoolsoort, usedSs)}</div>
         </div>
         <div class="form-group">
           <label>Vak</label>
@@ -135,7 +149,7 @@ export function openRubricEditor(existing: Rubric | null, opts: RubricEditorOpti
         </div>
         <div class="form-group">
           <label>Jaarlagen</label>
-          <div class="btn-toggle-group" id="rubric-jl">${toggles('jl-btn', 'jl', JAARLAGEN, draft.jaarlagen)}</div>
+          <div class="btn-toggle-group" id="rubric-jl">${toggles('jl-btn', 'jl', JAARLAGEN, draft.jaarlagen, usedJl)}</div>
         </div>
         <div class="form-group rubric-f-total">
           <label>Totaal</label>

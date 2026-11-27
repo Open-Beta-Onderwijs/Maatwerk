@@ -1020,12 +1020,20 @@ export class MockApi implements MaatwerkApi {
       .reverse();
     for (const year of years) {
       for (const { data } of this.jsonFilesIn(`${year}/exams`)) {
-        const exam = data as { id?: string; title?: string; rubric_id?: string } | null;
+        const exam = data as {
+          id?: string;
+          title?: string;
+          rubric_id?: string;
+          jaarlaag?: string | number;
+          schoolsoort?: string[];
+        } | null;
         if (!exam?.rubric_id) continue;
         (out[exam.rubric_id] ??= []).push({
           year,
           examId: exam.id ?? '',
           naam: exam.title ?? '',
+          jaarlaag: exam.jaarlaag === undefined ? '' : String(exam.jaarlaag),
+          schoolsoort: exam.schoolsoort ?? [],
         });
       }
     }

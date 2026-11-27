@@ -44,7 +44,9 @@ describe('MockApi rubric guard', () => {
       rubric_id: r.id,
     });
     expect(await api.rubricUsage()).toEqual({
-      [r.id]: [{ year: '2025-2026', examId: 'po-1', naam: 'PO verslag' }],
+      [r.id]: [
+        { year: '2025-2026', examId: 'po-1', naam: 'PO verslag', jaarlaag: '', schoolsoort: [] },
+      ],
     });
     const changed = structuredClone(r);
     const samen = changed.categories.find((c) => c.id === 'cat-samen');

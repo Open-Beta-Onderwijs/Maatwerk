@@ -189,6 +189,9 @@ pub struct RubricUse {
     pub year: String,
     pub exam_id: String,
     pub naam: String,
+    /// The PO's jaarlaag and schoolsoorten, which stay in the rubric (step 41).
+    pub jaarlaag: String,
+    pub schoolsoort: Vec<String>,
 }
 
 impl From<maatwerk_core::rubrics::RubricUse> for RubricUse {
@@ -197,6 +200,8 @@ impl From<maatwerk_core::rubrics::RubricUse> for RubricUse {
             year: u.year,
             exam_id: u.exam_id,
             naam: u.naam,
+            jaarlaag: u.jaarlaag,
+            schoolsoort: u.schoolsoort,
         }
     }
 }
