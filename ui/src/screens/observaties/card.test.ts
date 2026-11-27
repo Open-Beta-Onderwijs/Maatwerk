@@ -35,6 +35,15 @@ describe('obsDeleteBlock', () => {
     expect(obsDeleteBlock(false, true)).toMatch(/rubric/);
     expect(obsDeleteBlock(false, false)).toBeNull();
   });
+
+  it('blocks on linked opdrachten too and names them (edit-locks.md decision 13)', () => {
+    expect(obsDeleteBlock(false, false, [])).toBeNull();
+    expect(obsDeleteBlock(false, false, ['Breuken', 'Eenheden'])).toBe(
+      'Deze observatie is gekoppeld aan opdrachten en kan dus niet worden verwijderd: Breuken, Eenheden.',
+    );
+    expect(obsDeleteBlock(false, false, ['Breuken'])).toMatch(/opdracht en .*: Breuken\.$/);
+    expect(obsDeleteBlock(true, false, ['Breuken'])).toMatch(/toets/);
+  });
 });
 
 describe('obsCardHtml', () => {

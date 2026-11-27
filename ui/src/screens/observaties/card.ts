@@ -48,11 +48,22 @@ export function obsUse(
   return (id) => ({ tests: tests.get(id) ?? 0, opdrachten: opd.get(id) ?? [] });
 }
 
-/** Why an observatie cannot be deleted (as today: a test or a rubric uses it), or null. */
-export function obsDeleteBlock(usedInTest: boolean, usedInRubric: boolean): string | null {
+/**
+ * Why an observatie cannot be deleted, or null: a test or a rubric uses it, or opdrachten link
+ * it (edit-locks.md decision 13; the core refuses the same delete).
+ */
+export function obsDeleteBlock(
+  usedInTest: boolean,
+  usedInRubric: boolean,
+  opdrachten: readonly string[] = [],
+): string | null {
   if (usedInTest)
     return 'Deze observatie is gekoppeld aan een toets en kan dus niet worden verwijderd.';
   if (usedInRubric) return 'Deze observatie staat in een rubric en kan dus niet worden verwijderd.';
+  if (opdrachten.length) {
+    const what = opdrachten.length === 1 ? 'een opdracht' : 'opdrachten';
+    return `Deze observatie is gekoppeld aan ${what} en kan dus niet worden verwijderd: ${opdrachten.join(', ')}.`;
+  }
   return null;
 }
 

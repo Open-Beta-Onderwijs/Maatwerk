@@ -445,3 +445,21 @@ fn a_linked_observatie_keeps_what_its_tests_and_rubrics_use() {
     // From "all schoolsoorten" to a list without the test's one is a narrowing too.
     locked(write(obs(&["3", "5"], &["vwo"], &["nat"], &["toets"])));
 }
+
+/// A wiskunde test (`subject: "wi"`) fits an observatie with any wiskunde variant, as the test
+/// editor offers it (`obsMatchesSubject`): one variant may go, not the last one.
+#[test]
+fn a_wiskunde_test_keeps_one_wiskunde_variant() {
+    let (_t, s) = setup();
+    put(&s, OBS, obs(&["3"], &[], &["wisob", "wisa"], &["toets"]));
+    put(
+        &s,
+        &format!("{Y}/exams/e1.json"),
+        json!({ "id": "e1", "title": "Toets 1",
+        "subject": "wi", "jaarlaag": "3", "schoolsoort": ["havo"], "obs_ids": ["o1"] }),
+    );
+    let write = |v: serde_json::Value| s.write_json(&rel(OBS), &v, Expect::Any);
+    write(obs(&["3"], &[], &["wisob"], &["toets"])).unwrap();
+    let msg = locked(write(obs(&["3"], &[], &["nat"], &["toets"])));
+    assert!(msg.contains("vak wi"), "{msg}");
+}

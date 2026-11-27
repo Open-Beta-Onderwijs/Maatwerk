@@ -21,6 +21,8 @@ export function chipField({
   items,
   selected,
   disabled = [],
+  locked = [],
+  lockTitle = '',
   square = false,
 }: {
   label: string;
@@ -29,14 +31,19 @@ export function chipField({
   items: readonly (readonly [string, string])[];
   selected: readonly string[];
   disabled?: readonly string[];
+  /** Selected chips that stay on (disabled with `lockTitle` as the tooltip). */
+  locked?: readonly string[];
+  lockTitle?: string;
   square?: boolean;
 }): string {
   const buttons = items
     .map(([key, text]) => {
       const on = selected.includes(key);
-      const off = disabled.includes(key);
+      const lock = on && locked.includes(key);
+      const off = lock || disabled.includes(key);
+      const title = lock && lockTitle ? ` title="${escHtml(lockTitle)}"` : '';
       return `<button type="button" class="tog-btn chip-btn${square ? ' chip-btn--square' : ''}${on ? ' selected' : ''}${off ? ' tog-btn-disabled' : ''}"
-        data-${attr}="${escHtml(key)}" aria-pressed="${on}"${off ? ' disabled' : ''}>${escHtml(text)}</button>`;
+        data-${attr}="${escHtml(key)}" aria-pressed="${on}"${off ? ' disabled' : ''}${title}>${escHtml(text)}</button>`;
     })
     .join('');
   return `<div class="form-group">
@@ -46,7 +53,13 @@ export function chipField({
 }
 
 /** Schoolsoort chips; the school's own schoolsoorten only, when it set them. */
-export function schoolsoortField(id: string, selected: readonly string[]): string {
+/** Chips a linked test or rubric keeps on (Observatie bewerken), with their tooltip. */
+export interface ChipLock {
+  locked: readonly string[];
+  lockTitle: string;
+}
+
+export function schoolsoortField(id: string, selected: readonly string[], lock?: ChipLock): string {
   const school = (Store.getSchoolSync().schoolsoort ?? []) as string[];
   return chipField({
     label: 'Schoolsoort',
@@ -55,14 +68,19 @@ export function schoolsoortField(id: string, selected: readonly string[]): strin
     items: SCHOOLSOORTEN.map((s) => [s, s] as const),
     selected,
     disabled: school.length ? SCHOOLSOORTEN.filter((s) => !school.includes(s)) : [],
+    ...lock,
   });
 }
 
-export function vakkenField(id: string, selected: readonly string[]): string {
-  return chipField({ label: 'Vakken', id, attr: 'vak', items: VAK_CHIPS, selected });
+export function vakkenField(id: string, selected: readonly string[], lock?: ChipLock): string {
+  return chipField({ label: 'Vakken', id, attr: 'vak', items: VAK_CHIPS, selected, ...lock });
 }
 
-export function jaarlagenField(id: string, selected: readonly (string | number)[]): string {
+export function jaarlagenField(
+  id: string,
+  selected: readonly (string | number)[],
+  lock?: ChipLock,
+): string {
   return chipField({
     label: 'Jaarlagen',
     id,
@@ -70,6 +88,7 @@ export function jaarlagenField(id: string, selected: readonly (string | number)[
     items: JAARLAGEN.map((j) => [j, j] as const),
     selected: selected.map(String),
     square: true,
+    ...lock,
   });
 }
 

@@ -784,6 +784,24 @@ fn allows(list: &[String], value: &str) -> bool {
     list.is_empty() || list.iter().any(|v| v == value)
 }
 
+/// The wiskunde variants an observatie names; a test or rubric of vak `wi` fits any of them (the
+/// UI's `obsMatchesSubject`, `WI_VARIANTS`).
+const WI_VARIANTS: [&str; 5] = ["wisob", "wisa", "wisb", "wisc", "wisd"];
+
+/// Whether an observatie with vakken `vak` fits a test or rubric of `subject`.
+fn fits_vak(vak: &[String], subject: &str) -> bool {
+    if subject == "wi" {
+        vak.iter().any(|v| WI_VARIANTS.contains(&v.as_str()))
+    } else {
+        vak.iter().any(|v| v == subject)
+    }
+}
+
+/// A vak as the refusal names it.
+fn vak_label(subject: &str) -> &str {
+    if subject == "wi" { "wiskunde" } else { subject }
+}
+
 /// What a linked test or rubric uses that `obs` does not allow.
 fn misfits(links: &ObsLinks, obs: &Value) -> Vec<String> {
     let (jl, ss, vak, tt) = (
@@ -800,8 +818,8 @@ fn misfits(links: &ObsLinks, obs: &Value) -> Vec<String> {
         for s in schoolsoort.iter().filter(|s| !allows(&ss, s)) {
             out.push(format!("{s} (toets {naam})"));
         }
-        if !vak.contains(subject) {
-            out.push(format!("vak {subject} (toets {naam})"));
+        if !fits_vak(&vak, subject) {
+            out.push(format!("vak {} (toets {naam})", vak_label(subject)));
         }
     }
     if !links.tests.is_empty() && !tt.iter().any(|t| t == "toets") {
@@ -814,8 +832,8 @@ fn misfits(links: &ObsLinks, obs: &Value) -> Vec<String> {
         for s in schoolsoort.iter().filter(|s| !allows(&ss, s)) {
             out.push(format!("{s} (rubric {naam})"));
         }
-        if !vak.contains(subject) {
-            out.push(format!("vak {subject} (rubric {naam})"));
+        if !fits_vak(&vak, subject) {
+            out.push(format!("vak {} (rubric {naam})", vak_label(subject)));
         }
     }
     if !links.rubrics.is_empty() && !tt.iter().any(|t| t == "po") {

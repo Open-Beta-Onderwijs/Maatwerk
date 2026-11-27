@@ -1161,6 +1161,35 @@ const Store = (() => {
     );
   }
 
+  /**
+   * The scopes of the loaded tests and rubrics that link the observatie (after `loadObsUsage`):
+   * Observatie bewerken keeps what they use (edit-locks.md decision 12).
+   */
+  function obsLinkScopes(obsId) {
+    const tests = [];
+    const rubrics = [];
+    for (const [key, val] of Object.entries(cache)) {
+      if (!Array.isArray(val)) continue;
+      if (key.includes('/exams/')) {
+        for (const e of val)
+          if ((e.obs_ids ?? []).includes(obsId))
+            tests.push({ jaarlaag: e.jaarlaag, schoolsoort: e.schoolsoort, subject: e.subject });
+      } else if (key.startsWith('rubrics/')) {
+        for (const r of val)
+          if (
+            (r.obs_ids ?? []).includes(obsId) ||
+            (r.categories ?? []).some((c) => (c.obs_ids ?? []).includes(obsId))
+          )
+            rubrics.push({
+              jaarlagen: r.jaarlagen,
+              schoolsoort: r.schoolsoort,
+              subject: r.subject,
+            });
+      }
+    }
+    return { tests, rubrics };
+  }
+
   function obsIsUsedInAnyExam(obsId) {
     return Object.entries(cache).some(
       ([key, val]) =>
@@ -1640,6 +1669,7 @@ const Store = (() => {
     studentsWithDataAnyYear,
     obsIsUsedInAnyExam,
     obsIsUsedInAnyRubric,
+    obsLinkScopes,
     loadObsUsage,
     removeObsFromExamScores,
     getResitsSync,
