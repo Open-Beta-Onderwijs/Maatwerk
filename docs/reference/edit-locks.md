@@ -229,7 +229,9 @@ year)`. Commands `exam_has_data`, `students_with_data`; the UI's `examHasScores`
    Refusals: a new `Error::EditLocked { path, message }` (code `edit_locked`), Dutch message.
 3. **Students and groups** (2.1, 2.2): removing a student from `students-<year>.json` while they
    have data in that year or are in a group of that year; a group's name, jaarlaag, schoolsoort or
-   vak changed while it has students; deleting a group with students.
+   vak changed while it has students; deleting a group with students. A write that empties the
+   group may change its fields too (found in step 41: the CSV import that replaces a group, D34,
+   asks first and was refused; no student's scores stay with an emptied group).
 4. **Exams** (2.3, 2.4, 10 m6): deleting an exam with data or with herkansingen; removing a
    question id while the exam has data; a PO's jaarlaag, schoolsoort, subcategorie or `rubric_id`
    changed while its family has data.

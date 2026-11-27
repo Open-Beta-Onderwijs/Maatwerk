@@ -149,6 +149,11 @@ fn a_group_with_students_keeps_its_fields_and_stays() {
     let mut more = group("3a", "3", &["101", "102"]);
     more["docenten"] = json!(["t1"]);
     s.write_json(&rel(GROUP), &more, Expect::Any).unwrap();
+    // A write that empties the group may change its fields too (the CSV import that replaces
+    // a group, D34): nobody's scores stay with it.
+    s.write_json(&rel(GROUP), &group("3c", "5", &[]), Expect::Any)
+        .unwrap();
+    s.write_json(&rel(GROUP), &more, Expect::Any).unwrap();
     // Empty again: everything is free.
     s.write_json(&rel(GROUP), &group("3a", "3", &[]), Expect::Any)
         .unwrap();

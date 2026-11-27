@@ -71,8 +71,15 @@ Baseline: cargo test green.
   `bfeff5e` question max/soort asks once, max below an entered score disabled
   (`domain/question-locks.ts`, `Store.highestEnteredScores`); `02ce863` group membership confirm
   (`domain/group-membership.ts`, Groep bewerken save; CSV import already asked). e2e +3.
+- Part 9 done (`fb678f3`): Gegevenscontrole warnings for a PO whose rubric does not fit, an
+  observatie on a test the editor would not offer it to, scores for a removed question (the
+  offer rules, so normal use reports nothing; rules in `edit-locks.md` part 9). Core: no
+  jaarlagen on an observatie = all. Golden v3: the inhaal's own wisb observatie now warns.
+  `school` fixture 64 warnings (generator), `tiny` 0.
+- Mock guards (next commit): `bridge/mock/mock-locks.ts` (students, groups, exams, observaties;
+  not the single-write family rule). Vitest 1007.
 
-**Next action:** part 9 (was: part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
+**Next action:** sub-task 6 (gate, review, release 0.32). Old list, all done: part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
 max/soort confirm, max below an entered score refused; group membership confirm), part 9
 (Gegevenscontrole checks), mock guards for students/groups/exams/observaties; then sub-task 6
 (gate, review, release 0.32). Ask the user about 9 n6 (SPDX in toml/yml) at the report.

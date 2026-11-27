@@ -55,6 +55,7 @@ import { checkRubric, lockedChanges, type Rubric } from '../../domain/rubric';
 import { snapshotSettings } from '../../domain/snapshot-settings';
 import { snapshotKinds } from './mock-snapshots';
 import { hasData } from '../../domain/has-data';
+import { lockGuard, type LockFiles } from './mock-locks';
 import {
   bestuurOf,
   forbiddenMessage,
@@ -405,7 +406,10 @@ export class MockApi implements MaatwerkApi {
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
     if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
-    const refused = this.rubricGuard(relPath, data) ?? this.rightsGuard(relPath, data);
+    const refused =
+      this.rubricGuard(relPath, data) ??
+      this.rightsGuard(relPath, data) ??
+      lockGuard(this.lockFiles(), relPath, data);
     if (refused) return { ok: false, reason: refused };
     if (opts.cas) {
       const current = this.files.get(relPath);
@@ -448,6 +452,28 @@ export class MockApi implements MaatwerkApi {
     return this.jsonFilesIn(dirRelPath);
   }
 
+  /** What the edit-lock guard reads (`mock-locks.ts`). */
+  private lockFiles(): LockFiles {
+    const parse = (rel: string): unknown => {
+      const t = this.readText(rel);
+      if (t === null) return null;
+      try {
+        return JSON.parse(t) as unknown;
+      } catch {
+        return null;
+      }
+    };
+    return {
+      json: parse,
+      dir: (d) => this.jsonFilesIn(d),
+      years: () => this.list('').filter((n) => /^\d{4}-\d{4}$/.test(n)),
+      opdrachten: () =>
+        this.list('opdrachten')
+          .map((id) => parse(`opdrachten/${id}/opdracht.json`))
+          .filter((o) => o !== null),
+    };
+  }
+
   private jsonFilesIn(dirRelPath: string): { name: string; data: Json }[] {
     const out: { name: string; data: Json }[] = [];
     for (const name of this.list(dirRelPath)) {
@@ -483,7 +509,7 @@ export class MockApi implements MaatwerkApi {
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
     if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
-    const forbidden = this.rightsGuard(relPath, null);
+    const forbidden = this.rightsGuard(relPath, null) ?? lockGuard(this.lockFiles(), relPath, null);
     if (forbidden) return { ok: false, reason: forbidden };
     const rubricId = /^rubrics\/([^/]+)\.json$/.exec(relPath)?.[1];
     const uses = rubricId ? (this.rubricUses()[rubricId]?.length ?? 0) : 0;

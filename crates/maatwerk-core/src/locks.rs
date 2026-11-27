@@ -312,6 +312,11 @@ fn guard_group(storage: &Storage, rel: &RelPath, new: Option<&Value>) -> Result<
             format!("Deze groep heeft {members} leerling(en) en kan dus niet worden verwijderd."),
         ));
     };
+    // A write that empties the group may change its fields too (the CSV import that replaces a
+    // group, D34): no student's scores stay with it.
+    if group_students(new).is_empty() {
+        return Ok(());
+    }
     let changed: Vec<&str> = GROUP_FIELDS
         .iter()
         .filter(|(key, _)| !same(old.get(*key), new.get(*key)))
