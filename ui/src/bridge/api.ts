@@ -313,6 +313,10 @@ export interface MaatwerkApi {
   validateDataFolder(): Promise<DataCheck>;
   /** Per rubric id, the PO's in any school year that use it (step 21, decision 20). */
   rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>>;
+  /** Whether any student has data for the exam (maatwerk-core::locks::has_data, step 41). */
+  examHasData(year: string, vak: string, examId: string): Promise<boolean>;
+  /** The students with data in the school year, in any vak (step 41). */
+  studentsWithData(year: string): Promise<string[]>;
   /**
    * Everything the list screens show for one school year and vak, computed in Rust (step 38):
    * cards, Verzamelkaarten, group statistics, shown r/SE under the school's Cijfergemiddelden.

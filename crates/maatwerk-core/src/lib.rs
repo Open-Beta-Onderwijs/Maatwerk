@@ -14,6 +14,7 @@ pub mod data_location;
 pub mod error;
 pub mod integrity;
 pub mod jsonfmt;
+pub mod locks;
 pub mod migrate;
 pub mod numbers;
 pub mod opdracht_images;

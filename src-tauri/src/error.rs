@@ -26,6 +26,8 @@ pub enum ErrorCode {
     ReadOnly,
     /// The session's role does not allow the write (step 35); the message is Dutch.
     Forbidden,
+    /// Data depends on what the write would change or delete (step 41); the message is Dutch.
+    EditLocked,
     /// No data folder set, chosen or beside the program yet (first run, step 16a).
     NoDataFolder,
     Io,
@@ -94,7 +96,8 @@ impl From<Error> for CommandError {
         let message = match &e {
             Error::InvalidArgument { message }
             | Error::MigrationBlocked { message }
-            | Error::Forbidden { message } => message.clone(),
+            | Error::Forbidden { message }
+            | Error::EditLocked { message, .. } => message.clone(),
             other => other.to_string(),
         };
         let path = |p: &str| ErrorDetails {
@@ -149,6 +152,7 @@ impl From<Error> for CommandError {
                 },
             ),
             Error::Forbidden { .. } => (ErrorCode::Forbidden, ErrorDetails::default()),
+            Error::EditLocked { path: p, .. } => (ErrorCode::EditLocked, path(p)),
             Error::GuestReadOnly => (
                 ErrorCode::ReadOnly,
                 ErrorDetails {
@@ -201,6 +205,10 @@ mod tests {
                 app_version: "0.6.0".into(),
             },
             Error::Forbidden {
+                message: "m".into(),
+            },
+            Error::EditLocked {
+                path: "a".into(),
                 message: "m".into(),
             },
             Error::GuestReadOnly,

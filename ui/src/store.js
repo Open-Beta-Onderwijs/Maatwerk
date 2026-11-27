@@ -54,6 +54,7 @@ import {
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { normaliseRubric } from './domain/rubric';
+import { hasData } from './domain/has-data';
 import { rubricOf, setRubricLookup } from './domain/po';
 import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
@@ -1050,28 +1051,22 @@ const Store = (() => {
   // migrate() of the reference (legacy layouts -> per-year -> per-subject) is
   // not ported: no legacy data exists (ADR-0003 C2); Step 7 migrates v1 -> v2.
 
+  /**
+   * Whether any student has data for the exam: asked of the core, the rule the write guards use
+   * (maatwerk-core::locks, step 41). An unreadable score file counts as data (fail closed).
+   */
   async function examHasScores(examId, year, subject = _activeSubject) {
-    const students = getStudentsSync(year);
-    for (const s of students) {
-      const rec = await getStudentScores(s.id, year, subject);
-      const exScores = rec?.scores?.[examId];
-      if (rec?.overrides?.[examId]) return true;
-      if (!exScores) continue;
-      if (Object.values(exScores).some((v) => v !== null && v !== undefined)) return true;
+    try {
+      return await window.maatwerk.examHasData(year, subject, String(examId));
+    } catch (e) {
+      console.warn('[store] examHasData', e);
+      return true;
     }
-    return false;
   }
 
   /** Whether the student's score file holds anything for this exam (scores, grade, observaties, PO data). */
   async function studentHasExamData(studentId, examId, year, subject = _activeSubject) {
-    const rec = await getStudentScores(studentId, year, subject);
-    const filled = (o) => o && typeof o === 'object' && Object.keys(o).length > 0;
-    return Boolean(
-      filled(rec.scores?.[examId]) ||
-      rec.overrides?.[examId] ||
-      rec.observations?.[examId]?.length ||
-      rec.po?.[examId],
-    );
+    return hasData(await getStudentScores(studentId, year, subject), examId);
   }
 
   /**
@@ -1086,24 +1081,14 @@ const Store = (() => {
     });
   }
 
-  async function studentHasScores(studentId, year, subject = _activeSubject) {
-    const rec = await getStudentScores(studentId, year, subject);
-    if (Object.keys(rec.overrides ?? {}).length) return true;
-    return Object.values(rec.scores ?? {}).some((exScores) =>
-      Object.values(exScores ?? {}).some((v) => v !== null && v !== undefined),
-    );
-  }
-
-  // Check all years × all subjects — used by admin to guard deletion.
-  async function studentHasAnyScores(studentId) {
+  /**
+   * The students with data in any school year (step 41: they cannot be deleted), asked of the
+   * core per year. An unreadable score folder is reported and counts as "all of them".
+   */
+  async function studentsWithDataAnyYear() {
     const years = listYearsSync();
-    const subjects = Object.keys(SUBJECT_DISPLAY);
-    for (const year of years) {
-      for (const subject of subjects) {
-        if (await studentHasScores(studentId, year, subject)) return true;
-      }
-    }
-    return false;
+    const sets = await Promise.all(years.map((y) => window.maatwerk.studentsWithData(y)));
+    return new Set(sets.flat());
   }
 
   /**
@@ -1614,8 +1599,7 @@ const Store = (() => {
     deleteObservation,
     setObservation,
     examHasScores,
-    studentHasScores,
-    studentHasAnyScores,
+    studentsWithDataAnyYear,
     obsIsUsedInAnyExam,
     obsIsUsedInAnyRubric,
     loadObsUsage,

@@ -114,6 +114,13 @@ export const commands = {
 	 */
 	rubricUsage: () => typedError<{ [key in string]: RubricUse[] }, CommandError>(__TAURI_INVOKE("rubric_usage")),
 	/**
+	 *  Whether any student has data for the exam (step 41, `maatwerk_core::locks::has_data`): the
+	 *  same rule the write guards use. An unreadable score file is an `edit_locked` error.
+	 */
+	examHasData: (year: string, vak: string, examId: string) => typedError<boolean, CommandError>(__TAURI_INVOKE("exam_has_data", { year, vak, examId })),
+	/**  The students with data in the school year, in any vak (step 41: who cannot be deleted). */
+	studentsWithData: (year: string) => typedError<string[], CommandError>(__TAURI_INVOKE("students_with_data", { year })),
+	/**
 	 *  Everything the list screens show for one school year and vak (step 38,
 	 *  `maatwerk_core::numbers`): cards, Verzamelkaarten, group statistics, shown r/SE under the
 	 *  school's Cijfergemiddelden. Typed in the UI as `VakNumbers` (`ui/src/domain/numbers.ts`).
@@ -558,6 +565,8 @@ export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflic
 "read_only" | 
 /**  The session's role does not allow the write (step 35); the message is Dutch. */
 "forbidden" | 
+/**  Data depends on what the write would change or delete (step 41); the message is Dutch. */
+"edit_locked" | 
 /**  No data folder set, chosen or beside the program yet (first run, step 16a). */
 "no_data_folder" | "io" | "typst" | "internal";
 

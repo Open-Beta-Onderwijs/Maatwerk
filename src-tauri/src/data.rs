@@ -201,6 +201,41 @@ impl From<maatwerk_core::rubrics::RubricUse> for RubricUse {
     }
 }
 
+/// Whether any student has data for the exam (step 41, `maatwerk_core::locks::has_data`): the
+/// same rule the write guards use. An unreadable score file is an `edit_locked` error.
+#[tauri::command]
+#[specta::specta]
+pub async fn exam_has_data(
+    state: State<'_, Shared>,
+    year: String,
+    vak: String,
+    exam_id: String,
+) -> Res<bool> {
+    blocking(state, move |c| {
+        Ok(maatwerk_core::locks::exam_has_data(
+            c.storage()?,
+            &year,
+            &vak,
+            &exam_id,
+        )?)
+    })
+    .await
+}
+
+/// The students with data in the school year, in any vak (step 41: who cannot be deleted).
+#[tauri::command]
+#[specta::specta]
+pub async fn students_with_data(state: State<'_, Shared>, year: String) -> Res<Vec<String>> {
+    blocking(state, move |c| {
+        Ok(
+            maatwerk_core::locks::students_with_data(c.storage()?, &year)?
+                .into_iter()
+                .collect(),
+        )
+    })
+    .await
+}
+
 /// Per rubric id, the PO's in any school year that use it ("In gebruik bij n PO's"; decision 20
 /// locks max and soort while this is not empty).
 #[tauri::command]

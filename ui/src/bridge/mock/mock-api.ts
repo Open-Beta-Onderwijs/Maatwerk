@@ -54,6 +54,7 @@ import { requiredVersion } from '../../services/read-only';
 import { checkRubric, lockedChanges, type Rubric } from '../../domain/rubric';
 import { snapshotSettings } from '../../domain/snapshot-settings';
 import { snapshotKinds } from './mock-snapshots';
+import { hasData } from '../../domain/has-data';
 import {
   bestuurOf,
   forbiddenMessage,
@@ -958,6 +959,30 @@ export class MockApi implements MaatwerkApi {
   async rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>> {
     this.record('rubricUsage', []);
     return this.rubricUses();
+  }
+
+  async examHasData(year: string, vak: string, examId: string): Promise<boolean> {
+    this.record('examHasData', [year, vak, examId]);
+    return this.jsonFilesIn(`${year}/scores/${vak}`).some(({ data }) =>
+      hasData(data as Record<string, unknown>, examId),
+    );
+  }
+
+  async studentsWithData(year: string): Promise<string[]> {
+    this.record('studentsWithData', [year]);
+    const out = new Set<string>();
+    for (const vak of this.list(`${year}/scores`)) {
+      for (const { name, data } of this.jsonFilesIn(`${year}/scores/${vak}`)) {
+        const rec = data as Record<string, unknown>;
+        const exams = new Set(
+          ['scores', 'overrides', 'observations', 'po'].flatMap((k) =>
+            Object.keys((rec?.[k] as object | undefined) ?? {}),
+          ),
+        );
+        if ([...exams].some((e) => hasData(rec, e))) out.add(name.replace(/\.json$/, ''));
+      }
+    }
+    return [...out].sort();
   }
 
   /** As `maatwerk_core::rubrics::usage`: exams with a `rubric_id`, newest year first. */

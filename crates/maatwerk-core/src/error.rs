@@ -77,6 +77,11 @@ pub enum Error {
     #[error("forbidden: {message}")]
     Forbidden { message: String },
 
+    /// A change the data depends on refused (step 41, `docs/reference/edit-locks.md`): the
+    /// message is Dutch and says why (e.g. "Er zijn al scores voor deze PO: ...").
+    #[error("{message}")]
+    EditLocked { path: String, message: String },
+
     /// Any other I/O error.
     #[error("I/O error on {path}: {source}")]
     Io {
@@ -101,6 +106,7 @@ impl Error {
             Error::InvalidArgument { .. } => "invalid_argument",
             Error::ReadOnly { .. } => "read_only",
             Error::Forbidden { .. } => "forbidden",
+            Error::EditLocked { .. } => "edit_locked",
             Error::GuestReadOnly => "read_only",
             Error::Io { .. } => "io",
         }
