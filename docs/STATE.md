@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-26 (step 40 done, main merged in, CI pending)
+Last updated: 2026-11-27 (step 40 merged and tagged; step 41 edit locks analysed)
 Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
 merges; merge `main` in after it does)
 Last tags: `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
@@ -82,12 +82,19 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
 - 2026-11-26: **step 39 merged into `main`** (`df87d83`, merge commit, tree identical to
   `57fa6d0`, CI green there) and tagged `step-39` (user's OK). `v0.30.0` not tagged.
 
-**Next action (morning):** rerun the macOS job of run 45807358650; it fails only on the missing
-`visual-ci-webkit-darwin` `editor`/`splash` baselines: check them in its `visual-macos`
-artifact and commit. Was: CI on `step/40-ai-followups`: commit the CI baselines of `editor` and `splash`
-(3 platforms each) from its artifacts after checking them (CC; version 0.31.0). Then report.
-Merges wait for the user: step 39 into `main` first, then `main` into this branch, then step
-40 (tag `step-40`; `v0.31.0` only when the user says so).
+- 2026-11-27: run 45819157915 (after the `main` merge): Linux, Windows, licences green; macOS
+  failed only on the missing `visual-ci-webkit-darwin` `editor`/`splash` baselines (2 e2e
+  WebKit `Target crashed` flakes passed on retry). `58e1196`: both committed from its
+  `visual-macos` artifact (checked: CC badge, versie 0.31.0). CI run 45973949416 green on all
+  platforms. **Step 40 merged into `main`** (user's OK) and tagged `step-40`; `v0.31.0` not
+  tagged.
+- 2026-11-27: edit-lock analysis for step 41 in `docs/reference/edit-locks.md` (user's request),
+  user's decisions in its section 5; added as step 41 item 5 in `PLAN-2.md`. Open: a core
+  `save_exam_family` command (else family locks stay UI-only) and Gegevenscontrole checks for
+  lock violations from another PC (edit-locks.md, answer pending).
+
+**Next action:** step 41 (`PLAN-2.md`), after the user's go. Ask the two open edit-lock
+questions above first.
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 

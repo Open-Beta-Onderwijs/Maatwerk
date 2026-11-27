@@ -803,7 +803,11 @@ Bugs: failing test first.
    Herstellen uit snapshot), 26-28 m6 (`listSnapshots` returns the kind).
 4. **Input limits and messages:** 6b n10 and 6a m4 (image read cap, thumbnail cache, decode
    limits), 18 m4 (watermark cap), 18 n1/n4/n5, 6a n7, 6b n9, 5b n6, 9 n6, 7a n3-n6/n8, 4a m4.
-5. Gate, review, release 0.32.
+5. **Edit locks in UI and core** (user, 2026-11-27): analysis in `docs/reference/edit-locks.md`.
+   Build what its section 5 (user's decisions) says: PO scope locked after scores, rubric and
+   observatie scope values in use locked, observatie delete blocked by opdrachten, confirms for
+   question max/soort and group membership, the UI-only locks in core too, one "has data" rule.
+6. Gate, review, release 0.32.
 
 ### Step 41b: Encrypted storage (L: 41b-a, 41b-b)
 
