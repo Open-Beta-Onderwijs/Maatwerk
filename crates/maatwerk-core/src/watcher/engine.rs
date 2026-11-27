@@ -21,6 +21,11 @@ pub(crate) const DEBOUNCE: Duration = Duration::from_millis(500);
 pub(crate) const FLUSH: Duration = Duration::from_millis(100);
 pub(crate) const PARSE_RETRY: Duration = Duration::from_millis(1000);
 
+/// A file whose mtime is younger than this can have been written again within the same mtime
+/// tick (2 s on FAT/exFAT, 1 s on HFS+) with the same size, so an unchanged stat proves nothing
+/// for it (review 5a m4).
+const SAME_TICK: Duration = Duration::from_secs(3);
+
 /// Top-level folders that never hold shared app data (`sync.js` `IGNORED_DIRS`), plus the
 /// port's `rapporten/` output folder (ADR-0002 section 4), `snapshots/` (Step 7b) and the
 /// images folder under its v3 name (step 18).
@@ -58,6 +63,14 @@ pub fn is_relevant(rel: &str) -> bool {
 pub(crate) struct Stat {
     mtime: Option<SystemTime>,
     size: u64,
+}
+
+impl Stat {
+    /// Whether the mtime is within [`SAME_TICK`] of `now` (or in the future: clock skew).
+    fn recent(&self, now: SystemTime) -> bool {
+        self.mtime
+            .is_some_and(|m| now.duration_since(m).is_ok_and(|age| age < SAME_TICK) || m > now)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -250,7 +263,8 @@ impl Engine {
         if let Some(prev) = &prev {
             let same = match &prev.hash {
                 Some(h) => *h == hash,
-                None => stat.as_ref() == Some(&prev.stat), // S34
+                // S34; unless a write within the same mtime tick is possible (5a m4).
+                None => stat.as_ref() == Some(&prev.stat) && !prev.stat.recent(SystemTime::now()),
             };
             if same {
                 if let Some(stat) = stat {

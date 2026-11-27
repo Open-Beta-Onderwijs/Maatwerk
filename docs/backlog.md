@@ -221,9 +221,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   call in `rapport.typ`; pre-parse each field and name it (student, category) in the diagnostic.~~
   Done (39b): after a failed rapport each distinct text is compiled on its own; the first error
   gets the hint "de fout zit in het leeradvies bij T1 voor <naam>" (toets and PO rapport).
-- **Review 5a m4 (watcher, Step 4b code):** a colleague's write with the same size inside one
-  mtime tick of the previous state is not seen as a change by the stat check. Compare a content
-  hash when size and mtime are equal but an event arrived.
+- ~~**Review 5a m4 (watcher, Step 4b code):**~~ Done in step 41: a file not hashed yet whose
+  mtime is under 3 s old counts as changed when an event arrives with an unchanged stat (hashing
+  every file at start would download OneDrive on-demand files, D36). Was: a colleague's write
+  with the same size inside one mtime tick of the previous state is not seen as a change.
 - **Review 5a nit n8 (done 2026-10-28):** the pixel tests and golden PNGs no longer use system
   fonts (`support::fonts`, `--ignore-system-fonts`). The app still uses them; an installed
   "Libertinus Serif" could still shadow Typst's own copy there. Nits n1-n6 and n9 were done in 5b.
