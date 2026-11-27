@@ -79,6 +79,24 @@ test('Gegevenscontrole: a clean check is a green card; findings are cards with a
   expect(opened).toEqual(['2025-2026/scores/nat']);
 });
 
+test('Gebruikers: a failed (de)activation leaves the user as they were (review 7a n6)', async ({
+  page,
+}) => {
+  await admin(page, 'gebruikers');
+  const toggle = page.locator(`[data-action="toggle-user"][data-id="${TEACHER}"]`);
+  await expect(toggle).toHaveAttribute('title', 'Gebruiker deactiveren');
+  await withMock(page, (m, id) => m.fail('writeJson', `gebruikers/${id}`), TEACHER);
+  await toggle.click();
+  await expect(page.locator('.toast').last()).toContainText('Opslaan mislukt');
+  await expect(toggle).toHaveAttribute('title', 'Gebruiker deactiveren');
+  const saved = await withMock(
+    page,
+    (m, id) => JSON.parse(m.peek(`gebruikers/${id}.json`) ?? 'null'),
+    TEACHER,
+  );
+  expect(saved.actief).toBe(true);
+});
+
 test('Instellingen: fields with units, Opslaan top right, the snapshots with their kind', async ({
   page,
 }) => {

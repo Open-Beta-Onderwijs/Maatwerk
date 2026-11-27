@@ -804,3 +804,27 @@ fn messages_name_values_briefly() {
     let long = super::brief(&serde_json::json!({ "tekst": "a".repeat(200) }));
     assert!(long.ends_with('…') && long.chars().count() == 61, "{long}");
 }
+
+/// Review 7a n4: a file whose name starts like another file's is a conflict copy only when it
+/// holds that file's id (OneDrive copies the content). Another id is a misplaced file.
+#[test]
+fn a_misplaced_file_is_not_called_a_conflict_copy() {
+    let (_tmp, data) = copy();
+    let group = "2025-2026/groups/3a-nat-2025-2026.json";
+    let mut other: serde_json::Value =
+        serde_json::from_slice(&fs::read(data.join(group)).unwrap()).unwrap();
+    other["id"] = serde_json::json!("4b-bio-2025-2026");
+    let name = "2025-2026/groups/3a-nat-2025-2026-b.json";
+    fs::write(data.join(name), serde_json::to_vec_pretty(&other).unwrap()).unwrap();
+    let report = validate(&data).unwrap();
+    assert!(
+        !has(&report, IssueKind::Stray, name, "conflictkopie"),
+        "{:#?}",
+        issues_for(&report, name)
+    );
+    assert!(
+        has(&report, IssueKind::Placement, name, "4b-bio-2025-2026"),
+        "{:#?}",
+        issues_for(&report, name)
+    );
+}

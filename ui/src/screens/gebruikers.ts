@@ -132,12 +132,25 @@ async function renderUserList(): Promise<void> {
       }
       await renderUserList();
     } else if (btn.dataset.action === 'toggle-user') {
-      user.actief = !user.actief;
-      await upsertUser(user);
-      toast(
-        user.actief ? `${user.voornaam} geactiveerd.` : `${user.voornaam} gedeactiveerd.`,
-        'success',
-      );
+      // A copy: the cached user changes only when the save succeeds (review 7a n6: a conflict
+      // left the toggled state on screen).
+      const next = { ...user, actief: !user.actief };
+      try {
+        await upsertUser(next);
+        toast(
+          next.actief ? `${next.voornaam} geactiveerd.` : `${next.voornaam} gedeactiveerd.`,
+          'success',
+        );
+      } catch (err) {
+        const conflict = (err as { code?: string } | null)?.code === 'conflict';
+        toast(
+          conflict
+            ? `${user.voornaam} is intussen door iemand anders gewijzigd. Probeer het opnieuw.`
+            : `Opslaan mislukt: ${err instanceof Error ? err.message : String(err)}`,
+          'error',
+        );
+        if (conflict) Store.forgetFile(`gebruikers/${user.id}.json`);
+      }
       await renderAll();
     }
   };

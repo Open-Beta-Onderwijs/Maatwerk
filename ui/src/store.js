@@ -146,7 +146,7 @@ const Store = (() => {
         if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
         const onDisk = decode(relPath, read.data);
         const next = mutator(onDisk ?? fallback(), onDisk);
-        const result = await window.maatwerk.writeJson(relPath, encode(relPath, next), {
+        const result = await window.maatwerk.writeJson(relPath, encode(relPath, next, read.data), {
           cas: true,
           expectedHash: read.hash,
         });

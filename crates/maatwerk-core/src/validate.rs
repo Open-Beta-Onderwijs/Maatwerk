@@ -163,6 +163,12 @@ fn is_template_name(name: &str) -> bool {
     keys.contains(&key) && matches!(jaar, "1" | "2" | "3" | "4" | "5" | "6")
 }
 
+/// `a/b/naam.json` -> `naam`.
+fn file_stem(rel: &str) -> &str {
+    let name = rel.rsplit_once('/').map_or(rel, |(_, n)| n);
+    name.rsplit_once('.').map_or(name, |(stem, _)| stem)
+}
+
 /// `naam (2).json` or `naam-PCNAAM.json` next to an existing `naam.json`: OneDrive's copies.
 fn conflict_copy_of(rel: &str, files: &BTreeSet<&str>) -> Option<String> {
     let (dir, name) = match rel.rsplit_once('/') {
@@ -246,9 +252,11 @@ fn check_file(root: &Path, rel: &str, files: &BTreeSet<&str>, out: &mut Found) -
     }
     if let Some((field, expected)) = id {
         let found = value.get(field).and_then(Value::as_str);
-        // OneDrive copies the content, so a copy's id names the original.
+        // OneDrive copies the content, so a copy's id names the original; another id is a
+        // misplaced file, not a copy (review 7a n4).
         if found != Some(expected)
             && let Some(original) = conflict_copy_of(rel, files)
+            && found == Some(file_stem(&original))
         {
             out.warn(
                 IssueKind::Stray,

@@ -365,13 +365,15 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).~~ Closed (39a): moot, the core v1 migration went at 1.0 (decision 88).
 - ~~**n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
   remove after the cutover.~~ Done (39a, `b9fab11`).
-- **n3:** the data-files-v2 text on merging duplicate students vs. the Rust merge details.
-- **n4:** the conflict-copy check can label a misplaced file as a conflict copy.
+- ~~**n3:**~~ Closed in step 41: the v1-to-v2 merge went with 39a; `data-files-v2.md` now says
+  it is history. Was: the data-files-v2 text on merging duplicate students vs. the Rust merge.
+- ~~**n4:**~~ Done in step 41: a conflict copy must hold the original's id; another id is a
+  placement error (test first).
 - **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones
   each file; measure in 7c.
-- **n6:** the user active toggle changes the cached user before saving; a conflict leaves the
-  wrong state on screen.
-- **n8:** saving the students file drops top-level keys other than `students`.
+- ~~**n6:**~~ Done in step 41: the toggle saves a copy; a failure leaves the cache and screen
+  as they were (e2e first).
+- ~~**n8:**~~ Done in step 41: `encode` keeps the file's other top-level keys (Vitest).
 
 ## From Step 7b (review `docs/reviews/step-07b.md`)
 

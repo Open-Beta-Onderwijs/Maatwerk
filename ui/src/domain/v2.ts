@@ -65,10 +65,15 @@ export function decode(relPath: string, data: unknown): unknown {
   return data;
 }
 
-/** What the Store keeps in memory -> file content. Other files pass through. */
-export function encode(relPath: string, data: unknown): unknown {
+/**
+ * What the Store keeps in memory -> file content. Other files pass through. `raw` is the file as
+ * read before the change: the students file keeps its other top-level keys (review 7a n8).
+ */
+export function encode(relPath: string, data: unknown, raw?: unknown): unknown {
   if (STUDENTS_PATH.test(relPath) && Array.isArray(data)) {
+    const others = isObj(raw) ? raw : {};
     return {
+      ...others,
       students: data.map((s) => (isObj(s) && 'id' in s ? { ...s, id: studentId(s.id) } : s)),
     };
   }
