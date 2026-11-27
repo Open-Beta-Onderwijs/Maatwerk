@@ -101,5 +101,219 @@ pub fn students_with_data(storage: &Storage, year: &str) -> Result<BTreeSet<Stri
     Ok(out)
 }
 
+// ── Guards ─────────────────────────────────────────────────────────────────────────────────
+
+thread_local! {
+    /// Set while [`unlocked`] runs on this thread.
+    static UNLOCKED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Runs `f` with the edit locks lifted on this thread: "Herstellen uit snapshot" is a repair
+/// (it puts back a version that existed), not an edit. Nothing else may call it.
+pub fn unlocked<T>(f: impl FnOnce() -> Result<T>) -> Result<T> {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            UNLOCKED.with(|c| c.set(self.0));
+        }
+    }
+    let _reset = Reset(UNLOCKED.with(|c| c.replace(true)));
+    f()
+}
+
+fn refuse(rel: &RelPath, message: String) -> Error {
+    Error::EditLocked {
+        path: rel.to_string(),
+        message,
+    }
+}
+
+/// What kind of file a path is, for the guards.
+enum Kind<'a> {
+    Students { year: &'a str },
+    Group { year: &'a str },
+    Other,
+}
+
+fn kind(rel: &str) -> Kind<'_> {
+    let parts: Vec<&str> = rel.split('/').collect();
+    match parts.as_slice() {
+        [year, file] if is_year_name(year) && *file == format!("students-{year}.json") => {
+            Kind::Students { year }
+        }
+        [year, "groups", file] if is_year_name(year) && file.ends_with(".json") => {
+            Kind::Group { year }
+        }
+        _ => Kind::Other,
+    }
+}
+
+/// Runs under the commit lock, before a JSON write (`Storage::write_json`).
+pub(crate) fn guard_write(storage: &Storage, rel: &RelPath, new: &Value) -> Result<()> {
+    if UNLOCKED.with(std::cell::Cell::get) {
+        return Ok(());
+    }
+    match kind(rel.as_str()) {
+        Kind::Students { year } => guard_students(storage, rel, year, new),
+        Kind::Group { .. } => guard_group(storage, rel, Some(new)),
+        Kind::Other => Ok(()),
+    }
+}
+
+/// Runs under the commit lock, before a delete (`Storage::delete`).
+pub(crate) fn guard_delete(storage: &Storage, rel: &RelPath) -> Result<()> {
+    if UNLOCKED.with(std::cell::Cell::get) {
+        return Ok(());
+    }
+    match kind(rel.as_str()) {
+        Kind::Group { .. } => guard_group(storage, rel, None),
+        Kind::Students { .. } => Err(refuse(
+            rel,
+            "Het leerlingenbestand van een schooljaar wordt niet verwijderd.".into(),
+        )),
+        Kind::Other => Ok(()),
+    }
+}
+
+/// An id as text: student ids are strings since v3 (C8), numbers in older files.
+fn id_text(v: &Value) -> Option<String> {
+    match v {
+        Value::String(s) => Some(s.clone()),
+        Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
+fn student_ids(file: &Value) -> BTreeSet<String> {
+    file.get("students")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|s| s.get("id").and_then(id_text))
+        .collect()
+}
+
+/// 2.1: a student removed from a year's list must have no data in that year and be in none of
+/// its groups.
+fn guard_students(storage: &Storage, rel: &RelPath, year: &str, new: &Value) -> Result<()> {
+    let old = storage
+        .read_json(rel)
+        .map_err(|e| unreadable(rel.as_str(), &e))?
+        .unwrap_or(Value::Null);
+    let kept = student_ids(new);
+    let removed: Vec<String> = student_ids(&old)
+        .into_iter()
+        .filter(|id| !kept.contains(id))
+        .collect();
+    if removed.is_empty() {
+        return Ok(());
+    }
+    let with_data = students_with_data(storage, year)?;
+    if let Some(id) = removed.iter().find(|id| with_data.contains(*id)) {
+        return Err(refuse(
+            rel,
+            format!(
+                "Leerling {id} niet verwijderd: er zijn scores ingevoerd voor deze leerling in \
+                 {year}."
+            ),
+        ));
+    }
+    let in_group = groups_of(storage, year)?
+        .into_iter()
+        .flat_map(|g| group_students(&g))
+        .collect::<BTreeSet<_>>();
+    if let Some(id) = removed.iter().find(|id| in_group.contains(*id)) {
+        return Err(refuse(
+            rel,
+            format!("Leerling {id} niet verwijderd: de leerling zit in een groep van {year}."),
+        ));
+    }
+    Ok(())
+}
+
+/// Every group file of a year; fails closed.
+fn groups_of(storage: &Storage, year: &str) -> Result<Vec<Value>> {
+    let dir = RelPath::parse(&format!("{year}/groups"))?;
+    let mut out = Vec::new();
+    for name in storage
+        .list_dir(&dir, false)
+        .map_err(|e| unreadable(dir.as_str(), &e))?
+    {
+        if !name.ends_with(".json") {
+            continue;
+        }
+        let file = dir.join(&name)?;
+        match storage.read_json(&file) {
+            Ok(Some(g)) => out.push(g),
+            Ok(None) => {}
+            Err(e) => return Err(unreadable(file.as_str(), &e)),
+        }
+    }
+    Ok(out)
+}
+
+fn group_students(group: &Value) -> Vec<String> {
+    group
+        .get("student_ids")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(id_text)
+        .collect()
+}
+
+/// The group fields that stay while a group has students (2.2).
+const GROUP_FIELDS: [(&str, &str); 4] = [
+    ("name", "naam"),
+    ("jaarlaag", "jaarlaag"),
+    ("schoolsoort", "schoolsoort"),
+    ("subject", "vak"),
+];
+
+/// A value compared as the UI writes it: `"3"` and `3` are the same jaarlaag.
+fn same(a: Option<&Value>, b: Option<&Value>) -> bool {
+    match (a, b) {
+        (Some(Value::Number(n)), Some(Value::String(s)))
+        | (Some(Value::String(s)), Some(Value::Number(n))) => n.to_string() == *s,
+        (None | Some(Value::Null), None | Some(Value::Null)) => true,
+        _ => a == b,
+    }
+}
+
+/// 2.2: a group with students keeps its name, jaarlaag, schoolsoort and vak, and is not deleted.
+fn guard_group(storage: &Storage, rel: &RelPath, new: Option<&Value>) -> Result<()> {
+    let Some(old) = storage
+        .read_json(rel)
+        .map_err(|e| unreadable(rel.as_str(), &e))?
+    else {
+        return Ok(());
+    };
+    let members = group_students(&old).len();
+    if members == 0 {
+        return Ok(());
+    }
+    let Some(new) = new else {
+        return Err(refuse(
+            rel,
+            format!("Deze groep heeft {members} leerling(en) en kan dus niet worden verwijderd."),
+        ));
+    };
+    let changed: Vec<&str> = GROUP_FIELDS
+        .iter()
+        .filter(|(key, _)| !same(old.get(*key), new.get(*key)))
+        .map(|(_, label)| *label)
+        .collect();
+    if changed.is_empty() {
+        return Ok(());
+    }
+    Err(refuse(
+        rel,
+        format!(
+            "Deze groep heeft leerlingen: {} ligt vast. Haal eerst de leerlingen uit de groep.",
+            changed.join(", ")
+        ),
+    ))
+}
+
 #[cfg(test)]
 mod tests;

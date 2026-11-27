@@ -512,9 +512,11 @@ impl Storage {
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
         crate::rubrics::guard_write(self, rel, value, expect)?;
         let (stamped, text) = integrity::stamped_text(value);
-        // The rubric's lock is checked under the commit lock (review 21 m3).
+        // The rubric's lock and the edit locks (step 41) are checked under the commit lock
+        // (review 21 m3).
         self.commit_bytes_checked(rel, text.as_bytes(), expect, true, || {
-            crate::rubrics::guard_under_lock(self, rel, value)
+            crate::rubrics::guard_under_lock(self, rel, value)?;
+            crate::locks::guard_write(self, rel, value)
         })?;
         let value = stamped;
         self.note_stamp(rel.as_str(), &value);
@@ -606,8 +608,10 @@ impl Storage {
         let path = self.dir.resolve(rel)?;
         self.check_writable(rel)?;
         let _guard = self.commit.acquire(rel.as_str())?;
-        // Under the lock: no PO from this PC can start using the rubric meanwhile (21 m3).
+        // Under the lock: no PO from this PC can start using the rubric meanwhile (21 m3), and
+        // nothing can start depending on what goes (edit locks, step 41).
         crate::rubrics::guard_delete(self, rel)?;
+        crate::locks::guard_delete(self, rel)?;
         if let Some(observer) = &self.observer {
             observer.will_change(rel);
         }

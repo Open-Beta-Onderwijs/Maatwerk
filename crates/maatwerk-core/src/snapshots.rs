@@ -579,41 +579,44 @@ pub fn restore_file(
         path: rel.to_string(),
     })?;
     let is_user = rel.as_str().starts_with("gebruikers/");
-    storage.update(
-        rel,
-        || Value::Null,
-        |_current, on_disk| {
-            if let Some(disk) = on_disk
-                && integrity::check(disk) == StampState::Ok
-            {
-                return Err(Error::Conflict {
-                    path: rel.to_string(),
-                    updated_by: disk
-                        .get("_meta")
-                        .and_then(|m| m.get("updatedBy"))
-                        .and_then(Value::as_str)
-                        .map(str::to_owned),
-                });
-            }
-            let Value::Object(mut obj) = value.clone() else {
-                return Ok(value.clone());
-            };
-            if is_user {
-                for key in KEPT_USER_FIELDS {
-                    match on_disk.and_then(|d| d.get(key)) {
-                        Some(v) => obj.insert(key.into(), v.clone()),
-                        None => obj.remove(key),
-                    };
+    // A repair, not an edit: the edit locks do not apply (step 41). The rubric lock still does.
+    crate::locks::unlocked(|| {
+        storage.update(
+            rel,
+            || Value::Null,
+            |_current, on_disk| {
+                if let Some(disk) = on_disk
+                    && integrity::check(disk) == StampState::Ok
+                {
+                    return Err(Error::Conflict {
+                        path: rel.to_string(),
+                        updated_by: disk
+                            .get("_meta")
+                            .and_then(|m| m.get("updatedBy"))
+                            .and_then(Value::as_str)
+                            .map(str::to_owned),
+                    });
                 }
-            }
-            let entity = obj.get("_meta").and_then(|m| m.get("rev")).is_some();
-            Ok(if entity {
-                stamp_meta(obj, on_disk, user_id, at)
-            } else {
-                Value::Object(obj)
-            })
-        },
-    )?;
+                let Value::Object(mut obj) = value.clone() else {
+                    return Ok(value.clone());
+                };
+                if is_user {
+                    for key in KEPT_USER_FIELDS {
+                        match on_disk.and_then(|d| d.get(key)) {
+                            Some(v) => obj.insert(key.into(), v.clone()),
+                            None => obj.remove(key),
+                        };
+                    }
+                }
+                let entity = obj.get("_meta").and_then(|m| m.get("rev")).is_some();
+                Ok(if entity {
+                    stamp_meta(obj, on_disk, user_id, at)
+                } else {
+                    Value::Object(obj)
+                })
+            },
+        )
+    })?;
     Ok(())
 }
 
