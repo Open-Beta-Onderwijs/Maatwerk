@@ -5,7 +5,9 @@
 # base_assignment.typ, which becomes the start of a teacher's own opdracht file, and the
 # generated opdracht fixtures (teacher files, tools/fixtures/export-opdrachten.mjs), and the
 # migration fixtures (synthetic teacher files in a data folder), and the example opdrachten
-# (docs/assignment-examples, meant to be copied as teacher files).
+# (docs/assignment-examples, meant to be copied as teacher files). Config files in TOML and YAML
+# carry the header too; JSON cannot hold a comment. Copyright: one project line in README.md, no
+# per-file lines (git history records authorship).
 set -euo pipefail
 
 missing=0
@@ -17,6 +19,6 @@ while IFS= read -r file; do
     echo "missing SPDX header: $file"
     missing=1
   fi
-done < <(git ls-files '*.rs' '*.ts' '*.js' '*.mjs' '*.cjs' '*.css' '*.html' '*.sh' '*.typ')
+done < <(git ls-files '*.rs' '*.ts' '*.js' '*.mjs' '*.cjs' '*.css' '*.html' '*.sh' '*.typ' '*.toml' '*.yml' '*.yaml')
 
 exit "$missing"

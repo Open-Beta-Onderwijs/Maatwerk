@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 [package]
 name = "maatwerk-cli"
 description = "Headless Maatwerk tools: validate-data, migrate, assignment check/render."

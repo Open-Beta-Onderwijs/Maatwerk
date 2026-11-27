@@ -351,8 +351,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**n5:** `tauri.conf.json` `version` duplicates the Cargo workspace version~~ Done 2026-10-30:
   the field is gone (Tauri takes the Cargo version), version bumped to 0.2.0 to match the
   `v0.2.0-parity` tag. The versioning policy itself is still PLAN section 9, decision 9.
-- **n6:** SPDX check skips toml/yml; decide whether config files need headers and whether to add a
-  copyright line convention.
+- ~~**n6:**~~ done in step 41 (user took the recommendation, 2026-11-27): own TOML/YAML files
+  carry the SPDX header and `check-spdx.sh` checks them (JSON cannot hold a comment; vendored
+  Typst packages stay exempt). Copyright: the one project line in `README.md`, no per-file lines.
 - **n9:** CI hygiene: pin actions by SHA (Dependabot), avoid double runs on push + PR, avoid
   installing the Windows target on Linux runners.
 - **n2:** keep the two licence allowlists (`deny.toml`, `tools/check-npm-licenses.mjs`) in sync;

@@ -61,7 +61,8 @@ npm run build:exe                        # target/release/maatwerk.exe (portable
   packages. Update `THIRD_PARTY_LICENSES.md`. Allowlists: `deny.toml`,
   `tools/check-npm-licenses.mjs`.
 - Every source file starts with `SPDX-License-Identifier: AGPL-3.0-or-later` (comment syntax of
-  the language).
+  the language), TOML/YAML config too (not JSON). No per-file copyright lines: the project line
+  is in `README.md`.
 - **Grade numbers: one source of truth, `maatwerk-grades`** (user, 2026-11-23). Every grade,
   average, weighting, best attempt, SD, percentage, rounding or truncation is computed by the
   grades crate (through `maatwerk-core` or the WASM build). The UI and core never compute grade
