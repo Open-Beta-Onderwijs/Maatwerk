@@ -13,9 +13,11 @@ export const commands = {
 	/**  JSON plus hash; `null` if missing. */
 	readJsonVersioned: (relPath: string) => typedError<VersionedJson | null, CommandError>(__TAURI_INVOKE("read_json_versioned", { relPath })),
 	/**
-	 *  Writes JSON atomically; returns the hash written. With `cas`, the file must still hash to
-	 *  `expectedHash` (`null`: must not exist), else error `conflict`. A score file the session may
-	 *  not change is refused with `forbidden` (step 35, `maatwerk_core::rights`).
+	 *  Writes JSON atomically; returns the hash written. The file must still hash to `expectedHash`
+	 *  (`null`: must not exist), else error `conflict`. A blind write (`cas: false`) is refused:
+	 *  every UI write reads first (review 4a n10; the mock still allows it for test seeding). A
+	 *  score file the session may not change is refused with `forbidden` (step 35,
+	 *  `maatwerk_core::rights`).
 	 */
 	writeJson: (relPath: string, data: Value, cas: boolean, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("write_json", { relPath, data, cas, expectedHash })),
 	/**  Year folders, newest first. */

@@ -30,8 +30,12 @@ impl Storage {
     where
         F: FnMut(Value, Option<&Value>) -> Result<Value>,
     {
-        let queue = self.update_queue(rel);
-        let _queued = queue.lock().unwrap_or_else(|p| p.into_inner());
+        let queue = QueueSlot {
+            storage: self,
+            rel,
+            queue: self.update_queue(rel),
+        };
+        let _queued = queue.queue.lock().unwrap_or_else(|p| p.into_inner());
         for _ in 0..UPDATE_ATTEMPTS {
             // S24: a corrupt file is an error here, never overwritten.
             let read = self.read_json_versioned(rel)?;
@@ -55,6 +59,15 @@ impl Storage {
     fn update_queue(&self, rel: &RelPath) -> Arc<Mutex<()>> {
         let mut queues = self.update_locks.lock().unwrap_or_else(|p| p.into_inner());
         queues.entry(rel.clone()).or_default().clone()
+    }
+
+    /// Entries in the update queue map (tests: it must not grow with every file, 4a n6).
+    #[cfg(test)]
+    pub(crate) fn update_queues(&self) -> usize {
+        self.update_locks
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .len()
     }
 
     /// Saves a single-object file with a fresh `_meta` (S26). `base_rev` is the `_meta.rev` the
@@ -98,6 +111,30 @@ impl Storage {
                 Ok(stamp_meta(entity.clone(), on_disk, user_id, now))
             },
         )
+    }
+}
+
+/// One update's place in its file's queue. Dropped after the update's own lock guard (it is
+/// declared first), it removes the file's entry when no other update holds or waits for it, so
+/// the map does not keep one entry per file ever updated (review 4a n6). Clones are only made
+/// under the map lock, so the count cannot change while it is checked.
+struct QueueSlot<'a> {
+    storage: &'a Storage,
+    rel: &'a RelPath,
+    queue: Arc<Mutex<()>>,
+}
+
+impl Drop for QueueSlot<'_> {
+    fn drop(&mut self) {
+        let mut queues = self
+            .storage
+            .update_locks
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        // The map's own reference and this one: nobody else.
+        if Arc::strong_count(&self.queue) == 2 {
+            queues.remove(self.rel);
+        }
     }
 }
 

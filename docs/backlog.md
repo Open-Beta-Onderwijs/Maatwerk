@@ -251,8 +251,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   a slow OneDrive read in progress. Catch, log and restart the thread.~~ Done (Step 10).
 - ~~**`save_photo` / `write_text_file` accept any data path (n8)**~~ Done (6a):
   `check_photo_path` (`fotos/<name>`) and `check_opdracht_typ_path` (`opdrachten/<name>.typ`).
-- **Lock folder errors carry an absolute local path (n4, remaining part):** `CommitLock` errors
-  name the lock folder under `%LOCALAPPDATA%` (with the Windows user name) in `details.path`.
+- ~~**Lock folder errors carry an absolute local path (n4, remaining part):**~~ Done in step 41:
+  errors name the data file (or "(lokale vergrendeling)"); the log keeps the lock path. Was:
+  `CommitLock` errors name the lock folder under `%LOCALAPPDATA%` (with the Windows user name).
 - **Overflow of `ReadDirectoryChangesW` (review 4b M1 note):** `notify` drops it silently; the
   periodic re-start of OS notifications plus the poll limit the damage. Revisit if colleagues
   report missed changes in non-active years.
@@ -261,22 +262,30 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 4a
 
-- **`update()` does not retry a read that fails with `io` (review 4a m6):** on Windows a read can
-  hit a file that is being replaced. Retry with the rename backoff; needs read fault injection.
+- ~~**`update()` does not retry a read that fails with `io` (review 4a m6):**~~ Done in step 41:
+  every read retries a sharing error with the rename backoff (`atomic::read_retrying`, tested
+  with an injected read). Was: on Windows a read can hit a file that is being replaced.
 - **RTTI modal and an unreadable template file (review 4a m4):** the tab shows defaults and every
   save conflicts; offer "overwrite the unreadable file" explicitly.
-- **`Locked.path` names the local lock file, not the data file (n4).**
-- **`update_locks` map never shrinks (n6):** one small entry per file updated in a session.
-- **`read_all_json` skips non-UTF-8 files, `read_json` decodes lossily (n7):** align (lossy).
+- ~~**`Locked.path` names the local lock file, not the data file (n4).**~~ Done in step 41.
+- ~~**`update_locks` map never shrinks (n6):**~~ Done in step 41: an idle file's entry is
+  removed after its update.
+- ~~**`read_all_json` skips non-UTF-8 files, `read_json` decodes lossily (n7):**~~ Done in step
+  41: aligned (lossy), quirk D37.
 - **`save_photo` is stricter than Node's base64 (n8):** invalid characters are an error, not
   skipped. Record in quirks if a real caller ever sends such data.
-- **`schema_version` checked only at open (n9):** re-check before writes once Step 7 can migrate a
-  folder while an app is running.
-- **Blind `Expect::Any` writes still possible in the core API (n10):** used for text files and
-  presence; consider removing it for JSON in 4b.
-- **JSON edge cases (n11):** integers above 2^53 are printed exactly (JS would round); a file with
-  a lone surrogate escape is rejected as corrupt.
-- **No on-disk test for non-ASCII names or paths over 260 characters (n12).**
+- ~~**`schema_version` checked only at open (n9):**~~ Closed in step 41: a migration writes
+  `minAppVersion` first, and every write checks it (`Storage::read_only`), so an app running
+  on a folder another PC migrates turns read-only at its next write.
+- ~~**Blind `Expect::Any` writes still possible in the core API (n10):**~~ Done in step 41 for
+  the UI: the `write_json` command refuses `cas: false` (every UI write reads first). The core
+  keeps `Expect::Any` for text files, presence and migrations; the mock allows it for seeding.
+- ~~**JSON edge cases (n11):**~~ Accepted in step 41: the files are written by the JS UI, which
+  never produces integers above 2^53; a lone surrogate escape is reported as a corrupt file in
+  Gegevenscontrole, which is the right place to fix it. Was: integers above 2^53 are printed
+  exactly (JS would round); a lone surrogate escape is rejected as corrupt.
+- ~~**No on-disk test for non-ASCII names or paths over 260 characters (n12).**~~ Done in step 41
+  (`non_ascii_names_and_long_paths_round_trip_on_disk`).
 - **Junction created between `resolve` and the write (n13):** needs local write access to the data
   folder; accepted.
 
