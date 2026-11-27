@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-27 (step 41 started: sub-task 1 `rapporten/` done)
+Last updated: 2026-11-27 (step 41: sub-tasks 1-2 done)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -22,9 +22,16 @@ Baseline: cargo test green.
   user OK 2026-11-27: local updated, CI copies dropped (`4bac3d1`); commit them from the next
   CI run's artifacts.**
 
-**Next action:** sub-task 2 (storage and watcher items; backlog ids in `docs/backlog.md`).
-Commit the CI `admin-instellingen` baselines from the first CI run of this branch. Then 3, 4,
-5 (edit locks), 6 (gate).
+- Sub-task 2 done: `2ba0d6f` storage (4a m6 read retry, n4/4b n4 lock errors name the data
+  file, n6 idle update queues dropped, n7 lossy folder reads = quirk D37, n10 `write_json`
+  refuses `cas: false`, n12 long/non-ASCII path test; n9, n11 closed with reasons);
+  `55cc0f7` watcher 5a m4 (recent mtime + unchanged stat + event = change); `412c059` store
+  7c (external change during a read) and 3b n4 (colleague value clears "not saved"). 10 m6
+  moved to sub-task 5 (edit locks).
+
+**Next action:** sub-task 3 (snapshots and startup: 10 m3, n1, n2, 7b reload after Herstellen,
+26-28 m6 `listSnapshots` kind). Commit the CI `admin-instellingen` baselines from the first CI
+run of this branch. Then 4, 5 (edit locks), 6 (gate).
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 
