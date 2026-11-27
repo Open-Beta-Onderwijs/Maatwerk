@@ -779,7 +779,8 @@ fn toetstypes(obs: &Value) -> Vec<String> {
     }
 }
 
-/// Whether `value` is allowed by `list`, where an empty list allows everything.
+/// Whether `value` is allowed by `list`, where an empty list allows everything (an observatie
+/// without jaarlagen or schoolsoort passes the Observaties tab's filters too).
 fn allows(list: &[String], value: &str) -> bool {
     list.is_empty() || list.iter().any(|v| v == value)
 }
@@ -802,38 +803,115 @@ fn vak_label(subject: &str) -> &str {
     if subject == "wi" { "wiskunde" } else { subject }
 }
 
-/// What a linked test or rubric uses that `obs` does not allow.
-fn misfits(links: &ObsLinks, obs: &Value) -> Vec<String> {
-    let (jl, ss, vak, tt) = (
+/// What one linked test (`jaarlaag`, `schoolsoort`, `subject`) uses that `obs` does not allow.
+fn test_misfits(obs: &Value, jaarlaag: &str, schoolsoort: &[String], subject: &str) -> Vec<String> {
+    let (jl, ss, vak) = (
         texts(obs, "jaarlagen"),
         texts(obs, "schoolsoort"),
         obs_vakken(obs),
-        toetstypes(obs),
     );
     let mut out = Vec::new();
+    if !allows(&jl, jaarlaag) {
+        out.push(format!("jaarlaag {jaarlaag}"));
+    }
+    out.extend(schoolsoort.iter().filter(|s| !allows(&ss, s)).cloned());
+    if !fits_vak(&vak, subject) {
+        out.push(format!("vak {}", vak_label(subject)));
+    }
+    out
+}
+
+/// What one linked rubric uses that `obs` does not allow.
+fn rubric_misfits(
+    obs: &Value,
+    jaarlagen: &[String],
+    schoolsoort: &[String],
+    subject: &str,
+) -> Vec<String> {
+    let (jl, ss, vak) = (
+        texts(obs, "jaarlagen"),
+        texts(obs, "schoolsoort"),
+        obs_vakken(obs),
+    );
+    let mut out: Vec<String> = jaarlagen
+        .iter()
+        .filter(|j| !allows(&jl, j))
+        .map(|j| format!("jaarlaag {j}"))
+        .collect();
+    out.extend(schoolsoort.iter().filter(|s| !allows(&ss, s)).cloned());
+    if !fits_vak(&vak, subject) {
+        out.push(format!("vak {}", vak_label(subject)));
+    }
+    out
+}
+
+/// Whether two schoolsoort lists share one; an empty list stands for all of them.
+fn shares(a: &[String], b: &[String]) -> bool {
+    a.is_empty() || b.is_empty() || a.iter().any(|s| b.contains(s))
+}
+
+/// Gegevenscontrole (other PCs, edit-locks.md section 5): why the test `exam` should not have the
+/// observatie `obs`, by the rule the test editor offers observaties with (`toets-edit.ts`:
+/// toetstype Toets, the jaarlaag, a shared schoolsoort, the vak). A link that rule never makes
+/// came from elsewhere. Empty when it fits. The write guard is stricter (decision 12: no value
+/// in use is removed), so the app cannot make what this reports.
+pub(crate) fn obs_misfits_test(obs: &Value, exam: &Value) -> Vec<String> {
+    let jaarlaag = exam.get("jaarlaag").and_then(id_text).unwrap_or_default();
+    let (ss, mine) = (texts(exam, "schoolsoort"), texts(obs, "schoolsoort"));
+    let subject = text_of(exam, "subject").unwrap_or("?");
+    let mut out = Vec::new();
+    if !allows(&texts(obs, "jaarlagen"), &jaarlaag) {
+        out.push(format!("jaarlaag {jaarlaag}"));
+    }
+    if !shares(&ss, &mine) {
+        out.push(ss.join("/"));
+    }
+    if !fits_vak(&obs_vakken(obs), subject) {
+        out.push(format!("vak {}", vak_label(subject)));
+    }
+    if !toetstypes(obs).iter().any(|t| t == "toets") {
+        out.push("toetstype Toets".into());
+    }
+    out
+}
+
+/// Gegevenscontrole: why PO `po` should not have its rubric, by the rule the PO form offers
+/// rubrics with (`matchingRubrics`: the vak, a shared schoolsoort, the jaarlaag). Empty when it
+/// fits. The rubric's write guard is stricter (decision 9).
+pub(crate) fn po_misfits_rubric(po: &Value, rubric: &Value) -> Vec<String> {
+    let (ss, theirs) = (texts(po, "schoolsoort"), texts(rubric, "schoolsoort"));
+    let mut out = Vec::new();
+    if let Some(j) = po.get("jaarlaag").and_then(id_text)
+        && !texts(rubric, "jaarlagen").contains(&j)
+    {
+        out.push(format!("jaarlaag {j}"));
+    }
+    if !shares(&ss, &theirs) {
+        out.push(ss.join("/"));
+    }
+    if let (Some(m), Some(t)) = (text_of(po, "subject"), text_of(rubric, "subject"))
+        && m != t
+    {
+        out.push(format!("vak {m}"));
+    }
+    out
+}
+
+/// What a linked test or rubric uses that `obs` does not allow.
+fn misfits(links: &ObsLinks, obs: &Value) -> Vec<String> {
+    let tt = toetstypes(obs);
+    let mut out = Vec::new();
     for (naam, jaarlaag, schoolsoort, subject) in &links.tests {
-        if !jl.contains(jaarlaag) {
-            out.push(format!("jaarlaag {jaarlaag} (toets {naam})"));
-        }
-        for s in schoolsoort.iter().filter(|s| !allows(&ss, s)) {
-            out.push(format!("{s} (toets {naam})"));
-        }
-        if !fits_vak(&vak, subject) {
-            out.push(format!("vak {} (toets {naam})", vak_label(subject)));
+        for m in test_misfits(obs, jaarlaag, schoolsoort, subject) {
+            out.push(format!("{m} (toets {naam})"));
         }
     }
     if !links.tests.is_empty() && !tt.iter().any(|t| t == "toets") {
         out.push("toetstype Toets".into());
     }
     for (naam, jaarlagen, schoolsoort, subject) in &links.rubrics {
-        for j in jaarlagen.iter().filter(|j| !jl.contains(j)) {
-            out.push(format!("jaarlaag {j} (rubric {naam})"));
-        }
-        for s in schoolsoort.iter().filter(|s| !allows(&ss, s)) {
-            out.push(format!("{s} (rubric {naam})"));
-        }
-        if !fits_vak(&vak, subject) {
-            out.push(format!("vak {} (rubric {naam})", vak_label(subject)));
+        for m in rubric_misfits(obs, jaarlagen, schoolsoort, subject) {
+            out.push(format!("{m} (rubric {naam})"));
         }
     }
     if !links.rubrics.is_empty() && !tt.iter().any(|t| t == "po") {

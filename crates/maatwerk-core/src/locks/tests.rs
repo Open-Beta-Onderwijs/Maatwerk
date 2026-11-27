@@ -444,6 +444,9 @@ fn a_linked_observatie_keeps_what_its_tests_and_rubrics_use() {
     write(obs(&["3", "5"], &[], &["nat"], &["toets"])).unwrap();
     // From "all schoolsoorten" to a list without the test's one is a narrowing too.
     locked(write(obs(&["3", "5"], &["vwo"], &["nat"], &["toets"])));
+    // No jaarlagen means all of them, as in the Observaties tab's filters.
+    write(obs(&[], &[], &["nat"], &["toets"])).unwrap();
+    locked(write(obs(&["4"], &[], &["nat"], &["toets"])));
 }
 
 /// A wiskunde test (`subject: "wi"`) fits an observatie with any wiskunde variant, as the test

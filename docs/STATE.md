@@ -67,8 +67,12 @@ Baseline: cargo test green.
   `277245a` part 7 UI: observatie chips a linked test/rubric uses are locked
   (`domain/obs-locks.ts`, `Store.obsLinkScopes`), delete blocked on opdrachten; core fix: a `wi`
   test fits any wiskunde variant (`fits_vak`, was never locked). e2e obs-opd +2.
+- Part 8 done: `940c718` PO form scope lock after scores (keeps the saved subcategory);
+  `bfeff5e` question max/soort asks once, max below an entered score disabled
+  (`domain/question-locks.ts`, `Store.highestEnteredScores`); `02ce863` group membership confirm
+  (`domain/group-membership.ts`, Groep bewerken save; CSV import already asked). e2e +3.
 
-**Next action:** part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
+**Next action:** part 9 (was: part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
 max/soort confirm, max below an entered score refused; group membership confirm), part 9
 (Gegevenscontrole checks), mock guards for students/groups/exams/observaties; then sub-task 6
 (gate, review, release 0.32). Ask the user about 9 n6 (SPDX in toml/yml) at the report.

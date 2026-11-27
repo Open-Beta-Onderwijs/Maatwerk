@@ -500,9 +500,122 @@ fn check_references(
             }
             check_po_exam(rel, value, students, out);
             check_exam_rubric_refs(rel, year, value, &exam_by, out);
+            check_exam_lock_fits(rel, value, json, out);
         } else if rest.starts_with("scores/") {
             check_scores(rel, year, value, students, exams, out);
             check_po_scores(rel, year, value, &exam_by, out);
+            check_removed_questions(rel, year, value, &exam_by, out);
+        }
+    }
+}
+
+// ── Edit locks broken on another PC (step 41, edit-locks.md section 5) ──────────────────────
+// A PC with an older Maatwerk, or two PCs at once through sync, can write around a lock. These
+// checks only report it (warnings); nothing is rewritten.
+
+/// The ids in `obs_ids` of `v`, in order, once.
+fn obs_ids_of(v: &Value) -> Vec<&str> {
+    let mut out: Vec<&str> = Vec::new();
+    for id in v
+        .get("obs_ids")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+    {
+        if !out.contains(&id) {
+            out.push(id);
+        }
+    }
+    out
+}
+
+/// A PO outside its rubric's scope (decisions 8, 9) and an observatie the test uses outside the
+/// observatie's scope (decision 12). Not for rubrics: the rubric editor offers every PO
+/// observatie, so a rubric outside an observatie's scope is normal use there.
+fn check_exam_lock_fits(rel: &str, exam: &Value, json: &BTreeMap<&str, Value>, out: &mut Found) {
+    if crate::rubrics::is_po_exam(exam)
+        && let Some(rid) = crate::rubrics::exam_rubric_id(exam)
+        && let Some(rubric) = json.get(format!("rubrics/{rid}.json").as_str())
+    {
+        let misfits = crate::locks::po_misfits_rubric(exam, rubric);
+        if !misfits.is_empty() {
+            out.warn(
+                IssueKind::Reference,
+                rel,
+                format!(
+                    "De PO past niet bij de rubric {rid}: {} (de rubric heeft dat niet)",
+                    misfits.join(", ")
+                ),
+            );
+        }
+    }
+    if crate::rubrics::is_po_exam(exam) {
+        return; // a PO's observaties come from its rubric
+    }
+    for obs in obs_ids_of(exam) {
+        let Some(o) = json.get(format!("observaties/{obs}.json").as_str()) else {
+            continue; // "bestaat niet" is reported with the references
+        };
+        let misfits = crate::locks::obs_misfits_test(o, exam);
+        if !misfits.is_empty() {
+            out.warn(
+                IssueKind::Reference,
+                rel,
+                format!(
+                    "Observatie {obs} past niet bij deze toets: {} (de observatie heeft dat niet)",
+                    misfits.join(", ")
+                ),
+            );
+        }
+    }
+}
+
+/// Scores for a question the test no longer has (a question removed while there were scores).
+fn check_removed_questions(
+    rel: &str,
+    year: &str,
+    record: &Value,
+    exam_by: &ExamsById<'_>,
+    out: &mut Found,
+) {
+    let Some(Value::Object(scores)) = record.get("scores") else {
+        return;
+    };
+    for (exam_id, qs) in scores {
+        let (Some(exam), Some(qs)) = (exam_by.get(&(year, exam_id.as_str())), qs.as_object())
+        else {
+            continue; // a missing test is reported with the references
+        };
+        if crate::rubrics::is_po_exam(exam) {
+            continue;
+        }
+        let ids: BTreeSet<String> = exam
+            .get("questions")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|q| match q.get("id") {
+                Some(Value::String(s)) => Some(s.clone()),
+                Some(Value::Number(n)) => Some(n.to_string()),
+                _ => None,
+            })
+            .collect();
+        let gone: Vec<&str> = qs
+            .keys()
+            .filter(|q| !ids.contains(*q))
+            .map(String::as_str)
+            .collect();
+        if !gone.is_empty() {
+            let what = if gone.len() == 1 { "vraag" } else { "vragen" };
+            out.warn(
+                IssueKind::Reference,
+                rel,
+                format!(
+                    "Scores voor {what} {} van toets {exam_id}, die de toets niet meer heeft",
+                    gone.join(", ")
+                ),
+            );
         }
     }
 }

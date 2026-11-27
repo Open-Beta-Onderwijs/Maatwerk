@@ -252,3 +252,13 @@ year)`. Commands `exam_has_data`, `students_with_data`; the UI's `examHasScores`
 9. **Gegevenscontrole** (other PCs): PO outside its rubric's scope; scores for a question the
    exam no longer has; an observatie on a test outside the observatie's jaarlagen/schoolsoort; a
    link to an observatie that does not exist (opdrachten too).
+
+   Done (step 41): "outside" is what the app would never offer, so normal use reports nothing:
+   a test gets the observaties of its jaarlaag, a shared schoolsoort and its vak (toetstype
+   Toets), as `toets-edit.ts` offers them; a PO gets rubrics of its vak and jaarlaag with a shared
+   schoolsoort (`matchingRubrics`). The write guards are stricter (a value in use is never
+   removed). Rubrics are not checked against their observaties' scope: the rubric editor offers
+   every PO observatie. An empty jaarlagen or schoolsoort list on an observatie allows all (as
+   the Observaties tab's filters); the guard follows that too. Missing observaties were already
+   reported for tests, rubrics and opdrachten. The `school` fixture gets 64 warnings (its
+   generator links observaties across jaarlagen); `tiny` none.
