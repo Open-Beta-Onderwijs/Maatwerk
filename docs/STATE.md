@@ -76,8 +76,16 @@ Baseline: cargo test green.
   offer rules, so normal use reports nothing; rules in `edit-locks.md` part 9). Core: no
   jaarlagen on an observatie = all. Golden v3: the inhaal's own wisb observatie now warns.
   `school` fixture 64 warnings (generator), `tiny` 0.
-- Mock guards (next commit): `bridge/mock/mock-locks.ts` (students, groups, exams, observaties;
-  not the single-write family rule). Vitest 1007.
+- `e5314bd` mock guards: `bridge/mock/mock-locks.ts` (students, groups, exams, observaties;
+  not the single-write family rule). The full e2e run found the D34 CSV import (replaces a
+  group with students and fields) refused since part 3: core and mock now let a write that
+  empties the group change its fields (tell the user).
+- **Gate (local) at `e5314bd`:** fmt, clippy, cargo test (732, 27 suites), deny, SPDX (now
+  TOML/YAML too), lint, typecheck, Vitest 1007 + node 47, licences, e2e chromium 444/444 (after
+  the D34 fix), visual 171/177: `modal-toets-edit` (max buttons below an entered score faded)
+  and `modal-observatie-edit` (Havo, Vwo, Natuurkunde locked by the rubric) in 3 themes,
+  intended, **baselines not updated: wait for the user's OK**.
+- Review: reviewer subagent on `step-40..HEAD` -> `docs/reviews/step-41.md`.
 
 **Next action:** sub-task 6 (gate, review, release 0.32). Old list, all done: part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
 max/soort confirm, max below an entered score refused; group membership confirm), part 9
