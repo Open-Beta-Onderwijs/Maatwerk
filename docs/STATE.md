@@ -19,10 +19,12 @@ Baseline: cargo test green.
   Beheer › Instellingen (custom select "Ouder dan schooljaar", least preselected, confirm with
   count and size). `formatSize` moved to `domain/format.ts`. Tests: core 5 (+1 unix), Vitest
   3, e2e beheer 8/8. **Visual `admin-instellingen` (3 themes) changed (new card, empty state):
-  baseline update waits for the user's OK** (screens shown 2026-11-27).
+  user OK 2026-11-27: local updated, CI copies dropped (`4bac3d1`); commit them from the next
+  CI run's artifacts.**
 
-**Next action:** sub-task 2 (storage and watcher items), after the user's OK on the visual
-baseline (or in parallel). Then 3, 4, 5 (edit locks), 6 (gate).
+**Next action:** sub-task 2 (storage and watcher items; backlog ids in `docs/backlog.md`).
+Commit the CI `admin-instellingen` baselines from the first CI run of this branch. Then 3, 4,
+5 (edit locks), 6 (gate).
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 
