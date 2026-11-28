@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-28 (step 41: visuals OK, CI baselines, e2e race fixed; CI pending)
+Last updated: 2026-11-28 (step 41: all CI baselines in, macOS test fix; CI pending)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -104,8 +104,13 @@ Baseline: cargo test green.
   re-navigated while app.js was still importing (WebKit "Importing a module script failed");
   `6118158` waits for the subject cards first (test only). Pushed.
 
-**Next action:** next CI run: commit the Linux `splash` baseline from its artifact (check
-0.32.0); CI green; merge on the user's OK
+- CI 46129697015: Windows green; Linux only the missing `splash` baseline (committed from its
+  artifact, checked 0.32.0); macOS cargo test: `import_file_names_a_file_name_it_cannot_read`
+  could not create its non-UTF-8 file name (APFS, EILSEQ): skipped on macOS when the file
+  system refuses the name, Linux keeps it. Pushed, CI rerun.
+
+**Next action:** CI green on all jobs (macOS e2e/visual not yet seen on this branch's last
+fixes); merge on the user's OK
 (tag `step-41`). Tell the user: the emptying group write rule (D34), the offer rules in
 Gegevenscontrole, empty jaarlagen = all, the wiskunde vak fix.
 
