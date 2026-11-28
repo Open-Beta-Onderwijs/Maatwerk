@@ -620,7 +620,16 @@ mod tests {
         let pic = tmp
             .path()
             .join(std::ffi::OsStr::from_bytes(b"f\xffoto.png"));
-        std::fs::write(&pic, png(4, 4)).unwrap();
+        match std::fs::write(&pic, png(4, 4)) {
+            Ok(()) => {}
+            // APFS refuses names that are not UTF-8 (EILSEQ), so such a file cannot exist on
+            // macOS; Linux keeps the test (CI run 46129697015).
+            Err(e) if cfg!(target_os = "macos") => {
+                eprintln!("skipped: the file system refuses the name ({e})");
+                return;
+            }
+            Err(e) => panic!("{e}"),
+        }
         match import_file(&s, "op-1", &pic, "foto", false).unwrap() {
             Stored::Rejected { message } => assert!(message.contains("bestandsnaam"), "{message}"),
             other => panic!("{other:?}"),
