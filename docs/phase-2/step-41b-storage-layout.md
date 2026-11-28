@@ -1,6 +1,6 @@
 # Step 41b: storage layout report (ADR-0012, sub-task 1)
 
-Status: **draft for the user (STOP)**, 2026-11-28. Written before any code, from the real layout:
+Status: **approved** by the user, 2026-11-28 (answers in section 9). Written before any code, from the real layout:
 the code paths in `maatwerk-core`, `maatwerk-cli`, `src-tauri` (inventory with file:line refs
 below) and the synthetic `school` fixture (`tools/fixtures`, 5130 files, 23 MB). When the user
 approves it (with the answers in section 9), ADR-0012 becomes **accepted** with these choices.
@@ -157,7 +157,14 @@ longer paths itself (verbatim prefix), and OneDrive allows 400, but **Explorer**
 ids are short (`toets-<t36>-<r6>`, `groep-<t>-<r>`); old ones are title slugs **without a length
 limit** (`RelPath::parse` has none), so real data may be longer than the fixture (Q3).
 
-**Proposed:** a long-name rule as Cryptomator does: a name whose encoded form would exceed 100
+**Decided (2026-11-28, from the user's numbers for Q3):** real folder `root 87 maxrel 63 maxstem
+42 over40 1`. The longest real name (42 + `.json` = 47 bytes) encodes to 105 characters: the
+deepest path becomes 87 + 1 + 16 + 105 = **209**. Every id the app makes now is short and
+opaque (`toets-…`, `groep-…`, `rubric-<t>`, `obs-<ms>`, `gebr-<ms>`, student numbers), so names
+do not grow past today's. **No long-name rule**; instead the vault refuses a logical file name
+over **64 bytes** (encoded 132 characters; worst case 87 + 1 + 16 + 132 = 236 here). The
+migration checks every name before it converts anything and stops with a report if one is too
+long. The rejected proposal, for the record: a long-name rule as Cryptomator does: a name whose encoded form would exceed 100
 characters (a logical name over 44 bytes) is stored as `<base32 of the first 20 bytes of SHA-256(encrypted name)>.mwk` (36
 chars + `.mwk`), with the full encrypted name in the file's header. Only those (rare) files must
 be opened to be listed. The migration report states how many files used it.
@@ -168,7 +175,7 @@ be opened to be listed. The migration report states how many files used it.
 `config.json`, no `school.json` stub. Q2 data names only (section 1). Q4 deflate (`flate2`). Q5
 all four key file copies with "Sleutel herstellen". Q6 listings skip conflict copies,
 Gegevenscontrole reports them. Q7 old plain snapshots deleted after the first encrypted one. Q3:
-**open**, the user measures the real folder; the threshold is set from those numbers.
+the user's numbers (section 8): no long-name rule, logical file names capped at 64 bytes.
 
 - **Q1 Format marker.** `config.json` `schema_version: 4` (plain) as the marker, so 0.9-0.32
   refuse the folder at start with "nieuwere versie" and never see unreadable files; `school.json`

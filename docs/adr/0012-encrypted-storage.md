@@ -1,8 +1,28 @@
 # ADR-0012: Encrypted storage in the shared folder
 
-Status: **proposed**, 2026-11-22 (the user's design answers, recorded before step 41b). Accepted
-only together with the storage layout report of step 41b (sub-task 1), which the user approves
-first.
+Status: **accepted**, 2026-11-28, together with the storage layout report
+[`docs/phase-2/step-41b-storage-layout.md`](../phase-2/step-41b-storage-layout.md), which the
+user approved (proposed 2026-11-22).
+
+## Settled by the layout report (overrides the text below where they differ)
+
+- **Format marker:** plain `config.json` `schema_version: 4`; apps 0.9-0.32 refuse the folder at
+  start ("nieuwere versie"). No plain `school.json` stub: `school.json` is fully encrypted at its
+  logical path (items 5, 6 and "Older apps" below).
+- **Names:** a file with encrypted content gets an encrypted name: AES-SIV over the full logical
+  file name, lowercase base32, extension `.mwk`. Folder names fixed by the code (top-level, year,
+  `exams`, `groups`, `scores/<vak>`, `templates/rtti`) and `opdrachten/<id>` folders stay plain
+  (item 3). Logical file names are capped at 64 bytes; no long-name rule.
+- **Plain:** `config.json`, `sleutels.json` (wrapped keys), opdracht `.typ` files and images,
+  snapshot zip names, `rapporten/`. **`afbeeldingen/` is encrypted** (item 5).
+- **Compression:** deflate (`flate2`) before encryption, flag bit in the header; images not
+  deflated (item 2).
+- **Key file:** `sleutels.json` in the root, a copy in `snapshots/`, in every snapshot zip, and a
+  local cache per PC; "Sleutel herstellen" from a copy, never a silent new key.
+- **Snapshots** zip the physical (encrypted) files as they are; old plain snapshots are deleted
+  after the migration's first encrypted snapshot.
+- **Conflict copies** (`<b32>-<PC>.mwk`) are skipped by listings and reported by
+  Gegevenscontrole.
 
 ## Context
 

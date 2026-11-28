@@ -24,8 +24,15 @@ Plan: `PLAN-2.md` step 41b (41b-a: sub-tasks 1-3, 41b-b: 4-7). Baseline: cargo t
 - User 2026-11-28: `afbeeldingen/` encrypted too (report + ADR item 5, `7051187`); Q1, Q2,
   Q4-Q7 answered as recommended (report section 9). Q3 open: the user measures the real folder.
 
-**Next action:** STOP: the user's Q3 numbers (root, maxrel, maxstem, over40) -> set the
-long-name threshold in the report, ADR-0012 -> accepted, then sub-task 2 (`maatwerk-core::vault`).
+- Q3 numbers (user): root 87, maxrel 63, maxstem 42, over40 1 -> deepest path 209 after
+  encryption; no long-name rule, logical file names capped at 64 bytes (report section 8).
+  Report approved, **ADR-0012 accepted** with a "Settled by the layout report" section.
+  Sub-task 1 done.
+
+**Next action:** sub-task 2: `maatwerk-core::vault` (format `MWK1`, XChaCha20-Poly1305 with the
+logical path as AD, AES-SIV names in base32 + `.mwk`, HKDF subkeys, wrapped DEK per school with
+key ids, deflate flag, 64-byte name cap, conflict-suffix split); tests per PLAN-2 41b item 2;
+licences and `deny.toml` for the new crates.
 
 ## Step 41 (2026-11-27, on `step/41-data-robustness`): data robustness, `rapporten/`, edit locks
 
