@@ -38,6 +38,9 @@ date, and ships it next to the exe; "Over Maatwerk" in the app shows it.
 | similar (AI proposal diff)                       | Apache-2.0            |
 | uuid (AI session ids)                            | Apache-2.0 OR MIT     |
 | process-wrap (AI CLI job object, Windows)        | Apache-2.0 OR MIT     |
+| chacha20poly1305, aes-siv, hkdf (vault)          | Apache-2.0 OR MIT     |
+| getrandom, zeroize (vault keys and nonces)       | MIT OR Apache-2.0     |
+| flate2 (vault deflate)                           | MIT OR Apache-2.0     |
 
 Test-only (not shipped): proptest (MIT OR Apache-2.0), tempfile (MIT OR Apache-2.0), typst-render
 (Apache-2.0), tiny-skia (BSD-3-Clause).

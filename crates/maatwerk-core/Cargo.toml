@@ -15,6 +15,14 @@ maatwerk-grades.workspace = true
 argon2 = "0.5.3"
 password-hash = { version = "0.5.0", features = ["getrandom"] }
 base64 = "0.23.1"
+# Encrypted storage (ADR-0012, step 41b): contents XChaCha20-Poly1305, names AES-SIV, subkeys
+# HKDF-SHA256, nonces and keys from the OS RNG, deflate before encryption.
+aes-siv = "0.8.0"
+chacha20poly1305 = "0.11.0"
+flate2 = "1.1.10"
+getrandom = "0.4.3"
+hkdf = "0.13.0"
+zeroize = "1.8.2"
 # Opdracht image thumbnails and clipboard PNGs; the same version and formats Typst already uses.
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif", "webp"] }
 # PDF merge for batches (ADR-0002 5a). No default features: no chrono clock, no rayon.

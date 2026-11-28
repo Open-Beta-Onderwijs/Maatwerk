@@ -29,6 +29,7 @@ pub mod snapshots;
 pub mod storage;
 pub mod typst_svc;
 pub mod validate;
+pub mod vault;
 pub mod watcher;
 
 pub use error::{Error, Result};

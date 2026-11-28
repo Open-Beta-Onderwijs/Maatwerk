@@ -29,10 +29,22 @@ Plan: `PLAN-2.md` step 41b (41b-a: sub-tasks 1-3, 41b-b: 4-7). Baseline: cargo t
   Report approved, **ADR-0012 accepted** with a "Settled by the layout report" section.
   Sub-task 1 done.
 
-**Next action:** sub-task 2: `maatwerk-core::vault` (format `MWK1`, XChaCha20-Poly1305 with the
-logical path as AD, AES-SIV names in base32 + `.mwk`, HKDF subkeys, wrapped DEK per school with
-key ids, deflate flag, 64-byte name cap, conflict-suffix split); tests per PLAN-2 41b item 2;
-licences and `deny.toml` for the new crates.
+- User 2026-11-28: `afbeeldingen/` plain again except the gebruiker photos (`ef40eb0`).
+- Sub-task 2 done: `maatwerk_core::vault` (pure, no I/O): `mod.rs` (format `MWK1` | version |
+  flags | key id | nonce | ct+tag, AD = header + logical path; deflate flag with a 64 MB
+  inflate cap; AES-256-SIV names, AD = parent path, base32 + `.mwk`, 64-byte cap, conflict
+  suffix split at the first non-base32 char), `keys.rs` (`Kek` with id, public test KEK,
+  `KeyFile` = `sleutels.json` with `kek`/`names`/`current`/wrapped entries, rotation keeps the
+  name key, `TestKey`/`WrongKek`), `base32.rs` (canonical only). 20 tests: KATs (XChaCha draft
+  A.3.1, Wycheproof AES-SIV-512 tc 302/303, RFC 5297 A.1, RFC 4648 base32), pinned format and
+  name, round trips, every byte flipped, every truncation, swap, rotation, bomb cap, names,
+  conflict copies, key file tampering. New deps chacha20poly1305 0.11, aes-siv 0.8, hkdf 0.13,
+  getrandom 0.4, zeroize, flate2 (all MIT/Apache; deny ok; notices regenerated). cargo test 755.
+
+**Next action:** sub-task 3 (build key): `MAATWERK_MASTER_KEY` at build time (`.env`
+gitignored, `.env.example` committed), release build without it fails, debug/test use
+`Kek::test()`, KEK split/XOR in the binary; CI secret (user adds it) and the key backup outside
+GitHub (user). Ends 41b-a.
 
 ## Step 41 (2026-11-27, on `step/41-data-robustness`): data robustness, `rapporten/`, edit locks
 
