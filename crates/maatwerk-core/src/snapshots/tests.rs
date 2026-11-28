@@ -17,7 +17,7 @@ fn setup() -> (tempfile::TempDir, Storage) {
 
 /// Without the settle wait (tests that are not about it).
 fn run_if_due(s: &Storage, now: OffsetDateTime, who: &str) -> Result<Outcome> {
-    run_if_due_with(s, now, who, &|| {})
+    run_if_due_with(s, now, who, &|| true)
 }
 
 fn rel(s: &str) -> RelPath {
@@ -173,6 +173,40 @@ fn retention_keeps_the_newest_per_day_week_and_month() {
         },
     );
     assert_eq!(none.len(), 1, "the newest always stays");
+}
+
+/// Review 26-28 m6: the kinds the Instellingen screen shows come from here (the UI repeated the
+/// rule). The example of the UI test it replaces.
+#[test]
+fn each_kept_snapshot_has_the_first_rule_that_keeps_it() {
+    let all: Vec<Snapshot> = [
+        "2026-11-04 1118.zip",
+        "2026-11-04 0900.zip", // same day, older: kept by nothing
+        "2026-11-03 0842.zip",
+        "2026-10-28 0905.zip",
+        "2026-09-15 0812.zip",
+    ]
+    .iter()
+    .map(|n| snap(n))
+    .collect();
+    let settings = Settings {
+        interval_hours: 24,
+        daily: 2,
+        weekly: 2,
+        monthly: 3,
+    };
+    let got = kinds(&all, settings);
+    let shown: Vec<Option<Kind>> = all.iter().map(|s| got.get(&s.name).copied()).collect();
+    assert_eq!(
+        shown,
+        [
+            Some(Kind::Dagelijks),
+            None,
+            Some(Kind::Dagelijks),
+            Some(Kind::Wekelijks),
+            Some(Kind::Maandelijks),
+        ]
+    );
 }
 
 #[test]
@@ -408,6 +442,7 @@ fn m1_a_claim_overwritten_while_settling_means_busy() {
     let out = run_if_due_with(&s, now, "PC-1", &|| {
         // OneDrive brings in PC-2's state.json.
         s.write_json(&rel(STATE_FILE), &other, Expect::Any).unwrap();
+        true
     })
     .unwrap();
     assert_eq!(out, Outcome::Busy);
@@ -424,6 +459,7 @@ fn m1_a_snapshot_written_elsewhere_while_settling_means_not_due() {
     let out = run_if_due_with(&s, now, "PC-1", &|| {
         let done = json!({ "last": "2026-10-31 0815.zip", "lastAtMs": ms(now), "lastBy": "PC-2" });
         s.write_json(&rel(STATE_FILE), &done, Expect::Any).unwrap();
+        true
     })
     .unwrap();
     assert_eq!(out, Outcome::NotDue);
@@ -440,8 +476,45 @@ fn m1_an_undisturbed_claim_is_kept_after_settling() {
         let state = s.read_json(&rel(STATE_FILE)).unwrap().unwrap();
         assert_eq!(state["claim"]["by"], "PC-1");
         seen.set(true);
+        true
     })
     .unwrap();
     assert!(seen.get());
     assert!(matches!(out, Outcome::Written { .. }), "{out:?}");
+}
+
+/// Review 10 m3: an app closed during the settle wait left its claim for 30 minutes, so that
+/// day's snapshot could be skipped everywhere. Stopping now releases the claim; no zip.
+#[test]
+fn m3_stopping_while_settling_releases_the_claim() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    let now = datetime!(2026-10-31 08:15 UTC);
+    let out = run_if_due_with(&s, now, "PC-1", &|| false).unwrap();
+    assert_eq!(out, Outcome::Stopped);
+    assert!(names(&s).is_empty());
+    let state = s.read_json(&rel(STATE_FILE)).unwrap().unwrap();
+    assert!(state.get("claim").is_none(), "{state}");
+    // Another PC (or this one at its next start) can take it at once.
+    assert!(matches!(
+        run_if_due(&s, now + time::Duration::minutes(1), "PC-2").unwrap(),
+        Outcome::Written { .. }
+    ));
+}
+
+/// m3: a claim another PC wrote meanwhile stays when this app stops.
+#[test]
+fn m3_stopping_leaves_another_pcs_claim() {
+    let (_t, s) = setup();
+    put(&s, "config.json", b"{}");
+    let now = datetime!(2026-10-31 08:15 UTC);
+    let other = json!({ "claim": { "by": "PC-2", "atMs": ms(now) + 5_000 } });
+    let out = run_if_due_with(&s, now, "PC-1", &|| {
+        s.write_json(&rel(STATE_FILE), &other, Expect::Any).unwrap();
+        false
+    })
+    .unwrap();
+    assert_eq!(out, Outcome::Stopped);
+    let state = s.read_json(&rel(STATE_FILE)).unwrap().unwrap();
+    assert_eq!(state["claim"]["by"], "PC-2", "{state}");
 }

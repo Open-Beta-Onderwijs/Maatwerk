@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 [package]
 name = "maatwerk-grades"
 description = "Maatwerk grade rules: grades, attempts, averages, statistics. Pure: no I/O, no tauri, no Typst."

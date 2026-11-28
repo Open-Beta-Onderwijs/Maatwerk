@@ -50,6 +50,9 @@ pub struct RubricUse {
     pub year: String,
     pub exam_id: String,
     pub naam: String,
+    /// The PO's jaarlaag and schoolsoorten: these stay in the rubric (decision 9, step 41).
+    pub jaarlaag: String,
+    pub schoolsoort: Vec<String>,
 }
 
 /// `rel` split as `<dir>/<stem>.json`, the folder and extension in any ASCII case: Windows and
@@ -90,6 +93,18 @@ pub fn usage(storage: &Storage) -> Result<BTreeMap<String, Vec<RubricUse>>> {
                 exam_id: text(&exam, "id"),
                 // An exam's name is its `title`.
                 naam: text(&exam, "title"),
+                jaarlaag: exam
+                    .get("jaarlaag")
+                    .and_then(plain_text)
+                    .unwrap_or_default(),
+                schoolsoort: exam
+                    .get("schoolsoort")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .map(str::to_owned)
+                    .collect(),
             });
         }
     }
@@ -100,17 +115,22 @@ fn text(v: &Value, key: &str) -> String {
     v.get(key).and_then(Value::as_str).unwrap_or("").to_owned()
 }
 
-/// How many exams use rubric `id`, for the guards: fails closed (review 21 m2). A year folder
+/// How many exams use rubric `id`, for the guards: fails closed (review 21 m2).
+fn uses_of(storage: &Storage, id: &str) -> Result<usize> {
+    Ok(pos_using(storage, id)?.len())
+}
+
+/// The exams that use rubric `id`, for the guards: fails closed (review 21 m2). A year folder
 /// that cannot be listed or an exam file that cannot be read is a refusal naming it, not a skip:
 /// a skipped file could be the PO that locks the rubric.
-fn uses_of(storage: &Storage, id: &str) -> Result<usize> {
+fn pos_using(storage: &Storage, id: &str) -> Result<Vec<Value>> {
     let unreadable = |what: &str, e: &dyn std::fmt::Display| {
         refuse(format!(
             "Kan niet nagaan of deze rubric in gebruik is: {what} is onleesbaar ({e}). Herstel het \
              via Gegevenscontrole en probeer het opnieuw."
         ))
     };
-    let mut n = 0;
+    let mut out = Vec::new();
     for year in storage
         .try_list_years()
         .map_err(|e| unreadable("de gedeelde map", &e))?
@@ -125,13 +145,64 @@ fn uses_of(storage: &Storage, id: &str) -> Result<usize> {
             }
             let file = RelPath::parse(&format!("{}/{name}", dir.as_str()))?;
             match storage.read_json(&file) {
-                Ok(Some(exam)) => n += usize::from(exam_rubric_id(&exam) == Some(id)),
+                Ok(Some(exam)) if exam_rubric_id(&exam) == Some(id) => out.push(exam),
+                Ok(Some(_)) => {}
                 Ok(None) => {} // gone meanwhile, or `null`
                 Err(e) => return Err(unreadable(file.as_str(), &e)),
             }
         }
     }
-    Ok(n)
+    Ok(out)
+}
+
+/// A JSON value as text (`4` and `"4"` are the same jaarlaag).
+fn plain_text(v: &Value) -> Option<String> {
+    match v {
+        Value::String(s) => Some(s.clone()),
+        Value::Number(n) => Some(n.to_string()),
+        _ => None,
+    }
+}
+
+/// Decision 9 (step 41): the jaarlagen and schoolsoorten that `new` drops but a PO using the
+/// rubric has. Adding, and dropping values no PO has, is free.
+fn scope_in_use(storage: &Storage, id: &str, old: &Rubric, new: &Rubric) -> Result<Vec<String>> {
+    let dropped_jl: Vec<&String> = old
+        .jaarlagen
+        .iter()
+        .filter(|j| !new.jaarlagen.contains(j))
+        .collect();
+    let dropped_ss: Vec<&String> = old
+        .schoolsoort
+        .iter()
+        .filter(|s| !new.schoolsoort.contains(s))
+        .collect();
+    if dropped_jl.is_empty() && dropped_ss.is_empty() {
+        return Ok(Vec::new());
+    }
+    let mut out = Vec::new();
+    for po in pos_using(storage, id)? {
+        let naam = po.get("title").and_then(Value::as_str).unwrap_or("een PO");
+        if let Some(jl) = po.get("jaarlaag").and_then(plain_text)
+            && dropped_jl.iter().any(|j| **j == jl)
+        {
+            out.push(format!("jaarlaag {jl} (gebruikt door {naam})"));
+        }
+        for ss in po
+            .get("schoolsoort")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+        {
+            if dropped_ss.iter().any(|d| d.as_str() == ss) {
+                out.push(format!("{ss} (gebruikt door {naam})"));
+            }
+        }
+    }
+    out.sort();
+    out.dedup();
+    Ok(out)
 }
 
 fn refuse(message: String) -> Error {
@@ -258,6 +329,16 @@ pub(crate) fn guard_under_lock(storage: &Storage, rel: &RelPath, value: &Value) 
             ))),
         };
     };
+    let in_use = scope_in_use(storage, id, &old, &new)?;
+    if !in_use.is_empty() {
+        return Err(Error::EditLocked {
+            path: rel.to_string(),
+            message: format!(
+                "Rubric niet opgeslagen: een PO gebruikt deze rubric, dus blijft erin: {}",
+                in_use.join("; ")
+            ),
+        });
+    }
     let locked = rubric::locked_changes(&old, &new);
     if locked.is_empty() {
         return Ok(());

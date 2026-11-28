@@ -237,6 +237,34 @@ test.describe('rubric editor', () => {
     expect(saved.categories[0]!.niveaus[0]!.titel).toBe('Zwak');
   });
 
+  test("in use: the jaarlaag and schoolsoort of its PO's stay; others are free (decision 9)", async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const rubric = await readMockJson<Rubric>(page, `rubrics/${ONDERZOEK}.json`);
+    await seedFiles(page, {
+      ...poExam('po-a', ONDERZOEK), // jaarlaag 3, Havo
+      [`rubrics/${ONDERZOEK}.json`]: {
+        ...rubric,
+        jaarlagen: ['3', '4'],
+        schoolsoort: ['Havo', 'Vwo'],
+      },
+    });
+    await login(page);
+    await rubrics(page);
+    await card(page, ONDERZOEK).locator('.rubric-card-name').click();
+    await expect(editor(page).locator('#rubric-jl [data-jl="3"]')).toBeDisabled();
+    await expect(editor(page).locator('#rubric-ss [data-ss="Havo"]')).toBeDisabled();
+    await expect(editor(page).locator('#rubric-jl [data-jl="4"]')).toBeEnabled();
+    await expect(editor(page).locator('#rubric-ss [data-ss="Vwo"]')).toBeEnabled();
+    await editor(page).locator('#rubric-jl [data-jl="4"]').click();
+    await editor(page).locator('#rubric-jl [data-jl="5"]').click();
+    await page.locator('#rubric-save').click();
+    await expect(editor(page)).toHaveCount(0);
+    const saved = await readMockJson<Rubric>(page, `rubrics/${ONDERZOEK}.json`);
+    expect([...saved.jaarlagen].sort()).toEqual(['3', '5']);
+  });
+
   test('Dupliceren opens a free copy that saves as a new rubric', async ({ page }) => {
     await seedFiles(page, poExam('po-a', ONDERZOEK));
     await login(page);

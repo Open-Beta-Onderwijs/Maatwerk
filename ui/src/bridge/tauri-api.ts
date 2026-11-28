@@ -229,7 +229,12 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
 
     async readJsonVersioned(relPath) {
       const r = await c.readJsonVersioned(relPath);
-      if (r.status === 'error') return { error: message(r.error) };
+      if (r.status === 'error') {
+        // corrupt_json: `found` is the hash of the unreadable bytes (review 4a m4).
+        const unreadableHash =
+          r.error.code === 'corrupt_json' ? (r.error.details.found ?? null) : null;
+        return { error: message(r.error), unreadableHash };
+      }
       return r.data ?? { data: null, hash: null };
     },
 
@@ -393,6 +398,10 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
     migrateDataFolder: (dryRun) => orThrow(c.migrateDataFolder(dryRun ?? null)),
     validateDataFolder: () => orThrow(c.validateDataFolder()),
     rubricUsage: () => orThrow(c.rubricUsage()),
+    examHasData: (year, vak, examId) => orThrow(c.examHasData(year, vak, examId)),
+    saveExamFamily: (year, exams) =>
+      orThrow(c.saveExamFamily(year, exams as Value[])) as Promise<Json[]>,
+    studentsWithData: (year) => orThrow(c.studentsWithData(year)),
     // The command returns JSON; its shape is `VakNumbers` (maatwerk_core::numbers).
     vakNumbers: async (year, vak) =>
       (await orThrow(c.vakNumbers(year, vak))) as unknown as VakNumbers,
@@ -416,6 +425,8 @@ export function createTauriApi(backend: Backend = tauriBackend): MaatwerkApi {
       orThrow(c.copyOpdrachtToSectie(fromId, vak, teacherId, pin)),
     saveTextAs: (defaultName, content) => orThrow(c.saveTextAs(defaultName, content)),
     listSnapshots: () => orThrow(c.listSnapshots()),
+    rapportenUsage: () => orThrow(c.rapportenUsage()),
+    rapportenCleanup: (before) => orThrow(c.rapportenCleanup(before)),
     snapshotForFile: (relPath) => orThrow(c.snapshotForFile(relPath)),
     async restoreFromSnapshot(relPath, snapshot) {
       await orThrow(c.restoreFromSnapshot(relPath, snapshot));

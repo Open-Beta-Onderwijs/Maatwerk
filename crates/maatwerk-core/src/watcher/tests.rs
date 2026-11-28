@@ -29,11 +29,16 @@ impl Rig {
     /// Files present before the watcher starts (the initial snapshot sees them).
     fn with_files(files: &[(&str, &str)]) -> Rig {
         let tmp = tempfile::tempdir().unwrap();
+        for (rel, content) in files {
+            write_file(tmp.path(), rel, content);
+        }
+        Rig::from_dir(tmp)
+    }
+
+    /// A rig on a folder prepared by the test (the initial snapshot sees its files).
+    fn from_dir(tmp: tempfile::TempDir) -> Rig {
         let dir = DataDir::open(tmp.path()).unwrap();
         let root = dir.root().to_path_buf();
-        for (rel, content) in files {
-            write_file(&root, rel, content);
-        }
         let mut engine = Engine::new(dir);
         engine.snapshot();
         Rig {
@@ -341,6 +346,53 @@ fn s34_quirk_first_touch_with_same_content_is_reported_later_touches_not() {
     assert!(rig.changes_to(1_000 + SETTLE).is_empty());
 }
 
+/// Review 5a m4: a colleague's write with the same size inside one mtime tick of the state the
+/// start snapshot saw (no hash yet) left the stat unchanged and was not reported. A recent mtime
+/// makes such a write possible, so an event then counts as a change.
+#[test]
+fn m4_same_size_write_within_one_mtime_tick_is_reported() {
+    let mut rig = Rig::with_files(&[("a.json", r#"{"v":1}"#)]);
+    let mtime = std::fs::metadata(rig.path("a.json"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    rig.write("a.json", r#"{"v":2}"#);
+    let file = std::fs::File::options()
+        .write(true)
+        .open(rig.path("a.json"))
+        .unwrap();
+    file.set_modified(mtime).unwrap();
+    drop(file);
+    rig.event("a.json", 0);
+    assert_eq!(
+        rig.changes_to(SETTLE),
+        [change("a.json", ChangeKind::Changed, None)]
+    );
+    // Now the hash is known: the same bytes again are not a change.
+    rig.event("a.json", 1_000);
+    assert!(rig.changes_to(1_000 + SETTLE).is_empty());
+}
+
+/// The other side of m4: an event on a file whose mtime is old and whose stat did not change
+/// (OneDrive touching attributes, a read) is still not a change, so reading every file once
+/// does not make the UI reload them all.
+#[test]
+fn m4_an_event_on_an_old_unchanged_file_is_not_a_change() {
+    let rig_files = [("a.json", r#"{"v":1}"#)];
+    let root = tempfile::tempdir().unwrap();
+    write_file(root.path(), "a.json", rig_files[0].1);
+    let old = std::time::SystemTime::now() - Duration::from_secs(3_600);
+    std::fs::File::options()
+        .write(true)
+        .open(root.path().join("a.json"))
+        .unwrap()
+        .set_modified(old)
+        .unwrap();
+    let mut rig = Rig::from_dir(root);
+    rig.event("a.json", 0);
+    assert!(rig.changes_to(SETTLE).is_empty());
+}
+
 #[test]
 fn s35_unparsable_json_is_checked_once_more_after_a_second() {
     let mut rig = Rig::new();
@@ -601,8 +653,8 @@ fn m1_a_failed_own_write_releases_the_file() {
     let mut rig = Rig::with_files(&[("a.json", r#"{"v":1}"#)]);
     rig.engine.will_change("a.json");
     rig.engine.change_failed("a.json");
-    // A colleague's write. Different size: same-size content within one mtime tick is not seen
-    // as a change by the stat check (review 5a m4, backlog), which is not what this test is about.
+    // A colleague's write (a different size; same-size writes within one mtime tick: the m4
+    // tests).
     rig.write("a.json", r#"{"v":33}"#);
     rig.event("a.json", 0);
     assert_eq!(

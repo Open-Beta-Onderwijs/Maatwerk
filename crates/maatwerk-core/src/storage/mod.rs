@@ -51,6 +51,10 @@ const V1_MARKERS: [&str; 4] = [
     "opdrachten",
 ];
 
+/// The largest photo, logo or watermark [`Storage::read_photo_data_url`] reads (review 18 m4;
+/// the rapport takes a watermark up to the same 5 MB).
+pub const MAX_PHOTO_BYTES: u64 = 5 * 1024 * 1024;
+
 /// SHA-1 hex of the bytes (`hashContent`, S07). The CAS token; it is never stored.
 pub fn hash_hex(bytes: &[u8]) -> String {
     Sha1::digest(bytes)
@@ -342,10 +346,10 @@ impl Storage {
 
     // ── Reads ────────────────────────────────────────────────────────────────
 
-    /// Raw bytes, `None` if missing (`readWithHash`, S07).
+    /// Raw bytes, `None` if missing (`readWithHash`, S07). A sharing error is retried (4a m6).
     pub fn read_bytes(&self, rel: &RelPath) -> Result<Option<Vec<u8>>> {
         let path = self.dir.resolve(rel)?;
-        match fs::read(&path) {
+        match atomic::read_retrying(&path) {
             Ok(bytes) => Ok(Some(bytes)),
             Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(None),
             Err(e) => Err(Error::io(rel.as_str(), e)),
@@ -380,24 +384,21 @@ impl Storage {
     }
 
     /// Every `*.json` directly in `dir` that parses and is not `null`, sorted by file name
-    /// (`fs:readAllJson`; NTFS order, the same on every platform: the order feeds float sums). Unparsable files, folders and links are skipped; a missing folder
-    /// gives an empty list.
+    /// (`fs:readAllJson`; NTFS order, the same on every platform: the order feeds float sums).
+    /// Unparsable files, folders and links are skipped; a missing folder gives an empty list.
+    /// Invalid UTF-8 is decoded with replacement characters, as `read_json` does (review 4a n7;
+    /// the reference skipped the file, quirks.md).
     pub fn read_all_json(&self, dir: &RelPath) -> Result<Vec<Value>> {
-        Ok(self
-            .json_files(dir, false)?
-            .into_iter()
-            .map(|(_, v)| v)
-            .collect())
+        Ok(self.json_files(dir)?.into_iter().map(|(_, v)| v).collect())
     }
 
     /// The files [`Self::read_json`] would give one by one, with their names: one call for a
-    /// folder of records (score files, Step 7c). Unlike [`Self::read_all_json`], invalid UTF-8
-    /// is decoded with replacement characters, as `read_json` does (review 7c m3).
+    /// folder of records (score files, Step 7c). Invalid UTF-8 as in [`Self::read_all_json`].
     pub fn read_all_json_named(&self, dir: &RelPath) -> Result<Vec<(String, Value)>> {
-        self.json_files(dir, true)
+        self.json_files(dir)
     }
 
-    fn json_files(&self, dir: &RelPath, lossy: bool) -> Result<Vec<(String, Value)>> {
+    fn json_files(&self, dir: &RelPath) -> Result<Vec<(String, Value)>> {
         let path = self.dir.resolve(dir)?;
         let entries = match fs::read_dir(&path) {
             Ok(entries) => entries,
@@ -416,17 +417,10 @@ impl Storage {
                 Ok(t) if t.is_file() => {}
                 _ => continue,
             }
-            let Ok(bytes) = fs::read(entry.path()) else {
+            let Ok(bytes) = atomic::read_retrying(&entry.path()) else {
                 continue;
             };
-            let text = if lossy {
-                String::from_utf8_lossy(&bytes)
-            } else {
-                match std::str::from_utf8(&bytes) {
-                    Ok(t) => t.into(),
-                    Err(_) => continue,
-                }
-            };
+            let text = String::from_utf8_lossy(&bytes);
             match serde_json::from_str::<Value>(&text) {
                 Ok(Value::Null) | Err(_) => {}
                 Ok(v) => {
@@ -486,6 +480,12 @@ impl Storage {
 
     /// `data:<mime>;base64,...`, `None` if missing or unreadable (`fs:readPhotoAsDataUrl`).
     pub fn read_photo_data_url(&self, rel: &RelPath) -> Result<Option<String>> {
+        // Review 18 m4: not read whole when it is over the cap (the watermark loads at start).
+        let too_big = fs::metadata(self.dir.resolve(rel)?).is_ok_and(|m| m.len() > MAX_PHOTO_BYTES);
+        if too_big {
+            tracing::warn!("{rel}: larger than {MAX_PHOTO_BYTES} bytes, not shown");
+            return Ok(None);
+        }
         let Ok(Some(bytes)) = self.read_bytes(rel) else {
             return Ok(None);
         };
@@ -512,9 +512,11 @@ impl Storage {
     pub fn write_json(&self, rel: &RelPath, value: &Value, expect: Expect<'_>) -> Result<String> {
         crate::rubrics::guard_write(self, rel, value, expect)?;
         let (stamped, text) = integrity::stamped_text(value);
-        // The rubric's lock is checked under the commit lock (review 21 m3).
+        // The rubric's lock and the edit locks (step 41) are checked under the commit lock
+        // (review 21 m3).
         self.commit_bytes_checked(rel, text.as_bytes(), expect, true, || {
-            crate::rubrics::guard_under_lock(self, rel, value)
+            crate::rubrics::guard_under_lock(self, rel, value)?;
+            crate::locks::guard_write(self, rel, value)
         })?;
         let value = stamped;
         self.note_stamp(rel.as_str(), &value);
@@ -578,7 +580,7 @@ impl Storage {
         // The temp file is written before the commit lock, so the lock covers only the check
         // and the rename (plus its retries and fallback, which are part of the rename).
         let tmp = atomic::TempFile::write(&path, bytes).map_err(|e| Error::io(rel.as_str(), e))?;
-        let _guard = self.commit.acquire()?;
+        let _guard = self.commit.acquire(rel.as_str())?;
         if !self.expect_holds(rel, expect)? {
             return Err(Error::Conflict {
                 path: rel.to_string(),
@@ -605,9 +607,11 @@ impl Storage {
     pub fn delete(&self, rel: &RelPath) -> Result<()> {
         let path = self.dir.resolve(rel)?;
         self.check_writable(rel)?;
-        let _guard = self.commit.acquire()?;
-        // Under the lock: no PO from this PC can start using the rubric meanwhile (21 m3).
+        let _guard = self.commit.acquire(rel.as_str())?;
+        // Under the lock: no PO from this PC can start using the rubric meanwhile (21 m3), and
+        // nothing can start depending on what goes (edit locks, step 41).
         crate::rubrics::guard_delete(self, rel)?;
+        crate::locks::guard_delete(self, rel)?;
         if let Some(observer) = &self.observer {
             observer.will_change(rel);
         }
@@ -734,6 +738,7 @@ fn parse_json(rel: &RelPath, bytes: &[u8]) -> Result<Value> {
     serde_json::from_str(&text).map_err(|e| Error::CorruptJson {
         path: rel.to_string(),
         message: e.to_string(),
+        hash: hash_hex(bytes),
     })
 }
 

@@ -57,6 +57,9 @@ fn the_migrated_fixture_has_no_errors_only_its_known_strays() {
     assert_eq!(
         paths,
         [
+            // The inhaal keeps an older observatie of its own (wisb, jaarlaag 4) that does not
+            // fit it (nat, jaarlaag 3): the step 41 lock check reports it.
+            ("2025-2026/exams/toets-inhaal-1.json", IssueKind::Reference),
             ("notities.txt", IssueKind::Stray),
             ("opdrachten/images/weg/x.png", IssueKind::Stray),
             ("opdrachten/verweesd.typ", IssueKind::Stray),
@@ -791,4 +794,121 @@ fn po_leftovers_and_odd_references_are_warned_about() {
             .iter()
             .any(|i| i.message.contains("geen projectgroep"))
     );
+}
+
+/// Review 18 n4: a message names a value briefly, not as the whole JSON object.
+#[test]
+fn messages_name_values_briefly() {
+    assert_eq!(
+        super::brief(&serde_json::json!({"id": "k1", "vraag": null, "x": [1, 2, 3]})),
+        "(id k1)"
+    );
+    assert_eq!(super::brief(&serde_json::json!("x")), "\"x\"");
+    let long = super::brief(&serde_json::json!({ "tekst": "a".repeat(200) }));
+    assert!(long.ends_with('…') && long.chars().count() == 61, "{long}");
+}
+
+/// Review 7a n4: a file whose name starts like another file's is a conflict copy only when it
+/// holds that file's id (OneDrive copies the content). Another id is a misplaced file.
+#[test]
+fn a_misplaced_file_is_not_called_a_conflict_copy() {
+    let (_tmp, data) = copy();
+    let group = "2025-2026/groups/3a-nat-2025-2026.json";
+    let mut other: serde_json::Value =
+        serde_json::from_slice(&fs::read(data.join(group)).unwrap()).unwrap();
+    other["id"] = serde_json::json!("4b-bio-2025-2026");
+    let name = "2025-2026/groups/3a-nat-2025-2026-b.json";
+    fs::write(data.join(name), serde_json::to_vec_pretty(&other).unwrap()).unwrap();
+    let report = validate(&data).unwrap();
+    assert!(
+        !has(&report, IssueKind::Stray, name, "conflictkopie"),
+        "{:#?}",
+        issues_for(&report, name)
+    );
+    assert!(
+        has(&report, IssueKind::Placement, name, "4b-bio-2025-2026"),
+        "{:#?}",
+        issues_for(&report, name)
+    );
+}
+
+/// Edit locks (step 41, edit-locks.md section 5 "Other PCs"): what another PC wrote around a
+/// lock is reported, never fixed.
+#[test]
+fn lock_violations_from_another_pc_are_reported() {
+    let (_tmp, data) = copy();
+    let write = |rel: &str, v: serde_json::Value| {
+        let path = data.join(rel);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, serde_json::to_string_pretty(&v).unwrap()).unwrap();
+    };
+    let clean = validate(&data).unwrap();
+    let levels = serde_json::json!([
+        {"min": 0, "max": 1, "uitleg": "a"}, {"min": 2, "max": 4, "uitleg": "b"}
+    ]);
+    write(
+        "rubrics/r1.json",
+        serde_json::json!({
+            "id": "r1", "naam": "Verslag", "subject": "nat", "schoolsoort": ["Havo"],
+            "jaarlagen": ["4"], "obs_ids": ["obs-1756713600100"],
+            "categories": [{"id": "a", "naam": "Theorie", "max": 4, "soort": "normaal",
+                            "niveaus": levels}]
+        }),
+    );
+    write(
+        "2025-2026/exams/po-1.json",
+        serde_json::json!({"id": "po-1", "kind": "po", "title": "PO", "subject": "nat",
+                           "jaarlaag": "3", "schoolsoort": ["Vwo"], "rubric_id": "r1"}),
+    );
+    // A shared schoolsoort is enough, as the PO form offers rubrics (`matchingRubrics`).
+    write(
+        "2025-2026/exams/po-2.json",
+        serde_json::json!({"id": "po-2", "kind": "po", "title": "PO 2", "subject": "nat",
+                           "jaarlaag": "4", "schoolsoort": ["Havo", "Vwo"], "rubric_id": "r1"}),
+    );
+    let toets = "2025-2026/exams/nat-toets-1-2025-2026.json";
+    edit_exam(&data, toets, |e| {
+        e.insert("jaarlaag".into(), "4".into());
+    });
+    let score = "2025-2026/scores/nat/1001.json";
+    edit_exam(&data, score, |r| {
+        let scores = r.entry("scores").or_insert(serde_json::json!({}));
+        scores["nat-toets-1-2025-2026"]["q9"] = serde_json::json!(1);
+    });
+    let report = validate(&data).unwrap();
+    let po = "2025-2026/exams/po-1.json";
+    assert!(
+        has(&report, IssueKind::Reference, po, "jaarlaag 3, Vwo"),
+        "{:#?}",
+        issues_for(&report, po)
+    );
+    assert!(
+        !issues_for(&report, "2025-2026/exams/po-2.json")
+            .iter()
+            .any(|i| i.message.contains("past niet")),
+        "{:#?}",
+        report.issues
+    );
+    assert!(has(
+        &report,
+        IssueKind::Reference,
+        toets,
+        "Observatie obs-1756713600100"
+    ));
+    assert!(has(&report, IssueKind::Reference, toets, "jaarlaag 4"));
+    // A rubric may use any PO observatie (the rubric editor offers them all): no scope report.
+    assert!(
+        !issues_for(&report, "rubrics/r1.json")
+            .iter()
+            .any(|i| i.message.contains("past niet")),
+        "{:#?}",
+        report.issues
+    );
+    assert!(
+        has(&report, IssueKind::Reference, score, "vraag q9"),
+        "{:#?}",
+        issues_for(&report, score)
+    );
+    // Warnings only: nothing becomes an error.
+    assert_eq!(report.errors(), clean.errors());
 }

@@ -62,6 +62,23 @@ test('U6: the RTTI uitleg modal keeps teacher text as typed', async ({ page }) =
   await expect(page.locator('textarea[data-uitleg="R"]')).toHaveValue(NASTY);
 });
 
+test('4a m4: an unreadable RTTI template is replaced only after asking', async ({ page }) => {
+  const file = 'templates/rtti/nat_3.json';
+  await login(page);
+  await withMock(page, (m, f) => m.externalWriteText(f, '{ "uitleg": '), file);
+  await page.locator('.nav-btn[data-screen="toetsen"]').click();
+  await page.locator('#btn-toetsen-rtti-uitleg').click();
+  await page.locator('.dlg-tabs [role="tab"]', { hasText: /^3$/ }).click();
+  await page.locator('textarea[data-uitleg="R"]').fill('Nieuwe uitleg');
+  await page.locator('#btn-rtti-uitleg-save').click();
+  const ask = page.getByRole('alertdialog', { name: 'Onleesbaar bestand' });
+  await expect(ask).toContainText('tabblad 3');
+  await ask.getByRole('button', { name: 'Overschrijven' }).click();
+  await expect(page.locator('.toast').last()).toContainText('opgeslagen');
+  const saved = await readMockJson<{ uitleg: Record<string, string> }>(page, file);
+  expect(saved.uitleg.R).toBe('Nieuwe uitleg');
+});
+
 test('U3: a failed score save is reported', async ({ page }) => {
   await login(page);
   await openScoreGrid(page);
@@ -290,6 +307,37 @@ test('6a M1: an unsupported logo type is refused with a message', async ({ page 
   await expect(page.locator('.toast')).toContainText('Bestandstype .bmp wordt niet ondersteund');
   const calls = await withMock(page, (m) => m.calls.map((c) => c[0]));
   expect(calls).not.toContain('savePhoto');
+});
+
+test('review 41 M3: a delete the core refuses is reported, not shown as done', async ({ page }) => {
+  await page.goto('/');
+  const group = await readMockJson<Record<string, unknown>>(
+    page,
+    `${YEAR}/groups/3a-nat-${YEAR}.json`,
+  );
+  const id = `leeg-nat-${YEAR}`;
+  const rel = `${YEAR}/groups/${id}.json`;
+  await seedFiles(page, { [rel]: { ...group, id, name: 'Lege groep', student_ids: [] } });
+  await login(page, 'nat', 'admin');
+  await page.locator('.nav-btn[data-screen="groepen"]').click();
+  const del = page.locator(`[data-action="del-group"][data-id="${id}"]`);
+  await expect(del).toBeVisible();
+  // A colleague's student lands in the group; this window has not seen it yet.
+  await withMock(
+    page,
+    (m, a) => {
+      const files = (m as unknown as { files: Map<string, Uint8Array> }).files;
+      const old = JSON.parse(new TextDecoder().decode(files.get(a.rel)!)) as object;
+      const next = { ...old, student_ids: [a.student] };
+      files.set(a.rel, new TextEncoder().encode(JSON.stringify(next)));
+    },
+    { rel, student: String((group.student_ids as string[])[0]) },
+  );
+  await del.click();
+  await page.getByRole('button', { name: 'Verwijderen', exact: true }).click();
+  await expect(page.getByText(/Niet opgeslagen: Deze groep heeft 1 leerling/)).toBeVisible();
+  await expect(page.locator('.toast', { hasText: 'Groep verwijderd' })).toHaveCount(0);
+  expect(await readMockJson(page, rel)).not.toBeNull();
 });
 
 test('M-GRP-1: a deleted group disappears from the admin list', async ({ page }) => {

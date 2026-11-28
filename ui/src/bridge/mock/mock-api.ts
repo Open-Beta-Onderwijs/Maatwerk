@@ -20,6 +20,9 @@ import type {
   PinCheck,
   StampIssue,
   RubricUse,
+  RapportenYear,
+  RapportenCleanup,
+  SnapshotEntry,
   FsResult,
   ImageResult,
   Json,
@@ -49,6 +52,10 @@ import { cannedPdf } from './pdf';
 import { stampMeta } from '../../domain/ids';
 import { requiredVersion } from '../../services/read-only';
 import { checkRubric, lockedChanges, type Rubric } from '../../domain/rubric';
+import { snapshotSettings } from '../../domain/snapshot-settings';
+import { snapshotKinds } from './mock-snapshots';
+import { hasData } from '../../domain/has-data';
+import { lockGuard, type LockFiles } from './mock-locks';
 import {
   bestuurOf,
   forbiddenMessage,
@@ -67,7 +74,7 @@ export interface MockSeed {
 
 export const MOCK_DATA_DIR = 'C:\\Maatwerk-mock\\data';
 /** The app version the mock backend reports (`dataFolderStatus`); tests compare against it. */
-export const MOCK_APP_VERSION = '0.31.0';
+export const MOCK_APP_VERSION = '0.32.0';
 /** `rights::RIGHTS_MIN_APP_VERSION`: raised at every login (step 35). */
 const RIGHTS_MIN_APP_VERSION = '0.26.0';
 export const MOCK_LOG_DIR =
@@ -374,14 +381,16 @@ export class MockApi implements MaatwerkApi {
 
   async readJsonVersioned(
     relPath: string,
-  ): Promise<{ data: Json; hash: string | null } | { error: string }> {
+  ): Promise<
+    { data: Json; hash: string | null } | { error: string; unreadableHash?: string | null }
+  > {
     this.record('readJsonVersioned', [relPath]);
     const bytes = this.files.get(relPath);
     if (!bytes) return { data: null, hash: null };
     try {
       return { data: JSON.parse(decoder.decode(bytes)), hash: await sha1(bytes) };
     } catch (e) {
-      return { error: (e as Error).message };
+      return { error: (e as Error).message, unreadableHash: await sha1(bytes) };
     }
   }
 
@@ -397,7 +406,10 @@ export class MockApi implements MaatwerkApi {
     const fault = this.faultFor('writeJson', [relPath]);
     if (fault) return { ok: false, reason: fault };
     if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
-    const refused = this.rubricGuard(relPath, data) ?? this.rightsGuard(relPath, data);
+    const refused =
+      this.rubricGuard(relPath, data) ??
+      this.rightsGuard(relPath, data) ??
+      lockGuard(this.lockFiles(), relPath, data);
     if (refused) return { ok: false, reason: refused };
     if (opts.cas) {
       const current = this.files.get(relPath);
@@ -440,6 +452,29 @@ export class MockApi implements MaatwerkApi {
     return this.jsonFilesIn(dirRelPath);
   }
 
+  /** What the edit-lock guard reads (`mock-locks.ts`). */
+  private lockFiles(): LockFiles {
+    const parse = (rel: string): unknown => {
+      const t = this.readText(rel);
+      if (t === null) return null;
+      try {
+        return JSON.parse(t) as unknown;
+      } catch {
+        return null;
+      }
+    };
+    return {
+      json: parse,
+      dir: (d) => this.jsonFilesIn(d),
+      folders: (d) => this.list(d).filter((n) => this.dirs.has(`${d}/${n}`)),
+      years: () => this.list('').filter((n) => /^\d{4}-\d{4}$/.test(n)),
+      opdrachten: () =>
+        this.list('opdrachten')
+          .map((id) => parse(`opdrachten/${id}/opdracht.json`))
+          .filter((o) => o !== null),
+    };
+  }
+
   private jsonFilesIn(dirRelPath: string): { name: string; data: Json }[] {
     const out: { name: string; data: Json }[] = [];
     for (const name of this.list(dirRelPath)) {
@@ -475,7 +510,7 @@ export class MockApi implements MaatwerkApi {
   async deleteFile(relPath: string): Promise<FsResult> {
     this.record('deleteFile', [relPath]);
     if (this.readOnly() || this.guestRefuses(relPath)) return { ok: false, reason: 'read_only' };
-    const forbidden = this.rightsGuard(relPath, null);
+    const forbidden = this.rightsGuard(relPath, null) ?? lockGuard(this.lockFiles(), relPath, null);
     if (forbidden) return { ok: false, reason: forbidden };
     const rubricId = /^rubrics\/([^/]+)\.json$/.exec(relPath)?.[1];
     const uses = rubricId ? (this.rubricUses()[rubricId]?.length ?? 0) : 0;
@@ -953,6 +988,56 @@ export class MockApi implements MaatwerkApi {
     return this.rubricUses();
   }
 
+  /** As `locks::save_exam_family`, without the family checks (the core tests them). */
+  async saveExamFamily(year: string, exams: Json[]): Promise<Json[]> {
+    this.record('saveExamFamily', [year, exams]);
+    this.refuseIfReadOnly();
+    const ordered = [
+      ...exams.filter((e) => (e as { parent_id?: string | null }).parent_id),
+      ...exams.filter((e) => !(e as { parent_id?: string | null }).parent_id),
+    ] as { id: string; _meta?: { rev?: number } }[];
+    const out: Json[] = [];
+    for (const exam of ordered) {
+      const rel = `${year}/exams/${exam.id}.json`;
+      // The core writes each file: an injected write failure applies here too.
+      const fault = this.faultFor('writeJson', [rel]);
+      if (fault) throw { code: 'io', message: fault, details: { path: rel } };
+      const text = this.readText(rel);
+      const onDisk = text === null ? null : (JSON.parse(text) as { _meta?: { rev?: number } });
+      if (onDisk && (onDisk._meta?.rev ?? 0) !== (exam._meta?.rev ?? 0)) {
+        throw { code: 'conflict', message: 'conflict', details: { path: rel } };
+      }
+      const saved = stampMeta({ ...exam }, onDisk as { _meta?: never }, this.authSession);
+      this.putFile(rel, encoder.encode(JSON.stringify(saved, null, 2) + '\n'));
+      out.push(saved as unknown as Json);
+    }
+    return out;
+  }
+
+  async examHasData(year: string, vak: string, examId: string): Promise<boolean> {
+    this.record('examHasData', [year, vak, examId]);
+    return this.jsonFilesIn(`${year}/scores/${vak}`).some(({ data }) =>
+      hasData(data as Record<string, unknown>, examId),
+    );
+  }
+
+  async studentsWithData(year: string): Promise<string[]> {
+    this.record('studentsWithData', [year]);
+    const out = new Set<string>();
+    for (const vak of this.list(`${year}/scores`)) {
+      for (const { name, data } of this.jsonFilesIn(`${year}/scores/${vak}`)) {
+        const rec = data as Record<string, unknown>;
+        const exams = new Set(
+          ['scores', 'overrides', 'observations', 'po'].flatMap((k) =>
+            Object.keys((rec?.[k] as object | undefined) ?? {}),
+          ),
+        );
+        if ([...exams].some((e) => hasData(rec, e))) out.add(name.replace(/\.json$/, ''));
+      }
+    }
+    return [...out].sort();
+  }
+
   /** As `maatwerk_core::rubrics::usage`: exams with a `rubric_id`, newest year first. */
   private rubricUses(): Partial<Record<string, RubricUse[]>> {
     const out: Partial<Record<string, RubricUse[]>> = {};
@@ -962,12 +1047,20 @@ export class MockApi implements MaatwerkApi {
       .reverse();
     for (const year of years) {
       for (const { data } of this.jsonFilesIn(`${year}/exams`)) {
-        const exam = data as { id?: string; title?: string; rubric_id?: string } | null;
+        const exam = data as {
+          id?: string;
+          title?: string;
+          rubric_id?: string;
+          jaarlaag?: string | number;
+          schoolsoort?: string[];
+        } | null;
         if (!exam?.rubric_id) continue;
         (out[exam.rubric_id] ??= []).push({
           year,
           examId: exam.id ?? '',
           naam: exam.title ?? '',
+          jaarlaag: exam.jaarlaag === undefined ? '' : String(exam.jaarlaag),
+          schoolsoort: exam.schoolsoort ?? [],
         });
       }
     }
@@ -1391,9 +1484,12 @@ export class MockApi implements MaatwerkApi {
     return `C:\\Users\\docent\\Documents\\${defaultName}`;
   }
 
-  async listSnapshots(): Promise<string[]> {
+  async listSnapshots(): Promise<SnapshotEntry[]> {
     this.record('listSnapshots', []);
-    return this.snapshots.map((s) => s.name);
+    const names = this.snapshots.map((s) => s.name);
+    const settings = snapshotSettings(JSON.parse(this.readText('instellingen.json') ?? 'null'));
+    const kinds = snapshotKinds(names, settings);
+    return names.map((name) => ({ name, kind: kinds.get(name) ?? null }));
   }
 
   async snapshotForFile(relPath: string): Promise<string | null> {
@@ -1411,6 +1507,56 @@ export class MockApi implements MaatwerkApi {
     this.dataCheck.issues = this.dataCheck.issues.filter(
       (i) => !(i.kind === 'stamp' && i.path === relPath),
     );
+  }
+
+  /** Tests: a printed copy of `size` bytes (`rapporten/<jaar>/<naam>.pdf`). */
+  seedPrintedCopy(relPath: string, size: number): void {
+    this.putFile(relPath, new Uint8Array(size));
+  }
+
+  /** Tests: whether the file exists. */
+  hasFile(relPath: string): boolean {
+    return this.files.has(relPath);
+  }
+
+  /** The printed copies as `maatwerk_core::rapporten` sees them: `rapporten/<jaar>/*.pdf`. */
+  private printedCopies(): { year: string; path: string; size: number }[] {
+    const out: { year: string; path: string; size: number }[] = [];
+    for (const [path, bytes] of this.files) {
+      const m = /^rapporten\/(\d{4}-\d{4})\/[^/]+\.pdf$/i.exec(path);
+      if (m) out.push({ year: m[1]!, path, size: bytes.length });
+    }
+    return out.sort((a, b) => a.path.localeCompare(b.path));
+  }
+
+  async rapportenUsage(): Promise<RapportenYear[]> {
+    this.record('rapportenUsage', []);
+    this.requireAdmin();
+    const years = new Map<string, { schooljaar: string; files: number; bytes: number }>();
+    for (const c of this.printedCopies()) {
+      const y = years.get(c.year) ?? { schooljaar: c.year, files: 0, bytes: 0 };
+      y.files += 1;
+      y.bytes += c.size;
+      years.set(c.year, y);
+    }
+    return [...years.values()]
+      .sort((a, b) => a.schooljaar.localeCompare(b.schooljaar))
+      .map((y) => ({ schooljaar: y.schooljaar, files: y.files, kb: Math.ceil(y.bytes / 1024) }));
+  }
+
+  async rapportenCleanup(before: string): Promise<RapportenCleanup> {
+    this.record('rapportenCleanup', [before]);
+    this.requireAdmin();
+    this.refuseIfReadOnly();
+    if (!/^\d{4}-\d{4}$/.test(before)) throw new Error(`Geen schooljaar: "${before}"`);
+    const done = { files: 0, bytes: 0, failed: [] as string[] };
+    for (const c of this.printedCopies()) {
+      if (c.year >= before) continue;
+      this.files.delete(c.path);
+      done.files += 1;
+      done.bytes += c.size;
+    }
+    return { files: done.files, kb: Math.ceil(done.bytes / 1024), failed: done.failed };
   }
 
   // ── Live editor ───────────────────────────────────────────────────────────

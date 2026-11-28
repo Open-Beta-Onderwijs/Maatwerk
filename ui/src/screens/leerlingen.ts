@@ -18,7 +18,6 @@ import {
 import { openProfielModal } from '../modals/profile';
 import { inIdleSlices, type IdleJob } from '../utils/idle';
 import { perfSpan } from '../utils/perf';
-import { SUBJECT_DISPLAY } from '../domain/rapport';
 import { openStudentModal, deleteStudent, openStudentCSVImport } from '../modals/leerling-edit.js';
 import { Store } from '../store.js';
 import { fillStudentGrades, type GradeFill } from './cards/student-grades';
@@ -271,22 +270,23 @@ export function renderStudentList({ staged = true } = {}): void {
   }
 
   if (!isAdmin) return;
-  // Disable Verwijderen for students that cannot be deleted (non-blocking)
+  // Disable Verwijderen for students that cannot be deleted (non-blocking). The core says who
+  // has data, one call per year (maatwerk-core::locks, step 41); if it cannot tell (an
+  // unreadable file), nobody can be deleted until Gegevenscontrole fixes it.
   const endChecks = perfSpan('leerlingen:checks');
-  // One folder read per year and vak instead of one read per student and file.
-  const ids = students.map((s) => s.id);
-  const preloads = (Store.listYearsSync() as string[]).flatMap((y) =>
-    Object.keys(SUBJECT_DISPLAY).map((v) =>
-      (Store.preloadScores(y, v, ids) as Promise<void>).catch(() => {}),
-    ),
-  );
+  const withData = (Store.studentsWithDataAnyYear() as Promise<Set<string>>).catch((e) => {
+    console.warn('[leerlingen] studentsWithData', e);
+    return null;
+  });
   const checks = students.map(async (s) => {
-    await Promise.all(preloads);
+    const known = await withData;
     const id = String(s.id);
-    if (await Store.studentHasAnyScores(s.id)) {
+    if (!known || known.has(id)) {
       deleteBlocks.set(
         id,
-        'Er zijn scores ingevoerd voor deze leerling, de leerling kan dus niet worden verwijderd.',
+        known
+          ? 'Er zijn scores ingevoerd voor deze leerling, de leerling kan dus niet worden verwijderd.'
+          : 'Kan niet nagaan of deze leerling scores heeft (een scorebestand is onleesbaar). Zie Gegevenscontrole.',
       );
     } else if (
       (Store.getGroupsSync(year) as { student_ids?: string[] }[]).some((g) =>

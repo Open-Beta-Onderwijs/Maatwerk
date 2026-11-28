@@ -15,6 +15,7 @@ import {
 import { decodeCsv, parseCSV, askSchoolYear } from '../utils/csv.js';
 import { CSV_EXAMPLES, csvExampleHtml, wireCsvExample } from '../utils/csv-example';
 import { groupOverwrites, withImportIds } from '../domain/groups';
+import { removeWithDataText, removedWithData } from '../domain/group-membership';
 import { renderGroepen } from '../screens/groepen';
 import { SCHOOLSOORTEN } from '../domain/schoolsoort';
 
@@ -377,6 +378,31 @@ export async function openGroupModal(id) {
         });
 
         const allGroups = await Store.getGroups(year);
+        // edit-locks.md 2.2: a student with scores leaving a group is asked about first.
+        const changes = groupsInJaarlaag
+          .map((g) => ({ g, existing: allGroups.find((ag) => ag.id === g.id) }))
+          .filter(({ existing }) => existing)
+          .map(({ g, existing }) => ({ before: existing.student_ids, after: byGroup[g.id] ?? [] }));
+        if (
+          changes.some((c) => c.before.some((sid) => !c.after.map(String).includes(String(sid))))
+        ) {
+          let withData;
+          try {
+            withData = new Set((await window.maatwerk.studentsWithData(year)).map(String));
+          } catch (e) {
+            console.warn('[groep] studentsWithData', e);
+            withData = new Set(changes.flatMap((c) => c.before.map(String))); // fail closed: ask
+          }
+          const leaving = removedWithData(changes, withData);
+          if (leaving.length) {
+            const students = Store.getStudentsSync(year);
+            const names = leaving.map((sid) => {
+              const st = students.find((x) => String(x.id) === sid);
+              return st ? Store.fullName(st) : sid;
+            });
+            if (!(await confirmDialog(removeWithDataText(names), { okLabel: 'Doorgaan' }))) return;
+          }
+        }
         for (const g of groupsInJaarlaag) {
           const existing = allGroups.find((ag) => ag.id === g.id);
           if (!existing) continue;

@@ -26,6 +26,8 @@ pub enum ErrorCode {
     ReadOnly,
     /// The session's role does not allow the write (step 35); the message is Dutch.
     Forbidden,
+    /// Data depends on what the write would change or delete (step 41); the message is Dutch.
+    EditLocked,
     /// No data folder set, chosen or beside the program yet (first run, step 16a).
     NoDataFolder,
     Io,
@@ -44,7 +46,7 @@ pub struct ErrorDetails {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
     /// `unsupported_schema`, `needs_migration`: the `schema_version` found; `read_only`: the
-    /// `minAppVersion` from `school.json`.
+    /// `minAppVersion` from `school.json`; `corrupt_json`: the hash of the unreadable bytes.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub found: Option<String>,
 }
@@ -94,7 +96,8 @@ impl From<Error> for CommandError {
         let message = match &e {
             Error::InvalidArgument { message }
             | Error::MigrationBlocked { message }
-            | Error::Forbidden { message } => message.clone(),
+            | Error::Forbidden { message }
+            | Error::EditLocked { message, .. } => message.clone(),
             other => other.to_string(),
         };
         let path = |p: &str| ErrorDetails {
@@ -104,7 +107,14 @@ impl From<Error> for CommandError {
         let (code, details) = match &e {
             Error::InvalidPath { path: p, .. } => (ErrorCode::InvalidPath, path(p)),
             Error::NotFound { path: p } => (ErrorCode::NotFound, path(p)),
-            Error::CorruptJson { path: p, .. } => (ErrorCode::CorruptJson, path(p)),
+            // `found`: the hash of the unreadable bytes, for an overwrite the teacher confirms.
+            Error::CorruptJson { path: p, hash, .. } => (
+                ErrorCode::CorruptJson,
+                ErrorDetails {
+                    found: Some(hash.clone()),
+                    ..path(p)
+                },
+            ),
             Error::Conflict {
                 path: p,
                 updated_by,
@@ -142,6 +152,7 @@ impl From<Error> for CommandError {
                 },
             ),
             Error::Forbidden { .. } => (ErrorCode::Forbidden, ErrorDetails::default()),
+            Error::EditLocked { path: p, .. } => (ErrorCode::EditLocked, path(p)),
             Error::GuestReadOnly => (
                 ErrorCode::ReadOnly,
                 ErrorDetails {
@@ -174,6 +185,7 @@ mod tests {
             Error::CorruptJson {
                 path: "a".into(),
                 message: "m".into(),
+                hash: "h".into(),
             },
             Error::Conflict {
                 path: "a".into(),
@@ -193,6 +205,10 @@ mod tests {
                 app_version: "0.6.0".into(),
             },
             Error::Forbidden {
+                message: "m".into(),
+            },
+            Error::EditLocked {
+                path: "a".into(),
                 message: "m".into(),
             },
             Error::GuestReadOnly,

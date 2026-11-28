@@ -8,12 +8,13 @@
 //! (`docs/cutover-runbook.md`); one JSON file can be restored from the newest snapshot that
 //! holds an intact copy ("Herstellen uit snapshot", C19).
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
 use std::path::Path;
 use std::time::{Duration, SystemTime};
 
+use serde::Serialize;
 use serde_json::{Value, json};
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time};
 use zip::write::SimpleFileOptions;
@@ -188,14 +189,26 @@ pub fn contents(root: &Path) -> Result<Vec<String>> {
         .collect())
 }
 
-/// Which snapshots to keep (`list` order, newest first): the newest one, and the newest of
-/// each of the last `daily` days, `weekly` ISO weeks and `monthly` months that have one.
-pub fn keep(snapshots: &[Snapshot], settings: Settings) -> BTreeSet<String> {
+/// Why a snapshot is kept (spec 4.9): the first rule that keeps it, in this order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Kind {
+    Dagelijks,
+    Wekelijks,
+    Maandelijks,
+}
+
+/// Per snapshot name (`list` order, newest first): dagelijks, wekelijks or maandelijks, the
+/// first rule that keeps it (the newest of each of the last `daily` days, `weekly` ISO weeks
+/// and `monthly` months that have one). A snapshot kept only as the newest has no kind. The
+/// Instellingen screen shows these (review 26-28 m6: the UI no longer repeats the rule).
+pub fn kinds(snapshots: &[Snapshot], settings: Settings) -> BTreeMap<String, Kind> {
     fn newest_per<K: Ord>(
         snapshots: &[Snapshot],
         count: u32,
         key: impl Fn(&PrimitiveDateTime) -> K,
-        keep: &mut BTreeSet<String>,
+        kind: Kind,
+        out: &mut BTreeMap<String, Kind>,
     ) {
         let mut seen = BTreeSet::new();
         for s in snapshots {
@@ -203,15 +216,18 @@ pub fn keep(snapshots: &[Snapshot], settings: Settings) -> BTreeSet<String> {
                 break;
             }
             if seen.insert(key(&s.time)) {
-                keep.insert(s.name.clone());
+                out.entry(s.name.clone()).or_insert(kind);
             }
         }
     }
-    let mut out = BTreeSet::new();
-    if let Some(first) = snapshots.first() {
-        out.insert(first.name.clone());
-    }
-    newest_per(snapshots, settings.daily, |t| t.date(), &mut out);
+    let mut out = BTreeMap::new();
+    newest_per(
+        snapshots,
+        settings.daily,
+        |t| t.date(),
+        Kind::Dagelijks,
+        &mut out,
+    );
     newest_per(
         snapshots,
         settings.weekly,
@@ -219,14 +235,26 @@ pub fn keep(snapshots: &[Snapshot], settings: Settings) -> BTreeSet<String> {
             let (y, w, _) = t.date().to_iso_week_date();
             (y, w)
         },
+        Kind::Wekelijks,
         &mut out,
     );
     newest_per(
         snapshots,
         settings.monthly,
         |t| (t.year(), u8::from(t.month())),
+        Kind::Maandelijks,
         &mut out,
     );
+    out
+}
+
+/// Which snapshots to keep (`list` order, newest first): the newest one, and every one with a
+/// [`kinds`] entry.
+pub fn keep(snapshots: &[Snapshot], settings: Settings) -> BTreeSet<String> {
+    let mut out: BTreeSet<String> = kinds(snapshots, settings).into_keys().collect();
+    if let Some(first) = snapshots.first() {
+        out.insert(first.name.clone());
+    }
     out
 }
 
@@ -237,6 +265,8 @@ pub enum Outcome {
     NotDue,
     /// Another app is writing one now.
     Busy,
+    /// The app quit during the settle wait: the claim is released, no zip written (10 m3).
+    Stopped,
     Written {
         name: String,
         files: usize,
@@ -259,17 +289,26 @@ fn ms(t: OffsetDateTime) -> i64 {
 /// in meanwhile, it gives up. When OneDrive is slower than that, both PCs still write one; that
 /// only costs space (a same-name copy becomes an OneDrive conflict copy, which [`prune`]
 /// removes).
-pub fn run_if_due(storage: &Storage, now: OffsetDateTime, who: &str) -> Result<Outcome> {
-    run_if_due_with(storage, now, who, &|| std::thread::sleep(CLAIM_SETTLE))
+///
+/// `wait(d)` waits up to `d` and returns `false` when the app is quitting: during the settle
+/// wait that releases the claim and gives [`Outcome::Stopped`] (review 10 m3). Once the zip has
+/// started, quitting leaves the claim, which then goes stale after [`CLAIM_STALE`].
+pub fn run_if_due(
+    storage: &Storage,
+    now: OffsetDateTime,
+    who: &str,
+    wait: &dyn Fn(Duration) -> bool,
+) -> Result<Outcome> {
+    run_if_due_with(storage, now, who, &|| wait(CLAIM_SETTLE))
 }
 
 /// [`run_if_due`] with the settle wait passed in (tests run it at once, or let another "PC"
-/// write meanwhile).
+/// write meanwhile); it returns `false` to stop.
 pub(crate) fn run_if_due_with(
     storage: &Storage,
     now: OffsetDateTime,
     who: &str,
-    settle: &dyn Fn(),
+    settle: &dyn Fn() -> bool,
 ) -> Result<Outcome> {
     let settings = Settings::read(storage);
     let interval = time::Duration::hours(i64::from(settings.interval_hours));
@@ -319,7 +358,10 @@ pub(crate) fn run_if_due_with(
         Err(e) => return Err(e),
     }
 
-    settle();
+    if !settle() {
+        release_claim(storage, &state_rel, who, now_ms, None)?;
+        return Ok(Outcome::Stopped);
+    }
     let state = storage.read_json(&state_rel)?.unwrap_or(json!({}));
     let ours = state.get("claim").is_some_and(|c| {
         c.get("by").and_then(Value::as_str) == Some(who)
@@ -342,30 +384,8 @@ pub(crate) fn run_if_due_with(
 
     let written = write_zip(storage, local(now));
     // Release the claim and, if it worked, note the snapshot.
-    storage.update(
-        &state_rel,
-        || json!({}),
-        |current, _| {
-            let mut s = match current {
-                Value::Object(m) => m,
-                _ => Default::default(),
-            };
-            // Only our own claim: another PC's later claim stays (review 10 m3).
-            let ours = s.get("claim").is_some_and(|c| {
-                c.get("by").and_then(Value::as_str) == Some(who)
-                    && c.get("atMs").and_then(Value::as_i64) == Some(now_ms)
-            });
-            if ours {
-                s.remove("claim");
-            }
-            if let Ok((name, _, _)) = &written {
-                s.insert("last".into(), Value::String(name.clone()));
-                s.insert("lastAtMs".into(), Value::from(now_ms));
-                s.insert("lastBy".into(), Value::String(who.to_owned()));
-            }
-            Ok(Value::Object(s))
-        },
-    )?;
+    let name = written.as_ref().ok().map(|(name, _, _)| name.as_str());
+    release_claim(storage, &state_rel, who, now_ms, name)?;
     let (name, files, bytes) = written?;
     let removed = prune(storage, settings)?;
     Ok(Outcome::Written {
@@ -374,6 +394,41 @@ pub(crate) fn run_if_due_with(
         bytes,
         removed,
     })
+}
+
+/// Removes this app's claim (`who` at `now_ms`) from `state.json`; another PC's later claim
+/// stays (review 10 m3). With `written`, notes that snapshot as the last one.
+fn release_claim(
+    storage: &Storage,
+    state_rel: &RelPath,
+    who: &str,
+    now_ms: i64,
+    written: Option<&str>,
+) -> Result<()> {
+    storage.update(
+        state_rel,
+        || json!({}),
+        |current, _| {
+            let mut s = match current {
+                Value::Object(m) => m,
+                _ => Default::default(),
+            };
+            let ours = s.get("claim").is_some_and(|c| {
+                c.get("by").and_then(Value::as_str) == Some(who)
+                    && c.get("atMs").and_then(Value::as_i64) == Some(now_ms)
+            });
+            if ours {
+                s.remove("claim");
+            }
+            if let Some(name) = written {
+                s.insert("last".into(), Value::String(name.to_owned()));
+                s.insert("lastAtMs".into(), Value::from(now_ms));
+                s.insert("lastBy".into(), Value::String(who.to_owned()));
+            }
+            Ok(Value::Object(s))
+        },
+    )?;
+    Ok(())
 }
 
 /// Zips [`contents`] to `snapshots/<time>.zip` (via `.zip.partial`, read back before the
@@ -524,41 +579,44 @@ pub fn restore_file(
         path: rel.to_string(),
     })?;
     let is_user = rel.as_str().starts_with("gebruikers/");
-    storage.update(
-        rel,
-        || Value::Null,
-        |_current, on_disk| {
-            if let Some(disk) = on_disk
-                && integrity::check(disk) == StampState::Ok
-            {
-                return Err(Error::Conflict {
-                    path: rel.to_string(),
-                    updated_by: disk
-                        .get("_meta")
-                        .and_then(|m| m.get("updatedBy"))
-                        .and_then(Value::as_str)
-                        .map(str::to_owned),
-                });
-            }
-            let Value::Object(mut obj) = value.clone() else {
-                return Ok(value.clone());
-            };
-            if is_user {
-                for key in KEPT_USER_FIELDS {
-                    match on_disk.and_then(|d| d.get(key)) {
-                        Some(v) => obj.insert(key.into(), v.clone()),
-                        None => obj.remove(key),
-                    };
+    // A repair, not an edit: the edit locks do not apply (step 41). The rubric lock still does.
+    crate::locks::unlocked(|| {
+        storage.update(
+            rel,
+            || Value::Null,
+            |_current, on_disk| {
+                if let Some(disk) = on_disk
+                    && integrity::check(disk) == StampState::Ok
+                {
+                    return Err(Error::Conflict {
+                        path: rel.to_string(),
+                        updated_by: disk
+                            .get("_meta")
+                            .and_then(|m| m.get("updatedBy"))
+                            .and_then(Value::as_str)
+                            .map(str::to_owned),
+                    });
                 }
-            }
-            let entity = obj.get("_meta").and_then(|m| m.get("rev")).is_some();
-            Ok(if entity {
-                stamp_meta(obj, on_disk, user_id, at)
-            } else {
-                Value::Object(obj)
-            })
-        },
-    )?;
+                let Value::Object(mut obj) = value.clone() else {
+                    return Ok(value.clone());
+                };
+                if is_user {
+                    for key in KEPT_USER_FIELDS {
+                        match on_disk.and_then(|d| d.get(key)) {
+                            Some(v) => obj.insert(key.into(), v.clone()),
+                            None => obj.remove(key),
+                        };
+                    }
+                }
+                let entity = obj.get("_meta").and_then(|m| m.get("rev")).is_some();
+                Ok(if entity {
+                    stamp_meta(obj, on_disk, user_id, at)
+                } else {
+                    Value::Object(obj)
+                })
+            },
+        )
+    })?;
     Ok(())
 }
 

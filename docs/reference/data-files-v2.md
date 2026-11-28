@@ -1,5 +1,8 @@
 # Shared `data/` folder, format v2
 
+> History: format v3 ([data-files-v3.md](data-files-v3.md)) replaced this one, and the v1-to-v2
+> conversion went with 0.30 (step 39a). The migration text below describes that removed code.
+
 The format Maatwerk writes from Step 7a on (ADR-0003). Only the differences from v1
 ([data-files.md](data-files.md)) are listed; everything not mentioned here is unchanged. The
 migration (`maatwerk-core::migrate`, `maatwerk-cli migrate`) turns a v1 folder into this format;

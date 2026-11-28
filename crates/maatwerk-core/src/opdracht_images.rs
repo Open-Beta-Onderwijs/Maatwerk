@@ -5,12 +5,15 @@
 //! `image("images/<file>")`, relative to its own folder.
 
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::io::Cursor;
+use std::path::Path;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use base64::Engine as _;
-use image::ImageFormat;
 use image::imageops::FilterType;
+use image::{ImageFormat, ImageReader, Limits};
 use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::char::is_combining_mark;
 
@@ -23,6 +26,24 @@ pub const IMAGE_EXTS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "svg", "webp"];
 
 /// Height of the editor's thumbnails (`nativeImage.resize({ height: 48 })`).
 const THUMB_HEIGHT: u32 = 48;
+
+/// Largest image an opdracht takes (review 6b n10), as the AI attachments: a phone photo is
+/// well under it.
+pub const MAX_IMAGE_BYTES: u64 = 25 * 1024 * 1024;
+
+/// Decode limits for thumbnails (review 6a m4): a file claiming a huge size is refused before
+/// its pixels are allocated.
+const MAX_DIMENSION: u32 = 16_384;
+const MAX_DECODE_ALLOC: u64 = 512 * 1024 * 1024;
+
+/// Thumbnails by content hash (review 6a m4: every listing decoded every image again). Cleared
+/// when it grows past [`THUMB_CACHE_SIZE`] entries.
+static THUMB_CACHE: Mutex<Option<HashMap<String, Option<String>>>> = Mutex::new(None);
+const THUMB_CACHE_SIZE: usize = 512;
+
+/// Decodes done by [`thumbnail_data_url`] (tests: the cache spares them).
+#[cfg(test)]
+static THUMB_DECODES: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// One image of an opdracht.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -129,7 +150,7 @@ pub fn list(storage: &Storage, id: &str) -> Result<Vec<OpdrachtImage>> {
                     .join(&f)
                     .ok()
                     .and_then(|rel| storage.read_bytes(&rel).ok().flatten())
-                    .and_then(|bytes| thumbnail_data_url(&bytes)),
+                    .and_then(|bytes| cached_thumbnail(&bytes)),
             };
             OpdrachtImage {
                 file: format!("images/{f}"),
@@ -184,6 +205,43 @@ pub fn store(
         file: format!("images/{file}"),
         name,
     })
+}
+
+/// Imports a file the teacher picked (review 6b n10: read here, not in the shell, and only when
+/// it is at most [`MAX_IMAGE_BYTES`]). The extension comes from the picked file's name.
+pub fn import_file(
+    storage: &Storage,
+    id: &str,
+    path: &Path,
+    raw_name: &str,
+    overwrite: bool,
+) -> Result<Stored> {
+    let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
+        // Review 6a n7: was "Bestandstype . wordt niet ondersteund."
+        return Ok(Stored::Rejected {
+            message: "De bestandsnaam bevat tekens die Maatwerk niet kan lezen. Geef het \
+                      bestand een andere naam en kies het opnieuw."
+                .into(),
+        });
+    };
+    let ext = extension_of(file_name);
+    if !IMAGE_EXTS.contains(&ext.as_str()) {
+        return Ok(Stored::Rejected {
+            message: format!("Bestandstype .{ext} wordt niet ondersteund."),
+        });
+    }
+    let io = |e| Error::io(file_name, e);
+    let size = std::fs::metadata(path).map_err(io)?.len();
+    if size > MAX_IMAGE_BYTES {
+        return Ok(Stored::Rejected {
+            message: format!(
+                "{file_name} is groter dan {} MB. Verklein de afbeelding en probeer het opnieuw.",
+                MAX_IMAGE_BYTES / (1024 * 1024)
+            ),
+        });
+    }
+    let bytes = std::fs::read(path).map_err(io)?;
+    store(storage, id, raw_name, &ext, &bytes, overwrite)
 }
 
 /// Every `opdrachten/<id>/opdracht.json` that parses and is not `null` (`readAllJson('opdrachten')`
@@ -299,9 +357,41 @@ pub fn remove_empty_dirs(storage: &Storage) -> Result<()> {
     Ok(())
 }
 
-/// A 48 px high PNG data URL of an image, or `None` if it does not decode.
+/// [`thumbnail_data_url`], remembered by the bytes' hash.
+fn cached_thumbnail(bytes: &[u8]) -> Option<String> {
+    let key = crate::storage::hash_hex(bytes);
+    if let Some(hit) = THUMB_CACHE
+        .lock()
+        .unwrap_or_else(|p| p.into_inner())
+        .as_ref()
+        .and_then(|c| c.get(&key))
+    {
+        return hit.clone();
+    }
+    let thumb = thumbnail_data_url(bytes);
+    let mut cache = THUMB_CACHE.lock().unwrap_or_else(|p| p.into_inner());
+    let cache = cache.get_or_insert_with(HashMap::new);
+    if cache.len() >= THUMB_CACHE_SIZE {
+        cache.clear();
+    }
+    cache.insert(key, thumb.clone());
+    thumb
+}
+
+/// A 48 px high PNG data URL of an image, or `None` if it does not decode or exceeds the
+/// decode limits (review 6a m4).
 pub fn thumbnail_data_url(bytes: &[u8]) -> Option<String> {
-    let img = image::load_from_memory(bytes).ok()?;
+    #[cfg(test)]
+    THUMB_DECODES.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let mut limits = Limits::default();
+    limits.max_image_width = Some(MAX_DIMENSION);
+    limits.max_image_height = Some(MAX_DIMENSION);
+    limits.max_alloc = Some(MAX_DECODE_ALLOC);
+    let mut reader = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?;
+    reader.limits(limits);
+    let img = reader.decode().ok()?;
     let (w, h) = (img.width(), img.height());
     if w == 0 || h == 0 {
         return None;
@@ -499,6 +589,82 @@ mod tests {
             .unwrap();
         let thumb = image::load_from_memory(&bytes).unwrap();
         assert_eq!((thumb.width(), thumb.height()), (120, 48));
+    }
+
+    /// Review 6b n10: the picked file is read in the core, with a size cap checked before reading.
+    #[test]
+    fn import_file_caps_the_size_and_reads_the_picked_file() {
+        let (tmp, s) = storage();
+        let pic = tmp.path().join("foto.png");
+        std::fs::write(&pic, png(4, 4)).unwrap();
+        let stored = import_file(&s, "op-1", &pic, "foto", false).unwrap();
+        assert!(matches!(stored, Stored::Saved { .. }), "{stored:?}");
+        let big = tmp.path().join("groot.png");
+        let f = std::fs::File::create(&big).unwrap();
+        f.set_len(MAX_IMAGE_BYTES + 1).unwrap();
+        drop(f);
+        match import_file(&s, "op-1", &big, "groot", false).unwrap() {
+            Stored::Rejected { message } => assert!(message.contains("25 MB"), "{message}"),
+            other => panic!("{other:?}"),
+        }
+        // Not stored: the folder has only the first image.
+        assert_eq!(list(&s, "op-1").unwrap().len(), 1);
+    }
+
+    /// Review 6a n7: a name that is not valid Unicode gets its own message.
+    #[cfg(unix)]
+    #[test]
+    fn import_file_names_a_file_name_it_cannot_read() {
+        use std::os::unix::ffi::OsStrExt;
+        let (tmp, s) = storage();
+        let pic = tmp
+            .path()
+            .join(std::ffi::OsStr::from_bytes(b"f\xffoto.png"));
+        match std::fs::write(&pic, png(4, 4)) {
+            Ok(()) => {}
+            // APFS refuses names that are not UTF-8 (EILSEQ), so such a file cannot exist on
+            // macOS; Linux keeps the test (CI run 46129697015).
+            Err(e) if cfg!(target_os = "macos") => {
+                eprintln!("skipped: the file system refuses the name ({e})");
+                return;
+            }
+            Err(e) => panic!("{e}"),
+        }
+        match import_file(&s, "op-1", &pic, "foto", false).unwrap() {
+            Stored::Rejected { message } => assert!(message.contains("bestandsnaam"), "{message}"),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// Review 6a m4: decode limits. A header claiming a huge image is refused without
+    /// allocating it; a normal one still gives a thumbnail.
+    #[test]
+    fn thumbnails_refuse_images_over_the_decode_limits() {
+        // A valid PNG, small on disk, wider than MAX_DIMENSION.
+        let wide = png(MAX_DIMENSION + 1, 1);
+        assert!(wide.len() < 100_000);
+        assert!(
+            image::load_from_memory(&wide).is_ok(),
+            "decodes without limits"
+        );
+        assert_eq!(thumbnail_data_url(&wide), None);
+        assert!(thumbnail_data_url(&png(20, 10)).is_some());
+    }
+
+    /// Review 6a m4: listing again does not decode again (cached by content).
+    #[test]
+    fn listed_thumbnails_are_cached_by_content() {
+        let (_tmp, s) = storage();
+        store(&s, "op-1", "a", "png", &png(30, 10), false).unwrap();
+        let first = list(&s, "op-1").unwrap();
+        let decodes = THUMB_DECODES.load(std::sync::atomic::Ordering::SeqCst);
+        let again = list(&s, "op-1").unwrap();
+        assert_eq!(first, again);
+        assert_eq!(
+            THUMB_DECODES.load(std::sync::atomic::Ordering::SeqCst),
+            decodes,
+            "no new decode"
+        );
     }
 
     #[test]

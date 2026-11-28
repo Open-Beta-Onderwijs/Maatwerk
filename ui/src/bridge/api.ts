@@ -113,8 +113,26 @@ export interface OpdrachtImage {
 export type Unsubscribe = () => void;
 
 /** The migration offered on the startup screen (C1). */
-export type { MigrationResult, DataCheck, DataIssue, StampIssue, RubricUse } from './bindings';
-import type { MigrationResult, DataCheck, StampIssue, PinCheck, RubricUse } from './bindings';
+export type {
+  MigrationResult,
+  DataCheck,
+  DataIssue,
+  StampIssue,
+  RubricUse,
+  RapportenYear,
+  RapportenCleanup,
+  SnapshotEntry,
+} from './bindings';
+import type {
+  MigrationResult,
+  DataCheck,
+  StampIssue,
+  PinCheck,
+  RubricUse,
+  RapportenYear,
+  RapportenCleanup,
+  SnapshotEntry,
+} from './bindings';
 /** Result of the PIN methods (Step 7b). */
 export type { PinCheck, PinOutcome } from './bindings';
 
@@ -129,10 +147,15 @@ export interface MaatwerkApi {
   // ── JSON storage ──────────────────────────────────────────────────────────
   /** Parsed JSON, or null when missing or unparsable. */
   readJson(relPath: string): Promise<Json | null>;
-  /** `{ data, hash }`; `{ data: null, hash: null }` when missing; `{ error }` when unreadable. */
+  /**
+   * `{ data, hash }`; `{ data: null, hash: null }` when missing; `{ error, unreadableHash }` when
+   * unreadable: writing with `expectedHash: unreadableHash` replaces exactly that file (4a m4).
+   */
   readJsonVersioned(
     relPath: string,
-  ): Promise<{ data: Json; hash: string | null } | { error: string }>;
+  ): Promise<
+    { data: Json; hash: string | null } | { error: string; unreadableHash?: string | null }
+  >;
   writeJson(
     relPath: string,
     data: Json,
@@ -290,6 +313,15 @@ export interface MaatwerkApi {
   validateDataFolder(): Promise<DataCheck>;
   /** Per rubric id, the PO's in any school year that use it (step 21, decision 20). */
   rubricUsage(): Promise<Partial<Record<string, RubricUse[]>>>;
+  /** Whether any student has data for the exam (maatwerk-core::locks::has_data, step 41). */
+  examHasData(year: string, vak: string, examId: string): Promise<boolean>;
+  /**
+   * Saves a herkansing family at once (decision 5): every member with its `_meta.rev`; the
+   * core checks they agree and saves the attempts, then the original. Returns the saved exams.
+   */
+  saveExamFamily(year: string, exams: Json[]): Promise<Json[]>;
+  /** The students with data in the school year, in any vak (step 41). */
+  studentsWithData(year: string): Promise<string[]>;
   /**
    * Everything the list screens show for one school year and vak, computed in Rust (step 38):
    * cards, Verzamelkaarten, group statistics, shown r/SE under the school's Cijfergemiddelden.
@@ -336,12 +368,16 @@ export interface MaatwerkApi {
   ): Promise<CopiedTo>;
   /** "Opslaan als" dialog for a text file; the path, or null when cancelled. */
   saveTextAs(defaultName: string, content: string): Promise<string | null>;
-  /** `snapshots/*.zip`, newest first. */
-  listSnapshots(): Promise<string[]>;
+  /** `snapshots/*.zip`, newest first, with the kind that keeps each (review 26-28 m6). */
+  listSnapshots(): Promise<SnapshotEntry[]>;
   /** The newest snapshot with an intact copy of the JSON file, or null. */
   snapshotForFile(relPath: string): Promise<string | null>;
   /** Admin only: "Herstellen uit snapshot". */
   restoreFromSnapshot(relPath: string, snapshot: string): Promise<void>;
+  /** Admin only: the printed copies in `rapporten/` per school year, oldest first (X-06). */
+  rapportenUsage(): Promise<RapportenYear[]>;
+  /** Admin only: "Opruimen", deletes the copies of the school years before `before`. */
+  rapportenCleanup(before: string): Promise<RapportenCleanup>;
 
   // ── Live editor (Step 8b, ADR-0002 section 12) ────────────────────────────
   // One session per open opdracht; compile results arrive through

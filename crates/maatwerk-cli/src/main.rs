@@ -75,7 +75,14 @@ placeholder.
   with other content stop the export unless --overwrite.";
 
 fn main() -> ExitCode {
-    let args: Vec<String> = std::env::args().skip(1).collect();
+    // Review 5b n6: `env::args` panics on an argument that is not UTF-8.
+    let Some(args) = std::env::args_os()
+        .skip(1)
+        .map(|a| a.into_string().ok())
+        .collect::<Option<Vec<String>>>()
+    else {
+        return usage_error("an argument is not valid UTF-8 (rename the file or folder)");
+    };
     let args: Vec<&str> = args.iter().map(String::as_str).collect();
     match args.as_slice() {
         ["--version"] => {
@@ -127,6 +134,37 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         _ => usage_error("unknown command"),
+    }
+}
+
+/// Writes `bytes` to `<path>.partial`, then renames it over `path` (review 5b n6: a failed or
+/// interrupted run left a truncated PDF under the final name).
+pub(crate) fn write_file(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    let mut partial = path.as_os_str().to_owned();
+    partial.push(".partial");
+    let partial = PathBuf::from(partial);
+    std::fs::write(&partial, bytes)?;
+    std::fs::rename(&partial, path).inspect_err(|_| {
+        let _ = std::fs::remove_file(&partial);
+    })
+}
+
+/// Text for the terminal: control characters (from names in the data, review 18 n1) are shown
+/// escaped, so a crafted name cannot move the cursor or recolour the terminal.
+pub(crate) fn plain(text: &str) -> std::borrow::Cow<'_, str> {
+    if text.chars().any(char::is_control) {
+        text.chars()
+            .map(|c| {
+                if c.is_control() {
+                    c.escape_default().to_string()
+                } else {
+                    c.to_string()
+                }
+            })
+            .collect::<String>()
+            .into()
+    } else {
+        text.into()
     }
 }
 
@@ -204,7 +242,7 @@ impl CompileArgs {
                 if !compiled.warnings.is_empty() {
                     eprint!("{}", to_text(&compiled.warnings));
                 }
-                if let Err(e) = std::fs::write(&out, compiled.output) {
+                if let Err(e) = write_file(&out, &compiled.output) {
                     eprintln!("error: cannot write {}: {e}", out.display());
                     return ExitCode::FAILURE;
                 }
@@ -235,6 +273,25 @@ fn split_entry(file: &Path) -> Result<(PathBuf, RelPath), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Review 18 n1: names from the data are printed with control characters escaped.
+    #[test]
+    fn plain_escapes_control_characters() {
+        assert_eq!(plain("Toets 1"), "Toets 1");
+        assert_eq!(plain("a\u{1b}[31mb"), "a\\u{1b}[31mb");
+        assert_eq!(plain("r\nx"), "r\\nx");
+    }
+
+    /// Review 5b n6: the PDF lands under its name only when complete.
+    #[test]
+    fn write_file_replaces_the_target_and_leaves_no_partial() {
+        let tmp = tempfile::tempdir().unwrap();
+        let out = tmp.path().join("a.pdf");
+        write_file(&out, b"one").unwrap();
+        write_file(&out, b"two").unwrap();
+        assert_eq!(std::fs::read(&out).unwrap(), b"two");
+        assert!(!tmp.path().join("a.pdf.partial").exists());
+    }
 
     #[test]
     fn parses_compile_arguments() {

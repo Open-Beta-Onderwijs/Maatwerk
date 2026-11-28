@@ -21,6 +21,9 @@ use crate::error::{Error, Result};
 /// milliseconds; only a hung process holds the lock this long.
 pub(crate) const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// What an error about the local lock folder names instead of its path (review 4b n4).
+const LOCK_LABEL: &str = "(lokale vergrendeling)";
+
 /// Default folder for the lock files: per user, local, never synced. `%LOCALAPPDATA%` rather
 /// than `%TEMP%`, whose value a process can change (review 4a m2). Exclusion covers processes of
 /// the same user on this PC; another user on the same PC has their own OneDrive copy anyway.
@@ -74,7 +77,11 @@ impl CommitLock {
             .entry(root.to_path_buf())
             .or_default()
             .clone();
-        fs::create_dir_all(lock_dir).map_err(|e| Error::io(lock_dir.display().to_string(), e))?;
+        fs::create_dir_all(lock_dir).map_err(|e| {
+            // The UI gets no local path (it names the Windows user; review 4b n4): the log has it.
+            tracing::warn!("commit lock folder {}: {e}", lock_dir.display());
+            Error::io(LOCK_LABEL, e)
+        })?;
         let key = super::hash_hex(root.as_os_str().as_encoded_bytes());
         let file = lock_dir.join(format!("data-{}.lock", &key[..16]));
         Ok(CommitLock {
@@ -84,17 +91,22 @@ impl CommitLock {
         })
     }
 
-    pub(crate) fn acquire(&self) -> Result<CommitGuard<'_>> {
+    /// Takes the lock for a write or delete of `rel`. Errors name `rel`, not the local lock
+    /// file (review 4a n4, 4b n4); the log has the lock file.
+    pub(crate) fn acquire(&self, rel: &str) -> Result<CommitGuard<'_>> {
         // A panic while holding the mutex leaves no broken state behind (the guarded data is
         // the filesystem), so a poisoned mutex is still usable.
         let guard = self.mutex.lock().unwrap_or_else(|p| p.into_inner());
-        let shown = || self.file.display().to_string();
+        let failed = |e: std::io::Error| {
+            tracing::warn!("commit lock {}: {e}", self.file.display());
+            Error::io(rel, e)
+        };
         let file = OpenOptions::new()
             .create(true)
             .truncate(false)
             .write(true)
             .open(&self.file)
-            .map_err(|e| Error::io(shown(), e))?;
+            .map_err(failed)?;
         let start = Instant::now();
         loop {
             match file.try_lock() {
@@ -107,8 +119,12 @@ impl CommitLock {
                 Err(TryLockError::WouldBlock) if start.elapsed() < self.timeout => {
                     std::thread::sleep(Duration::from_millis(5));
                 }
-                Err(TryLockError::WouldBlock) => return Err(Error::Locked { path: shown() }),
-                Err(TryLockError::Error(e)) => return Err(Error::io(shown(), e)),
+                Err(TryLockError::WouldBlock) => {
+                    return Err(Error::Locked {
+                        path: rel.to_owned(),
+                    });
+                }
+                Err(TryLockError::Error(e)) => return Err(failed(e)),
             }
         }
     }

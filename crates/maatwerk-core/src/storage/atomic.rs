@@ -109,6 +109,31 @@ fn rename_or_write(
     }
 }
 
+/// Reads a file. A sharing error (OneDrive, a virus scanner or a colleague's sync replacing the
+/// file at that moment) is retried with the rename backoff (review 4a m6); after the last
+/// attempt, or on any other error, the error is returned.
+pub(crate) fn read_retrying(path: &Path) -> io::Result<Vec<u8>> {
+    read_retrying_with(path, &|p| fs::read(p), &std::thread::sleep)
+}
+
+/// [`read_retrying`] with the read and sleep injected, for failure tests.
+pub(crate) fn read_retrying_with(
+    path: &Path,
+    read: &dyn Fn(&Path) -> io::Result<Vec<u8>>,
+    sleep: &dyn Fn(Duration),
+) -> io::Result<Vec<u8>> {
+    let mut attempt = 0;
+    loop {
+        match read(path) {
+            Err(e) if attempt + 1 < RENAME_ATTEMPTS && is_sharing_error(&e) => {
+                attempt += 1;
+                sleep(Duration::from_millis(30 * u64::from(attempt)));
+            }
+            result => return result,
+        }
+    }
+}
+
 /// `<target>.<pid>-<n>.tmp` in the target's folder (S06: same folder; a counter added because
 /// the port writes from several threads).
 fn temp_path(path: &Path) -> PathBuf {
@@ -156,6 +181,46 @@ mod tests {
         write_atomic(&target, b"[1]").unwrap();
         assert_eq!(fs::read(&target).unwrap(), b"[1]");
         assert_eq!(names_in(&tmp.path().join("a/b")), vec!["c.json"]);
+    }
+
+    /// Review 4a m6: a read that hits a file being replaced (a sharing error on Windows) is
+    /// retried with the rename backoff; other errors and a missing file are not.
+    #[test]
+    fn reads_retry_sharing_errors_only() {
+        let calls = Cell::new(0);
+        let sleeps = RefCell::new(vec![]);
+        let read = |_: &Path| {
+            calls.set(calls.get() + 1);
+            if calls.get() < 3 {
+                Err(io::Error::from(io::ErrorKind::PermissionDenied))
+            } else {
+                Ok(b"ok".to_vec())
+            }
+        };
+        let sleep = |d: Duration| sleeps.borrow_mut().push(d.as_millis());
+        assert_eq!(
+            read_retrying_with(Path::new("x"), &read, &sleep).unwrap(),
+            b"ok"
+        );
+        assert_eq!(*sleeps.borrow(), vec![30, 60]);
+
+        let calls = Cell::new(0);
+        let missing = |_: &Path| {
+            calls.set(calls.get() + 1);
+            Err(io::Error::from(io::ErrorKind::NotFound))
+        };
+        let err =
+            read_retrying_with(Path::new("x"), &missing, &|_| panic!("no sleep")).unwrap_err();
+        assert_eq!((err.kind(), calls.get()), (io::ErrorKind::NotFound, 1));
+
+        let calls = Cell::new(0);
+        let held = |_: &Path| {
+            calls.set(calls.get() + 1);
+            Err(io::Error::from(io::ErrorKind::PermissionDenied))
+        };
+        let err = read_retrying_with(Path::new("x"), &held, &|_| {}).unwrap_err();
+        assert_eq!(err.kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(calls.get(), RENAME_ATTEMPTS);
     }
 
     #[test]

@@ -20,11 +20,15 @@ await installBridge();
 installQuitGuard(window.maatwerk);
 // Emoji in the embedded font, as in the PDFs (where the webview can draw it).
 registerEmojiFont(window.maatwerk.emojiFontUrl());
-// Errors nobody handled: logged, plus one message pointing to "Probleem melden".
+// Errors nobody handled: logged, plus one message pointing to "Probleem melden". The message
+// waits for app.js as the startup loads it: importing it from here could evaluate it before the
+// legacy globals exist (review 10 n2).
+type AppModule = { persistentError: (message: string) => void };
+let appLoaded: (app: AppModule) => void = () => {};
+const app = new Promise<AppModule>((resolve) => (appLoaded = resolve));
 installErrorReporting(window.maatwerk, (message) => {
-  import('./app.js')
-    .then((app) => app.persistentError(message))
-    .catch(() => console.error(message));
+  console.error(message);
+  void app.then((a) => a.persistentError(message));
 });
 await import('./legacy/globals');
-await import('./app.js');
+appLoaded(await import('./app.js'));

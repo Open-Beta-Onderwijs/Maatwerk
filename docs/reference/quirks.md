@@ -202,6 +202,14 @@ are relative to `_reference/` unless a section says otherwise.
       disappear; the UI re-reads the RTTI templates when the modal opens. Test:
       `watcher::tests::m4_own_writes_to_ignored_paths_are_not_tracked`.
 
+37. **D37 · `readAllJson` skips a file that is not valid UTF-8**
+    - Where: `Storage::read_all_json` (step 4a, kept as reference behaviour of `fs:readAllJson`
+      per its test): a file saved in another encoding (an observatie edited in Windows-1252)
+      vanished from the list, while `read_json` and `read_all_json_named` showed it with a
+      replacement character (review 4a n7).
+    - **Fixed (step 41, review 4a n7):** every folder read decodes like `read_json` (replacement
+      characters). Test: `storage::tests::folder_reads_decode_invalid_utf8_like_read_json`.
+
 ## B. Business logic
 
 Paths in this section are relative to `_reference/renderer/`.

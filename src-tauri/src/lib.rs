@@ -102,6 +102,9 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             data::migrate_data_folder,
             data::validate_data_folder,
             data::rubric_usage,
+            data::exam_has_data,
+            data::students_with_data,
+            data::save_exam_family,
             data::vak_numbers,
             data::stamp_issues,
             data::accept_stamp,
@@ -116,6 +119,8 @@ pub fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             auth::copy_opdracht_to_sectie,
             auth::save_text_as,
             auth::list_snapshots,
+            auth::rapporten_usage,
+            auth::rapporten_cleanup,
             auth::snapshot_for_file,
             auth::restore_from_snapshot,
             render::render_rapport_pdf,
@@ -323,11 +328,13 @@ pub fn run() {
         if let tauri::RunEvent::Ready = event {
             start_error::mark_started();
         }
+        let slot = handle.try_state::<state::Shared>();
+        if let (tauri::RunEvent::Exit, Some(slot)) = (&event, &slot) {
+            // Also before the core is open: it then starts nothing (review 10 n1).
+            slot.set_closing();
+        }
         // Not open yet: nothing to mark offline or stop.
-        let Some(core) = handle
-            .try_state::<state::Shared>()
-            .and_then(|slot| slot.get())
-        else {
+        let Some(core) = slot.and_then(|slot| slot.get()) else {
             return;
         };
         match event {
@@ -386,6 +393,8 @@ mod tests {
             "read_clipboard_image",
             "validate_data_folder",
             "rubric_usage",
+            "exam_has_data",
+            "students_with_data",
             "vak_numbers",
             "stamp_issues",
             "verify_pin",
@@ -393,6 +402,7 @@ mod tests {
             "login_gast",
             "save_text_as",
             "list_snapshots",
+            "rapporten_usage",
             "snapshot_for_file",
             "render_rapport_pdf",
             "render_po_rapport_pdf",
@@ -451,6 +461,8 @@ mod tests {
             "ai_commit_images",
             "ai_undo_images",
             "print_pdf",
+            "save_exam_family",
+            "rapporten_cleanup",
             // The user file (PIN commands), project file updates, folders (none for a gast).
             "set_first_pin",
             "change_pin",

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Step 30: Observatie bewerken with the icon picker (F-15, spec 4.12, board 15) and Opdracht
-// bewerken with observatie chips and "Inhoud bewerken in de editor".
+// bewerken with observatie chips and "Inhoud bewerken in de editor". Step 41: what a linked test
+// keeps in an observatie, and the delete block for linked opdrachten (edit-locks.md 12, 13).
 
 import { expect, test } from '@playwright/test';
-import { login, watchErrors, withMock } from './helpers';
+import { login, seedFiles, watchErrors, withMock, YEAR } from './helpers';
 
 test('the icon picker: 200+ icons, search, categories; the chosen icon is saved', async ({
   page,
@@ -111,4 +112,98 @@ test('"Inhoud bewerken in de editor" saves the opdracht and opens the editor', a
   const src = await page.locator('#editor-frame').getAttribute('src');
   expect(new URLSearchParams(src!.split('?')[1]).get('naam')).toBe('Direct naar de editor');
   expect(errors.filter((e) => !e.includes('Vul') && !e.includes('Selecteer'))).toEqual([]);
+});
+
+test('a linked test keeps its jaarlaag, schoolsoort and vak in the observatie (decision 12)', async ({
+  page,
+}) => {
+  const errors = watchErrors(page);
+  const obs = {
+    id: 'obs-lock',
+    naam: 'Gekoppeld',
+    icon: '🧪',
+    schoolsoort: ['Havo', 'Vwo'],
+    subjects: ['nat', 'wisob', 'wisa'],
+    jaarlagen: ['3', '4'],
+    toetstypes: ['toets'],
+    _meta: { rev: 1 },
+  };
+  const exam = (id: string, subject: string) => ({
+    id,
+    title: `Toets ${id}`,
+    subject,
+    jaarlaag: '3',
+    schoolsoort: ['Havo'],
+    obs_ids: ['obs-lock'],
+    questions: [],
+    _meta: { rev: 1 },
+  });
+  await seedFiles(page, {
+    'observaties/obs-lock.json': obs,
+    [`${YEAR}/exams/e-lock-nat.json`]: exam('e-lock-nat', 'nat'),
+    [`${YEAR}/exams/e-lock-wi.json`]: exam('e-lock-wi', 'wi'),
+  });
+  await login(page);
+  await page.locator('.nav-btn[data-screen="observaties"]').click();
+  await page
+    .locator('#obs-list .icard', { hasText: 'Gekoppeld' })
+    .locator('[data-action="edit-obs"]')
+    .click();
+  const chip = (group: string, attr: string, v: string) =>
+    page.locator(`#${group} [data-${attr}="${v}"]`);
+  await expect(chip('obs-jl-group', 'jl', '3')).toBeDisabled();
+  await expect(chip('obs-jl-group', 'jl', '3')).toHaveAttribute('title', /gekoppelde toets/);
+  await expect(chip('obs-jl-group', 'jl', '4')).toBeEnabled();
+  await expect(chip('obs-ss-group', 'ss', 'Havo')).toBeDisabled();
+  await expect(chip('obs-ss-group', 'ss', 'Vwo')).toBeEnabled();
+  await expect(chip('obs-subj-group', 'vak', 'nat')).toBeDisabled();
+  // Wiskunde: one of the two variants may go, the last one stays.
+  await expect(chip('obs-subj-group', 'vak', 'wisob')).toBeEnabled();
+  await chip('obs-subj-group', 'vak', 'wisob').click();
+  await expect(chip('obs-subj-group', 'vak', 'wisa')).toBeDisabled();
+  await chip('obs-subj-group', 'vak', 'wisob').click();
+  await expect(chip('obs-subj-group', 'vak', 'wisa')).toBeEnabled();
+
+  await chip('obs-jl-group', 'jl', '4').click();
+  await chip('obs-ss-group', 'ss', 'Vwo').click();
+  await chip('obs-subj-group', 'vak', 'wisa').click();
+  await page.locator('#f-osave').click();
+  await expect(page.locator('.dlg.modal-obs-edit')).toHaveCount(0);
+  const saved = (await withMock(page, (m) => m.readAllJson('observaties'))) as (typeof obs)[];
+  const o = saved.find((x) => x.id === 'obs-lock')!;
+  expect([o.jaarlagen, o.schoolsoort, o.subjects]).toEqual([['3'], ['Havo'], ['nat', 'wisob']]);
+  expect(errors).toEqual([]);
+});
+
+test('an observatie that opdrachten link cannot be deleted; the menu names them (decision 13)', async ({
+  page,
+}) => {
+  await seedFiles(page, {
+    'observaties/obs-opd-link.json': {
+      id: 'obs-opd-link',
+      naam: 'Alleen in een opdracht',
+      icon: '🧪',
+      schoolsoort: ['Havo'],
+      subjects: ['nat'],
+      jaarlagen: ['3'],
+      toetstypes: ['toets'],
+      _meta: { rev: 1 },
+    },
+    'opdrachten/op-link/opdracht.json': {
+      id: 'op-link',
+      naam: 'Breuken oefenen',
+      observaties: ['obs-opd-link'],
+      subjects: ['nat'],
+      schoolsoort: ['Havo'],
+      jaarlagen: [3],
+      _meta: { rev: 1 },
+    },
+  });
+  await login(page);
+  await page.locator('.nav-btn[data-screen="observaties"]').click();
+  const card = page.locator('#obs-list .icard', { hasText: 'Alleen in een opdracht' });
+  await card.getByRole('button', { name: 'Meer acties' }).click();
+  const del = page.getByRole('menuitem', { name: 'Verwijderen' });
+  await expect(del).toHaveAttribute('aria-disabled', 'true');
+  await expect(del).toHaveAttribute('title', /opdracht .*: Breuken oefenen\.$/);
 });

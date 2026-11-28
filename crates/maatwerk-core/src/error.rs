@@ -18,9 +18,15 @@ pub enum Error {
     #[error("not found: {path}")]
     NotFound { path: String },
 
-    /// A file exists but does not parse as JSON (or is not UTF-8). Never overwritten (S24).
+    /// A file exists but does not parse as JSON (or is not UTF-8). Never overwritten blindly
+    /// (S24): `hash` is the hash of its bytes, so a write the teacher confirms can replace exactly
+    /// this file and nothing a colleague wrote since (review 4a m4).
     #[error("corrupt JSON in {path}: {message}")]
-    CorruptJson { path: String, message: String },
+    CorruptJson {
+        path: String,
+        message: String,
+        hash: String,
+    },
 
     /// Compare-and-swap failed: someone else wrote the file since it was read. `updated_by` is the
     /// other user's id from `_meta.updatedBy` when known (S27).
@@ -71,6 +77,11 @@ pub enum Error {
     #[error("forbidden: {message}")]
     Forbidden { message: String },
 
+    /// A change the data depends on refused (step 41, `docs/reference/edit-locks.md`): the
+    /// message is Dutch and says why (e.g. "Er zijn al scores voor deze PO: ...").
+    #[error("{message}")]
+    EditLocked { path: String, message: String },
+
     /// Any other I/O error.
     #[error("I/O error on {path}: {source}")]
     Io {
@@ -95,6 +106,7 @@ impl Error {
             Error::InvalidArgument { .. } => "invalid_argument",
             Error::ReadOnly { .. } => "read_only",
             Error::Forbidden { .. } => "forbidden",
+            Error::EditLocked { .. } => "edit_locked",
             Error::GuestReadOnly => "read_only",
             Error::Io { .. } => "io",
         }

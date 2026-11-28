@@ -118,7 +118,7 @@ fn min_version(s: &Storage) -> String {
 
 fn message(e: Error) -> String {
     match e {
-        Error::InvalidArgument { message } => message,
+        Error::InvalidArgument { message } | Error::EditLocked { message, .. } => message,
         other => panic!("expected a refusal, got {other:?}"),
     }
 }
@@ -449,4 +449,41 @@ fn a_locked_change_to_a_rubric_in_use_is_still_refused() {
     );
     assert!(err.contains("in gebruik bij 1 PO"), "{err}");
     assert!(s.delete(&path).is_err());
+}
+
+/// Decision 9 (step 41): a jaarlaag or schoolsoort that a linked PO has stays in the rubric;
+/// adding one, or removing one no linked PO has, stays allowed.
+#[test]
+fn a_rubric_keeps_the_jaarlagen_and_schoolsoorten_its_pos_have() {
+    let (_t, s) = setup();
+    let mut r = rubric("r1");
+    r["schoolsoort"] = json!(["Havo", "Vwo"]);
+    r["jaarlagen"] = json!(["4", "5"]);
+    s.write_json(&rel("rubrics/r1.json"), &r, Expect::Any)
+        .unwrap();
+    let (exam, mut po) = po_exam("2025-2026", "p1", "r1");
+    po["jaarlaag"] = json!(4);
+    po["schoolsoort"] = json!(["Havo"]);
+    s.write_json(&exam, &po, Expect::Any).unwrap();
+
+    let mut no_4 = r.clone();
+    no_4["jaarlagen"] = json!(["5"]);
+    let msg = message(
+        s.write_json(&rel("rubrics/r1.json"), &no_4, Expect::Any)
+            .unwrap_err(),
+    );
+    assert!(msg.contains("jaarlaag 4"), "{msg}");
+    let mut no_havo = r.clone();
+    no_havo["schoolsoort"] = json!(["Vwo"]);
+    let msg = message(
+        s.write_json(&rel("rubrics/r1.json"), &no_havo, Expect::Any)
+            .unwrap_err(),
+    );
+    assert!(msg.contains("Havo"), "{msg}");
+
+    let mut free = r.clone();
+    free["jaarlagen"] = json!(["4", "6"]); // 5 out (no PO), 6 in
+    free["schoolsoort"] = json!(["Havo", "Mavo"]); // Vwo out (no PO), Mavo in
+    s.write_json(&rel("rubrics/r1.json"), &free, Expect::Any)
+        .unwrap();
 }

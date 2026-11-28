@@ -54,8 +54,16 @@ import {
 import { SUBJECT_DISPLAY } from './domain/rapport';
 import { decode, encode, studentId as asStudentId } from './domain/v2';
 import { normaliseRubric } from './domain/rubric';
+import { hasData } from './domain/has-data';
+import { highestEntered } from './domain/question-locks';
 import { rubricOf, setRubricLookup } from './domain/po';
-import { READ_ONLY_CODE, isReadOnly, noteReadOnly, readOnlyError } from './services/read-only';
+import {
+  READ_ONLY_CODE,
+  isReadOnly,
+  isReadOnlyError,
+  noteReadOnly,
+  readOnlyError,
+} from './services/read-only';
 import { savedActiveYear, withPreferences } from './domain/preferences';
 import { withExamDefaults } from './domain/types';
 import { timed } from './utils/perf';
@@ -98,11 +106,25 @@ const Store = (() => {
   // the sectievoorzitter or sectiesecretaris badge (the same rights, decision 80).
   let _activeRole = null;
 
+  // External changes per path while a read is in flight (backlog 7c): a change reported before
+  // a read returns is skipped by applyExternalChange when nothing is cached yet, so the read's
+  // older content would stay until the next login. Each change bumps a counter; a read that
+  // started before the path's last change reads again (one file) or caches nothing (a folder).
+  let externalTick = 0;
+  const changedAt = new Map(); // relPath -> externalTick of its last external change
+  const changedSince = (relPath, tick) => (changedAt.get(relPath) ?? -1) > tick;
+
   async function load(relPath) {
     if (cache[relPath] !== undefined) return cache[relPath];
-    const data = decode(relPath, await window.maatwerk.readJson(relPath));
-    cache[relPath] = data;
-    return data;
+    for (let attempt = 0; ; attempt++) {
+      const started = externalTick;
+      const data = decode(relPath, await window.maatwerk.readJson(relPath));
+      // A newer version may have been cached meanwhile (an own write, a refresh): keep it.
+      if (cache[relPath] !== undefined) return cache[relPath];
+      if (changedSince(relPath, started) && attempt < 3) continue;
+      cache[relPath] = data;
+      return data;
+    }
   }
 
   function invalidate(relPath) {
@@ -132,7 +154,7 @@ const Store = (() => {
         if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
         const onDisk = decode(relPath, read.data);
         const next = mutator(onDisk ?? fallback(), onDisk);
-        const result = await window.maatwerk.writeJson(relPath, encode(relPath, next), {
+        const result = await window.maatwerk.writeJson(relPath, encode(relPath, next, read.data), {
           cas: true,
           expectedHash: read.hash,
         });
@@ -168,7 +190,12 @@ const Store = (() => {
   // throws an error with code 'conflict'.
   async function loadVersioned(relPath) {
     const read = await window.maatwerk.readJsonVersioned(relPath);
-    if (read?.error) throw new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
+    if (read?.error) {
+      const err = new Error(`Bestand ${relPath} is onleesbaar: ${read.error}`);
+      // Saving with this hash replaces exactly the unreadable file (review 4a m4).
+      err.unreadableHash = read.unreadableHash ?? null;
+      throw err;
+    }
     return { data: read.data, hash: read.hash };
   }
 
@@ -673,7 +700,7 @@ const Store = (() => {
   async function deleteGroup(id, year) {
     const group = getGroupsSync(year).find((g) => g.id === id);
     if (!group) return;
-    await window.maatwerk.deleteFile(ypGroup(year, id));
+    checkDeleted(ypGroup(year, id), await window.maatwerk.deleteFile(ypGroup(year, id)));
     changed();
     // The admin's list is the `__all__` cache; the reference only filtered the
     // subject cache, so the deleted group stayed on screen (quirk U21).
@@ -731,6 +758,69 @@ const Store = (() => {
     return saved;
   }
 
+  /**
+   * Saves a herkansing family at once (step 41, decision 5): `exams` are the original and every
+   * attempt, edited; each is merged over the cached version as `upsertExam` does. The core saves
+   * the attempts, then the original, and refuses a family that does not agree.
+   */
+  async function saveExamFamily(exams, year) {
+    const merged = exams.map((exam) => {
+      const subj = exam.subject ?? _activeSubject;
+      const { academic_year: _ay, ...clean } = exam;
+      const updated = withExamDefaults({ ...clean, subject: subj });
+      const cached = (cache[`${year}/exams/${subj}`] ?? []).find((e) => e.id === updated.id);
+      return cached ? { ...cached, ...updated } : updated;
+    });
+    let saved;
+    try {
+      saved = await window.maatwerk.saveExamFamily(year, merged);
+    } catch (e) {
+      // The core saves the attempts first: after a failure halfway they are on disk with a new
+      // revision, so the cache takes the family from disk again (review 41 M2).
+      await refreshExams(year, merged);
+      if (e?.code === 'conflict') throw conflictError(null);
+      if (isReadOnlyError(e)) {
+        noteReadOnly();
+        throw readOnlyError();
+      }
+      if (e?.code === 'edit_locked') throw e;
+      throw saveFailed(e?.details?.path ?? `${year}/exams`, e?.message ?? String(e));
+    }
+    for (const exam of saved)
+      putCachedExam(`${year}/exams/${exam.subject ?? _activeSubject}`, exam);
+    changed();
+    return saved;
+  }
+
+  /** Re-reads these exams from disk into the cache; one that is gone leaves the cache. */
+  async function refreshExams(year, exams) {
+    for (const exam of exams) {
+      const rel = ypExam(year, exam.id);
+      const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
+      try {
+        const fresh = decode(rel, await window.maatwerk.readJson(rel));
+        if (fresh) putCachedExam(key, fresh);
+        else cache[key] = (cache[key] ?? []).filter((e) => e.id !== exam.id);
+      } catch (e) {
+        console.warn('[store] refreshExams', rel, e);
+      }
+    }
+    changed();
+  }
+
+  /**
+   * A delete the core refused (an edit lock, read-only, a guest) throws, so the caller shows no
+   * "verwijderd" and the item stays (review 41 M3). The app shows "Niet opgeslagen: <reden>".
+   */
+  function checkDeleted(relPath, result) {
+    if (!result || result.ok !== false) return;
+    if (result.reason === READ_ONLY_CODE) {
+      noteReadOnly();
+      throw readOnlyError();
+    }
+    throw saveFailed(relPath, result.reason);
+  }
+
   function putCachedExam(key, exam) {
     const arr = cache[key] ?? [];
     const i = arr.findIndex((e) => e.id === exam.id);
@@ -755,7 +845,7 @@ const Store = (() => {
     const exam = getExamsSync(year).find((e) => e.id === id);
     if (!exam) return;
     if (examHasResits(id, year)) throw new Error('has_resits');
-    await window.maatwerk.deleteFile(ypExam(year, id));
+    checkDeleted(ypExam(year, id), await window.maatwerk.deleteFile(ypExam(year, id)));
     changed();
     const key = `${year}/exams/${exam.subject ?? _activeSubject}`;
     cache[key] = (cache[key] ?? []).filter((e) => e.id !== id);
@@ -917,7 +1007,7 @@ const Store = (() => {
   }
 
   async function deleteObservation(id, subject = _activeSubject) {
-    await window.maatwerk.deleteFile(ypObs(id));
+    checkDeleted(ypObs(id), await window.maatwerk.deleteFile(ypObs(id)));
     changed();
     invalidateObsCache();
     await loadObservaties(subject);
@@ -1003,49 +1093,60 @@ const Store = (() => {
     if (ids.every((id) => cache[ypScore(year, subject, id)] !== undefined)) return;
     let read = scoreDirReads.get(dir);
     if (!read) {
+      const started = externalTick;
       read = timed('store:readDir', () => window.maatwerk.readJsonDir(dir)).then((files) =>
         timed('store:decodeDir', () => {
           for (const { name, data } of files) {
             const rel = `${dir}/${name}`;
-            if (cache[rel] === undefined) cache[rel] = decode(rel, data);
+            // Changed by a colleague during the read: not cached, the next load reads it (7c).
+            if (cache[rel] === undefined && !changedSince(rel, started)) {
+              cache[rel] = decode(rel, data);
+            }
           }
         }),
       );
+      read.started = started;
       scoreDirReads.set(dir, read);
       void read.finally(() => scoreDirReads.delete(dir)).catch(() => {});
     }
+    const started = read.started;
     await read;
     for (const id of ids) {
       const rel = ypScore(year, subject, id);
-      if (cache[rel] === undefined) cache[rel] = null;
+      // "No file" only when nobody added it meanwhile (7c).
+      if (cache[rel] === undefined && !changedSince(rel, started)) cache[rel] = null;
     }
   }
 
   // migrate() of the reference (legacy layouts -> per-year -> per-subject) is
   // not ported: no legacy data exists (ADR-0003 C2); Step 7 migrates v1 -> v2.
 
+  /**
+   * Whether any student has data for the exam: asked of the core, the rule the write guards use
+   * (maatwerk-core::locks, step 41). An unreadable score file counts as data (fail closed).
+   */
   async function examHasScores(examId, year, subject = _activeSubject) {
-    const students = getStudentsSync(year);
-    for (const s of students) {
-      const rec = await getStudentScores(s.id, year, subject);
-      const exScores = rec?.scores?.[examId];
-      if (rec?.overrides?.[examId]) return true;
-      if (!exScores) continue;
-      if (Object.values(exScores).some((v) => v !== null && v !== undefined)) return true;
+    try {
+      return await window.maatwerk.examHasData(year, subject, String(examId));
+    } catch (e) {
+      console.warn('[store] examHasData', e);
+      return true;
     }
-    return false;
+  }
+
+  /**
+   * The highest score entered per question of the exam (edit-locks.md decision 11: the test
+   * editor refuses a max below it). One folder read, as the list screens.
+   */
+  async function highestEnteredScores(examId, year, subject = _activeSubject) {
+    await preloadScores(year, subject);
+    const records = getStudentsSync(year).map((s) => cache[ypScore(year, subject, s.id)]);
+    return highestEntered(records, String(examId));
   }
 
   /** Whether the student's score file holds anything for this exam (scores, grade, observaties, PO data). */
   async function studentHasExamData(studentId, examId, year, subject = _activeSubject) {
-    const rec = await getStudentScores(studentId, year, subject);
-    const filled = (o) => o && typeof o === 'object' && Object.keys(o).length > 0;
-    return Boolean(
-      filled(rec.scores?.[examId]) ||
-      rec.overrides?.[examId] ||
-      rec.observations?.[examId]?.length ||
-      rec.po?.[examId],
-    );
+    return hasData(await getStudentScores(studentId, year, subject), examId);
   }
 
   /**
@@ -1060,24 +1161,14 @@ const Store = (() => {
     });
   }
 
-  async function studentHasScores(studentId, year, subject = _activeSubject) {
-    const rec = await getStudentScores(studentId, year, subject);
-    if (Object.keys(rec.overrides ?? {}).length) return true;
-    return Object.values(rec.scores ?? {}).some((exScores) =>
-      Object.values(exScores ?? {}).some((v) => v !== null && v !== undefined),
-    );
-  }
-
-  // Check all years × all subjects — used by admin to guard deletion.
-  async function studentHasAnyScores(studentId) {
+  /**
+   * The students with data in any school year (step 41: they cannot be deleted), asked of the
+   * core per year. An unreadable score folder is reported and counts as "all of them".
+   */
+  async function studentsWithDataAnyYear() {
     const years = listYearsSync();
-    const subjects = Object.keys(SUBJECT_DISPLAY);
-    for (const year of years) {
-      for (const subject of subjects) {
-        if (await studentHasScores(studentId, year, subject)) return true;
-      }
-    }
-    return false;
+    const sets = await Promise.all(years.map((y) => window.maatwerk.studentsWithData(y)));
+    return new Set(sets.flat());
   }
 
   /**
@@ -1111,6 +1202,35 @@ const Store = (() => {
             (r.categories ?? []).some((c) => (c.obs_ids ?? []).includes(obsId)),
         ),
     );
+  }
+
+  /**
+   * The scopes of the loaded tests and rubrics that link the observatie (after `loadObsUsage`):
+   * Observatie bewerken keeps what they use (edit-locks.md decision 12).
+   */
+  function obsLinkScopes(obsId) {
+    const tests = [];
+    const rubrics = [];
+    for (const [key, val] of Object.entries(cache)) {
+      if (!Array.isArray(val)) continue;
+      if (key.includes('/exams/')) {
+        for (const e of val)
+          if ((e.obs_ids ?? []).includes(obsId))
+            tests.push({ jaarlaag: e.jaarlaag, schoolsoort: e.schoolsoort, subject: e.subject });
+      } else if (key.startsWith('rubrics/')) {
+        for (const r of val)
+          if (
+            (r.obs_ids ?? []).includes(obsId) ||
+            (r.categories ?? []).some((c) => (c.obs_ids ?? []).includes(obsId))
+          )
+            rubrics.push({
+              jaarlagen: r.jaarlagen,
+              schoolsoort: r.schoolsoort,
+              subject: r.subject,
+            });
+      }
+    }
+    return { tests, rubrics };
   }
 
   function obsIsUsedInAnyExam(obsId) {
@@ -1352,6 +1472,7 @@ const Store = (() => {
   }
 
   async function applyExternalChange({ relPath, kind, meta }) {
+    changedAt.set(relPath, ++externalTick);
     let type = 'other';
     let match = null;
     for (const [t, re] of EXTERNAL_PATTERNS) {
@@ -1567,6 +1688,7 @@ const Store = (() => {
     getJaarlagen,
     getExams,
     upsertExam,
+    saveExamFamily,
     setExamNTerm,
     deleteExam,
     getStudentScores,
@@ -1587,10 +1709,11 @@ const Store = (() => {
     deleteObservation,
     setObservation,
     examHasScores,
-    studentHasScores,
-    studentHasAnyScores,
+    highestEnteredScores,
+    studentsWithDataAnyYear,
     obsIsUsedInAnyExam,
     obsIsUsedInAnyRubric,
+    obsLinkScopes,
     loadObsUsage,
     removeObsFromExamScores,
     getResitsSync,

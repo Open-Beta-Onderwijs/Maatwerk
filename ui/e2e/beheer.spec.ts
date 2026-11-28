@@ -79,6 +79,24 @@ test('Gegevenscontrole: a clean check is a green card; findings are cards with a
   expect(opened).toEqual(['2025-2026/scores/nat']);
 });
 
+test('Gebruikers: a failed (de)activation leaves the user as they were (review 7a n6)', async ({
+  page,
+}) => {
+  await admin(page, 'gebruikers');
+  const toggle = page.locator(`[data-action="toggle-user"][data-id="${TEACHER}"]`);
+  await expect(toggle).toHaveAttribute('title', 'Gebruiker deactiveren');
+  await withMock(page, (m, id) => m.fail('writeJson', `gebruikers/${id}`), TEACHER);
+  await toggle.click();
+  await expect(page.locator('.toast').last()).toContainText('Opslaan mislukt');
+  await expect(toggle).toHaveAttribute('title', 'Gebruiker deactiveren');
+  const saved = await withMock(
+    page,
+    (m, id) => JSON.parse(m.peek(`gebruikers/${id}.json`) ?? 'null'),
+    TEACHER,
+  );
+  expect(saved.actief).toBe(true);
+});
+
 test('Instellingen: fields with units, Opslaan top right, the snapshots with their kind', async ({
   page,
 }) => {
@@ -111,6 +129,51 @@ test('Instellingen: fields with units, Opslaan top right, the snapshots with the
     m.calls.filter((c) => c[0] === 'openDataFolder').map((c) => c[1]),
   );
   expect(opened).toEqual(['snapshots']);
+});
+
+test('Instellingen: printed copies per school year, Opruimen after a confirm (step 41)', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await withMock(page, (m) => {
+    m.seedPrintedCopy('rapporten/2023-2024/a.pdf', 1024);
+    m.seedPrintedCopy('rapporten/2024-2025/b.pdf', 2048);
+    m.seedPrintedCopy('rapporten/2024-2025/c.pdf', 2048);
+    m.seedPrintedCopy('rapporten/2025-2026/d.pdf', 3 * 1024 * 1024);
+  });
+  await chooseVak(page, 'nat');
+  await page.locator('.user-badge[data-user-id="admin"]').click();
+  await enterPin(page);
+  await page.locator('.nav-btn[data-screen="instellingen"]').click();
+  const card = page.locator('#inst-rapporten');
+  await expect(card.locator('#inst-rapporten-total')).toHaveText('In totaal 4 bestanden, 3 MB.');
+  await expect(card.locator('li')).toHaveText([
+    /2025-2026\s*1 bestand · 3 MB/,
+    /2024-2025\s*2 bestanden · 4 kB/,
+    /2023-2024\s*1 bestand · 1 kB/,
+  ]);
+  // The least is preselected: only 2023-2024 goes.
+  await expect(card.locator('#inst-rapporten-before .csel-label')).toHaveText('2024-2025');
+  await card.locator('#inst-rapporten-before .csel-trigger').click();
+  await card.locator('#inst-rapporten-before .csel-option[data-value="2025-2026"]').click();
+  await card.locator('#inst-rapporten-clean').click();
+  const dialog = page.getByRole('alertdialog', { name: 'Rapporten opruimen' });
+  await expect(dialog).toContainText('3 bestanden (5 kB) van vóór schooljaar 2025-2026');
+  await dialog.getByRole('button', { name: 'Annuleren' }).click();
+  expect(await withMock(page, (m) => m.hasFile('rapporten/2023-2024/a.pdf'))).toBe(true);
+  await card.locator('#inst-rapporten-clean').click();
+  await page
+    .getByRole('alertdialog', { name: 'Rapporten opruimen' })
+    .getByRole('button', { name: 'Verwijderen' })
+    .click();
+  await expect(page.locator('.toast').last()).toContainText('3 bestanden verwijderd (5 kB).');
+  await expect(card.locator('li')).toHaveText([/2025-2026\s*1 bestand/]);
+  await expect(card.locator('#inst-rapporten-clean')).toBeDisabled();
+  const left = await withMock(page, (m) => [
+    m.hasFile('rapporten/2024-2025/b.pdf'),
+    m.hasFile('rapporten/2025-2026/d.pdf'),
+  ]);
+  expect(left).toEqual([false, true]);
 });
 
 test('Instellingen: the school AI switch is saved in instellingen.json (step 32c)', async ({

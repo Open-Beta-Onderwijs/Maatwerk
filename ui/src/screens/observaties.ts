@@ -2,7 +2,7 @@
 
 // The Observaties tab as cards (design spec 4.16, board 57, F-28, PLAN-2 decision 46): three per
 // row, alphabetical; a click on a card opens Observatie bewerken; ⋮ has Bewerken and Verwijderen
-// (disabled with the reason when a test or a rubric uses the observatie, as before).
+// (disabled with the reason when a test, a rubric or an opdracht links the observatie).
 
 import {
   confirmDialog,
@@ -42,7 +42,9 @@ function ownGroups(): OwnGroup[] | null {
 }
 
 function deleteReason(id: string): string | null {
-  return obsDeleteBlock(Store.obsIsUsedInAnyExam(id), obsUsedInRubric(id));
+  // The list's render loaded the opdrachten.
+  const opdrachten = obsUse([], Store.getOpdrachtenSync() as Opdracht[])(id).opdrachten;
+  return obsDeleteBlock(Store.obsIsUsedInAnyExam(id), obsUsedInRubric(id), opdrachten);
 }
 
 async function deleteObs(id: string): Promise<void> {

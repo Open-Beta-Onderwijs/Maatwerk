@@ -157,12 +157,12 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**Review 6 m6:** `Core::open` (schema check, seeding, image-folder walk, output cleanup) runs in
   Tauri's setup on the main thread; a slow OneDrive folder delays the window. Open the core on a
   blocking thread and let the UI wait on `data_folder_status`.~~ Done (Step 10): `CoreSlot`.
-- **Review 6 n10:** `import_opdracht_image` reads the picked file in the shell with `std::fs::read`
-  and no size cap. Move the read into `opdracht_images` with a limit (with 6a m4).
+- ~~**Review 6 n10:**~~ Done in step 41: `opdracht_images::import_file` reads the picked file,
+  refused above 25 MB before reading. Was: read in the shell with no size cap.
 - **Review 6 m3 (rest):** the real-PDF test runs under the mock CSP (`blob:`), not through the
   `maatwerk-out` scheme, and does not fail on pdf.js warnings (manual `M-TOE-5` covers the scheme).
-- **Review 6 n9 (rest):** the watermark upload reuses the logo message, which lists PNG/JPG
-  although only SVG is offered there (unreachable today: the watermark input checks SVG first).
+- ~~**Review 6 n9 (rest):**~~ Done in step 41: the message names each field's types (SVG for the
+  watermark); uploads over 5 MB are refused.
 
 - **Compat layer stays (PLAN Step 6b):** `TauriApi` is the only backend in the app bundle (CI
   checks the bundle has no MockApi), but no legacy screen uses the typed results yet, so the
@@ -178,18 +178,17 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   generate/rapport modals (6b or Step 8).~~ Done: the modals since F-04 (`render-warnings.ts`);
   the editor marks warnings in the open file, and since 39b the others (no place, or in
   `lib.typ`/`main.typ`) show in the status pill ("Opgeslagen · 1 waarschuwing", details).
-- **`rapporten/` retention:** printed copies are never cleaned up (ADR-0002 section 9). Decide on
-  a policy with the user.
+- ~~**`rapporten/` retention:**~~ Done in step 41 (X-06, decision 85): size and "Opruimen" in
+  Beheer › Instellingen.
 - **Command-level tests:** the Tauri commands are thin and their core functions are tested, but
   no test invokes a command through Tauri (`tauri::test` mock runtime). Add a few for the
   render/print/image commands, or cover them in the 6b manual checklist.
 - ~~**Startup error screen (4b m5)**~~ Done (6b): `data_folder_status` + `restart_app`,
   `ui/src/screens/startup-error.ts`, quirks.spec "4b m5".
-- **Review 6a m4:** `list_opdracht_images` decodes and resizes every image on each call (slow for
-  phone photos, no decode limits). Cache thumbnails by file hash/mtime and set
-  `image::Limits`.
-- **Review 6a n7:** a picked file whose name is not valid Unicode gets "Bestandstype . wordt niet
-  ondersteund." instead of a clear message.
+- ~~**Review 6a m4:**~~ Done in step 41: thumbnails cached by content hash, decoded with
+  `image::Limits` (16 384 px, 512 MB). Was: every image decoded on each call, no limits.
+- ~~**Review 6a n7:**~~ Done in step 41: "De bestandsnaam bevat tekens die Maatwerk niet kan
+  lezen…". Was: "Bestandstype . wordt niet ondersteund."
 - ~~**`save_photo` takes image types only (review 6a M1)**~~ Done (6b): the logo input accepts
   the six image types and other types get a Dutch toast (quirks.spec "6a M1").
 
@@ -211,7 +210,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   normalisation also ignores trailing whitespace/final newline.~~ Done (39b, user 2026-11-25: yes): release hashes recomputed, a test per released text.
 - ~~**Review 5b n5:** the mount boundary is the data dir, so a junction from `images/<id>` to another
   opdracht's images is followed. Tighten to `opdrachten/images/<id>` if Step 7 keeps v1 folders.~~ Done (39a, `b9fab11`): only opdracht folders are mounted; a junction to another opdracht is denied (test).
-- **Review 5b n6:** the CLI panics on a non-UTF-8 argument and writes its output non-atomically.
+- ~~**Review 5b n6:**~~ Done in step 41: arguments via `args_os` (a non-UTF-8 one is a usage
+  error), PDFs written to `.partial` and renamed.
 - ~~**Review 5b n7:** the old app removed stale `opdrachten/_preview_*.typ` at start; nobody does now.
   Step 7 migration deletes them.~~ Closed (39a): `_preview_*.typ` only existed in v1 folders, which the 0.29 conversion cleans.
 
@@ -221,9 +221,10 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   call in `rapport.typ`; pre-parse each field and name it (student, category) in the diagnostic.~~
   Done (39b): after a failed rapport each distinct text is compiled on its own; the first error
   gets the hint "de fout zit in het leeradvies bij T1 voor <naam>" (toets and PO rapport).
-- **Review 5a m4 (watcher, Step 4b code):** a colleague's write with the same size inside one
-  mtime tick of the previous state is not seen as a change by the stat check. Compare a content
-  hash when size and mtime are equal but an event arrived.
+- ~~**Review 5a m4 (watcher, Step 4b code):**~~ Done in step 41: a file not hashed yet whose
+  mtime is under 3 s old counts as changed when an event arrives with an unchanged stat (hashing
+  every file at start would download OneDrive on-demand files, D36). Was: a colleague's write
+  with the same size inside one mtime tick of the previous state is not seen as a change.
 - **Review 5a nit n8 (done 2026-10-28):** the pixel tests and golden PNGs no longer use system
   fonts (`support::fonts`, `--ignore-system-fonts`). The app still uses them; an installed
   "Libertinus Serif" could still shadow Typst's own copy there. Nits n1-n6 and n9 were done in 5b.
@@ -251,8 +252,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   a slow OneDrive read in progress. Catch, log and restart the thread.~~ Done (Step 10).
 - ~~**`save_photo` / `write_text_file` accept any data path (n8)**~~ Done (6a):
   `check_photo_path` (`fotos/<name>`) and `check_opdracht_typ_path` (`opdrachten/<name>.typ`).
-- **Lock folder errors carry an absolute local path (n4, remaining part):** `CommitLock` errors
-  name the lock folder under `%LOCALAPPDATA%` (with the Windows user name) in `details.path`.
+- ~~**Lock folder errors carry an absolute local path (n4, remaining part):**~~ Done in step 41:
+  errors name the data file (or "(lokale vergrendeling)"); the log keeps the lock path. Was:
+  `CommitLock` errors name the lock folder under `%LOCALAPPDATA%` (with the Windows user name).
 - **Overflow of `ReadDirectoryChangesW` (review 4b M1 note):** `notify` drops it silently; the
   periodic re-start of OS notifications plus the poll limit the damage. Revisit if colleagues
   report missed changes in non-active years.
@@ -261,22 +263,31 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 4a
 
-- **`update()` does not retry a read that fails with `io` (review 4a m6):** on Windows a read can
-  hit a file that is being replaced. Retry with the rename backoff; needs read fault injection.
-- **RTTI modal and an unreadable template file (review 4a m4):** the tab shows defaults and every
-  save conflicts; offer "overwrite the unreadable file" explicitly.
-- **`Locked.path` names the local lock file, not the data file (n4).**
-- **`update_locks` map never shrinks (n6):** one small entry per file updated in a session.
-- **`read_all_json` skips non-UTF-8 files, `read_json` decodes lossily (n7):** align (lossy).
+- ~~**`update()` does not retry a read that fails with `io` (review 4a m6):**~~ Done in step 41:
+  every read retries a sharing error with the rename backoff (`atomic::read_retrying`, tested
+  with an injected read). Was: on Windows a read can hit a file that is being replaced.
+- ~~**RTTI modal and an unreadable template file (review 4a m4):**~~ Done in step 41: saving asks
+  "Overschrijven"; the write is checked against the hash of the unreadable bytes (`corrupt_json`
+  `details.found`), so only that file is replaced (e2e "4a m4"). Was: every save conflicted.
+- ~~**`Locked.path` names the local lock file, not the data file (n4).**~~ Done in step 41.
+- ~~**`update_locks` map never shrinks (n6):**~~ Done in step 41: an idle file's entry is
+  removed after its update.
+- ~~**`read_all_json` skips non-UTF-8 files, `read_json` decodes lossily (n7):**~~ Done in step
+  41: aligned (lossy), quirk D37.
 - **`save_photo` is stricter than Node's base64 (n8):** invalid characters are an error, not
   skipped. Record in quirks if a real caller ever sends such data.
-- **`schema_version` checked only at open (n9):** re-check before writes once Step 7 can migrate a
-  folder while an app is running.
-- **Blind `Expect::Any` writes still possible in the core API (n10):** used for text files and
-  presence; consider removing it for JSON in 4b.
-- **JSON edge cases (n11):** integers above 2^53 are printed exactly (JS would round); a file with
-  a lone surrogate escape is rejected as corrupt.
-- **No on-disk test for non-ASCII names or paths over 260 characters (n12).**
+- ~~**`schema_version` checked only at open (n9):**~~ Closed in step 41: a migration writes
+  `minAppVersion` first, and every write checks it (`Storage::read_only`), so an app running
+  on a folder another PC migrates turns read-only at its next write.
+- ~~**Blind `Expect::Any` writes still possible in the core API (n10):**~~ Done in step 41 for
+  the UI: the `write_json` command refuses `cas: false` (every UI write reads first). The core
+  keeps `Expect::Any` for text files, presence and migrations; the mock allows it for seeding.
+- ~~**JSON edge cases (n11):**~~ Accepted in step 41: the files are written by the JS UI, which
+  never produces integers above 2^53; a lone surrogate escape is reported as a corrupt file in
+  Gegevenscontrole, which is the right place to fix it. Was: integers above 2^53 are printed
+  exactly (JS would round); a lone surrogate escape is rejected as corrupt.
+- ~~**No on-disk test for non-ASCII names or paths over 260 characters (n12).**~~ Done in step 41
+  (`non_ascii_names_and_long_paths_round_trip_on_disk`).
 - **Junction created between `resolve` and the write (n13):** needs local write access to the data
   folder; accepted.
 
@@ -286,9 +297,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - **Licence ban covers production deps only (review 3b m8):** `tools/check-npm-licenses.mjs` walks
   `--omit=dev`; Vite would bundle a dev dependency if UI code imported it. Add a check on the
   built bundle (or an ESLint import rule) when the dependency list grows.
-- **Colleague change on an unsaved cell (review 3b n4):** a background update can replace a cell
-  whose save failed; the cell keeps its "not saved" mark. Clear the mark when a colleague's value
-  replaces it.
+- ~~**Colleague change on an unsaved cell (review 3b n4):**~~ Done in step 41: the mark goes when
+  a colleague's value replaces the cell (e2e "3b n4"). Was: the cell kept its "not saved" mark.
 - ~~**Queued saves stamp the user at run time:**~~ Closed in step 35: score files carry no
   `updatedBy`; the core now checks every score write against the session, so the backend logout
   waits for the queued saves and a new PIN check waits for that logout. Was: `updateStudentScores` stamps `_meta.updatedBy` when
@@ -341,8 +351,9 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - ~~**n5:** `tauri.conf.json` `version` duplicates the Cargo workspace version~~ Done 2026-10-30:
   the field is gone (Tauri takes the Cargo version), version bumped to 0.2.0 to match the
   `v0.2.0-parity` tag. The versioning policy itself is still PLAN section 9, decision 9.
-- **n6:** SPDX check skips toml/yml; decide whether config files need headers and whether to add a
-  copyright line convention.
+- ~~**n6:**~~ done in step 41 (user took the recommendation, 2026-11-27): own TOML/YAML files
+  carry the SPDX header and `check-spdx.sh` checks them (JSON cannot hold a comment; vendored
+  Typst packages stay exempt). Copyright: the one project line in `README.md`, no per-file lines.
 - **n9:** CI hygiene: pin actions by SHA (Dependabot), avoid double runs on push + PR, avoid
   installing the Windows target on Linux runners.
 - **n2:** keep the two licence allowlists (`deny.toml`, `tools/check-npm-licenses.mjs`) in sync;
@@ -356,13 +367,16 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   for the tiny fixture (ignoring `_meta.hash` and migration-added `_meta`).~~ Closed (39a): moot, the core v1 migration went at 1.0 (decision 88).
 - ~~**n1:** `TypstProject::opdracht_v1`/`v1_opdracht_id` are only used by tests and an example now;
   remove after the cutover.~~ Done (39a, `b9fab11`).
-- **n3:** the data-files-v2 text on merging duplicate students vs. the Rust merge details.
-- **n4:** the conflict-copy check can label a misplaced file as a conflict copy.
+- ~~**n3:**~~ Closed in step 41: the v1-to-v2 merge went with 39a; `data-files-v2.md` now says
+  it is history. Was: the data-files-v2 text on merging duplicate students vs. the Rust merge.
+- ~~**n4:**~~ Done in step 41: a conflict copy must hold the original's id; another id is a
+  placement error (test first).
 - **n5:** validate at admin login reads every year (Files-On-Demand downloads) and stamping clones
-  each file; measure in 7c.
-- **n6:** the user active toggle changes the cached user before saving; a conflict leaves the
-  wrong state on screen.
-- **n8:** saving the students file drops top-level keys other than `students`.
+  each file. Step 41: moved to 45b (manual tests on a real copy): only measurable there, and
+  checking fewer years could hide errors.
+- ~~**n6:**~~ Done in step 41: the toggle saves a copy; a failure leaves the cache and screen
+  as they were (e2e first).
+- ~~**n8:**~~ Done in step 41: `encode` keeps the file's other top-level keys (Vitest).
 
 ## From Step 7b (review `docs/reviews/step-07b.md`)
 
@@ -375,12 +389,15 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
   `isSectiebestuurActive` reads `school.json` each time). Was: the sectievoorzitter role is checked against `school.json` only at login; a removal by the
   admin takes effect at the next login.
 - n5: the Rust login session survives a webview reload (dev only; release builds have no reload).
-- After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only at
-  the next login.
+- ~~After "Herstellen uit snapshot" of year data (groups, exams, scores) the Store reloads it only
+  at the next login.~~ Done in step 41: the restored file goes through `Sync.refresh`, the path
+  of a colleague's change (e2e "a restored group shows at once").
 
 ## From Step 7c (perceived speed)
 
-- **Read vs. colleague change, file not cached yet** (older than 7c, also with single reads):
+- ~~**Read vs. colleague change, file not cached yet**~~ Done in step 41: the store counts
+  external changes per path; a single read that saw one reads again, a folder read does not
+  cache that file (`ui/src/store.test.ts`). Was (older than 7c, also with single reads):
   a score file read in flight when the watcher reports a colleague's change to that file is not
   refreshed (the event is skipped because nothing is cached yet), so the read's older content
   stays until the next login. Window: one read. Option: count external changes per path while
@@ -468,14 +485,16 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 - **Perf at 4x (review 10 M1):** investigated: `step-07c` and `step-10` exes are equally slow
   on battery (`docs/perf.md`); likely the power state, not a regression. Confirm on mains power.
-- **m3 (rest):** an app closed during the 45 s snapshot settle leaves its claim for 30 min
-  (`CLAIM_STALE`), so that day's snapshot may be skipped. Remove our claim on `shutdown` when no
-  zip has started.
+- ~~**m3 (rest):**~~ Done in step 41: quitting during the settle wait releases the claim
+  (`Outcome::Stopped`); once the zip has started the claim stays and goes stale. Was: an app
+  closed during the 45 s snapshot settle left its claim for 30 min.
 - **m6:** exam delete is a blind delete after a stale scores check (reference behaviour): CAS on
-  `delete_file` and re-check scores after the confirm.
-- **n1:** `CoreSlot`: a `closing` flag so the snapshot thread does not start after `Exit`; a
-  panic inside `Core::failed` would leave the slot empty.
-- **n2:** an error before `legacy/globals` loads makes the handler import `app.js` early.
+  `delete_file` and re-check scores after the confirm. Step 41: part of the edit locks
+  (sub-task 5): the core refuses deleting an exam with data, under the commit lock.
+- ~~**n1:**~~ Done in step 41: `CoreSlot::set_closing` at `Exit` (a core opened later starts
+  nothing); a panic in `Core::failed` too fills the slot with `Core::broken`.
+- ~~**n2:**~~ Done in step 41: the error message waits for the startup's own import of
+  `app.js`. Was: an error before `legacy/globals` loads made the handler import `app.js` early.
 - **n7:** the sandbox test passes on any failure; assert the diagnostic is "not found/denied".
 - Other nits in `docs/reviews/step-10.md`.
 
@@ -561,11 +580,12 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 
 ## From Step 18 (reviews `docs/reviews/step-18.md`, `step-17-18-security.md`)
 
-- **Security m4:** `applyWatermerk` (UI) reads the watermark whole at every start; a size cap
-  as in the rapport (5 MB). The migration reads each moved image whole (copy then delete).
-- **Security n1:** `maatwerk-cli migrate` prints exam and observatie names raw; strip control
-  characters. **n4:** validation messages embed whole JSON objects (`opdrachtenVraag`).
-  **n5:** `prune_stale` reads every presence file whole at each start.
+- ~~**Security m4:**~~ Done in step 41: `read_photo_data_url` does not read a file over 5 MB
+  (watermark, logo, photos). Was: `applyWatermerk` read the watermark whole at every start. The
+  v2-to-v3 migration still reads each moved image whole once (a one-off, kept).
+- ~~**Security n1:**~~ Done in step 41: the CLI's text output escapes control characters
+  (`plain`). ~~**n4:**~~ Done: messages name a value briefly (an object by its id, else cut at
+  60 characters). ~~**n5:**~~ Done: `prune_stale` reads only files not changed in 30 days.
 
 ## From Step 19
 
@@ -631,7 +651,8 @@ item through with its commit when done, or moves it to "After 1.0" with a reason
 - **Review 26-28 m2:** ~~Gebruiker bewerken writes the photo before the user record (rev check); a
   refused save leaves the new photo in place.~~ Fixed in step 35 (the old photo is put back, a new
   one removed; no e2e: the crop needs a real file). Removing a photo (both dialogs) leaves the file.
-- **Review 26-28 m6:** the snapshot kinds in Instellingen repeat `maatwerk-core::snapshots::keep`
+- ~~**Review 26-28 m6:**~~ Done in step 41: `list_snapshots` returns each kind from
+  `maatwerk_core::snapshots::kinds`; the TS copy of the rule lives only in the mock. Was: the snapshot kinds in Instellingen repeat `maatwerk-core::snapshots::keep`
   in TypeScript; let `listSnapshots` return the kind instead.
 - **Review 26-28 m7:** board 12 "Vergelijken" (OneDrive conflict copy) and "Toets openen" (a broken
   reference) need features behind them; those findings get "Map openen" for now. The rapport
@@ -654,6 +675,20 @@ See `docs/reviews/step-32.md` for the evidence of each item.
   Mistral Vibe passed in step 40. Vibe image input in `-p` unverified.
 - ~~**Logos**~~ no vendor logos (user, 2026-11-26): letter buttons CC, GPT, G, AG, V, CP.
 - ~~**Resizable AI panel (user 2026-11-19)**~~ done 2026-11-20 (`aiPanelWidth`, 380 px minimum).
+
+## From Step 41
+
+See `docs/reviews/step-41.md`. Fixed in step 41: M1-M3, m3, m4, m5, n1-n3, n6, part of m2
+(students-file delete, vak folders, header). Open: m1 (an observatie saved with no jaarlagen or
+schoolsoort, "all", locks no chip; the core refuses a narrowing that leaves out a linked value,
+shown as "Niet opgeslagen"; pre-select or lock the used values), m2 rest (the mock has no
+family rule, no observatie toetstype rule), m6 (`listed_thumbnails_are_cached_by_content` uses
+a process-global decode counter: flaky under parallel tests), m7 (the watcher's same-size rule
+reads the wall clock, its m4 test is time-dependent), n4 (`presence.rs:122` comment past 100
+columns), n5 (`changedAt` in `store.js` never shrinks), n7 (refusals name a student id, not a
+name), n8 (quit during open: shutdown can run twice), n9 (`saveExamFamily` loses `updatedBy` on
+a conflict), n10 (`highestEnteredScores` reads listed students only), n11 (guards read the old
+file twice; a legacy single-`subject` observatie always triggers the link scan).
 
 ## From Step 40
 

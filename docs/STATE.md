@@ -1,11 +1,124 @@
 # State
 
-Last updated: 2026-11-27 (step 40 merged and tagged; step 41 edit locks analysed)
-Branch: `step/40-ai-followups` (from `step/39-v1-removal-typst` at `57fa6d0`, before step 39
-merges; merge `main` in after it does)
-Last tags: `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-28 (step 41: all CI baselines in, CI green; waiting for the merge OK)
+Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
+Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 41 (2026-11-27, on `step/41-data-robustness`): data robustness, `rapporten/`, edit locks
+
+Plan: `PLAN-2.md` step 41 (now L, items 1-6). Edit locks: `docs/reference/edit-locks.md`, the
+user's decisions in its section 5 (incl. `save_exam_family` and Gegevenscontrole checks).
+Baseline: cargo test green.
+
+- Sub-task 1 (X-06, decision 85) done: `maatwerk_core::rapporten` (`usage`, `cleanup`: only
+  `*.pdf` directly in `rapporten/<schooljaar>/`, links not followed, emptied year folders
+  removed; refused for a gast and a read-only folder), commands `rapporten_usage` /
+  `rapporten_cleanup` (admin only; sizes in whole kB as u32), card "Afgedrukte rapporten" in
+  Beheer › Instellingen (custom select "Ouder dan schooljaar", least preselected, confirm with
+  count and size). `formatSize` moved to `domain/format.ts`. Tests: core 5 (+1 unix), Vitest
+  3, e2e beheer 8/8. **Visual `admin-instellingen` (3 themes) changed (new card, empty state):
+  user OK 2026-11-27: local updated, CI copies dropped (`4bac3d1`); commit them from the next
+  CI run's artifacts.**
+
+- Sub-task 2 done: `2ba0d6f` storage (4a m6 read retry, n4/4b n4 lock errors name the data
+  file, n6 idle update queues dropped, n7 lossy folder reads = quirk D37, n10 `write_json`
+  refuses `cas: false`, n12 long/non-ASCII path test; n9, n11 closed with reasons);
+  `55cc0f7` watcher 5a m4 (recent mtime + unchanged stat + event = change); `412c059` store
+  7c (external change during a read) and 3b n4 (colleague value clears "not saved"). 10 m6
+  moved to sub-task 5 (edit locks).
+
+- Sub-task 3 done (`b4db77c`): snapshot claim released on quit during the settle wait (10
+  m3, `Outcome::Stopped`, `Core::stopping`); `CoreSlot::set_closing` and `Core::broken` (n1);
+  error reporter waits for the startup's `app.js` (n2); `Sync.refresh` after "Herstellen uit
+  snapshot" (7b); `list_snapshots` returns kinds from `snapshots::kinds` (26-28 m6;
+  `domain/snapshot-settings.ts`, mock copy in `mock-snapshots.ts`).
+- CI 45990525762: only the missing `admin-instellingen` baselines failed (macOS, Windows);
+  Linux failed installing apt packages (infrastructure). macOS and Windows baselines taken from
+  its artifacts; Linux from the next run.
+
+- `76eff64`: CI `admin-instellingen` baselines for macOS and Windows (run 45990525762).
+- Sub-task 4 done: `d94aacb` images (6b n10 import cap 25 MB in core, 6a m4 decode limits +
+  thumbnail cache, 6a n7 message, 6b n9 per-field types, 18 m4 photo read cap 5 MB);
+  `c2b2e9c` CLI/messages (18 n1 `plain`, 5b n6 `args_os` + `.partial`, 18 n4 `brief`, 18 n5
+  prune reads only old files); `6706964` 7a (n8 students keys, n6 toggle copy, n4 conflict copy
+  needs the original's id, n3 closed); `aef610a` 4a m4 (unreadable RTTI template: "Overschrijven"
+  against the bytes' hash, `corrupt_json` `details.found`). 7a n5 moved to 45b. **9 n6 (SPDX
+  headers in toml/yml, copyright line): ask the user.**
+
+- CI 45992954516: macOS, Windows green; Linux only the missing baseline, committed from its
+  artifact. All three `admin-instellingen` CI baselines now in.
+- Sub-task 5 (edit locks, plan in `edit-locks.md` section 6), parts 1-5 done: `95e192d`
+  `locks::has_data` ("N" counts) + commands `exam_has_data`, `students_with_data` (UI uses them;
+  TS copy `domain/has-data.ts` for cached records); `0752ca0` guard hook in `Storage` (under the
+  commit lock), students and groups, `locks::unlocked` for "Herstellen uit snapshot";
+  `08ebaab` exams (delete, questions with data; 10 m6), PO scope after data (decision 8), family
+  rule + `locks::save_exam_family`; `7383bb0` UI uses `save_exam_family` (verzamelkaart, test
+  editor), refusals shown as "Niet opgeslagen: <reden>" (app.js handler). New error code
+  `edit_locked`. Mock: family save done; mock guards for students/groups/exams still TODO.
+
+- Part 6 done (`4cc0c84`): rubric keeps the jaarlaag/schoolsoort its PO's have (core +
+  editor chips, `RubricUse` has `jaarlaag`, `schoolsoort`). Part 7 core done (observatie
+  delete/scope guards, `locks.rs` `guard_obs*`); full cargo test green.
+
+- 2026-11-27 session 2: `fe0e651` 9 n6 (user took the recommendation: SPDX in own TOML/YAML,
+  `check-spdx.sh` covers them; no per-file copyright lines, the README line stays).
+  `277245a` part 7 UI: observatie chips a linked test/rubric uses are locked
+  (`domain/obs-locks.ts`, `Store.obsLinkScopes`), delete blocked on opdrachten; core fix: a `wi`
+  test fits any wiskunde variant (`fits_vak`, was never locked). e2e obs-opd +2.
+- Part 8 done: `940c718` PO form scope lock after scores (keeps the saved subcategory);
+  `bfeff5e` question max/soort asks once, max below an entered score disabled
+  (`domain/question-locks.ts`, `Store.highestEnteredScores`); `02ce863` group membership confirm
+  (`domain/group-membership.ts`, Groep bewerken save; CSV import already asked). e2e +3.
+- Part 9 done (`fb678f3`): Gegevenscontrole warnings for a PO whose rubric does not fit, an
+  observatie on a test the editor would not offer it to, scores for a removed question (the
+  offer rules, so normal use reports nothing; rules in `edit-locks.md` part 9). Core: no
+  jaarlagen on an observatie = all. Golden v3: the inhaal's own wisb observatie now warns.
+  `school` fixture 64 warnings (generator), `tiny` 0.
+- `e5314bd` mock guards: `bridge/mock/mock-locks.ts` (students, groups, exams, observaties;
+  not the single-write family rule). The full e2e run found the D34 CSV import (replaces a
+  group with students and fields) refused since part 3: core and mock now let a write that
+  empties the group change its fields (tell the user).
+- **Gate (local) at `e5314bd`:** fmt, clippy, cargo test (732, 27 suites), deny, SPDX (now
+  TOML/YAML too), lint, typecheck, Vitest 1007 + node 47, licences, e2e chromium 444/444 (after
+  the D34 fix), visual 171/177: `modal-toets-edit` (max buttons below an entered score faded)
+  and `modal-observatie-edit` (Havo, Vwo, Natuurkunde locked by the rubric) in 3 themes,
+  intended, **baselines not updated: wait for the user's OK**.
+- **Review** `docs/reviews/step-41.md`: 0 blockers, 3 majors, 7 minors, 11 nits. `1a2c33b`
+  fixed M1 (locked top fields rebuilt from defaults: older exams without `weging_se` could not
+  save any attempt), M2 (half-failed family save: Store re-reads the family), M3 (refused
+  deletes shown as done), m3 (scored test keeps its vak), m4, m5 (non-ASCII panic), n1-n3, n6,
+  part of m2; each major with an e2e test that fails without the fix. Open in backlog "From
+  Step 41". Also fixed: the B24 validate message had runs of spaces (old heredoc edit).
+- `1074cd5` version **0.32.0** (local splash updated, version digits only; CI copies dropped).
+- Gate after the fixes: fmt, clippy, cargo test 735, lint, typecheck, Vitest 1007 + node 47,
+  e2e chromium 446/447 (`po-grading` "footer follows the grading save" failed once under load,
+  3/3 alone; not touched this step). Visual: the 6 `modal-toets-edit` / `modal-observatie-edit`
+  diffs still wait for the user's OK. Release notes draft (Dutch) in the step report.
+
+- 2026-11-28: user OK on the 6 visual diffs; local baselines updated (gitignored; visual
+  177/177). Their CI copies need no change: in CI run 46029336839 they passed with the old
+  baselines (macOS, Windows). `aec569d`: CI `splash` baselines macOS + Windows from that run
+  (checked: 0.32.0). Linux WebKit e2e failed there (decision 11 test, 3/3 locally too): the test
+  re-navigated while app.js was still importing (WebKit "Importing a module script failed");
+  `6118158` waits for the subject cards first (test only). Pushed.
+
+- CI 46129697015: Windows green; Linux only the missing `splash` baseline (committed from its
+  artifact, checked 0.32.0); macOS cargo test: `import_file_names_a_file_name_it_cannot_read`
+  could not create its non-UTF-8 file name (APFS, EILSEQ): skipped on macOS when the file
+  system refuses the name, Linux keeps it. Pushed, CI rerun.
+
+- CI 46135418711 on `7d257b3`: green on all jobs (Linux, macOS, Windows, licences).
+
+**Next action:** merge on the user's OK
+(tag `step-41`). Tell the user: the emptying group write rule (D34), the offer rules in
+Gegevenscontrole, empty jaarlagen = all, the wiskunde vak fix.
+
+Old next-action list (all done): part 8 (PO form locks jaarlaag/schoolsoort/subcategorie after scores; question
+max/soort confirm, max below an entered score refused; group membership confirm), part 9
+(Gegevenscontrole checks), mock guards for students/groups/exams/observaties; then sub-task 6
+(gate, review, release 0.32). Ask the user about 9 n6 (SPDX in toml/yml) at the report.
 
 ## Step 40 (2026-11-26, on `step/40-ai-followups`): AI assistant follow-ups
 
@@ -93,8 +206,7 @@ Started while the step 39 CI runs (user). Baseline: cargo test green.
   `save_exam_family` command (else family locks stay UI-only) and Gegevenscontrole checks for
   lock violations from another PC (edit-locks.md, answer pending).
 
-**Next action:** step 41 (`PLAN-2.md`), after the user's go. Ask the two open edit-lock
-questions above first.
+Step 40 done (merged and tagged 2026-11-27).
 
 ## Step 39 (2026-11-25, on `step/39-v1-removal-typst`): user's small fixes first
 

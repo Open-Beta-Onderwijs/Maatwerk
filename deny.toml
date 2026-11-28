@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # cargo-deny: licence allowlist and supply-chain checks (PLAN.md 2.5).
 # Only AGPL-compatible licences may be shipped in the exe.
 

@@ -67,9 +67,11 @@ pub async fn read_json_versioned(
     .await
 }
 
-/// Writes JSON atomically; returns the hash written. With `cas`, the file must still hash to
-/// `expectedHash` (`null`: must not exist), else error `conflict`. A score file the session may
-/// not change is refused with `forbidden` (step 35, `maatwerk_core::rights`).
+/// Writes JSON atomically; returns the hash written. The file must still hash to `expectedHash`
+/// (`null`: must not exist), else error `conflict`. A blind write (`cas: false`) is refused:
+/// every UI write reads first (review 4a n10; the mock still allows it for test seeding). A
+/// score file the session may not change is refused with `forbidden` (step 35,
+/// `maatwerk_core::rights`).
 #[tauri::command]
 #[specta::specta]
 pub async fn write_json(
@@ -80,10 +82,17 @@ pub async fn write_json(
     expected_hash: Option<String>,
 ) -> Res<String> {
     blocking(state, move |c| {
-        let expect = match (cas, expected_hash.as_deref()) {
-            (false, _) => Expect::Any,
-            (true, None) => Expect::Missing,
-            (true, Some(h)) => Expect::Hash(h),
+        if !cas {
+            return Err(maatwerk_core::Error::InvalidArgument {
+                message: format!(
+                    "Niet opgeslagen: {rel_path} werd zonder versiecontrole geschreven."
+                ),
+            }
+            .into());
+        }
+        let expect = match expected_hash.as_deref() {
+            None => Expect::Missing,
+            Some(h) => Expect::Hash(h),
         };
         let (storage, rel) = (c.storage()?, rel(&rel_path)?);
         rights::check_json_write(storage, c.auth.current().as_ref(), &rel, Some(&data))?;

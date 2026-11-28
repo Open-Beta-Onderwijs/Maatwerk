@@ -18,7 +18,7 @@ import type {
   StepKind,
   TranscriptStep,
 } from '../../bridge/ai-api';
-import { formatNumber } from '../../domain/format';
+import { formatSize } from '../../domain/format';
 
 // ── Context chips (decisions 51, 64) ───────────────────────────────────────
 
@@ -158,12 +158,7 @@ export const extOf = (name: string) => {
 
 export const isImageName = (name: string) => IMAGE_EXTS.includes(extOf(name));
 
-/** "412 kB", "31,4 MB" (decimal comma). */
-export function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
-  return `${formatNumber(Math.round((bytes / (1024 * 1024)) * 10) / 10)} MB`;
-}
+export { formatSize };
 
 /** Why a file cannot be attached (board 60), or null. */
 export function attachmentError(name: string, size: number): string | null {

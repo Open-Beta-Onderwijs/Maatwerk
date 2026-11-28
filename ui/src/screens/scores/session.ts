@@ -76,6 +76,15 @@ export const isUnsaved = (student: Student | undefined, col: number) =>
   unsavedCells.has(cellKey(student, col));
 /** Number of cells whose last save failed. */
 export const unsavedCount = () => unsavedCells.size;
+/**
+ * A colleague's value replaced the cell: what is on disk is now what it shows, so it is no
+ * longer "not saved" (review 3b n4). Returns whether it was marked.
+ */
+export function clearUnsaved(student: Student | undefined, col: number): boolean {
+  const cleared = unsavedCells.delete(cellKey(student, col));
+  if (cleared) session.onSaveState?.();
+  return cleared;
+}
 
 export function renderAllGrids(): void {
   session.gridInstances.forEach((g) => g.render());

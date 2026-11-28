@@ -5,7 +5,7 @@
 // same as the group overview's Jaar column (docs/phase-2/step-27-card-numbers.md).
 
 import { expect, test } from '@playwright/test';
-import { YEAR, login } from './helpers';
+import { YEAR, login, readMockJson, withMock } from './helpers';
 import { screen } from './views';
 
 test('a student card shows bars, the year average with the trend and the last grade', async ({
@@ -130,4 +130,39 @@ test.describe('reduced motion', () => {
     await card.hover();
     await expect(card).toHaveCSS('transform', 'none');
   });
+});
+
+test('removing a student with scores from a group asks first; the scores stay (edit-locks 2.2)', async ({
+  page,
+}) => {
+  const group = `3a-nat-${YEAR}`;
+  await login(page, 'nat', 'admin'); // the group's composition: admin (edit-locks 2.2)
+  await screen(page, 'groepen');
+  await page.locator(`[data-action="edit-group"][data-id="${group}"]`).click();
+  const withData = new Set(await withMock(page, (m, y) => m.studentsWithData(y), YEAR));
+  const boxes = page.locator(`input[type="checkbox"][data-group-id="${group}"]:checked`);
+  const ids = await boxes.evaluateAll((els) =>
+    els.map((e) => (e as HTMLInputElement).dataset.studentId!),
+  );
+  const sid = ids.find((id) => withData.has(id))!;
+  expect(sid).toBeTruthy();
+  await page
+    .locator(`input[type="checkbox"][data-group-id="${group}"][data-student-id="${sid}"]`)
+    .uncheck();
+  const save = page.getByRole('button', { name: 'Opslaan', exact: true });
+  await save.click();
+  const ask = page.locator('.dlg', { hasText: 'De scores blijven bewaard' });
+  await expect(ask).toBeVisible();
+  await ask.getByRole('button', { name: 'Annuleren' }).click();
+  await expect(page.locator('#f-gname')).toBeVisible();
+  const kept = await readMockJson<{ student_ids: string[] }>(page, `${YEAR}/groups/${group}.json`);
+  expect(kept.student_ids.map(String)).toContain(sid);
+
+  await save.click();
+  await ask.getByRole('button', { name: 'Doorgaan' }).click();
+  await expect(page.locator('#f-gname')).toHaveCount(0);
+  await expect(async () => {
+    const g = await readMockJson<{ student_ids: string[] }>(page, `${YEAR}/groups/${group}.json`);
+    expect(g.student_ids.map(String)).not.toContain(sid);
+  }).toPass();
 });

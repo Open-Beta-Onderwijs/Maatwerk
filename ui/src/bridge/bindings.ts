@@ -13,9 +13,11 @@ export const commands = {
 	/**  JSON plus hash; `null` if missing. */
 	readJsonVersioned: (relPath: string) => typedError<VersionedJson | null, CommandError>(__TAURI_INVOKE("read_json_versioned", { relPath })),
 	/**
-	 *  Writes JSON atomically; returns the hash written. With `cas`, the file must still hash to
-	 *  `expectedHash` (`null`: must not exist), else error `conflict`. A score file the session may
-	 *  not change is refused with `forbidden` (step 35, `maatwerk_core::rights`).
+	 *  Writes JSON atomically; returns the hash written. The file must still hash to `expectedHash`
+	 *  (`null`: must not exist), else error `conflict`. A blind write (`cas: false`) is refused:
+	 *  every UI write reads first (review 4a n10; the mock still allows it for test seeding). A
+	 *  score file the session may not change is refused with `forbidden` (step 35,
+	 *  `maatwerk_core::rights`).
 	 */
 	writeJson: (relPath: string, data: Value, cas: boolean, expectedHash: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("write_json", { relPath, data, cas, expectedHash })),
 	/**  Year folders, newest first. */
@@ -112,6 +114,19 @@ export const commands = {
 	 */
 	rubricUsage: () => typedError<{ [key in string]: RubricUse[] }, CommandError>(__TAURI_INVOKE("rubric_usage")),
 	/**
+	 *  Whether any student has data for the exam (step 41, `maatwerk_core::locks::has_data`): the
+	 *  same rule the write guards use. An unreadable score file is an `edit_locked` error.
+	 */
+	examHasData: (year: string, vak: string, examId: string) => typedError<boolean, CommandError>(__TAURI_INVOKE("exam_has_data", { year, vak, examId })),
+	/**  The students with data in the school year, in any vak (step 41: who cannot be deleted). */
+	studentsWithData: (year: string) => typedError<string[], CommandError>(__TAURI_INVOKE("students_with_data", { year })),
+	/**
+	 *  Saves a herkansing family at once (step 41, decision 5): the original and every attempt,
+	 *  each with its own `_meta.rev` as the version the edit started from. Returns the saved exams
+	 *  (attempts first, the original last). See `maatwerk_core::locks::save_exam_family`.
+	 */
+	saveExamFamily: (year: string, exams: Value[]) => typedError<Value[], CommandError>(__TAURI_INVOKE("save_exam_family", { year, exams })),
+	/**
 	 *  Everything the list screens show for one school year and vak (step 38,
 	 *  `maatwerk_core::numbers`): cards, Verzamelkaarten, group statistics, shown r/SE under the
 	 *  school's Cijfergemiddelden. Typed in the UI as `VakNumbers` (`ui/src/domain/numbers.ts`).
@@ -154,8 +169,18 @@ export const commands = {
 	 *  the path, `null` when cancelled.
 	 */
 	saveTextAs: (defaultName: string, content: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("save_text_as", { defaultName, content })),
-	/**  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`). */
-	listSnapshots: () => typedError<string[], CommandError>(__TAURI_INVOKE("list_snapshots")),
+	/**
+	 *  Snapshots in `snapshots/`, newest first (names: `YYYY-MM-DD HHmm.zip`), with the kind
+	 *  `maatwerk_core::snapshots::kinds` gives under the current settings (review 26-28 m6).
+	 */
+	listSnapshots: () => typedError<SnapshotEntry[], CommandError>(__TAURI_INVOKE("list_snapshots")),
+	/**  Beheer › Instellingen: the printed copies per school year, oldest first. Admin only. */
+	rapportenUsage: () => typedError<RapportenYear[], CommandError>(__TAURI_INVOKE("rapporten_usage")),
+	/**
+	 *  "Opruimen" (decision 85): deletes the printed copies of the school years before `before`.
+	 *  Admin only; refused for a gast and a read-only folder (`maatwerk_core::rapporten::cleanup`).
+	 */
+	rapportenCleanup: (before: string) => typedError<RapportenCleanup, CommandError>(__TAURI_INVOKE("rapporten_cleanup", { before })),
 	/**  The newest snapshot with an intact copy of the JSON file; `null` if none has one. */
 	snapshotForFile: (relPath: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("snapshot_for_file", { relPath })),
 	/**  "Herstellen uit snapshot": writes that snapshot's copy of the JSON file back. Admin only. */
@@ -546,6 +571,8 @@ export type ErrorCode = "invalid_path" | "not_found" | "corrupt_json" | "conflic
 "read_only" | 
 /**  The session's role does not allow the write (step 35); the message is Dutch. */
 "forbidden" | 
+/**  Data depends on what the write would change or delete (step 41); the message is Dutch. */
+"edit_locked" | 
 /**  No data folder set, chosen or beside the program yet (first run, step 16a). */
 "no_data_folder" | "io" | "typst" | "internal";
 
@@ -557,7 +584,7 @@ export type ErrorDetails = {
 	updatedBy?: string | null,
 	/**
 	 *  `unsupported_schema`, `needs_migration`: the `schema_version` found; `read_only`: the
-	 *  `minAppVersion` from `school.json`.
+	 *  `minAppVersion` from `school.json`; `corrupt_json`: the hash of the unreadable bytes.
 	 */
 	found?: string | null,
 };
@@ -663,6 +690,23 @@ export type ProjectFileInfo = {
 	hash: string | null,
 };
 
+/**  What "Opruimen" deleted, and the copies it could not delete. */
+export type RapportenCleanup = {
+	files: number,
+	kb: number,
+	failed: string[],
+};
+
+/**
+ *  The printed copies of one school year in `rapporten/` (X-06). Sizes in whole kB, rounded up
+ *  (u32: specta types f64 as `number | null`, u64 as bigint).
+ */
+export type RapportenYear = {
+	schooljaar: string,
+	files: number,
+	kb: number,
+};
+
 /**  A merged batch in the output folder. */
 export type RenderedBatch = {
 	pdfPath: string,
@@ -693,6 +737,18 @@ export type RubricUse = {
 	year: string,
 	examId: string,
 	naam: string,
+	/**  The PO's jaarlaag and schoolsoorten, which stay in the rubric (step 41). */
+	jaarlaag: string,
+	schoolsoort: string[],
+};
+
+/**
+ *  A snapshot and why it is kept (`dagelijks`, `wekelijks`, `maandelijks`; `null`: only as
+ *  the newest).
+ */
+export type SnapshotEntry = {
+	name: string,
+	kind: string | null,
 };
 
 /**  A JSON file read with a missing or wrong stamp since start (C19). */

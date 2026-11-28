@@ -189,6 +189,9 @@ pub struct RubricUse {
     pub year: String,
     pub exam_id: String,
     pub naam: String,
+    /// The PO's jaarlaag and schoolsoorten, which stay in the rubric (step 41).
+    pub jaarlaag: String,
+    pub schoolsoort: Vec<String>,
 }
 
 impl From<maatwerk_core::rubrics::RubricUse> for RubricUse {
@@ -197,8 +200,68 @@ impl From<maatwerk_core::rubrics::RubricUse> for RubricUse {
             year: u.year,
             exam_id: u.exam_id,
             naam: u.naam,
+            jaarlaag: u.jaarlaag,
+            schoolsoort: u.schoolsoort,
         }
     }
+}
+
+/// Whether any student has data for the exam (step 41, `maatwerk_core::locks::has_data`): the
+/// same rule the write guards use. An unreadable score file is an `edit_locked` error.
+#[tauri::command]
+#[specta::specta]
+pub async fn exam_has_data(
+    state: State<'_, Shared>,
+    year: String,
+    vak: String,
+    exam_id: String,
+) -> Res<bool> {
+    blocking(state, move |c| {
+        Ok(maatwerk_core::locks::exam_has_data(
+            c.storage()?,
+            &year,
+            &vak,
+            &exam_id,
+        )?)
+    })
+    .await
+}
+
+/// Saves a herkansing family at once (step 41, decision 5): the original and every attempt,
+/// each with its own `_meta.rev` as the version the edit started from. Returns the saved exams
+/// (attempts first, the original last). See `maatwerk_core::locks::save_exam_family`.
+#[tauri::command]
+#[specta::specta]
+pub async fn save_exam_family(
+    state: State<'_, Shared>,
+    year: String,
+    exams: Vec<serde_json::Value>,
+) -> Res<Vec<serde_json::Value>> {
+    blocking(state, move |c| {
+        let user = c.auth.current().map(|s| s.user_id);
+        Ok(maatwerk_core::locks::save_exam_family(
+            c.storage()?,
+            &year,
+            &exams,
+            user.as_deref(),
+            std::time::SystemTime::now(),
+        )?)
+    })
+    .await
+}
+
+/// The students with data in the school year, in any vak (step 41: who cannot be deleted).
+#[tauri::command]
+#[specta::specta]
+pub async fn students_with_data(state: State<'_, Shared>, year: String) -> Res<Vec<String>> {
+    blocking(state, move |c| {
+        Ok(
+            maatwerk_core::locks::students_with_data(c.storage()?, &year)?
+                .into_iter()
+                .collect(),
+        )
+    })
+    .await
 }
 
 /// Per rubric id, the PO's in any school year that use it ("In gebruik bij n PO's"; decision 20

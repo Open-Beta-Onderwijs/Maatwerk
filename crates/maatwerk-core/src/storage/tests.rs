@@ -365,6 +365,32 @@ fn s25_updates_of_one_file_are_serialised_and_a_failing_mutator_only_aborts_itse
     assert_eq!(got, vec![0, 1, 2, 4, 5, 6, 7]);
 }
 
+#[test]
+fn update_queues_are_dropped_when_idle() {
+    // Review 4a n6: one entry per file ever updated made the map grow all session.
+    let (_t, s) = setup();
+    for i in 0..5 {
+        let file = rel(&format!("q/{i}.json"));
+        s.update(
+            &file,
+            || json!(0),
+            |v, _| Ok(json!(v.as_i64().unwrap() + 1)),
+        )
+        .unwrap();
+    }
+    // A failing mutator also leaves nothing behind.
+    let _ = s.update(
+        &rel("q/x.json"),
+        || json!(0),
+        |_, _| {
+            Err(Error::InvalidArgument {
+                message: "no".into(),
+            })
+        },
+    );
+    assert_eq!(s.update_queues(), 0);
+}
+
 fn at(ms: u64) -> std::time::SystemTime {
     UNIX_EPOCH + Duration::from_millis(ms)
 }
@@ -584,6 +610,11 @@ fn commit_lock_held_by_another_process_gives_locked() {
         .write_json(&rel("x.json"), &json!(2), Expect::Any)
         .unwrap_err();
     assert_eq!(err.code(), "locked");
+    // Review 4a n4: the error names the data file, not the local lock file.
+    assert!(
+        matches!(&err, Error::Locked { path } if path == "x.json"),
+        "{err:?}"
+    );
     drop(other);
     s.write_json(&rel("x.json"), &json!(3), Expect::Any)
         .unwrap();
@@ -671,14 +702,14 @@ fn read_all_json_named_gives_the_same_files_with_their_names() {
 }
 
 #[test]
-fn read_all_json_named_decodes_invalid_utf8_like_read_json() {
+fn folder_reads_decode_invalid_utf8_like_read_json() {
     let (_t, s) = setup();
     put(&s, "scores/nat/7.json", b"{\"naam\": \"Jos\xE9\"}");
     let single = s.read_json(&rel("scores/nat/7.json")).unwrap().unwrap();
     let named = s.read_all_json_named(&rel("scores/nat")).unwrap();
-    assert_eq!(named, vec![("7.json".to_owned(), single)]);
-    // readAllJson keeps skipping it (reference behaviour).
-    assert!(s.read_all_json(&rel("scores/nat")).unwrap().is_empty());
+    assert_eq!(named, vec![("7.json".to_owned(), single.clone())]);
+    // Review 4a n7: readAllJson no longer skips it (the reference did; quirks.md).
+    assert_eq!(s.read_all_json(&rel("scores/nat")).unwrap(), vec![single]);
 }
 
 #[test]
@@ -731,6 +762,26 @@ fn text_files_round_trip_with_cas() {
             "= Collega
 "
         )
+    );
+}
+
+/// Review 18 m4: the watermark (and any photo) is read whole at every start; one over
+/// `MAX_PHOTO_BYTES` is not read at all.
+#[test]
+fn photos_over_the_cap_are_not_read() {
+    let (_t, s) = setup();
+    let path = s
+        .data_dir()
+        .resolve(&rel("afbeeldingen/groot.svg"))
+        .unwrap();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let f = fs::File::create(&path).unwrap();
+    f.set_len(MAX_PHOTO_BYTES + 1).unwrap();
+    drop(f);
+    assert_eq!(
+        s.read_photo_data_url(&rel("afbeeldingen/groot.svg"))
+            .unwrap(),
+        None
     );
 }
 
@@ -1136,4 +1187,41 @@ fn listings_are_sorted_by_name_not_in_directory_order() {
             .collect::<Vec<_>>()
     );
     assert_eq!(s.list_dir(&rel("exams"), true).unwrap(), sorted);
+}
+
+#[test]
+fn non_ascii_names_and_long_paths_round_trip_on_disk() {
+    // Review 4a n12: names with accents and paths over Windows' 260 characters (a deep OneDrive
+    // folder) work for every operation, not only in the path checks.
+    let (tmp, s) = setup();
+    let deep = format!(
+        "opdrachten/{}/{}",
+        "é".repeat(40),
+        "geschiedenis-van-de-natuurkunde-".repeat(4)
+    );
+    let file = rel(&format!("{deep}/Jöns Ærø ÿ.json"));
+    assert!(
+        tmp.path()
+            .join("data")
+            .join(file.as_str())
+            .as_os_str()
+            .len()
+            > 260,
+        "the test path must be long"
+    );
+    let hash = s
+        .write_json(&file, &json!({"naam": "Ŝtéfan"}), Expect::Missing)
+        .unwrap();
+    let read = s.read_json_versioned(&file).unwrap().unwrap();
+    // (`opdrachten/` files also get an integrity stamp in `_meta`.)
+    assert_eq!((&read.data["naam"], &read.hash), (&json!("Ŝtéfan"), &hash));
+    assert_eq!(
+        s.list_dir(&rel(&deep), false).unwrap(),
+        vec!["Jöns Ærø ÿ.json"]
+    );
+    assert_eq!(s.read_all_json_named(&rel(&deep)).unwrap().len(), 1);
+    s.write_json(&file, &json!(2), Expect::Hash(&read.hash))
+        .unwrap();
+    s.delete(&file).unwrap();
+    assert_eq!(s.read_json(&file).unwrap(), None);
 }

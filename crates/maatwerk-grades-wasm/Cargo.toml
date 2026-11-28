@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
 [package]
 name = "maatwerk-grades-wasm"
 description = "The grade rules for the UI: maatwerk-grades behind a small WebAssembly interface (ADR-0011)."

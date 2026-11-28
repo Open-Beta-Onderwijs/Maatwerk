@@ -20,6 +20,12 @@ import {
   filterIcons,
   type IconCategory,
 } from '../domain/obs-icons';
+import {
+  OBS_LOCK_TITLE,
+  obsLockedValues,
+  type ObsLinkScopes,
+  type ObsScope,
+} from '../domain/obs-locks';
 import { obsToetstypes } from '../domain/rubric';
 import type { Observatie } from '../domain/types';
 import { readToetstypes, toetstypeField } from '../screens/observatie-toetstype';
@@ -98,6 +104,17 @@ export function openObsModal(existingId: string | null, onSaved: () => void): vo
   if (!Array.isArray(obs.subjects) || obs.subjects.length === 0)
     obs.subjects = obs.subject ? [obs.subject] : [Store.getActiveSubject()];
   const usedInTest = isEdit && Store.obsIsUsedInAnyExam(obs.id);
+  // Decision 12: what a linked test or rubric uses stays (the core refuses the same change).
+  const links: ObsLinkScopes = isEdit
+    ? (Store.obsLinkScopes(obs.id) as ObsLinkScopes)
+    : { tests: [], rubrics: [] };
+  const initialScope: ObsScope = {
+    jaarlagen: (obs.jaarlagen ?? []).map(String),
+    schoolsoort: obs.schoolsoort ?? [],
+    subjects: obs.subjects,
+  };
+  const locked = obsLockedValues(links, initialScope);
+  const lock = (values: string[]) => ({ locked: values, lockTitle: OBS_LOCK_TITLE });
   const categories = ['Alle', ...ICON_CATEGORIES.map((c) => c.label)];
 
   openModal({
@@ -134,10 +151,10 @@ export function openObsModal(existingId: string | null, onSaved: () => void): vo
           <textarea id="f-oleeradvies" rows="4"
             placeholder="Bijvoorbeeld: Vergeet nooit te controleren of je de eenheid vergeten bent. Gebruik de GFBA-methode (Gegevens, Formule, Berekening &amp; Antwoord).">${escHtml(obs.leeradvies ?? '')}</textarea>
         </div>
-        ${schoolsoortField('obs-ss-group', obs.schoolsoort ?? [])}
-        ${vakkenField('obs-subj-group', obs.subjects)}
+        ${schoolsoortField('obs-ss-group', obs.schoolsoort ?? [], lock(locked.schoolsoort))}
+        ${vakkenField('obs-subj-group', obs.subjects, lock(locked.vakken))}
         <div class="obs-edit-row">
-          ${jaarlagenField('obs-jl-group', obs.jaarlagen ?? [])}
+          ${jaarlagenField('obs-jl-group', obs.jaarlagen ?? [], lock(locked.jaarlagen))}
           ${toetstypeField(obsToetstypes(obs), usedInTest, isEdit ? obs.id : undefined)}
         </div>
       </div>
@@ -200,7 +217,19 @@ export function openObsModal(existingId: string | null, onSaved: () => void): vo
         renderPicker();
       });
 
-      wireChips(form, ['obs-ss-group', 'obs-subj-group', 'obs-jl-group']);
+      // The last wiskunde variant a wiskunde link fits stays, whichever one it is.
+      const relockVakken = () => {
+        const subjects = readChips(form, 'obs-subj-group', 'vak');
+        const keep = obsLockedValues(links, initialScope, { ...initialScope, subjects }).vakken;
+        for (const b of form.querySelectorAll<HTMLButtonElement>('#obs-subj-group .chip-btn')) {
+          const on = keep.includes(b.dataset.vak ?? '') && b.classList.contains('selected');
+          b.disabled = on;
+          b.classList.toggle('tog-btn-disabled', on);
+          if (on) b.title = OBS_LOCK_TITLE;
+          else b.removeAttribute('title');
+        }
+      };
+      wireChips(form, ['obs-ss-group', 'obs-subj-group', 'obs-jl-group'], relockVakken);
       // Toetstype: one or both, never none (the last selected one stays on).
       for (const b of form.querySelectorAll<HTMLButtonElement>('.tt-btn:not(:disabled)')) {
         b.addEventListener('click', () => {

@@ -222,7 +222,7 @@ impl RenderArgs {
                 if !compiled.warnings.is_empty() {
                     eprint!("{}", to_text(&compiled.warnings));
                 }
-                if let Err(e) = std::fs::write(&out, compiled.output) {
+                if let Err(e) = crate::write_file(&out, &compiled.output) {
                     eprintln!("error: cannot write {}: {e}", display_path(&out));
                     return ExitCode::FAILURE;
                 }

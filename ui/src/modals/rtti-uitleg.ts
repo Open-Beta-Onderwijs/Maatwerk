@@ -14,6 +14,7 @@ import {
 import { rttiLabel } from '../domain/rtti-names';
 import { GRADE_BAR } from '../domain/grade-colors';
 import { setBusy } from '../components/button';
+import { confirmDialog } from '../components/dialog';
 import { defaultTabData, rttiExplFilePath, type AdviesData } from '../domain/rapport';
 
 interface Tab {
@@ -209,10 +210,11 @@ export async function openRttiUitlegModal() {
 
   // Each tab remembers the version it was loaded from, so saving cannot
   // overwrite a change another teacher made meanwhile (ADR-0003 C6). An
-  // unreadable file shows the defaults and then conflicts on save.
+  // unreadable file shows the defaults; saving asks before replacing it (review 4a m4).
   const tabData: Record<number, AdviesData> = {};
   const tabHash: Record<number, string> = {};
   const tabSaved: Record<number, string | null> = {}; // JSON of the version on disk, to skip unchanged tabs
+  const tabUnreadable = new Set<number>();
 
   await Promise.all(
     tabs.map(async (t, i) => {
@@ -225,9 +227,13 @@ export async function openRttiUitlegModal() {
         tabData[i] = data ?? defaultTabData();
         tabHash[i] = hash;
         tabSaved[i] = data ? JSON.stringify(data) : null;
-      } catch {
+      } catch (e) {
         tabData[i] = defaultTabData();
-        tabHash[i] = 'onleesbaar';
+        // The hash of the unreadable bytes: an explicit overwrite replaces exactly that file.
+        const unreadable = (e as { unreadableHash?: string | null } | null)?.unreadableHash;
+        tabHash[i] = unreadable ?? 'onleesbaar';
+        tabSaved[i] = null;
+        tabUnreadable.add(i);
       }
     }),
   );
@@ -352,13 +358,26 @@ export async function openRttiUitlegModal() {
         // Unchanged tabs whose file exists are skipped, so they cannot conflict.
         // A missing file is still written, as in the reference: the rapport
         // falls back from a missing variant file to the subject file.
+        // Review 4a m4: an unreadable file is replaced only when the teacher says so.
+        let skip = new Set<number>();
+        if (tabUnreadable.size) {
+          const names = [...tabUnreadable].map((i) => `tabblad ${tabs[i]!.label}`).join(', ');
+          const overwrite = await confirmDialog(
+            `Het bestand van ${names} is onleesbaar (beschadigd of half gesynchroniseerd). ` +
+              'Overschrijven met wat je hier ziet? Anders worden alleen de andere tabbladen opgeslagen.',
+            { title: 'Onleesbaar bestand', okLabel: 'Overschrijven', danger: true },
+          );
+          if (!overwrite) skip = new Set(tabUnreadable);
+        }
         const results = await Promise.allSettled(
           tabs.map(async (t, i) => {
+            if (skip.has(i)) return;
             const json = JSON.stringify(tabData[i]);
             if (tabSaved[i] !== null && tabSaved[i] === json) return;
             const relPath = rttiExplFilePath(t.fileKey, t.jaar);
             tabHash[i] = (await Store.saveVersioned(relPath, tabData[i], tabHash[i])) as string;
             tabSaved[i] = json;
+            tabUnreadable.delete(i);
           }),
         );
         setBusy(saveBtn, false);

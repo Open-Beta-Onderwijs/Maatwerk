@@ -165,7 +165,10 @@ function attachListeners(container, school) {
       e.target.value = '';
       return;
     }
-    await saveImageField(file, 'school-watermerk', 'watermerk', school, container);
+    await saveImageField(file, 'school-watermerk', 'watermerk', school, container, {
+      exts: ['svg'],
+      text: 'SVG',
+    });
     e.target.value = '';
   });
 }
@@ -261,15 +264,30 @@ function restoreDisplay(field, value, confirmBtn, cancelBtn, container, school) 
 
 // ── Image saving ──────────────────────────────────────────────────────────────
 
-async function saveImageField(file, fileBaseName, field, school, container) {
+// The largest logo or watermark: the core shows nothing bigger (review 18 m4).
+const MAX_IMAGE_MB = 5;
+
+async function saveImageField(
+  file,
+  fileBaseName,
+  field,
+  school,
+  container,
+  allowed = { exts: IMAGE_EXTS, text: IMAGE_EXTS_TEXT },
+) {
   const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
-  // savePhoto takes image types only (review 6a M1); the reference accepted any file.
-  if (!IMAGE_EXTS.includes(ext)) {
+  // savePhoto takes image types only (review 6a M1); the reference accepted any file. The
+  // message names this field's types (review 6b n9: the watermark takes SVG only).
+  if (!allowed.exts.includes(ext)) {
     toast(
       `${ext ? `Bestandstype .${ext}` : 'Dit bestandstype'} wordt niet ondersteund. ` +
-        `Kies een ${IMAGE_EXTS_TEXT}-bestand.`,
+        `Kies een ${allowed.text}-bestand.`,
       'error',
     );
+    return;
+  }
+  if (file.size > MAX_IMAGE_MB * 1024 * 1024) {
+    toast(`Dit bestand is groter dan ${MAX_IMAGE_MB} MB. Kies een kleinere afbeelding.`, 'error');
     return;
   }
   const relPath = `afbeeldingen/${fileBaseName}.${ext}`;
