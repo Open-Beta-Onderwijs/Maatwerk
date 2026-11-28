@@ -21,8 +21,11 @@ Plan: `PLAN-2.md` step 41b (41b-a: sub-tasks 1-3, 41b-b: 4-7). Baseline: cargo t
   no length limit (long-name rule proposed); conflict copies of data files are read as records
   today.
 
-**Next action:** STOP: the user answers Q1-Q7 (Q3 needs numbers from the real folder). Then
-record the answers in the report, ADR-0012 -> accepted, sub-task 2 (`maatwerk-core::vault`).
+- User 2026-11-28: `afbeeldingen/` encrypted too (report + ADR item 5, `7051187`); Q1, Q2,
+  Q4-Q7 answered as recommended (report section 9). Q3 open: the user measures the real folder.
+
+**Next action:** STOP: the user's Q3 numbers (root, maxrel, maxstem, over40) -> set the
+long-name threshold in the report, ADR-0012 -> accepted, then sub-task 2 (`maatwerk-core::vault`).
 
 ## Step 41 (2026-11-27, on `step/41-data-robustness`): data robustness, `rapporten/`, edit locks
 

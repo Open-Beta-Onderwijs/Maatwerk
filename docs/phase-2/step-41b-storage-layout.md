@@ -164,6 +164,12 @@ be opened to be listed. The migration report states how many files used it.
 
 ## 9. Questions for the user
 
+**Answers (user, 2026-11-28), all as recommended:** Q1 `schema_version: 4` in plain
+`config.json`, no `school.json` stub. Q2 data names only (section 1). Q4 deflate (`flate2`). Q5
+all four key file copies with "Sleutel herstellen". Q6 listings skip conflict copies,
+Gegevenscontrole reports them. Q7 old plain snapshots deleted after the first encrypted one. Q3:
+**open**, the user measures the real folder; the threshold is set from those numbers.
+
 - **Q1 Format marker.** `config.json` `schema_version: 4` (plain) as the marker, so 0.9-0.32
   refuse the folder at start with "nieuwere versie" and never see unreadable files; `school.json`
   fully encrypted, no stub. _Alternative (ADR text):_ a plain `school.json` stub with
