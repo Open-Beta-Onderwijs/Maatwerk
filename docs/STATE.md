@@ -1,10 +1,28 @@
 # State
 
-Last updated: 2026-11-28 (step 41: all CI baselines in, CI green; waiting for the merge OK)
-Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
-Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
+Last updated: 2026-11-28 (step 41b: layout report written, STOP for the user)
+Branch: `step/41b-encrypted-storage` (from `main` at `4f9b29b`)
+Last tags: `step-41` (merge `4f9b29b`), `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
 (`d8c741c`), `v0.16.0`, `step-25`
+
+## Step 41b (2026-11-28, on `step/41b-encrypted-storage`): encrypted storage (ADR-0012)
+
+Plan: `PLAN-2.md` step 41b (41b-a: sub-tasks 1-3, 41b-b: 4-7). Baseline: cargo test 735 green
+(27 suites).
+
+- Step 41 merged into `main` (`4f9b29b`, tag `step-41`) with the user's OK 2026-11-28. Version
+  tag `v0.32.0` and the GitHub release not made: only when the user says so.
+- Sub-task 1: `docs/phase-2/step-41b-storage-layout.md` written from the code (inventory with
+  file:line refs) and the `school` fixture. Questions Q1-Q7 in its section 9 (marker =
+  `schema_version: 4`; names rule; real path lengths; deflate; key file copies; conflict copies
+  skipped; old plain snapshots deleted). Findings beyond the ADR: temp names and snapshot zips
+  expose plain names; name order feeds float sums (sort by logical name); exam/group slugs have
+  no length limit (long-name rule proposed); conflict copies of data files are read as records
+  today.
+
+**Next action:** STOP: the user answers Q1-Q7 (Q3 needs numbers from the real folder). Then
+record the answers in the report, ADR-0012 -> accepted, sub-task 2 (`maatwerk-core::vault`).
 
 ## Step 41 (2026-11-27, on `step/41-data-robustness`): data robustness, `rapporten/`, edit locks
 
