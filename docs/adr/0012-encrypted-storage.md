@@ -14,7 +14,8 @@ user approved (proposed 2026-11-22).
   `exams`, `groups`, `scores/<vak>`, `templates/rtti`) and `opdrachten/<id>` folders stay plain
   (item 3). Logical file names are capped at 64 bytes; no long-name rule.
 - **Plain:** `config.json`, `sleutels.json` (wrapped keys), opdracht `.typ` files and images,
-  snapshot zip names, `rapporten/`. **`afbeeldingen/` is encrypted** (item 5).
+  snapshot zip names, `rapporten/`, and in `afbeeldingen/` the folder name, `school-logo.*` and
+  `school-watermerk.*`. **The gebruiker photos in `afbeeldingen/` are encrypted** (item 5).
 - **Compression:** deflate (`flate2`) before encryption, flag bit in the header; images not
   deflated (item 2).
 - **Key file:** `sleutels.json` in the root, a copy in `snapshots/`, in every snapshot zip, and a
@@ -65,9 +66,10 @@ real trust boundary.
    working) and the images inside an opdracht folder (Typst reads them by name), and a small
    plain `school.json` version stub (`minAppVersion` + format
    marker) that older apps can still read. The real school settings move to an encrypted file.
-   **Encrypted, not plain** (user, 2026-11-28): `afbeeldingen/` (student and teacher photos,
-   school logo, watermark), names and contents; there was no reason to keep it plain. The
-   rapport reads them through the vault.
+   **Changed (user, 2026-11-28):** in `afbeeldingen/` the school logo and watermark stay plain
+   (`school-logo.*`, `school-watermerk.*`; the rapport mounts the folder), but the **gebruiker
+   photos are encrypted** (names and contents). Every other file in that folder counts as a
+   photo. (An earlier decision the same day encrypted the whole folder; replaced by this one.)
 6. **Migration: automatic on the first start** of the new version, when the stub has no format
    marker. The user's procedure: run it on an up-to-date offline copy, then replace the online
    folder in one go, while nobody else touches the data. The code still guards against misuse:

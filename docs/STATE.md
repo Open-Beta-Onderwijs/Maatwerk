@@ -21,7 +21,7 @@ Plan: `PLAN-2.md` step 41b (41b-a: sub-tasks 1-3, 41b-b: 4-7). Baseline: cargo t
   no length limit (long-name rule proposed); conflict copies of data files are read as records
   today.
 
-- User 2026-11-28: `afbeeldingen/` encrypted too (report + ADR item 5, `7051187`); Q1, Q2,
+- User 2026-11-28: `afbeeldingen/`: only the gebruiker photos encrypted, logo and watermark and the folder name plain (replaces "all of it", `7051187`; report + ADR item 5); Q1, Q2,
   Q4-Q7 answered as recommended (report section 9). Q3 open: the user measures the real folder.
 
 - Q3 numbers (user): root 87, maxrel 63, maxstem 42, over40 1 -> deepest path 209 after

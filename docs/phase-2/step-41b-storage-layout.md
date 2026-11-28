@@ -5,8 +5,9 @@ the code paths in `maatwerk-core`, `maatwerk-cli`, `src-tauri` (inventory with f
 below) and the synthetic `school` fixture (`tools/fixtures`, 5130 files, 23 MB). When the user
 approves it (with the answers in section 9), ADR-0012 becomes **accepted** with these choices.
 
-User decision 2026-11-28: **`afbeeldingen/` is encrypted too** (names and contents; there was no
-reason to keep it plain). ADR-0012 item 5 changed with it.
+User decision 2026-11-28 (replaces an earlier one that day, which encrypted all of
+`afbeeldingen/`): **in `afbeeldingen/`, only the gebruiker photos are encrypted.** The folder
+name, the school logo and the watermark stay plain. ADR-0012 item 5 changed with it.
 
 Legend: **N** = name, **C** = content; `enc` = encrypted, `plain` = as today.
 
@@ -44,8 +45,9 @@ R/                                         before                               
 │       ├── opdracht.json                  title, scope, metadata                N enc   C enc
 │       ├── main.typ, lib.typ, opdracht.typ                                      N plain C plain   (ADR: editor, Typst)
 │       └── images/figuur.png, foto.jpg, schema.svg                              N plain C plain   (ADR)
-├── afbeeldingen/                          photos, logo, watermark; plain folder (still not in snapshots)
-│   └── gebr-1756713600001.png, school-logo.png, school-watermerk.svg           N enc   C enc     (user 2026-11-28)
+├── afbeeldingen/                          plain folder (still not in snapshots)
+│   ├── school-logo.png, school-watermerk.svg                                    N plain C plain   (rapport mounts them)
+│   └── gebr-1756713600001.png             gebruiker photo                       N enc   C enc     (user 2026-11-28)
 ├── 2025-2026/                             year folder, plain
 │   ├── students-2025-2026.json            all students of the year              N enc   C enc
 │   ├── exams/                             plain folder
@@ -63,20 +65,21 @@ R/../rapporten/<schooljaar>/<stamp> <soort> <vak> <groep> <toets>.pdf          N
 `*` `sleutels.json` is plain JSON, but its values are wrapped keys (unreadable without the KEK).
 
 Encrypted names: AES-SIV over the **full logical file name** (with its extension: `.json`, or the
-image extension in `afbeeldingen/`), associated data = the parent's logical path, lowercase
+image extension of a photo), associated data = the parent's logical path, lowercase
 base32 without padding, then `.mwk`. Example: `scores/nat/900001.json` ->
 `scores/nat/ab4…q7.mwk` (11 bytes + 16 -> 44 chars + `.mwk`).
 
 ## 3. What stays plain and why
 
-| What                                        | Why                                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config.json`                               | Format marker and `activeYear` only; every app version reads it first (`check_schema`, `mod.rs:281-316`; watcher `engine.rs:311-318`; `is_data_folder` probe `data_location.rs:186`). With `schema_version: 4` apps 0.9-0.32 refuse the folder at start with their existing "nieuwere versie van Maatwerk" message instead of going read-only on unreadable files (Q1). |
-| Top-level, year and structural folder names | Fixed by the code, same in every school (section 1).                                                                                                                                                                                                                                                                                                                    |
-| `opdrachten/<id>/*.typ`, `images/`          | ADR: "Openen in editor" opens the `.typ` file; the Typst World mounts the folder with `std::fs` (`project.rs:72-81`, `world.rs:310-339`) and `.typ` files refer to `lib.typ` and `images/<file>` by name.                                                                                                                                                               |
-| `opdrachten/<id>/` folder name              | The `.typ` inside it is plain, so an encrypted folder name hides nothing; plain keeps the editor path, the AI workspace copy and the `write_text_file` check (`mod.rs:68-80`) unchanged (Q2).                                                                                                                                                                           |
-| `snapshots/<date>.zip` names                | Dates only.                                                                                                                                                                                                                                                                                                                                                             |
-| `R/../rapporten/`                           | ADR. Note: the PDF names contain group and test names, and the PDFs contain everything a rapport shows.                                                                                                                                                                                                                                                                 |
+| What                                                          | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config.json`                                                 | Format marker and `activeYear` only; every app version reads it first (`check_schema`, `mod.rs:281-316`; watcher `engine.rs:311-318`; `is_data_folder` probe `data_location.rs:186`). With `schema_version: 4` apps 0.9-0.32 refuse the folder at start with their existing "nieuwere versie van Maatwerk" message instead of going read-only on unreadable files (Q1).                                                                                         |
+| Top-level, year and structural folder names                   | Fixed by the code, same in every school (section 1).                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `opdrachten/<id>/*.typ`, `images/`                            | ADR: "Openen in editor" opens the `.typ` file; the Typst World mounts the folder with `std::fs` (`project.rs:72-81`, `world.rs:310-339`) and `.typ` files refer to `lib.typ` and `images/<file>` by name.                                                                                                                                                                                                                                                       |
+| `opdrachten/<id>/` folder name                                | The `.typ` inside it is plain, so an encrypted folder name hides nothing; plain keeps the editor path, the AI workspace copy and the `write_text_file` check (`mod.rs:68-80`) unchanged (Q2).                                                                                                                                                                                                                                                                   |
+| `afbeeldingen/` folder, `school-logo.*`, `school-watermerk.*` | The user's choice (2026-11-28). The school's own images, not personal data; the rapport's Typst mount `/data/afbeeldingen` (`rapport.rs:96, 210-218`) and the any-case watermark lookup (`world.rs:345-368`) keep reading them with `std::fs`. The UI always saves them under these two stems (`school.js:121, 293`, `rapport.rs:44`). Every other file in `afbeeldingen/` (the photos, `afbeeldingen/<gebruiker-id>.jpg`, `foto-wijzigen.ts:25`) is encrypted. |
+| `snapshots/<date>.zip` names                                  | Dates only.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `R/../rapporten/`                                             | ADR. Note: the PDF names contain group and test names, and the PDFs contain everything a rapport shows.                                                                                                                                                                                                                                                                                                                                                         |
 
 The real school settings: `school.json` stays at its logical path, so only its physical name and
 content change. No separate stub is needed when Q1 is accepted (the marker is in `config.json`);
@@ -93,8 +96,8 @@ otherwise a plain `school.json` stub `{ minAppVersion, format }` next to the enc
   `-` is the encrypted name.
 - **Compression (Q4):** deflate before encryption, via `flate2` (already in the dependency tree,
   MIT/Apache; zstd would add a C library). Fixture: a scores file 1475 -> 357 bytes, the
-  students file 144 810 -> 6 335 bytes. The flags bit leaves room to change this later. Images
-  in `afbeeldingen/` are stored without deflate (PNG/JPEG are compressed already).
+  students file 144 810 -> 6 335 bytes. The flags bit leaves room to change this later. Photos
+  are stored without deflate (PNG/JPEG are compressed already).
 - No-op writes: skip the write when the decrypted current content equals the new content (fresh
   nonces would otherwise change every byte and wake every PC's watcher and OneDrive).
 
@@ -206,11 +209,11 @@ the user's numbers (section 8): no long-name rule, logical file names capped at 
 - `Storage` gets the logical/physical mapping: `resolve`, `json_files` (sort by **logical**
   name: the order feeds float sums, `mod.rs:432-434`), `list_dir`, `try_list_years`, `read_*`,
   `write_*`, CAS on the ciphertext; `save_photo` and `read_photo_data_url` (`mod.rs:482-501`,
-  `540-543`) encrypt and decrypt `afbeeldingen/`.
-- `afbeeldingen/` readers outside `Storage`: the rapport's Typst mount `/data/afbeeldingen`
-  (`rapport.rs:96, 210-218`) and `find_ignoring_case` for the watermark (`world.rs:345-368`) read
-  through the vault (decrypt in memory; list and decode names for the any-case lookup); validate's
-  image checks likewise.
+  `540-543`) encrypt and decrypt the photos; the logo and watermark stay plain.
+- Migration: a `school.json` `logo` / `watermerk` that points to another name in
+  `afbeeldingen/` (possible in data from older versions) is renamed to `school-logo.<ext>` /
+  `school-watermerk.<ext>` with `school.json` updated, and listed in the migration report; any
+  other file there is treated as a photo and encrypted.
 - Direct `std::fs` readers of data files that must go through the vault: watcher (`engine.rs`),
   migration planner, validate (`validate.rs:221`), snapshots, CLI `stats`/`numbers`
   (`stats.rs:119-197`), `rubric check` (`rubric.rs:103-109`), AI context (`ai/send.rs:117-131`
@@ -218,6 +221,7 @@ the user's numbers (section 8): no long-name rule, logical file names capped at 
 - File-name parsers that must work on logical names: `locks.rs:55-159`, `rights.rs:182-199`,
   `rubrics.rs:60-155`, `numbers/load.rs:75-166`, `validate.rs:112-195`, `snapshots::contents`.
 - Unchanged: the UI, bridge and TS mock (logical paths), the opdracht Typst mount (plain `.typ`
-  and images), the commit lock, `rapporten/`.
+  and images), the rapport's `/data/afbeeldingen` mount (plain logo and watermark), the commit
+  lock, `rapporten/`.
 - Local plaintext that stays (outside OneDrive, not in scope): migration backup zips, AI
   workspace copies and `undo/` image backups, output PDFs in the cache, `session.json`, logs.
