@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-11-27 (step 41: all sub-tasks done, review fixed, 0.32.0; waiting for the user)
+Last updated: 2026-11-28 (step 41: visuals OK, CI baselines, e2e race fixed; CI pending)
 Branch: `step/41-data-robustness` (from `main` at `3f4a3d7`)
 Last tags: `step-40` (merge `3f4a3d7`), `step-39` (merge `df87d83`), `step-38` (merge `0459ac2`), `step-37` (merge `c9677c0`), `step-35`, `step-36` (merge `82e7c92`), `step-34` (merge `49ad3d4`), `step-33b`, `step-33`, `step-32` (merges `18cf902`, `aa04a67`, `a6a9357`), `step-31`,
 `step-30`, `v0.19.0` (merge `a32e7fc`), `step-28` (`5a832ca`), `step-27` (`33188e8`), `step-26`
@@ -97,8 +97,15 @@ Baseline: cargo test green.
   3/3 alone; not touched this step). Visual: the 6 `modal-toets-edit` / `modal-observatie-edit`
   diffs still wait for the user's OK. Release notes draft (Dutch) in the step report.
 
-**Next action:** the user: OK the 6 visual diffs (then update local baselines, drop their CI
-copies, commit the CI ones from the next run's artifacts); CI green; merge on the user's OK
+- 2026-11-28: user OK on the 6 visual diffs; local baselines updated (gitignored; visual
+  177/177). Their CI copies need no change: in CI run 46029336839 they passed with the old
+  baselines (macOS, Windows). `aec569d`: CI `splash` baselines macOS + Windows from that run
+  (checked: 0.32.0). Linux WebKit e2e failed there (decision 11 test, 3/3 locally too): the test
+  re-navigated while app.js was still importing (WebKit "Importing a module script failed");
+  `6118158` waits for the subject cards first (test only). Pushed.
+
+**Next action:** next CI run: commit the Linux `splash` baseline from its artifact (check
+0.32.0); CI green; merge on the user's OK
 (tag `step-41`). Tell the user: the emptying group write rule (D34), the offer rules in
 Gegevenscontrole, empty jaarlagen = all, the wiskunde vak fix.
 
