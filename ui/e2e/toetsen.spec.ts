@@ -719,6 +719,9 @@ test('after scores a max or soort change asks once; a max below an entered score
     YEAR,
   );
   const rec = file.data as { scores?: Record<string, unknown> };
+  // The mock is up before app.js has loaded: navigating away mid-import makes WebKit report
+  // "Importing a module script failed", which watchErrors would catch.
+  await expect(page.locator('.subject-card').first()).toBeVisible();
   await seedFiles(page, {
     [`${YEAR}/scores/nat/${file.name}`]: {
       ...rec,
