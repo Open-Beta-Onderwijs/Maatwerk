@@ -42,9 +42,12 @@ real trust boundary.
    - The KEK constant is lightly scrambled in the binary (split and XOR at build time): only
      against `strings`, not a security measure.
 5. **Plain on disk:** `rapporten/` PDFs, opdrachten Typst sources ("Openen in editor" keeps
-   working), images and photos (the user's choice; student photos are the most privacy-sensitive
-   files left plain), and a small plain `school.json` version stub (`minAppVersion` + format
+   working) and the images inside an opdracht folder (Typst reads them by name), and a small
+   plain `school.json` version stub (`minAppVersion` + format
    marker) that older apps can still read. The real school settings move to an encrypted file.
+   **Encrypted, not plain** (user, 2026-11-28): `afbeeldingen/` (student and teacher photos,
+   school logo, watermark), names and contents; there was no reason to keep it plain. The
+   rapport reads them through the vault.
 6. **Migration: automatic on the first start** of the new version, when the stub has no format
    marker. The user's procedure: run it on an up-to-date offline copy, then replace the online
    folder in one go, while nobody else touches the data. The code still guards against misuse:

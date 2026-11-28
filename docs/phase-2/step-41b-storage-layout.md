@@ -5,6 +5,9 @@ the code paths in `maatwerk-core`, `maatwerk-cli`, `src-tauri` (inventory with f
 below) and the synthetic `school` fixture (`tools/fixtures`, 5130 files, 23 MB). When the user
 approves it (with the answers in section 9), ADR-0012 becomes **accepted** with these choices.
 
+User decision 2026-11-28: **`afbeeldingen/` is encrypted too** (names and contents; there was no
+reason to keep it plain). ADR-0012 item 5 changed with it.
+
 Legend: **N** = name, **C** = content; `enc` = encrypted, `plain` = as today.
 
 ## 1. Rule in one sentence
@@ -41,8 +44,8 @@ R/                                         before                               
 │       ├── opdracht.json                  title, scope, metadata                N enc   C enc
 │       ├── main.typ, lib.typ, opdracht.typ                                      N plain C plain   (ADR: editor, Typst)
 │       └── images/figuur.png, foto.jpg, schema.svg                              N plain C plain   (ADR)
-├── afbeeldingen/                          photos, logo, watermark               N plain C plain   (ADR; not in snapshots)
-│   └── gebr-1756713600001.png, school-logo.png, school-watermerk.svg
+├── afbeeldingen/                          photos, logo, watermark; plain folder (still not in snapshots)
+│   └── gebr-1756713600001.png, school-logo.png, school-watermerk.svg           N enc   C enc     (user 2026-11-28)
 ├── 2025-2026/                             year folder, plain
 │   ├── students-2025-2026.json            all students of the year              N enc   C enc
 │   ├── exams/                             plain folder
@@ -59,10 +62,10 @@ R/../rapporten/<schooljaar>/<stamp> <soort> <vak> <groep> <toets>.pdf          N
 
 `*` `sleutels.json` is plain JSON, but its values are wrapped keys (unreadable without the KEK).
 
-Encrypted names: AES-SIV over the **logical file name without `.json`** (every encrypted-content
-file is JSON, so `.mwk` stands for it), associated data = the parent's logical path, lowercase
+Encrypted names: AES-SIV over the **full logical file name** (with its extension: `.json`, or the
+image extension in `afbeeldingen/`), associated data = the parent's logical path, lowercase
 base32 without padding, then `.mwk`. Example: `scores/nat/900001.json` ->
-`scores/nat/ab4…q7.mwk` (6 bytes + 16 -> 36 chars + `.mwk`).
+`scores/nat/ab4…q7.mwk` (11 bytes + 16 -> 44 chars + `.mwk`).
 
 ## 3. What stays plain and why
 
@@ -72,7 +75,6 @@ base32 without padding, then `.mwk`. Example: `scores/nat/900001.json` ->
 | Top-level, year and structural folder names | Fixed by the code, same in every school (section 1).                                                                                                                                                                                                                                                                                                                    |
 | `opdrachten/<id>/*.typ`, `images/`          | ADR: "Openen in editor" opens the `.typ` file; the Typst World mounts the folder with `std::fs` (`project.rs:72-81`, `world.rs:310-339`) and `.typ` files refer to `lib.typ` and `images/<file>` by name.                                                                                                                                                               |
 | `opdrachten/<id>/` folder name              | The `.typ` inside it is plain, so an encrypted folder name hides nothing; plain keeps the editor path, the AI workspace copy and the `write_text_file` check (`mod.rs:68-80`) unchanged (Q2).                                                                                                                                                                           |
-| `afbeeldingen/`                             | ADR (the user's choice). Student and teacher photos are the most sensitive files left plain. The rapport mounts it as `/data/afbeeldingen`.                                                                                                                                                                                                                             |
 | `snapshots/<date>.zip` names                | Dates only.                                                                                                                                                                                                                                                                                                                                                             |
 | `R/../rapporten/`                           | ADR. Note: the PDF names contain group and test names, and the PDFs contain everything a rapport shows.                                                                                                                                                                                                                                                                 |
 
@@ -91,16 +93,17 @@ otherwise a plain `school.json` stub `{ minAppVersion, format }` next to the enc
   `-` is the encrypted name.
 - **Compression (Q4):** deflate before encryption, via `flate2` (already in the dependency tree,
   MIT/Apache; zstd would add a C library). Fixture: a scores file 1475 -> 357 bytes, the
-  students file 144 810 -> 6 335 bytes. The flags bit leaves room to change this later.
+  students file 144 810 -> 6 335 bytes. The flags bit leaves room to change this later. Images
+  in `afbeeldingen/` are stored without deflate (PNG/JPEG are compressed already).
 - No-op writes: skip the write when the decrypted current content equals the new content (fresh
   nonces would otherwise change every byte and wake every PC's watcher and OneDrive).
 
 ## 5. Keys
 
-- `R/sleutels.json`: `{ "format": 1, "schoolId": "<random uuid>", "keys": [ { "id": "<4-byte
-hex>", "wrapped": "<base64: XChaCha20-Poly1305(KEK, DEK), AD = schoolId + id>" } ], "current":
-"<id>" }`. Plain name, because nothing can be decrypted before it is read. Content and name
-  keys are HKDF-SHA256 subkeys of the DEK.
+- `R/sleutels.json`: `format` (1), `schoolId` (random UUID), `keys` (a list of `id`, 4-byte hex,
+  and `wrapped`, base64 of XChaCha20-Poly1305(KEK, DEK) with associated data `schoolId` + `id`),
+  `current` (the id new writes use). Plain name, because nothing can be decrypted before it is
+  read. Content and name keys are HKDF-SHA256 subkeys of the DEK.
 - **Second copy (Q5):** `R/snapshots/sleutels.json` (written together with the first, same
   bytes), plus every snapshot zip, plus a local cache per PC
   (`<app_local_data>/sleutels/<schoolId>.json`). On start: if `R/sleutels.json` is missing or
@@ -137,24 +140,25 @@ logical name); Gegevenscontrole keeps reporting them by their physical name and 
 
 ## 8. Path length budget
 
-Encoded name length = `ceil((n + 16) * 8 / 5) + 4` for a stem of `n` bytes: 10 -> 46,
-20 -> 62, 30 -> 78, 40 -> 94, 50 -> 110, 60 -> 126.
+Encoded name length = `ceil((n + 16) * 8 / 5) + 4` for a file name of `n` bytes (extension
+included): 10 -> 46, 20 -> 62, 30 -> 78, 40 -> 94, 50 -> 110, 60 -> 126.
 
-| Deepest relative path (fixture)                                          | Before | After |
+| Relative path (fixture)                                                  | Before | After |
 | ------------------------------------------------------------------------ | -----: | ----: |
-| `2025-2026/exams/nat-toets-h1-krachten-nergie-herkansing-2025-2026.json` |     70 |   124 |
-| `2025-2026/scores/nat/900001.json`                                       |     32 |    61 |
+| `2025-2026/exams/nat-toets-h1-krachten-nergie-herkansing-2025-2026.json` |     70 |   132 |
+| `2025-2026/scores/nat/900001.json`                                       |     32 |    69 |
+| `afbeeldingen/gebr-1756713600001.png`                                    |     35 |    78 |
 | `opdrachten/opdracht_1756713600200/images/schema.svg`                    |     50 |    50 |
 
 Plus the root, e.g. `C:\Users\j.jansen\OneDrive - Stichting Voorbeeldscholen\Sectie NASK\Maatwerk\data\`
-(~95 chars): fixture worst case ~220 of the 260 that Explorer handles. Rust's `std::fs` handles
+(~95 chars): fixture worst case ~230 of the 260 that Explorer handles. Rust's `std::fs` handles
 longer paths itself (verbatim prefix), and OneDrive allows 400, but **Explorer** copies fail above
 260, and the migration procedure is an Explorer copy of the offline folder. New exam and group
 ids are short (`toets-<t36>-<r6>`, `groep-<t>-<r>`); old ones are title slugs **without a length
 limit** (`RelPath::parse` has none), so real data may be longer than the fixture (Q3).
 
-**Proposed:** a long-name rule as Cryptomator does: a stem whose encoded name would exceed 100
-characters is stored as `<base32 of the first 20 bytes of SHA-256(encrypted name)>.mwk` (36
+**Proposed:** a long-name rule as Cryptomator does: a name whose encoded form would exceed 100
+characters (a logical name over 44 bytes) is stored as `<base32 of the first 20 bytes of SHA-256(encrypted name)>.mwk` (36
 chars + `.mwk`), with the full encrypted name in the file's header. Only those (rare) files must
 be opened to be listed. The migration report states how many files used it.
 
@@ -188,14 +192,19 @@ be opened to be listed. The migration report states how many files used it.
 
 - `Storage` gets the logical/physical mapping: `resolve`, `json_files` (sort by **logical**
   name: the order feeds float sums, `mod.rs:432-434`), `list_dir`, `try_list_years`, `read_*`,
-  `write_*`, CAS on the ciphertext, `save_photo` unchanged (plain).
+  `write_*`, CAS on the ciphertext; `save_photo` and `read_photo_data_url` (`mod.rs:482-501`,
+  `540-543`) encrypt and decrypt `afbeeldingen/`.
+- `afbeeldingen/` readers outside `Storage`: the rapport's Typst mount `/data/afbeeldingen`
+  (`rapport.rs:96, 210-218`) and `find_ignoring_case` for the watermark (`world.rs:345-368`) read
+  through the vault (decrypt in memory; list and decode names for the any-case lookup); validate's
+  image checks likewise.
 - Direct `std::fs` readers of data files that must go through the vault: watcher (`engine.rs`),
   migration planner, validate (`validate.rs:221`), snapshots, CLI `stats`/`numbers`
   (`stats.rs:119-197`), `rubric check` (`rubric.rs:103-109`), AI context (`ai/send.rs:117-131`
   reads `opdracht.json`), `presence::prune_stale`, `data_location::check_chosen`.
 - File-name parsers that must work on logical names: `locks.rs:55-159`, `rights.rs:182-199`,
   `rubrics.rs:60-155`, `numbers/load.rs:75-166`, `validate.rs:112-195`, `snapshots::contents`.
-- Unchanged: the UI, bridge and TS mock (logical paths), Typst mounts (plain `.typ`, images,
-  `afbeeldingen`), the commit lock, `rapporten/`.
+- Unchanged: the UI, bridge and TS mock (logical paths), the opdracht Typst mount (plain `.typ`
+  and images), the commit lock, `rapporten/`.
 - Local plaintext that stays (outside OneDrive, not in scope): migration backup zips, AI
   workspace copies and `undo/` image backups, output PDFs in the cache, `session.json`, logs.
